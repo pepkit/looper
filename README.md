@@ -5,7 +5,7 @@
 
 __`Looper`__ is a pipeline submission engine that parses sample inputs and submits pipelines for each sample. Looper was conceived to use [pypiper](https://github.com/epigen/pypiper/) pipelines, but does not require this.
 
-You can download the latest version from the [releases page](https://github.com/epigen/looper/releases).
+You can download the latest version from the [releases page](https://github.com/pepkit/looper/releases).
 
 # Looper-compatible pipelines
 
@@ -15,7 +15,7 @@ You can find a list of pre-built pipelines in the [hello looper! repository](htt
 # Links
 
  * Documentation: [Read the Docs](http://looper.readthedocs.org/)
- * Source code: http://github.com/epigen/looper
+ * Source code: http://github.com/pepkit/looper
 
 
 # Quick start
@@ -23,7 +23,7 @@ Instructions for installation, usage, tutorials, and advanced options are availa
 
 
 ```
-pip install https://github.com/epigen/looper/zipball/master
+pip install https://github.com/pepkit/looper/zipball/master
 export PATH=$PATH:~/.local/bin
 ```
 
