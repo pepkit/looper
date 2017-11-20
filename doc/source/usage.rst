@@ -22,7 +22,7 @@ Here you can see the command-line usage instructions for the main looper command
 
 .. code-block:: none
 
-	version: 0.7.0-dev
+	version: 0.7.2
 	usage: looper [-h] [-V] [--logfile LOGFILE] [--verbosity {0,1,2,3,4}] [--dbg]
 	              {run,summarize,destroy,check,clean} ...
 	
@@ -46,16 +46,17 @@ Here you can see the command-line usage instructions for the main looper command
 	  --dbg                 Turn on debug mode (default: False)
 	
 	For subcommand-specific options, type: 'looper <subcommand> -h'
-	https://github.com/epigen/looper
+	https://github.com/pepkit/looper
 
 ``looper run --help``
 ----------------------------------
 
 .. code-block:: none
 
-	version: 0.7.0-dev
+	version: 0.7.2
 	usage: looper run [-h] [-t TIME_DELAY] [--ignore-flags] [--compute COMPUTE]
-	                  [--env ENV] [--limit LIMIT] [--file-checks] [-d]
+	                  [--env ENV] [--limit LIMIT] [--lump LUMP] [--lumpn LUMPN]
+	                  [--file-checks] [-d]
 	                  [--exclude-protocols [EXCLUDE_PROTOCOLS [EXCLUDE_PROTOCOLS ...]]
 	                  | --include-protocols
 	                  [INCLUDE_PROTOCOLS [INCLUDE_PROTOCOLS ...]]]
@@ -79,6 +80,10 @@ Here you can see the command-line usage instructions for the main looper command
 	  --compute COMPUTE     YAML file with looper environment compute settings.
 	  --env ENV             Employ looper environment compute settings.
 	  --limit LIMIT         Limit to n samples.
+	  --lump LUMP           Maximum total input file size for a lump/batch of
+	                        commands in a single job
+	  --lumpn LUMPN         Number of individual scripts grouped into single
+	                        submission
 	  --file-checks         Perform input file checks. Default=True.
 	  -d, --dry-run         Don't actually submit the project/subproject.
 	  --exclude-protocols [EXCLUDE_PROTOCOLS [EXCLUDE_PROTOCOLS ...]]
@@ -95,7 +100,7 @@ Here you can see the command-line usage instructions for the main looper command
 
 .. code-block:: none
 
-	version: 0.7.0-dev
+	version: 0.7.2
 	usage: looper summarize [-h] [--file-checks] [-d]
 	                        [--exclude-protocols [EXCLUDE_PROTOCOLS [EXCLUDE_PROTOCOLS ...]]
 	                        | --include-protocols
@@ -126,7 +131,7 @@ Here you can see the command-line usage instructions for the main looper command
 
 .. code-block:: none
 
-	version: 0.7.0-dev
+	version: 0.7.2
 	usage: looper destroy [-h] [--file-checks] [-d]
 	                      [--exclude-protocols [EXCLUDE_PROTOCOLS [EXCLUDE_PROTOCOLS ...]]
 	                      | --include-protocols
@@ -157,7 +162,7 @@ Here you can see the command-line usage instructions for the main looper command
 
 .. code-block:: none
 
-	version: 0.7.0-dev
+	version: 0.7.2
 	usage: looper check [-h] [-A] [-F [FLAGS [FLAGS ...]]] [--file-checks] [-d]
 	                    [--exclude-protocols [EXCLUDE_PROTOCOLS [EXCLUDE_PROTOCOLS ...]]
 	                    | --include-protocols
@@ -193,7 +198,7 @@ Here you can see the command-line usage instructions for the main looper command
 
 .. code-block:: none
 
-	version: 0.7.0-dev
+	version: 0.7.2
 	usage: looper clean [-h] [--file-checks] [-d]
 	                    [--exclude-protocols [EXCLUDE_PROTOCOLS [EXCLUDE_PROTOCOLS ...]]
 	                    | --include-protocols
@@ -224,7 +229,7 @@ Here you can see the command-line usage instructions for the main looper command
 
 .. code-block:: none
 
-	version: 0.7.0-dev
+	version: 0.7.2
 	usage: looper [-h] [-V] [--logfile LOGFILE] [--verbosity {0,1,2,3,4}] [--dbg]
 	              {run,summarize,destroy,check,clean} ...
 	
@@ -248,4 +253,4 @@ Here you can see the command-line usage instructions for the main looper command
 	  --dbg                 Turn on debug mode (default: False)
 	
 	For subcommand-specific options, type: 'looper <subcommand> -h'
-	https://github.com/epigen/looper
+	https://github.com/pepkit/looper

@@ -64,4 +64,4 @@ Links
 
  * Public-facing permalink: http://databio.org/looper
  * Documentation: http://looper.readthedocs.io/
- * Source code: http://github.com/epigen/looper
+ * Source code: http://github.com/pepkit/looper
