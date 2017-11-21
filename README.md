@@ -19,7 +19,7 @@ You can find a list of pre-built pipelines in the [hello looper! repository](htt
 
 # Quick start
 
-Instructions for installation, usage, tutorials, and advanced options are available in the [Read the Docs documentation](http://looper.readthedocs.org/), and that's the best place to start. To get running quickly, you can install the latest release and put the `looper` executable in your `$PATH`: 
+Detailed instructions are in the [Read the Docs documentation](http://looper.readthedocs.org/), and that's the best place to start. To get running quickly, you can install the latest release and put the `looper` executable in your `$PATH`: 
 
 
 ```
@@ -27,7 +27,7 @@ pip install https://github.com/pepkit/looper/zipball/master
 export PATH=$PATH:~/.local/bin
 ```
 
-Looper supports Python 2.7 only and has been tested only in Linux. To use looper with your project, you must define your project using [Looper’s standard project definition format](http://looper.readthedocs.io/en/latest/define-your-project.html), which is a `yaml` config file passed as an argument to looper:
+Looper supports Python 2.7 and Python 3, and has been tested only in Linux. To use looper with your project, you must define your project using [standard PEP project definition format](http://pepkit.github.io), which is a `yaml` config file passed as an argument to looper. To test, grab an [example PEP](https://pepkit.github.io/docs/example_PEPs/) and run it through looper with this command:
 
 ```bash
 looper run project_config.yaml
@@ -35,10 +35,8 @@ looper run project_config.yaml
 
 
 # Installation troubleshooting
-If you clone this repository and then an attempt at local installation, e.g. with `pip install --upgrade ./`, fails, this may be due to an issue 
-with `setuptools` and `six`. A `FileNotFoundError` (Python 3) or an `IOError` (Python2), with a message/traceback about a nonexistent `METADATA` file 
-means that this is even more likely the cause. To get around this, you can first manually `pip install --upgrade six` or `pip install six==1.11.0`, 
-as upgrading from `six` from 1.10.0 to 1.11.0 resolves this issue, then retry the `looper` installation.
+
+If you clone this repository and then an attempt at local installation, e.g. with `pip install --upgrade ./`, fails, this may be due to an issue with `setuptools` and `six`. A `FileNotFoundError` (Python 3) or an `IOError` (Python2), with a message/traceback about a nonexistent `METADATA` file means that this is even more likely the cause. To get around this, you can first manually `pip install --upgrade six` or `pip install six==1.11.0`, as upgrading from `six` from 1.10.0 to 1.11.0 resolves this issue, then retry the `looper` installation.
 
 
 # Contributing
