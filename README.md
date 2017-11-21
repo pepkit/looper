@@ -1,7 +1,7 @@
 # Looper
 
 [![Documentation Status](http://readthedocs.org/projects/looper/badge/?version=latest)](http://looper.readthedocs.io/en/latest/?badge=latest)
-[![Build Status](https://travis-ci.org/vreuter/looper.svg?branch=master)](https://travis-ci.org/vreuter/looper)
+[![Build Status](https://travis-ci.org/pepkit/looper.svg?branch=master)](https://travis-ci.org/pepkit/looper)
 
 `Looper` is a pipeline submission engine that reads [standard PEP format](http://pepkit.github.io) and maps sample inputs to any command-line tool. It provides a convenient interface for submitting pipelines for bioinformatics research projects with many samples. Looper was conceived to use [pypiper pipelines](https://github.com/epigen/pypiper/), but it is in fact compatible with any tool that can be run via the command line.
 
