@@ -7,13 +7,18 @@
 
 You can download the latest version of `looper` from the [releases page](https://github.com/pepkit/looper/releases).
 
-The documentation is hosted at [Read the Docs](http://looper.readthedocs.org/). Looper is built on the python [`pep`](http://github.com/pepkit/pep) package.
+The documentation is hosted at [Read the Docs](http://looper.readthedocs.org/). 
 
 # Looper-compatible pipelines
 
 You can find a list of pre-built pipelines in the [hello looper! repository](https://github.com/pepkit/hello_looper/blob/master/looper_pipelines.md).
 
+# `Looper` and `pep`
+
+`Looper` is built on the python [`pep`](http://github.com/pepkit/pep) package. `Looper` and `pep` were originally developed together as a single package, but `pep` has been extracted to make the projects more modular. `Looper` now imports `pep` for its sample input and processing, and `pep` can be used independently of `looper`.
+
 # Quick start
+
 Instructions for installation, usage, tutorials, and advanced options are available in the [Read the Docs documentation](http://looper.readthedocs.org/), and that's the best place to start. To get running quickly, you can install the latest release and put the `looper` executable in your `$PATH`: 
 
 
