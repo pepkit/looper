@@ -3,20 +3,15 @@
 [![Documentation Status](http://readthedocs.org/projects/looper/badge/?version=latest)](http://looper.readthedocs.io/en/latest/?badge=latest)
 [![Build Status](https://travis-ci.org/vreuter/looper.svg?branch=master)](https://travis-ci.org/vreuter/looper)
 
-__`Looper`__ is a pipeline submission engine that parses sample inputs and submits pipelines for each sample. Looper was conceived to use [pypiper](https://github.com/epigen/pypiper/) pipelines, but does not require this.
+`Looper` is a pipeline submission engine that reads [standard PEP format](http://pepkit.github.io) and maps sample inputs to any command-line tool. It provides a convenient interface for submitting pipelines for bioinformatics research projects with many samples. Looper was conceived to use [pypiper pipelines](https://github.com/epigen/pypiper/), but it is in fact compatible with any tool that can be run via the command line.
 
-You can download the latest version from the [releases page](https://github.com/pepkit/looper/releases).
+You can download the latest version of `looper` from the [releases page](https://github.com/pepkit/looper/releases).
+
+The documentation is hosted at [Read the Docs](http://looper.readthedocs.org/). Looper is built on the python [`pep`](http://github.com/pepkit/pep) package.
 
 # Looper-compatible pipelines
 
 You can find a list of pre-built pipelines in the [hello looper! repository](https://github.com/pepkit/hello_looper/blob/master/looper_pipelines.md).
-
-
-# Links
-
- * Documentation: [Read the Docs](http://looper.readthedocs.org/)
- * Source code: http://github.com/pepkit/looper
-
 
 # Quick start
 Instructions for installation, usage, tutorials, and advanced options are available in the [Read the Docs documentation](http://looper.readthedocs.org/), and that's the best place to start. To get running quickly, you can install the latest release and put the `looper` executable in your `$PATH`: 
