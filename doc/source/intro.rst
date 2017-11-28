@@ -6,6 +6,28 @@ Looper is a pipeline submitting engine. It helps you run a bunch of samples thro
 
 Looper is modular and totally configurable, so it scales as your needs grow. We provide sensible defaults for ease-of-use, but you can configure just about anything. By default, it runs your jobs sequentially on the local computer, but with a small configuration change, it will create and submit jobs to any cluster resource manager (like SLURM, SGE, or LFS).
 
+Once you've built a pipeline (for example, using <a href="http://databio.org/pypiper">pypiper</a>), you need a way to deploy that pipeline across lots of samples. Looper helps you do that.
+
+You use a `yaml` file to describe your project. It points to a `csv` listing each sample you want to run, and has fields for data input location, pipeline output location, and other project-specific variables. Looper reads this metadata and submits pipeline runs for each sample.
+
+Looper makes it easy to:
+
+* only submit jobs that haven't already been submitted
+
+* run multiple pipelines on each sample
+
+* interface with any kind of pipeline
+
+* collate inputs from different locations on disk
+
+* request different resources for different input file sizes
+
+* monitor which jobs are running or failed
+
+* run different pipelines on different types of data
+
+* use sample objects for downstream (post-pipeline) data analysis
+
 
 
 How does it work?

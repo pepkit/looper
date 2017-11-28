@@ -2,18 +2,18 @@
 Installing and Hello, World!
 =====================================
 
-Release versions are posted on the GitHub `looper releases page <https://github.com/epigen/looper/releases>`_. You can install the latest release directly from GitHub using pip:
+Release versions are posted on the GitHub `looper releases page <https://github.com/pepkit/looper/releases>`_. You can install the latest release directly from GitHub using pip:
 
 .. code-block:: bash
 
-	pip install --user https://github.com/epigen/looper/zipball/master
+	pip install --user https://github.com/pepkit/looper/zipball/master
 
 
 Update looper with:
 
 .. code-block:: bash
 
-	pip install --user --upgrade https://github.com/epigen/looper/zipball/master
+	pip install --user --upgrade https://github.com/pepkit/looper/zipball/master
 
 
 To put the ``looper`` executable in your ``$PATH``, add the following line to your ``.bashrc`` or ``.profile``:
@@ -28,7 +28,7 @@ Now, to test looper, follow the commands in the `Hello, Looper! example reposito
 .. code:: bash
 
 	# Install the latest version of looper:
-	pip install --user https://github.com/epigen/looper/zipball/master
+	pip install --user https://github.com/pepkit/looper/zipball/master
 
 	# download and unzip this repository
 	wget https://github.com/databio/hello_looper/archive/master.zip

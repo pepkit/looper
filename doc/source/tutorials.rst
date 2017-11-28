@@ -7,7 +7,7 @@ First, install looper and pypiper. `Pypiper <https://pypiper.readthedocs.io>`_ i
 
 .. code:: bash
 
-	pip install --user https://github.com/epigen/looper/zipball/master
+	pip install --user https://github.com/pepkit/looper/zipball/master
 	pip install --user https://github.com/epigen/pypiper/zipball/master
 
 

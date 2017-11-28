@@ -39,5 +39,5 @@ For example:
 	  pipeline_interfaces: [pipeline_iface1.yaml, pipeline_iface2.yaml]
 
 
-In this case, for a given sample, looper will first look in pipeline_iface1.yaml to see if appropriate pipeline exists for this sample type. If it finds one, it will use this pipeline (or set of pipelines, as specified in the protocol_mappings.yaml file). Having submitted a suitable pipeline it will ignore the pipeline_iface2.yaml interface. However if there is no suitable pipeline in the first interface, looper will check the second and, if it finds a match, will submit that. If no suitable pipelines are found in any of the interfaces, the sample will be skipped as usual.
+In this case, for a given sample, looper will first look in ``pipeline_iface1.yaml`` to see if appropriate pipeline exists for this sample type. If it finds one, it will use this pipeline (or set of pipelines, as specified in the ``protocol_mappings`` section of the ``pipeline_interface.yaml`` file). Having submitted a suitable pipeline it will ignore the pipeline_iface2.yaml interface. However if there is no suitable pipeline in the first interface, looper will check the second and, if it finds a match, will submit that. If no suitable pipelines are found in any of the interfaces, the sample will be skipped as usual.
 
