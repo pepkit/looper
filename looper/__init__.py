@@ -12,15 +12,20 @@ import os
 from sys import stdout
 from ._version import __version__
 
+# Not used here, but make this the main import interface between pep and
+# looper, so that other modules within this package need not worry about
+# the locations of some of the pep declarations. Effectively, concentrate
+# the connection between pep and looper here, to the extent possible.
+from pep import \
+    IMPLICATIONS_DECLARATION, SAMPLE_INDEPENDENT_PROJECT_SECTIONS, \
+    SAMPLE_NAME_COLNAME
 
-# TODO: import from pep.
+
+# TODO: import from pep? They could be useful there, but conceptually this
+# TODO (cont.): feels like more of a submission engine concern.
 FLAGS = ["completed", "running", "failed", "waiting", "partial"]
 
 GENERIC_PROTOCOL_KEY = "*"
-IMPLICATIONS_DECLARATION = "implied_columns"
-SAMPLE_INDEPENDENT_PROJECT_SECTIONS = \
-        ["metadata", "derived_columns", IMPLICATIONS_DECLARATION, "trackhubs"]
-SAMPLE_NAME_COLNAME = "sample_name"
 LOGGING_LEVEL = "INFO"
 LOGGING_LOCATIONS = (stdout, )
 

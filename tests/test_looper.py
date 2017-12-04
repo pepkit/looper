@@ -73,8 +73,7 @@ class ProjectConstructorTest:
         assert expected == observed
 
 
-    @pytest.mark.parametrize(argnames="sample_index",
-                             argvalues=MERGED_SAMPLE_INDICES)
+    @named_param(argnames="sample_index", argvalues=MERGED_SAMPLE_INDICES)
     def test_derived_columns_merge_table_sample(self, proj, sample_index):
         """ Make sure derived columns works on merged table. """
         observed_merged_sample_filepaths = \
@@ -84,9 +83,8 @@ class ProjectConstructorTest:
                observed_merged_sample_filepaths
 
 
-    @pytest.mark.parametrize(argnames="sample_index",
-                             argvalues=set(range(NUM_SAMPLES)) -
-                                       MERGED_SAMPLE_INDICES)
+    @named_param(argnames="sample_index",
+                 argvalues=set(range(NUM_SAMPLES)) - MERGED_SAMPLE_INDICES)
     def test_unmerged_samples_lack_merged_cols(self, proj, sample_index):
         """ Samples not in the `merge_table` lack merged columns. """
         # Assert the negative to cover empty dict/AttributeDict/None/etc.
@@ -94,6 +92,7 @@ class ProjectConstructorTest:
 
 
     def test_duplicate_derived_columns_still_derived(self, proj):
+        """ Duplicated derived columns can still be derived. """
         sample_index = 2
         observed_nonmerged_col_basename = \
             os.path.basename(proj.samples[sample_index].nonmerged_col)
@@ -108,10 +107,8 @@ class SampleWrtProjectCtorTests:
     """ Tests for `Sample` related to `Project` construction """
 
 
-    @pytest.mark.parametrize(
-            argnames="sample_index",
-            argvalues=(set(range(NUM_SAMPLES)) - NGS_SAMPLE_INDICES)
-    )
+    @named_param(argnames="sample_index",
+                 argvalues=(set(range(NUM_SAMPLES)) - NGS_SAMPLE_INDICES))
     def test_required_inputs(self, proj, pipe_iface, sample_index):
         """ A looper Sample's required inputs are based on pipeline. """
         # Note that this is testing only the non-NGS samples for req's inputs.
@@ -129,8 +126,7 @@ class SampleWrtProjectCtorTests:
         assert not error_specific
 
 
-    @pytest.mark.parametrize(argnames="sample_index",
-                             argvalues=NGS_SAMPLE_INDICES)
+    @named_param(argnames="sample_index", argvalues=NGS_SAMPLE_INDICES)
     def test_ngs_pipe_ngs_sample(self, proj, pipe_iface, sample_index):
         """ NGS pipeline with NGS input works just fine. """
         sample = proj.samples[sample_index]
@@ -151,9 +147,8 @@ class SampleWrtProjectCtorTests:
                observed_required_input_basename
 
 
-    @pytest.mark.parametrize(
-            argnames="sample_index",
-            argvalues=set(range(NUM_SAMPLES)) - NGS_SAMPLE_INDICES)
+    @named_param(argnames="sample_index",
+                 argvalues=set(range(NUM_SAMPLES)) - NGS_SAMPLE_INDICES)
     @pytest.mark.parametrize(
             argnames="permissive", argvalues=[False, True],
             ids=lambda permissive: "permissive={}".format(permissive))
@@ -204,9 +199,8 @@ class SampleWrtProjectCtorTests:
             assert pre_test_handlers == looper.models._LOGGER.handlers
 
 
-    @pytest.mark.parametrize(
-            argnames="pipeline,expected",
-            argvalues=list(LOOPER_ARGS_BY_PIPELINE.items()))
+    @named_param(argnames="pipeline,expected",
+                 argvalues=list(LOOPER_ARGS_BY_PIPELINE.items()))
     def test_looper_args_usage(self, pipe_iface, pipeline, expected):
         """ Test looper args usage flag. """
         observed = pipe_iface.uses_looper_args(pipeline)
@@ -225,9 +219,8 @@ class RunErrorReportTests:
                     "MC-circ", "Mac-tissue-res"}
 
 
-    @pytest.mark.parametrize(
-            argnames="empty_skips",
-            argvalues=[tuple(), set(), list(), dict()])
+    @named_param(argnames="empty_skips",
+                 argvalues=[tuple(), set(), list(), dict()])
     def test_no_failures(self, empty_skips):
         """ Aggregation step returns empty collection for no-fail case. """
         assert defaultdict(list) == aggregate_exec_skip_reasons(empty_skips)
@@ -330,11 +323,13 @@ class GenericProtocolMatchTests:
         return Project(prj_file)
 
 
+    @pytest.mark.skip("Not implemented")
     def test_specific_protocol_match_lower_priority_interface(self):
         """ Generic protocol mapping doesn't preclude specific ones. """
         pass
 
 
+    @pytest.mark.skip("Not implemented")
     def test_no_specific_protocol_match(self):
         """ Protocol match in no pipeline interface allows generic match. """
         pass
