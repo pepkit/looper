@@ -9,9 +9,10 @@ import subprocess
 import time
 
 from .exceptions import JobSubmissionException
-from .models import Sample, VALID_READ_TYPES
 from .utils import \
     create_looper_args_text, grab_project_data, sample_folder
+
+from pep import Sample, VALID_READ_TYPES
 
 
 __author__ = "Vince Reuter"
