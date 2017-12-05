@@ -20,7 +20,9 @@ import pytest
 import yaml
 
 from looper import setup_looper_logger
-from pep import PipelineInterface, Project, SAMPLE_NAME_COLNAME
+from looper.pipeline_interface import PipelineInterface
+from looper.project import Project
+from pep import SAMPLE_NAME_COLNAME
 
 
 _LOGGER = logging.getLogger("looper")

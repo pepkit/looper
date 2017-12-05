@@ -22,7 +22,7 @@ from . import \
     setup_looper_logger, FLAGS, GENERIC_PROTOCOL_KEY, \
     LOGGING_LEVEL, __version__
 from .exceptions import JobSubmissionException
-from .looper_project import Project
+from .project import Project
 from .submission_manager import SubmissionConductor
 from .utils import \
     fetch_flag_files, sample_folder, VersionInHelpParser
