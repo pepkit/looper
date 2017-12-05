@@ -20,7 +20,7 @@ import pytest
 import yaml
 
 from looper import setup_looper_logger
-from looper.models import PipelineInterface, Project, SAMPLE_NAME_COLNAME
+from pep import PipelineInterface, Project, SAMPLE_NAME_COLNAME
 
 
 _LOGGER = logging.getLogger("looper")
@@ -542,7 +542,7 @@ def proj(request):
 
     :param pytest._pytest.fixtures.SubRequest request: test case requesting
         a project instance
-    :return looper.models.Project: object created by parsing
+    :return pep.Project: object created by parsing
         data in file pointed to by `request` class
     """
     p = _create(request, Project)
@@ -562,7 +562,7 @@ def pipe_iface(request):
 
     :param pytest._pytest.fixtures.SubRequest request: test case requesting
         a project instance
-    :return looper.models.PipelineInterface: object created by parsing
+    :return pep.PipelineInterface: object created by parsing
         data in file pointed to by `request` class
     """
     return _create(request, PipelineInterface)
