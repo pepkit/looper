@@ -18,13 +18,15 @@ import yaml
 
 from looper import GENERIC_PROTOCOL_KEY, SAMPLE_NAME_COLNAME
 from looper.looper import aggregate_exec_skip_reasons, Runner
-import looper.models
-from looper.models import Project, COL_KEY_SUFFIX, SAMPLE_ANNOTATIONS_KEY
 from tests.conftest import \
     DERIVED_COLNAMES, EXPECTED_MERGED_SAMPLE_FILES, \
     LOOPER_ARGS_BY_PIPELINE, MERGED_SAMPLE_INDICES, NGS_SAMPLE_INDICES, \
     NUM_SAMPLES, PIPELINE_TO_REQD_INFILES_BY_SAMPLE
 from tests.helpers import named_param
+
+import pep
+from pep import Project, SAMPLE_ANNOTATIONS_KEY
+from pep.sample import COL_KEY_SUFFIX
 
 
 _LOGGER = logging.getLogger("looper.{}".format(__name__))
@@ -175,7 +177,7 @@ class SampleWrtProjectCtorTests:
             # Get a logging handlers snapshot so that we can ensure that
             # we've successfully reset logging state upon test conclusion.
             import copy
-            pre_test_handlers = copy.copy(looper.models._LOGGER.handlers)
+            pre_test_handlers = copy.copy(pep._LOGGER.handlers)
 
             # Control the format to enable assertions about message content.
             logfile = tmpdir.join("captured.log").strpath
@@ -183,7 +185,7 @@ class SampleWrtProjectCtorTests:
             logmsg_format = "{%(name)s} %(module)s:%(lineno)d [%(levelname)s] > %(message)s "
             capture_handler.setFormatter(logging.Formatter(logmsg_format))
             capture_handler.setLevel(logging.ERROR)
-            looper.models._LOGGER.addHandler(capture_handler)
+            pep._LOGGER.addHandler(capture_handler)
 
             # Execute the actual call under test.
             test_call()
@@ -195,8 +197,8 @@ class SampleWrtProjectCtorTests:
             assert "ERROR" in loglines[0]
 
             # Remove the temporary handler and assert that we've reset state.
-            del looper.models._LOGGER.handlers[-1]
-            assert pre_test_handlers == looper.models._LOGGER.handlers
+            del pep._LOGGER.handlers[-1]
+            assert pre_test_handlers == pep._LOGGER.handlers
 
 
     @named_param(argnames="pipeline,expected",
