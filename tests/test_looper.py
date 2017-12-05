@@ -8,93 +8,17 @@ The primary function under test here is the creation of a project instance.
 from collections import defaultdict
 import itertools
 import logging
-import os
 import random
 
 import numpy.random as nprand
 import pytest
 
 from looper.looper import aggregate_exec_skip_reasons
-from tests.conftest import \
-    DERIVED_COLNAMES, EXPECTED_MERGED_SAMPLE_FILES, \
-    LOOPER_ARGS_BY_PIPELINE, MERGED_SAMPLE_INDICES, NUM_SAMPLES
+from tests.conftest import LOOPER_ARGS_BY_PIPELINE
 from tests.helpers import named_param
-
-from pep.sample import COL_KEY_SUFFIX
 
 
 _LOGGER = logging.getLogger("looper.{}".format(__name__))
-
-
-
-@pytest.mark.usefixtures("write_project_files")
-class ProjectConstructorTest:
-
-
-    @pytest.mark.parametrize(argnames="attr_name",
-                             argvalues=["required_inputs", "all_input_attr"])
-    def test_sample_required_inputs_not_set(self, proj, attr_name):
-        """ Samples' inputs are not set in `Project` ctor. """
-        with pytest.raises(AttributeError):
-            getattr(proj.samples[nprand.randint(len(proj.samples))], attr_name)
-
-
-    @pytest.mark.parametrize(argnames="sample_index",
-                             argvalues=MERGED_SAMPLE_INDICES)
-    def test_merge_samples_positive(self, proj, sample_index):
-        """ Samples annotation lines say only sample 'b' should be merged. """
-        assert proj.samples[sample_index].merged
-
-
-    @pytest.mark.parametrize(argnames="sample_index",
-                             argvalues=set(range(NUM_SAMPLES)) -
-                                       MERGED_SAMPLE_INDICES)
-    def test_merge_samples_negative(self, proj, sample_index):
-        assert not proj.samples[sample_index].merged
-
-
-    @pytest.mark.parametrize(argnames="sample_index",
-                             argvalues=MERGED_SAMPLE_INDICES)
-    def test_data_sources_derivation(self, proj, sample_index):
-        """ Samples in merge file, check data_sources --> derived_columns. """
-        # Make sure these columns were merged:
-        merged_columns = filter(
-                lambda col_key: (col_key != "col_modifier") and
-                                not col_key.endswith(COL_KEY_SUFFIX),
-                proj.samples[sample_index].merged_cols.keys())
-        # Order may be lost due to mapping.
-        # We don't care about that here, or about duplicates.
-        expected = set(DERIVED_COLNAMES)
-        observed = set(merged_columns)
-        assert expected == observed
-
-
-    @named_param(argnames="sample_index", argvalues=MERGED_SAMPLE_INDICES)
-    def test_derived_columns_merge_table_sample(self, proj, sample_index):
-        """ Make sure derived columns works on merged table. """
-        observed_merged_sample_filepaths = \
-            [os.path.basename(f) for f in
-             proj.samples[sample_index].file2.split(" ")]
-        assert EXPECTED_MERGED_SAMPLE_FILES == \
-               observed_merged_sample_filepaths
-
-
-    @named_param(argnames="sample_index",
-                 argvalues=set(range(NUM_SAMPLES)) - MERGED_SAMPLE_INDICES)
-    def test_unmerged_samples_lack_merged_cols(self, proj, sample_index):
-        """ Samples not in the `merge_table` lack merged columns. """
-        # Assert the negative to cover empty dict/AttributeDict/None/etc.
-        assert not proj.samples[sample_index].merged_cols
-
-
-    def test_duplicate_derived_columns_still_derived(self, proj):
-        """ Duplicated derived columns can still be derived. """
-        sample_index = 2
-        observed_nonmerged_col_basename = \
-            os.path.basename(proj.samples[sample_index].nonmerged_col)
-        assert "c.txt" == observed_nonmerged_col_basename
-        assert "" == proj.samples[sample_index].locate_data_source(
-                proj.data_sources, 'file')
 
 
 
