@@ -1,6 +1,6 @@
-""" Looper versions of NGS project models. """
+""" Looper version of NGS project model. """
 
-from . import models
+import pep
 
 
 __author__ = "Vince Reuter"
@@ -8,7 +8,7 @@ __email__ = "vreuter@virginia.edu"
 
 
 
-class Project(models.Project):
+class Project(pep.Project):
     """
     Looper-specific NGS Project.
 

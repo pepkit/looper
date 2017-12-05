@@ -11,22 +11,26 @@ import logging
 import os
 import subprocess
 import sys
-import pandas as _pd
-from . import \
-    setup_looper_logger, FLAGS, GENERIC_PROTOCOL_KEY, \
-    LOGGING_LEVEL, __version__
-from .exceptions import JobSubmissionException
-from .looper_project import Project
-from pep.models import \
-    ProjectContext, COMPUTE_SETTINGS_VARNAME, SAMPLE_EXECUTION_TOGGLE
-from .submission_manager import SubmissionConductor
-from .utils import \
-    alpha_cased, fetch_flag_files, sample_folder, VersionInHelpParser
 
 # Need specific sequence of actions for colorama imports?
 from colorama import init
 init()
 from colorama import Fore, Style
+import pandas as _pd
+
+from . import \
+    setup_looper_logger, FLAGS, GENERIC_PROTOCOL_KEY, \
+    LOGGING_LEVEL, __version__
+from .exceptions import JobSubmissionException
+from .looper_project import Project
+from .submission_manager import SubmissionConductor
+from .utils import \
+    fetch_flag_files, sample_folder, VersionInHelpParser
+
+from pep import \
+    ProjectContext, COMPUTE_SETTINGS_VARNAME, SAMPLE_EXECUTION_TOGGLE
+from pep.utils import alpha_cased
+
 
 
 SUBMISSION_FAILURE_MESSAGE = "Cluster resource failure"
