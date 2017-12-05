@@ -6,7 +6,6 @@ The primary function under test here is the creation of a project instance.
 """
 
 from collections import defaultdict
-from functools import partial
 import itertools
 import logging
 import os
@@ -14,18 +13,13 @@ import random
 
 import numpy.random as nprand
 import pytest
-import yaml
 
-from looper import GENERIC_PROTOCOL_KEY, SAMPLE_NAME_COLNAME
-from looper.looper import aggregate_exec_skip_reasons, Runner
+from looper.looper import aggregate_exec_skip_reasons
 from tests.conftest import \
     DERIVED_COLNAMES, EXPECTED_MERGED_SAMPLE_FILES, \
-    LOOPER_ARGS_BY_PIPELINE, MERGED_SAMPLE_INDICES, NGS_SAMPLE_INDICES, \
-    NUM_SAMPLES, PIPELINE_TO_REQD_INFILES_BY_SAMPLE
+    LOOPER_ARGS_BY_PIPELINE, MERGED_SAMPLE_INDICES, NUM_SAMPLES
 from tests.helpers import named_param
 
-import pep
-from pep import Project, SAMPLE_ANNOTATIONS_KEY
 from pep.sample import COL_KEY_SUFFIX
 
 
@@ -108,100 +102,7 @@ class ProjectConstructorTest:
 class SampleWrtProjectCtorTests:
     """ Tests for `Sample` related to `Project` construction """
 
-
-    @named_param(argnames="sample_index",
-                 argvalues=(set(range(NUM_SAMPLES)) - NGS_SAMPLE_INDICES))
-    def test_required_inputs(self, proj, pipe_iface, sample_index):
-        """ A looper Sample's required inputs are based on pipeline. """
-        # Note that this is testing only the non-NGS samples for req's inputs.
-        expected_required_inputs = \
-            PIPELINE_TO_REQD_INFILES_BY_SAMPLE["testpipeline.sh"][sample_index]
-        sample = proj.samples[sample_index]
-        sample.set_pipeline_attributes(pipe_iface, "testpipeline.sh")
-        observed_required_inputs = [os.path.basename(f)
-                                    for f in sample.required_inputs]
-        assert expected_required_inputs == observed_required_inputs
-        error_type, error_general, error_specific = \
-                sample.determine_missing_requirements()
-        assert error_type is None
-        assert not error_general
-        assert not error_specific
-
-
-    @named_param(argnames="sample_index", argvalues=NGS_SAMPLE_INDICES)
-    def test_ngs_pipe_ngs_sample(self, proj, pipe_iface, sample_index):
-        """ NGS pipeline with NGS input works just fine. """
-        sample = proj.samples[sample_index]
-        sample.set_pipeline_attributes(pipe_iface, "testngs.sh")
-        expected_required_input_basename = \
-            os.path.basename(
-                PIPELINE_TO_REQD_INFILES_BY_SAMPLE["testngs.sh"]
-                                                  [sample_index][0])
-        observed_required_input_basename = \
-            os.path.basename(sample.required_inputs[0])
-        error_type, error_general, error_specific = \
-                sample.determine_missing_requirements()
-        assert error_type is None
-        assert not error_general
-        assert not error_specific
-        assert 1 == len(sample.required_inputs)
-        assert expected_required_input_basename == \
-               observed_required_input_basename
-
-
-    @named_param(argnames="sample_index",
-                 argvalues=set(range(NUM_SAMPLES)) - NGS_SAMPLE_INDICES)
-    @pytest.mark.parametrize(
-            argnames="permissive", argvalues=[False, True],
-            ids=lambda permissive: "permissive={}".format(permissive))
-    def test_ngs_pipe_non_ngs_sample(
-            self, proj, pipe_iface, sample_index, permissive, tmpdir):
-        """ An NGS-dependent pipeline with non-NGS sample(s) is dubious. """
-
-        # Based on the test case's parameterization,
-        # get the sample and create the function call to test.
-        sample = proj.samples[sample_index]
-        kwargs = {"pipeline_interface": pipe_iface,
-                  "pipeline_name": "testngs.sh",
-                  "permissive": permissive}
-        test_call = partial(sample.set_pipeline_attributes, **kwargs)
-
-        # Permissiveness parameter determines whether
-        # there's an exception or just an error message.
-        if not permissive:
-            with pytest.raises(TypeError):
-                test_call()
-        else:
-            # Log to a file just for this test.
-
-            # Get a logging handlers snapshot so that we can ensure that
-            # we've successfully reset logging state upon test conclusion.
-            import copy
-            pre_test_handlers = copy.copy(pep._LOGGER.handlers)
-
-            # Control the format to enable assertions about message content.
-            logfile = tmpdir.join("captured.log").strpath
-            capture_handler = logging.FileHandler(logfile, mode='w')
-            logmsg_format = "{%(name)s} %(module)s:%(lineno)d [%(levelname)s] > %(message)s "
-            capture_handler.setFormatter(logging.Formatter(logmsg_format))
-            capture_handler.setLevel(logging.ERROR)
-            pep._LOGGER.addHandler(capture_handler)
-
-            # Execute the actual call under test.
-            test_call()
-
-            # Read the captured, logged lines and make content assertion(s).
-            with open(logfile, 'r') as captured:
-                loglines = captured.readlines()
-            assert 1 == len(loglines)
-            assert "ERROR" in loglines[0]
-
-            # Remove the temporary handler and assert that we've reset state.
-            del pep._LOGGER.handlers[-1]
-            assert pre_test_handlers == pep._LOGGER.handlers
-
-
-    @named_param(argnames="pipeline,expected",
+    @named_param(argnames=["pipeline", "expected"],
                  argvalues=list(LOOPER_ARGS_BY_PIPELINE.items()))
     def test_looper_args_usage(self, pipe_iface, pipeline, expected):
         """ Test looper args usage flag. """
@@ -275,64 +176,3 @@ class RunErrorReportTests:
             observed_aggregation = aggregate_exec_skip_reasons(
                     original_skip_reasons)
             assert expected_aggregation == observed_aggregation
-
-
-
-@pytest.mark.skip("Not implemented")
-class GenericProtocolMatchTests:
-    """ Pipeline interface may support 'all-other' protocols notion. """
-
-
-    NAME_ANNS_FILE = "annotations.csv"
-
-
-    @pytest.fixture
-    def prj_data(self):
-        """ Provide basic Project data. """
-        return {"metadata": {"output_dir": "output",
-                             "results_subdir": "results_pipeline",
-                             "submission_subdir": "submission"}}
-
-
-    @pytest.fixture
-    def sheet_lines(self):
-        """ Provide sample annotations sheet lines. """
-        return ["{},{}".format(SAMPLE_NAME_COLNAME, "basic_sample")]
-
-
-    @pytest.fixture
-    def sheet_file(self, tmpdir, sheet_lines):
-        """ Write annotations sheet file and provide path. """
-        anns_file = tmpdir.join(self.NAME_ANNS_FILE)
-        anns_file.write(os.linesep.join(sheet_lines))
-        return anns_file.strpath
-
-
-    @pytest.fixture
-    def iface_paths(self, tmpdir):
-        """ Write basic pipeline interfaces and provide paths. """
-        pass
-
-
-    @pytest.fixture
-    def prj(self, tmpdir, prj_data, anns_file, iface_paths):
-        """ Provide basic Project. """
-        prj_data["pipeline_interfaces"] = iface_paths
-        prj_data["metadata"][SAMPLE_ANNOTATIONS_KEY] = anns_file
-        prj_file = tmpdir.join("pconf.yaml").strpath
-        with open(prj_file, 'w') as f:
-            yaml.dump(prj_data, f)
-        return Project(prj_file)
-
-
-    @pytest.mark.skip("Not implemented")
-    def test_specific_protocol_match_lower_priority_interface(self):
-        """ Generic protocol mapping doesn't preclude specific ones. """
-        pass
-
-
-    @pytest.mark.skip("Not implemented")
-    def test_no_specific_protocol_match(self):
-        """ Protocol match in no pipeline interface allows generic match. """
-        pass
-
