@@ -121,7 +121,7 @@ def fetch_flag_files(prj=None, results_folder="", flags=FLAGS):
         # Iterate over samples to collect flag files.
         for s in prj.samples:
             folder = sample_folder(prj, s)
-            # Check each candidate flag for existence, collecting it if present.
+            # Check each candidate flag for existence, collecting if present.
             for flag, suffix in flag_suffix_pairs:
                 flag_expr = os.path.join(folder, suffix)
                 flags_present = glob.glob(flag_expr)
