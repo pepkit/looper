@@ -18,3 +18,8 @@ FAQ
 
 - How can I resubmit a subset of jobs that failed?
 	By default, looper **will not submit a job that has already run**. If you want to re-rerun a sample (maybe you've updated the pipeline, or you want to run restart a failed attempt), you can do so by passing ``--ignore-flags`` to looper at startup, but this will **resubmit all samples**. If you only want to re-run or restart a few samples, it's best to just delete the flag files manually for the samples you want to restart, then use ``looper run`` as normal.	
+
+
+- Can I pass additional command-line arguments to my pipeline on-the-fly?
+	Yes! Any command-line arguments passed to `looper run` *that are not consumed by looper* will simply be handed off untouched to *all the pipelines*. This gives you a handy way to pass-through command-line arguments that you want passed to every job in a given looper run.	
+
