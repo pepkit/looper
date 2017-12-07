@@ -21,5 +21,5 @@ FAQ
 
 
 - Can I pass additional command-line arguments to my pipeline on-the-fly?
-	Yes! Any command-line arguments passed to `looper run` *that are not consumed by looper* will simply be handed off untouched to *all the pipelines*. This gives you a handy way to pass-through command-line arguments that you want passed to every job in a given looper run.	
+	Yes! Any command-line arguments passed to `looper run` *that are not consumed by looper* will simply be handed off untouched to *all the pipelines*. This gives you a handy way to pass-through command-line arguments that you want passed to every job in a given looper run.	For example, you may run `looper run config.yaml -R` -- since `looper `does not understand `-R`, this will be passed to every pipeline.
 
