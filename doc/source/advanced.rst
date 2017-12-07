@@ -41,3 +41,7 @@ For example:
 
 In this case, for a given sample, looper will first look in ``pipeline_iface1.yaml`` to see if appropriate pipeline exists for this sample type. If it finds one, it will use this pipeline (or set of pipelines, as specified in the ``protocol_mappings`` section of the ``pipeline_interface.yaml`` file). Having submitted a suitable pipeline it will ignore the pipeline_iface2.yaml interface. However if there is no suitable pipeline in the first interface, looper will check the second and, if it finds a match, will submit that. If no suitable pipelines are found in any of the interfaces, the sample will be skipped as usual.
 
+Command-line argument pass-through
+****************************************
+
+Any command-line arguments passed to `looper run` *that are not consumed by looper* will be added to the command of every pipeline submitted in that looper run. This gives you a handy way to pass-through command-line arguments that you want passed to every job in a given looper run. For example, pypiper pipelines understand the `--recover` flag; so if you want to pass this flag through `looper` to all your pipeline runs, you may run `looper run config.yaml --recover`. Since `looper `does not understand `--recover`, this will be passed to every pipeline. Obviously, this feature is limited to passing flags that `looper` does not understand, because those arguments will be consumed by `looper` and not passed through to individual pipelines.
