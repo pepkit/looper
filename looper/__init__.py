@@ -10,6 +10,9 @@ local level, but this will at least provide a foundation.
 import logging
 import os
 from sys import stdout
+
+from .pipeline_interface import PipelineInterface
+from .protocol_interface import ProtocolInterface
 from ._version import __version__
 
 # Not used here, but make this the main import interface between pep and
