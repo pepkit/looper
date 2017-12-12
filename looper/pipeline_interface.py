@@ -10,15 +10,16 @@ else:
 
 import yaml
 
-from .const import DEFAULT_COMPUTE_RESOURCES_NAME
-from .utils import copy, expandpath
+from pep import utils
+from pep.const import DEFAULT_COMPUTE_RESOURCES_NAME
+
 
 
 _LOGGER = logging.getLogger(__name__)
 
 
 
-@copy
+@utils.copy
 class PipelineInterface(object):
     """
     This class parses, holds, and returns information for a yaml file that
@@ -78,7 +79,7 @@ class PipelineInterface(object):
             if "path" in pipe_data:
                 pipe_path = pipe_data["path"]
                 _LOGGER.log(5, "Expanding path: '%s'", pipe_path)
-                pipe_path = expandpath(pipe_path)
+                pipe_path = utils.expandpath(pipe_path)
                 _LOGGER.log(5, "Expanded: '%s'", pipe_path)
                 pipe_data["path"] = pipe_path
 
@@ -323,6 +324,20 @@ class PipelineInterface(object):
         except KeyError:
             _LOGGER.debug("No 'name' for pipeline '{}'".format(pipeline))
             return os.path.splitext(pipeline)[0]
+
+
+    def uses_looper_args(self, pipeline_name):
+        """
+        Determine whether indicated pipeline accepts looper arguments.
+
+        :param pipeline_name: Name of pipeline to check for looper
+            argument acceptance.
+        :type pipeline_name: str
+        :return: Whether indicated pipeline accepts looper arguments.
+        :rtype: bool
+        """
+        config = self._select_pipeline(pipeline_name)
+        return "looper_args" in config and config["looper_args"]
 
 
     def _select_pipeline(self, pipeline_name):

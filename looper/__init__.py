@@ -20,17 +20,12 @@ from ._version import __version__
 # the locations of some of the pep declarations. Effectively, concentrate
 # the connection between pep and looper here, to the extent possible.
 from pep import \
-    IMPLICATIONS_DECLARATION, SAMPLE_INDEPENDENT_PROJECT_SECTIONS, \
+    FLAGS, IMPLICATIONS_DECLARATION, SAMPLE_INDEPENDENT_PROJECT_SECTIONS, \
     SAMPLE_NAME_COLNAME
 
 
 __classes__ = ["PipelineInterface", "ProtocolInterface"]
-__all__ = __classes__
 
-
-# TODO: import from pep? They could be useful there, but conceptually this
-# TODO (cont.): feels like more of a submission engine concern.
-FLAGS = ["completed", "running", "failed", "waiting", "partial"]
 
 GENERIC_PROTOCOL_KEY = "*"
 LOGGING_LEVEL = "INFO"

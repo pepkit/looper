@@ -13,8 +13,8 @@ else:
 import yaml
 
 from .pipeline_interface import PipelineInterface
-from .sample import Sample
-from .utils import alpha_cased, copy, is_command_callable, \
+from pep.sample import Sample
+from pep.utils import alpha_cased, copy, is_command_callable, \
     import_from_source, standard_stream_redirector
 
 

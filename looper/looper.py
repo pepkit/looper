@@ -24,8 +24,7 @@ from . import \
 from .exceptions import JobSubmissionException
 from .project import Project
 from .submission_manager import SubmissionConductor
-from .utils import \
-    fetch_flag_files, sample_folder, VersionInHelpParser
+from .utils import fetch_flag_files, sample_folder
 
 from pep import \
     ProjectContext, COMPUTE_SETTINGS_VARNAME, SAMPLE_EXECUTION_TOGGLE
@@ -60,7 +59,7 @@ def parse_arguments():
             "'%(prog)s <subcommand> -h'"
     additional_description += "\nhttps://github.com/pepkit/looper"
 
-    parser = VersionInHelpParser(
+    parser = _VersionInHelpParser(
             description=banner,
             epilog=additional_description,
             formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -791,6 +790,14 @@ def _submission_status_text(curr, total, sample_name, sample_protocol, color):
            "## [{n} of {N}] {sample} ({protocol})".format(
                n=curr, N=total, sample=sample_name, protocol=sample_protocol) + \
            Style.RESET_ALL
+
+
+
+class _VersionInHelpParser(argparse.ArgumentParser):
+    def format_help(self):
+        """ Add version information to help text. """
+        return "version: {}\n".format(__version__) + \
+               super(_VersionInHelpParser, self).format_help()
 
 
 

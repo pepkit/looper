@@ -1,32 +1,16 @@
 """ Helpers without an obvious logical home. """
 
-from argparse import ArgumentParser
 from collections import defaultdict, Iterable
 import copy
-import contextlib
 import glob
 import logging
 import os
-import random
-import string
 
-import yaml
-
-from ._version import __version__
-from . import \
-    FLAGS, GENERIC_PROTOCOL_KEY, SAMPLE_INDEPENDENT_PROJECT_SECTIONS, \
-    SAMPLE_NAME_COLNAME
+from pep import \
+    FLAGS, SAMPLE_INDEPENDENT_PROJECT_SECTIONS, SAMPLE_NAME_COLNAME
 
 
 _LOGGER = logging.getLogger(__name__)
-
-
-
-class VersionInHelpParser(ArgumentParser):
-    def format_help(self):
-        """ Add version information to help text. """
-        return "version: {}\n".format(__version__) + \
-               super(VersionInHelpParser, self).format_help()
 
 
 
