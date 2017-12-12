@@ -24,6 +24,10 @@ from pep import \
     SAMPLE_NAME_COLNAME
 
 
+__classes__ = ["PipelineInterface", "ProtocolInterface"]
+__all__ = __classes__
+
+
 # TODO: import from pep? They could be useful there, but conceptually this
 # TODO (cont.): feels like more of a submission engine concern.
 FLAGS = ["completed", "running", "failed", "waiting", "partial"]
