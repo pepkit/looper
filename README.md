@@ -1,3 +1,5 @@
+<img src="logo_looper.svg" alt="looper logo" height="70" align="left"/>
+
 # Looper
 
 [![Documentation Status](http://readthedocs.org/projects/looper/badge/?version=latest)](http://looper.readthedocs.io/en/latest/?badge=latest)
