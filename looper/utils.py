@@ -50,7 +50,7 @@ def create_looper_args_text(pl_key, submission_settings, prj):
         else:
             _LOGGER.debug("No pipeline configuration: %s", pl_key)
     else:
-        _LOGGER.debug("Projet lacks pipeline configuration")
+        _LOGGER.debug("Project lacks pipeline configuration")
 
     num_cores = int(submission_settings.setdefault("cores"))
     if num_cores > 1:
