@@ -47,6 +47,10 @@ def create_looper_args_text(pl_key, submission_settings, prj):
                 _LOGGER.info("Found config file: %s", pl_config_file)
                 # Append arg for config file if found
                 opt_arg_pairs.append(("-C", pl_config_file))
+        else:
+            _LOGGER.debug("No pipeline configuration: %s", pl_key)
+    else:
+        _LOGGER.debug("Projet lacks pipeline configuration")
 
     num_cores = int(submission_settings.setdefault("cores"))
     if num_cores > 1:
