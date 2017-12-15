@@ -1,6 +1,5 @@
 """ Model interface between executor, protocols, and pipelines. """
 
-from collections import defaultdict
 import inspect
 import logging
 import os
@@ -19,32 +18,6 @@ from pep.utils import alpha_cased, copy, is_command_callable, \
 
 
 _LOGGER = logging.getLogger(__name__)
-
-
-
-def process_pipeline_interfaces(pipeline_interface_locations):
-    """
-    Create a ProtocolInterface for each pipeline location given.
-
-    :param Iterable[str] pipeline_interface_locations: locations, each of
-        which should be either a directory path or a filepath, that specifies
-        pipeline interface and protocol mappings information. Each such file
-        should be have a pipelines section and a protocol mappings section
-        whereas each folder should have a file for each of those sections.
-    :return Mapping[str, Iterable[ProtocolInterface]]: mapping from protocol
-        name to interface(s) for which that protocol is mapped
-    """
-    interface_by_protocol = defaultdict(list)
-    for pipe_iface_location in pipeline_interface_locations:
-        if not os.path.exists(pipe_iface_location):
-            _LOGGER.warn("Ignoring nonexistent pipeline interface "
-                         "location: '%s'", pipe_iface_location)
-            continue
-        proto_iface = ProtocolInterface(pipe_iface_location)
-        for proto_name in proto_iface.protomap:
-            _LOGGER.log(5, "Adding protocol name: '%s'", proto_name)
-            interface_by_protocol[alpha_cased(proto_name)].append(proto_iface)
-    return interface_by_protocol
 
 
 
