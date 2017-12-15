@@ -390,6 +390,8 @@ class Runner(Executor):
         mapped_protos = set()
         for proto in protocols | {GENERIC_PROTOCOL_KEY}:
             proto_key = alpha_cased(proto)
+            _LOGGER.debug("Determining sample type, script, and flags for "
+                          "pipeline(s) associated with protocol: %s", proto)
             submission_bundles = self.prj.build_submission_bundles(proto_key)
             if not submission_bundles:
                 if proto_key != GENERIC_PROTOCOL_KEY:
@@ -398,6 +400,7 @@ class Runner(Executor):
             mapped_protos.add(proto)
             for pl_iface, sample_subtype, pl_key, script_with_flags in \
                     submission_bundles:
+                _LOGGER.debug("%s: %s", pl_iface, sample_subtype.__name__)
                 conductor = SubmissionConductor(
                         pl_key, pl_iface, script_with_flags, self.prj,
                         args.dry_run, args.time_delay, sample_subtype,
