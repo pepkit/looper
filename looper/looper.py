@@ -400,7 +400,7 @@ class Runner(Executor):
             mapped_protos.add(proto)
             for pl_iface, sample_subtype, pl_key, script_with_flags in \
                     submission_bundles:
-                _LOGGER.debug("%s: %s", pl_iface, sample_subtype.__name__)
+                _LOGGER.debug("%s: %s", pl_key, sample_subtype.__name__)
                 conductor = SubmissionConductor(
                         pl_key, pl_iface, script_with_flags, self.prj,
                         args.dry_run, args.time_delay, sample_subtype,
