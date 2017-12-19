@@ -11,12 +11,13 @@ import mock
 import pytest
 import yaml
 
-from peppy import \
-    PipelineInterface, Project, Sample, DEFAULT_COMPUTE_RESOURCES_NAME, \
+from looper.pipeline_interface import PipelineInterface
+from looper.project import Project
+from looper.exceptions import \
+    InvalidResourceSpecificationException, \
+    MissingPipelineConfigurationException
+from peppy import Project, Sample, DEFAULT_COMPUTE_RESOURCES_NAME, \
     SAMPLE_ANNOTATIONS_KEY, SAMPLE_NAME_COLNAME
-from peppy.pipeline_interface import \
-    _InvalidResourceSpecificationException, \
-    _MissingPipelineConfigurationException
 
 
 __author__ = "Vince Reuter"
@@ -120,7 +121,7 @@ def test_unconfigured_pipeline_exception(
     for parameter in ["pipeline_name", "pipeline"]:
         if parameter in required_parameters and parameter not in kwargs:
             kwargs[parameter] = "missing-pipeline"
-    with pytest.raises(_MissingPipelineConfigurationException):
+    with pytest.raises(MissingPipelineConfigurationException):
         func.__call__(**kwargs)
 
 
@@ -151,7 +152,7 @@ class PipelineInterfaceNameResolutionTests:
             pipelines = [name + ext for name, ext
                          in zip(pipeline_names, extensions)]
             pi_config_data = {pipeline: None for pipeline in pipelines}
-            with mock.patch("peppy.pipeline_interface.PipelineInterface._expand_paths"):
+            with mock.patch("looper.pipeline_interface.PipelineInterface._expand_paths"):
                 pi = PipelineInterface(pi_config_data)
             for expected_name, pipeline in zip(pipeline_names, pipelines):
                 assert expected_name == pi.get_pipeline_name(pipeline)
@@ -175,7 +176,7 @@ class PipelineInterfaceResourcePackageTests:
                 # Already no default resource package.
                 pass
             assert "default" not in pipeline["resources"]
-            with pytest.raises(_InvalidResourceSpecificationException):
+            with pytest.raises(InvalidResourceSpecificationException):
                 pi.choose_resource_package(
                         name, file_size=huge_resources["file_size"] + 1)
 

@@ -2,7 +2,6 @@
 
 import inspect
 import itertools
-import logging
 import os
 import sys
 if sys.version_info < (3, ):
@@ -14,7 +13,8 @@ import mock
 import pytest
 import yaml
 
-from peppy import ProtocolInterface, Sample
+from looper.protocol_interface import ProtocolInterface
+from peppy import Sample
 
 
 __author__ = "Vince Reuter"
@@ -256,7 +256,7 @@ class SampleSubtypeTests:
 
         # Make the call under test, patching the function protected
         # function that's called iff the protocol name match succeeds.
-        with mock.patch("peppy.protocol_interface._import_sample_subtype",
+        with mock.patch("looper.protocol_interface._import_sample_subtype",
                         return_value=None) as mocked_import:
             # Return value is irrelevant; the effect of the protocol name
             # match/resolution is entirely observable via the argument to the

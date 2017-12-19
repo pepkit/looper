@@ -22,10 +22,10 @@ import yaml
 from looper import setup_looper_logger
 from looper.pipeline_interface import PipelineInterface
 from looper.project import Project
-from peppy import SAMPLE_NAME_COLNAME
+from peppy import setup_peppy_logger, SAMPLE_NAME_COLNAME
 
 
-_LOGGER = logging.getLogger("looper")
+_LOGGER = logging.getLogger("peppy")
 
 
 P_CONFIG_FILENAME = "project_config.yaml"
@@ -214,8 +214,8 @@ def pytest_generate_tests(metafunc):
 def conf_logs(request):
     """ Configure logging for the testing session. """
     level = request.config.getoption("--logging-level")
-    setup_looper_logger(level=level, devmode=True)
-    logging.getLogger("looper").info(
+    setup_peppy_logger(level=level, devmode=True)
+    logging.getLogger("peppy").info(
         "Configured looper logger at level %s; attaching tests' logger %s",
         str(level), __name__)
     global _LOGGER

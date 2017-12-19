@@ -9,9 +9,9 @@ import sys
 
 import pytest
 
+from looper.protocol_interface import _import_sample_subtype
 import peppy
 from peppy import Sample, DEV_LOGGING_FMT
-from peppy.protocol_interface import _import_sample_subtype
 
 
 __author__ = "Vince Reuter"
@@ -108,7 +108,8 @@ class SampleSubtypeImportTests:
             try:
                 assert any(map(found_line, messages))
             except AssertionError:
-                print("Missing expected message: {}".format(messages))
+                print("Expected at least one non-empty message, "
+                      "but got {}: {}".format(len(messages), messages))
                 raise
 
         else:

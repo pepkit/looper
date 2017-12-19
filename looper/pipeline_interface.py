@@ -10,6 +10,9 @@ else:
 
 import yaml
 
+from .exceptions import \
+    InvalidResourceSpecificationException, \
+    MissingPipelineConfigurationException
 from peppy import utils
 from peppy.const import DEFAULT_COMPUTE_RESOURCES_NAME
 
@@ -57,7 +60,7 @@ class PipelineInterface(object):
     def __getitem__(self, item):
         try:
             return self._select_pipeline(item)
-        except _MissingPipelineConfigurationException:
+        except MissingPipelineConfigurationException:
             raise KeyError("{} is not a known pipeline; known: {}".
                            format(item, self.pipe_iface_config.keys()))
 
@@ -143,7 +146,7 @@ class PipelineInterface(object):
             default_resource_package = \
                     resources[DEFAULT_COMPUTE_RESOURCES_NAME]
         except KeyError:
-            raise _InvalidResourceSpecificationException(
+            raise InvalidResourceSpecificationException(
                 "Pipeline resources specification lacks '{}' section".
                     format(DEFAULT_COMPUTE_RESOURCES_NAME))
 
@@ -348,7 +351,7 @@ class PipelineInterface(object):
         :type pipeline_name: str
         :return: configuration data for pipeline indicated
         :rtype: Mapping
-        :raises _MissingPipelineConfigurationException: if there's no
+        :raises MissingPipelineConfigurationException: if there's no
             configuration data for the indicated pipeline
         """
         try:
@@ -360,18 +363,4 @@ class PipelineInterface(object):
                 pipeline_name, len(self.pipe_iface_config),
                 ", ".format(self.pipe_iface_config.keys()))
             # TODO: use defaults or force user to define this?
-            raise _MissingPipelineConfigurationException(pipeline_name)
-
-
-
-class _InvalidResourceSpecificationException(Exception):
-    """ Pipeline interface resources--if present--needs default. """
-    def __init__(self, reason):
-        super(_InvalidResourceSpecificationException, self).__init__(reason)
-
-
-
-class _MissingPipelineConfigurationException(Exception):
-    """ A selected pipeline needs configuration data. """
-    def __init__(self, pipeline):
-        super(_MissingPipelineConfigurationException, self).__init__(pipeline)
+            raise MissingPipelineConfigurationException(pipeline_name)
