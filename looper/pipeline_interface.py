@@ -10,8 +10,8 @@ else:
 
 import yaml
 
-from pep import utils
-from pep.const import DEFAULT_COMPUTE_RESOURCES_NAME
+from peppy import utils
+from peppy.const import DEFAULT_COMPUTE_RESOURCES_NAME
 
 
 

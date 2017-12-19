@@ -9,9 +9,9 @@ import sys
 
 import pytest
 
-import pep
-from pep import Sample, DEV_LOGGING_FMT
-from pep.protocol_interface import _import_sample_subtype
+import peppy
+from peppy import Sample, DEV_LOGGING_FMT
+from peppy.protocol_interface import _import_sample_subtype
 
 
 __author__ = "Vince Reuter"
@@ -221,7 +221,7 @@ class SampleSubtypeImportTests:
 
         # Write the subtypes module file.
         with open(path_subtypes_file, 'w') as subtypes_file:
-            subtypes_file.write("from pep import Sample\n\n")
+            subtypes_file.write("from peppy import Sample\n\n")
             subtypes_file.write(build_subtype_lines(external_subtypes))
 
         # Write the pipeline module file.
@@ -232,7 +232,7 @@ class SampleSubtypeImportTests:
                 pipe_file.write(import_statement)
             # Include a subtype definition with the pipeline itself as desired.
             if pipeline_has_subtype:
-                pipe_file.write("from pep import Sample\n\n")
+                pipe_file.write("from peppy import Sample\n\n")
                 pipe_file.write(build_subtype_lines("InternalPipelineSample"))
 
         return path_pipe_file, path_subtypes_file
@@ -241,7 +241,7 @@ class SampleSubtypeImportTests:
     @pytest.fixture(scope="function")
     def temp_logfile(self, request, tmpdir):
         """
-        Temporarily capture in a file logging information from pep models.
+        Temporarily capture in a file logging information from peppy models.
 
         :param request: test case using this fixture
         :param tmpdir: temporary directory fixture
@@ -251,7 +251,7 @@ class SampleSubtypeImportTests:
         target_level = logging.DEBUG
 
         # Retain original logger level to reset.
-        original_loglevel = pep._LOGGER.getEffectiveLevel()
+        original_loglevel = peppy._LOGGER.getEffectiveLevel()
 
         # Create the handler with appropriate level and formatter for test.
         logfile = os.path.join(tmpdir.strpath, "logfile.txt")
@@ -261,12 +261,12 @@ class SampleSubtypeImportTests:
         handler.setLevel(target_level)
 
         # Add the handler to the relevant logger.
-        pep._LOGGER.setLevel(target_level)
-        pep._LOGGER.handlers.append(handler)
+        peppy._LOGGER.setLevel(target_level)
+        peppy._LOGGER.handlers.append(handler)
         
         def reset_logger():
-            pep._LOGGER.setLevel(original_loglevel)
-            del pep._LOGGER.handlers[-1]
+            peppy._LOGGER.setLevel(original_loglevel)
+            del peppy._LOGGER.handlers[-1]
 
         # Restore the logger when the test case finishes, and provide the
         # test case with the path to the file to which logs will be written

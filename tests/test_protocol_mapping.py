@@ -2,7 +2,7 @@
 
 import pytest
 from looper import SAMPLE_NAME_COLNAME
-from pep import Sample
+from peppy import Sample
 
 
 __author__ = "Vince Reuter"

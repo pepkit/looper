@@ -11,10 +11,10 @@ import mock
 import pytest
 import yaml
 
-from pep import \
+from peppy import \
     PipelineInterface, Project, Sample, DEFAULT_COMPUTE_RESOURCES_NAME, \
     SAMPLE_ANNOTATIONS_KEY, SAMPLE_NAME_COLNAME
-from pep.pipeline_interface import \
+from peppy.pipeline_interface import \
     _InvalidResourceSpecificationException, \
     _MissingPipelineConfigurationException
 
@@ -151,7 +151,7 @@ class PipelineInterfaceNameResolutionTests:
             pipelines = [name + ext for name, ext
                          in zip(pipeline_names, extensions)]
             pi_config_data = {pipeline: None for pipeline in pipelines}
-            with mock.patch("pep.pipeline_interface.PipelineInterface._expand_paths"):
+            with mock.patch("peppy.pipeline_interface.PipelineInterface._expand_paths"):
                 pi = PipelineInterface(pi_config_data)
             for expected_name, pipeline in zip(pipeline_names, pipelines):
                 assert expected_name == pi.get_pipeline_name(pipeline)

@@ -12,8 +12,8 @@ else:
 import yaml
 
 from .pipeline_interface import PipelineInterface
-from pep.sample import Sample
-from pep.utils import alpha_cased, copy, is_command_callable, \
+from peppy.sample import Sample
+from peppy.utils import alpha_cased, copy, is_command_callable, \
     import_from_source, standard_stream_redirector
 
 

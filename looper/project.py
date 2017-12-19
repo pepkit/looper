@@ -3,8 +3,8 @@
 from collections import defaultdict
 import logging
 import os
-import pep
-from pep.utils import alpha_cased
+import peppy
+from peppy.utils import alpha_cased
 from .protocol_interface import ProtocolInterface
 
 
@@ -17,7 +17,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 
-class Project(pep.Project):
+class Project(peppy.Project):
     """
     Looper-specific NGS Project.
 

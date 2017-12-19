@@ -14,7 +14,7 @@ import mock
 import pytest
 import yaml
 
-from pep import ProtocolInterface, Sample
+from peppy import ProtocolInterface, Sample
 
 
 __author__ = "Vince Reuter"
@@ -23,7 +23,7 @@ __email__ = "vreuter@virginia.edu"
 
 SUBTYPES_KEY = ProtocolInterface.SUBTYPE_MAPPING_SECTION
 ATAC_PROTOCOL_NAME = "ATAC"
-SAMPLE_IMPORT = "from pep import Sample"
+SAMPLE_IMPORT = "from peppy import Sample"
 
 
 class CustomExceptionA(Exception):
@@ -256,7 +256,7 @@ class SampleSubtypeTests:
 
         # Make the call under test, patching the function protected
         # function that's called iff the protocol name match succeeds.
-        with mock.patch("pep.protocol_interface._import_sample_subtype",
+        with mock.patch("peppy.protocol_interface._import_sample_subtype",
                         return_value=None) as mocked_import:
             # Return value is irrelevant; the effect of the protocol name
             # match/resolution is entirely observable via the argument to the
@@ -297,7 +297,7 @@ class SampleSubtypeTests:
         # the import attempt, so patch the relevant function with a function
         # to raise the parameterized exception type.
         with mock.patch(
-                "pep.utils.import_from_source",
+                "peppy.utils.import_from_source",
                 side_effect=error_type()):
             subtype = piface.fetch_sample_subtype(
                     protocol=protocol, strict_pipe_key=atac_pipe_name,
@@ -384,7 +384,7 @@ class SampleSubtypeTests:
         pipe_path = os.path.join(tmpdir.strpath, atac_pipe_name)
 
         # Define the subtype in the pipeline module.
-        lines = ["from pep import Sample\n",
+        lines = ["from peppy import Sample\n",
                  "class {}({}):\n".format(subtype_name, subtype_name),
                  "\tdef __init__(self, *args, **kwargs):\n",
                  "\t\tsuper({}, self).__init__(*args, **kwargs)\n".

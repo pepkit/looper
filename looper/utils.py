@@ -6,7 +6,7 @@ import glob
 import logging
 import os
 
-from pep import \
+from peppy import \
     FLAGS, SAMPLE_INDEPENDENT_PROJECT_SECTIONS, SAMPLE_NAME_COLNAME
 
 

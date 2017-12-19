@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Looper: a pipeline submission engine. https://github.com/pepkit/looper
+Looper: a pipeline submission engine. https://github.com/peppykit/looper
 """
 
 import abc
@@ -26,9 +26,9 @@ from .project import Project
 from .submission_manager import SubmissionConductor
 from .utils import fetch_flag_files, sample_folder
 
-from pep import \
+from peppy import \
     ProjectContext, COMPUTE_SETTINGS_VARNAME, SAMPLE_EXECUTION_TOGGLE
-from pep.utils import alpha_cased
+from peppy.utils import alpha_cased
 
 
 
@@ -57,7 +57,7 @@ def parse_arguments():
     banner = "%(prog)s - Loop through samples and submit pipelines."
     additional_description = "For subcommand-specific options, type: " \
             "'%(prog)s <subcommand> -h'"
-    additional_description += "\nhttps://github.com/pepkit/looper"
+    additional_description += "\nhttps://github.com/peppykit/looper"
 
     parser = _VersionInHelpParser(
             description=banner,
