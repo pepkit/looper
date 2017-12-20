@@ -1,8 +1,7 @@
-""" Tests for ProtocolInterface, for Project/PipelineInterface interaction. """
+""" Tests for use of sample subtypes in PipelineInterface. """
 
 import inspect
 import itertools
-import logging
 import os
 import sys
 if sys.version_info < (3, ):
@@ -12,19 +11,19 @@ else:
 
 import mock
 import pytest
-import yaml
 
-from looper import models, DEV_LOGGING_FMT
-from looper.models import ProtocolInterface, Sample
+from looper.pipeline_interface import PipelineInterface
+from peppy import Sample
+from .conftest import write_config_data, ATAC_PROTOCOL_NAME
 
 
 __author__ = "Vince Reuter"
 __email__ = "vreuter@virginia.edu"
 
 
-SUBTYPES_KEY = ProtocolInterface.SUBTYPE_MAPPING_SECTION
-ATAC_PROTOCOL_NAME = "ATAC"
-SAMPLE_IMPORT = "from looper.models import Sample"
+
+SUBTYPES_KEY = PipelineInterface.SUBTYPE_MAPPING_SECTION
+SAMPLE_IMPORT = "from peppy import Sample"
 
 
 class CustomExceptionA(Exception):
@@ -37,7 +36,6 @@ class CustomExceptionB(Exception):
 
 CUSTOM_EXCEPTIONS = [CustomExceptionA, CustomExceptionB]
 
-
 # Test case parameterization, but here for import locality and
 # to reduce clutter in the pararmeterization declaration.
 _, BUILTIN_EXCEPTIONS_WITHOUT_REQUIRED_ARGUMENTS = \
@@ -47,124 +45,10 @@ _, BUILTIN_EXCEPTIONS_WITHOUT_REQUIRED_ARGUMENTS = \
                                        not issubclass(o, UnicodeError)))))
 
 
-def pytest_generate_tests(metafunc):
-    """ Customization of this module's test cases. """
-    if "subtypes_section_spec_type" in metafunc.fixturenames:
-        # Subtypes section can be raw string or mapping.
-        metafunc.parametrize(argnames="subtypes_section_spec_type",
-                             argvalues=[str, dict])
-
-
-
-@pytest.fixture(scope="function")
-def path_config_file(request, tmpdir, atac_pipe_name):
-    """
-    Write PipelineInterface configuration data to disk.
-
-    Grab the data from the test case's appropriate fixture. Also check the
-    test case parameterization for pipeline path specification, adding it to
-    the configuration data before writing to disk if the path specification is
-    present
-
-    :param pytest._pytest.fixtures.SubRequest request: test case requesting
-        this fixture
-    :param py.path.local.LocalPath tmpdir: temporary directory fixture
-    :param str atac_pipe_name: name/key for ATAC-Seq pipeline; this should
-        also be used by the requesting test case if a path is to be added;
-        separating the name from the folder path allows parameterization of
-        the test case in terms of folder path, with pipeline name appended
-        after the fact (that is, the name fixture can't be used in the )
-    :return str: path to the configuration file written
-    """
-    conf_data = request.getfixturevalue("atacseq_piface_data")
-    if "pipe_path" in request.fixturenames:
-        pipeline_dirpath = request.getfixturevalue("pipe_path")
-        pipe_path = os.path.join(pipeline_dirpath, atac_pipe_name)
-        # Pipeline key/name is mapped to the interface data; insert path in
-        # that Mapping, not at the top level, in which name/key is mapped to
-        # interface data bundle.
-        for iface_bundle in conf_data.values():
-            iface_bundle["path"] = pipe_path
-    return _write_config_data(protomap={ATAC_PROTOCOL_NAME: atac_pipe_name},
-                              conf_data=conf_data, dirpath=tmpdir.strpath)
-
-
-
-class PipelinePathResolutionTests:
-    """ Project requests pipeline information via an interface key. """
-
-
-    def test_no_path(self, atacseq_piface_data,
-                     path_config_file, atac_pipe_name):
-        """ Without explicit path, pipeline is assumed parallel to config. """
-
-        piface = ProtocolInterface(path_config_file)
-
-        # The pipeline is assumed to live alongside its configuration file.
-        config_dirpath = os.path.dirname(path_config_file)
-        expected_pipe_path = os.path.join(config_dirpath, atac_pipe_name)
-
-        _, full_pipe_path, _ = \
-                piface.finalize_pipeline_key_and_paths(atac_pipe_name)
-        assert expected_pipe_path == full_pipe_path
-
-
-    def test_relpath_with_dot_becomes_absolute(
-            self, tmpdir, atac_pipe_name, atacseq_piface_data):
-        """ Leading dot drops from relative path, and it's made absolute. """
-        path_parts = ["relpath", "to", "pipelines", atac_pipe_name]
-        sans_dot_path = os.path.join(*path_parts)
-        pipe_path = os.path.join(".", sans_dot_path)
-        atacseq_piface_data[atac_pipe_name]["path"] = pipe_path
-
-        exp_path = os.path.join(tmpdir.strpath, sans_dot_path)
-
-        path_config_file = _write_config_data(
-                protomap={ATAC_PROTOCOL_NAME: atac_pipe_name},
-                conf_data=atacseq_piface_data, dirpath=tmpdir.strpath)
-        piface = ProtocolInterface(path_config_file)
-        _, obs_path, _ = piface.finalize_pipeline_key_and_paths(atac_pipe_name)
-        # Dot may remain in path, so assert equality of absolute paths.
-        assert os.path.abspath(exp_path) == os.path.abspath(obs_path)
-
-
-    @pytest.mark.parametrize(
-            argnames="pipe_path", argvalues=["relative/pipelines/path"])
-    def test_non_dot_relpath_becomes_absolute(
-            self, atacseq_piface_data, path_config_file,
-            tmpdir, pipe_path, atac_pipe_name):
-        """ Relative pipeline path is made absolute when requested by key. """
-        # TODO: constant-ify "path" and "ATACSeq.py", as well as possibly "pipelines"
-        # and "protocol_mapping" section names of PipelineInterface
-        exp_path = os.path.join(
-                tmpdir.strpath, pipe_path, atac_pipe_name)
-        piface = ProtocolInterface(path_config_file)
-        _, obs_path, _ = piface.finalize_pipeline_key_and_paths(atac_pipe_name)
-        assert exp_path == obs_path
-
-
-    @pytest.mark.parametrize(
-            argnames=["pipe_path", "expected_path_base"],
-            argvalues=[(os.path.join("$HOME", "code-base-home", "biopipes"),
-                        os.path.join(os.path.expandvars("$HOME"),
-                                "code-base-home", "biopipes")),
-                       (os.path.join("~", "bioinformatics-pipelines"),
-                        os.path.join(os.path.expanduser("~"),
-                                     "bioinformatics-pipelines"))])
-    def test_absolute_path(
-            self, atacseq_piface_data, path_config_file, tmpdir, pipe_path,
-            expected_path_base, atac_pipe_name):
-        """ Absolute path regardless of variables works as pipeline path. """
-        exp_path = os.path.join(
-                tmpdir.strpath, expected_path_base, atac_pipe_name)
-        piface = ProtocolInterface(path_config_file)
-        _, obs_path, _ = piface.finalize_pipeline_key_and_paths(atac_pipe_name)
-        assert exp_path == obs_path
-
 
 
 class SampleSubtypeTests:
-    """ ProtocolInterface attempts import of pipeline-specific Sample. """
+    """ PipelineInterface attempts import of pipeline-specific Sample. """
 
     # Basic cases
     # 1 -- unmapped pipeline
@@ -185,32 +69,32 @@ class SampleSubtypeTests:
     #
 
     PROTOCOL_NAME_VARIANTS = [
-            "ATAC-Seq", "ATACSeq", "ATACseq", "ATAC-seq", "ATAC",
-            "ATACSEQ", "ATAC-SEQ", "atac", "atacseq", "atac-seq"]
+        "ATAC-Seq", "ATACSeq", "ATACseq", "ATAC-seq", "ATAC",
+        "ATACSEQ", "ATAC-SEQ", "atac", "atacseq", "atac-seq"]
 
 
     @pytest.mark.parametrize(
-            argnames="pipe_key",
-            argvalues=["{}.py".format(proto) for proto
-                       in PROTOCOL_NAME_VARIANTS])
+        argnames="pipe_key",
+        argvalues=["{}.py".format(proto) for proto
+                   in PROTOCOL_NAME_VARIANTS])
     @pytest.mark.parametrize(
-            argnames="protocol",
-            argvalues=PROTOCOL_NAME_VARIANTS)
+        argnames="protocol",
+        argvalues=PROTOCOL_NAME_VARIANTS)
     def test_pipeline_key_match_is_strict(
             self, tmpdir, pipe_key, protocol, atac_pipe_name,
             atacseq_iface_with_resources):
         """ Request for Sample subtype for unmapped pipeline is KeyError. """
 
-        # Create the ProtocolInterface.
+        # Create the PipelineInterface.
         strict_pipe_key = atac_pipe_name
         protocol_mapping = {protocol: strict_pipe_key}
-        confpath = _write_config_data(
-                protomap=protocol_mapping, dirpath=tmpdir.strpath,
-                conf_data={strict_pipe_key: atacseq_iface_with_resources})
-        piface = ProtocolInterface(confpath)
+        confpath = write_config_data(
+            protomap=protocol_mapping, dirpath=tmpdir.strpath,
+            conf_data={strict_pipe_key: atacseq_iface_with_resources})
+        piface = PipelineInterface(confpath)
 
         # The absolute pipeline path is the pipeline name, joined to the
-        # ProtocolInterface's pipelines location. This location is the
+        # PipelineInterface's pipelines location. This location is the
         # location from which a Sample subtype import is attempted.
         full_pipe_path = os.path.join(tmpdir.strpath, atac_pipe_name)
 
@@ -223,18 +107,18 @@ class SampleSubtypeTests:
         else:
             with pytest.raises(KeyError):
                 piface.fetch_sample_subtype(
-                        protocol, pipe_key, full_pipe_path=full_pipe_path)
+                    protocol, pipe_key, full_pipe_path=full_pipe_path)
 
 
     @pytest.mark.parametrize(
-            argnames=["mapped_protocol", "requested_protocol"],
-            argvalues=itertools.combinations(PROTOCOL_NAME_VARIANTS, 2))
+        argnames=["mapped_protocol", "requested_protocol"],
+        argvalues=itertools.combinations(PROTOCOL_NAME_VARIANTS, 2))
     def test_protocol_match_is_fuzzy(
             self, tmpdir, mapped_protocol, atac_pipe_name,
             requested_protocol, atacseq_piface_data):
         """ Punctuation and case mismatches are tolerated in protocol name. """
 
-        # Needed to create the ProtocolInterface.
+        # Needed to create the PipelineInterface.
         protomap = {mapped_protocol: atac_pipe_name}
         # Needed to invoke the function under test.
         full_pipe_path = os.path.join(tmpdir.strpath, atac_pipe_name)
@@ -247,36 +131,35 @@ class SampleSubtypeTests:
         # relevant assertion(s).
         test_class_name = "TotallyArbitrary"
         atacseq_piface_data[atac_pipe_name][SUBTYPES_KEY] = \
-                test_class_name
+            test_class_name
 
-        # Write out configuration data and create the ProtocolInterface.
-        conf_path = _write_config_data(
-                protomap=protomap, conf_data=atacseq_piface_data,
-                dirpath=tmpdir.strpath)
-        piface = ProtocolInterface(conf_path)
+        # Write out configuration data and create the PipelineInterface.
+        conf_path = write_config_data(
+            protomap=protomap, conf_data=atacseq_piface_data,
+            dirpath=tmpdir.strpath)
+        piface = PipelineInterface(conf_path)
 
         # Make the call under test, patching the function protected
         # function that's called iff the protocol name match succeeds.
-        with mock.patch("looper.models._import_sample_subtype",
+        with mock.patch("looper.pipeline_interface._import_sample_subtype",
                         return_value=None) as mocked_import:
             # Return value is irrelevant; the effect of the protocol name
             # match/resolution is entirely observable via the argument to the
             # protected import function.
             piface.fetch_sample_subtype(
-                    protocol=requested_protocol,
-                    strict_pipe_key=atac_pipe_name,
-                    full_pipe_path=full_pipe_path)
+                protocol=requested_protocol,
+                strict_pipe_key=atac_pipe_name,
+                full_pipe_path=full_pipe_path)
         # When the protocol name match/resolution succeeds, the name of the
         # Sample subtype class to which it was mapped is passed as an
         # argument to the protected import function.
         mocked_import.assert_called_with(full_pipe_path, test_class_name)
 
 
-
     @pytest.mark.parametrize(
-            argnames="error_type",
-            argvalues=CUSTOM_EXCEPTIONS +
-                      BUILTIN_EXCEPTIONS_WITHOUT_REQUIRED_ARGUMENTS)
+        argnames="error_type",
+        argvalues=CUSTOM_EXCEPTIONS +
+                  BUILTIN_EXCEPTIONS_WITHOUT_REQUIRED_ARGUMENTS)
     def test_problematic_import_builtin_exception(
             self, tmpdir, error_type, atac_pipe_name, atacseq_piface_data):
         """ Base Sample is used if builtin exception on pipeline import. """
@@ -286,34 +169,34 @@ class SampleSubtypeTests:
         protocol_mapping = {protocol: atac_pipe_name}
         full_pipe_path = os.path.join(tmpdir.strpath, atac_pipe_name)
 
-        # Modify the data for the ProtocolInterface and create it.
+        # Modify the data for the PipelineInterface and create it.
         atacseq_piface_data[atac_pipe_name][SUBTYPES_KEY] = \
-                {protocol: "IrrelevantClassname"}
-        conf_path = _write_config_data(
-                protomap=protocol_mapping,
-                conf_data=atacseq_piface_data, dirpath=tmpdir.strpath)
-        piface = ProtocolInterface(conf_path)
+            {protocol: "IrrelevantClassname"}
+        conf_path = write_config_data(
+            protomap=protocol_mapping,
+            conf_data=atacseq_piface_data, dirpath=tmpdir.strpath)
+        piface = PipelineInterface(conf_path)
 
         # We want to test the effect of an encounter with an exception during
         # the import attempt, so patch the relevant function with a function
         # to raise the parameterized exception type.
         with mock.patch(
-                "looper.utils.import_from_source",
+                "peppy.utils.import_from_source",
                 side_effect=error_type()):
             subtype = piface.fetch_sample_subtype(
-                    protocol=protocol, strict_pipe_key=atac_pipe_name,
-                    full_pipe_path=full_pipe_path)
+                protocol=protocol, strict_pipe_key=atac_pipe_name,
+                full_pipe_path=full_pipe_path)
         # When the import hits an exception, the base Sample type is used.
         assert subtype is Sample
 
 
     @pytest.mark.parametrize(
-            argnames="num_sample_subclasses", argvalues=[0, 1, 2],
-            ids=lambda n_samples:
-            " num_sample_subclasses = {} ".format(n_samples))
+        argnames="num_sample_subclasses", argvalues=[0, 1, 2],
+        ids=lambda n_samples:
+        " num_sample_subclasses = {} ".format(n_samples))
     @pytest.mark.parametrize(
-            argnames="decoy_class", argvalues=[False, True],
-            ids=lambda decoy: " decoy_class = {} ".format(decoy))
+        argnames="decoy_class", argvalues=[False, True],
+        ids=lambda decoy: " decoy_class = {} ".format(decoy))
     def test_no_subtypes_section(
             self, tmpdir, path_config_file, atac_pipe_name,
             num_sample_subclasses, decoy_class):
@@ -321,23 +204,24 @@ class SampleSubtypeTests:
 
         # Basic values to invoke the function under test
         pipe_path = os.path.join(tmpdir.strpath, atac_pipe_name)
-        piface = ProtocolInterface(path_config_file)
+        piface = PipelineInterface(path_config_file)
 
         # How to define the Sample subtypes (and non-subtype)
         sample_subclass_basename = "SampleSubclass"
         sample_lines = [
-                "class {basename}{index}(Sample):",
-                "\tdef __init__(*args, **kwargs):",
-                "\t\tsuper({basename}{index}, self).__init__(*args, **kwargs)"]
+            "class {basename}{index}(Sample):",
+            "\tdef __init__(*args, **kwargs):",
+            "\t\tsuper({basename}{index}, self).__init__(*args, **kwargs)"]
         non_sample_class_lines = [
-                "class NonSample(object):", "\tdef __init__(self):",
-                "\t\tsuper(NonSample, self).__init__()"]
+            "class NonSample(object):", "\tdef __init__(self):",
+            "\t\tsuper(NonSample, self).__init__()"]
 
         # We expect the subtype iff there's just one Sample subtype.
         if num_sample_subclasses == 1:
             exp_subtype_name = "{}0".format(sample_subclass_basename)
         else:
             exp_subtype_name = Sample.__name__
+
 
         # Fill in the class definition template lines.
         def populate_sample_lines(n_classes):
@@ -347,6 +231,7 @@ class SampleSubtypeTests:
                      sample_lines[2].format(basename=sample_subclass_basename,
                                             index=class_index)]
                     for class_index in range(n_classes)]
+
 
         # Determine the groups of lines to permute.
         class_lines_pool = populate_sample_lines(num_sample_subclasses)
@@ -359,8 +244,8 @@ class SampleSubtypeTests:
             # Write out class declarations and invoke the function under test.
             _create_module(lines_by_class=lines_order, filepath=pipe_path)
             subtype = piface.fetch_sample_subtype(
-                    protocol=ATAC_PROTOCOL_NAME,
-                    strict_pipe_key=atac_pipe_name, full_pipe_path=pipe_path)
+                protocol=ATAC_PROTOCOL_NAME,
+                strict_pipe_key=atac_pipe_name, full_pipe_path=pipe_path)
 
             # Make the assertion on subtype name, getting additional
             # information about the module that we defined if there's failure.
@@ -369,12 +254,12 @@ class SampleSubtypeTests:
             except AssertionError:
                 with open(pipe_path, 'r') as f:
                     print("PIPELINE MODULE LINES: {}".
-                          format("".join(f.readlines())))
+                        format("".join(f.readlines())))
                 raise
 
 
     @pytest.mark.parametrize(
-            argnames="subtype_name", argvalues=[Sample.__name__])
+        argnames="subtype_name", argvalues=[Sample.__name__])
     def test_Sample_as_name(
             self, tmpdir, subtype_name, atac_pipe_name,
             subtypes_section_spec_type, atacseq_piface_data_with_subtypes):
@@ -385,23 +270,23 @@ class SampleSubtypeTests:
         pipe_path = os.path.join(tmpdir.strpath, atac_pipe_name)
 
         # Define the subtype in the pipeline module.
-        lines = ["from looper.models import Sample\n",
+        lines = ["from peppy import Sample\n",
                  "class {}({}):\n".format(subtype_name, subtype_name),
                  "\tdef __init__(self, *args, **kwargs):\n",
                  "\t\tsuper({}, self).__init__(*args, **kwargs)\n".
-                        format(subtype_name)]
+                     format(subtype_name)]
         with open(pipe_path, 'w') as pipe_module_file:
             for l in lines:
                 pipe_module_file.write(l)
 
-        conf_path = _write_config_data(
-                protomap={ATAC_PROTOCOL_NAME: atac_pipe_name},
-                conf_data=atacseq_piface_data_with_subtypes,
-                dirpath=tmpdir.strpath)
-        piface = ProtocolInterface(conf_path)
+        conf_path = write_config_data(
+            protomap={ATAC_PROTOCOL_NAME: atac_pipe_name},
+            conf_data=atacseq_piface_data_with_subtypes,
+            dirpath=tmpdir.strpath)
+        piface = PipelineInterface(conf_path)
         subtype = piface.fetch_sample_subtype(
-                protocol=ATAC_PROTOCOL_NAME,
-                strict_pipe_key=atac_pipe_name, full_pipe_path=pipe_path)
+            protocol=ATAC_PROTOCOL_NAME,
+            strict_pipe_key=atac_pipe_name, full_pipe_path=pipe_path)
 
         # Establish that subclass relationship is improper.
         assert issubclass(Sample, Sample)
@@ -415,7 +300,7 @@ class SampleSubtypeTests:
 
     @pytest.mark.parametrize(argnames="subtype_name", argvalues=["NonSample"])
     @pytest.mark.parametrize(
-            argnames="test_type", argvalues=["return_sample", "class_found"])
+        argnames="test_type", argvalues=["return_sample", "class_found"])
     def test_subtype_is_not_Sample(
             self, tmpdir, atac_pipe_name, subtype_name, test_type,
             atacseq_piface_data_with_subtypes, subtypes_section_spec_type):
@@ -430,16 +315,16 @@ class SampleSubtypeTests:
             for l in lines:
                 pipe_module_file.write(l)
 
-        # Create the ProtocolInterface and do the test call.
-        path_config_file = _write_config_data(
-                protomap={ATAC_PROTOCOL_NAME: atac_pipe_name},
-                conf_data=atacseq_piface_data_with_subtypes,
-                dirpath=tmpdir.strpath)
-        piface = ProtocolInterface(path_config_file)
+        # Create the PipelineInterface and do the test call.
+        path_config_file = write_config_data(
+            protomap={ATAC_PROTOCOL_NAME: atac_pipe_name},
+            conf_data=atacseq_piface_data_with_subtypes,
+            dirpath=tmpdir.strpath)
+        piface = PipelineInterface(path_config_file)
         with pytest.raises(ValueError):
             piface.fetch_sample_subtype(
-                    protocol=ATAC_PROTOCOL_NAME,
-                    strict_pipe_key=atac_pipe_name, full_pipe_path=pipe_path)
+                protocol=ATAC_PROTOCOL_NAME,
+                strict_pipe_key=atac_pipe_name, full_pipe_path=pipe_path)
 
 
     @pytest.mark.parametrize(argnames="subtype_name", argvalues=["irrelevant"])
@@ -452,24 +337,24 @@ class SampleSubtypeTests:
         # Create the pipeline module.
         pipe_path = os.path.join(tmpdir.strpath, atac_pipe_name)
         lines = _class_definition_lines("Decoy", "object") \
-                if decoy_class else []
+            if decoy_class else []
         with open(pipe_path, 'w') as modfile:
             modfile.write("{}\n\n".format(SAMPLE_IMPORT))
             for l in lines:
                 modfile.write(l)
-        conf_path = _write_config_data(
-                protomap={ATAC_PROTOCOL_NAME: atac_pipe_name},
-                conf_data=atacseq_piface_data_with_subtypes,
-                dirpath=tmpdir.strpath)
-        piface = ProtocolInterface(conf_path)
+        conf_path = write_config_data(
+            protomap={ATAC_PROTOCOL_NAME: atac_pipe_name},
+            conf_data=atacseq_piface_data_with_subtypes,
+            dirpath=tmpdir.strpath)
+        piface = PipelineInterface(conf_path)
         with pytest.raises(ValueError):
             piface.fetch_sample_subtype(
-                    protocol=ATAC_PROTOCOL_NAME,
-                    strict_pipe_key=atac_pipe_name, full_pipe_path=pipe_path)
+                protocol=ATAC_PROTOCOL_NAME,
+                strict_pipe_key=atac_pipe_name, full_pipe_path=pipe_path)
 
-    
+
     @pytest.mark.parametrize(
-            argnames="subtype_name", argvalues=["SubsampleA", "SubsampleB"])
+        argnames="subtype_name", argvalues=["SubsampleA", "SubsampleB"])
     def test_matches_sample_subtype(
             self, tmpdir, atac_pipe_name, subtype_name, atacseq_piface_data):
         """ Fetch of subtype is specific even from among multiple subtypes. """
@@ -479,13 +364,13 @@ class SampleSubtypeTests:
         decoy_class = "Decoy"
         decoy_proto = "DECOY"
 
-        # Update the ProtocolInterface data and write it out.
+        # Update the PipelineInterface data and write it out.
         atacseq_piface_data[atac_pipe_name][SUBTYPES_KEY] = {
-                ATAC_PROTOCOL_NAME: subtype_name, decoy_proto: decoy_class}
-        conf_path = _write_config_data(
-                protomap={ATAC_PROTOCOL_NAME: atac_pipe_name,
-                          decoy_proto: atac_pipe_name},
-                conf_data=atacseq_piface_data, dirpath=tmpdir.strpath)
+            ATAC_PROTOCOL_NAME: subtype_name, decoy_proto: decoy_class}
+        conf_path = write_config_data(
+            protomap={ATAC_PROTOCOL_NAME: atac_pipe_name,
+                      decoy_proto: atac_pipe_name},
+            conf_data=atacseq_piface_data, dirpath=tmpdir.strpath)
 
         # Create the collection of definition lines for each class.
         legit_lines = _class_definition_lines(subtype_name, Sample.__name__)
@@ -500,16 +385,16 @@ class SampleSubtypeTests:
                     pipe_mod_file.write("\n\n")
 
             # We need the new pipeline module file in place before the
-            # ProtocolInterface is created.
-            piface = ProtocolInterface(conf_path)
+            # PipelineInterface is created.
+            piface = PipelineInterface(conf_path)
             subtype = piface.fetch_sample_subtype(
-                    protocol=ATAC_PROTOCOL_NAME,
-                    strict_pipe_key=atac_pipe_name, full_pipe_path=pipe_path)
+                protocol=ATAC_PROTOCOL_NAME,
+                strict_pipe_key=atac_pipe_name, full_pipe_path=pipe_path)
             assert subtype_name == subtype.__name__
 
 
     @pytest.mark.parametrize(
-            argnames="spec_type", argvalues=["single", "nested"])
+        argnames="spec_type", argvalues=["single", "nested"])
     def test_subtypes_list(
             self, tmpdir, atac_pipe_name, atacseq_piface_data, spec_type):
         """ As singleton or within mapping, only 1 subtype allowed. """
@@ -527,28 +412,28 @@ class SampleSubtypeTests:
                     pipe_module_file.write(line)
                 pipe_module_file.write("\n\n")
 
-        # Update the ProtocolInterface data.
+        # Update the PipelineInterface data.
         subtype_section = subtype_names if spec_type == "single" \
-                else {ATAC_PROTOCOL_NAME: subtype_names}
+            else {ATAC_PROTOCOL_NAME: subtype_names}
         atacseq_piface_data[atac_pipe_name][SUBTYPES_KEY] = subtype_section
 
-        # Create the ProtocolInterface.
-        conf_path = _write_config_data(
-                protomap={ATAC_PROTOCOL_NAME: atac_pipe_name},
-                conf_data=atacseq_piface_data, dirpath=tmpdir.strpath)
-        piface = ProtocolInterface(conf_path)
+        # Create the PipelineInterface.
+        conf_path = write_config_data(
+            protomap={ATAC_PROTOCOL_NAME: atac_pipe_name},
+            conf_data=atacseq_piface_data, dirpath=tmpdir.strpath)
+        piface = PipelineInterface(conf_path)
 
         # We don't really care about exception type, just that one arises.
         with pytest.raises(Exception):
             piface.fetch_sample_subtype(
-                    protocol=ATAC_PROTOCOL_NAME,
-                    strict_pipe_key=atac_pipe_name, full_pipe_path=pipe_path)
+                protocol=ATAC_PROTOCOL_NAME,
+                strict_pipe_key=atac_pipe_name, full_pipe_path=pipe_path)
 
 
     @pytest.mark.parametrize(
-            argnames="target", argvalues=["Leaf", "Middle"])
+        argnames="target", argvalues=["Leaf", "Middle"])
     @pytest.mark.parametrize(
-            argnames="spec_type", argvalues=["single", "mapping"])
+        argnames="spec_type", argvalues=["single", "mapping"])
     def test_sample_grandchild(
             self, tmpdir, spec_type, target,
             atacseq_piface_data, atac_pipe_name):
@@ -559,9 +444,9 @@ class SampleSubtypeTests:
         leaf_sample_subtype = "Leaf"
 
         intermediate_subtype_lines = _class_definition_lines(
-                intermediate_sample_subtype, Sample.__name__)
+            intermediate_sample_subtype, Sample.__name__)
         leaf_subtype_lines = _class_definition_lines(
-                leaf_sample_subtype, intermediate_sample_subtype)
+            leaf_sample_subtype, intermediate_sample_subtype)
         with open(pipe_path, 'w') as pipe_mod_file:
             pipe_mod_file.write("{}\n\n".format(SAMPLE_IMPORT))
             for l in intermediate_subtype_lines:
@@ -571,16 +456,16 @@ class SampleSubtypeTests:
                 pipe_mod_file.write(l)
 
         atacseq_piface_data[atac_pipe_name][SUBTYPES_KEY] = \
-                target if spec_type == "single" else \
+            target if spec_type == "single" else \
                 {ATAC_PROTOCOL_NAME: target}
-        conf_path = _write_config_data(
-                protomap={ATAC_PROTOCOL_NAME: atac_pipe_name},
-                conf_data=atacseq_piface_data, dirpath=tmpdir.strpath)
+        conf_path = write_config_data(
+            protomap={ATAC_PROTOCOL_NAME: atac_pipe_name},
+            conf_data=atacseq_piface_data, dirpath=tmpdir.strpath)
 
-        piface = ProtocolInterface(conf_path)
+        piface = PipelineInterface(conf_path)
         subtype = piface.fetch_sample_subtype(
-                protocol=ATAC_PROTOCOL_NAME, strict_pipe_key=atac_pipe_name,
-                full_pipe_path=pipe_path)
+            protocol=ATAC_PROTOCOL_NAME, strict_pipe_key=atac_pipe_name,
+            full_pipe_path=pipe_path)
 
         assert target == subtype.__name__
 
@@ -589,11 +474,11 @@ class SampleSubtypeTests:
     def atacseq_piface_data_with_subtypes(
             self, request, atacseq_piface_data, atac_pipe_name):
         """
-        Provide test case with ProtocolInterface data.
+        Provide test case with PipelineInterface data.
 
         :param pytest._pytest.fixtures.SubRequest request: test case
             requesting the parameterization
-        :param Mapping atacseq_piface_data: the ProtocolInterface data
+        :param Mapping atacseq_piface_data: the PipelineInterface data
         :param str atac_pipe_name: name for the pipeline
         :return Mapping: same as input, but with Sample subtype specification
             section mixed in
@@ -623,7 +508,7 @@ def _class_definition_lines(name, name_super_type):
     return ["class {t}({st}):\n".format(t=name, st=name_super_type),
             "\tdef __init__(self, *args, **kwarggs):\n",
             "\t\tsuper({t}, self).__init__(*args, **kwargs)".format(
-                    t=name, st=name_super_type)]
+                t=name, st=name_super_type)]
 
 
 
@@ -637,26 +522,7 @@ def _create_module(lines_by_class, filepath):
     """
     lines = "\n\n".join(
         [SAMPLE_IMPORT] + ["\n".join(class_lines)
-                    for class_lines in lines_by_class])
+                           for class_lines in lines_by_class])
     with open(filepath, 'w') as modfile:
         modfile.write("{}\n".format(lines))
-    return filepath
-
-
-
-def _write_config_data(protomap, conf_data, dirpath):
-    """
-    Write ProtocolInterface data to (temp)file.
-
-    :param Mapping protomap: mapping from protocol name to pipeline key/name
-    :param Mapping conf_data: mapping from pipeline key/name to configuration
-        data for a PipelineInterface
-    :param str dirpath: path to filesystem location in which to place the
-        file to write
-    :return str: path to the (temp)file written
-    """
-    full_conf_data = {"protocol_mapping": protomap, "pipelines": conf_data}
-    filepath = os.path.join(dirpath, "pipeline_interface.yaml")
-    with open(filepath, 'w') as conf_file:
-        yaml.safe_dump(full_conf_data, conf_file)
     return filepath

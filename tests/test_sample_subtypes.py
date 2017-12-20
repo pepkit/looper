@@ -1,13 +1,15 @@
 """ Tests for module-scoped functions, i.e. those not in a class. """
 
 import copy
-import logging
 import os
 import random
 import string
 import sys
+
 import pytest
-from looper import models, DEV_LOGGING_FMT
+
+from looper.pipeline_interface import _import_sample_subtype
+from peppy import Sample
 
 
 __author__ = "Vince Reuter"
@@ -33,7 +35,6 @@ def pytest_generate_tests(metafunc):
                 ids=lambda has_sub: " internal_subtype = {} ".format(has_sub))
 
 
-
 class SampleSubtypeImportTests:
     """ Tests for the lowest-level step in Sample subtype processing. """
 
@@ -46,7 +47,7 @@ class SampleSubtypeImportTests:
             ids=lambda request: " subtype_request = {} ".format(request))
     def test_single_external_subtype(
             self, location, has_internal_subtype, subtype_request,
-            tmpdir, temp_models_logfile, tmpdir_on_path):
+            tmpdir, tmpdir_on_path):
         """ Subtype is inferred iff exactly one's available. """
 
         external_subtype = subtype_request or self.SUBTYPE_1
@@ -57,18 +58,12 @@ class SampleSubtypeImportTests:
                 subtype_module_relative_to_pipeline=location,
                 dirpath=tmpdir.strpath)
 
-        observed_subtype = models._import_sample_subtype(
+        observed_subtype = _import_sample_subtype(
                 path_pipeline_file, subtype_name=subtype_request)
-        try:
-            if has_internal_subtype and subtype_request is None:
-                assert models.Sample is observed_subtype
-                assert self._validate_basic_sample_reason(temp_models_logfile)
-            else:
-                assert external_subtype == observed_subtype.__name__
-        except AssertionError:
-            self.print_file_contents(
-                path_subtypes_file, path_pipeline_file, temp_models_logfile)
-            raise
+        if has_internal_subtype and subtype_request is None:
+            assert Sample is observed_subtype
+        else:
+            assert external_subtype == observed_subtype.__name__
 
 
     @pytest.mark.parametrize(
@@ -76,7 +71,7 @@ class SampleSubtypeImportTests:
             ids=lambda sub_req: " subtype_request = {} ".format(sub_req))
     def test_multiple_external_subtypes(
             self, location, has_internal_subtype, subtype_request,
-            tmpdir, temp_models_logfile, tmpdir_on_path):
+            tmpdir, tmpdir_on_path):
         """ With multiple subtypes available, one must be selected. """
 
         path_pipeline_file, path_subtypes_file = self.write_files(
@@ -85,37 +80,15 @@ class SampleSubtypeImportTests:
                 subtype_module_relative_to_pipeline=location,
                 dirpath=tmpdir.strpath)
 
-        observed_subtype = models._import_sample_subtype(
+        observed_subtype = _import_sample_subtype(
                 path_pipeline_file, subtype_name=subtype_request)
 
         if subtype_request is None:
             # We get the base/generic Sample type if we can't do inference.
-            assert models.Sample is observed_subtype
-
-            # Criterion for expected message to validate HOW we got the
-            # base/generic Sample type.
-            def found_line(msg):
-                return "DEBUG" in msg and "subtype cannot be selected" in msg
-
-            # Find the message that indicates the we did in fact get the base/
-            # generic sample in the way that was expected.
-            with open(temp_models_logfile, 'r') as tmplog:
-                messages = tmplog.readlines()
-            try:
-                assert any(map(found_line, messages))
-            except AssertionError:
-                print("Missing expected message: {}".format(messages))
-                raise
-
+            assert Sample is observed_subtype
         else:
             # Request for specific subtype that we defined is found.
-            try:
-                assert subtype_request == observed_subtype.__name__
-            except AssertionError:
-                self.print_file_contents(
-                        path_subtypes_file, path_pipeline_file,
-                        temp_models_logfile)
-                raise
+            assert subtype_request == observed_subtype.__name__
 
 
     @staticmethod
@@ -217,7 +190,7 @@ class SampleSubtypeImportTests:
 
         # Write the subtypes module file.
         with open(path_subtypes_file, 'w') as subtypes_file:
-            subtypes_file.write("from looper.models import Sample\n\n")
+            subtypes_file.write("from peppy import Sample\n\n")
             subtypes_file.write(build_subtype_lines(external_subtypes))
 
         # Write the pipeline module file.
@@ -228,47 +201,10 @@ class SampleSubtypeImportTests:
                 pipe_file.write(import_statement)
             # Include a subtype definition with the pipeline itself as desired.
             if pipeline_has_subtype:
-                pipe_file.write("from looper.models import Sample\n\n")
+                pipe_file.write("from peppy import Sample\n\n")
                 pipe_file.write(build_subtype_lines("InternalPipelineSample"))
 
         return path_pipe_file, path_subtypes_file
-
-    
-    @pytest.fixture(scope="function")
-    def temp_models_logfile(self, request, tmpdir):
-        """
-        Temporarily capture in a file logging information from looper models.
-
-        :param request: test case using this fixture
-        :param tmpdir: temporary directory fixture
-        :return str: path to the file in which logging information is captured
-        """
-
-        target_level = logging.DEBUG
-
-        # Retain original logger level to reset.
-        original_loglevel = models._LOGGER.getEffectiveLevel()
-
-        # Create the handler with appropriate level and formatter for test.
-        logfile = os.path.join(tmpdir.strpath, "logfile.txt")
-        handler = logging.FileHandler(logfile, mode='w')
-        formatter = logging.Formatter(DEV_LOGGING_FMT)
-        handler.setFormatter(formatter)
-        handler.setLevel(target_level)
-
-        # Add the handler to the relevant logger.
-        models._LOGGER.setLevel(target_level)
-        models._LOGGER.handlers.append(handler)
-        
-        def reset_logger():
-            models._LOGGER.setLevel(original_loglevel)
-            del models._LOGGER.handlers[-1]
-
-        # Restore the logger when the test case finishes, and provide the
-        # test case with the path to the file to which logs will be written
-        # so that the test case can make assertions about the message content.
-        request.addfinalizer(reset_logger)
-        return logfile
 
 
     @pytest.fixture(scope="function")
@@ -338,4 +274,4 @@ def subtype_def_text(subtype_name):
     template = "class {sub}({sup}):\n" \
                "\tdef __init__(self, *args, **kwargs):\n" \
                "\t\tsuper({sub}, self).__init__(*args, **kwargs)"
-    return template.format(sub=subtype_name, sup=models.Sample.__name__)
+    return template.format(sub=subtype_name, sup=Sample.__name__)

@@ -10,17 +10,23 @@ local level, but this will at least provide a foundation.
 import logging
 import os
 from sys import stdout
+
+from .pipeline_interface import PipelineInterface
 from ._version import __version__
 
+# Not used here, but make this the main import interface between peppy and
+# looper, so that other modules within this package need not worry about
+# the locations of some of the peppy declarations. Effectively, concentrate
+# the connection between peppy and looper here, to the extent possible.
+from peppy import \
+    FLAGS, IMPLICATIONS_DECLARATION, SAMPLE_INDEPENDENT_PROJECT_SECTIONS, \
+    SAMPLE_NAME_COLNAME
 
-# TODO: import from pep.
-FLAGS = ["completed", "running", "failed", "waiting", "partial"]
+
+__classes__ = ["PipelineInterface"]
+
 
 GENERIC_PROTOCOL_KEY = "*"
-IMPLICATIONS_DECLARATION = "implied_columns"
-SAMPLE_INDEPENDENT_PROJECT_SECTIONS = \
-        ["metadata", "derived_columns", IMPLICATIONS_DECLARATION, "trackhubs"]
-SAMPLE_NAME_COLNAME = "sample_name"
 LOGGING_LEVEL = "INFO"
 LOGGING_LOCATIONS = (stdout, )
 
