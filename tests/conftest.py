@@ -64,42 +64,46 @@ SRC2_TEMPLATE = "data/{sample_name}-bamfile.bam"
 SRC3_TEMPLATE = "data/{sample_name}.txt"
 
 
-PIPELINE_INTERFACE_CONFIG_LINES = """testpipeline.sh:
-  name: test_pipeline  # Name used by pypiper so looper can find the logs
-  looper_args: False
-  arguments:
-    "--input": file
-  optional_arguments:
-    "--sample-name": sample_name
-    "--dcol1": dcol1
-  required_input_files: [file, file2]
-  resources:
-    default:
-      file_size: "0"
-      cores: "8"
-      mem: "32000"
-      time: "2-00:00:00"
-      partition: "longq"
-testngs.sh:
-  name: test_ngs_pipeline  # Name used by pypiper so looper can find the logs
-  looper_args: True
-  arguments:
-    "--input": file
-  optional_arguments:
-    "--sample-name": sample_name
-    "--genome": genome
-    "--single-or-paired": read_type
-    "--dcol1": dcol1
-  required_input_files: [file]
-  all_input_files: [file, read1]
-  ngs_input_files: [file]
-  resources:
-    default:
-      file_size: "0"
-      cores: "8"
-      mem: "32000"
-      time: "2-00:00:00"
-      partition: "longq"
+PIPELINE_INTERFACE_CONFIG_LINES = """protocol_mapping:
+  standard: testpipeline.sh
+  ngs: testngs.sh
+pipelines:
+  testpipeline.sh:
+    name: test_pipeline  # Name used by pypiper so looper can find the logs
+    looper_args: False
+    arguments:
+      "--input": file
+    optional_arguments:
+      "--sample-name": sample_name
+      "--dcol1": dcol1
+    required_input_files: [file, file2]
+    resources:
+      default:
+        file_size: "0"
+        cores: "8"
+        mem: "32000"
+        time: "2-00:00:00"
+        partition: "longq"
+  testngs.sh:
+    name: test_ngs_pipeline  # Name used by pypiper so looper can find the logs
+    looper_args: True
+    arguments:
+      "--input": file
+    optional_arguments:
+      "--sample-name": sample_name
+      "--genome": genome
+      "--single-or-paired": read_type
+      "--dcol1": dcol1
+    required_input_files: [file]
+    all_input_files: [file, read1]
+    ngs_input_files: [file]
+    resources:
+      default:
+        file_size: "0"
+        cores: "8"
+        mem: "32000"
+        time: "2-00:00:00"
+        partition: "longq"
 """.splitlines(True)
 
 # Determined by "looper_args" in pipeline interface lines.

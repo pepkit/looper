@@ -20,6 +20,9 @@ __author__ = "Vince Reuter"
 __email__ = "vreuter@virginia.edu"
 
 
+
+ATAC_PROTOCOL_NAME = "ATAC"
+
 CONFIG_FILENAME = "test-proj-conf.yaml"
 ANNOTATIONS_FILENAME = "anns.csv"
 SAMPLE_NAME_1 = "test-sample-1"
@@ -300,6 +303,25 @@ def resources():
     """ Basic PipelineInterface compute resources data. """
     return {DEFAULT_COMPUTE_RESOURCES_NAME: copy.deepcopy(DEFAULT_RESOURCES),
             "huge": copy.copy(HUGE_RESOURCES)}
+
+
+
+def write_config_data(protomap, conf_data, dirpath):
+    """
+    Write ProtocolInterface data to (temp)file.
+
+    :param Mapping protomap: mapping from protocol name to pipeline key/name
+    :param Mapping conf_data: mapping from pipeline key/name to configuration
+        data for a PipelineInterface
+    :param str dirpath: path to filesystem location in which to place the
+        file to write
+    :return str: path to the (temp)file written
+    """
+    full_conf_data = {"protocol_mapping": protomap, "pipelines": conf_data}
+    filepath = os.path.join(dirpath, "pipeline_interface.yaml")
+    with open(filepath, 'w') as conf_file:
+        yaml.safe_dump(full_conf_data, conf_file)
+    return filepath
 
 
 
