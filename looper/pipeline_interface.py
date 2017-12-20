@@ -498,41 +498,6 @@ class PipelineInterface(object):
         return "looper_args" in config and config["looper_args"]
 
 
-    @classmethod
-    def _parse_iface_data(cls, pipe_iface_data):
-        """
-        Parse data from mappings to set instance attributes.
-
-        The data that define a PipelineInterface are a "protocol_mapping"
-        Mapping and a "pipelines" Mapping, which are used to create a
-        a PipelineInterface, representing the configuration
-        data for pipeline(s) from a single location. There are a couple of
-        different ways (file, folder, and eventually, raw Mapping) to provide
-        this data, and this function provides some standardization to how
-        those data are processed, independent of input type/format.
-
-        :param Mapping[str, Mapping] pipe_iface_data: mapping from section
-            name to section data mapping; more specifically, the protocol
-            mappings Mapping and the PipelineInterface mapping
-        :return list[(str, Mapping)]: pairs of attribute name and value, for
-            assignment on this instance.
-        """
-        assignments = [("protocol_mapping", None, "protomap"),
-                       ("pipelines", PipelineInterface, "pipe_iface")]
-        attribute_values = []
-        for section_name, data_type, attr_name in assignments:
-            try:
-                data = pipe_iface_data[section_name]
-            except KeyError:
-                _LOGGER.error("Error creating %s from data: %s",
-                              cls.__name__, str(pipe_iface_data))
-                raise Exception("PipelineInterface file lacks section: '{}'".
-                                format(section_name))
-            data = data if data_type is None else data_type(data)
-            attribute_values.append((attr_name, data))
-        return attribute_values
-
-
     def select_pipeline(self, pipeline_name):
         """
         Check to make sure that pipeline has an entry and if so, return it.
