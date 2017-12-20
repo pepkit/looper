@@ -47,6 +47,7 @@ class PipelineInterface(object):
             self.pipe_iface_file = None
             self.pipe_iface_config = config
             self.pipelines_path = None
+            self.source = None
         else:
             # More likely old-style, with protocol_mapping in its own file,
             # separate from the actual pipeline interface data
@@ -56,6 +57,7 @@ class PipelineInterface(object):
             with open(config, 'r') as f:
                 self.pipe_iface_config = yaml.load(f)
             self.pipelines_path = os.path.dirname(config)
+            self.source = config
         
         for section in ["protocol_mapping", "pipelines"]:
             assert section in self.pipe_iface_config, \

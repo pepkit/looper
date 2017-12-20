@@ -211,6 +211,10 @@ def pytest_generate_tests(metafunc):
                 "empty_collection",
                 argvalues=[ctype() for ctype in collection_types],
                 ids=[ctype.__name__ for ctype in collection_types])
+    if "subtypes_section_spec_type" in metafunc.fixturenames:
+        # Subtypes section can be raw string or mapping.
+        metafunc.parametrize(argnames="subtypes_section_spec_type",
+                             argvalues=[str, dict])
 
 
 

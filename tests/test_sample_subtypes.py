@@ -33,11 +33,6 @@ def pytest_generate_tests(metafunc):
         metafunc.parametrize(
                 argnames="has_internal_subtype", argvalues=[False, True],
                 ids=lambda has_sub: " internal_subtype = {} ".format(has_sub))
-    if "subtypes_section_spec_type" in metafunc.fixturenames:
-        # Subtypes section can be raw string or mapping.
-        metafunc.parametrize(argnames="subtypes_section_spec_type",
-                             argvalues=[str, dict])
-
 
 
 class SampleSubtypeImportTests:

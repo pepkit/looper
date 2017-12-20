@@ -66,40 +66,6 @@ def bundled_piface(request):
 
 
 @pytest.fixture(scope="function")
-def path_config_file(request, tmpdir, atac_pipe_name):
-    """
-    Write PipelineInterface configuration data to disk.
-
-    Grab the data from the test case's appropriate fixture. Also check the
-    test case parameterization for pipeline path specification, adding it to
-    the configuration data before writing to disk if the path specification is
-    present
-
-    :param pytest._pytest.fixtures.SubRequest request: test case requesting
-        this fixture
-    :param py.path.local.LocalPath tmpdir: temporary directory fixture
-    :param str atac_pipe_name: name/key for ATAC-Seq pipeline; this should
-        also be used by the requesting test case if a path is to be added;
-        separating the name from the folder path allows parameterization of
-        the test case in terms of folder path, with pipeline name appended
-        after the fact (that is, the name fixture can't be used in the )
-    :return str: path to the configuration file written
-    """
-    conf_data = request.getfixturevalue("atacseq_piface_data")
-    if "pipe_path" in request.fixturenames:
-        pipeline_dirpath = request.getfixturevalue("pipe_path")
-        pipe_path = os.path.join(pipeline_dirpath, atac_pipe_name)
-        # Pipeline key/name is mapped to the interface data; insert path in
-        # that Mapping, not at the top level, in which name/key is mapped to
-        # interface data bundle.
-        for iface_bundle in conf_data.values():
-            iface_bundle["path"] = pipe_path
-    return write_config_data(protomap={ATAC_PROTOCOL_NAME: atac_pipe_name},
-                             conf_data=conf_data, dirpath=tmpdir.strpath)
-
-
-
-@pytest.fixture(scope="function")
 def pi_with_resources(request, bundled_piface, resources):
     """ Add resource bundle data to each config section. """
     if "use_new_file_size" in request.fixturenames:
