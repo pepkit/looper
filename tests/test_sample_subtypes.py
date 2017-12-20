@@ -1,7 +1,6 @@
 """ Tests for module-scoped functions, i.e. those not in a class. """
 
 import copy
-import logging
 import os
 import random
 import string
@@ -10,8 +9,7 @@ import sys
 import pytest
 
 from looper.protocol_interface import _import_sample_subtype
-import peppy
-from peppy import Sample, DEV_LOGGING_FMT
+from peppy import Sample
 
 
 __author__ = "Vince Reuter"
@@ -208,43 +206,6 @@ class SampleSubtypeImportTests:
                 pipe_file.write(build_subtype_lines("InternalPipelineSample"))
 
         return path_pipe_file, path_subtypes_file
-
-    
-    @pytest.fixture(scope="function")
-    def temp_logfile(self, request, tmpdir):
-        """
-        Temporarily capture in a file logging information from peppy models.
-
-        :param request: test case using this fixture
-        :param tmpdir: temporary directory fixture
-        :return str: path to the file in which logging information is captured
-        """
-
-        target_level = logging.DEBUG
-
-        # Retain original logger level to reset.
-        original_loglevel = peppy._LOGGER.getEffectiveLevel()
-
-        # Create the handler with appropriate level and formatter for test.
-        logfile = os.path.join(tmpdir.strpath, "logfile.txt")
-        handler = logging.FileHandler(logfile, mode='w')
-        formatter = logging.Formatter(DEV_LOGGING_FMT)
-        handler.setFormatter(formatter)
-        handler.setLevel(target_level)
-
-        # Add the handler to the relevant logger.
-        peppy._LOGGER.setLevel(target_level)
-        peppy._LOGGER.handlers.append(handler)
-        
-        def reset_logger():
-            peppy._LOGGER.setLevel(original_loglevel)
-            del peppy._LOGGER.handlers[-1]
-
-        # Restore the logger when the test case finishes, and provide the
-        # test case with the path to the file to which logs will be written
-        # so that the test case can make assertions about the message content.
-        request.addfinalizer(reset_logger)
-        return logfile
 
 
     @pytest.fixture(scope="function")
