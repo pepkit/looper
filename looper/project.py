@@ -215,7 +215,7 @@ class Project(peppy.Project):
                     raise ValueError(errmsg)
 
                 # Add this bundle to the collection of ones relevant for the
-                # current ProtocolInterface.
+                # current PipelineInterface.
                 new_jobs.append(submission_bundle)
 
             job_submission_bundles.append(new_jobs)
@@ -231,14 +231,14 @@ class Project(peppy.Project):
 
 def process_pipeline_interfaces(pipeline_interface_locations):
     """
-    Create a ProtocolInterface for each pipeline location given.
+    Create a PipelineInterface for each pipeline location given.
 
     :param Iterable[str] pipeline_interface_locations: locations, each of
         which should be either a directory path or a filepath, that specifies
         pipeline interface and protocol mappings information. Each such file
         should be have a pipelines section and a protocol mappings section
         whereas each folder should have a file for each of those sections.
-    :return Mapping[str, Iterable[ProtocolInterface]]: mapping from protocol
+    :return Mapping[str, Iterable[PipelineInterfaec]]: mapping from protocol
         name to interface(s) for which that protocol is mapped
     """
     interface_by_protocol = defaultdict(list)

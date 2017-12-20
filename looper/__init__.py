@@ -12,7 +12,6 @@ import os
 from sys import stdout
 
 from .pipeline_interface import PipelineInterface
-from .protocol_interface import ProtocolInterface
 from ._version import __version__
 
 # Not used here, but make this the main import interface between peppy and
@@ -24,7 +23,7 @@ from peppy import \
     SAMPLE_NAME_COLNAME
 
 
-__classes__ = ["PipelineInterface", "ProtocolInterface"]
+__classes__ = ["PipelineInterface"]
 
 
 GENERIC_PROTOCOL_KEY = "*"

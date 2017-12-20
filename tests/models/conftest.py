@@ -148,9 +148,9 @@ def atacseq_piface_data(atacseq_iface_with_resources, atac_pipe_name):
 
 @pytest.fixture(scope="function")
 def basic_data_raw():
-    return copy.deepcopy({
-            "AttributeDict": {}, "ProtocolMapper": BASIC_PROTOMAP,
-            "Sample": {SAMPLE_NAME_COLNAME: "arbitrary-sample"}})
+    return copy.deepcopy(
+        {"AttributeDict": {},
+         "Sample": {SAMPLE_NAME_COLNAME: "arbitrary-sample"}})
 
 
 
@@ -170,9 +170,6 @@ def basic_instance_data(request, instance_raw_data):
             "AttributeDict": lambda data: data,
             "PipelineInterface": lambda data:
                     _write_config(data, request, "pipeline_interface.yaml"),
-            "ProtocolInterface": lambda data:
-                    _write_config(data, request, "pipeline_interface.yaml"),
-            "ProtocolMapper": lambda data: data,
             "Sample": lambda data: pd.Series(data)}
     which_class = request.getfixturevalue("class_name")
     return transformation_by_class[which_class](instance_raw_data)
@@ -208,10 +205,6 @@ def instance_raw_data(request, basic_data_raw, atacseq_piface_data):
     which_class = request.getfixturevalue("class_name")
     if which_class == "PipelineInterface":
         return copy.deepcopy(atacseq_piface_data)
-    elif which_class == "ProtocolInterface":
-        return {"protocol_mapping":
-                        copy.deepcopy(basic_data_raw["ProtocolMapper"]),
-                "pipelines": copy.deepcopy(atacseq_piface_data)}
     else:
         return copy.deepcopy(basic_data_raw[which_class])
 
@@ -342,7 +335,7 @@ def resources():
 
 def write_config_data(protomap, conf_data, dirpath):
     """
-    Write ProtocolInterface data to (temp)file.
+    Write PipelineInterface data to (temp)file.
 
     :param Mapping protomap: mapping from protocol name to pipeline key/name
     :param Mapping conf_data: mapping from pipeline key/name to configuration

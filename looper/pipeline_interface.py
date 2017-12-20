@@ -424,8 +424,8 @@ class PipelineInterface(object):
             pipeline script
         :return type: Sample subtype to use for jobs for the given protocol,
             that use the pipeline indicated
-        :raises KeyError: if given a pipeline key that's not mapped in this
-            ProtocolInterface instance's PipelineInterface
+        :raises KeyError: if given a pipeline key that's not mapped in the
+            pipelines section of this PipelineInterface
         """
 
         subtype = None
@@ -502,9 +502,9 @@ class PipelineInterface(object):
         """
         Parse data from mappings to set instance attributes.
 
-        The data that define a ProtocolInterface are a "protocol_mapping"
+        The data that define a PipelineInterface are a "protocol_mapping"
         Mapping and a "pipelines" Mapping, which are used to create a
-        ProtocolMapper and a PipelineInterface, representing the configuration
+        a PipelineInterface, representing the configuration
         data for pipeline(s) from a single location. There are a couple of
         different ways (file, folder, and eventually, raw Mapping) to provide
         this data, and this function provides some standardization to how
@@ -513,9 +513,8 @@ class PipelineInterface(object):
         :param Mapping[str, Mapping] pipe_iface_data: mapping from section
             name to section data mapping; more specifically, the protocol
             mappings Mapping and the PipelineInterface mapping
-        :return list[(str, ProtocolMapper | PipelineInterface)]: pairs of
-            attribute name for the ProtocolInterface being created, and the
-            value for that attribute,
+        :return list[(str, Mapping)]: pairs of attribute name and value, for
+            assignment on this instance.
         """
         assignments = [("protocol_mapping", None, "protomap"),
                        ("pipelines", PipelineInterface, "pipe_iface")]
