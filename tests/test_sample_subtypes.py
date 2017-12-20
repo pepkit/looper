@@ -50,7 +50,7 @@ class SampleSubtypeImportTests:
             ids=lambda request: " subtype_request = {} ".format(request))
     def test_single_external_subtype(
             self, location, has_internal_subtype, subtype_request,
-            tmpdir, temp_logfile, tmpdir_on_path):
+            tmpdir, tmpdir_on_path):
         """ Subtype is inferred iff exactly one's available. """
 
         external_subtype = subtype_request or self.SUBTYPE_1
@@ -63,16 +63,10 @@ class SampleSubtypeImportTests:
 
         observed_subtype = _import_sample_subtype(
                 path_pipeline_file, subtype_name=subtype_request)
-        try:
-            if has_internal_subtype and subtype_request is None:
-                assert Sample is observed_subtype
-                assert self._validate_basic_sample_reason(temp_logfile)
-            else:
-                assert external_subtype == observed_subtype.__name__
-        except AssertionError:
-            self.print_file_contents(
-                path_subtypes_file, path_pipeline_file, temp_logfile)
-            raise
+        if has_internal_subtype and subtype_request is None:
+            assert Sample is observed_subtype
+        else:
+            assert external_subtype == observed_subtype.__name__
 
 
     @pytest.mark.parametrize(
@@ -80,7 +74,7 @@ class SampleSubtypeImportTests:
             ids=lambda sub_req: " subtype_request = {} ".format(sub_req))
     def test_multiple_external_subtypes(
             self, location, has_internal_subtype, subtype_request,
-            tmpdir, temp_logfile, tmpdir_on_path):
+            tmpdir, tmpdir_on_path):
         """ With multiple subtypes available, one must be selected. """
 
         path_pipeline_file, path_subtypes_file = self.write_files(
@@ -95,32 +89,9 @@ class SampleSubtypeImportTests:
         if subtype_request is None:
             # We get the base/generic Sample type if we can't do inference.
             assert Sample is observed_subtype
-
-            # Criterion for expected message to validate HOW we got the
-            # base/generic Sample type.
-            def found_line(msg):
-                return "DEBUG" in msg and "subtype cannot be selected" in msg
-
-            # Find the message that indicates the we did in fact get the base/
-            # generic sample in the way that was expected.
-            with open(temp_logfile, 'r') as tmplog:
-                messages = tmplog.readlines()
-            try:
-                assert any(map(found_line, messages))
-            except AssertionError:
-                print("Expected at least one non-empty message, "
-                      "but got {}: {}".format(len(messages), messages))
-                raise
-
         else:
             # Request for specific subtype that we defined is found.
-            try:
-                assert subtype_request == observed_subtype.__name__
-            except AssertionError:
-                self.print_file_contents(
-                        path_subtypes_file, path_pipeline_file,
-                        temp_logfile)
-                raise
+            assert subtype_request == observed_subtype.__name__
 
 
     @staticmethod
