@@ -3,7 +3,7 @@ Changelog
 
 - **v0.8.0** (*2018-01-19*):
 
-  - New
+  - Changed
 
     - Use independent `peppy` package, replacing ``models`` module for core data types.
 
