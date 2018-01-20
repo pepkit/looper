@@ -1,6 +1,14 @@
 Changelog
 ******************************
 
+- **v0.8.0** (*2018-01-19*):
+
+  - New
+
+    - Use independent `peppy` package, replacing ``models`` module for core data types.
+
+    - Integrate ``ProtocolInterface`` functionality into ``PipelineInterface``.
+
 - **v0.7.2** (*2017-11-16*):
 
   - Fixed
