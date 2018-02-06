@@ -38,7 +38,7 @@ Looper supports Python 2.7 and Python 3, and has been tested in Linux. If you cl
 
 # Portable Encapsulated Projects
 
-`Looper` is built on the python [`pep`](http://github.com/pepkit/pep) package. `Looper` and `pep` were originally developed together as a single package, but `pep` has been extracted to make the projects more modular. `Looper` now imports `pep` for its sample input and processing, and `pep` can be used independently of `looper`.
+`Looper` is built on the python [`peppy`](http://github.com/pepkit/peppy) package. `Looper` and `peppy` were originally developed together as a single package, but `peppy` has been extracted to make the projects more modular. `Looper` now imports `peppy` for its sample input and processing, and `peppy` can be used independently of `looper`.
 
 # Contributing
 
