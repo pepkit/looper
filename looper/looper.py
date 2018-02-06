@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Looper: a pipeline submission engine. https://github.com/pepkit/looper
+Looper: a pipeline submission engine. https://github.com/peppykit/looper
 """
 
 import abc
@@ -11,22 +11,25 @@ import logging
 import os
 import subprocess
 import sys
+
+# Need specific sequence of actions for colorama imports?
+from colorama import init
+init()
+from colorama import Fore, Style
 import pandas as _pd
+
 from . import \
     setup_looper_logger, FLAGS, GENERIC_PROTOCOL_KEY, \
     LOGGING_LEVEL, __version__
 from .exceptions import JobSubmissionException
-from .loodels import Project
-from .models import \
-    ProjectContext, COMPUTE_SETTINGS_VARNAME, SAMPLE_EXECUTION_TOGGLE
+from .project import Project
 from .submission_manager import SubmissionConductor
-from .utils import \
-    alpha_cased, fetch_flag_files, sample_folder, VersionInHelpParser
+from .utils import fetch_flag_files, sample_folder
 
+from peppy import \
+    ProjectContext, COMPUTE_SETTINGS_VARNAME, SAMPLE_EXECUTION_TOGGLE
+from peppy.utils import alpha_cased
 
-from colorama import init
-init()
-from colorama import Fore, Style
 
 
 SUBMISSION_FAILURE_MESSAGE = "Cluster resource failure"
@@ -54,9 +57,9 @@ def parse_arguments():
     banner = "%(prog)s - Loop through samples and submit pipelines."
     additional_description = "For subcommand-specific options, type: " \
             "'%(prog)s <subcommand> -h'"
-    additional_description += "\nhttps://github.com/pepkit/looper"
+    additional_description += "\nhttps://github.com/peppykit/looper"
 
-    parser = VersionInHelpParser(
+    parser = _VersionInHelpParser(
             description=banner,
             epilog=additional_description,
             formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -387,6 +390,8 @@ class Runner(Executor):
         mapped_protos = set()
         for proto in protocols | {GENERIC_PROTOCOL_KEY}:
             proto_key = alpha_cased(proto)
+            _LOGGER.debug("Determining sample type, script, and flags for "
+                          "pipeline(s) associated with protocol: %s", proto)
             submission_bundles = self.prj.build_submission_bundles(proto_key)
             if not submission_bundles:
                 if proto_key != GENERIC_PROTOCOL_KEY:
@@ -395,6 +400,7 @@ class Runner(Executor):
             mapped_protos.add(proto)
             for pl_iface, sample_subtype, pl_key, script_with_flags in \
                     submission_bundles:
+                _LOGGER.debug("%s: %s", pl_key, sample_subtype.__name__)
                 conductor = SubmissionConductor(
                         pl_key, pl_iface, script_with_flags, self.prj,
                         args.dry_run, args.time_delay, sample_subtype,
@@ -787,6 +793,14 @@ def _submission_status_text(curr, total, sample_name, sample_protocol, color):
            "## [{n} of {N}] {sample} ({protocol})".format(
                n=curr, N=total, sample=sample_name, protocol=sample_protocol) + \
            Style.RESET_ALL
+
+
+
+class _VersionInHelpParser(argparse.ArgumentParser):
+    def format_help(self):
+        """ Add version information to help text. """
+        return "version: {}\n".format(__version__) + \
+               super(_VersionInHelpParser, self).format_help()
 
 
 

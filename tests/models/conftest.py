@@ -13,13 +13,15 @@ import pandas as pd
 import pytest
 import yaml
 
-from looper.models import DEFAULT_COMPUTE_RESOURCES_NAME, SAMPLE_NAME_COLNAME
+from peppy import DEFAULT_COMPUTE_RESOURCES_NAME, SAMPLE_NAME_COLNAME
 
 
 __author__ = "Vince Reuter"
 __email__ = "vreuter@virginia.edu"
 
 
+
+ATAC_PROTOCOL_NAME = "ATAC"
 
 CONFIG_FILENAME = "test-proj-conf.yaml"
 ANNOTATIONS_FILENAME = "anns.csv"
@@ -146,9 +148,9 @@ def atacseq_piface_data(atacseq_iface_with_resources, atac_pipe_name):
 
 @pytest.fixture(scope="function")
 def basic_data_raw():
-    return copy.deepcopy({
-            "AttributeDict": {}, "ProtocolMapper": BASIC_PROTOMAP,
-            "Sample": {SAMPLE_NAME_COLNAME: "arbitrary-sample"}})
+    return copy.deepcopy(
+        {"AttributeDict": {},
+         "Sample": {SAMPLE_NAME_COLNAME: "arbitrary-sample"}})
 
 
 
@@ -168,9 +170,6 @@ def basic_instance_data(request, instance_raw_data):
             "AttributeDict": lambda data: data,
             "PipelineInterface": lambda data:
                     _write_config(data, request, "pipeline_interface.yaml"),
-            "ProtocolInterface": lambda data:
-                    _write_config(data, request, "pipeline_interface.yaml"),
-            "ProtocolMapper": lambda data: data,
             "Sample": lambda data: pd.Series(data)}
     which_class = request.getfixturevalue("class_name")
     return transformation_by_class[which_class](instance_raw_data)
@@ -206,10 +205,6 @@ def instance_raw_data(request, basic_data_raw, atacseq_piface_data):
     which_class = request.getfixturevalue("class_name")
     if which_class == "PipelineInterface":
         return copy.deepcopy(atacseq_piface_data)
-    elif which_class == "ProtocolInterface":
-        return {"protocol_mapping":
-                        copy.deepcopy(basic_data_raw["ProtocolMapper"]),
-                "pipelines": copy.deepcopy(atacseq_piface_data)}
     else:
         return copy.deepcopy(basic_data_raw[which_class])
 
@@ -235,6 +230,40 @@ def minimal_project_conf_path(tmpdir):
             "metadata:\n  sample_annotation: {}".format(anns_file)
     conf_file.write(config_lines)
     return conf_file.strpath
+
+
+
+@pytest.fixture(scope="function")
+def path_config_file(request, tmpdir, atac_pipe_name):
+    """
+    Write PipelineInterface configuration data to disk.
+
+    Grab the data from the test case's appropriate fixture. Also check the
+    test case parameterization for pipeline path specification, adding it to
+    the configuration data before writing to disk if the path specification is
+    present
+
+    :param pytest._pytest.fixtures.SubRequest request: test case requesting
+        this fixture
+    :param py.path.local.LocalPath tmpdir: temporary directory fixture
+    :param str atac_pipe_name: name/key for ATAC-Seq pipeline; this should
+        also be used by the requesting test case if a path is to be added;
+        separating the name from the folder path allows parameterization of
+        the test case in terms of folder path, with pipeline name appended
+        after the fact (that is, the name fixture can't be used in the )
+    :return str: path to the configuration file written
+    """
+    conf_data = request.getfixturevalue("atacseq_piface_data")
+    if "pipe_path" in request.fixturenames:
+        pipeline_dirpath = request.getfixturevalue("pipe_path")
+        pipe_path = os.path.join(pipeline_dirpath, atac_pipe_name)
+        # Pipeline key/name is mapped to the interface data; insert path in
+        # that Mapping, not at the top level, in which name/key is mapped to
+        # interface data bundle.
+        for iface_bundle in conf_data.values():
+            iface_bundle["path"] = pipe_path
+    return write_config_data(protomap={ATAC_PROTOCOL_NAME: atac_pipe_name},
+                             conf_data=conf_data, dirpath=tmpdir.strpath)
 
 
 
@@ -301,6 +330,25 @@ def resources():
     """ Basic PipelineInterface compute resources data. """
     return {DEFAULT_COMPUTE_RESOURCES_NAME: copy.deepcopy(DEFAULT_RESOURCES),
             "huge": copy.copy(HUGE_RESOURCES)}
+
+
+
+def write_config_data(protomap, conf_data, dirpath):
+    """
+    Write PipelineInterface data to (temp)file.
+
+    :param Mapping protomap: mapping from protocol name to pipeline key/name
+    :param Mapping conf_data: mapping from pipeline key/name to configuration
+        data for a PipelineInterface
+    :param str dirpath: path to filesystem location in which to place the
+        file to write
+    :return str: path to the (temp)file written
+    """
+    full_conf_data = {"protocol_mapping": protomap, "pipelines": conf_data}
+    filepath = os.path.join(dirpath, "pipeline_interface.yaml")
+    with open(filepath, 'w') as conf_file:
+        yaml.safe_dump(full_conf_data, conf_file)
+    return filepath
 
 
 

@@ -9,9 +9,10 @@ import subprocess
 import time
 
 from .exceptions import JobSubmissionException
-from .models import Sample, VALID_READ_TYPES
 from .utils import \
     create_looper_args_text, grab_project_data, sample_folder
+
+from peppy import Sample, VALID_READ_TYPES
 
 
 __author__ = "Vince Reuter"
@@ -196,7 +197,7 @@ class SubmissionConductor(object):
                             format(Sample.__name__))
         
         sfolder = sample_folder(prj=self.prj, sample=sample)
-        # TODO: pep utils --> flag_name for *.flag
+        # TODO: peppy utils --> flag_name for *.flag
         flag_files = glob.glob(os.path.join(sfolder, self.pl_name + "*.flag"))
         # TODO: need to communicate failures to caller, but also disambiguate
         # TODO (cont.): between three cases: flag files, failure(s), and submission.

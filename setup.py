@@ -8,6 +8,7 @@ import sys
 # Additional keyword arguments for setup().
 extra = {}
 
+
 # Ordinary dependencies
 DEPENDENCIES = []
 with open("requirements/requirements-all.txt", "r") as reqs_file:
@@ -17,6 +18,7 @@ with open("requirements/requirements-all.txt", "r") as reqs_file:
         #DEPENDENCIES.append(line.split("=")[0].rstrip("<>"))
         DEPENDENCIES.append(line)
 
+
 # numexpr for pandas
 try:
     import numexpr
@@ -25,12 +27,13 @@ except ImportError:
     pass
 else:
     # pandas 0.20.2 needs updated numexpr; the claim is 2.4.6, but that failed.
-    DEPENDENCIES.append("numexpr==2.6.2")
+    DEPENDENCIES.append("numexpr>=2.6.2")
+extra["install_requires"] = DEPENDENCIES
+
 
 # 2to3
 if sys.version_info >= (3, ):
     extra["use_2to3"] = True
-extra["install_requires"] = DEPENDENCIES
 
 
 # Additional files to include with package
@@ -42,13 +45,16 @@ def get_static(name, condition=None):
     else:
         return [i for i in filter(lambda x: eval(condition), static)]
 
+
 # scripts to be added to the $PATH
 # scripts = get_static("scripts", condition="'.' in x")
 # scripts removed (TO remove this)
 scripts = None
 
+
 with open("looper/_version.py", 'r') as versionfile:
     version = versionfile.readline().split()[-1].strip("\"'\n")
+
 
 setup(
     name="looper",
@@ -71,6 +77,7 @@ setup(
             'looper = looper.looper:main'
         ],
     },
+    dependency_links=["git+git://github.com/vreuter/pep.git@support-looper#egg=pep"],
     scripts=scripts,
     package_data={'looper': ['submit_templates/*']},
     include_package_data=True,

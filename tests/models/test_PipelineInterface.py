@@ -11,9 +11,14 @@ import mock
 import pytest
 import yaml
 
-from looper.models import \
-    PipelineInterface, Sample, _InvalidResourceSpecificationException, \
-    _MissingPipelineConfigurationException, DEFAULT_COMPUTE_RESOURCES_NAME
+from looper.pipeline_interface import PipelineInterface
+from looper.project import Project
+from looper.exceptions import \
+    InvalidResourceSpecificationException, \
+    MissingPipelineConfigurationException
+from peppy import Project, Sample, DEFAULT_COMPUTE_RESOURCES_NAME, \
+    SAMPLE_ANNOTATIONS_KEY, SAMPLE_NAME_COLNAME
+from .conftest import ATAC_PROTOCOL_NAME, write_config_data
 
 
 __author__ = "Vince Reuter"
@@ -53,8 +58,15 @@ def basic_pipe_iface_data(request):
 
 
 
+@pytest.fixture
+def bundled_piface(request):
+    pipelines = request.getfixturevalue("basic_pipe_iface_data")
+    return {"protocol_mapping": {"ATAC": "ATACSeq.py"}, "pipelines": pipelines}
+
+
+
 @pytest.fixture(scope="function")
-def pi_with_resources(request, basic_pipe_iface_data, resources):
+def pi_with_resources(request, bundled_piface, resources):
     """ Add resource bundle data to each config section. """
     if "use_new_file_size" in request.fixturenames:
         file_size_name = "min_file_size" if \
@@ -65,7 +77,7 @@ def pi_with_resources(request, basic_pipe_iface_data, resources):
             size = size1 or size2
             if size:
                 rp_data[file_size_name] = size
-    pipe_iface_config = PipelineInterface(basic_pipe_iface_data)
+    pipe_iface_config = PipelineInterface(bundled_piface)
     for pipe_data in pipe_iface_config.pipelines:
         pipe_data["resources"] = resources
     return pipe_iface_config
@@ -73,16 +85,16 @@ def pi_with_resources(request, basic_pipe_iface_data, resources):
 
 
 @pytest.mark.parametrize(argnames="from_file", argvalues=[False, True])
-def test_constructor_input_types(tmpdir, from_file, basic_pipe_iface_data):
+def test_constructor_input_types(tmpdir, from_file, bundled_piface):
     """ PipelineInterface constructor handles Mapping or filepath. """
     if from_file:
         pipe_iface_config = tmpdir.join("pipe-iface-conf.yaml").strpath
         with open(tmpdir.join("pipe-iface-conf.yaml").strpath, 'w') as f:
-            yaml.safe_dump(basic_pipe_iface_data, f)
+            yaml.safe_dump(bundled_piface, f)
     else:
-        pipe_iface_config = basic_pipe_iface_data
+        pipe_iface_config = bundled_piface
     pi = PipelineInterface(pipe_iface_config)
-    assert basic_pipe_iface_data == pi.pipe_iface_config
+    assert bundled_piface == pi.pipe_iface_config
     assert pi.pipe_iface_file == (pipe_iface_config if from_file else None)
 
 
@@ -95,8 +107,7 @@ def test_constructor_input_types(tmpdir, from_file, basic_pipe_iface_data):
                             {"sample_name": "arbitrary-sample-name"})}),
                    ("get_attribute",
                     {"attribute_key": "irrelevant-attr-name"}),
-                   ("get_pipeline_name", {}),
-                   ("uses_looper_args", {})])
+                   ("get_pipeline_name", {})])
 @pytest.mark.parametrize(argnames="use_resources", argvalues=[False, True])
 def test_unconfigured_pipeline_exception(
         funcname_and_kwargs, use_resources, pi_with_resources):
@@ -118,7 +129,7 @@ def test_unconfigured_pipeline_exception(
     for parameter in ["pipeline_name", "pipeline"]:
         if parameter in required_parameters and parameter not in kwargs:
             kwargs[parameter] = "missing-pipeline"
-    with pytest.raises(_MissingPipelineConfigurationException):
+    with pytest.raises(MissingPipelineConfigurationException):
         func.__call__(**kwargs)
 
 
@@ -137,22 +148,10 @@ class PipelineInterfaceNameResolutionTests:
         pipelines = [name + ext for name, ext in name_and_ext_pairs]
         pi_conf_data = {pipeline: {"name": name}
                         for pipeline, name in zip(pipelines, names)}
-        pi = PipelineInterface(pi_conf_data)
+        pi = PipelineInterface({"protocol_mapping": {"ATAC": "ATACSeq.py"},
+                                "pipelines": pi_conf_data})
         for pipeline, expected_name in zip(pipelines, names):
             assert expected_name == pi.get_pipeline_name(pipeline)
-
-
-    def test_get_pipeline_name_inferred(self):
-        """ Script implies pipeline name if it's not explicitly configured. """
-        pipeline_names = ["wgbs", "atacseq"]
-        for extensions in itertools.combinations(EXTENSIONS, 2):
-            pipelines = [name + ext for name, ext
-                         in zip(pipeline_names, extensions)]
-            pi_config_data = {pipeline: None for pipeline in pipelines}
-            with mock.patch("looper.models.PipelineInterface._expand_paths"):
-                pi = PipelineInterface(pi_config_data)
-            for expected_name, pipeline in zip(pipeline_names, pipelines):
-                assert expected_name == pi.get_pipeline_name(pipeline)
 
 
 
@@ -173,7 +172,7 @@ class PipelineInterfaceResourcePackageTests:
                 # Already no default resource package.
                 pass
             assert "default" not in pipeline["resources"]
-            with pytest.raises(_InvalidResourceSpecificationException):
+            with pytest.raises(InvalidResourceSpecificationException):
                 pi.choose_resource_package(
                         name, file_size=huge_resources["file_size"] + 1)
 
@@ -235,7 +234,7 @@ class PipelineInterfaceResourcePackageTests:
 
 
     def test_file_size_spec_not_required_for_default(
-            self, use_new_file_size, basic_pipe_iface_data, 
+            self, use_new_file_size, bundled_piface, 
             default_resources, huge_resources, midsize_resources):
         """ Default package implies minimum file size of zero. """
 
@@ -257,8 +256,8 @@ class PipelineInterfaceResourcePackageTests:
                 pack_data["min_file_size"] = pack_data.pop("file_size")
 
         # Add resource package spec data and create PipelineInterface.
-        pipe_iface_data = copy.deepcopy(basic_pipe_iface_data)
-        for pipe_data in pipe_iface_data.values():
+        pipe_iface_data = copy.deepcopy(bundled_piface)
+        for pipe_data in pipe_iface_data["pipelines"].values():
             pipe_data["resources"] = resources_data
         pi = PipelineInterface(pipe_iface_data)
 
@@ -305,7 +304,7 @@ class PipelineInterfaceResourcePackageTests:
 
 
     def test_file_size_spec_required_for_non_default_packages(
-            self, use_new_file_size, basic_pipe_iface_data, 
+            self, use_new_file_size, bundled_piface, 
             default_resources, huge_resources):
         """ Resource packages besides default require file size. """
 
@@ -321,9 +320,9 @@ class PipelineInterfaceResourcePackageTests:
                     resource_package_data["default"].pop("file_size")
 
         # Create the PipelineInterface.
-        for pipe_data in basic_pipe_iface_data.values():
+        for pipe_data in bundled_piface["pipelines"].values():
             pipe_data["resources"] = resource_package_data
-        pi = PipelineInterface(basic_pipe_iface_data)
+        pi = PipelineInterface(bundled_piface)
 
         # Attempt to select resource package should fail for each pipeline,
         # regardless of the file size specification; restrict to nonnegative
@@ -365,6 +364,12 @@ class ConstructorPathParsingTests:
         return dict(zip(self.PIPELINE_KEYS, piface_config_bundles))
 
 
+    @pytest.fixture(scope="function")
+    def bundled_piface(self, pipe_iface_data):
+        return {"protocol_mapping": {"ATAC": "ATACSeq.py"},
+                "pipelines": pipe_iface_data}
+
+
     @pytest.fixture(scope="function", autouse=True)
     def apply_envvars(self, request):
         """ Use environment variables temporarily. """
@@ -395,22 +400,22 @@ class ConstructorPathParsingTests:
 
 
     def test_no_path(self, config_bundles, piface_config_bundles,
-                     pipe_iface_data):
+                     bundled_piface):
         """ PipelineInterface config sections need not specify path. """
-        pi = PipelineInterface(pipe_iface_data)
+        pi = PipelineInterface(bundled_piface)
         for pipe_key in self.PIPELINE_KEYS:
             piface_config = pi[pipe_key]
             # Specific negative test of interest.
             assert "path" not in piface_config
             # Positive control validation.
-            assert pipe_iface_data[pipe_key] == piface_config
+            assert pi.select_pipeline(pipe_key) == piface_config
 
 
     @pytest.mark.parametrize(
             argnames=["pipe_path", "envvars", "expected"],
             argvalues=RELATIVE_PATH_DATA)
     def test_relative_path(
-            self, config_bundles, piface_config_bundles, pipe_iface_data,
+            self, config_bundles, piface_config_bundles, bundled_piface,
             pipe_path, envvars, expected, apply_envvars):
         """
         PipelineInterface construction expands pipeline path.
@@ -422,8 +427,8 @@ class ConstructorPathParsingTests:
         """
         for add_path, pipe_key in zip(self.ADD_PATH, self.PIPELINE_KEYS):
             if add_path:
-                pipe_iface_data[pipe_key]["path"] = pipe_path
-        pi = PipelineInterface(pipe_iface_data)
+                bundled_piface["pipelines"][pipe_key]["path"] = pipe_path
+        pi = PipelineInterface(bundled_piface)
         for add_path, pipe_key in zip(self.ADD_PATH, self.PIPELINE_KEYS):
             if add_path:
                 assert expected == pi[pipe_key]["path"]
@@ -438,13 +443,96 @@ class ConstructorPathParsingTests:
                           EXPECTED_PATHS_ABSOLUTE))
     def test_path_expansion(
             self, pipe_path, envvars, expected,
-            config_bundles, piface_config_bundles, pipe_iface_data):
+            config_bundles, piface_config_bundles, bundled_piface):
         """ User/environment variables are expanded. """
-        for piface_data in pipe_iface_data.values():
+        for piface_data in bundled_piface["pipelines"].values():
             piface_data["path"] = pipe_path
-        pi = PipelineInterface(pipe_iface_data)
+        pi = PipelineInterface(bundled_piface)
         for _, piface_data in pi:
             assert expected == piface_data["path"]
+
+
+
+class PipelinePathResolutionTests:
+    """ Project requests pipeline information via an interface key. """
+
+
+    def test_no_path(self, atacseq_piface_data,
+                     path_config_file, atac_pipe_name):
+        """ Without explicit path, pipeline is assumed parallel to config. """
+
+        piface = PipelineInterface(path_config_file)
+
+        # The pipeline is assumed to live alongside its configuration file.
+        config_dirpath = os.path.dirname(path_config_file)
+        expected_pipe_path = os.path.join(config_dirpath, atac_pipe_name)
+
+        _, full_pipe_path, _ = \
+                piface.finalize_pipeline_key_and_paths(atac_pipe_name)
+        assert expected_pipe_path == full_pipe_path
+
+
+    def test_relpath_with_dot_becomes_absolute(
+            self, tmpdir, atac_pipe_name, atacseq_piface_data):
+        """ Leading dot drops from relative path, and it's made absolute. """
+        path_parts = ["relpath", "to", "pipelines", atac_pipe_name]
+        sans_dot_path = os.path.join(*path_parts)
+        pipe_path = os.path.join(".", sans_dot_path)
+        atacseq_piface_data[atac_pipe_name]["path"] = pipe_path
+
+        exp_path = os.path.join(tmpdir.strpath, sans_dot_path)
+
+        path_config_file = write_config_data(
+                protomap={ATAC_PROTOCOL_NAME: atac_pipe_name},
+                conf_data=atacseq_piface_data, dirpath=tmpdir.strpath)
+        piface = PipelineInterface(path_config_file)
+        _, obs_path, _ = piface.finalize_pipeline_key_and_paths(atac_pipe_name)
+        # Dot may remain in path, so assert equality of absolute paths.
+        assert os.path.abspath(exp_path) == os.path.abspath(obs_path)
+
+
+    @pytest.mark.parametrize(
+            argnames="pipe_path", argvalues=["relative/pipelines/path"])
+    def test_non_dot_relpath_becomes_absolute(
+            self, atacseq_piface_data, path_config_file,
+            tmpdir, pipe_path, atac_pipe_name):
+        """ Relative pipeline path is made absolute when requested by key. """
+        # TODO: constant-ify "path" and "ATACSeq.py", as well as possibly "pipelines"
+        # and "protocol_mapping" section names of PipelineInterface
+        exp_path = os.path.join(
+                tmpdir.strpath, pipe_path, atac_pipe_name)
+        piface = PipelineInterface(path_config_file)
+        _, obs_path, _ = piface.finalize_pipeline_key_and_paths(atac_pipe_name)
+        assert exp_path == obs_path
+
+
+    @pytest.mark.parametrize(
+            argnames=["pipe_path", "expected_path_base"],
+            argvalues=[(os.path.join("$HOME", "code-base-home", "biopipes"),
+                        os.path.join(os.path.expandvars("$HOME"),
+                                "code-base-home", "biopipes")),
+                       (os.path.join("~", "bioinformatics-pipelines"),
+                        os.path.join(os.path.expanduser("~"),
+                                     "bioinformatics-pipelines"))])
+    def test_absolute_path(
+            self, atacseq_piface_data, path_config_file, tmpdir, pipe_path,
+            expected_path_base, atac_pipe_name):
+        """ Absolute path regardless of variables works as pipeline path. """
+        exp_path = os.path.join(
+                tmpdir.strpath, expected_path_base, atac_pipe_name)
+        piface = PipelineInterface(path_config_file)
+        _, obs_path, _ = piface.finalize_pipeline_key_and_paths(atac_pipe_name)
+        assert exp_path == obs_path
+
+
+
+@pytest.mark.usefixtures("write_project_files", "pipe_iface_config_file")
+class BasicPipelineInterfaceTests:
+    """ Test cases specific to PipelineInterface """
+
+    def test_missing_input_files(self, proj):
+        """ We're interested here in lack of exception, not return value. """
+        proj.samples[0].get_attr_values("all_input_files")
 
 
 
@@ -459,3 +547,63 @@ class PipelineInterfaceArgstringTests:
 class PipelineInterfaceLooperArgsTests:
     """  """
     pass
+
+
+
+@pytest.mark.skip("Not implemented")
+class GenericProtocolMatchTests:
+    """ Pipeline interface may support 'all-other' protocols notion. """
+
+
+    NAME_ANNS_FILE = "annotations.csv"
+
+
+    @pytest.fixture
+    def prj_data(self):
+        """ Provide basic Project data. """
+        return {"metadata": {"output_dir": "output",
+                             "results_subdir": "results_pipeline",
+                             "submission_subdir": "submission"}}
+
+
+    @pytest.fixture
+    def sheet_lines(self):
+        """ Provide sample annotations sheet lines. """
+        return ["{},{}".format(SAMPLE_NAME_COLNAME, "basic_sample")]
+
+
+    @pytest.fixture
+    def sheet_file(self, tmpdir, sheet_lines):
+        """ Write annotations sheet file and provide path. """
+        anns_file = tmpdir.join(self.NAME_ANNS_FILE)
+        anns_file.write(os.linesep.join(sheet_lines))
+        return anns_file.strpath
+
+
+    @pytest.fixture
+    def iface_paths(self, tmpdir):
+        """ Write basic pipeline interfaces and provide paths. """
+        pass
+
+
+    @pytest.fixture
+    def prj(self, tmpdir, prj_data, anns_file, iface_paths):
+        """ Provide basic Project. """
+        prj_data["pipeline_interfaces"] = iface_paths
+        prj_data["metadata"][SAMPLE_ANNOTATIONS_KEY] = anns_file
+        prj_file = tmpdir.join("pconf.yaml").strpath
+        with open(prj_file, 'w') as f:
+            yaml.dump(prj_data, f)
+        return Project(prj_file)
+
+
+    @pytest.mark.skip("Not implemented")
+    def test_specific_protocol_match_lower_priority_interface(self):
+        """ Generic protocol mapping doesn't preclude specific ones. """
+        pass
+
+
+    @pytest.mark.skip("Not implemented")
+    def test_no_specific_protocol_match(self):
+        """ Protocol match in no pipeline interface allows generic match. """
+        pass

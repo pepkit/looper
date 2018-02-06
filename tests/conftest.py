@@ -20,10 +20,12 @@ import pytest
 import yaml
 
 from looper import setup_looper_logger
-from looper.models import PipelineInterface, Project, SAMPLE_NAME_COLNAME
+from looper.pipeline_interface import PipelineInterface
+from looper.project import Project
+from peppy import setup_peppy_logger, SAMPLE_NAME_COLNAME
 
 
-_LOGGER = logging.getLogger("looper")
+_LOGGER = logging.getLogger("peppy")
 
 
 P_CONFIG_FILENAME = "project_config.yaml"
@@ -62,42 +64,46 @@ SRC2_TEMPLATE = "data/{sample_name}-bamfile.bam"
 SRC3_TEMPLATE = "data/{sample_name}.txt"
 
 
-PIPELINE_INTERFACE_CONFIG_LINES = """testpipeline.sh:
-  name: test_pipeline  # Name used by pypiper so looper can find the logs
-  looper_args: False
-  arguments:
-    "--input": file
-  optional_arguments:
-    "--sample-name": sample_name
-    "--dcol1": dcol1
-  required_input_files: [file, file2]
-  resources:
-    default:
-      file_size: "0"
-      cores: "8"
-      mem: "32000"
-      time: "2-00:00:00"
-      partition: "longq"
-testngs.sh:
-  name: test_ngs_pipeline  # Name used by pypiper so looper can find the logs
-  looper_args: True
-  arguments:
-    "--input": file
-  optional_arguments:
-    "--sample-name": sample_name
-    "--genome": genome
-    "--single-or-paired": read_type
-    "--dcol1": dcol1
-  required_input_files: [file]
-  all_input_files: [file, read1]
-  ngs_input_files: [file]
-  resources:
-    default:
-      file_size: "0"
-      cores: "8"
-      mem: "32000"
-      time: "2-00:00:00"
-      partition: "longq"
+PIPELINE_INTERFACE_CONFIG_LINES = """protocol_mapping:
+  standard: testpipeline.sh
+  ngs: testngs.sh
+pipelines:
+  testpipeline.sh:
+    name: test_pipeline  # Name used by pypiper so looper can find the logs
+    looper_args: False
+    arguments:
+      "--input": file
+    optional_arguments:
+      "--sample-name": sample_name
+      "--dcol1": dcol1
+    required_input_files: [file, file2]
+    resources:
+      default:
+        file_size: "0"
+        cores: "8"
+        mem: "32000"
+        time: "2-00:00:00"
+        partition: "longq"
+  testngs.sh:
+    name: test_ngs_pipeline  # Name used by pypiper so looper can find the logs
+    looper_args: True
+    arguments:
+      "--input": file
+    optional_arguments:
+      "--sample-name": sample_name
+      "--genome": genome
+      "--single-or-paired": read_type
+      "--dcol1": dcol1
+    required_input_files: [file]
+    all_input_files: [file, read1]
+    ngs_input_files: [file]
+    resources:
+      default:
+        file_size: "0"
+        cores: "8"
+        mem: "32000"
+        time: "2-00:00:00"
+        partition: "longq"
 """.splitlines(True)
 
 # Determined by "looper_args" in pipeline interface lines.
@@ -205,6 +211,10 @@ def pytest_generate_tests(metafunc):
                 "empty_collection",
                 argvalues=[ctype() for ctype in collection_types],
                 ids=[ctype.__name__ for ctype in collection_types])
+    if "subtypes_section_spec_type" in metafunc.fixturenames:
+        # Subtypes section can be raw string or mapping.
+        metafunc.parametrize(argnames="subtypes_section_spec_type",
+                             argvalues=[str, dict])
 
 
 
@@ -212,8 +222,8 @@ def pytest_generate_tests(metafunc):
 def conf_logs(request):
     """ Configure logging for the testing session. """
     level = request.config.getoption("--logging-level")
-    setup_looper_logger(level=level, devmode=True)
-    logging.getLogger("looper").info(
+    setup_peppy_logger(level=level, devmode=True)
+    logging.getLogger("peppy").info(
         "Configured looper logger at level %s; attaching tests' logger %s",
         str(level), __name__)
     global _LOGGER
@@ -542,7 +552,7 @@ def proj(request):
 
     :param pytest._pytest.fixtures.SubRequest request: test case requesting
         a project instance
-    :return looper.models.Project: object created by parsing
+    :return peppy.Project: object created by parsing
         data in file pointed to by `request` class
     """
     p = _create(request, Project)
@@ -562,7 +572,7 @@ def pipe_iface(request):
 
     :param pytest._pytest.fixtures.SubRequest request: test case requesting
         a project instance
-    :return looper.models.PipelineInterface: object created by parsing
+    :return peppy.PipelineInterface: object created by parsing
         data in file pointed to by `request` class
     """
     return _create(request, PipelineInterface)
