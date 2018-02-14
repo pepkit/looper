@@ -213,7 +213,7 @@ class SubmissionConductor(object):
         
         else:
             sample = sample_subtype(sample)
-            _LOGGER.debug("Created %s instance: %s'",
+            _LOGGER.debug("Created %s instance: '%s'",
                           sample_subtype.__name__, sample.name)
             sample.prj = grab_project_data(self.prj)
             
