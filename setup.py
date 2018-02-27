@@ -55,22 +55,28 @@ scripts = None
 with open("looper/_version.py", 'r') as versionfile:
     version = versionfile.readline().split()[-1].strip("\"'\n")
 
+# Handle the pypi README formatting.
+try:
+    import pypandoc
+    long_description = pypandoc.convert_file('README.md', 'rst')
+except(IOError, ImportError):
+    long_description = open('README.md').read()
 
 setup(
     name="looper",
     packages=["looper"],
     version=version,
     description="A pipeline submission engine that parses sample inputs and submits pipelines for each sample.",
-    long_description=open('README.md').read(),
+    long_description=long_description,
     classifiers=[
-        "Development Status :: 3 - Alpha",
-        "License :: OSI Approved :: GNU General Public License v2 or later (GPLv2+)",
+        "Development Status :: 4 - Beta",
+        "License :: OSI Approved :: BSD License",
         "Programming Language :: Python :: 2.7",
         "Topic :: Scientific/Engineering :: Bio-Informatics"
     ],
     keywords="bioinformatics, sequencing, ngs",
     url="https://github.com/epigen/looper",
-    author=u"Nathan Sheffield, Johanna Klughammer, Andre Rendeiro, Charles Dietz",
+    author=u"Nathan Sheffield, Vince Reuter, Johanna Klughammer, Andre Rendeiro",
     license="GPL2",
     entry_points={
         "console_scripts": [
