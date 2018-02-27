@@ -5,15 +5,11 @@
 [![Documentation Status](http://readthedocs.org/projects/looper/badge/?version=latest)](http://looper.readthedocs.io/en/latest/?badge=latest)
 [![Build Status](https://travis-ci.org/pepkit/looper.svg?branch=master)](https://travis-ci.org/pepkit/looper)
 
-`Looper` is a pipeline submission engine. It reads project metadata in [standard PEP format](http://pepkit.github.io) and maps sample inputs to any command-line tool. It provides a convenient interface for submitting pipelines for bioinformatics research projects with many samples. 
+`Looper` is a pipeline submission engine. It reads project metadata in [standard PEP format](http://pepkit.github.io) and maps sample inputs to any command-line tool. The typical use case is to run a bioinformatics pipeline across many different inputs. Looper provides a convenient interface for submitting pipelines to any cluster resource manager. Looper was conceived to use [pypiper pipelines](https://github.com/epigen/pypiper/), but it is in fact compatible with any tool that can be run via the command line.
 
-Looper was conceived to use [pypiper pipelines](https://github.com/epigen/pypiper/), but it is in fact compatible with any tool that can be run via the command line.
+You can download the latest version from the [releases page](https://github.com/pepkit/looper/releases) or at [pypi](https://pypi.python.org/pypi/looper/). You can find a list of looper-compatible pipelines in the [hello looper! repository](https://github.com/pepkit/hello_looper/blob/master/looper_pipelines.md). `Looper` is built on the python [peppy](http://github.com/pepkit/peppy) package. `Looper` and `peppy` were originally developed together as a single package, but `peppy` has been extracted to make the projects more modular. `Looper` now imports `peppy` for its sample input and processing, and `peppy` can be used independently of `looper`.
 
-You can download the latest version from the [releases page](https://github.com/pepkit/looper/releases).
-
-The documentation is hosted at [Read the Docs](http://looper.readthedocs.org/). 
-
-You can find a list of looper-compatible pipelines in the [hello looper! repository](https://github.com/pepkit/hello_looper/blob/master/looper_pipelines.md).
+You should start with the documentation, which is hosted at [Read the Docs](http://looper.readthedocs.org/). 
 
 # Install and quick start
 
@@ -21,7 +17,7 @@ Detailed instructions are in the [Read the Docs documentation](http://looper.rea
 
 
 ```
-pip install --user https://github.com/pepkit/looper/zipball/master
+pip install --user looper
 export PATH=$PATH:~/.local/bin
 ```
 
@@ -31,14 +27,9 @@ To use looper with your project, you must define your project using [standard PE
 looper run project_config.yaml
 ```
 
-
 # Installation troubleshooting
 
 Looper supports Python 2.7 and Python 3, and has been tested in Linux. If you clone this repository and then an attempt at local installation, e.g. with `pip install --upgrade ./`, fails, this may be due to an issue with `setuptools` and `six`. A `FileNotFoundError` (Python 3) or an `IOError` (Python2), with a message/traceback about a nonexistent `METADATA` file means that this is even more likely the cause. To get around this, you can first manually `pip install --upgrade six` or `pip install six==1.11.0`, as upgrading from `six` from 1.10.0 to 1.11.0 resolves this issue, then retry the `looper` installation.
-
-# Portable Encapsulated Projects
-
-`Looper` is built on the python [`peppy`](http://github.com/pepkit/peppy) package. `Looper` and `peppy` were originally developed together as a single package, but `peppy` has been extracted to make the projects more modular. `Looper` now imports `peppy` for its sample input and processing, and `peppy` can be used independently of `looper`.
 
 # Contributing
 

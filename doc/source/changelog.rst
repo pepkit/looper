@@ -1,6 +1,13 @@
 Changelog
 ******************************
 
+- **v0.8.1** (*2018-02-27*):
+
+  - Changed
+
+    - Minor documentation and packaging updates for first Pypi release.
+
+
 - **v0.8.0** (*2018-01-19*):
 
   - Changed
