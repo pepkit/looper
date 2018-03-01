@@ -7,7 +7,7 @@ Handling multiple input files
 Sometimes you have multiple input files that you want to merge for one sample. For example, a common use case is a single library that was spread across multiple sequencing lanes, yielding multiple input files that need to be merged, and then run through the pipeline as one. Rather than putting multiple lines in your sample annotation sheet, which causes conceptual and analytical challenges, we introduce two ways to merge these:
 
 1. Use shell expansion characters (like '*' or '[]') in your `data_source` definition or filename (good for simple merges)
-2. Specify a *merge table* which maps input files to samples for samples with more than one input file (infinitely customizable for more complicated merges).
+2. Specify a *sample subannotation* which maps input files to samples for samples with more than one input file (infinitely customizable for more complicated merges).
 
 To do the first option, just change your data source specifications, like this:
 
@@ -16,10 +16,10 @@ To do the first option, just change your data source specifications, like this:
       data_R1: "${DATA}/{id}_S{nexseq_num}_L00*_R1_001.fastq.gz"
       data_R2: "${DATA}/{id}_S{nexseq_num}_L00*_R2_001.fastq.gz"
 
-To do the second option, just provide a merge table in the *metadata* section of your project config:
+To do the second option, just provide a sample subannotation in the *metadata* section of your project config:
 
 metadata:
-  merge_table: mergetable.csv
+  sample_subannotation: mergetable.csv
 
 Make sure the ``sample_name`` column of this table matches, and then include any columns you need to point to the data. ``Looper`` will automatically include all of these files as input passed to the pipelines. Warning: do not use both of these options simultaneously for the same sample, it will lead to multiple merges.
 
