@@ -565,7 +565,7 @@ class Summarizer(Executor):
 
         columns = []
         stats = []
-        figs = []
+        figs = _pd.DataFrame()
 
         for sample in self.prj.samples:
             _LOGGER.info(self.counter.show(sample.sample_name, sample.protocol))
@@ -612,14 +612,8 @@ class Summarizer(Executor):
 
             t = _pd.read_table(
                 figs_file, header=None, names=['key', 'value', 'pl'])
-
-            t.drop_duplicates(subset=['key', 'pl'], keep='last', inplace=True)
-
-            t.loc[:, 'plkey'] = t['pl'] + ":" + t['key']
-            dupes = t.duplicated(subset=['key'], keep=False)
-            t.loc[dupes, 'key'] = t.loc[dupes, 'plkey']
-
-            figs.append(t)
+            t['sample_name'] = sample.name
+            figs = figs.append(t, ignore_index=True)
 
         # all samples are parsed. Produce file.
 
@@ -646,11 +640,22 @@ class Summarizer(Executor):
             root=os.path.join(self.prj.metadata.output_dir, self.prj.name))
 
         figs_html_file = open(figs_html_path, 'w')
+        html_header = "<html><h1>Summary of sample figures for project {}</h1>\n".format(self.prj.name)
+        figs_html_file.write(html_header)
+        sample_img_header = "<h3>{sample_name}</h3>\n"
+        sample_img_code = "<p><a href='{path}'><img src='{path}'>{key}</a></p>\n"
 
-        img_code = "<h1>{key}</h1><a href='{path}'><img src='{path}'></a>\n"
-        for fig in figs:
-            figs_html_file.write(img_code.format(
-                key=str(fig['key']), path=fig['value']))
+        figs.drop_duplicates(keep='last', inplace=True)
+        for sample_name in figs['sample_name'].drop_duplicates().sort_values():
+            f = figs[figs['sample_name'] == sample_name]
+            figs_html_file.write(sample_img_header.format(sample_name=sample_name))
+
+            for i, row in f.iterrows():
+                figs_html_file.write(sample_img_code.format(
+                    key=str(row['key']), path=row['value']))
+
+        html_footer = "</html>"
+        figs_html_file.write(html_footer)
 
         figs_html_file.close()
         _LOGGER.info(
