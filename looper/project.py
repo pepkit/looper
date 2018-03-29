@@ -95,6 +95,8 @@ class Project(peppy.Project):
             those already mapped and those not yet mapped
         """
 
+        protocol = alpha_cased(protocol)
+
         if not priority:
             raise NotImplementedError(
                 "Currently, only prioritized protocol mapping is supported "
