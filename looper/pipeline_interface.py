@@ -74,7 +74,9 @@ class PipelineInterface(object):
                 pipe_data["path"] = pipe_path
 
         self.pipe_iface = self.pipe_iface_config["pipelines"]
-        self.protomap = self.pipe_iface_config["protocol_mapping"]
+        self.protomap = {utils.alpha_cased(proto): pipekey
+                         for proto, pipekey in
+                         self.pipe_iface_config["protocol_mapping"].items()}
 
 
     def __getitem__(self, item):
