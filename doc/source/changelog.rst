@@ -1,11 +1,15 @@
 Changelog
 ******************************
 
-- **v0.8.1** (*2018-02-27*):
+- **v0.8.1** (*2018-04-02*):
 
   - Changed
 
     - Minor documentation and packaging updates for first Pypi release.
+
+    - Fix a bug that incorrectly mapped protocols due to case sensitive issues
+
+    - Fix a bug with ``report_figure`` that made it output pandas code
 
 
 - **v0.8.0** (*2018-01-19*):

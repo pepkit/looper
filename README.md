@@ -17,7 +17,7 @@ Detailed instructions are in the [Read the Docs documentation](http://looper.rea
 
 
 ```
-pip install --user looper
+pip install --user https://github.com/pepkit/looper/zipball/master
 export PATH=$PATH:~/.local/bin
 ```
 
