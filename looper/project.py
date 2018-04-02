@@ -95,6 +95,8 @@ class Project(peppy.Project):
             those already mapped and those not yet mapped
         """
 
+        protocol = alpha_cased(protocol)
+
         if not priority:
             raise NotImplementedError(
                 "Currently, only prioritized protocol mapping is supported "
@@ -110,11 +112,12 @@ class Project(peppy.Project):
                 self.interfaces_by_protocol[protocol]
         except KeyError:
             # Messaging can be done by the caller.
+            _LOGGER.debug("No interface for protocol: %s", protocol)
             return []
 
         job_submission_bundles = []
         pipeline_keys_used = set()
-        _LOGGER.debug("Building pipelines for {} PIs...".
+        _LOGGER.debug("Building pipelines for {} interface(s)...".
                       format(len(pipeline_interfaces)))
 
         bundle_by_strict_pipe_key = {}
@@ -131,6 +134,8 @@ class Project(peppy.Project):
 
             this_protocol_pipelines = pipe_iface.fetch_pipelines(protocol)
             if not this_protocol_pipelines:
+                _LOGGER.debug("No pipelines; available: {}".format(
+                        ", ".join(pipe_iface.protomap.keys())))
                 continue
 
             # TODO: update once dependency-encoding logic is in place.
