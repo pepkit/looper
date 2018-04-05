@@ -9,7 +9,7 @@
 
 * **it completely divides sample handling from pipeline processing**. This modular approach simplifies the pipeline-building process because pipelines no longer need to worry about sample metadata parsing. 
 * **it subscribes to a single, standardized project metadata format**. `Looper` reads project metadata in [standard PEP format](http://pepkit.github.io) using [peppy](http://github.com/pepkit/peppy). It then maps sample inputs to any command-line tool. This means you only need to learn 1 way to format your project metadata, and it will work with any pipeline.
-* **it provides a universal implementation of sample-parallelization**, so individual pipelines do not need reinvent the wheel. This allows looper to provide a convenient interface for submitting pipelines either to local compute or to any cluster resource manager.
+* **it provides a universal implementation of sample-parallelization**, so individual pipelines do not need reinvent the wheel. This allows looper to provide a convenient interface for submitting pipelines either to local compute or to any cluster resource manager, so individual pipeline authors do not need to worry about cluster job submission at all.
 * **it is compatible with any command-line tool**. Looper was conceived to use [pypiper pipelines](https://github.com/databio/pypiper/), but it is in fact compatible with any tool that can be run via the command line.
 
 You can download the latest version from the [releases page](https://github.com/pepkit/looper/releases). You can find a list of looper-compatible pipelines in the [hello looper! repository](https://github.com/pepkit/hello_looper/blob/master/looper_pipelines.md). 
