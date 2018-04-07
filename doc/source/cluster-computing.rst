@@ -1,6 +1,6 @@
 .. _cluster-resource-managers:
 
-How to connect to a compute cluster
+How to run jobs on a cluster
 =============================================
 
 By default, looper will build a shell script for each sample and then run each sample serially on the local computer. But where looper really excels is in large projects that require submitting these jobs to a cluster resource manager (like SLURM, SGE, LFS, etc.). Looper handles the interface to the resource manager so that projects and pipelines can be moved to different environments with ease. 

@@ -19,7 +19,12 @@ FAQ
 - How can I resubmit a subset of jobs that failed?
 	By default, looper **will not submit a job that has already run**. If you want to re-rerun a sample (maybe you've updated the pipeline, or you want to run restart a failed attempt), you can do so by passing ``--ignore-flags`` to looper at startup, but this will **resubmit all samples**. If you only want to re-run or restart a few samples, it's best to just delete the flag files manually for the samples you want to restart, then use ``looper run`` as normal.	
 
-
 - Can I pass additional command-line arguments to my pipeline on-the-fly?
 	Yes! Any command-line arguments passed to `looper run` *that are not consumed by looper* will simply be handed off untouched to *all the pipelines*. This gives you a handy way to pass-through command-line arguments that you want passed to every job in a given looper run.	For example, you may run `looper run config.yaml -R` -- since `looper `does not understand `-R`, this will be passed to every pipeline.
 
+	For example, pypiper pipelines understand the `--recover` flag; so if you want to pass this flag through `looper` to all your pipeline runs, you may run `looper run config.yaml --recover`. Since `looper `does not understand `--recover`, this will be passed to every pipeline. Obviously, this feature is limited to passing flags that `looper` does not understand, because those arguments will be consumed by `looper` and not passed through to individual pipelines.
+
+- How can I analyze my project interactively?
+	Looper uses the ``peppy`` package to model Project and Sample objects under the hood. These project objects are actually useful outside of looper. If you define your project using looper's :doc:`standardized project definition format <define-your-project>` , you can use the project models to instantiate an in memory representation of your project and all of its samples, without using looper. 
+
+	If you're interested in this, you should check out the `peppy package <http://peppy.readthedocs.io/en/latest/models.html>`_. All the documentation for model objects has moved there.

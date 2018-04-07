@@ -1,4 +1,4 @@
-Writing a pipeline interface
+How to write a pipeline interface
 =============================================
 
 .. HINT:: 

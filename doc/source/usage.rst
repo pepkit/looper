@@ -1,4 +1,4 @@
-Usage 
+Usage reference
 ******************************
 
 Looper doesn't just run pipelines; it can also check and summarize the progress of your jobs, as well as remove all files created by them.
