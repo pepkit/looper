@@ -34,16 +34,9 @@ Contents
 	config-files.rst
 
 .. toctree::
-	:caption: Project Models
-	:maxdepth: 2
-
-	models.rst
-
-.. toctree::
 	:caption: Further Reading
 	:maxdepth: 1
 
-	api.rst
 	faq.rst
 	changelog.rst
 	support.rst
