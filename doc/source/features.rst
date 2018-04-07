@@ -1,5 +1,5 @@
 
-Features
+Features and benefits
 ******************************
 
 Simplicity for the beginning, power when you need to expand.

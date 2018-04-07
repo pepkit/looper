@@ -8,7 +8,7 @@ First, install looper and pypiper. `Pypiper <https://pypiper.readthedocs.io>`_ i
 .. code:: bash
 
 	pip install --user https://github.com/pepkit/looper/zipball/master
-	pip install --user https://github.com/epigen/pypiper/zipball/master
+	pip install --user https://github.com/databio/pypiper/zipball/master
 
 
 Now, you will need to grab a project to run, and some pipelines to run on it. We have a functional working project example and an open source pipeline repository on github.
@@ -37,8 +37,8 @@ Outputs of pipeline runs will be under the directory specified in the ``output_d
 
 Inside there will be two directories:
 
--  ``results_pipeline`` - a directory containing one directory with the output of the pipelines, for each sample.
--  ``submissions`` - which holds yaml representations of the samples and log files of the submited jobs.
+-  ``results_pipeline`` - pipeline results with one subdirectory per sample
+-  ``submissions`` - yaml representations of the samples and log files of the submitted jobs.
 
 In this example, we just ran one example sample (an amplicon sequencing library) through a pipeline that processes amplicon data (to determine percentage of indels in amplicon).
 
@@ -51,8 +51,7 @@ To use looper on your own, you will need to prepare 2 things: your project (what
 
 1. **Project**. To link your project to looper, you will need to :doc:`define your project <define-your-project>` using looper's standard format. 
 
-	
-2.  **Pipelines**. You will want to either use pre-made looper-compatible pipelines, or link your own, custom built pipelines. Either way, the next section includes detailed instructions  on how to :doc:`connect your pipeline to looper <pipeline-interface>`.
+2.  **Pipelines**. You will want to either use pre-made looper-compatible pipelines, or link your own, custom built pipelines. Either way, the next section includes detailed instructions  on how to :doc:`connect your project to your pipeline <linking-a-pipeline>`.
 
 
 
