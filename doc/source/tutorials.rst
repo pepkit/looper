@@ -8,7 +8,7 @@ First, install looper and pypiper. `Pypiper <https://pypiper.readthedocs.io>`_ i
 .. code:: bash
 
 	pip install --user https://github.com/pepkit/looper/zipball/master
-	pip install --user https://github.com/epigen/pypiper/zipball/master
+	pip install --user https://github.com/databio/pypiper/zipball/master
 
 
 Now, you will need to grab a project to run, and some pipelines to run on it. We have a functional working project example and an open source pipeline repository on github.

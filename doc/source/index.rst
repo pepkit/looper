@@ -7,36 +7,30 @@ Contents
 ^^^^^^^^
 
 .. toctree::
-	:caption: Getting Started
+	:caption: Getting started
 	:maxdepth: 1
 
 	intro.rst
-	hello-world.rst
 	features.rst
-	usage.rst
+	hello-world.rst
 	tutorials.rst
 
 .. toctree::
 	:maxdepth: 2
-	:caption: Using Looper in Production
+	:caption: How-to guides
 
 	define-your-project.rst
-	derived-columns.rst
-	implied-columns.rst
+	linking-a-project.rst
+	pipeline-interface.rst
 	cluster-computing.rst
 	advanced.rst
-
-.. toctree::
-	:caption: Developing and Linking Pipelines
-	:maxdepth: 2
-
-	pipeline-interface.rst
 	config-files.rst
 
 .. toctree::
-	:caption: Further Reading
+	:caption: Reference
 	:maxdepth: 1
 
+	usage.rst
 	faq.rst
 	changelog.rst
 	support.rst
