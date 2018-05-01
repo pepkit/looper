@@ -127,7 +127,7 @@ def parse_arguments():
     run_subparser.add_argument(
             "--lump", type=float, default=None,
             help="Maximum total input file size for a lump/batch of commands "
-                 "in a single job")
+                 "in a single job (in GB)")
     run_subparser.add_argument(
             "--lumpn", type=int, default=None,
             help="Number of individual scripts grouped into single submission")
