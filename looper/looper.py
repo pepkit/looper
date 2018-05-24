@@ -111,6 +111,14 @@ def parse_arguments():
                  "'running' or 'failed'). Set this option to ignore flags "
                  "and submit the runs anyway.")
     run_subparser.add_argument(
+            "--ignore-duplicate-names",
+            action="store_true",
+            help="Ignore duplicate names? Default: False. "
+                 "By default, pipelines will not be submitted if a sample name "
+                 "is duplicated, since samples names should be unique.  "
+                 " Set this option to override this setting and "
+                 "and submit the runs anyway.")
+    run_subparser.add_argument(
             "--compute", dest="compute",
             help="YAML file with looper environment compute settings.")
     run_subparser.add_argument(
@@ -436,9 +444,12 @@ class Runner(Executor):
                     sample.sample_name, sample.protocol))
             skip_reasons = []
 
-            # Don't submit samples with duplicate names.
+            # Don't submit samples with duplicate names unless suppressed.
             if sample.sample_name in processed_samples:
-                skip_reasons.append("Duplicate sample name")
+                if args.ignore_duplicate_names:
+                    _LOGGER.warn("Duplicate name detected, but submitting anyway")
+                else:
+                    skip_reasons.append("Duplicate sample name")
 
             # Check if sample should be run.
             if sample.is_dormant():
