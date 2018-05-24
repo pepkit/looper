@@ -1,30 +1,5 @@
-How to link a pipeline to your project
+How to write a pipeline interface
 =============================================
-
-Looper links to pipelines through a file called the `pipeline_interface`. How you use this depends on if you're using an existing pipeline or building a new pipeline. 
-
-* **If you're using pre-made looper pipelines**, you don't need to create a new interface; you just point your project at the one that comes with the pipeline. See the first section below, `Linking a looper-compatible pipeline`.
-
-* **If you need to link a new pipeline to looper**, then you'll need to create a new pipeline interface file. See the second section below, `Linking a custom pipeline`.
-
-
-Linking a looper-compatible pipeline
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Many projects will require only existing pipelines that are already looper-compatible. We maintain a (growing) list of known publicly available `looper-compatible pipelines <https://github.com/pepkit/hello_looper/blob/master/looper_pipelines.md>`_ that will give you a good place to start. This list includes pipelines for data types like RNA-seq, bisulfite sequencing, etc.
-
-To use one of these pipelines, just clone the repository and the point your project to that pipeline's `pipeline_interface` file. You do this with the `pipeline_interfaces` attribute in the `metadata` section of your `project_config` file:
-
-.. code-block:: yaml
-
-  metadata:
-    pipeline_interfaces: /path/to/pipeline_interface.yaml
-
-This value should be the absolute path to the pipeline interface file. After that, you just need to make sure your project definition provides all the necessary sample metadata that is required by the pipeline you want to use. For example, you will need to make sure your sample annotation sheet specifies the correct value under `protocol` that your linked pipeline understands. These details are specific to each pipeline and should be defined in the pipeline's README.
-
-
-Linking a custom pipeline
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. HINT:: 
 

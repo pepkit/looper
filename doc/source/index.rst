@@ -1,49 +1,37 @@
-Welcome
-^^^^^^^^
+Looper documentation
+^^^^^^^^^^^^^^^^^^^^
 
-Deploying pipelines just got easier. Looper is a python application that deploys pipelines across samples with minimal effort. Looper is **not** a pipeline development framework; it does not help develop pipelines, but sits a layer above the pipeline to manage projects and samples for any type of pipeline. To get started, proceed with the :doc:`Introduction <intro>`. If you're looking for actual pipelines, you can find a list in the `Hello, Looper! example repository <https://github.com/databio/hello_looper>`_.
+Looper is a python application that deploys pipelines across samples with minimal effort. To get started, proceed with the :doc:`Introduction <intro>`. If you're looking for actual pipelines, you can find a list in the `Hello, Looper! example repository <https://github.com/databio/hello_looper>`_.
 
 Contents
 ^^^^^^^^
 
 .. toctree::
-	:caption: Getting Started
+	:caption: Getting started
 	:maxdepth: 1
 
 	intro.rst
-	hello-world.rst
 	features.rst
-	usage.rst
+	hello-world.rst
 	tutorials.rst
 
 .. toctree::
 	:maxdepth: 2
-	:caption: Using Looper in Production
+	:caption: How-to guides
 
 	define-your-project.rst
-	derived-columns.rst
-	implied-columns.rst
-	cluster-computing.rst
-	advanced.rst
-
-.. toctree::
-	:caption: Developing and Linking Pipelines
-	:maxdepth: 2
-
+	linking-a-pipeline.rst
+	linking-multiple-pipelines.rst
 	pipeline-interface.rst
-	config-files.rst
+	cluster-computing.rst
+	how-to-merge-inputs.rst
 
 .. toctree::
-	:caption: Project Models
-	:maxdepth: 2
-
-	models.rst
-
-.. toctree::
-	:caption: Further Reading
+	:caption: Reference
 	:maxdepth: 1
 
-	api.rst
+	usage.rst
+	config-files.rst
 	faq.rst
 	changelog.rst
 	support.rst

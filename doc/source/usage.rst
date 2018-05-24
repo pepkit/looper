@@ -1,4 +1,4 @@
-Usage 
+Usage reference
 ******************************
 
 Looper doesn't just run pipelines; it can also check and summarize the progress of your jobs, as well as remove all files created by them.
@@ -22,7 +22,7 @@ Here you can see the command-line usage instructions for the main looper command
 
 .. code-block:: none
 
-	version: 0.7.2
+	version: 0.8.1
 	usage: looper [-h] [-V] [--logfile LOGFILE] [--verbosity {0,1,2,3,4}] [--dbg]
 	              {run,summarize,destroy,check,clean} ...
 	
@@ -46,14 +46,14 @@ Here you can see the command-line usage instructions for the main looper command
 	  --dbg                 Turn on debug mode (default: False)
 	
 	For subcommand-specific options, type: 'looper <subcommand> -h'
-	https://github.com/pepkit/looper
+	https://github.com/peppykit/looper
 
 ``looper run --help``
 ----------------------------------
 
 .. code-block:: none
 
-	version: 0.7.2
+	version: 0.8.1
 	usage: looper run [-h] [-t TIME_DELAY] [--ignore-flags] [--compute COMPUTE]
 	                  [--env ENV] [--limit LIMIT] [--lump LUMP] [--lumpn LUMPN]
 	                  [--file-checks] [-d]
@@ -100,7 +100,7 @@ Here you can see the command-line usage instructions for the main looper command
 
 .. code-block:: none
 
-	version: 0.7.2
+	version: 0.8.1
 	usage: looper summarize [-h] [--file-checks] [-d]
 	                        [--exclude-protocols [EXCLUDE_PROTOCOLS [EXCLUDE_PROTOCOLS ...]]
 	                        | --include-protocols
@@ -131,7 +131,7 @@ Here you can see the command-line usage instructions for the main looper command
 
 .. code-block:: none
 
-	version: 0.7.2
+	version: 0.8.1
 	usage: looper destroy [-h] [--file-checks] [-d]
 	                      [--exclude-protocols [EXCLUDE_PROTOCOLS [EXCLUDE_PROTOCOLS ...]]
 	                      | --include-protocols
@@ -162,7 +162,7 @@ Here you can see the command-line usage instructions for the main looper command
 
 .. code-block:: none
 
-	version: 0.7.2
+	version: 0.8.1
 	usage: looper check [-h] [-A] [-F [FLAGS [FLAGS ...]]] [--file-checks] [-d]
 	                    [--exclude-protocols [EXCLUDE_PROTOCOLS [EXCLUDE_PROTOCOLS ...]]
 	                    | --include-protocols
@@ -198,7 +198,7 @@ Here you can see the command-line usage instructions for the main looper command
 
 .. code-block:: none
 
-	version: 0.7.2
+	version: 0.8.1
 	usage: looper clean [-h] [--file-checks] [-d]
 	                    [--exclude-protocols [EXCLUDE_PROTOCOLS [EXCLUDE_PROTOCOLS ...]]
 	                    | --include-protocols
@@ -223,34 +223,3 @@ Here you can see the command-line usage instructions for the main looper command
 	                        protocols; if not provided, all samples are used.
 	  --sp SUBPROJECT       Name of subproject to use, as designated in the
 	                        project's configuration file
-
-``looper --help``
-----------------------------------
-
-.. code-block:: none
-
-	version: 0.7.2
-	usage: looper [-h] [-V] [--logfile LOGFILE] [--verbosity {0,1,2,3,4}] [--dbg]
-	              {run,summarize,destroy,check,clean} ...
-	
-	looper - Loop through samples and submit pipelines.
-	
-	positional arguments:
-	  {run,summarize,destroy,check,clean}
-	    run                 Main Looper function: Submit jobs for samples.
-	    summarize           Summarize statistics of project samples.
-	    destroy             Remove all files of the project.
-	    check               Checks flag status of current runs.
-	    clean               Runs clean scripts to remove intermediate files of
-	                        already processed jobs.
-	
-	optional arguments:
-	  -h, --help            show this help message and exit
-	  -V, --version         show program's version number and exit
-	  --logfile LOGFILE     Optional output file for looper logs (default: None)
-	  --verbosity {0,1,2,3,4}
-	                        Choose level of verbosity (default: None)
-	  --dbg                 Turn on debug mode (default: False)
-	
-	For subcommand-specific options, type: 'looper <subcommand> -h'
-	https://github.com/pepkit/looper
