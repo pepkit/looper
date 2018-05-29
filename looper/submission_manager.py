@@ -444,7 +444,7 @@ class SubmissionConductor(object):
             placeholder = "{" + str(k).upper() + "}"
             script_data = script_data.replace(placeholder, str(v))
         
-        keys_left = re.findall(r'\{(.+?)\}', script_data)
+        keys_left = re.findall(r'!$\{(.+?)\}', script_data)
 
         if len(keys_left) > 0:
             _LOGGER.warn("> Warning: Submission template variables are not all populated: '%s'", str(keys_left))

@@ -24,6 +24,7 @@ Contents
 	linking-multiple-pipelines.rst
 	pipeline-interface.rst
 	cluster-computing.rst
+	containers.rst
 	how-to-merge-inputs.rst
 
 .. toctree::
