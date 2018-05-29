@@ -212,7 +212,13 @@ def parse_arguments():
 
 
 class Executor(object):
-    """ Base class that ensures the program's Sample counter starts. """
+    """ Base class that ensures the program's Sample counter starts. 
+
+    Looper is made up of a series of child classes that each extend the base
+    Executor class. Each child class does a particular task (such as run the
+    project, summarize the project, destroy the project, etc). The parent
+    Executor class simply holds the code that is common to all child classes,
+    such as counting samples as the class does its thing."""
 
     __metaclass__ = abc.ABCMeta
 
@@ -413,7 +419,7 @@ class Runner(Executor):
                         pl_key, pl_iface, script_with_flags, self.prj,
                         args.dry_run, args.time_delay, sample_subtype,
                         remaining_args, args.ignore_flags,
-                        self.prj.compute.partition,
+                        self.prj.compute,
                         max_cmds=args.lumpn, max_size=args.lump)
                 submission_conductors[pl_key] = conductor
                 pipe_keys_by_protocol[proto_key].append(pl_key)

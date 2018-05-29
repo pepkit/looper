@@ -40,7 +40,7 @@ class SubmissionConductor(object):
 
     def __init__(self, pipeline_key, pipeline_interface, cmd_base, prj,
                  dry_run=False, delay=0, sample_subtype=None, extra_args=None,
-                 ignore_flags=False, partition=None,
+                 ignore_flags=False, compute_variables=None,
                  max_cmds=None, max_size=None, automatic=True):
         """
         Create a job submission manager.
@@ -70,8 +70,9 @@ class SubmissionConductor(object):
             each command within each job generated
         :param bool ignore_flags: Whether to ignore flag files present in
             the sample folder for each sample considered for submission
-        :param str partition: Name of the cluster partition to which job(s)
-            will be submitted
+        :param str compute variables: A dict with variables that will be made
+            available to the compute package. For example, this should include
+            the name of the cluster partition to which job(s) will be submitted
         :param int | NoneType max_cmds: Upper bound on number of commands to
             include in a single job script.
         :param int | float | NoneType max_size: Upper bound on total file
@@ -91,7 +92,7 @@ class SubmissionConductor(object):
         self.delay = float(delay)
 
         self.sample_subtype = sample_subtype or Sample
-        self.partition = partition
+        self.compute_variables = compute_variables
         if extra_args:
             self.extra_args_text = "{}".format(" ".join(extra_args))
         else:
@@ -302,8 +303,9 @@ class SubmissionConductor(object):
                          "(%.2f Gb)", len(self._pool), self._curr_size)
             settings = self.pl_iface.choose_resource_package(
                 self.pl_key, self._curr_size)
-            if self.partition:
-                settings["partition"] = self.partition
+            if self.compute_variables:
+                #settings["partition"] = self.partition
+                settings.update(self.compute_variables)
             if self.uses_looper_args:
                 settings.setdefault("cores", 1)
                 looper_argtext = \
