@@ -584,6 +584,8 @@ class Summarizer(Executor):
         stats = []
         figs = _pd.DataFrame()
 
+        # First, the generic summarize will pull together all the fits
+        # and stats from each sample into project-combined spreadsheets.
         for sample in self.prj.samples:
             _LOGGER.info(self.counter.show(sample.sample_name, sample.protocol))
             sample_output_folder = sample_folder(self.prj, sample)
@@ -650,33 +652,55 @@ class Summarizer(Executor):
 
         tsv_outfile.close()
 
-        figs_tsv_path = "{root}_figs_summary.tsv".format(
-            root=os.path.join(self.prj.metadata.output_dir, self.prj.name))
+        try:
 
-        figs_html_path = "{root}_figs_summary.html".format(
-            root=os.path.join(self.prj.metadata.output_dir, self.prj.name))
+            figs_tsv_path = "{root}_figs_summary.tsv".format(
+                root=os.path.join(self.prj.metadata.output_dir, self.prj.name))
 
-        figs_html_file = open(figs_html_path, 'w')
-        html_header = "<html><h1>Summary of sample figures for project {}</h1>\n".format(self.prj.name)
-        figs_html_file.write(html_header)
-        sample_img_header = "<h3>{sample_name}</h3>\n"
-        sample_img_code = "<p><a href='{path}'><img src='{path}'>{key}</a></p>\n"
+            figs_html_path = "{root}_figs_summary.html".format(
+                root=os.path.join(self.prj.metadata.output_dir, self.prj.name))
 
-        figs.drop_duplicates(keep='last', inplace=True)
-        for sample_name in figs['sample_name'].drop_duplicates().sort_values():
-            f = figs[figs['sample_name'] == sample_name]
-            figs_html_file.write(sample_img_header.format(sample_name=sample_name))
+            figs_html_file = open(figs_html_path, 'w')
+            html_header = "<html><h1>Summary of sample figures for project {}</h1>\n".format(self.prj.name)
+            figs_html_file.write(html_header)
+            sample_img_header = "<h3>{sample_name}</h3>\n"
+            sample_img_code = "<p><a href='{path}'><img src='{path}'>{key}</a></p>\n"
 
-            for i, row in f.iterrows():
-                figs_html_file.write(sample_img_code.format(
-                    key=str(row['key']), path=row['value']))
+            figs.drop_duplicates(keep='last', inplace=True)
+            for sample_name in figs['sample_name'].drop_duplicates().sort_values():
+                f = figs[figs['sample_name'] == sample_name]
+                figs_html_file.write(sample_img_header.format(sample_name=sample_name))
 
-        html_footer = "</html>"
-        figs_html_file.write(html_footer)
+                for i, row in f.iterrows():
+                    figs_html_file.write(sample_img_code.format(
+                        key=str(row['key']), path=row['value']))
 
-        figs_html_file.close()
+            html_footer = "</html>"
+            figs_html_file.write(html_footer)
+
+            figs_html_file.close()
+        except ValueError:
+            _LOGGER.info("No files found.")
         _LOGGER.info(
             "Summary (n=" + str(len(stats)) + "): " + tsv_outfile_path)
+
+        # Next, looper can run custom summarizers, if they exist.
+
+        all_protocols = [sample.protocol for sample in self.prj.samples]
+
+        print(all_protocols)
+        print(self.prj.interfaces_by_protocol)
+        for protocol in set(all_protocols):
+            ifaces = self.prj.interfaces_by_protocol[alpha_cased(protocol)]
+            for iface in ifaces:
+                print(iface)
+                pl = iface.fetch_pipelines(protocol)
+                summarizers = iface.get_attribute(pl,"summarizers")
+                for summarizer in summarizers:
+                    summarizer_abspath = os.path.join(
+                        os.path.dirname(iface.pipe_iface_file), summarizer)
+                    print([summarizer_abspath, self.prj.config_file])
+                    subprocess.call([summarizer_abspath, self.prj.config_file])
 
 
 
