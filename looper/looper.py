@@ -688,19 +688,22 @@ class Summarizer(Executor):
 
         all_protocols = [sample.protocol for sample in self.prj.samples]
 
-        print(all_protocols)
-        print(self.prj.interfaces_by_protocol)
+        _LOGGER.debug("Protocols: " + str(all_protocols))
+        _LOGGER.debug(self.prj.interfaces_by_protocol)
         for protocol in set(all_protocols):
             ifaces = self.prj.interfaces_by_protocol[alpha_cased(protocol)]
             for iface in ifaces:
-                print(iface)
+                _LOGGER.debug(iface)
                 pl = iface.fetch_pipelines(protocol)
                 summarizers = iface.get_attribute(pl,"summarizers")
                 for summarizer in summarizers:
                     summarizer_abspath = os.path.join(
                         os.path.dirname(iface.pipe_iface_file), summarizer)
-                    print([summarizer_abspath, self.prj.config_file])
-                    subprocess.call([summarizer_abspath, self.prj.config_file])
+                    _LOGGER.debug([summarizer_abspath, self.prj.config_file])
+                    try:
+                        subprocess.call([summarizer_abspath, self.prj.config_file])
+                    except OSError:
+                        _LOGGER.warn("Summarizer was unable to run: " + str(summarizer))
 
 
 
