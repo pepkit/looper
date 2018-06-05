@@ -566,6 +566,76 @@ class Summarizer(Executor):
         columns = []
         stats = []
         figs = _pd.DataFrame()
+        objs = _pd.DataFrame()
+        
+        def create_figures_html(figs):
+            # QUESTION: Is not being used? ...Original usage was?
+            # figs_tsv_path = "{root}_figs_summary.tsv".format(
+                # root=os.path.join(self.prj.metadata.output_dir, self.prj.name))
+
+            figs_html_path = "{root}_figs_summary.html".format(
+                root=os.path.join(self.prj.metadata.output_dir, self.prj.name))
+
+            figs_html_file = open(figs_html_path, 'w')
+            html_header = "<html><h1>Summary of sample figures for project {}</h1>\n".format(self.prj.name)
+            figs_html_file.write(html_header)
+            sample_img_header = "<h3>{sample_name}</h3>\n"
+            sample_img_code = "<p><a href='{path}'><img src='{path}'>{key}</a></p>\n"
+
+            figs.drop_duplicates(keep='last', inplace=True)
+            for sample_name in figs['sample_name'].drop_duplicates().sort_values():
+                f = figs[figs['sample_name'] == sample_name]
+                figs_html_file.write(
+                    sample_img_header.format(sample_name=sample_name))
+
+                for i, row in f.iterrows():
+                    figs_html_file.write(sample_img_code.format(
+                        key=str(row['key']),
+                        path=str(self.prj.metadata.results_subdir + '/' +
+                                 sample_name + '/' + row['value'])))
+
+            html_footer = "</html>"
+            figs_html_file.write(html_footer)
+
+            figs_html_file.close()
+            _LOGGER.info(
+                "Summary (n=" + str(len(stats)) + "): " + tsv_outfile_path)
+        
+        def create_objects_html(objs):
+            # objs_tsv_path = "{root}_objs_summary.tsv".format(
+                # root=os.path.join(self.prj.metadata.output_dir, self.prj.name))
+
+            objs_html_path = "{root}_objs_summary.html".format(
+                root=os.path.join(self.prj.metadata.output_dir, self.prj.name))
+
+            objs_html_file = open(objs_html_path, 'w')
+            html_header = "<html><h1>PEPATAC project summary for {}</h1>\n".format(self.prj.name)
+            objs_html_file.write(html_header)
+            sample_header   = "<h3>{sample_name}</h3>\n"
+            sample_obj_code = ("<p><a href='{path}'>"
+                               "<img src='{image}'>"
+                               "{label}</a></p>\n")
+
+            objs.drop_duplicates(keep='last', inplace=True)
+            for sample_name in objs['sample_name'].drop_duplicates().sort_values():
+                o = objs[objs['sample_name'] == sample_name]
+                objs_html_file.write(
+                    sample_header.format(sample_name=sample_name))
+
+                for i, row in o.iterrows():
+                    objs_html_file.write(sample_obj_code.format(
+                        label=str(row['key']),
+                        path=str(self.prj.metadata.results_subdir + '/' +
+                                 sample_name + '/' + row['filename']),
+                        image=str(self.prj.metadata.results_subdir + '/' +
+                                 sample_name + '/' + row['anchor_image'])))
+
+            html_footer = "</html>"
+            objs_html_file.write(html_footer)
+
+            objs_html_file.close()
+            _LOGGER.info(
+                "Summary (n=" + str(len(stats)) + "): " + tsv_outfile_path)
 
         for sample in self.prj.samples:
             _LOGGER.info(self.counter.show(sample.sample_name, sample.protocol))
@@ -602,20 +672,31 @@ class Summarizer(Executor):
         for sample in self.prj.samples:
             _LOGGER.info(self.counter.show(sample.sample_name, sample.protocol))
             sample_output_folder = sample_folder(self.prj, sample)
-            # Now process any reported figures
+            # Now process any reported figures            
             figs_file = os.path.join(sample_output_folder, "figures.tsv")
             if os.path.isfile(figs_file):
                 _LOGGER.info("Found figures file: '%s'", figs_file)
             else:
                 _LOGGER.warn("No figures file '%s'", figs_file)
                 continue
-
             t = _pd.read_table(
                 figs_file, header=None, names=['key', 'value', 'pl'])
             t['sample_name'] = sample.name
             figs = figs.append(t, ignore_index=True)
-
-        # all samples are parsed. Produce file.
+            
+            # Now process any reported objects
+            # TODO: only use the objects tsv once confirmed working
+            objs_file = os.path.join(sample_output_folder, "objects.tsv")
+            if os.path.isfile(objs_file):
+                _LOGGER.info("Found objects file: '%s'", objs_file)
+            else:
+                _LOGGER.warn("No objects file '%s'", objs_file)
+                continue
+            t = _pd.read_table(objs_file, header=None,
+                               names=['key', 'filename', 'anchor_text',
+                                      'anchor_image', 'annotation'])
+            t['sample_name'] = sample.name
+            objs = objs.append(t, ignore_index=True)
 
         tsv_outfile_path = os.path.join(self.prj.metadata.output_dir, self.prj.name)
         if hasattr(self.prj, "subproject") and self.prj.subproject:
@@ -631,37 +712,15 @@ class Summarizer(Executor):
         for row in stats:
             tsv_writer.writerow(row)
 
-        tsv_outfile.close()
+        tsv_outfile.close()            
+        
+        # all samples are parsed. 
+        # Produce figures html file.
+        #create_figures_html(figs)
+        # Produce objects html file.
+        create_objects_html(objs)
 
-        figs_tsv_path = "{root}_figs_summary.tsv".format(
-            root=os.path.join(self.prj.metadata.output_dir, self.prj.name))
-
-        figs_html_path = "{root}_figs_summary.html".format(
-            root=os.path.join(self.prj.metadata.output_dir, self.prj.name))
-
-        figs_html_file = open(figs_html_path, 'w')
-        html_header = "<html><h1>Summary of sample figures for project {}</h1>\n".format(self.prj.name)
-        figs_html_file.write(html_header)
-        sample_img_header = "<h3>{sample_name}</h3>\n"
-        sample_img_code = "<p><a href='{path}'><img src='{path}'>{key}</a></p>\n"
-
-        figs.drop_duplicates(keep='last', inplace=True)
-        for sample_name in figs['sample_name'].drop_duplicates().sort_values():
-            f = figs[figs['sample_name'] == sample_name]
-            figs_html_file.write(sample_img_header.format(sample_name=sample_name))
-
-            for i, row in f.iterrows():
-                figs_html_file.write(sample_img_code.format(
-                    key=str(row['key']), path=row['value']))
-
-        html_footer = "</html>"
-        figs_html_file.write(html_footer)
-
-        figs_html_file.close()
-        _LOGGER.info(
-            "Summary (n=" + str(len(stats)) + "): " + tsv_outfile_path)
-
-
+        
 
 def aggregate_exec_skip_reasons(skip_reasons_sample_pairs):
     """
