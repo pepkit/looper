@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Looper: a pipeline submission engine. https://github.com/peppykit/looper
+Looper: a pipeline submission engine. https://github.com/pepkit/looper
 """
 
 import abc
@@ -57,7 +57,7 @@ def parse_arguments():
     banner = "%(prog)s - Loop through samples and submit pipelines."
     additional_description = "For subcommand-specific options, type: " \
             "'%(prog)s <subcommand> -h'"
-    additional_description += "\nhttps://github.com/peppykit/looper"
+    additional_description += "\nhttps://github.com/pepkit/looper"
 
     parser = _VersionInHelpParser(
             description=banner,
@@ -111,6 +111,14 @@ def parse_arguments():
                  "'running' or 'failed'). Set this option to ignore flags "
                  "and submit the runs anyway.")
     run_subparser.add_argument(
+            "--ignore-duplicate-names",
+            action="store_true",
+            help="Ignore duplicate names? Default: False. "
+                 "By default, pipelines will not be submitted if a sample name "
+                 "is duplicated, since samples names should be unique.  "
+                 " Set this option to override this setting and "
+                 "and submit the runs anyway.")
+    run_subparser.add_argument(
             "--compute", dest="compute",
             help="YAML file with looper environment compute settings.")
     run_subparser.add_argument(
@@ -127,7 +135,7 @@ def parse_arguments():
     run_subparser.add_argument(
             "--lump", type=float, default=None,
             help="Maximum total input file size for a lump/batch of commands "
-                 "in a single job")
+                 "in a single job (in GB)")
     run_subparser.add_argument(
             "--lumpn", type=int, default=None,
             help="Number of individual scripts grouped into single submission")
@@ -204,7 +212,13 @@ def parse_arguments():
 
 
 class Executor(object):
-    """ Base class that ensures the program's Sample counter starts. """
+    """ Base class that ensures the program's Sample counter starts. 
+
+    Looper is made up of a series of child classes that each extend the base
+    Executor class. Each child class does a particular task (such as run the
+    project, summarize the project, destroy the project, etc). The parent
+    Executor class simply holds the code that is common to all child classes,
+    such as counting samples as the class does its thing."""
 
     __metaclass__ = abc.ABCMeta
 
@@ -405,7 +419,7 @@ class Runner(Executor):
                         pl_key, pl_iface, script_with_flags, self.prj,
                         args.dry_run, args.time_delay, sample_subtype,
                         remaining_args, args.ignore_flags,
-                        self.prj.compute.partition,
+                        self.prj.compute,
                         max_cmds=args.lumpn, max_size=args.lump)
                 submission_conductors[pl_key] = conductor
                 pipe_keys_by_protocol[proto_key].append(pl_key)
@@ -436,9 +450,12 @@ class Runner(Executor):
                     sample.sample_name, sample.protocol))
             skip_reasons = []
 
-            # Don't submit samples with duplicate names.
+            # Don't submit samples with duplicate names unless suppressed.
             if sample.sample_name in processed_samples:
-                skip_reasons.append("Duplicate sample name")
+                if args.ignore_duplicate_names:
+                    _LOGGER.warn("Duplicate name detected, but submitting anyway")
+                else:
+                    skip_reasons.append("Duplicate sample name")
 
             # Check if sample should be run.
             if sample.is_dormant():
@@ -565,13 +582,14 @@ class Summarizer(Executor):
 
         columns = []
         stats = []
-        figs = _pd.DataFrame()
+        #figs = _pd.DataFrame()
         objs = _pd.DataFrame()
         
         def create_figures_html(figs):
             # QUESTION: Is not being used? ...Original usage was?
             # figs_tsv_path = "{root}_figs_summary.tsv".format(
                 # root=os.path.join(self.prj.metadata.output_dir, self.prj.name))
+            # DEPRECATED
 
             figs_html_path = "{root}_figs_summary.html".format(
                 root=os.path.join(self.prj.metadata.output_dir, self.prj.name))
@@ -601,27 +619,71 @@ class Summarizer(Executor):
             _LOGGER.info(
                 "Summary (n=" + str(len(stats)) + "): " + tsv_outfile_path)
         
-        def create_objects_html(objs):
-            # objs_tsv_path = "{root}_objs_summary.tsv".format(
-                # root=os.path.join(self.prj.metadata.output_dir, self.prj.name))
-
+        def create_index_html(objs):
             objs_html_path = "{root}_objs_summary.html".format(
                 root=os.path.join(self.prj.metadata.output_dir, self.prj.name))
 
             objs_html_file = open(objs_html_path, 'w')
             html_header = "<html><h1>PEPATAC project summary for {}</h1>\n".format(self.prj.name)
             objs_html_file.write(html_header)
+            
+            table_header = ('<body>\n'
+                            '\t<h1>PEPATAC objects</h1>\n\n'
+                            '\t<table>\n'
+                            #'\t\t<caption>PEPATAC objects table</caption>\n'
+                            '\t\t<colgroup>\n'
+                            '\t\t\t<col span="2">\n'
+                            '\t\t\t<col style="border: 2px solid black">\n'
+                            '\t\t</colgroup>\n'
+                            '\t\t<thead>\n'
+                            '\t\t\t<tr>\n'
+                            '\t\t\t\t<td colspan="2"></td>\n'
+                            '\t\t\t\t<th scope="col">Object</th>\n'
+                            '\t\t\t\t<th scope="col">File</th>\n'
+                            '\t\t\t\t<th scope="col">Link</th>\n'
+                            '\t\t\t\t<th scope="col">Image</th>\n'
+                            '\t\t\t\t<th scope="col">Annotation</th>\n'
+                            '\t\t\t</tr>\n'
+                            '\t\t</thead>\n'
+                            '\t\t<tbody>\n'
+                            '\t\t\t<tr>\n')
+            table_footer = ('\t\t\t</tr>\n'
+                            '\t\t</tbody>\n'
+                            '\t</table>\n')                   
+            table_row = ('\t\t\t\t<th scope="row">{obj_row_name}</th>\n'
+                         '\t\t\t\t<td>{file}</td>\n'
+                         '\t\t\t\t<td>{link}</td>\n'
+                         '\t\t\t\t<td>{image}</td>\n'
+                         '\t\t\t\t<td>{annotation}</td>\n'
+                         '\t\t\t</tr>\n')
+            
             sample_header   = "<h3>{sample_name}</h3>\n"
             sample_obj_code = ("<p><a href='{path}'>"
                                "<img src='{image}'>"
-                               "{label}</a></p>\n")
+                               "{label}</a></p>\n\n")
+            sample_fastqc   = ("<p><a href='{fastqc1}'>{sample_name} r1"
+                               "FastQC Report</a></p>\n"
+                               "<p><a href='{fastqc2}'>{sample_name} r2"
+                               "FastQC Report</a></p>\n\n")
 
             objs.drop_duplicates(keep='last', inplace=True)
             for sample_name in objs['sample_name'].drop_duplicates().sort_values():
-                o = objs[objs['sample_name'] == sample_name]
+                o = objs[objs['sample_name'] == sample_name]                
+                objs_html_file.write(table_header)
+                
+                # Write objects table
+                for i, row in o.iterrows():
+                    objs_html_file.write(table_row.format(
+                        obj_row_name=str(row['key']),
+                        file=str(row['filename']),
+                        link=str(row['anchor_text']),
+                        image=str(row['anchor_image']),
+                        annotation=str(row['annotation'])))
+                objs_html_file.write(table_footer)  
+                
                 objs_html_file.write(
                     sample_header.format(sample_name=sample_name))
-
+                # Write sample images and fastQC links
                 for i, row in o.iterrows():
                     objs_html_file.write(sample_obj_code.format(
                         label=str(row['key']),
@@ -629,14 +691,25 @@ class Summarizer(Executor):
                                  sample_name + '/' + row['filename']),
                         image=str(self.prj.metadata.results_subdir + '/' +
                                  sample_name + '/' + row['anchor_image'])))
-
-            html_footer = "</html>"
+                    objs_html_file.write(sample_fastqc.format(
+                        fastqc1=str(self.prj.metadata.results_subdir + '/' +
+                                   sample_name + '/fastqc/' + sample_name +
+                                   '_R1.trim_fastqc.html'),
+                        fastqc2=str(self.prj.metadata.results_subdir + '/' +
+                                   sample_name + '/fastqc/' + sample_name +
+                                   '_R2.trim_fastqc.html'),
+                        sample_name=sample_name))
+                    
+            # Close html file
+            html_footer = ("</body>\n"
+                           "</html>")
             objs_html_file.write(html_footer)
 
             objs_html_file.close()
             _LOGGER.info(
                 "Summary (n=" + str(len(stats)) + "): " + tsv_outfile_path)
-
+        
+        # Create stats_summary file
         for sample in self.prj.samples:
             _LOGGER.info(self.counter.show(sample.sample_name, sample.protocol))
             sample_output_folder = sample_folder(self.prj, sample)
@@ -669,20 +742,21 @@ class Summarizer(Executor):
 
         self.counter.reset()
 
+        # Create objects summary file
         for sample in self.prj.samples:
             _LOGGER.info(self.counter.show(sample.sample_name, sample.protocol))
             sample_output_folder = sample_folder(self.prj, sample)
-            # Now process any reported figures            
-            figs_file = os.path.join(sample_output_folder, "figures.tsv")
-            if os.path.isfile(figs_file):
-                _LOGGER.info("Found figures file: '%s'", figs_file)
-            else:
-                _LOGGER.warn("No figures file '%s'", figs_file)
-                continue
-            t = _pd.read_table(
-                figs_file, header=None, names=['key', 'value', 'pl'])
-            t['sample_name'] = sample.name
-            figs = figs.append(t, ignore_index=True)
+            # Now process any reported figures <DEPRECATED>            
+            # figs_file = os.path.join(sample_output_folder, "figures.tsv")
+            # if os.path.isfile(figs_file):
+                # _LOGGER.info("Found figures file: '%s'", figs_file)
+            # else:
+                # _LOGGER.warn("No figures file '%s'", figs_file)
+                # continue
+            # t = _pd.read_table(
+                # figs_file, header=None, names=['key', 'value', 'pl'])
+            # t['sample_name'] = sample.name
+            # figs = figs.append(t, ignore_index=True)
             
             # Now process any reported objects
             # TODO: only use the objects tsv once confirmed working
@@ -715,10 +789,10 @@ class Summarizer(Executor):
         tsv_outfile.close()            
         
         # all samples are parsed. 
-        # Produce figures html file.
+        # Produce figures html file. <DEPRECATED>
         #create_figures_html(figs)
         # Produce objects html file.
-        create_objects_html(objs)
+        create_index_html(objs)
 
         
 
