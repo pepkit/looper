@@ -4,7 +4,7 @@ __author__ = "Jason Smith"
 __email__ = "jasonsmith@virginia.edu"
 
 # Table-related
-TABLE_STYLE = (
+TABLE_STYLE = \
 """
 <style type="text/css">
 	table.stats-table {
@@ -24,8 +24,8 @@ TABLE_STYLE = (
 	}
 </style>
 """
-)
-TABLE_HEADER = (
+
+TABLE_HEADER = \
 """
 <body>
 <h2>PEPATAC stats summary</h2>
@@ -34,39 +34,39 @@ TABLE_HEADER = (
     <thead>
         <tr class="stats-firstrow">
 """
-)
-TABLE_COLS = (
+
+TABLE_COLS = \
 """\
             <th>{col_val}</th>
 """
-)
-TABLE_COLS_FOOTER = (
+
+TABLE_COLS_FOOTER = \
 """\
         </tr>
     </thead>
     <tbody>
         <tr>
 """
-)
 
-TABLE_ROWS = (
+
+TABLE_ROWS = \
 """\
             <td>{row_val}</td>
 """
-)
-TABLE_FOOTER = (
+
+TABLE_FOOTER = \
 """\
         </tr>
     </tbody>
 </table>
 """
-)
-TABLE_ROWS_LINK = (
+
+TABLE_ROWS_LINK = \
 """\
             <td style="cursor:pointer" onclick="location.href='{html_page}'"><tlinks class="LN1 LN2 LN3 LN4 LN5" href="{page_name}" target="_top">{link_name}</a></td>
 """
-)
-LINKS_STYLE = (
+
+LINKS_STYLE = \
 """
 tlinks.LN1 {
   font-style:normal;
@@ -94,35 +94,60 @@ tlinks.LN5:active {
   text-decoration:none;
 }
 """
-)
+
 
 TABLE_VARS = ["TABLE_STYLE", "TABLE_HEADER", "TABLE_COLS",
               "TABLE_COLS_FOOTER", "TABLE_ROWS", "TABLE_FOOTER",
               "TABLE_ROWS_LINK", "LINKS_STYLE"]
 
 # Sample-page-related
-SAMPLE_HEADER = (
+SAMPLE_HEADER = \
 """\
 <html>
 <h1>{sample_name} figures</h1>
     <body>
-        <p><a href='{index_html}'>Return to summary page</a></p>
+        <p><a href='{index_html_path}'>Return to summary page</a></p>
 
 """
-)
-SAMPLE_PLOTS = (
+
+SAMPLE_PLOTS = \
 """\
         <p><a href='{path}'><img src='{image}'>{label}</a></p>
 """
-)
-SAMPLE_FOOTER = (
+
+SAMPLE_FOOTER = \
 """
-        <p><a href='{index_html}'>Return to summary page</a></p>
+        <p><a href='{index_html_path}'>Return to summary page</a></p>
     </body>
 </html>
 """
-)
+
 
 SAMPLE_VARS = ["SAMPLE_HEADER", "SAMPLE_PLOTS", "SAMPLE_FOOTER"]
 
-__all__ = TABLE_VARS + SAMPLE_VARS
+# Objects-page-related
+OBJECTS_HEADER = \
+"""\
+<html>
+<h1>{object_type} figures</h1>
+    <body>
+        <p><a href='{index_html_path}'>Return to summary page</a></p>
+
+"""
+
+OBJECTS_PLOTS = \
+"""\
+        <p><a href='{path}'><img src='{image}'>{label}</a></p>
+"""
+
+OBJECTS_FOOTER = \
+"""
+        <p><a href='{index_html_path}'>Return to summary page</a></p>
+    </body>
+</html>
+"""
+
+
+OBJECTS_VARS = ["OBJECTS_HEADER", "OBJECTS_PLOTS", "OBJECTS_FOOTER"]
+
+__all__ = TABLE_VARS + SAMPLE_VARS + OBJECTS_VARS
