@@ -25,6 +25,7 @@ from .exceptions import JobSubmissionException
 from .project import Project
 from .submission_manager import SubmissionConductor
 from .utils import fetch_flag_files, sample_folder
+from .html_vars import *    
 
 from peppy import \
     ProjectContext, COMPUTE_SETTINGS_VARNAME, SAMPLE_EXECUTION_TOGGLE
@@ -619,6 +620,23 @@ class Summarizer(Executor):
             _LOGGER.info(
                 "Summary (n=" + str(len(stats)) + "): " + tsv_outfile_path)
         
+        def create_sample_html(objs):
+            # TODO: Build a page for an individual sample with all of its plots
+            #       and? statistics
+            sample_html_path = "{root}_{sample}.html".format(
+                root=os.path.join(self.prj.metadata.output_dir, "reports",
+                                  self.prj.name),
+                sample=sample_name)
+            for sample_name in objs['sample_name'].drop_duplicates().sort_values():
+                o = objs[objs['sample_name'] == sample_name]
+
+        def create_object_html(objs):
+            # TODO: Build a page for each object type (e.g. all TSS plots)
+            object_html_path = "{root}_{obj_type}.html".format(
+                root=os.path.join(self.prj.metadata.output_dir, "reports",
+                                  self.prj.name),
+                sample=sample_name)
+
         def create_index_html(objs, stats):
             objs_html_path = "{root}_objs_summary.html".format(
                 root=os.path.join(self.prj.metadata.output_dir, self.prj.name))
@@ -626,57 +644,18 @@ class Summarizer(Executor):
             objs_html_file = open(objs_html_path, 'w')
             html_header = "<html><h1>PEPATAC project summary for {}</h1>\n".format(self.prj.name)
             objs_html_file.write(html_header)
-            
-            html_style = ('''
-<style type="text/css">
-	table.stats-table {
-		font-size: 12px;
-		border: 1px solid #CCC; 
-		font-family: Courier New, Courier, monospace;
-	} 
-	.stats-table td {
-		padding: 4px;
-		margin: 3px;
-		border: 1px solid #CCC;
-	}
-	.stats-table th {
-		background-color: #104E8B; 
-		color: #FFF;
-		font-weight: bold;
-	}
-</style>
-''')
-            objs_html_file.write(html_style)
-            table_header = ('''
-<body>
-<h2>PEPATAC stats summary</h2>
+            objs_html_file.write(TABLE_STYLE)
+            objs_html_file.write(TABLE_HEADER)
 
-<table class="stats-table">                           
-    <thead>
-        <tr class="stats-firstrow">''')
-            objs_html_file.write(table_header)
-            table_columns = ('''
-            <th>{col_val}</th>''')
-            table_columns_footer = ('''
-        </tr>
-    </thead>
-    <tbody>
-        <tr>''')
-            table_row = ('''
-            <td>{row_val}</td>''')
-            table_footer = ('''
-        </tr>
-    </tbody>
-</table>''')
             sample_header   = "<h3>{sample_name}</h3>\n"
 
             sample_obj_code = ("<p><a href='{path}'>"
                                "<img src='{image}'>"
                                "{label}</a></p>\n\n")
-            sample_fastqc   = ("<p><a href='{fastqc1}'>{sample_name} r1"
-                               "FastQC Report</a></p>\n"
-                               "<p><a href='{fastqc2}'>{sample_name} r2"
-                               "FastQC Report</a></p>\n\n")
+            # sample_fastqc   = ("<p><a href='{fastqc1}'>{sample_name} r1"
+                               # "FastQC Report</a></p>\n"
+                               # "<p><a href='{fastqc2}'>{sample_name} r2"
+                               # "FastQC Report</a></p>\n\n")
 
             objs.drop_duplicates(keep='last', inplace=True)
             for sample_name in objs['sample_name'].drop_duplicates().sort_values():
@@ -686,14 +665,14 @@ class Summarizer(Executor):
                 #print (stats[0])
                 for key, value in stats[0].items():
                     #print key, value
-                    objs_html_file.write(table_columns.format(
+                    objs_html_file.write(TABLE_COLS.format(
                         col_val=str(key)))
                     
-                objs_html_file.write(table_columns_footer)
+                objs_html_file.write(TABLE_COLS_FOOTER)
                 for key, value in stats[0].items():
-                    objs_html_file.write(table_row.format(
+                    objs_html_file.write(TABLE_ROWS.format(
                         row_val=str(value)))
-                objs_html_file.write(table_footer)  
+                objs_html_file.write(TABLE_FOOTER)
                 
                 objs_html_file.write(sample_header.format(sample_name=sample_name))
                 # Write sample images and fastQC links
