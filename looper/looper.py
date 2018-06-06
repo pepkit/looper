@@ -620,16 +620,32 @@ class Summarizer(Executor):
             _LOGGER.info(
                 "Summary (n=" + str(len(stats)) + "): " + tsv_outfile_path)
         
-        def create_sample_html(objs):
+        def create_sample_html(s_objs, s_name, s_html, objs_html):
             # TODO: Build a page for an individual sample with all of its plots
-            #       and? statistics
-            sample_html_path = "{root}_{sample}.html".format(
-                root=os.path.join(self.prj.metadata.output_dir, "reports",
-                                  self.prj.name),
-                sample=sample_name)
-            for sample_name in objs['sample_name'].drop_duplicates().sort_values():
-                o = objs[objs['sample_name'] == sample_name]
-
+            #       and? statistics               
+            sample_html_path = str(os.path.join(self.prj.metadata.output_dir,
+                                                "reports", s_html))
+            if not os.path.exists(os.path.dirname(sample_html_path)):
+                os.makedirs(os.path.dirname(sample_html_path))
+            with open(sample_html_path, 'w') as html_file:
+                html_file.write(SAMPLE_HEADER.format(sample_name = s_name,
+                                       index_html=objs_html))
+                
+                for s_name in s_objs['sample_name'].drop_duplicates().sort_values():
+                    o = s_objs[s_objs['sample_name'] == s_name]
+                    for i, row in o.iterrows():
+                        html_file.write(SAMPLE_PLOTS.format(
+                            label=str(row['key']),
+                            path=str(os.path.join(
+                                     self.prj.metadata.results_subdir,
+                                     s_name, row['filename'])),
+                            image=str(os.path.join(
+                                      self.prj.metadata.results_subdir,
+                                      s_name, row['anchor_image']))))
+                
+                html_file.write(SAMPLE_FOOTER.format(index_html=objs_html))
+                html_file.close()
+            
         def create_object_html(objs):
             # TODO: Build a page for each object type (e.g. all TSS plots)
             object_html_path = "{root}_{obj_type}.html".format(
@@ -648,53 +664,52 @@ class Summarizer(Executor):
             objs_html_file.write(TABLE_HEADER)
 
             sample_header   = "<h3>{sample_name}</h3>\n"
-
             sample_obj_code = ("<p><a href='{path}'>"
                                "<img src='{image}'>"
                                "{label}</a></p>\n\n")
-            # sample_fastqc   = ("<p><a href='{fastqc1}'>{sample_name} r1"
-                               # "FastQC Report</a></p>\n"
-                               # "<p><a href='{fastqc2}'>{sample_name} r2"
-                               # "FastQC Report</a></p>\n\n")
+                                          
 
             objs.drop_duplicates(keep='last', inplace=True)
             for sample_name in objs['sample_name'].drop_duplicates().sort_values():
                 o = objs[objs['sample_name'] == sample_name]
                 
                 # Write stats summary table
-                #print (stats[0])
                 for key, value in stats[0].items():
-                    #print key, value
                     objs_html_file.write(TABLE_COLS.format(
                         col_val=str(key)))
                     
                 objs_html_file.write(TABLE_COLS_FOOTER)
                 for key, value in stats[0].items():
-                    objs_html_file.write(TABLE_ROWS.format(
-                        row_val=str(value)))
+                    # Treat sample_name as a link to sample page
+                    if key=='sample_name':                       
+                        html_filename = str(value)
+                        html_filename += ".html"
+                        create_sample_html(o, value, html_filename, objs_html_path)                     
+                        objs_html_file.write(TABLE_ROWS_LINK.format(
+                            html_page=str(os.path.join(
+                                self.prj.metadata.output_dir, "reports", 
+                                html_filename)),
+                            page_name=html_filename,
+                            link_name=str(value)))
+                    # Otherwise add as a static cell value
+                    else:
+                        objs_html_file.write(TABLE_ROWS.format(
+                            row_val=str(value)))
                 objs_html_file.write(TABLE_FOOTER)
                 
-                objs_html_file.write(sample_header.format(sample_name=sample_name))
-                # Write sample images and fastQC links
-                for i, row in o.iterrows():
-                    objs_html_file.write(sample_obj_code.format(
-                        label=str(row['key']),
-                        path=str(os.path.join(
-                                 self.prj.metadata.results_subdir,
-                                 sample_name,
-                                 row['filename'])),
-                        image=str(os.path.join(
-                                  self.prj.metadata.results_subdir,
-                                  sample_name,
-                                  row['anchor_image']))))
-                    # objs_html_file.write(sample_fastqc.format(
-                        # fastqc1=str(self.prj.metadata.results_subdir + '/' +
-                                   # sample_name + '/fastqc/' + sample_name +
-                                   # '_R1.trim_fastqc.html'),
-                        # fastqc2=str(self.prj.metadata.results_subdir + '/' +
-                                   # sample_name + '/fastqc/' + sample_name +
-                                   # '_R2.trim_fastqc.html'),
-                        # sample_name=sample_name))
+                # objs_html_file.write(sample_header.format(sample_name=sample_name))
+                # # Write sample images and fastQC links
+                # for i, row in o.iterrows():
+                    # objs_html_file.write(sample_obj_code.format(
+                        # label=str(row['key']),
+                        # path=str(os.path.join(
+                                 # self.prj.metadata.results_subdir,
+                                 # sample_name,
+                                 # row['filename'])),
+                        # image=str(os.path.join(
+                                  # self.prj.metadata.results_subdir,
+                                  # sample_name,
+                                  # row['anchor_image']))))
                     
             # Close html file
             html_footer = ("</body>\n"
