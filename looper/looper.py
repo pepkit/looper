@@ -633,13 +633,12 @@ class Summarizer(Executor):
 
 <table>                           
     <colgroup>
-        <col span="2">
+        <col span="1">
         <col style="border: 2px solid black">
     </colgroup>
     <thead>
         <tr>
-            <td colspan="2"></td>
-            <th scope="col">Object</th>
+            <td colspan="1"></td>
             <th scope="col">File</th>
             <th scope="col">Link</th>
             <th scope="col">Image</th>
