@@ -619,7 +619,7 @@ class Summarizer(Executor):
             _LOGGER.info(
                 "Summary (n=" + str(len(stats)) + "): " + tsv_outfile_path)
         
-        def create_index_html(objs):
+        def create_index_html(objs, stats):
             objs_html_path = "{root}_objs_summary.html".format(
                 root=os.path.join(self.prj.metadata.output_dir, self.prj.name))
 
@@ -627,41 +627,49 @@ class Summarizer(Executor):
             html_header = "<html><h1>PEPATAC project summary for {}</h1>\n".format(self.prj.name)
             objs_html_file.write(html_header)
             
+            html_style = ('''
+<style type="text/css">
+	table.stats-table {
+		font-size: 12px;
+		border: 1px solid #CCC; 
+		font-family: Courier New, Courier, monospace;
+	} 
+	.stats-table td {
+		padding: 4px;
+		margin: 3px;
+		border: 1px solid #CCC;
+	}
+	.stats-table th {
+		background-color: #104E8B; 
+		color: #FFF;
+		font-weight: bold;
+	}
+</style>
+''')
+            objs_html_file.write(html_style)
             table_header = ('''
 <body>
-<h1>PEPATAC objects</h1>
+<h2>PEPATAC stats summary</h2>
 
-<table>                           
-    <colgroup>
-        <col span="1">
-        <col style="border: 2px solid black">
-    </colgroup>
+<table class="stats-table">                           
     <thead>
-        <tr>
-            <td colspan="1"></td>
-            <th scope="col">File</th>
-            <th scope="col">Link</th>
-            <th scope="col">Image</th>
-            <th scope="col">Annotation</th>
+        <tr class="stats-firstrow">''')
+            objs_html_file.write(table_header)
+            table_columns = ('''
+            <th>{col_val}</th>''')
+            table_columns_footer = ('''
         </tr>
     </thead>
     <tbody>
-        <tr>
-                            ''')
-            table_footer = ('''
-    </tbody>
-</table>
-                            ''')               
+        <tr>''')
             table_row = ('''
-            <th scope="row">{obj_row_name}</th>
-            <td>{file}</td>
-            <td>{link}</td>
-            <td>{image}</td>
-            <td>{annotation}</td>
+            <td>{row_val}</td>''')
+            table_footer = ('''
         </tr>
-                         ''')
-            
+    </tbody>
+</table>''')
             sample_header   = "<h3>{sample_name}</h3>\n"
+
             sample_obj_code = ("<p><a href='{path}'>"
                                "<img src='{image}'>"
                                "{label}</a></p>\n\n")
@@ -672,17 +680,19 @@ class Summarizer(Executor):
 
             objs.drop_duplicates(keep='last', inplace=True)
             for sample_name in objs['sample_name'].drop_duplicates().sort_values():
-                o = objs[objs['sample_name'] == sample_name]                
-                objs_html_file.write(table_header)
+                o = objs[objs['sample_name'] == sample_name]
                 
-                # Write objects table
-                for i, row in o.iterrows():
+                # Write stats summary table
+                #print (stats[0])
+                for key, value in stats[0].items():
+                    #print key, value
+                    objs_html_file.write(table_columns.format(
+                        col_val=str(key)))
+                    
+                objs_html_file.write(table_columns_footer)
+                for key, value in stats[0].items():
                     objs_html_file.write(table_row.format(
-                        obj_row_name=str(row['key']),
-                        file=str(row['filename']),
-                        link=str(row['anchor_text']),
-                        image=str(row['anchor_image']),
-                        annotation=str(row['annotation'])))
+                        row_val=str(value)))
                 objs_html_file.write(table_footer)  
                 
                 objs_html_file.write(sample_header.format(sample_name=sample_name))
@@ -690,10 +700,14 @@ class Summarizer(Executor):
                 for i, row in o.iterrows():
                     objs_html_file.write(sample_obj_code.format(
                         label=str(row['key']),
-                        path=str(self.prj.metadata.results_subdir + '/' +
-                                 sample_name + '/' + row['filename']),
-                        image=str(self.prj.metadata.results_subdir + '/' +
-                                 sample_name + '/' + row['anchor_image'])))
+                        path=str(os.path.join(
+                                 self.prj.metadata.results_subdir,
+                                 sample_name,
+                                 row['filename'])),
+                        image=str(os.path.join(
+                                  self.prj.metadata.results_subdir,
+                                  sample_name,
+                                  row['anchor_image']))))
                     # objs_html_file.write(sample_fastqc.format(
                         # fastqc1=str(self.prj.metadata.results_subdir + '/' +
                                    # sample_name + '/fastqc/' + sample_name +
@@ -795,7 +809,7 @@ class Summarizer(Executor):
         # Produce figures html file. <DEPRECATED>
         #create_figures_html(figs)
         # Produce objects html file.
-        create_index_html(objs)
+        create_index_html(objs, stats)
 
         
 
