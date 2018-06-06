@@ -419,7 +419,7 @@ class Runner(Executor):
                         pl_key, pl_iface, script_with_flags, self.prj,
                         args.dry_run, args.time_delay, sample_subtype,
                         remaining_args, args.ignore_flags,
-                        self.prj.compute,
+                        self.prj.compute.partition,
                         max_cmds=args.lumpn, max_size=args.lump)
                 submission_conductors[pl_key] = conductor
                 pipe_keys_by_protocol[proto_key].append(pl_key)
@@ -627,35 +627,40 @@ class Summarizer(Executor):
             html_header = "<html><h1>PEPATAC project summary for {}</h1>\n".format(self.prj.name)
             objs_html_file.write(html_header)
             
-            table_header = ('<body>\n'
-                            '\t<h1>PEPATAC objects</h1>\n\n'
-                            '\t<table>\n'
-                            #'\t\t<caption>PEPATAC objects table</caption>\n'
-                            '\t\t<colgroup>\n'
-                            '\t\t\t<col span="2">\n'
-                            '\t\t\t<col style="border: 2px solid black">\n'
-                            '\t\t</colgroup>\n'
-                            '\t\t<thead>\n'
-                            '\t\t\t<tr>\n'
-                            '\t\t\t\t<td colspan="2"></td>\n'
-                            '\t\t\t\t<th scope="col">Object</th>\n'
-                            '\t\t\t\t<th scope="col">File</th>\n'
-                            '\t\t\t\t<th scope="col">Link</th>\n'
-                            '\t\t\t\t<th scope="col">Image</th>\n'
-                            '\t\t\t\t<th scope="col">Annotation</th>\n'
-                            '\t\t\t</tr>\n'
-                            '\t\t</thead>\n'
-                            '\t\t<tbody>\n'
-                            '\t\t\t<tr>\n')
-            table_footer = ('\t\t\t</tr>\n'
-                            '\t\t</tbody>\n'
-                            '\t</table>\n')                   
-            table_row = ('\t\t\t\t<th scope="row">{obj_row_name}</th>\n'
-                         '\t\t\t\t<td>{file}</td>\n'
-                         '\t\t\t\t<td>{link}</td>\n'
-                         '\t\t\t\t<td>{image}</td>\n'
-                         '\t\t\t\t<td>{annotation}</td>\n'
-                         '\t\t\t</tr>\n')
+            table_header = ('''
+<body>
+<h1>PEPATAC objects</h1>
+
+<table>                           
+    <colgroup>
+        <col span="2">
+        <col style="border: 2px solid black">
+    </colgroup>
+    <thead>
+        <tr>
+            <td colspan="2"></td>
+            <th scope="col">Object</th>
+            <th scope="col">File</th>
+            <th scope="col">Link</th>
+            <th scope="col">Image</th>
+            <th scope="col">Annotation</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+                            ''')
+            table_footer = ('''
+    </tbody>
+</table>
+                            ''')               
+            table_row = ('''
+            <th scope="row">{obj_row_name}</th>
+            <td>{file}</td>
+            <td>{link}</td>
+            <td>{image}</td>
+            <td>{annotation}</td>
+        </tr>
+                         ''')
             
             sample_header   = "<h3>{sample_name}</h3>\n"
             sample_obj_code = ("<p><a href='{path}'>"
@@ -681,8 +686,7 @@ class Summarizer(Executor):
                         annotation=str(row['annotation'])))
                 objs_html_file.write(table_footer)  
                 
-                objs_html_file.write(
-                    sample_header.format(sample_name=sample_name))
+                objs_html_file.write(sample_header.format(sample_name=sample_name))
                 # Write sample images and fastQC links
                 for i, row in o.iterrows():
                     objs_html_file.write(sample_obj_code.format(
@@ -691,14 +695,14 @@ class Summarizer(Executor):
                                  sample_name + '/' + row['filename']),
                         image=str(self.prj.metadata.results_subdir + '/' +
                                  sample_name + '/' + row['anchor_image'])))
-                    objs_html_file.write(sample_fastqc.format(
-                        fastqc1=str(self.prj.metadata.results_subdir + '/' +
-                                   sample_name + '/fastqc/' + sample_name +
-                                   '_R1.trim_fastqc.html'),
-                        fastqc2=str(self.prj.metadata.results_subdir + '/' +
-                                   sample_name + '/fastqc/' + sample_name +
-                                   '_R2.trim_fastqc.html'),
-                        sample_name=sample_name))
+                    # objs_html_file.write(sample_fastqc.format(
+                        # fastqc1=str(self.prj.metadata.results_subdir + '/' +
+                                   # sample_name + '/fastqc/' + sample_name +
+                                   # '_R1.trim_fastqc.html'),
+                        # fastqc2=str(self.prj.metadata.results_subdir + '/' +
+                                   # sample_name + '/fastqc/' + sample_name +
+                                   # '_R2.trim_fastqc.html'),
+                        # sample_name=sample_name))
                     
             # Close html file
             html_footer = ("</body>\n"
