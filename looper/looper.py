@@ -620,38 +620,56 @@ class Summarizer(Executor):
             _LOGGER.info(
                 "Summary (n=" + str(len(stats)) + "): " + tsv_outfile_path)
         
-        def create_sample_html(s_objs, s_name, s_html, objs_html):
+        def create_object_html(objs, type, object_path, index_html):
+            # TODO: Build a page for an individual object type with all of its 
+            #       plots from each sample
+            
+            if not os.path.exists(os.path.dirname(object_path)):
+                os.makedirs(os.path.dirname(object_path))
+            with open(object_path, 'w') as html_file:
+                html_file.write(
+                    OBJECTS_HEADER.format(
+                        object_type=type,
+                        index_html_path=index_html))
+                for i, row in objs.iterrows():
+                    html_file.write(OBJECTS_PLOTS.format(
+                        label=str(row['key']),
+                        path=str(os.path.join(
+                                 self.prj.metadata.results_subdir,
+                                 row['sample_name'], row['filename'])),
+                        image=str(os.path.join(
+                                  self.prj.metadata.results_subdir,
+                                  row['sample_name'], row['anchor_image']))))
+            
+                html_file.write(OBJECTS_FOOTER.format(index_html_path=index_html))
+                html_file.close()
+        
+        def create_sample_html(objs, sample_name, filename, index_html):
             # TODO: Build a page for an individual sample with all of its plots
             #       and? statistics               
             sample_html_path = str(os.path.join(self.prj.metadata.output_dir,
-                                                "reports", s_html))
+                                                "reports", filename))
             if not os.path.exists(os.path.dirname(sample_html_path)):
                 os.makedirs(os.path.dirname(sample_html_path))
             with open(sample_html_path, 'w') as html_file:
-                html_file.write(SAMPLE_HEADER.format(sample_name = s_name,
-                                       index_html=objs_html))
+                html_file.write(SAMPLE_HEADER.format(
+                                    sample_name = sample_name,
+                                    index_html_path=index_html))
                 
-                for s_name in s_objs['sample_name'].drop_duplicates().sort_values():
-                    o = s_objs[s_objs['sample_name'] == s_name]
+                for sample_name in objs['sample_name'].drop_duplicates().sort_values():
+                    o = objs[objs['sample_name'] == sample_name]
                     for i, row in o.iterrows():
                         html_file.write(SAMPLE_PLOTS.format(
                             label=str(row['key']),
                             path=str(os.path.join(
                                      self.prj.metadata.results_subdir,
-                                     s_name, row['filename'])),
+                                     sample_name, row['filename'])),
                             image=str(os.path.join(
                                       self.prj.metadata.results_subdir,
-                                      s_name, row['anchor_image']))))
+                                      sample_name, row['anchor_image']))))
                 
-                html_file.write(SAMPLE_FOOTER.format(index_html=objs_html))
+                html_file.write(SAMPLE_FOOTER.format(index_html_path=index_html))
                 html_file.close()
-            
-        def create_object_html(objs):
-            # TODO: Build a page for each object type (e.g. all TSS plots)
-            object_html_path = "{root}_{obj_type}.html".format(
-                root=os.path.join(self.prj.metadata.output_dir, "reports",
-                                  self.prj.name),
-                sample=sample_name)
 
         def create_index_html(objs, stats):
             objs_html_path = "{root}_objs_summary.html".format(
@@ -667,9 +685,21 @@ class Summarizer(Executor):
             sample_obj_code = ("<p><a href='{path}'>"
                                "<img src='{image}'>"
                                "{label}</a></p>\n\n")
-                                          
+            objects_links   = "<p><a href='{object_page}'>View {object_type} for each sample</a></p>\n"
 
             objs.drop_duplicates(keep='last', inplace=True)
+            for key in objs['key'].drop_duplicates().sort_values():
+                objects = objs[objs['key'] == key]
+                object_filename = str(key)
+                object_filename += ".html"
+                object_path = os.path.join(
+                                self.prj.metadata.output_dir, "reports",
+                                object_filename).replace(' ', '_').lower()
+                create_object_html(objects, key, object_path, objs_html_path)
+                objs_html_file.write(objects_links.format(
+                                        object_page=object_path,
+                                        object_type=str(key)))
+            
             for sample_name in objs['sample_name'].drop_duplicates().sort_values():
                 o = objs[objs['sample_name'] == sample_name]
                 
