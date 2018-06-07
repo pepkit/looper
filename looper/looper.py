@@ -793,7 +793,7 @@ class Summarizer(Executor):
             
             objs_html_file = open(objs_html_path, 'w')
             objs_html_file.write(HTML_HEAD_OPEN)
-            objs_html_file.write(TABLE_STYLE)
+            #objs_html_file.write(TABLE_STYLE)
             objs_html_file.write(HTML_TITLE.format(project_name=self.prj.name))
             navbar = create_navbar(objs, os.path.join(
                                     self.prj.metadata.output_dir,

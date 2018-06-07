@@ -173,9 +173,10 @@ TABLE_STYLE = \
 
 TABLE_HEADER = \
 """
-<h2>PEPATAC stats summary</h2>
+<h3>PEPATAC stats summary</h3>
 
-<table class="stats-table">                           
+<div class="table-responsive">
+  <table class="table table-hover">                           
     <thead>
         <tr class="stats-firstrow">
 """
