@@ -150,7 +150,7 @@ GENERIC_VARS = ["HTML_HEAD_OPEN", "HTML_TITLE", "HTML_HEAD_CLOSE",
                 "GENERIC_LIST_FOOTER"]
 
 # Table-related
-TABLE_STYLE = \
+TABLE_STYLE_BASIC = \
 """
         <style type="text/css">
             table.stats-table {
@@ -212,7 +212,7 @@ TABLE_ROWS_LINK = \
             <td style="cursor:pointer" onclick="location.href='{html_page}'"><a class="LN1 LN2 LN3 LN4 LN5" href="{page_name}" target="_top">{link_name}</a></td>
 """
 
-LINKS_STYLE = \
+LINKS_STYLE_BASIC = \
 """
 a.LN1 {
   font-style:normal;
@@ -240,9 +240,9 @@ a.LN5:active {
   text-decoration:none;
 }
 """
-TABLE_VARS = ["TABLE_STYLE", "TABLE_HEADER", "TABLE_COLS",
+TABLE_VARS = ["TABLE_STYLE_BASIC", "TABLE_HEADER", "TABLE_COLS",
               "TABLE_COLS_FOOTER", "TABLE_ROWS", "TABLE_FOOTER",
-              "TABLE_ROWS_LINK", "LINKS_STYLE"]
+              "TABLE_ROWS_LINK", "LINKS_STYLE_BASIC"]
 
 # Sample-page-related
 SAMPLE_HEADER = \
