@@ -3,7 +3,7 @@
 __author__ = "Jason Smith"
 __email__ = "jasonsmith@virginia.edu"
 
-# Generic 
+# HTML generator vars 
 HTML_HEAD_OPEN = \
 """\
 <!doctype html>
@@ -32,6 +32,25 @@ HTML_TITLE = \
 """\
         <title>PEPATAC project summary for {project_name}</title>
 """
+HTML_HEAD_CLOSE = \
+"""\
+    </head>
+    <body>
+"""
+HTML_FOOTER = \
+"""\
+        <!-- Optional JavaScript -->
+        <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+        <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js" integrity="sha384-smHYKdLADwkXOn1EmN1qk/HfnUcbVRZyYmZ4qpPea6sjB/pTJ0euyQp0Mk8ck+5T" crossorigin="anonymous"></script>
+    </body>
+</html>
+"""
+
+HTML_VARS = ["HTML_HEAD_OPEN", "HTML_TITLE", "HTML_HEAD_CLOSE", "HTML_FOOTER"]
+
+# Navigation-related vars
 NAVBAR_HEADER = \
 """\
         <nav class="navbar navbar-expand-lg navbar-light bg-light">
@@ -109,22 +128,12 @@ HTML_NAVBAR_BASIC = \
         <li class="navbar"><a href='{samples_html}'>Samples</a></li>
     </ul>
 """
-HTML_HEAD_CLOSE = \
-"""\
-    </head>
-    <body>
-"""
-HTML_FOOTER = \
-"""\
-        <!-- Optional JavaScript -->
-        <!-- jQuery first, then Popper.js, then Bootstrap JS -->
-        <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
-        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js" integrity="sha384-smHYKdLADwkXOn1EmN1qk/HfnUcbVRZyYmZ4qpPea6sjB/pTJ0euyQp0Mk8ck+5T" crossorigin="anonymous"></script>
-    </body>
-</html>
-"""
 
+NAVBAR_VARS = ["HTML_NAVBAR_STYLE_BASIC", "HTML_NAVBAR_BASIC", "NAVBAR_HEADER",
+               "NAVBAR_DROPDOWN_HEADER", "NAVBAR_DROPDOWN_LINK",
+               "NAVBAR_DROPDOWN_FOOTER", "NAVBAR_FOOTER"]
+
+# Generic HTML vars
 GENERIC_LIST_HEADER = \
 """\
 <h3>Click to see each object type for all samples</h3>
@@ -140,10 +149,6 @@ GENERIC_LIST_FOOTER = \
 """
     </ul> 
 """
-
-NAVBAR_VARS = ["HTML_NAVBAR_STYLE_BASIC", "HTML_NAVBAR_BASIC", "NAVBAR_HEADER",
-               "NAVBAR_DROPDOWN_HEADER", "NAVBAR_DROPDOWN_LINK",
-               "NAVBAR_DROPDOWN_FOOTER", "NAVBAR_FOOTER"]
 
 GENERIC_VARS = ["HTML_HEAD_OPEN", "HTML_TITLE", "HTML_HEAD_CLOSE",
                 "HTML_FOOTER", "GENERIC_LIST_HEADER", "GENERIC_LIST_ENTRY",
@@ -296,4 +301,5 @@ OBJECTS_FOOTER = \
 OBJECTS_VARS = ["OBJECTS_HEADER", "OBJECTS_LINK", "OBJECTS_PLOTS",
                 "OBJECTS_FOOTER"]
 
-__all__ = GENERIC_VARS + NAVBAR_VARS + TABLE_VARS + SAMPLE_VARS + OBJECTS_VARS
+__all__ = HTML_VARS + NAVBAR_VARS + GENERIC_VARS + \
+          TABLE_VARS + SAMPLE_VARS + OBJECTS_VARS
