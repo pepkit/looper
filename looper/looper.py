@@ -619,42 +619,6 @@ class Summarizer(Executor):
             # figs_html_file.close()
             # _LOGGER.info(
                 # "Summary (n=" + str(len(stats)) + "): " + tsv_outfile_path)
-               
-        def create_object_parent_html(links, index_html):
-            # Need links to each object page
-            # Need link to index page
-            # Add NavBar + list of Object pages
-            object_parent_path = os.path.join(self.prj.metadata.output_dir,
-                                              "reports", "objects.html")
-            sample_parent_path = os.path.join(self.prj.metadata.output_dir,
-                                              "reports", "samples.html")
-            if not os.path.exists(os.path.dirname(object_parent_path)):
-                os.makedirs(os.path.dirname(object_parent_path))
-            with open(object_parent_path, 'w') as html_file:
-                html_file.write(HTML_HEAD_OPEN)
-                html_file.write(HTML_NAVBAR_STYLE)
-                
-                html_file.write(HTML_TITLE.format(
-                                    project_name=self.prj.name))
-                html_file.write(HTML_HEAD_CLOSE)
-                html_file.write(HTML_NAVBAR.format(
-                                    index_html=index_html,
-                                    objects_html=object_parent_path,
-                                    samples_html=sample_parent_path))
-                html_file.write(GENERIC_LIST_HEADER)
-                links.reverse()
-                while links:
-                    object_name = str(links.pop())
-                    page_name = object_name + ".html"
-                    page_path = os.path.join(self.prj.metadata.output_dir,
-                                             "reports",
-                                             page_name).replace(' ', '_').lower()
-                    html_file.write(GENERIC_LIST_ENTRY.format(
-                                        object_page=page_path,
-                                        object_type=object_name))
-                html_file.write(GENERIC_LIST_FOOTER)                        
-                html_file.write(HTML_FOOTER)
-                html_file.close()
 
         def create_object_html(objs, nb, type, filename, index_html):
             # TODO: Build a page for an individual object type with all of its 
@@ -680,43 +644,7 @@ class Summarizer(Executor):
             
                 html_file.write(HTML_FOOTER)
                 html_file.close()
-        
-        def create_sample_parent_html(links, index_html):
-            # Need links to each object page
-            # Need link to index page
-            # Add NavBar + list of Object pages
-            object_parent_path = os.path.join(self.prj.metadata.output_dir,
-                                              "reports", "objects.html")
-            sample_parent_path = os.path.join(self.prj.metadata.output_dir,
-                                              "reports", "samples.html")
-            if not os.path.exists(os.path.dirname(sample_parent_path)):
-                os.makedirs(os.path.dirname(sample_parent_path))
-            with open(sample_parent_path, 'w') as html_file:
-                html_file.write(HTML_HEAD_OPEN)
-                html_file.write(HTML_NAVBAR_STYLE)
-                
-                html_file.write(HTML_TITLE.format(
-                                    project_name=self.prj.name))
-                html_file.write(HTML_HEAD_CLOSE)
-                html_file.write(HTML_NAVBAR.format(
-                                    index_html=index_html,
-                                    objects_html=object_parent_path,
-                                    samples_html=sample_parent_path))
-                html_file.write(GENERIC_LIST_HEADER)
-                links.reverse()
-                while links:
-                    object_name = str(links.pop())
-                    page_name = object_name + ".html"
-                    page_path = os.path.join(self.prj.metadata.output_dir,
-                                             "reports",
-                                             page_name).replace(' ', '_').lower()
-                    html_file.write(GENERIC_LIST_ENTRY.format(
-                                        object_page=page_path,
-                                        object_type=object_name))
-                html_file.write(GENERIC_LIST_FOOTER)                        
-                html_file.write(HTML_FOOTER)
-                html_file.close()
-        
+               
         def create_sample_html(objs, sample_name, filename, index_html):
             # TODO: Build a page for an individual sample with all of its plots
             #       and? statistics               
@@ -730,6 +658,10 @@ class Summarizer(Executor):
                                 os.path.join(self.prj.metadata.output_dir,
                                 "reports")))
                 html_file.write("\t\t<body>\n")
+                log_name = str(objs.iloc[0]['annotation']) + "_log.md"
+                log_file = os.path.join(self.prj.metadata.results_subdir,
+                                        sample_name, log_name)
+                html_file.write("\t\t\t<p><a href='{log_file}'>{sample_name} log file</a></p>\n".format(log_file=log_file, sample_name=sample_name))
                 for sample_name in objs['sample_name'].drop_duplicates().sort_values():
                     o = objs[objs['sample_name'] == sample_name]
                     for i, row in o.iterrows():

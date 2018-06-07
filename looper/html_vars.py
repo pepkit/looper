@@ -256,7 +256,7 @@ SAMPLE_HEADER = \
 
 SAMPLE_PLOTS = \
 """\
-        <p><a href='{path}'><img src='{image}'>{label}</a></p>
+        <p><a href='{path}'><img src='{image}'><br>{label}</a></p>
 """
 
 SAMPLE_FOOTER = \
