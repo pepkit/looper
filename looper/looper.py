@@ -586,40 +586,73 @@ class Summarizer(Executor):
         #figs = _pd.DataFrame()
         objs = _pd.DataFrame()
         
-        def create_figures_html(figs):
-            # QUESTION: Is not being used? ...Original usage was?
-            # figs_tsv_path = "{root}_figs_summary.tsv".format(
+        # def create_figures_html(figs):
+            # # QUESTION: Is not being used? ...Original usage was?
+            # # figs_tsv_path = "{root}_figs_summary.tsv".format(
+                # # root=os.path.join(self.prj.metadata.output_dir, self.prj.name))
+            # # DEPRECATED
+
+            # figs_html_path = "{root}_figs_summary.html".format(
                 # root=os.path.join(self.prj.metadata.output_dir, self.prj.name))
-            # DEPRECATED
 
-            figs_html_path = "{root}_figs_summary.html".format(
-                root=os.path.join(self.prj.metadata.output_dir, self.prj.name))
+            # figs_html_file = open(figs_html_path, 'w')
+            # html_header = "<html><h1>Summary of sample figures for project {}</h1>\n".format(self.prj.name)
+            # figs_html_file.write(html_header)
+            # sample_img_header = "<h3>{sample_name}</h3>\n"
+            # sample_img_code = "<p><a href='{path}'><img src='{path}'>{key}</a></p>\n"
 
-            figs_html_file = open(figs_html_path, 'w')
-            html_header = "<html><h1>Summary of sample figures for project {}</h1>\n".format(self.prj.name)
-            figs_html_file.write(html_header)
-            sample_img_header = "<h3>{sample_name}</h3>\n"
-            sample_img_code = "<p><a href='{path}'><img src='{path}'>{key}</a></p>\n"
+            # figs.drop_duplicates(keep='last', inplace=True)
+            # for sample_name in figs['sample_name'].drop_duplicates().sort_values():
+                # f = figs[figs['sample_name'] == sample_name]
+                # figs_html_file.write(
+                    # sample_img_header.format(sample_name=sample_name))
 
-            figs.drop_duplicates(keep='last', inplace=True)
-            for sample_name in figs['sample_name'].drop_duplicates().sort_values():
-                f = figs[figs['sample_name'] == sample_name]
-                figs_html_file.write(
-                    sample_img_header.format(sample_name=sample_name))
+                # for i, row in f.iterrows():
+                    # figs_html_file.write(sample_img_code.format(
+                        # key=str(row['key']),
+                        # path=str(self.prj.metadata.results_subdir + '/' +
+                                 # sample_name + '/' + row['value'])))
 
-                for i, row in f.iterrows():
-                    figs_html_file.write(sample_img_code.format(
-                        key=str(row['key']),
-                        path=str(self.prj.metadata.results_subdir + '/' +
-                                 sample_name + '/' + row['value'])))
+            # html_footer = "</html>"
+            # figs_html_file.write(html_footer)
 
-            html_footer = "</html>"
-            figs_html_file.write(html_footer)
+            # figs_html_file.close()
+            # _LOGGER.info(
+                # "Summary (n=" + str(len(stats)) + "): " + tsv_outfile_path)
+               
+        def create_object_parent_html(links, index_html):
+            # Need links to each object page
+            # Need link to index page
+            # Add NavBar + list of Object pages
+            object_parent_path = os.path.join(self.prj.metadata.output_dir,
+                                              "reports", "objects.html")
+            sample_parent_path = os.path.join(self.prj.metadata.output_dir,
+                                              "reports", "samples.html")
+            if not os.path.exists(os.path.dirname(object_parent_path)):
+                os.makedirs(os.path.dirname(object_parent_path))
+            with open(object_parent_path, 'w') as html_file:
+                html_file.write(HTML_HEADER)
+                html_file.write(HTML_TITLE.format(
+                                    project_name=self.prj.name))
+                html_file.write(HTML_NAVBAR.format(
+                                    index_html=index_html,
+                                    objects_html=object_parent_path,
+                                    samples_html=sample_parent_path))
+                html_file.write(GENERIC_LIST_HEADER)
+                links.reverse()
+                while links:
+                    object_name = str(links.pop())
+                    page_name = object_name + ".html"
+                    page_path = os.path.join(self.prj.metadata.output_dir,
+                                             "reports",
+                                             page_name).replace(' ', '_').lower()
+                    html_file.write(GENERIC_LIST_ENTRY.format(
+                                        object_page=page_path,
+                                        object_type=object_name))
+                html_file.write(GENERIC_LIST_FOOTER)                        
+                html_file.write(HTML_FOOTER)
+                html_file.close()
 
-            figs_html_file.close()
-            _LOGGER.info(
-                "Summary (n=" + str(len(stats)) + "): " + tsv_outfile_path)
-        
         def create_object_html(objs, type, object_path, index_html):
             # TODO: Build a page for an individual object type with all of its 
             #       plots from each sample
@@ -642,6 +675,39 @@ class Summarizer(Executor):
                                   row['sample_name'], row['anchor_image']))))
             
                 html_file.write(OBJECTS_FOOTER.format(index_html_path=index_html))
+                html_file.close()
+        
+        def create_sample_parent_html(links, index_html):
+            # Need links to each object page
+            # Need link to index page
+            # Add NavBar + list of Object pages
+            object_parent_path = os.path.join(self.prj.metadata.output_dir,
+                                              "reports", "objects.html")
+            sample_parent_path = os.path.join(self.prj.metadata.output_dir,
+                                              "reports", "samples.html")
+            if not os.path.exists(os.path.dirname(sample_parent_path)):
+                os.makedirs(os.path.dirname(sample_parent_path))
+            with open(sample_parent_path, 'w') as html_file:
+                html_file.write(HTML_HEADER)
+                html_file.write(HTML_TITLE.format(
+                                    project_name=self.prj.name))
+                html_file.write(HTML_NAVBAR.format(
+                                    index_html=index_html,
+                                    objects_html=object_parent_path,
+                                    samples_html=sample_parent_path))
+                html_file.write(GENERIC_LIST_HEADER)
+                links.reverse()
+                while links:
+                    object_name = str(links.pop())
+                    page_name = object_name + ".html"
+                    page_path = os.path.join(self.prj.metadata.output_dir,
+                                             "reports",
+                                             page_name).replace(' ', '_').lower()
+                    html_file.write(GENERIC_LIST_ENTRY.format(
+                                        object_page=page_path,
+                                        object_type=object_name))
+                html_file.write(GENERIC_LIST_FOOTER)                        
+                html_file.write(HTML_FOOTER)
                 html_file.close()
         
         def create_sample_html(objs, sample_name, filename, index_html):
@@ -672,37 +738,47 @@ class Summarizer(Executor):
                 html_file.close()
 
         def create_index_html(objs, stats):
+            # Generate parent index.html page
             objs_html_path = "{root}_objs_summary.html".format(
                 root=os.path.join(self.prj.metadata.output_dir, self.prj.name))
-
+            # Generate parent objects.html page
+            object_parent_path = os.path.join(self.prj.metadata.output_dir,
+                                              "reports", "objects.html")
+            # Generate parent samples.html page
+            sample_parent_path = os.path.join(self.prj.metadata.output_dir,
+                                              "reports", "samples.html")
+            
             objs_html_file = open(objs_html_path, 'w')
-            html_header = "<html><h1>PEPATAC project summary for {}</h1>\n".format(self.prj.name)
-            objs_html_file.write(html_header)
+            objs_html_file.write(HTML_HEADER)
+            objs_html_file.write(HTML_TITLE.format(project_name=self.prj.name))
+            objs_html_file.write(HTML_NAVBAR.format(
+                                    index_html=objs_html_path,
+                                    objects_html=object_parent_path,
+                                    samples_html=sample_parent_path))
             objs_html_file.write(TABLE_STYLE)
             objs_html_file.write(TABLE_HEADER)
 
-            sample_header   = "<h3>{sample_name}</h3>\n"
-            sample_obj_code = ("<p><a href='{path}'>"
-                               "<img src='{image}'>"
-                               "{label}</a></p>\n\n")
-            objects_links   = "<p><a href='{object_page}'>View {object_type} for each sample</a></p>\n"
-
             objs.drop_duplicates(keep='last', inplace=True)
+            links = []
             for key in objs['key'].drop_duplicates().sort_values():
+                links.append(key) 
                 objects = objs[objs['key'] == key]
                 object_filename = str(key)
                 object_filename += ".html"
                 object_path = os.path.join(
                                 self.prj.metadata.output_dir, "reports",
                                 object_filename).replace(' ', '_').lower()
-                create_object_html(objects, key, object_path, objs_html_path)
-                objs_html_file.write(objects_links.format(
+                create_object_html(objects, key, object_path, objs_html_path)   
+                objs_html_file.write(OBJECTS_LINK.format(
                                         object_page=object_path,
                                         object_type=str(key)))
+            # Create parent objects page with links to each object type
+            create_object_parent_html(links, objs_html_path)
             
+            links = []
             for sample_name in objs['sample_name'].drop_duplicates().sort_values():
                 o = objs[objs['sample_name'] == sample_name]
-                
+                links.append(sample_name) 
                 # Write stats summary table
                 for key, value in stats[0].items():
                     objs_html_file.write(TABLE_COLS.format(
@@ -726,25 +802,12 @@ class Summarizer(Executor):
                         objs_html_file.write(TABLE_ROWS.format(
                             row_val=str(value)))
                 objs_html_file.write(TABLE_FOOTER)
-                
-                # objs_html_file.write(sample_header.format(sample_name=sample_name))
-                # # Write sample images and fastQC links
-                # for i, row in o.iterrows():
-                    # objs_html_file.write(sample_obj_code.format(
-                        # label=str(row['key']),
-                        # path=str(os.path.join(
-                                 # self.prj.metadata.results_subdir,
-                                 # sample_name,
-                                 # row['filename'])),
-                        # image=str(os.path.join(
-                                  # self.prj.metadata.results_subdir,
-                                  # sample_name,
-                                  # row['anchor_image']))))
-                    
-            # Close html file
-            html_footer = ("</body>\n"
-                           "</html>")
-            objs_html_file.write(html_footer)
+            
+            # Create parent samples page with links to each sample
+            create_sample_parent_html(links, objs_html_path)
+            
+            # Complete and Close html file
+            objs_html_file.write(HTML_FOOTER)
 
             objs_html_file.close()
             _LOGGER.info(
