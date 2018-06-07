@@ -661,7 +661,8 @@ class Summarizer(Executor):
                 log_name = str(objs.iloc[0]['annotation']) + "_log.md"
                 log_file = os.path.join(self.prj.metadata.results_subdir,
                                         sample_name, log_name)
-                html_file.write("\t\t\t<p><a href='{log_file}'>{sample_name} log file</a></p>\n".format(log_file=log_file, sample_name=sample_name))
+                html_file.write(SAMPLE_LOG.format(log_file=log_file,
+                                                  sample_name=sample_name))
                 for sample_name in objs['sample_name'].drop_duplicates().sort_values():
                     o = objs[objs['sample_name'] == sample_name]
                     for i, row in o.iterrows():
@@ -725,7 +726,6 @@ class Summarizer(Executor):
             
             objs_html_file = open(objs_html_path, 'w')
             objs_html_file.write(HTML_HEAD_OPEN)
-            #objs_html_file.write(TABLE_STYLE)
             objs_html_file.write(HTML_TITLE.format(project_name=self.prj.name))
             navbar = create_navbar(objs, os.path.join(
                                     self.prj.metadata.output_dir,
@@ -737,8 +737,7 @@ class Summarizer(Executor):
             objs_html_file.write(TABLE_HEADER)
             o = _pd.DataFrame()
             for sample_name in objs['sample_name'].drop_duplicates().sort_values():
-                o = objs[objs['sample_name'] == sample_name]
-                #links.append(sample_name) 
+                o = objs[objs['sample_name'] == sample_name] 
                 # Write stats summary table
                 for key, value in stats[0].items():
                     objs_html_file.write(TABLE_COLS.format(

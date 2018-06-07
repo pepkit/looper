@@ -259,6 +259,11 @@ SAMPLE_HEADER = \
 
 """
 
+SAMPLE_LOG = \
+"""\
+        <p><a href='{log_file}'>{sample_name} log file</a></p>
+"""
+
 SAMPLE_PLOTS = \
 """\
         <p><a href='{path}'><img src='{image}'><br>{label}</a></p>
@@ -270,7 +275,7 @@ SAMPLE_FOOTER = \
     </body>
 </html>
 """
-SAMPLE_VARS = ["SAMPLE_HEADER", "SAMPLE_PLOTS", "SAMPLE_FOOTER"]
+SAMPLE_VARS = ["SAMPLE_HEADER", "SAMPLE_LOG", "SAMPLE_PLOTS", "SAMPLE_FOOTER"]
 
 # Objects-page-related
 OBJECTS_HEADER = \
