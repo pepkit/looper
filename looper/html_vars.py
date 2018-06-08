@@ -279,12 +279,22 @@ SAMPLE_HEADER = \
 
 SAMPLE_LOG = \
 """\
-        <p><a href='{log_file}'>{sample_name} log file</a></p>
+        <hr>
+        <div class="container-fluid">
+            <p class="text-left">
+            <button type="button" class='{button_class}' disabled>STATUS: {flag}</button>
+            <a class="btn btn-info" href='{log_file}' role="button">LOG FILE: {sample_name}</a>
+            </p>
+        </div>
+        <hr>
 """
 
 SAMPLE_PLOTS = \
 """\
-        <p><a href='{path}'><img src='{image}'><br>{label}</a></p>
+            <figure class="figure">
+                <p><a href='{path}'><img src='{image}' class="figure-img img-fluid rounded" alt=""></a>
+                <a href='{path}'><figcaption class="figure-caption text-right">'{label}'</figcaption></a>
+            </figure>
 """
 
 SAMPLE_FOOTER = \
@@ -312,7 +322,7 @@ OBJECTS_LINK = \
 
 OBJECTS_PLOTS = \
 """\
-        <p><a href='{path}'><img src='{image}'>{label}</a></p>
+        <p><a href='{path}'><img src='{image}'><br>{label}</a></p>
 """
 
 OBJECTS_FOOTER = \
