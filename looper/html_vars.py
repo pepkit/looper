@@ -189,49 +189,49 @@ TABLE_STYLE_BASIC = \
 
 TABLE_HEADER = \
 """
-<h3>PEPATAC stats summary</h3>
+    <h4>PEPATAC stats summary</h4>
 
-<div class="table-responsive-sm">
-  <table class="table table-hover">                           
-    <thead>
-        <tr class="stats-firstrow">
+    <div class="table-responsive-sm">
+      <table class="table table-hover">                           
+        <thead>
+            <tr class="stats-firstrow">
 """
 
 TABLE_COLS = \
 """\
-            <th>{col_val}</th>
+                <th>{col_val}</th>
 """
 
 TABLE_COLS_FOOTER = \
 """\
-        </tr>
-    </thead>
-    <tbody>
+            </tr>
+        </thead>
+        <tbody>
 """
 TABLE_ROW_HEADER = \
 """\
-        <tr>    
+            <tr>    
 """
 
 TABLE_ROWS = \
 """\
-            <td>{row_val}</td>
+                <td>{row_val}</td>
 """
 TABLE_ROW_FOOTER = \
 """\
-        </tr>
+            </tr>
 """
 
 TABLE_FOOTER = \
 """\
-    </tbody>
-</table>
-</div>
+        </tbody>
+      </table>
+    </div>
 """
 
 TABLE_ROWS_LINK = \
 """\
-            <td style="cursor:pointer" onclick="location.href='{html_page}'"><a class="LN1 LN2 LN3 LN4 LN5" href="{page_name}" target="_top">{link_name}</a></td>
+                <td style="cursor:pointer" onclick="location.href='{html_page}'"><a class="LN1 LN2 LN3 LN4 LN5" href="{page_name}" target="_top">{link_name}</a></td>
 """
 
 LINKS_STYLE_BASIC = \
@@ -277,13 +277,14 @@ SAMPLE_HEADER = \
 
 """
 
-SAMPLE_LOG = \
+SAMPLE_BUTTONS = \
 """\
         <hr>
         <div class="container-fluid">
             <p class="text-left">
             <button type="button" class='{button_class}' disabled>STATUS: {flag}</button>
             <a class="btn btn-info" href='{log_file}' role="button">LOG FILE: {sample_name}</a>
+            <a class='btn btn-info' href='{stats_file}' role='button'>Stats Summary File</a>
             </p>
         </div>
         <hr>
@@ -303,7 +304,8 @@ SAMPLE_FOOTER = \
     </body>
 </html>
 """
-SAMPLE_VARS = ["SAMPLE_HEADER", "SAMPLE_LOG", "SAMPLE_PLOTS", "SAMPLE_FOOTER"]
+SAMPLE_VARS = ["SAMPLE_HEADER", "SAMPLE_BUTTONS",
+               "SAMPLE_PLOTS", "SAMPLE_FOOTER"]
 
 # Objects-page-related
 OBJECTS_HEADER = \

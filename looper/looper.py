@@ -697,8 +697,8 @@ class Summarizer(Executor):
                 html_file.write(HTML_FOOTER)
                 html_file.close()
                
-        def create_sample_html(single_sample, all_samples,
-                               sample_name, filename, index_html):
+        def create_sample_html(single_sample, all_samples, sample_name,
+                               sample_stats, filename, index_html):
             # Produce an HTML page containing all of a sample's objects         
             sample_html_path = str(os.path.join(self.prj.metadata.output_dir,
                                "reports", filename)).replace(' ', '_').lower()
@@ -713,6 +713,7 @@ class Summarizer(Executor):
                 log_name = str(single_sample.iloc[0]['annotation']) + "_log.md"
                 log_file = os.path.join(self.prj.metadata.results_subdir,
                                         sample_name, log_name)
+                # Grab the status flag for the current sample
                 flag = glob.glob(os.path.join(self.prj.metadata.results_subdir,
                                               sample_name, '*.flag'))
                 if "completed" in str(flag):
@@ -727,11 +728,44 @@ class Summarizer(Executor):
                 else:
                     button_class = "btn btn-secondary"
                     flag = "Unknown"
-                html_file.write(SAMPLE_LOG.format(log_file=log_file,
-                                                  sample_name=sample_name,
-                                                  button_class=button_class,
-                                                  flag=flag))
+                # Create a button for the sample's STATUS and its LOGFILE
+                html_file.write(SAMPLE_BUTTONS.format(log_file=log_file,
+                    sample_name=sample_name, button_class=button_class,
+                    flag=flag, stats_file=os.path.join(
+                                self.prj.metadata.results_subdir,
+                                sample_name,
+                                "stats.tsv")))
+                # Add the sample's statistics as a table
                 html_file.write("\t\t<div class='container-fluid'>\n")
+                html_file.write(TABLE_HEADER)   
+                for key, value in sample_stats.items():
+                    html_file.write(TABLE_COLS.format(col_val=str(key)))
+                html_file.write(TABLE_COLS_FOOTER)
+
+                # Produce table rows      
+                html_file.write(TABLE_ROW_HEADER)                    
+                for key, value in sample_stats.items():
+                    # Treat sample_name as a link to sample page
+                    if key=='sample_name':                       
+                        html_filename = str(value) + ".html"                
+                        html_file.write(TABLE_ROWS_LINK.format(
+                            html_page=str(os.path.join(
+                                self.prj.metadata.output_dir, "reports", 
+                                html_filename)).lower(),
+                            page_name=html_filename,
+                            link_name=str(value)))
+                    # Otherwise add as a static cell value
+                    else:
+                        html_file.write(TABLE_ROWS.format(
+                            row_val=str(value)))
+                html_file.write(TABLE_ROW_FOOTER)                                   
+                html_file.write(TABLE_FOOTER)               
+                html_file.write("\t\t</div>\n")
+                html_file.write("\t\t<hr>\n")
+
+                # Add all the objects for the current sample
+                html_file.write("\t\t<div class='container-fluid'>\n")
+                html_file.write("\t\t<h4>{sample} figures</h4>\n".format(sample=sample_name))
                 for sample_name in single_sample['sample_name'].drop_duplicates().sort_values():
                     o = single_sample[single_sample['sample_name'] == sample_name]
                     for i, row in o.iterrows():
@@ -844,9 +878,17 @@ class Summarizer(Executor):
                                     "reports"))
             objs_html_file.write(navbar)
             objs_html_file.write(HTML_HEAD_CLOSE)
-            
+
             # Add stats summary table to index page           
-            stats_file = os.path.join(sample_output_folder, "stats.tsv")
+            #stats_file = os.path.join(sample_output_folder, "stats.tsv")
+            objs_html_file.write("\t\t<hr>\n")
+            objs_html_file.write("\t\t<div class='container-fluid'>\n")
+            objs_html_file.write("\t\t\t<p class='text-left'>\n")
+            objs_html_file.write("\t\t\t<a class='btn btn-info' href='{stats_file}' role='button'>Stats Summary File</a>\n".format(stats_file=tsv_outfile_path))
+            objs_html_file.write("\t\t\t</p>\n")
+            objs_html_file.write("\t\t</div>\n")
+            objs_html_file.write("\t\t<hr>\n")
+            
             if os.path.isfile(stats_file):
                 objs_html_file.write(TABLE_HEADER)
                 # TODO: more than one sample broke the table
@@ -866,6 +908,7 @@ class Summarizer(Executor):
                             html_filename = str(value)
                             html_filename += ".html"
                             create_sample_html(single_sample, objs, value,
+                                               stats[sample_pos],
                                                html_filename, objs_html_path)                     
                             objs_html_file.write(TABLE_ROWS_LINK.format(
                                 html_page=str(os.path.join(
