@@ -25,6 +25,7 @@ from .exceptions import JobSubmissionException
 from .project import Project
 from .submission_manager import SubmissionConductor
 from .utils import fetch_flag_files, sample_folder
+#from .html_funcs import *
 from .html_vars import *
 
 from peppy import \
@@ -619,7 +620,6 @@ class Summarizer(Executor):
             # figs_html_file.close()
             # _LOGGER.info(
                 # "Summary (n=" + str(len(stats)) + "): " + tsv_outfile_path)
-
         def create_object_parent_html(objs):
             object_parent_path = os.path.join(self.prj.metadata.output_dir,
                                               "reports", "objects.html")
@@ -698,8 +698,7 @@ class Summarizer(Executor):
                 html_file.close()
                
         def create_sample_html(objs, sample_name, filename, index_html):
-            # TODO: Build a page for an individual sample with all of its plots
-            #       and? statistics               
+            # TODO: On a multi sample pipeline, it only made one page????           
             sample_html_path = str(os.path.join(self.prj.metadata.output_dir,
                                "reports", filename)).replace(' ', '_').lower()
             if not os.path.exists(os.path.dirname(sample_html_path)):
@@ -729,7 +728,7 @@ class Summarizer(Executor):
                 
                 html_file.write(HTML_FOOTER)
                 html_file.close()
-        
+
         def create_navbar(objs, wd):
             # Need all the pages
             # Need all the links
@@ -742,7 +741,7 @@ class Summarizer(Executor):
             # If the number of objects is 20 or less, use a drop-down menu
             if len(objs['key'].drop_duplicates()) <= 20:
                 # Create drop-down menu item for all the objects
-                navbar_objects_dropdown = NAVBAR_DROPDOWN_HEADER.format(menu_name="Objects")   
+                obj_links.append(NAVBAR_DROPDOWN_HEADER.format(menu_name="Objects"))
                 obj_links.append(NAVBAR_DROPDOWN_LINK.format(
                                     html_page=os.path.join(
                                         self.prj.metadata.output_dir,
@@ -754,7 +753,7 @@ class Summarizer(Executor):
                     page_path = os.path.join(wd, page_name).replace(' ', '_').lower()
                     obj_links.append(NAVBAR_DROPDOWN_LINK.format(
                                         html_page=page_path,
-                                        page_name=key))
+                                        page_name=key.lower()))
             else:
                 # Create a menu link to the objects parent page
                 obj_links.append(NAVBAR_MENU_LINK.format(
@@ -768,7 +767,7 @@ class Summarizer(Executor):
             # If the number of samples is 20 or less, use a drop-down menu
             if len(objs['sample_name'].drop_duplicates()) <= 20:
                 # Create drop-down menu item for all the samples
-                navbar_samples_dropdown = NAVBAR_DROPDOWN_HEADER.format(menu_name="Samples")
+                sample_links.append(NAVBAR_DROPDOWN_HEADER.format(menu_name="Samples"))
                 sample_links.append(NAVBAR_DROPDOWN_LINK.format(
                                     html_page=os.path.join(
                                         self.prj.metadata.output_dir,
@@ -780,7 +779,7 @@ class Summarizer(Executor):
                     page_path = os.path.join(wd, page_name).replace(' ', '_').lower()
                     sample_links.append(NAVBAR_DROPDOWN_LINK.format(
                                             html_page=page_path,
-                                            page_name=sample_name))
+                                            page_name=sample_name.lower()))
             else:
                 # Create a menu link to the samples parent page
                 sample_links.append(NAVBAR_MENU_LINK.format(
@@ -789,9 +788,8 @@ class Summarizer(Executor):
                                             "reports", "samples.html"),
                                         page_name="Samples"))
 
-            return ("\n".join([navbar_header, navbar_objects_dropdown,
+            return ("\n".join([navbar_header, 
                                "\n".join(obj_links), NAVBAR_DROPDOWN_FOOTER,
-                               navbar_samples_dropdown,
                                "\n".join(sample_links), NAVBAR_DROPDOWN_FOOTER,
                                NAVBAR_FOOTER]))
                 
@@ -818,20 +816,22 @@ class Summarizer(Executor):
             objs_html_file.write(navbar)
             objs_html_file.write(HTML_HEAD_CLOSE)
             
-            # Add stats summary table to index page
-            objs_html_file.write(TABLE_HEADER)
+            # Add stats summary table to index page           
             stats_file = os.path.join(sample_output_folder, "stats.tsv")
-            
-            for sample_name in objs['sample_name'].drop_duplicates().sort_values():
-                o = objs[objs['sample_name'] == sample_name]      
-                if os.path.isfile(stats_file):
-                    # Write stats summary table
-                    for key, value in stats[0].items():
-                        objs_html_file.write(TABLE_COLS.format(
-                            col_val=str(key)))
-                        
-                    objs_html_file.write(TABLE_COLS_FOOTER)
-                    for key, value in stats[0].items():
+            if os.path.isfile(stats_file):
+                objs_html_file.write(TABLE_HEADER)
+                # TODO: more than one sample broke the table
+                # Produce table columns         
+                for key, value in stats[0].items():
+                    objs_html_file.write(TABLE_COLS.format(col_val=str(key)))
+                objs_html_file.write(TABLE_COLS_FOOTER)
+
+                # Produce table rows
+                sample_pos = 0        
+                for sample_name in objs['sample_name'].drop_duplicates().sort_values():
+                    o = objs[objs['sample_name'] == sample_name]
+                    objs_html_file.write(TABLE_ROW_HEADER)                    
+                    for key, value in stats[sample_pos].items():
                         # Treat sample_name as a link to sample page
                         if key=='sample_name':                       
                             html_filename = str(value)
@@ -841,18 +841,18 @@ class Summarizer(Executor):
                             objs_html_file.write(TABLE_ROWS_LINK.format(
                                 html_page=str(os.path.join(
                                     self.prj.metadata.output_dir, "reports", 
-                                    html_filename)),
+                                    html_filename)).lower(),
                                 page_name=html_filename,
                                 link_name=str(value)))
                         # Otherwise add as a static cell value
                         else:
                             objs_html_file.write(TABLE_ROWS.format(
                                 row_val=str(value)))
-                    objs_html_file.write(TABLE_FOOTER)
-                else:
-                    _LOGGER.warn("No stats file '%s'", stats_file)
-                continue                
-
+                    objs_html_file.write(TABLE_ROW_FOOTER) 
+                    sample_pos += 1                                   
+                objs_html_file.write(TABLE_FOOTER)
+            else:
+                _LOGGER.warn("No stats file '%s'", stats_file)
             # Create parent samples page with links to each sample
             create_sample_parent_html(objs)
 
@@ -872,7 +872,6 @@ class Summarizer(Executor):
             objs_html_file.close()
             _LOGGER.info(
                 "Summary (n=" + str(len(stats)) + "): " + tsv_outfile_path)
-
 
         # Create stats_summary file
         for sample in self.prj.samples:
@@ -958,7 +957,6 @@ class Summarizer(Executor):
         #create_figures_html(figs)
         # Produce objects html file.
         create_index_html(objs, stats)
-
         
 
 def aggregate_exec_skip_reasons(skip_reasons_sample_pairs):

@@ -142,7 +142,7 @@ HTML_NAVBAR_BASIC = \
 NAVBAR_VARS = ["HTML_NAVBAR_STYLE_BASIC", "HTML_NAVBAR_BASIC", "NAVBAR_HEADER",
                "NAVBAR_DROPDOWN_HEADER", "NAVBAR_DROPDOWN_LINK",
                "NAVBAR_DROPDOWN_DIVIDER", "NAVBAR_DROPDOWN_FOOTER",
-               "NAVBAR_FOOTER"]
+               "NAVBAR_MENU_LINK", "NAVBAR_FOOTER"]
 
 # Generic HTML vars
 GENERIC_LIST_HEADER = \
@@ -207,18 +207,23 @@ TABLE_COLS_FOOTER = \
         </tr>
     </thead>
     <tbody>
-        <tr>
 """
-
+TABLE_ROW_HEADER = \
+"""\
+        <tr>    
+"""
 
 TABLE_ROWS = \
 """\
             <td>{row_val}</td>
 """
+TABLE_ROW_FOOTER = \
+"""\
+        </tr>
+"""
 
 TABLE_FOOTER = \
 """\
-        </tr>
     </tbody>
 </table>
 """
@@ -257,7 +262,8 @@ a.LN5:active {
 }
 """
 TABLE_VARS = ["TABLE_STYLE_BASIC", "TABLE_HEADER", "TABLE_COLS",
-              "TABLE_COLS_FOOTER", "TABLE_ROWS", "TABLE_FOOTER",
+              "TABLE_COLS_FOOTER", "TABLE_ROW_HEADER", "TABLE_ROWS",
+              "TABLE_ROW_FOOTER", "TABLE_FOOTER",
               "TABLE_ROWS_LINK", "LINKS_STYLE_BASIC"]
 
 # Sample-page-related
