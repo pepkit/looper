@@ -620,6 +620,58 @@ class Summarizer(Executor):
             # _LOGGER.info(
                 # "Summary (n=" + str(len(stats)) + "): " + tsv_outfile_path)
 
+        def create_object_parent_html(objs):
+            object_parent_path = os.path.join(self.prj.metadata.output_dir,
+                                              "reports", "objects.html")
+            if not os.path.exists(os.path.dirname(object_parent_path)):
+                os.makedirs(os.path.dirname(object_parent_path))
+            with open(object_parent_path, 'w') as html_file:
+                html_file.write(HTML_HEAD_OPEN)
+                html_file.write(create_navbar(objs,
+                                os.path.join(self.prj.metadata.output_dir,
+                                "reports")))
+                html_file.write(HTML_HEAD_CLOSE)
+                html_file.write("\t<h4>Click link to view all samples for each object</h4>\n")
+                html_file.write("\t\t<ul style='list-style-type:circle'>\n")
+                for key in objs['key'].drop_duplicates().sort_values():
+                    page_name = key + ".html"
+                    page_path = os.path.join(
+                                    self.prj.metadata.output_dir, "reports",
+                                    page_name).replace(' ', '_').lower()
+                    html_file.write(GENERIC_LIST_ENTRY.format(
+                                            page=page_path,
+                                            label=key))
+                html_file.write(HTML_FOOTER)
+                html_file.close()
+                
+        def create_sample_parent_html(objs):
+            # index_html = "{root}_objs_summary.html".format(
+                # root=os.path.join(self.prj.metadata.output_dir, self.prj.name))
+            # object_parent_path = os.path.join(self.prj.metadata.output_dir,
+                                              # "reports", "objects.html")
+            sample_parent_path = os.path.join(self.prj.metadata.output_dir,
+                                              "reports", "samples.html")
+            if not os.path.exists(os.path.dirname(sample_parent_path)):
+                os.makedirs(os.path.dirname(sample_parent_path))
+            with open(sample_parent_path, 'w') as html_file:
+                html_file.write(HTML_HEAD_OPEN)
+                html_file.write(create_navbar(objs,
+                                os.path.join(self.prj.metadata.output_dir,
+                                "reports")))
+                html_file.write(HTML_HEAD_CLOSE)
+                html_file.write("\t<h4>Click link to view all objects for each sample</h4>\n")
+                html_file.write("\t\t<ul style='list-style-type:circle'>\n")
+                for sample_name in objs['sample_name'].drop_duplicates().sort_values():
+                    page_name = sample_name + ".html"
+                    page_path = os.path.join(
+                                    self.prj.metadata.output_dir, "reports",
+                                    page_name).replace(' ', '_').lower()
+                    html_file.write(GENERIC_LIST_ENTRY.format(
+                                            page=page_path,
+                                            label=sample_name))
+                html_file.write(HTML_FOOTER)
+                html_file.close()
+
         def create_object_html(objs, nb, type, filename, index_html):
             # TODO: Build a page for an individual object type with all of its 
             #       plots from each sample
@@ -685,27 +737,58 @@ class Summarizer(Executor):
             objs_html_path = "{root}_objs_summary.html".format(
                 root=os.path.join(self.prj.metadata.output_dir, self.prj.name))
             navbar_header = NAVBAR_HEADER.format(index_html=objs_html_path)
-            # Create dropdown menu item for all the objects
-            navbar_objects_dropdown = NAVBAR_DROPDOWN_HEADER.format(menu_name="Objects")            
             # Create list of object page links
             obj_links = []
-            for key in objs['key'].drop_duplicates().sort_values():
-                page_name = key + ".html"
-                page_path = os.path.join(wd, page_name).replace(' ', '_').lower()
+            # If the number of objects is 20 or less, use a drop-down menu
+            if len(objs['key'].drop_duplicates()) <= 20:
+                # Create drop-down menu item for all the objects
+                navbar_objects_dropdown = NAVBAR_DROPDOWN_HEADER.format(menu_name="Objects")   
                 obj_links.append(NAVBAR_DROPDOWN_LINK.format(
-                                    html_page=page_path,
-                                    page_name=key))
-            
-            # Create dropdown menu item for all the samples
-            navbar_samples_dropdown = NAVBAR_DROPDOWN_HEADER.format(menu_name="Samples")
+                                    html_page=os.path.join(
+                                        self.prj.metadata.output_dir,
+                                        "reports", "objects.html"),
+                                        page_name="All objects"))
+                obj_links.append(NAVBAR_DROPDOWN_DIVIDER)             
+                for key in objs['key'].drop_duplicates().sort_values():
+                    page_name = key + ".html"
+                    page_path = os.path.join(wd, page_name).replace(' ', '_').lower()
+                    obj_links.append(NAVBAR_DROPDOWN_LINK.format(
+                                        html_page=page_path,
+                                        page_name=key))
+            else:
+                # Create a menu link to the objects parent page
+                obj_links.append(NAVBAR_MENU_LINK.format(
+                                    html_page=os.path.join(
+                                        self.prj.metadata.output_dir,
+                                        "reports", "objects.html"),
+                                    page_name="Objects"))
+
             # Create list of sample page links
             sample_links = []
-            for sample_name in objs['sample_name'].drop_duplicates().sort_values():
-                page_name = sample_name + ".html"
-                page_path = os.path.join(wd, page_name).replace(' ', '_').lower()
+            # If the number of samples is 20 or less, use a drop-down menu
+            if len(objs['sample_name'].drop_duplicates()) <= 20:
+                # Create drop-down menu item for all the samples
+                navbar_samples_dropdown = NAVBAR_DROPDOWN_HEADER.format(menu_name="Samples")
                 sample_links.append(NAVBAR_DROPDOWN_LINK.format(
-                                        html_page=page_path,
-                                        page_name=sample_name))
+                                    html_page=os.path.join(
+                                        self.prj.metadata.output_dir,
+                                        "reports", "samples.html"),
+                                        page_name="All samples"))
+                sample_links.append(NAVBAR_DROPDOWN_DIVIDER)   
+                for sample_name in objs['sample_name'].drop_duplicates().sort_values():
+                    page_name = sample_name + ".html"
+                    page_path = os.path.join(wd, page_name).replace(' ', '_').lower()
+                    sample_links.append(NAVBAR_DROPDOWN_LINK.format(
+                                            html_page=page_path,
+                                            page_name=sample_name))
+            else:
+                # Create a menu link to the samples parent page
+                sample_links.append(NAVBAR_MENU_LINK.format(
+                                        html_page=os.path.join(
+                                            self.prj.metadata.output_dir,
+                                            "reports", "samples.html"),
+                                        page_name="Samples"))
+
             return ("\n".join([navbar_header, navbar_objects_dropdown,
                                "\n".join(obj_links), NAVBAR_DROPDOWN_FOOTER,
                                navbar_samples_dropdown,
@@ -713,6 +796,8 @@ class Summarizer(Executor):
                                NAVBAR_FOOTER]))
                 
         def create_index_html(objs, stats):
+            # TODO: Need to add a file check for stats to make sure it's present
+            #       or I guess to make sure stats here is not empty
             objs.drop_duplicates(keep='last', inplace=True)
             # Generate parent index.html page
             objs_html_path = "{root}_objs_summary.html".format(
@@ -735,48 +820,64 @@ class Summarizer(Executor):
             
             # Add stats summary table to index page
             objs_html_file.write(TABLE_HEADER)
-            o = _pd.DataFrame()
-            for sample_name in objs['sample_name'].drop_duplicates().sort_values():
-                o = objs[objs['sample_name'] == sample_name] 
-                # Write stats summary table
-                for key, value in stats[0].items():
-                    objs_html_file.write(TABLE_COLS.format(
-                        col_val=str(key)))
-                    
-                objs_html_file.write(TABLE_COLS_FOOTER)
-                for key, value in stats[0].items():
-                    # Treat sample_name as a link to sample page
-                    if key=='sample_name':                       
-                        html_filename = str(value)
-                        html_filename += ".html"
-                        create_sample_html(o, value, html_filename, objs_html_path)                     
-                        objs_html_file.write(TABLE_ROWS_LINK.format(
-                            html_page=str(os.path.join(
-                                self.prj.metadata.output_dir, "reports", 
-                                html_filename)),
-                            page_name=html_filename,
-                            link_name=str(value)))
-                    # Otherwise add as a static cell value
-                    else:
-                        objs_html_file.write(TABLE_ROWS.format(
-                            row_val=str(value)))
-                objs_html_file.write(TABLE_FOOTER)
+            stats_file = os.path.join(sample_output_folder, "stats.tsv")
             
+            for sample_name in objs['sample_name'].drop_duplicates().sort_values():
+                o = objs[objs['sample_name'] == sample_name]      
+                if os.path.isfile(stats_file):
+                    # Write stats summary table
+                    for key, value in stats[0].items():
+                        objs_html_file.write(TABLE_COLS.format(
+                            col_val=str(key)))
+                        
+                    objs_html_file.write(TABLE_COLS_FOOTER)
+                    for key, value in stats[0].items():
+                        # Treat sample_name as a link to sample page
+                        if key=='sample_name':                       
+                            html_filename = str(value)
+                            html_filename += ".html"
+                            create_sample_html(
+                                o, value, html_filename, objs_html_path)                     
+                            objs_html_file.write(TABLE_ROWS_LINK.format(
+                                html_page=str(os.path.join(
+                                    self.prj.metadata.output_dir, "reports", 
+                                    html_filename)),
+                                page_name=html_filename,
+                                link_name=str(value)))
+                        # Otherwise add as a static cell value
+                        else:
+                            objs_html_file.write(TABLE_ROWS.format(
+                                row_val=str(value)))
+                    objs_html_file.write(TABLE_FOOTER)
+                else:
+                    _LOGGER.warn("No stats file '%s'", stats_file)
+                continue                
+
+            # Create parent samples page with links to each sample
+            create_sample_parent_html(objs)
+
+            # Create objects pages
             for key in objs['key'].drop_duplicates().sort_values(): 
                 objects = objs[objs['key'] == key]
                 object_filename = str(key) + ".html"
-                create_object_html(objects, o, key, object_filename, objs_html_path)
+                create_object_html(
+                    objects, objs, key, object_filename, objs_html_path)      
             
-            # Complete and Close html file
+            # Create parent objects page with links to each object type
+            create_object_parent_html(objs)
+            
+            # Complete and close HTML file
             objs_html_file.write(HTML_FOOTER)
 
             objs_html_file.close()
             _LOGGER.info(
                 "Summary (n=" + str(len(stats)) + "): " + tsv_outfile_path)
-        
+
+
         # Create stats_summary file
         for sample in self.prj.samples:
-            _LOGGER.info(self.counter.show(sample.sample_name, sample.protocol))
+            _LOGGER.info(self.counter.show(sample.sample_name,
+                                           sample.protocol))
             sample_output_folder = sample_folder(self.prj, sample)
 
             # Grab the basic info from the annotation sheet for this sample.
@@ -796,7 +897,6 @@ class Summarizer(Executor):
 
             t.drop_duplicates(subset=['key', 'pl'], keep='last', inplace=True)
             # t.duplicated(subset= ['key'], keep = False)
-
             t.loc[:, 'plkey'] = t['pl'] + ":" + t['key']
             dupes = t.duplicated(subset=['key'], keep=False)
             t.loc[dupes, 'key'] = t.loc[dupes, 'plkey']

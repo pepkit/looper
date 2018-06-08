@@ -73,6 +73,10 @@ NAVBAR_DROPDOWN_HEADER = \
                 </a>
                 <div class="dropdown-menu" aria-labelledby="navbarDropdown">
 """
+NAVBAR_DROPDOWN_DIVIDER = \
+"""\
+                  <div class="dropdown-divider"></div>
+"""
 NAVBAR_DROPDOWN_LINK = \
 """\
                   <a class="dropdown-item" href="{html_page}">{page_name}</a>
@@ -80,6 +84,12 @@ NAVBAR_DROPDOWN_LINK = \
 NAVBAR_DROPDOWN_FOOTER = \
 """\
                 </div>
+              </li>
+"""
+NAVBAR_MENU_LINK = \
+"""\
+              <li class="nav-item">
+                <a class="nav-link" href="{html_page}">{page_name}</a>
               </li>
 """
 NAVBAR_FOOTER = \
@@ -131,7 +141,8 @@ HTML_NAVBAR_BASIC = \
 
 NAVBAR_VARS = ["HTML_NAVBAR_STYLE_BASIC", "HTML_NAVBAR_BASIC", "NAVBAR_HEADER",
                "NAVBAR_DROPDOWN_HEADER", "NAVBAR_DROPDOWN_LINK",
-               "NAVBAR_DROPDOWN_FOOTER", "NAVBAR_FOOTER"]
+               "NAVBAR_DROPDOWN_DIVIDER", "NAVBAR_DROPDOWN_FOOTER",
+               "NAVBAR_FOOTER"]
 
 # Generic HTML vars
 GENERIC_LIST_HEADER = \
@@ -142,7 +153,7 @@ GENERIC_LIST_HEADER = \
 
 GENERIC_LIST_ENTRY = \
 """\
-        <li><a href='{object_page}'>{object_type}</a></li>
+        <li><a href='{page}'>{label}</a></li>
 """
 
 GENERIC_LIST_FOOTER = \
