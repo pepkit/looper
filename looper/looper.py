@@ -696,7 +696,46 @@ class Summarizer(Executor):
             
                 html_file.write(HTML_FOOTER)
                 html_file.close()
-               
+        
+        def create_status_html(all_samples):
+            # Need all the sample names for sample folders
+            # The flags for each of those
+            status_html_path = os.path.join(self.prj.metadata.output_dir,
+                               "reports", "status.html")
+            if not os.path.exists(os.path.dirname(status_html_path)):
+                os.makedirs(os.path.dirname(status_html_path))
+            with open(status_html_path, 'w') as html_file:
+                html_file.write(HTML_HEAD_OPEN)
+                html_file.write(create_navbar(all_samples,
+                                os.path.join(self.prj.metadata.output_dir,
+                                "reports")))
+                html_file.write("\t\t<body>\n")
+                html_file.write(STATUS_HEADER)
+                for sample_name in all_samples['sample_name'].drop_duplicates().sort_values():
+                    # Grab the status flag for the current sample
+                    flag = glob.glob(os.path.join(self.prj.metadata.results_subdir,
+                                                  sample_name, '*.flag'))
+                    if "completed" in str(flag):
+                        button_class = "btn btn-success"
+                        flag = "Completed"
+                    elif "running" in str(flag):
+                        button_class = "btn btn-warning"
+                        flag = "Running"
+                    elif "failed" in str(flag):
+                        button_class = "btn btn-danger"
+                        flag = "Failed"
+                    else:
+                        button_class = "btn btn-secondary"
+                        flag = "Unknown"
+                    # Create a button for the sample's STATUS and its LOGFILE
+                    html_file.write(STATUS_BUTTON.format(
+                                        button_class=button_class,
+                                        sample=sample_name,
+                                        flag=flag))
+                html_file.write(STATUS_FOOTER)
+                html_file.write(HTML_FOOTER)
+                html_file.close()
+        
         def create_sample_html(single_sample, all_samples, sample_name,
                                sample_stats, filename, index_html):
             # Produce an HTML page containing all of a sample's objects         
@@ -704,7 +743,7 @@ class Summarizer(Executor):
                                "reports", filename)).replace(' ', '_').lower()
             if not os.path.exists(os.path.dirname(sample_html_path)):
                 os.makedirs(os.path.dirname(sample_html_path))
-            with open(sample_html_path, 'w') as html_file:               
+            with open(sample_html_path, 'w') as html_file:
                 html_file.write(HTML_HEAD_OPEN)
                 html_file.write(create_navbar(all_samples,
                                 os.path.join(self.prj.metadata.output_dir,
@@ -799,6 +838,12 @@ class Summarizer(Executor):
             objs_html_path = "{root}_objs_summary.html".format(
                 root=os.path.join(self.prj.metadata.output_dir, self.prj.name))
             navbar_header = NAVBAR_HEADER.format(index_html=objs_html_path)
+            # Add link to STATUS page
+            status_link = NAVBAR_MENU_LINK.format(html_page=os.path.join(
+                                        self.prj.metadata.output_dir,
+                                        "reports", "status.html"),
+                                        page_name="Status")
+                               
             # Create list of object page links
             obj_links = []
             # If the number of objects is 20 or less, use a drop-down menu
@@ -851,7 +896,7 @@ class Summarizer(Executor):
                                             "reports", "samples.html"),
                                         page_name="Samples"))
 
-            return ("\n".join([navbar_header, 
+            return ("\n".join([navbar_header, status_link,
                                "\n".join(obj_links), NAVBAR_DROPDOWN_FOOTER,
                                "\n".join(sample_links), NAVBAR_DROPDOWN_FOOTER,
                                NAVBAR_FOOTER]))
@@ -937,6 +982,9 @@ class Summarizer(Executor):
             
             # Create parent objects page with links to each object type
             create_object_parent_html(objs)
+            
+            # Create status page with each sample's status listed
+            create_status_html(objs)
             
             # Complete and close HTML file
             objs_html_file.write(HTML_FOOTER)

@@ -307,6 +307,26 @@ SAMPLE_FOOTER = \
 SAMPLE_VARS = ["SAMPLE_HEADER", "SAMPLE_BUTTONS",
                "SAMPLE_PLOTS", "SAMPLE_FOOTER"]
 
+# Status-page-related
+STATUS_HEADER = \
+"""\
+        <hr>
+        <div class="container-fluid row mt-3">
+            <p class="text-left">
+"""
+STATUS_BUTTON = \
+"""\
+            <button type="button" class='{button_class}' disabled>{sample}: {flag}</button>
+"""
+STATUS_FOOTER = \
+"""\
+            </p>
+        </div>
+        <hr>
+"""
+
+STATUS_VARS = ["STATUS_HEADER", "STATUS_BUTTON", "STATUS_FOOTER"]
+          
 # Objects-page-related
 OBJECTS_HEADER = \
 """\
@@ -337,4 +357,4 @@ OBJECTS_VARS = ["OBJECTS_HEADER", "OBJECTS_LINK", "OBJECTS_PLOTS",
                 "OBJECTS_FOOTER"]
 
 __all__ = HTML_VARS + NAVBAR_VARS + GENERIC_VARS + \
-          TABLE_VARS + SAMPLE_VARS + OBJECTS_VARS
+          TABLE_VARS + SAMPLE_VARS + STATUS_VARS + OBJECTS_VARS
