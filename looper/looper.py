@@ -697,7 +697,8 @@ class Summarizer(Executor):
                 html_file.write(HTML_FOOTER)
                 html_file.close()
                
-        def create_sample_html(objs, sample_name, filename, index_html):
+        def create_sample_html(single_sample, all_samples,
+                               sample_name, filename, index_html):
             # TODO: On a multi sample pipeline, it only made one page????           
             sample_html_path = str(os.path.join(self.prj.metadata.output_dir,
                                "reports", filename)).replace(' ', '_').lower()
@@ -705,17 +706,17 @@ class Summarizer(Executor):
                 os.makedirs(os.path.dirname(sample_html_path))
             with open(sample_html_path, 'w') as html_file:               
                 html_file.write(HTML_HEAD_OPEN)
-                html_file.write(create_navbar(objs,
+                html_file.write(create_navbar(all_samples,
                                 os.path.join(self.prj.metadata.output_dir,
                                 "reports")))
                 html_file.write("\t\t<body>\n")
-                log_name = str(objs.iloc[0]['annotation']) + "_log.md"
+                log_name = str(single_sample.iloc[0]['annotation']) + "_log.md"
                 log_file = os.path.join(self.prj.metadata.results_subdir,
                                         sample_name, log_name)
                 html_file.write(SAMPLE_LOG.format(log_file=log_file,
                                                   sample_name=sample_name))
-                for sample_name in objs['sample_name'].drop_duplicates().sort_values():
-                    o = objs[objs['sample_name'] == sample_name]
+                for sample_name in single_sample['sample_name'].drop_duplicates().sort_values():
+                    o = single_sample[single_sample['sample_name'] == sample_name]
                     for i, row in o.iterrows():
                         html_file.write(SAMPLE_PLOTS.format(
                             label=str(row['key']),
@@ -829,15 +830,15 @@ class Summarizer(Executor):
                 # Produce table rows
                 sample_pos = 0        
                 for sample_name in objs['sample_name'].drop_duplicates().sort_values():
-                    o = objs[objs['sample_name'] == sample_name]
+                    single_sample = objs[objs['sample_name'] == sample_name]
                     objs_html_file.write(TABLE_ROW_HEADER)                    
                     for key, value in stats[sample_pos].items():
                         # Treat sample_name as a link to sample page
                         if key=='sample_name':                       
                             html_filename = str(value)
                             html_filename += ".html"
-                            create_sample_html(
-                                o, value, html_filename, objs_html_path)                     
+                            create_sample_html(single_sample, objs, value,
+                                               html_filename, objs_html_path)                     
                             objs_html_file.write(TABLE_ROWS_LINK.format(
                                 html_page=str(os.path.join(
                                     self.prj.metadata.output_dir, "reports", 

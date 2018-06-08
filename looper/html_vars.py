@@ -191,7 +191,7 @@ TABLE_HEADER = \
 """
 <h3>PEPATAC stats summary</h3>
 
-<div class="table-responsive">
+<div class="table-responsive-sm">
   <table class="table table-hover">                           
     <thead>
         <tr class="stats-firstrow">
@@ -226,6 +226,7 @@ TABLE_FOOTER = \
 """\
     </tbody>
 </table>
+</div>
 """
 
 TABLE_ROWS_LINK = \
