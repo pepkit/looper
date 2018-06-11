@@ -205,7 +205,7 @@ TABLE_STYLE_ROTATED_HEADER = \
         }
         .table-header-rotated td{
           width: 60px;
-          border-top: 1px solid #dddddd;
+          <!-- border-top: 1px solid #dddddd; -->
           border-left: 1px solid #dddddd;
           border-right: 1px solid #dddddd;
           vertical-align: middle;
@@ -235,7 +235,7 @@ TABLE_STYLE_ROTATED_HEADER = \
           overflow: hidden;
           border-left: 1px solid #dddddd;
           border-right: 1px solid #dddddd;
-          border-top: 1px solid #dddddd;
+          <!-- border-top: 1px solid #dddddd; -->
         }
         .table-header-rotated th.rotate-45 span {
           -ms-transform:skew(45deg,0deg) rotate(315deg);

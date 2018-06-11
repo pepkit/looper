@@ -941,15 +941,15 @@ class Summarizer(Executor):
             # TODO: Need to add a file check for stats to make sure it's present
             #       or I guess to make sure stats here is not empty
             objs.drop_duplicates(keep='last', inplace=True)
+            reports_dir = os.path.join(self.prj.metadata.output_dir,
+                                       "reports")
             # Generate parent index.html page
             objs_html_path = "{root}_objs_summary.html".format(
                 root=os.path.join(self.prj.metadata.output_dir, self.prj.name))
             # Generate parent objects.html page
-            object_parent_path = os.path.join(self.prj.metadata.output_dir,
-                                              "reports", "objects.html")
+            object_parent_path = os.path.join(reports_dir, "objects.html")
             # Generate parent samples.html page
-            sample_parent_path = os.path.join(self.prj.metadata.output_dir,
-                                              "reports", "samples.html")
+            sample_parent_path = os.path.join(reports_dir, "samples.html")
             
             objs_html_file = open(objs_html_path, 'w')
             objs_html_file.write(HTML_HEAD_OPEN)
@@ -983,16 +983,18 @@ class Summarizer(Executor):
                     for key, value in stats[sample_pos].items():
                         # Treat sample_name as a link to sample page
                         if key=='sample_name':
-                            html_filename = str(value)
-                            html_filename += ".html"
+                            html_filename = str(value) + ".html"
+                            html_page = os.path.join(reports_dir,
+                                                     html_filename).lower()
+                            page_relpath = os.path.relpath(html_page,
+                                            self.prj.metadata.output_dir)
                             create_sample_html(single_sample, objs, value,
                                                stats[sample_pos],
-                                               html_filename, objs_html_path)
+                                               html_filename,
+                                               objs_html_path)
                             objs_html_file.write(TABLE_ROWS_LINK.format(
-                                html_page=str(os.path.join(
-                                    self.prj.metadata.output_dir, "reports",
-                                    html_filename)).lower(),
-                                page_name=html_filename,
+                                html_page=page_relpath,
+                                page_name=page_relpath,
                                 link_name=str(value)))
                         # Otherwise add as a static cell value
                         else:
