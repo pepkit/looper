@@ -883,13 +883,9 @@ class Summarizer(Executor):
                 obj_links.append(NAVBAR_DROPDOWN_DIVIDER)             
                 for key in objs['key'].drop_duplicates().sort_values():
                     page_name = key + ".html"
+                    # Absolute path for testing purposes
                     #page_path = os.path.join(wd, page_name).replace(' ', '_').lower()
                     page_path = os.path.join(reports_dir, page_name).replace(' ', '_').lower()
-                    #print ("page_path: " + page_path)
-                    #print ("relpath:")
-                    #print (os.path.relpath(page_path, reports_dir))
-                    #print ("wd relpath: ")
-                    #print (os.path.relpath(page_path, wd))
                     relpath = os.path.relpath(page_path, wd)
                     obj_links.append(NAVBAR_DROPDOWN_LINK.format(
                                         html_page=relpath,
@@ -919,6 +915,7 @@ class Summarizer(Executor):
                 sample_links.append(NAVBAR_DROPDOWN_DIVIDER)   
                 for sample_name in objs['sample_name'].drop_duplicates().sort_values():
                     page_name = sample_name + ".html"
+                    # Absolute path for testing purposes
                     #page_path = os.path.join(wd, page_name).replace(' ', '_').lower()
                     page_path = os.path.join(reports_dir, page_name).replace(' ', '_').lower()
                     relpath = os.path.relpath(page_path, wd)
@@ -958,7 +955,6 @@ class Summarizer(Executor):
             objs_html_file.write(HTML_HEAD_OPEN)
             objs_html_file.write(TABLE_STYLE_ROTATED_HEADER)
             objs_html_file.write(HTML_TITLE.format(project_name=self.prj.name))
-            #print ("Create INDEX navbar") #  DEBUGGING
             navbar = create_navbar(objs, self.prj.metadata.output_dir)
             # navbar = create_navbar(objs, os.path.join(
                                     # self.prj.metadata.output_dir,
@@ -966,24 +962,14 @@ class Summarizer(Executor):
             objs_html_file.write(navbar)
             objs_html_file.write(HTML_HEAD_CLOSE)
 
-            # Add stats summary table to index page
             # Add stats summary table link
-            # TODO: Move this to html_vars
-            #stats_file = os.path.join(sample_output_folder, "stats.tsv")
             stats_relpath = os.path.relpath(tsv_outfile_path,
                                             self.prj.metadata.output_dir)
-            objs_html_file.write("\t\t<hr>\n")
-            objs_html_file.write("\t\t<div class='container-fluid'>\n")
-            objs_html_file.write("\t\t\t<p class='text-left'>\n")
-            #objs_html_file.write("\t\t\t<a class='btn btn-info' href='{stats_file}' role='button'>Stats Summary File</a>\n".format(stats_file=tsv_outfile_path))
-            objs_html_file.write("\t\t\t<a class='btn btn-info' href='{stats_file}' role='button'>Stats Summary File</a>\n".format(stats_file=stats_relpath))
-            objs_html_file.write("\t\t\t</p>\n")
-            objs_html_file.write("\t\t</div>\n")
-            objs_html_file.write("\t\t<hr>\n")
-            
+            objs_html_file.write(HTML_BUTTON.format(stats_file=stats_relpath))
+
+            # Add stats summary table to index page
             if os.path.isfile(stats_file):
                 objs_html_file.write(TABLE_HEADER)
-                # TODO: more than one sample broke the table
                 # Produce table columns         
                 for key, value in stats[0].items():
                     objs_html_file.write(TABLE_COLS.format(col_val=str(key)))
@@ -996,15 +982,15 @@ class Summarizer(Executor):
                     objs_html_file.write(TABLE_ROW_HEADER)                    
                     for key, value in stats[sample_pos].items():
                         # Treat sample_name as a link to sample page
-                        if key=='sample_name':                       
+                        if key=='sample_name':
                             html_filename = str(value)
                             html_filename += ".html"
                             create_sample_html(single_sample, objs, value,
                                                stats[sample_pos],
-                                               html_filename, objs_html_path)                     
+                                               html_filename, objs_html_path)
                             objs_html_file.write(TABLE_ROWS_LINK.format(
                                 html_page=str(os.path.join(
-                                    self.prj.metadata.output_dir, "reports", 
+                                    self.prj.metadata.output_dir, "reports",
                                     html_filename)).lower(),
                                 page_name=html_filename,
                                 link_name=str(value)))
@@ -1012,8 +998,8 @@ class Summarizer(Executor):
                         else:
                             objs_html_file.write(TABLE_ROWS.format(
                                 row_val=str(value)))
-                    objs_html_file.write(TABLE_ROW_FOOTER) 
-                    sample_pos += 1                                   
+                    objs_html_file.write(TABLE_ROW_FOOTER)
+                    sample_pos += 1
                 objs_html_file.write(TABLE_FOOTER)
             else:
                 _LOGGER.warn("No stats file '%s'", stats_file)
@@ -1021,18 +1007,18 @@ class Summarizer(Executor):
             create_sample_parent_html(objs)
 
             # Create objects pages
-            for key in objs['key'].drop_duplicates().sort_values(): 
+            for key in objs['key'].drop_duplicates().sort_values():
                 objects = objs[objs['key'] == key]
                 object_filename = str(key) + ".html"
                 create_object_html(
-                    objects, objs, key, object_filename, objs_html_path)      
-            
+                    objects, objs, key, object_filename, objs_html_path)
+
             # Create parent objects page with links to each object type
             create_object_parent_html(objs)
-            
+
             # Create status page with each sample's status listed
             create_status_html(objs)
-            
+
             # Complete and close HTML file
             objs_html_file.write(HTML_FOOTER)
 

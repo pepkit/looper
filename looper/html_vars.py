@@ -37,6 +37,16 @@ HTML_HEAD_CLOSE = \
     </head>
     <body>
 """
+HTML_BUTTON = \
+"""\
+		<hr>
+		<div class='container-fluid'>
+			<p class='text-left'>
+			<a class='btn btn-info' href='{stats_file}' role='button'>Stats Summary File</a>
+			</p>
+		</div>
+		<hr>
+"""
 HTML_FOOTER = \
 """\
         <!-- Optional JavaScript -->
@@ -48,7 +58,8 @@ HTML_FOOTER = \
 </html>
 """
 
-HTML_VARS = ["HTML_HEAD_OPEN", "HTML_TITLE", "HTML_HEAD_CLOSE", "HTML_FOOTER"]
+HTML_VARS = ["HTML_HEAD_OPEN", "HTML_TITLE", "HTML_HEAD_CLOSE",
+             "HTML_BUTTON", "HTML_FOOTER"]
 
 # Navigation-related vars
 NAVBAR_HEADER = \
