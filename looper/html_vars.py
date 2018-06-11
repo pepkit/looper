@@ -192,7 +192,6 @@ TABLE_STYLE_ROTATED_HEADER = \
         .table-header-rotated th.row-header{
           width: auto;
         }
-
         .table-header-rotated td{
           width: 60px;
           border-top: 1px solid #dddddd;
@@ -201,7 +200,6 @@ TABLE_STYLE_ROTATED_HEADER = \
           vertical-align: middle;
           text-align: center;
         }
-
         .table-header-rotated th.rotate-45{
           height: 120px;
           width: 60px;
@@ -213,7 +211,6 @@ TABLE_STYLE_ROTATED_HEADER = \
           font-size: 14px;
           line-height: 0.8;
         }
-
         .table-header-rotated th.rotate-45 > div{
           position: relative;
           top: 0px;
@@ -229,7 +226,6 @@ TABLE_STYLE_ROTATED_HEADER = \
           border-right: 1px solid #dddddd;
           border-top: 1px solid #dddddd;
         }
-
         .table-header-rotated th.rotate-45 span {
           -ms-transform:skew(45deg,0deg) rotate(315deg);
           -moz-transform:skew(45deg,0deg) rotate(315deg);
@@ -244,6 +240,22 @@ TABLE_STYLE_ROTATED_HEADER = \
           width: 85px; /* 120 / cos(45) - 60 cos (45) = 85 where 120 is the height of the cell, 60 the width of the cell and 45 the transform angle*/
           text-align: left;
           // white-space: nowrap; /*whether to display in one line or not*/
+        }
+        
+        .table td.text {
+            max-width: 150px;
+        }
+        .table td.text span {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: inline-block;
+            max-width: 100%;
+        }
+        .table td.text span:hover {
+            white-space: normal;
+            text-overflow: clip;
+            max-width: 100%;
         }
         </style>
 """
@@ -275,7 +287,7 @@ TABLE_ROW_HEADER = \
 
 TABLE_ROWS = \
 """\
-                <td>{row_val}</td>
+                <td class="text"><span>{row_val}</span></td>
 """
 TABLE_ROW_FOOTER = \
 """\
