@@ -745,6 +745,7 @@ class Summarizer(Executor):
                 os.makedirs(os.path.dirname(sample_html_path))
             with open(sample_html_path, 'w') as html_file:
                 html_file.write(HTML_HEAD_OPEN)
+                html_file.write(TABLE_STYLE_ROTATED_HEADER)
                 html_file.write(create_navbar(all_samples,
                                 os.path.join(self.prj.metadata.output_dir,
                                 "reports")))
@@ -861,7 +862,8 @@ class Summarizer(Executor):
                     page_path = os.path.join(wd, page_name).replace(' ', '_').lower()
                     obj_links.append(NAVBAR_DROPDOWN_LINK.format(
                                         html_page=page_path,
-                                        page_name=key.lower()))
+                                        page_name=key))
+                obj_links.append(NAVBAR_DROPDOWN_FOOTER)
             else:
                 # Create a menu link to the objects parent page
                 obj_links.append(NAVBAR_MENU_LINK.format(
@@ -887,7 +889,8 @@ class Summarizer(Executor):
                     page_path = os.path.join(wd, page_name).replace(' ', '_').lower()
                     sample_links.append(NAVBAR_DROPDOWN_LINK.format(
                                             html_page=page_path,
-                                            page_name=sample_name.lower()))
+                                            page_name=sample_name))
+                sample_links.append(NAVBAR_DROPDOWN_FOOTER)
             else:
                 # Create a menu link to the samples parent page
                 sample_links.append(NAVBAR_MENU_LINK.format(
@@ -897,8 +900,8 @@ class Summarizer(Executor):
                                         page_name="Samples"))
 
             return ("\n".join([navbar_header, status_link,
-                               "\n".join(obj_links), NAVBAR_DROPDOWN_FOOTER,
-                               "\n".join(sample_links), NAVBAR_DROPDOWN_FOOTER,
+                               "\n".join(obj_links),
+                               "\n".join(sample_links),
                                NAVBAR_FOOTER]))
                 
         def create_index_html(objs, stats):
@@ -917,6 +920,7 @@ class Summarizer(Executor):
             
             objs_html_file = open(objs_html_path, 'w')
             objs_html_file.write(HTML_HEAD_OPEN)
+            objs_html_file.write(TABLE_STYLE_ROTATED_HEADER)
             objs_html_file.write(HTML_TITLE.format(project_name=self.prj.name))
             navbar = create_navbar(objs, os.path.join(
                                     self.prj.metadata.output_dir,

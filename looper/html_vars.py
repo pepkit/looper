@@ -63,7 +63,7 @@ NAVBAR_HEADER = \
             <ul class="navbar-nav mr-auto">
               <li class="nav-item active">
                 <a class="nav-link" href="{index_html}">Home <span class="sr-only">(current)</span></a>
-              </li>
+              </li>\
 """
 NAVBAR_DROPDOWN_HEADER = \
 """\
@@ -71,26 +71,26 @@ NAVBAR_DROPDOWN_HEADER = \
                 <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                   {menu_name}
                 </a>
-                <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                <div class="dropdown-menu" aria-labelledby="navbarDropdown">\
 """
 NAVBAR_DROPDOWN_DIVIDER = \
 """\
-                  <div class="dropdown-divider"></div>
+                  <div class="dropdown-divider"></div>\
 """
 NAVBAR_DROPDOWN_LINK = \
 """\
-                  <a class="dropdown-item" href="{html_page}">{page_name}</a>
+                  <a class="dropdown-item" href="{html_page}">{page_name}</a>\
 """
 NAVBAR_DROPDOWN_FOOTER = \
 """\
                 </div>
-              </li>
+              </li>\
 """
 NAVBAR_MENU_LINK = \
 """\
               <li class="nav-item">
                 <a class="nav-link" href="{html_page}">{page_name}</a>
-              </li>
+              </li>\
 """
 NAVBAR_FOOTER = \
 """\
@@ -186,20 +186,80 @@ TABLE_STYLE_BASIC = \
             }
         </style>
 """
+TABLE_STYLE_ROTATED_HEADER = \
+"""\
+        <style>
+        .table-header-rotated th.row-header{
+          width: auto;
+        }
 
+        .table-header-rotated td{
+          width: 60px;
+          border-top: 1px solid #dddddd;
+          border-left: 1px solid #dddddd;
+          border-right: 1px solid #dddddd;
+          vertical-align: middle;
+          text-align: center;
+        }
+
+        .table-header-rotated th.rotate-45{
+          height: 120px;
+          width: 60px;
+          min-width: 60px;
+          max-width: 60px;
+          position: relative;
+          vertical-align: bottom;
+          padding: 0;
+          font-size: 14px;
+          line-height: 0.8;
+        }
+
+        .table-header-rotated th.rotate-45 > div{
+          position: relative;
+          top: 0px;
+          left: 60px; /* 120 * tan(45) / 2 = 40 where 120 is the height on the cell and 45 is the transform angle*/
+          height: 100%;
+          -ms-transform:skew(-45deg,0deg);
+          -moz-transform:skew(-45deg,0deg);
+          -webkit-transform:skew(-45deg,0deg);
+          -o-transform:skew(-45deg,0deg);
+          transform:skew(-45deg,0deg);
+          overflow: hidden;
+          border-left: 1px solid #dddddd;
+          border-right: 1px solid #dddddd;
+          border-top: 1px solid #dddddd;
+        }
+
+        .table-header-rotated th.rotate-45 span {
+          -ms-transform:skew(45deg,0deg) rotate(315deg);
+          -moz-transform:skew(45deg,0deg) rotate(315deg);
+          -webkit-transform:skew(45deg,0deg) rotate(315deg);
+          -o-transform:skew(45deg,0deg) rotate(315deg);
+          transform:skew(45deg,0deg) rotate(315deg);
+          position: absolute;
+          bottom: 30px; /* 60 cos(45) = 28 with an additional 2px margin*/
+          left: -25px; /*Because it looked good, but there is probably a mathematical link here as well*/
+          display: inline-block;
+          // width: 100%;
+          width: 85px; /* 120 / cos(45) - 60 cos (45) = 85 where 120 is the height of the cell, 60 the width of the cell and 45 the transform angle*/
+          text-align: left;
+          // white-space: nowrap; /*whether to display in one line or not*/
+        }
+        </style>
+"""
 TABLE_HEADER = \
 """
     <h4>PEPATAC stats summary</h4>
 
     <div class="table-responsive-sm">
-      <table class="table table-hover">                           
+      <table class="table table-hover table-header-rotated">                           
         <thead>
             <tr class="stats-firstrow">
 """
 
 TABLE_COLS = \
 """\
-                <th>{col_val}</th>
+                <th class="rotate-45"><div><span>{col_val}</span></div></th>
 """
 
 TABLE_COLS_FOOTER = \
@@ -265,7 +325,8 @@ a.LN5:active {
 TABLE_VARS = ["TABLE_STYLE_BASIC", "TABLE_HEADER", "TABLE_COLS",
               "TABLE_COLS_FOOTER", "TABLE_ROW_HEADER", "TABLE_ROWS",
               "TABLE_ROW_FOOTER", "TABLE_FOOTER",
-              "TABLE_ROWS_LINK", "LINKS_STYLE_BASIC"]
+              "TABLE_ROWS_LINK", "LINKS_STYLE_BASIC",
+              "TABLE_STYLE_ROTATED_HEADER"]
 
 # Sample-page-related
 SAMPLE_HEADER = \
@@ -311,7 +372,7 @@ SAMPLE_VARS = ["SAMPLE_HEADER", "SAMPLE_BUTTONS",
 STATUS_HEADER = \
 """\
         <hr>
-        <div class="container-fluid row mt-3">
+        <div class="container-fluid">
             <p class="text-left">
 """
 STATUS_BUTTON = \
