@@ -42,7 +42,7 @@ HTML_BUTTON = \
 		<hr>
 		<div class='container-fluid'>
 			<p class='text-left'>
-			<a class='btn btn-info' href='{stats_file}' role='button'>Stats Summary File</a>
+			<a class='btn btn-info' href='{file_path}' role='button'>{label}</a>
 			</p>
 		</div>
 		<hr>
@@ -367,8 +367,10 @@ SAMPLE_BUTTONS = \
         <div class="container-fluid">
             <p class="text-left">
             <button type="button" class='{button_class}' disabled>STATUS: {flag}</button>
-            <a class="btn btn-info" href='{log_file}' role="button">LOG FILE: {sample_name}</a>
-            <a class='btn btn-info' href='{stats_file}' role='button'>Stats Summary File</a>
+            <a class="btn btn-info" href='{log_file}' role="button">Log file</a>
+            <a class="btn btn-info" href='{profile_file}' role="button">Pipeline profile</a>
+            <a class="btn btn-info" href='{commands_file}' role="button">Pipeline commands</a>
+            <a class='btn btn-info' href='{stats_file}' role='button'>Stats summary file</a>         
             </p>
         </div>
         <hr>
@@ -396,20 +398,27 @@ STATUS_HEADER = \
 """\
         <hr>
         <div class="container-fluid">
-            <p class="text-left">
+          <table>
+"""
+STATUS_TABLE_HEAD = \
+"""\
+            <thead>
 """
 STATUS_BUTTON = \
 """\
-            <button type="button" class='{button_class}' disabled>{sample}: {flag}</button>
+            <tr>
+              <td><button type="button" class='{button_class}' disabled>{sample}: {flag}</button></td>
+            </tr>
 """
 STATUS_FOOTER = \
 """\
-            </p>
+          </table>
         </div>
         <hr>
 """
 
-STATUS_VARS = ["STATUS_HEADER", "STATUS_BUTTON", "STATUS_FOOTER"]
+STATUS_VARS = ["STATUS_HEADER", "STATUS_TABLE_HEAD",
+               "STATUS_BUTTON", "STATUS_FOOTER"]
           
 # Objects-page-related
 OBJECTS_HEADER = \

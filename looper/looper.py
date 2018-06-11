@@ -776,15 +776,26 @@ class Summarizer(Executor):
                     button_class = "btn btn-secondary"
                     flag = "Unknown"
                 # Create a button for the sample's STATUS, LOGFILE, and STATS
+                # add button linking to profile.tsv and commands.sh
                 stats_relpath = os.path.relpath(os.path.join(
                                     self.prj.metadata.results_subdir,
                                     sample_name, "stats.tsv"), reports_dir)
+                profile_name = str(single_sample.iloc[0]['annotation']) + "_profile.tsv"
+                profile_relpath = os.path.relpath(os.path.join(
+                                    self.prj.metadata.results_subdir,
+                                    sample_name, profile_name), reports_dir)
+                command_name = str(single_sample.iloc[0]['annotation']) + "_commands.sh"
+                command_relpath = os.path.relpath(os.path.join(
+                                    self.prj.metadata.results_subdir,
+                                    sample_name, command_name), reports_dir)
                 html_file.write(SAMPLE_BUTTONS.format(
-                                    log_file=log_relpath,
-                                    sample_name=sample_name,
                                     button_class=button_class,
                                     flag=flag,
+                                    log_file=log_relpath,
+                                    profile_file=profile_relpath,
+                                    commands_file=command_relpath,
                                     stats_file=stats_relpath))
+                
                 # Add the sample's statistics as a table
                 html_file.write("\t\t<div class='container-fluid'>\n")
                 html_file.write(TABLE_HEADER)   
@@ -962,10 +973,11 @@ class Summarizer(Executor):
             objs_html_file.write(navbar)
             objs_html_file.write(HTML_HEAD_CLOSE)
 
-            # Add stats summary table link
+            # Add stats_summary.tsv button link
             stats_relpath = os.path.relpath(tsv_outfile_path,
                                             self.prj.metadata.output_dir)
-            objs_html_file.write(HTML_BUTTON.format(stats_file=stats_relpath))
+            objs_html_file.write(HTML_BUTTON.format(
+                file_path=stats_relpath, label="Stats Summary File"))
 
             # Add stats summary table to index page
             if os.path.isfile(stats_file):
