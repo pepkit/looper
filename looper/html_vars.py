@@ -398,27 +398,54 @@ STATUS_HEADER = \
 """\
         <hr>
         <div class="container-fluid">
-          <table>
 """
 STATUS_TABLE_HEAD = \
 """\
-            <thead>
+        <div class="d-flex justify-content-between">
+          <div class="table-responsive-sm">
+            <table class="table table-hover table-bordered">
+              <thead>
+                <th>Sample name</th>
+                <th>Status</th>
+                <th>Log file</th>
+                <th>Runtime</th>
+              </thead>
+              <tbody>
 """
 STATUS_BUTTON = \
 """\
-            <tr>
-              <td><button type="button" class='{button_class}' disabled>{sample}: {flag}</button></td>
-            </tr>
+                <tr>
+                  <td><button type="button" class='{button_class}' disabled>{sample}: {flag}</button></td>
+                </tr>
+"""
+STATUS_ROW_HEADER = \
+"""\
+                <tr>
+"""
+STATUS_ROW_VALUE = \
+"""\
+                  <td class='{row_class}'>{value}</td>
+"""
+STATUS_ROW_LINK = \
+"""\
+                  <td class='{row_class}' style="cursor:pointer" onclick="location.href='{file_link}'"><a href="{file_link}" target="_top">{link_name}</a></td>
+"""
+STATUS_ROW_FOOTER = \
+"""\
+                </tr>
 """
 STATUS_FOOTER = \
 """\
-          </table>
+              </tbody>
+            </table>
+          </div>  
         </div>
         <hr>
 """
 
-STATUS_VARS = ["STATUS_HEADER", "STATUS_TABLE_HEAD",
-               "STATUS_BUTTON", "STATUS_FOOTER"]
+STATUS_VARS = ["STATUS_HEADER", "STATUS_TABLE_HEAD", "STATUS_BUTTON",
+               "STATUS_ROW_HEADER", "STATUS_ROW_VALUE", "STATUS_ROW_LINK",
+               "STATUS_ROW_FOOTER", "STATUS_FOOTER"]
           
 # Objects-page-related
 OBJECTS_HEADER = \

@@ -706,38 +706,80 @@ class Summarizer(Executor):
         def create_status_html(all_samples):
             # Need all the sample names for sample folders
             # The flags for each of those
-            status_html_path = os.path.join(self.prj.metadata.output_dir,
-                               "reports", "status.html")
+            reports_dir = os.path.join(self.prj.metadata.output_dir,
+                                       "reports")
+            status_html_path = os.path.join(reports_dir, "status.html")
             if not os.path.exists(os.path.dirname(status_html_path)):
                 os.makedirs(os.path.dirname(status_html_path))
             with open(status_html_path, 'w') as html_file:
                 html_file.write(HTML_HEAD_OPEN)
-                html_file.write(create_navbar(all_samples,
-                                os.path.join(self.prj.metadata.output_dir,
-                                "reports")))
+                html_file.write(create_navbar(all_samples, reports_dir))
                 html_file.write("\t\t<body>\n")
                 html_file.write(STATUS_HEADER)
+                html_file.write(STATUS_TABLE_HEAD)
                 for sample_name in all_samples['sample_name'].drop_duplicates().sort_values():
                     # Grab the status flag for the current sample
                     flag = glob.glob(os.path.join(self.prj.metadata.results_subdir,
                                                   sample_name, '*.flag'))
                     if "completed" in str(flag):
-                        button_class = "btn btn-success"
+                        button_class = "table-success"
                         flag = "Completed"
                     elif "running" in str(flag):
-                        button_class = "btn btn-warning"
+                        button_class = "table-warning"
                         flag = "Running"
                     elif "failed" in str(flag):
-                        button_class = "btn btn-danger"
+                        button_class = "table-danger"
                         flag = "Failed"
                     else:
-                        button_class = "btn btn-secondary"
+                        button_class = "table-secondary"
                         flag = "Unknown"
+                    
+                    # Create table entry for each sample
+                    html_file.write(STATUS_ROW_HEADER)
+                    # First Col: Sample_Name
+                    html_file.write(STATUS_ROW_VALUE.format(
+                                        row_class="",
+                                        value=sample_name))
+                    # Second Col: Status
+                    html_file.write(STATUS_ROW_VALUE.format(
+                                        row_class=button_class,
+                                        value=flag))
+                    # Third Col: Log File
+                    #for annotation in all_samples
+                    single_sample = all_samples[all_samples['sample_name'] == sample_name]
+                    log_name = str(single_sample.iloc[0]['annotation']) + "_log.md"
+                    log_file = os.path.join(self.prj.metadata.results_subdir,
+                                            sample_name, log_name)
+                    log_relpath = os.path.relpath(log_file, reports_dir)
+                    html_file.write(STATUS_ROW_LINK.format(
+                                        row_class="",
+                                        file_link=log_file,
+                                        link_name=log_name))
+                    # Fourth Col: Current runtime
+                    # If Completed, use stats.tsv
+                    stats_file = os.path.join(
+                                    self.prj.metadata.results_subdir,
+                                    sample_name, "stats.tsv")
+                    if os.path.isfile(stats_file):
+                        t = _pd.read_table(stats_file, header=None,
+                                           names=['key', 'value', 'pl'])
+                        t.drop_duplicates(subset=['key', 'pl'],
+                                          keep='last', inplace=True)
+                        time = str(t[t['key'] == 'Time'].iloc[0]['value'])
+                        html_file.write(STATUS_ROW_VALUE.format(
+                                            row_class="",
+                                            value=str(time)))
+                    else:
+                        # TODO: If still running, use _profile.tsv
+                        html_file.write(STATUS_ROW_VALUE.format(
+                                            row_class=button_class,
+                                            value="Unknown"))
+                    html_file.write(STATUS_ROW_FOOTER)
                     # Create a button for the sample's STATUS and its LOGFILE
-                    html_file.write(STATUS_BUTTON.format(
-                                        button_class=button_class,
-                                        sample=sample_name,
-                                        flag=flag))
+                    # html_file.write(STATUS_BUTTON.format(
+                                        # button_class=button_class,
+                                        # sample=sample_name,
+                                        # flag=flag))
                 html_file.write(STATUS_FOOTER)
                 html_file.write(HTML_FOOTER)
                 html_file.close()
