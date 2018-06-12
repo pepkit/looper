@@ -664,15 +664,6 @@ class Summarizer(Executor):
                     html_file.write(GENERIC_LIST_ENTRY.format(
                                             page=page_relpath,
                                             label=sample_name))
-                # old method follows
-                # for sample_name in objs['sample_name'].drop_duplicates().sort_values():
-                    # page_name = sample_name + ".html"
-                    # page_path = os.path.join(reports_dir,
-                                    # page_name).replace(' ', '_').lower()
-                    # page_relpath = os.path.relpath(page_path, reports_dir)
-                    # html_file.write(GENERIC_LIST_ENTRY.format(
-                                            # page=page_relpath,
-                                            # label=sample_name))
                 html_file.write(HTML_FOOTER)
                 html_file.close()
 
@@ -700,16 +691,7 @@ class Summarizer(Executor):
                     html_file.write(OBJECTS_PLOTS.format(
                                         label=str(row['sample_name']),
                                         path=page_relpath,
-                                        image=image_relpath))
-                    # html_file.write(OBJECTS_PLOTS.format(
-                        # label=str(row['sample_name']),
-                        # path=str(os.path.join(
-                                 # self.prj.metadata.results_subdir,
-                                 # row['sample_name'], row['filename'])),
-                        # image=str(os.path.join(
-                                  # self.prj.metadata.results_subdir,
-                                  # row['sample_name'], row['anchor_image']))))
-            
+                                        image=image_relpath))          
                 html_file.write(HTML_FOOTER)
                 html_file.close()
         
@@ -727,7 +709,6 @@ class Summarizer(Executor):
                 html_file.write("\t\t<body>\n")
                 html_file.write(STATUS_HEADER)
                 html_file.write(STATUS_TABLE_HEAD)
-                #for sample_name in all_samples['sample_name'].drop_duplicates().sort_values():
                 for sample in self.prj.samples:
                     sample_name = str(sample.sample_name)
                     # Grab the status flag for the current sample
@@ -757,10 +738,8 @@ class Summarizer(Executor):
                                         row_class=button_class,
                                         value=flag))
                     # Third Col: Log File
-                    #for annotation in all_samples
                     single_sample = all_samples[all_samples['sample_name'] == sample_name]
                     if single_sample.empty:
-                        #print (sample_name + " is empty")  # DEBUGGING
                         # When there is no objects.tsv file, search for the
                         # presence of log, profile, and command files
                         log_name = os.path.basename(str(glob.glob(os.path.join(
@@ -778,7 +757,6 @@ class Summarizer(Executor):
                         # Currently unused. Future?
                         #profile_name = str(single_sample.iloc[0]['annotation']) + "_profile.tsv"
                         #command_name = str(single_sample.iloc[0]['annotation']) + "_commands.sh"
-                    #log_name = str(single_sample.iloc[0]['annotation']) + "_log.md"
                     log_file = os.path.join(self.prj.metadata.results_subdir,
                                             sample_name, log_name)
                     log_relpath = os.path.relpath(log_file, reports_dir)
@@ -801,16 +779,11 @@ class Summarizer(Executor):
                                             row_class="",
                                             value=str(time)))
                     else:
-                        # TODO: If still running, use _profile.tsv
+                        # TODO: If still running, use _profile.tsv?
                         html_file.write(STATUS_ROW_VALUE.format(
                                             row_class=button_class,
                                             value="Unknown"))
                     html_file.write(STATUS_ROW_FOOTER)
-                    # Create a button for the sample's STATUS and its LOGFILE
-                    # html_file.write(STATUS_BUTTON.format(
-                                        # button_class=button_class,
-                                        # sample=sample_name,
-                                        # flag=flag))
                 html_file.write(STATUS_FOOTER)
                 html_file.write(HTML_FOOTER)
                 html_file.close()
@@ -830,7 +803,6 @@ class Summarizer(Executor):
                 html_file.write(create_navbar(all_samples, reports_dir))
                 html_file.write("\t\t<body>\n")
                 if single_sample.empty:
-                    #print (sample_name + " is empty")  # DEBUGGING
                     # When there is no objects.tsv file, search for the
                     # presence of log, profile, and command files
                     log_name = os.path.basename(str(glob.glob(os.path.join(
@@ -946,7 +918,7 @@ class Summarizer(Executor):
         def create_navbar(objs, wd):
             # Need all the pages
             # Need all the links
-            # Return a string containing the navbar prebuilt html           
+            # Return a string containing the navbar prebuilt html          
             objs_html_path = "{root}_objs_summary.html".format(
                 root=os.path.join(self.prj.metadata.output_dir, self.prj.name))
             reports_dir = os.path.join(self.prj.metadata.output_dir,
@@ -958,15 +930,8 @@ class Summarizer(Executor):
                                        "reports", "status.html")
             # Use relative linking structure
             relpath = os.path.relpath(status_page, wd)
-            #print (relpath)  #  DEBUGGING
             status_link = NAVBAR_MENU_LINK.format(html_page=relpath,
-                                                  page_name="Status")
-            # Absolute paths formatted like this; TESTING purposes only
-            # status_link = NAVBAR_MENU_LINK.format(html_page=os.path.join(
-                                        # self.prj.metadata.output_dir,
-                                        # "reports", "status.html"),
-                                        # page_name="Status")
-                               
+                                                  page_name="Status")                               
             # Create list of object page links
             obj_links = []
             # If the number of objects is 20 or less, use a drop-down menu
@@ -982,8 +947,6 @@ class Summarizer(Executor):
                 obj_links.append(NAVBAR_DROPDOWN_DIVIDER)             
                 for key in objs['key'].drop_duplicates().sort_values():
                     page_name = key + ".html"
-                    # Absolute path for testing purposes
-                    #page_path = os.path.join(wd, page_name).replace(' ', '_').lower()
                     page_path = os.path.join(reports_dir, page_name).replace(' ', '_').lower()
                     relpath = os.path.relpath(page_path, wd)
                     obj_links.append(NAVBAR_DROPDOWN_LINK.format(
@@ -1014,8 +977,6 @@ class Summarizer(Executor):
                 sample_links.append(NAVBAR_DROPDOWN_DIVIDER)   
                 for sample_name in objs['sample_name'].drop_duplicates().sort_values():
                     page_name = sample_name + ".html"
-                    # Absolute path for testing purposes
-                    #page_path = os.path.join(wd, page_name).replace(' ', '_').lower()
                     page_path = os.path.join(reports_dir, page_name).replace(' ', '_').lower()
                     relpath = os.path.relpath(page_path, wd)
                     sample_links.append(NAVBAR_DROPDOWN_LINK.format(
@@ -1068,36 +1029,46 @@ class Summarizer(Executor):
                 file_path=stats_relpath, label="Stats Summary File"))
 
             # Add stats summary table to index page
-            #print ("objs['sample_name']: " + objs['sample_name'].drop_duplicates())
-            #print ("num samples: " + str(len(objs['sample_name'].drop_duplicates())))
             if os.path.isfile(stats_file):
                 objs_html_file.write(TABLE_HEADER)
-                # Produce table columns                
-                for key, value in stats[0].items():
+                # Produce table columns
+                sample_pos = 0
+                # Get unique column name list
+                col_names = []
+                while sample_pos < len(stats):
+                    for key, value in stats[sample_pos].items():
+                        col_names.append(key)
+                    sample_pos += 1
+                unique_columns = []
+                for name in col_names:
+                    if name not in unique_columns:
+                        unique_columns.append(name)
+                # Write table column names to index.html file
+                for key in unique_columns:
                     objs_html_file.write(TABLE_COLS.format(col_val=str(key)))
                 objs_html_file.write(TABLE_COLS_FOOTER)
+                
                 # Produce table rows
                 sample_pos = 0
-                #print ("num samples: " + str(len(stats)))
-                # TODO: Need to get sample names from the stats summary file
-                #       Otherwise if the objects file is missing it won't add it
-                               
-                while sample_pos < len(stats):
-                    #print ("sample_pos: " + str(sample_pos))
+                col_pos = 0
+                num_columns = len(unique_columns)                
+                for row in stats:
+                    table_row = []
+                    while col_pos < num_columns:
+                        value = row.get(unique_columns[col_pos])
+                        if value is None:
+                            value = ''
+                        table_row.append(value)
+                        col_pos += 1
+                    #print (str(len(table_row)))  # DEBUGGING
+                    # Reset column position counter
+                    col_pos = 0
                     sample_name = str(stats[sample_pos]['sample_name'])
-                    #print ("sample_name: " + sample_name)
-                    #print ("")
-                #for sample_name in objs['sample_name'].drop_duplicates().sort_values():
                     single_sample = objs[objs['sample_name'] == sample_name]
-                    #if not single_sample.empty:                 
-                    #print ("single_sample: " + single_sample)
-                    #print ("")
-                    objs_html_file.write(TABLE_ROW_HEADER)                   
-                    #print ("stats[sample_pos]: " + str(stats[sample_pos].items()))
-                    #print ("")
-                    for key, value in stats[sample_pos].items():
+                    objs_html_file.write(TABLE_ROW_HEADER)
+                    for value in table_row:
                         # Treat sample_name as a link to sample page
-                        if key=='sample_name':
+                        if value==sample_name:
                             html_filename = str(value) + ".html"
                             html_page = os.path.join(reports_dir,
                                                      html_filename).lower()
