@@ -379,7 +379,7 @@ SAMPLE_BUTTONS = \
 SAMPLE_PLOTS = \
 """\
             <figure class="figure">
-                <p><a href='{path}'><img src='{image}' class="figure-img img-fluid rounded" alt=""></a>
+                <a href='{path}'><img src='{image}' class="figure-img img-fluid rounded" alt=""></a>
                 <a href='{path}'><figcaption class="figure-caption text-right">'{label}'</figcaption></a>
             </figure>
 """
@@ -456,25 +456,33 @@ OBJECTS_HEADER = \
         <p><a href='{index_html_path}'>Return to summary page</a></p>
 
 """
-
+OBJECTS_LIST_HEADER = \
+"""\
+          <ul class="list-group list-group-flush">
+"""
 OBJECTS_LINK = \
 """\
-<p><a href='{object_page}'>View {object_type} for each sample</a></p>
+            <li class="list-group-item"><a href='{path}'>'{label}'</a></li>\
 """
-
+OBJECTS_LIST_FOOTER = \
+"""\
+          </ul>
+"""
 OBJECTS_PLOTS = \
 """\
-        <p><a href='{path}'><img src='{image}'><br>{label}</a></p>
+        <figure class="figure">
+          <a href='{path}'><img src='{image}' class="figure-img img-fluid rounded" alt=""></a>
+          <a href='{path}'><figcaption class="figure-caption text-right">'{label}'</figcaption></a>
+        </figure>
 """
-
 OBJECTS_FOOTER = \
 """
         <p><a href='{index_html_path}'>Return to summary page</a></p>
     </body>
 </html>
 """
-OBJECTS_VARS = ["OBJECTS_HEADER", "OBJECTS_LINK", "OBJECTS_PLOTS",
-                "OBJECTS_FOOTER"]
+OBJECTS_VARS = ["OBJECTS_HEADER", "OBJECTS_LIST_HEADER", "OBJECTS_LINK",
+                "OBJECTS_LIST_FOOTER", "OBJECTS_PLOTS", "OBJECTS_FOOTER"]
 
 __all__ = HTML_VARS + NAVBAR_VARS + GENERIC_VARS + \
           TABLE_VARS + SAMPLE_VARS + STATUS_VARS + OBJECTS_VARS

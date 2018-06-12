@@ -670,6 +670,7 @@ class Summarizer(Executor):
         def create_object_html(objs, nb, type, filename, index_html):
             # TODO: Build a page for an individual object type with all of its 
             #       plots from each sample
+            # TODO: Is type no longer being used? I think I can drop it
             reports_dir = os.path.join(self.prj.metadata.output_dir,
                                        "reports")
             object_path = os.path.join(reports_dir,
@@ -677,21 +678,37 @@ class Summarizer(Executor):
             if not os.path.exists(os.path.dirname(object_path)):
                 os.makedirs(os.path.dirname(object_path))
             with open(object_path, 'w') as html_file:
-                html_file.write(HTML_HEAD_OPEN)
+                html_file.write(HTML_HEAD_OPEN)                
                 html_file.write(create_navbar(nb, reports_dir))
+                html_file.write(HTML_HEAD_CLOSE)
+                html_file.write("\t\t<title>{} objects</title>\n".format(str(type)))
+                links = []
+                figures = []
                 for i, row in objs.iterrows():
                     page_path = os.path.join(
                                  self.prj.metadata.results_subdir,
                                  row['sample_name'], row['filename'])
                     image_path = os.path.join(
                                   self.prj.metadata.results_subdir,
-                                  row['sample_name'], row['anchor_image'])
+                                  row['sample_name'], row['anchor_image'])                   
                     page_relpath = os.path.relpath(page_path, reports_dir)
-                    image_relpath = os.path.relpath(image_path, reports_dir)
-                    html_file.write(OBJECTS_PLOTS.format(
-                                        label=str(row['sample_name']),
+                    if os.path.isfile(image_path):
+                        image_relpath = os.path.relpath(image_path, reports_dir)
+                        figures.append(OBJECTS_PLOTS.format(
+                                            label=str(row['sample_name']),
+                                            path=page_relpath,
+                                            image=image_relpath))
+                    else:
+                        # Treat as a link in a list
+                        links.append(OBJECTS_LINK.format(
                                         path=page_relpath,
-                                        image=image_relpath))          
+                                        label=str(row['sample_name'])))
+                html_file.write(OBJECTS_LIST_HEADER)
+                html_file.write("\n".join(links))
+                html_file.write(OBJECTS_LIST_FOOTER)
+                html_file.write("\t\t\t<hr>\n")
+                html_file.write("\n".join(figures))
+                html_file.write("\t\t\t<hr>\n")
                 html_file.write(HTML_FOOTER)
                 html_file.close()
         
@@ -706,7 +723,7 @@ class Summarizer(Executor):
             with open(status_html_path, 'w') as html_file:
                 html_file.write(HTML_HEAD_OPEN)
                 html_file.write(create_navbar(all_samples, reports_dir))
-                html_file.write("\t\t<body>\n")
+                html_file.write(HTML_HEAD_CLOSE)
                 html_file.write(STATUS_HEADER)
                 html_file.write(STATUS_TABLE_HEAD)
                 for sample in self.prj.samples:
@@ -1016,9 +1033,6 @@ class Summarizer(Executor):
             objs_html_file.write(TABLE_STYLE_ROTATED_HEADER)
             objs_html_file.write(HTML_TITLE.format(project_name=self.prj.name))
             navbar = create_navbar(objs, self.prj.metadata.output_dir)
-            # navbar = create_navbar(objs, os.path.join(
-                                    # self.prj.metadata.output_dir,
-                                    # "reports"))
             objs_html_file.write(navbar)
             objs_html_file.write(HTML_HEAD_CLOSE)
 
@@ -1053,6 +1067,7 @@ class Summarizer(Executor):
                 col_pos = 0
                 num_columns = len(unique_columns)                
                 for row in stats:
+                    # Match row value to column
                     table_row = []
                     while col_pos < num_columns:
                         value = row.get(unique_columns[col_pos])
