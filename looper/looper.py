@@ -655,7 +655,8 @@ class Summarizer(Executor):
                 html_file.write(HTML_HEAD_CLOSE)
                 html_file.write("\t<h4>Click link to view all objects for each sample</h4>\n")
                 html_file.write("\t\t<ul style='list-style-type:circle'>\n")
-                for sample_name in objs['sample_name'].drop_duplicates().sort_values():
+                for sample in self.prj.samples:
+                    sample_name = str(sample.sample_name)
                     page_name = sample_name + ".html"
                     page_path = os.path.join(reports_dir,
                                     page_name).replace(' ', '_').lower()
@@ -663,6 +664,15 @@ class Summarizer(Executor):
                     html_file.write(GENERIC_LIST_ENTRY.format(
                                             page=page_relpath,
                                             label=sample_name))
+                # old method follows
+                # for sample_name in objs['sample_name'].drop_duplicates().sort_values():
+                    # page_name = sample_name + ".html"
+                    # page_path = os.path.join(reports_dir,
+                                    # page_name).replace(' ', '_').lower()
+                    # page_relpath = os.path.relpath(page_path, reports_dir)
+                    # html_file.write(GENERIC_LIST_ENTRY.format(
+                                            # page=page_relpath,
+                                            # label=sample_name))
                 html_file.write(HTML_FOOTER)
                 html_file.close()
 
@@ -717,7 +727,9 @@ class Summarizer(Executor):
                 html_file.write("\t\t<body>\n")
                 html_file.write(STATUS_HEADER)
                 html_file.write(STATUS_TABLE_HEAD)
-                for sample_name in all_samples['sample_name'].drop_duplicates().sort_values():
+                #for sample_name in all_samples['sample_name'].drop_duplicates().sort_values():
+                for sample in self.prj.samples:
+                    sample_name = str(sample.sample_name)
                     # Grab the status flag for the current sample
                     flag = glob.glob(os.path.join(self.prj.metadata.results_subdir,
                                                   sample_name, '*.flag'))
@@ -747,13 +759,32 @@ class Summarizer(Executor):
                     # Third Col: Log File
                     #for annotation in all_samples
                     single_sample = all_samples[all_samples['sample_name'] == sample_name]
-                    log_name = str(single_sample.iloc[0]['annotation']) + "_log.md"
+                    if single_sample.empty:
+                        #print (sample_name + " is empty")  # DEBUGGING
+                        # When there is no objects.tsv file, search for the
+                        # presence of log, profile, and command files
+                        log_name = os.path.basename(str(glob.glob(os.path.join(
+                                    self.prj.metadata.results_subdir,
+                                    sample_name, '*log.md'))[0]))
+                        # Currently unused. Future?
+                        # profile_name = os.path.basename(str(glob.glob(os.path.join(
+                                            # self.prj.metadata.results_subdir,
+                                            # sample_name, '*profile.tsv'))[0]))
+                        # command_name = os.path.basename(str(glob.glob(os.path.join(
+                                            # self.prj.metadata.results_subdir,
+                                            # sample_name, '*commands.sh'))[0]))
+                    else:
+                        log_name = str(single_sample.iloc[0]['annotation']) + "_log.md"
+                        # Currently unused. Future?
+                        #profile_name = str(single_sample.iloc[0]['annotation']) + "_profile.tsv"
+                        #command_name = str(single_sample.iloc[0]['annotation']) + "_commands.sh"
+                    #log_name = str(single_sample.iloc[0]['annotation']) + "_log.md"
                     log_file = os.path.join(self.prj.metadata.results_subdir,
                                             sample_name, log_name)
                     log_relpath = os.path.relpath(log_file, reports_dir)
                     html_file.write(STATUS_ROW_LINK.format(
                                         row_class="",
-                                        file_link=log_file,
+                                        file_link=log_relpath,
                                         link_name=log_name))
                     # Fourth Col: Current runtime
                     # If Completed, use stats.tsv
@@ -798,13 +829,30 @@ class Summarizer(Executor):
                 html_file.write(TABLE_STYLE_ROTATED_HEADER)
                 html_file.write(create_navbar(all_samples, reports_dir))
                 html_file.write("\t\t<body>\n")
-                log_name = str(single_sample.iloc[0]['annotation']) + "_log.md"
+                if single_sample.empty:
+                    #print (sample_name + " is empty")  # DEBUGGING
+                    # When there is no objects.tsv file, search for the
+                    # presence of log, profile, and command files
+                    log_name = os.path.basename(str(glob.glob(os.path.join(
+                                    self.prj.metadata.results_subdir,
+                                    sample_name, '*log.md'))[0]))
+                    profile_name = os.path.basename(str(glob.glob(os.path.join(
+                                        self.prj.metadata.results_subdir,
+                                        sample_name, '*profile.tsv'))[0]))
+                    command_name = os.path.basename(str(glob.glob(os.path.join(
+                                        self.prj.metadata.results_subdir,
+                                        sample_name, '*commands.sh'))[0]))
+                else:
+                    log_name = str(single_sample.iloc[0]['annotation']) + "_log.md"
+                    profile_name = str(single_sample.iloc[0]['annotation']) + "_profile.tsv"
+                    command_name = str(single_sample.iloc[0]['annotation']) + "_commands.sh"
+                # Get relative path to the log file
                 log_file = os.path.join(self.prj.metadata.results_subdir,
-                                        sample_name, log_name)
+                                        sample_name, log_name)              
                 log_relpath = os.path.relpath(log_file, reports_dir)
                 # Grab the status flag for the current sample
                 flag = glob.glob(os.path.join(self.prj.metadata.results_subdir,
-                                              sample_name, '*.flag'))
+                                              sample_name, '*.flag'))[0]
                 if "completed" in str(flag):
                     button_class = "btn btn-success"
                     flag = "Completed"
@@ -822,11 +870,9 @@ class Summarizer(Executor):
                 stats_relpath = os.path.relpath(os.path.join(
                                     self.prj.metadata.results_subdir,
                                     sample_name, "stats.tsv"), reports_dir)
-                profile_name = str(single_sample.iloc[0]['annotation']) + "_profile.tsv"
                 profile_relpath = os.path.relpath(os.path.join(
                                     self.prj.metadata.results_subdir,
-                                    sample_name, profile_name), reports_dir)
-                command_name = str(single_sample.iloc[0]['annotation']) + "_commands.sh"
+                                    sample_name, profile_name), reports_dir)              
                 command_relpath = os.path.relpath(os.path.join(
                                     self.prj.metadata.results_subdir,
                                     sample_name, command_name), reports_dir)
@@ -1022,18 +1068,33 @@ class Summarizer(Executor):
                 file_path=stats_relpath, label="Stats Summary File"))
 
             # Add stats summary table to index page
+            #print ("objs['sample_name']: " + objs['sample_name'].drop_duplicates())
+            #print ("num samples: " + str(len(objs['sample_name'].drop_duplicates())))
             if os.path.isfile(stats_file):
                 objs_html_file.write(TABLE_HEADER)
-                # Produce table columns         
+                # Produce table columns                
                 for key, value in stats[0].items():
                     objs_html_file.write(TABLE_COLS.format(col_val=str(key)))
                 objs_html_file.write(TABLE_COLS_FOOTER)
-
                 # Produce table rows
-                sample_pos = 0        
-                for sample_name in objs['sample_name'].drop_duplicates().sort_values():
+                sample_pos = 0
+                #print ("num samples: " + str(len(stats)))
+                # TODO: Need to get sample names from the stats summary file
+                #       Otherwise if the objects file is missing it won't add it
+                               
+                while sample_pos < len(stats):
+                    #print ("sample_pos: " + str(sample_pos))
+                    sample_name = str(stats[sample_pos]['sample_name'])
+                    #print ("sample_name: " + sample_name)
+                    #print ("")
+                #for sample_name in objs['sample_name'].drop_duplicates().sort_values():
                     single_sample = objs[objs['sample_name'] == sample_name]
-                    objs_html_file.write(TABLE_ROW_HEADER)                    
+                    #if not single_sample.empty:                 
+                    #print ("single_sample: " + single_sample)
+                    #print ("")
+                    objs_html_file.write(TABLE_ROW_HEADER)                   
+                    #print ("stats[sample_pos]: " + str(stats[sample_pos].items()))
+                    #print ("")
                     for key, value in stats[sample_pos].items():
                         # Treat sample_name as a link to sample page
                         if key=='sample_name':
