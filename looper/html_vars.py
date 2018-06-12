@@ -263,7 +263,7 @@ TABLE_STYLE_ROTATED_HEADER = \
             display: inline-block;
             max-width: 100%;
         }
-        .table td.text span:hover {
+        .table td.text span:active {
             white-space: normal;
             text-overflow: clip;
             max-width: 100%;
