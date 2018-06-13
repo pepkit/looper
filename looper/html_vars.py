@@ -103,13 +103,19 @@ NAVBAR_MENU_LINK = \
                 <a class="nav-link" href="{html_page}">{page_name}</a>
               </li>\
 """
-NAVBAR_FOOTER = \
+NAVBAR_SEARCH_FOOTER = \
 """\
             </ul>
             <form class="form-inline my-2 my-lg-0">
               <input class="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search">
               <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
             </form>
+          </div>
+        </nav>
+"""
+NAVBAR_FOOTER = \
+"""\
+            </ul>
           </div>
         </nav>
 """
@@ -153,7 +159,7 @@ HTML_NAVBAR_BASIC = \
 NAVBAR_VARS = ["HTML_NAVBAR_STYLE_BASIC", "HTML_NAVBAR_BASIC", "NAVBAR_HEADER",
                "NAVBAR_DROPDOWN_HEADER", "NAVBAR_DROPDOWN_LINK",
                "NAVBAR_DROPDOWN_DIVIDER", "NAVBAR_DROPDOWN_FOOTER",
-               "NAVBAR_MENU_LINK", "NAVBAR_FOOTER"]
+               "NAVBAR_MENU_LINK", "NAVBAR_SEARCH_FOOTER", "NAVBAR_FOOTER"]
 
 # Generic HTML vars
 GENERIC_LIST_HEADER = \
@@ -272,24 +278,24 @@ TABLE_STYLE_ROTATED_HEADER = \
 """
 TABLE_HEADER = \
 """
-    <h4>PEPATAC stats summary</h4>
+      <h5>PEPATAC stats summary</h5>
 
-    <div class="table-responsive-sm">
-      <table class="table table-hover table-header-rotated">                           
-        <thead>
+      <div class="table-responsive-sm">
+        <table class="table table-hover table-header-rotated">                           
+          <thead>
             <tr class="stats-firstrow">
 """
 
 TABLE_COLS = \
 """\
-                <th class="rotate-45"><div><span>{col_val}</span></div></th>
+              <th class="rotate-45"><div><span>{col_val}</span></div></th>
 """
 
 TABLE_COLS_FOOTER = \
 """\
             </tr>
-        </thead>
-        <tbody>
+          </thead>
+          <tbody>
 """
 TABLE_ROW_HEADER = \
 """\
@@ -298,7 +304,7 @@ TABLE_ROW_HEADER = \
 
 TABLE_ROWS = \
 """\
-                <td class="text"><span>{row_val}</span></td>
+              <td class="text"><span>{row_val}</span></td>
 """
 TABLE_ROW_FOOTER = \
 """\
@@ -307,14 +313,14 @@ TABLE_ROW_FOOTER = \
 
 TABLE_FOOTER = \
 """\
-        </tbody>
-      </table>
-    </div>
+          </tbody>
+        </table>
+      </div>
 """
 
 TABLE_ROWS_LINK = \
 """\
-                <td style="cursor:pointer" onclick="location.href='{html_page}'"><a class="LN1 LN2 LN3 LN4 LN5" href="{page_name}" target="_top">{link_name}</a></td>
+              <td style="cursor:pointer" onclick="location.href='{html_page}'"><a class="LN1 LN2 LN3 LN4 LN5" href="{page_name}" target="_top">{link_name}</a></td>
 """
 
 LINKS_STYLE_BASIC = \
@@ -379,8 +385,8 @@ SAMPLE_BUTTONS = \
 SAMPLE_PLOTS = \
 """\
             <figure class="figure">
-                <a href='{path}'><img src='{image}' class="figure-img img-fluid rounded" alt=""></a>
-                <a href='{path}'><figcaption class="figure-caption text-right">'{label}'</figcaption></a>
+                <a href='{path}'><img style="width: 200px; height: 200px" src='{image}' class="figure-img img-fluid rounded" alt=""></a>
+                <a href='{path}'><figcaption class="figure-caption text-left">'{label}'</figcaption></a>
             </figure>
 """
 
@@ -471,8 +477,8 @@ OBJECTS_LIST_FOOTER = \
 OBJECTS_PLOTS = \
 """\
         <figure class="figure">
-          <a href='{path}'><img src='{image}' class="figure-img img-fluid rounded" alt=""></a>
-          <a href='{path}'><figcaption class="figure-caption text-right">'{label}'</figcaption></a>
+          <a href='{path}'><img style="width: 200px; height: 200px" src='{image}' class="figure-img img-fluid rounded" alt=""></a>
+          <a href='{path}'><figcaption class="figure-caption text-left">'{label}'</figcaption></a>
         </figure>
 """
 OBJECTS_FOOTER = \

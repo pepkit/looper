@@ -681,7 +681,7 @@ class Summarizer(Executor):
                 html_file.write(HTML_HEAD_OPEN)                
                 html_file.write(create_navbar(nb, reports_dir))
                 html_file.write(HTML_HEAD_CLOSE)
-                html_file.write("\t\t<title>{} objects</title>\n".format(str(type)))
+                html_file.write("\t\t<h4>{} objects</h4>\n".format(str(type)))
                 links = []
                 figures = []
                 for i, row in objs.iterrows():
@@ -747,9 +747,14 @@ class Summarizer(Executor):
                     # Create table entry for each sample
                     html_file.write(STATUS_ROW_HEADER)
                     # First Col: Sample_Name
-                    html_file.write(STATUS_ROW_VALUE.format(
+                    page_name = sample_name + ".html"
+                    page_path = os.path.join(reports_dir,
+                                    page_name).replace(' ', '_').lower()
+                    page_relpath = os.path.relpath(page_path, reports_dir)
+                    html_file.write(STATUS_ROW_LINK.format(
                                         row_class="",
-                                        value=sample_name))
+                                        file_link=page_relpath,
+                                        link_name=sample_name))
                     # Second Col: Status
                     html_file.write(STATUS_ROW_VALUE.format(
                                         row_class=button_class,
@@ -818,7 +823,8 @@ class Summarizer(Executor):
                 html_file.write(HTML_HEAD_OPEN)
                 html_file.write(TABLE_STYLE_ROTATED_HEADER)
                 html_file.write(create_navbar(all_samples, reports_dir))
-                html_file.write("\t\t<body>\n")
+                html_file.write(HTML_HEAD_CLOSE)
+                html_file.write("\t\t<h4>{}</h4>\n".format(str(sample_name)))
                 if single_sample.empty:
                     # When there is no objects.tsv file, search for the
                     # presence of log, profile, and command files
@@ -874,7 +880,7 @@ class Summarizer(Executor):
                                     stats_file=stats_relpath))
                 
                 # Add the sample's statistics as a table
-                html_file.write("\t\t<div class='container-fluid'>\n")
+                html_file.write("\t<div class='container-fluid'>\n")
                 html_file.write(TABLE_HEADER)   
                 for key, value in sample_stats.items():
                     html_file.write(TABLE_COLS.format(col_val=str(key)))
@@ -898,13 +904,14 @@ class Summarizer(Executor):
                         html_file.write(TABLE_ROWS.format(
                             row_val=str(value)))
                 html_file.write(TABLE_ROW_FOOTER)                                   
-                html_file.write(TABLE_FOOTER)               
-                html_file.write("\t\t</div>\n")
+                html_file.write(TABLE_FOOTER)
                 html_file.write("\t\t<hr>\n")
 
                 # Add all the objects for the current sample
                 html_file.write("\t\t<div class='container-fluid'>\n")
-                html_file.write("\t\t<h4>{sample} figures</h4>\n".format(sample=sample_name))
+                html_file.write("\t\t<h5>{sample} objects</h5>\n".format(sample=sample_name))
+                links = []
+                figures = []
                 for sample_name in single_sample['sample_name'].drop_duplicates().sort_values():
                     o = single_sample[single_sample['sample_name'] == sample_name]
                     for i, row in o.iterrows():
@@ -918,17 +925,27 @@ class Summarizer(Executor):
                         page_relpath = os.path.relpath(page_path, reports_dir)
                         # If the object has a png image, use it!
                         if os.path.isfile(image_path):
-                            html_file.write(SAMPLE_PLOTS.format(
-                                label=str(row['key']),
-                                path=page_relpath,
-                                image=image_relpath))
+                            if str(image_path).lower().endswith(('.png', '.jpg', '.jpeg', '.svg', '.gif')):
+                                figures.append(SAMPLE_PLOTS.format(
+                                                label=str(row['key']),
+                                                path=page_relpath,
+                                                image=image_relpath))
+                            else:
+                                links.append(OBJECTS_LINK.format(
+                                                label=str(row['key']),
+                                                path=page_relpath))
                         # Otherwise it's just a link
                         else:
-                            html_file.write(SAMPLE_PLOTS.format(
-                                label=str(row['key']),
-                                path=page_relpath,
-                                image=""))
+                            links.append(OBJECTS_LINK.format(
+                                            label=str(row['key']),
+                                            path=page_relpath))
+                html_file.write(OBJECTS_LIST_HEADER)
+                html_file.write("\n".join(links))
+                html_file.write(OBJECTS_LIST_FOOTER)
+                html_file.write("\t\t\t<hr>\n")
+                html_file.write("\n".join(figures))
                 html_file.write("\t\t</div>\n")
+                html_file.write("\t\t<hr>\n")
                 html_file.write(HTML_FOOTER)
                 html_file.close()
 
