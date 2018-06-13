@@ -1209,12 +1209,11 @@ class Summarizer(Executor):
             _LOGGER.info(
                 "Summary (n=" + str(len(stats)) + "): " + tsv_outfile_path)
 
-<<<<<<< HEAD
         # First, the generic summarize will pull together all the fits
         # and stats from each sample into project-combined spreadsheets.
-=======
+
         # Create stats_summary file
->>>>>>> origin/feat
+
         for sample in self.prj.samples:
             _LOGGER.info(self.counter.show(sample.sample_name,
                                            sample.protocol))
@@ -1291,9 +1290,6 @@ class Summarizer(Executor):
         for row in stats:
             tsv_writer.writerow(row)
 
-<<<<<<< HEAD
-        tsv_outfile.close()
-
         try:
 
             figs_tsv_path = "{root}_figs_summary.tsv".format(
@@ -1348,7 +1344,7 @@ class Summarizer(Executor):
                         _LOGGER.warn("Summarizer was unable to run: " + str(summarizer))
 
 
-=======
+
         tsv_outfile.close()            
         
         # all samples are parsed. 
@@ -1357,8 +1353,6 @@ class Summarizer(Executor):
         # Produce objects html file.
         create_index_html(objs, stats)
         
->>>>>>> origin/feat
-
 def aggregate_exec_skip_reasons(skip_reasons_sample_pairs):
     """
     Collect the reasons for skipping submission/execution of each sample
