@@ -206,7 +206,7 @@ class Project(peppy.Project):
                     pipe_iface, sample_subtype, strict_pipe_key,
                     full_pipe_path_with_flags)
 
-                # Enforce bundle unqiueness for each strict pipeline key.
+                # Enforce bundle uniqueness for each strict pipeline key.
                 maybe_new_bundle = (full_pipe_path_with_flags,
                                     sample_subtype, pipe_iface)
                 old_bundle = bundle_by_strict_pipe_key.setdefault(
@@ -241,8 +241,7 @@ def process_pipeline_interfaces(pipeline_interface_locations):
     :param Iterable[str] pipeline_interface_locations: locations, each of
         which should be either a directory path or a filepath, that specifies
         pipeline interface and protocol mappings information. Each such file
-        should be have a pipelines section and a protocol mappings section
-        whereas each folder should have a file for each of those sections.
+        should be have a pipelines section and a protocol mappings section.
     :return Mapping[str, Iterable[PipelineInterfaec]]: mapping from protocol
         name to interface(s) for which that protocol is mapped
     """

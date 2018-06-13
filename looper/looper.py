@@ -421,7 +421,7 @@ class Runner(Executor):
                         pl_key, pl_iface, script_with_flags, self.prj,
                         args.dry_run, args.time_delay, sample_subtype,
                         remaining_args, args.ignore_flags,
-                        self.prj.compute.partition,
+                        self.prj.compute,
                         max_cmds=args.lumpn, max_size=args.lump)
                 submission_conductors[pl_key] = conductor
                 pipe_keys_by_protocol[proto_key].append(pl_key)
@@ -1209,7 +1209,12 @@ class Summarizer(Executor):
             _LOGGER.info(
                 "Summary (n=" + str(len(stats)) + "): " + tsv_outfile_path)
 
+<<<<<<< HEAD
+        # First, the generic summarize will pull together all the fits
+        # and stats from each sample into project-combined spreadsheets.
+=======
         # Create stats_summary file
+>>>>>>> origin/feat
         for sample in self.prj.samples:
             _LOGGER.info(self.counter.show(sample.sample_name,
                                            sample.protocol))
@@ -1286,6 +1291,64 @@ class Summarizer(Executor):
         for row in stats:
             tsv_writer.writerow(row)
 
+<<<<<<< HEAD
+        tsv_outfile.close()
+
+        try:
+
+            figs_tsv_path = "{root}_figs_summary.tsv".format(
+                root=os.path.join(self.prj.metadata.output_dir, self.prj.name))
+
+            figs_html_path = "{root}_figs_summary.html".format(
+                root=os.path.join(self.prj.metadata.output_dir, self.prj.name))
+
+            figs_html_file = open(figs_html_path, 'w')
+            html_header = "<html><h1>Summary of sample figures for project {}</h1>\n".format(self.prj.name)
+            figs_html_file.write(html_header)
+            sample_img_header = "<h3>{sample_name}</h3>\n"
+            sample_img_code = "<p><a href='{path}'><img src='{path}'>{key}</a></p>\n"
+
+            figs.drop_duplicates(keep='last', inplace=True)
+            for sample_name in figs['sample_name'].drop_duplicates().sort_values():
+                f = figs[figs['sample_name'] == sample_name]
+                figs_html_file.write(sample_img_header.format(sample_name=sample_name))
+
+                for i, row in f.iterrows():
+                    figs_html_file.write(sample_img_code.format(
+                        key=str(row['key']), path=row['value']))
+
+            html_footer = "</html>"
+            figs_html_file.write(html_footer)
+
+            figs_html_file.close()
+        except ValueError:
+            _LOGGER.info("No files found.")
+        _LOGGER.info(
+            "Summary (n=" + str(len(stats)) + "): " + tsv_outfile_path)
+
+        # Next, looper can run custom summarizers, if they exist.
+
+        all_protocols = [sample.protocol for sample in self.prj.samples]
+
+        _LOGGER.debug("Protocols: " + str(all_protocols))
+        _LOGGER.debug(self.prj.interfaces_by_protocol)
+        for protocol in set(all_protocols):
+            ifaces = self.prj.interfaces_by_protocol[alpha_cased(protocol)]
+            for iface in ifaces:
+                _LOGGER.debug(iface)
+                pl = iface.fetch_pipelines(protocol)
+                summarizers = iface.get_attribute(pl,"summarizers")
+                for summarizer in summarizers:
+                    summarizer_abspath = os.path.join(
+                        os.path.dirname(iface.pipe_iface_file), summarizer)
+                    _LOGGER.debug([summarizer_abspath, self.prj.config_file])
+                    try:
+                        subprocess.call([summarizer_abspath, self.prj.config_file])
+                    except OSError:
+                        _LOGGER.warn("Summarizer was unable to run: " + str(summarizer))
+
+
+=======
         tsv_outfile.close()            
         
         # all samples are parsed. 
@@ -1294,6 +1357,7 @@ class Summarizer(Executor):
         # Produce objects html file.
         create_index_html(objs, stats)
         
+>>>>>>> origin/feat
 
 def aggregate_exec_skip_reasons(skip_reasons_sample_pairs):
     """

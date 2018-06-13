@@ -150,6 +150,16 @@ class PipelineInterface(object):
             raise ValueError("Attempted selection of resource package for "
                              "negative file size: {}".format(file_size))
 
+        universal_compute = {}
+        try:
+            universal_compute = self.select_pipeline(pipeline_name)["compute"]
+        except KeyError:
+            msg = "No universal compute settings for pipeline '{}'".format(pipeline_name)
+            if self.pipe_iface_file is not None:
+                msg += " in file '{}'".format(self.pipe_iface_file)
+            _LOGGER.warn(msg)
+
+
         try:
             resources = self.select_pipeline(pipeline_name)["resources"]
         except KeyError:
@@ -208,6 +218,7 @@ class PipelineInterface(object):
                 msg = "Selected '{}' package with min file size {} Gb for file " \
                       "of size {} Gb.".format(rp_name, size_ante, file_size)
                 _LOGGER.debug(msg)
+                rp_data.update(universal_compute)
                 return rp_data
 
 
@@ -229,7 +240,8 @@ class PipelineInterface(object):
         """
 
         # The key may contain extra command-line flags; split key from flags.
-        # The strict key is the script name itself, something like "ATACseq.py"
+        # The strict key was previously the script name itself, something like
+        # "ATACseq.py", but now is typically just something like "atacseq".
         strict_pipeline_key, _, pipeline_key_args = pipeline_key.partition(' ')
 
         full_pipe_path = \
