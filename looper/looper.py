@@ -1030,6 +1030,63 @@ class Summarizer(Executor):
                                "\n".join(obj_links),
                                "\n".join(sample_links),
                                NAVBAR_FOOTER]))
+                               
+        def create_project_objects():
+            interface_file = str(self.prj.metadata.pipeline_interfaces)
+            t = _pd.read_table(interface_file, header=None)
+            df = _pd.DataFrame()
+            df = df.append(t)
+            project_objs = []
+            i = 0
+            while i < len(df):
+                if 'summary_results' in df.iloc[i,0]:
+                    i += 1
+                    while '"' in df.iloc[i,0]:
+                        s = str(df.iloc[i,0])
+                        s = " ".join(s.split())
+                        s = s.replace('"','')
+                        project_objs.append(s)
+                        i += 1
+                else:
+                    i += 1
+            pod = dict(s.split(':') for s in project_objs)
+            obj_figs = []
+            obj_links = []
+            for key, value in pod.items():
+                ext = value.split('.')[-1]
+                label = value.split('.')[-2]
+                file = ".".join([label, ext])
+                img = ".".join([label, "png"])
+                search = os.path.join(self.prj.metadata.output_dir, '*{}'.format(file))
+                if glob.glob(search):
+                    file_path = str(glob.glob(search)[0])
+                    file_relpath = os.path.relpath(file_path, self.prj.metadata.output_dir)
+                    search = os.path.join(self.prj.metadata.output_dir, '*{}'.format(img))
+                    if glob.glob(search):
+                        img_path = str(glob.glob(search)[0])                    
+                        img_relpath = os.path.relpath(img_path, self.prj.metadata.output_dir)
+                        obj_figs.append(HTML_FIGURE.format(
+                            path=file_relpath,
+                            image=img_relpath,
+                            label=label))
+                    else:
+                        # No thumbnail exists, add as a link in a list
+                        obj_links.append(OBJECTS_LINK.format(
+                                            path=file_relpath,
+                                            label=label))
+                else:
+                    # File doesn't exist, don't add
+                    continue
+                
+            return ("\n".join(["\t\t<h5>PEPATAC project objects</h5>",
+                               "\t\t<div class='container'>",
+                               "\t\t<div class='row justify-content-start'>",
+                               "\n".join(obj_figs),
+                               "\t\t</div>",
+                               "\t\t</div>",
+                               OBJECTS_LIST_HEADER,
+                               "\n".join(obj_links),
+                               OBJECTS_LIST_FOOTER]))
                 
         def create_index_html(objs, stats):
             # Generate an index.html style project home page w/ sample summary
@@ -1138,6 +1195,12 @@ class Summarizer(Executor):
 
             # Create status page with each sample's status listed
             create_status_html(objs)
+            
+            # Add project level objects
+            pobjs = create_project_objects()
+            objs_html_file.write("\t\t<hr>\n")
+            objs_html_file.write(pobjs)
+            objs_html_file.write("\t\t<hr>\n")
 
             # Complete and close HTML file
             objs_html_file.write(HTML_FOOTER)

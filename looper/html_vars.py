@@ -47,6 +47,15 @@ HTML_BUTTON = \
 		</div>
 		<hr>
 """
+HTML_FIGURE = \
+"""\
+          <div class="col">
+            <figure class="figure">
+              <a href='{path}'><img style="width: 50%; height: 50%" src='{image}' class="figure-img img-fluid rounded img-thumbnail" alt=""></a>
+              <a href='{path}'><figcaption class="figure-caption text-left">'{label}'</figcaption></a>
+            </figure>
+          </div>
+"""
 HTML_FOOTER = \
 """\
         <!-- Optional JavaScript -->
@@ -59,7 +68,7 @@ HTML_FOOTER = \
 """
 
 HTML_VARS = ["HTML_HEAD_OPEN", "HTML_TITLE", "HTML_HEAD_CLOSE",
-             "HTML_BUTTON", "HTML_FOOTER"]
+             "HTML_BUTTON", "HTML_FIGURE", "HTML_FOOTER"]
 
 # Navigation-related vars
 NAVBAR_HEADER = \
@@ -477,7 +486,7 @@ OBJECTS_LIST_FOOTER = \
 OBJECTS_PLOTS = \
 """\
         <figure class="figure">
-          <a href='{path}'><img style="width: 200px; height: 200px" src='{image}' class="figure-img img-fluid rounded" alt=""></a>
+          <a href='{path}'><img style="width: 50%; height: 50%" src='{image}' class="figure-img img-fluid rounded" alt=""></a>
           <a href='{path}'><figcaption class="figure-caption text-left">'{label}'</figcaption></a>
         </figure>
 """
