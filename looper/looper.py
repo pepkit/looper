@@ -792,10 +792,13 @@ class Summarizer(Executor):
                                            names=['key', 'value', 'pl'])
                         t.drop_duplicates(subset=['key', 'pl'],
                                           keep='last', inplace=True)
-                        time = str(t[t['key'] == 'Time'].iloc[0]['value'])
-                        html_file.write(STATUS_ROW_VALUE.format(
+                        try:
+                            time = str(t[t['key'] == 'Time'].iloc[0]['value'])
+                            html_file.write(STATUS_ROW_VALUE.format(
                                             row_class="",
                                             value=str(time)))
+                        except IndexError:
+                            _LOGGER.warn("Summary file is incomplete")                        
                     else:
                         # TODO: If still running, use _profile.tsv?
                         html_file.write(STATUS_ROW_VALUE.format(
@@ -1263,6 +1266,8 @@ class Summarizer(Executor):
             t['sample_name'] = sample.name
             figs = figs.append(t, ignore_index=True)
 
+        # Create objects summary file
+        for sample in self.prj.samples:
             # Now process any reported objects
             # TODO: only use the objects tsv once confirmed working
             objs_file = os.path.join(sample_output_folder, "objects.tsv")
@@ -1320,7 +1325,7 @@ class Summarizer(Executor):
 
             figs_html_file.close()
         except ValueError:
-            _LOGGER.info("No files found.")
+            _LOGGER.info("No figure files found.")
 
         _LOGGER.info(
             "Summary (n=" + str(len(stats)) + "): " + tsv_outfile_path)
