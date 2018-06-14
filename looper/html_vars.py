@@ -51,10 +51,10 @@ HTML_FIGURE = \
 """\
           <div class="col">
             <figure class="figure">
-              <a href='{path}'><img style="width: 50%; height: 50%" src='{image}' class="figure-img img-fluid rounded img-thumbnail" alt=""></a>
+              <a href='{path}'><img style="width: 100%; height: 100%" src='{image}' class="figure-img img-fluid rounded img-thumbnail" alt=""></a>
               <a href='{path}'><figcaption class="figure-caption text-left">'{label}'</figcaption></a>
             </figure>
-          </div>
+          </div>\
 """
 HTML_FOOTER = \
 """\

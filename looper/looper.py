@@ -25,7 +25,6 @@ from .exceptions import JobSubmissionException
 from .project import Project
 from .submission_manager import SubmissionConductor
 from .utils import fetch_flag_files, sample_folder
-#from .html_funcs import *
 from .html_vars import *
 
 from peppy import \
@@ -697,12 +696,19 @@ class Summarizer(Executor):
                     page_relpath = os.path.relpath(page_path, reports_dir)
                     if os.path.isfile(image_path):
                         image_relpath = os.path.relpath(image_path, reports_dir)
-                        figures.append(OBJECTS_PLOTS.format(
-                                            label=str(row['sample_name']),
+                        # If the object has a valid image, use it!
+                        if str(image_path).lower().endswith(('.png', '.jpg', '.jpeg', '.svg', '.gif')):
+                            figures.append(OBJECTS_PLOTS.format(
                                             path=page_relpath,
-                                            image=image_relpath))
+                                            image=image_relpath,
+                                            label=str(row['sample_name'])))
+                        # Otherwise treat as a link
+                        else:
+                            links.append(OBJECTS_LINK.format(                                            
+                                            path=page_relpath,
+                                            label=str(row['sample_name'])))
+                    # If no image file present, it's just a link
                     else:
-                        # Treat as a link in a list
                         links.append(OBJECTS_LINK.format(
                                         path=page_relpath,
                                         label=str(row['sample_name'])))
@@ -1032,51 +1038,61 @@ class Summarizer(Executor):
                                NAVBAR_FOOTER]))
                                
         def create_project_objects():
-            interface_file = str(self.prj.metadata.pipeline_interfaces)
-            t = _pd.read_table(interface_file, header=None)
-            df = _pd.DataFrame()
-            df = df.append(t)
-            project_objs = []
-            i = 0
-            while i < len(df):
-                if 'summary_results' in df.iloc[i,0]:
-                    i += 1
-                    while '"' in df.iloc[i,0]:
-                        s = str(df.iloc[i,0])
-                        s = " ".join(s.split())
-                        s = s.replace('"','')
-                        project_objs.append(s)
-                        i += 1
-                else:
-                    i += 1
-            pod = dict(s.split(':') for s in project_objs)
-            obj_figs = []
-            obj_links = []
-            for key, value in pod.items():
-                ext = value.split('.')[-1]
-                label = value.split('.')[-2]
-                file = ".".join([label, ext])
-                img = ".".join([label, "png"])
-                search = os.path.join(self.prj.metadata.output_dir, '*{}'.format(file))
-                if glob.glob(search):
-                    file_path = str(glob.glob(search)[0])
-                    file_relpath = os.path.relpath(file_path, self.prj.metadata.output_dir)
-                    search = os.path.join(self.prj.metadata.output_dir, '*{}'.format(img))
-                    if glob.glob(search):
-                        img_path = str(glob.glob(search)[0])                    
-                        img_relpath = os.path.relpath(img_path, self.prj.metadata.output_dir)
-                        obj_figs.append(HTML_FIGURE.format(
-                            path=file_relpath,
-                            image=img_relpath,
-                            label=label))
-                    else:
-                        # No thumbnail exists, add as a link in a list
-                        obj_links.append(OBJECTS_LINK.format(
-                                            path=file_relpath,
-                                            label=label))
-                else:
-                    # File doesn't exist, don't add
-                    continue
+            # If a sample produces result summaries add those as additional
+            # figures or links to the index.html page
+            all_protocols = [sample.protocol for sample in self.prj.samples]
+
+            for protocol in set(all_protocols):
+                obj_figs = []
+                num_figures = 1
+                obj_links = []
+                ifaces = self.prj.interfaces_by_protocol[alpha_cased(protocol)]
+                for iface in ifaces:
+                    pl = iface.fetch_pipelines(protocol)
+                    summary_results = iface.get_attribute(pl,"summary_results")
+                    for result in summary_results:
+                        caption = str(result['caption'])
+                        file_path = str(result['path'])
+                        img_path = str(result['thumbnail_path'])
+                        subdir = os.path.dirname(result['path'])
+                        ext = file_path.split('.')[-1]
+                        label = file_path.split('.')[-2]
+                        file = ".".join([label, ext])
+                        search = os.path.join(self.prj.metadata.output_dir, subdir, '*{}'.format(file))
+                        if glob.glob(search):
+                            file_path = str(glob.glob(search)[0])
+                            file_relpath = os.path.relpath(file_path, self.prj.metadata.output_dir)
+                            ext = img_path.split('.')[-1]
+                            label = img_path.split('.')[-2]
+                            img = ".".join([label, ext])
+                            search = os.path.join(self.prj.metadata.output_dir, subdir, '*{}'.format(img))
+                            if glob.glob(search):
+                                img_path = str(glob.glob(search)[0])                  
+                                img_relpath = os.path.relpath(img_path, self.prj.metadata.output_dir)
+                                if num_figures <= 3:
+                                    # Add to single row
+                                    obj_figs.append(HTML_FIGURE.format(
+                                        path=file_relpath,
+                                        image=img_relpath,
+                                        label=caption))
+                                    num_figures += 1
+                                else:
+                                    # Close the previous row and start new one
+                                    num_figures = 1
+                                    obj_figs.append("\t\t</div>")
+                                    obj_figs.append("\t\t<div class='row justify-content-start'>")
+                                    obj_figs.append(HTML_FIGURE.format(
+                                        path=file_relpath,
+                                        image=img_relpath,
+                                        label=caption))
+                                    
+                            else:
+                                # No thumbnail exists, add as a link in a list
+                                obj_links.append(OBJECTS_LINK.format(
+                                                    path=file_relpath,
+                                                    label=caption))
+                        else:
+                            _LOGGER.warn("Summarizer was unable to find the: " + caption)
                 
             return ("\n".join(["\t\t<h5>PEPATAC project objects</h5>",
                                "\t\t<div class='container'>",
@@ -1211,9 +1227,13 @@ class Summarizer(Executor):
 
         # First, the generic summarize will pull together all the fits
         # and stats from each sample into project-combined spreadsheets.
+<<<<<<< HEAD
 
         # Create stats_summary file
 
+=======
+        # Create stats_summary file
+>>>>>>> Update project_objects creation
         for sample in self.prj.samples:
             _LOGGER.info(self.counter.show(sample.sample_name,
                                            sample.protocol))
@@ -1290,35 +1310,43 @@ class Summarizer(Executor):
         for row in stats:
             tsv_writer.writerow(row)
 
+<<<<<<< HEAD
         try:
 
             figs_tsv_path = "{root}_figs_summary.tsv".format(
                 root=os.path.join(self.prj.metadata.output_dir, self.prj.name))
+=======
+        tsv_outfile.close()
 
-            figs_html_path = "{root}_figs_summary.html".format(
-                root=os.path.join(self.prj.metadata.output_dir, self.prj.name))
+        # try:
+            # figs_tsv_path = "{root}_figs_summary.tsv".format(
+                # root=os.path.join(self.prj.metadata.output_dir, self.prj.name))
+>>>>>>> Update project_objects creation
 
-            figs_html_file = open(figs_html_path, 'w')
-            html_header = "<html><h1>Summary of sample figures for project {}</h1>\n".format(self.prj.name)
-            figs_html_file.write(html_header)
-            sample_img_header = "<h3>{sample_name}</h3>\n"
-            sample_img_code = "<p><a href='{path}'><img src='{path}'>{key}</a></p>\n"
+            # figs_html_path = "{root}_figs_summary.html".format(
+                # root=os.path.join(self.prj.metadata.output_dir, self.prj.name))
 
-            figs.drop_duplicates(keep='last', inplace=True)
-            for sample_name in figs['sample_name'].drop_duplicates().sort_values():
-                f = figs[figs['sample_name'] == sample_name]
-                figs_html_file.write(sample_img_header.format(sample_name=sample_name))
+            # figs_html_file = open(figs_html_path, 'w')
+            # html_header = "<html><h1>Summary of sample figures for project {}</h1>\n".format(self.prj.name)
+            # figs_html_file.write(html_header)
+            # sample_img_header = "<h3>{sample_name}</h3>\n"
+            # sample_img_code = "<p><a href='{path}'><img src='{path}'>{key}</a></p>\n"
 
-                for i, row in f.iterrows():
-                    figs_html_file.write(sample_img_code.format(
-                        key=str(row['key']), path=row['value']))
+            # figs.drop_duplicates(keep='last', inplace=True)
+            # for sample_name in figs['sample_name'].drop_duplicates().sort_values():
+                # f = figs[figs['sample_name'] == sample_name]
+                # figs_html_file.write(sample_img_header.format(sample_name=sample_name))
 
-            html_footer = "</html>"
-            figs_html_file.write(html_footer)
+                # for i, row in f.iterrows():
+                    # figs_html_file.write(sample_img_code.format(
+                        # key=str(row['key']), path=row['value']))
 
-            figs_html_file.close()
-        except ValueError:
-            _LOGGER.info("No files found.")
+            # html_footer = "</html>"
+            # figs_html_file.write(html_footer)
+
+            # figs_html_file.close()
+        # except ValueError:
+            # _LOGGER.info("No files found.")
         _LOGGER.info(
             "Summary (n=" + str(len(stats)) + "): " + tsv_outfile_path)
 
@@ -1341,18 +1369,27 @@ class Summarizer(Executor):
                     try:
                         subprocess.call([summarizer_abspath, self.prj.config_file])
                     except OSError:
+<<<<<<< HEAD
                         _LOGGER.warn("Summarizer was unable to run: " + str(summarizer))
 
 
 
         tsv_outfile.close()            
         
+=======
+                        _LOGGER.warn("Summarizer was unable to run: " + str(summarizer))     
+>>>>>>> Update project_objects creation
         # all samples are parsed. 
         # Produce figures html file. <DEPRECATED>
         #create_figures_html(figs) <DEPRECATED>
         # Produce objects html file.
         create_index_html(objs, stats)
+<<<<<<< HEAD
         
+=======
+
+
+>>>>>>> Update project_objects creation
 def aggregate_exec_skip_reasons(skip_reasons_sample_pairs):
     """
     Collect the reasons for skipping submission/execution of each sample
