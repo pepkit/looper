@@ -1250,7 +1250,7 @@ class Summarizer(Executor):
 
         self.counter.reset()
 
-        # Create objects summary file
+        # Create figures summary file
         for sample in self.prj.samples:
             _LOGGER.info(self.counter.show(sample.sample_name, sample.protocol))
             sample_output_folder = sample_folder(self.prj, sample)
@@ -1266,37 +1266,7 @@ class Summarizer(Executor):
             t['sample_name'] = sample.name
             figs = figs.append(t, ignore_index=True)
 
-        # Create objects summary file
-        for sample in self.prj.samples:
-            # Now process any reported objects
-            # TODO: only use the objects tsv once confirmed working
-            objs_file = os.path.join(sample_output_folder, "objects.tsv")
-            if os.path.isfile(objs_file):
-                _LOGGER.info("Found objects file: '%s'", objs_file)
-            else:
-                _LOGGER.warn("No objects file '%s'", objs_file)
-                continue
-            t = _pd.read_table(objs_file, header=None,
-                               names=['key', 'filename', 'anchor_text',
-                                      'anchor_image', 'annotation'])
-            t['sample_name'] = sample.name
-            objs = objs.append(t, ignore_index=True)
-
-        tsv_outfile_path = os.path.join(self.prj.metadata.output_dir, self.prj.name)
-        if hasattr(self.prj, "subproject") and self.prj.subproject:
-            tsv_outfile_path += '_' + self.prj.subproject
-        tsv_outfile_path += '_stats_summary.tsv'
-
-        tsv_outfile = open(tsv_outfile_path, 'w')
-
-        tsv_writer = csv.DictWriter(tsv_outfile, fieldnames=uniqify(columns),
-                                    delimiter='\t', extrasaction='ignore')
-        tsv_writer.writeheader()
-
-        for row in stats:
-            tsv_writer.writerow(row)
-
-        tsv_outfile.close()
+        self.counter.reset()
 
         try:
             figs_tsv_path = "{root}_figs_summary.tsv".format(
@@ -1327,11 +1297,44 @@ class Summarizer(Executor):
         except ValueError:
             _LOGGER.info("No figure files found.")
 
+        # Create objects summary file
+        for sample in self.prj.samples:
+            # Now process any reported objects
+            # TODO: only use the objects tsv once confirmed working
+            _LOGGER.info(self.counter.show(sample.sample_name, sample.protocol))
+            sample_output_folder = sample_folder(self.prj, sample)
+            objs_file = os.path.join(sample_output_folder, "objects.tsv")
+            if os.path.isfile(objs_file):
+                _LOGGER.info("Found objects file: '%s'", objs_file)
+            else:
+                _LOGGER.warn("No objects file '%s'", objs_file)
+                continue
+            t = _pd.read_table(objs_file, header=None,
+                               names=['key', 'filename', 'anchor_text',
+                                      'anchor_image', 'annotation'])
+            t['sample_name'] = sample.name
+            objs = objs.append(t, ignore_index=True)
+
+        tsv_outfile_path = os.path.join(self.prj.metadata.output_dir, self.prj.name)
+        if hasattr(self.prj, "subproject") and self.prj.subproject:
+            tsv_outfile_path += '_' + self.prj.subproject
+        tsv_outfile_path += '_stats_summary.tsv'
+
+        tsv_outfile = open(tsv_outfile_path, 'w')
+
+        tsv_writer = csv.DictWriter(tsv_outfile, fieldnames=uniqify(columns),
+                                    delimiter='\t', extrasaction='ignore')
+        tsv_writer.writeheader()
+
+        for row in stats:
+            tsv_writer.writerow(row)
+
+        tsv_outfile.close()
+
         _LOGGER.info(
             "Summary (n=" + str(len(stats)) + "): " + tsv_outfile_path)
 
         # Next, looper can run custom summarizers, if they exist.
-
         all_protocols = [sample.protocol for sample in self.prj.samples]
 
         _LOGGER.debug("Protocols: " + str(all_protocols))
