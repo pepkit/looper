@@ -32,7 +32,6 @@ from peppy import \
 from peppy.utils import alpha_cased
 
 
-
 SUBMISSION_FAILURE_MESSAGE = "Cluster resource failure"
 
 # Descending by severity for correspondence with logic inversion.
@@ -42,7 +41,6 @@ _LEVEL_BY_VERBOSITY = [logging.ERROR, logging.CRITICAL, logging.WARN,
 _FAIL_DISPLAY_PROPORTION_THRESHOLD = 0.5
 _MAX_FAIL_SAMPLE_DISPLAY = 20
 _LOGGER = logging.getLogger()
-
 
 
 def parse_arguments():
@@ -57,7 +55,7 @@ def parse_arguments():
     # Main looper program help text messages
     banner = "%(prog)s - Loop through samples and submit pipelines."
     additional_description = "For subcommand-specific options, type: " \
-            "'%(prog)s <subcommand> -h'"
+                             "'%(prog)s <subcommand> -h'"
     additional_description += "\nhttps://github.com/pepkit/looper"
 
     parser = _VersionInHelpParser(
@@ -88,11 +86,12 @@ def parse_arguments():
     msg_by_cmd = {
             "run": "Main Looper function: Submit jobs for samples.",
             "summarize": "Summarize statistics of project samples.",
-            "destroy": "Remove all files of the project.", 
-            "check": "Checks flag status of current runs.", 
+            "destroy": "Remove all files of the project.",
+            "check": "Checks flag status of current runs.",
             "clean": "Runs clean scripts to remove intermediate "
                      "files of already processed jobs."}
     subparsers = parser.add_subparsers(dest="command")
+
     def add_subparser(cmd):
         message = msg_by_cmd[cmd]
         return subparsers.add_parser(cmd, description=message, help=message)
@@ -115,8 +114,8 @@ def parse_arguments():
             "--ignore-duplicate-names",
             action="store_true",
             help="Ignore duplicate names? Default: False. "
-                 "By default, pipelines will not be submitted if a sample name "
-                 "is duplicated, since samples names should be unique.  "
+                 "By default, pipelines will not be submitted if a sample name"
+                 " is duplicated, since samples names should be unique.  "
                  " Set this option to override this setting and "
                  "and submit the runs anyway.")
     run_subparser.add_argument(
@@ -157,7 +156,7 @@ def parse_arguments():
 
     # Common arguments
     for subparser in [run_subparser, summarize_subparser,
-                destroy_subparser, check_subparser, clean_subparser]:
+                      destroy_subparser, check_subparser, clean_subparser]:
         subparser.add_argument(
                 "config_file",
                 help="Project configuration file (YAML).")
@@ -176,8 +175,8 @@ def parse_arguments():
                      "for which protocol is not in this collection.")
         protocols.add_argument(
                 "--include-protocols", nargs='*', dest="include_protocols",
-                help="Operate only on samples associated with these protocols; "
-                     "if not provided, all samples are used.")
+                help="Operate only on samples associated with these protocols;"
+                     " if not provided, all samples are used.")
         subparser.add_argument(
                 "--sp", dest="subproject",
                 help="Name of subproject to use, as designated in the "
@@ -211,9 +210,8 @@ def parse_arguments():
     return args, remaining_args
 
 
-
 class Executor(object):
-    """ Base class that ensures the program's Sample counter starts. 
+    """ Base class that ensures the program's Sample counter starts.
 
     Looper is made up of a series of child classes that each extend the base
     Executor class. Each child class does a particular task (such as run the
@@ -226,7 +224,7 @@ class Executor(object):
     def __init__(self, prj):
         """
         The Project defines the instance; establish an iteration counter.
-        
+
         :param Project prj: Project with which to work/operate on
         """
         super(Executor, self).__init__()
@@ -237,7 +235,6 @@ class Executor(object):
     def __call__(self, *args, **kwargs):
         """ Do the work of the subcommand/program. """
         pass
-
 
 
 class Checker(Executor):
@@ -289,16 +286,15 @@ class Checker(Executor):
                              len(files), "\n".join(files))
 
 
-
 class Cleaner(Executor):
     """ Remove all intermediate files (defined by pypiper clean scripts). """
-    
+
     def __call__(self, args, preview_flag=True):
         """
         Execute the file cleaning process.
-        
+
         :param argparse.Namespace args: command-line options and arguments
-        :param bool preview_flag: whether to halt before actually removing files 
+        :param bool preview_flag: whether to halt before actually removing files
         """
         _LOGGER.info("Files to clean:")
 
@@ -333,20 +329,19 @@ class Cleaner(Executor):
         return self(args, preview_flag=False)
 
 
-
 class Destroyer(Executor):
     """ Destroyer of files and folders associated with Project's Samples """
-    
+
     def __call__(self, args, preview_flag=True):
         """
         Completely remove all output produced by any pipelines.
-    
+
         :param argparse.Namespace args: command-line options and arguments
         :param bool preview_flag: whether to halt before actually removing files
         """
-    
+
         _LOGGER.info("Results to destroy:")
-    
+
         for sample in self.prj.samples:
             _LOGGER.info(
                 self.counter.show(sample.sample_name, sample.protocol))
@@ -356,15 +351,15 @@ class Destroyer(Executor):
                 _LOGGER.info(str(sample_output_folder))
             else:
                 destroy_sample_results(sample_output_folder, args)
-    
+
         if not preview_flag:
             _LOGGER.info("Destroy complete.")
             return 0
-    
+
         if args.dry_run:
             _LOGGER.info("Dry run. No files destroyed.")
             return 0
-    
+
         if not query_yes_no("Are you sure you want to permanently delete "
                             "all pipeline results for this project?"):
             _LOGGER.info("Destroy action aborted by user.")
@@ -376,17 +371,16 @@ class Destroyer(Executor):
         return self(args, preview_flag=False)
 
 
-
 class Runner(Executor):
     """ The true submitter of pipelines """
 
     def __call__(self, args, remaining_args):
         """
         Do the Sample submission.
-        
-        :param argparse.Namespace args: parsed command-line options and 
-            arguments, recognized by looper 
-        :param list remaining_args: command-line options and arguments not 
+
+        :param argparse.Namespace args: parsed command-line options and
+            arguments, recognized by looper
+        :param list remaining_args: command-line options and arguments not
             recognized by looper, germane to samples/pipelines
         """
 
@@ -491,7 +485,7 @@ class Runner(Executor):
             sample.to_yaml(subs_folder_path=self.prj.metadata.submission_subdir)
 
             pipe_keys = pipe_keys_by_protocol.get(alpha_cased(sample.protocol)) \
-                        or pipe_keys_by_protocol.get(GENERIC_PROTOCOL_KEY)
+                or pipe_keys_by_protocol.get(GENERIC_PROTOCOL_KEY)
             _LOGGER.debug("Considering %d pipeline(s)", len(pipe_keys))
 
             pl_fails = []
@@ -573,24 +567,23 @@ class Runner(Executor):
         """
 
 
-
 class Summarizer(Executor):
     """ Project/Sample output summarizer """
-    
+
     def __call__(self):
         """ Do the summarization. """
         import csv
 
         columns = []
         stats = []
-        #figs = _pd.DataFrame()
+        # figs = _pd.DataFrame()
         objs = _pd.DataFrame()
-        
+
         # def create_figures_html(figs):
-            # # QUESTION: Is not being used? ...Original usage was?
-            # # figs_tsv_path = "{root}_figs_summary.tsv".format(
-                # # root=os.path.join(self.prj.metadata.output_dir, self.prj.name))
-            # # DEPRECATED
+            # QUESTION: Is not being used? ...Original usage was?
+            # figs_tsv_path = "{root}_figs_summary.tsv".format(
+                # root=os.path.join(self.prj.metadata.output_dir, self.prj.name))
+            # DEPRECATED
 
             # figs_html_path = "{root}_figs_summary.html".format(
                 # root=os.path.join(self.prj.metadata.output_dir, self.prj.name))
@@ -611,7 +604,7 @@ class Summarizer(Executor):
                     # figs_html_file.write(sample_img_code.format(
                         # key=str(row['key']),
                         # path=str(self.prj.metadata.results_subdir + '/' +
-                                 # sample_name + '/' + row['value'])))
+                                # sample_name + '/' + row['value'])))
 
             # html_footer = "</html>"
             # figs_html_file.write(html_footer)
@@ -619,6 +612,7 @@ class Summarizer(Executor):
             # figs_html_file.close()
             # _LOGGER.info(
                 # "Summary (n=" + str(len(stats)) + "): " + tsv_outfile_path)
+
         def create_object_parent_html(objs):
             # Generates a page listing all the project objects with links
             # to individual object pages
@@ -635,15 +629,13 @@ class Summarizer(Executor):
                 html_file.write("\t\t<ul style='list-style-type:circle'>\n")
                 for key in objs['key'].drop_duplicates().sort_values():
                     page_name = key + ".html"
-                    page_path = os.path.join(reports_dir,
-                                    page_name).replace(' ', '_').lower()
+                    page_path = os.path.join(reports_dir, page_name).replace(' ', '_').lower()
                     page_relpath = os.path.relpath(page_path, reports_dir)
                     html_file.write(GENERIC_LIST_ENTRY.format(
-                                            page=page_relpath,
-                                            label=key))
+                                    page=page_relpath, label=key))
                 html_file.write(HTML_FOOTER)
                 html_file.close()
-                
+
         def create_sample_parent_html(objs):
             # Generates a page listing all the project samples with links
             # to individual sample pages
@@ -654,33 +646,30 @@ class Summarizer(Executor):
                 os.makedirs(os.path.dirname(sample_parent_path))
             with open(sample_parent_path, 'w') as html_file:
                 html_file.write(HTML_HEAD_OPEN)
-                html_file.write(create_navbar(objs,reports_dir))
+                html_file.write(create_navbar(objs, reports_dir))
                 html_file.write(HTML_HEAD_CLOSE)
                 html_file.write("\t<h4>Click link to view all objects for each sample</h4>\n")
                 html_file.write("\t\t<ul style='list-style-type:circle'>\n")
                 for sample in self.prj.samples:
                     sample_name = str(sample.sample_name)
                     page_name = sample_name + ".html"
-                    page_path = os.path.join(reports_dir,
-                                    page_name).replace(' ', '_').lower()
+                    page_path = os.path.join(reports_dir, page_name).replace(' ', '_').lower()
                     page_relpath = os.path.relpath(page_path, reports_dir)
                     html_file.write(GENERIC_LIST_ENTRY.format(
-                                            page=page_relpath,
-                                            label=sample_name))
+                                    page=page_relpath, label=sample_name))
                 html_file.write(HTML_FOOTER)
                 html_file.close()
 
         def create_object_html(objs, nb, type, filename, index_html):
-            # Generates a page for an individual object type with all of its 
+            # Generates a page for an individual object type with all of its
             # plots from each sample
-            reports_dir = os.path.join(self.prj.metadata.output_dir,
-                                       "reports")
+            reports_dir = os.path.join(self.prj.metadata.output_dir, "reports")
             object_path = os.path.join(reports_dir,
                                        filename).replace(' ', '_').lower()
             if not os.path.exists(os.path.dirname(object_path)):
                 os.makedirs(os.path.dirname(object_path))
             with open(object_path, 'w') as html_file:
-                html_file.write(HTML_HEAD_OPEN)                
+                html_file.write(HTML_HEAD_OPEN)
                 html_file.write(create_navbar(nb, reports_dir))
                 html_file.write(HTML_HEAD_CLOSE)
                 html_file.write("\t\t<h4>{} objects</h4>\n".format(str(type)))
@@ -692,7 +681,7 @@ class Summarizer(Executor):
                                  row['sample_name'], row['filename'])
                     image_path = os.path.join(
                                   self.prj.metadata.results_subdir,
-                                  row['sample_name'], row['anchor_image'])                   
+                                  row['sample_name'], row['anchor_image'])
                     page_relpath = os.path.relpath(page_path, reports_dir)
                     if os.path.isfile(image_path):
                         image_relpath = os.path.relpath(image_path, reports_dir)
@@ -704,7 +693,7 @@ class Summarizer(Executor):
                                             label=str(row['sample_name'])))
                         # Otherwise treat as a link
                         else:
-                            links.append(OBJECTS_LINK.format(                                            
+                            links.append(OBJECTS_LINK.format(
                                             path=page_relpath,
                                             label=str(row['sample_name'])))
                     # If no image file present, it's just a link
@@ -720,12 +709,11 @@ class Summarizer(Executor):
                 html_file.write("\t\t\t<hr>\n")
                 html_file.write(HTML_FOOTER)
                 html_file.close()
-        
+
         def create_status_html(all_samples):
             # Generates a page listing all the samples, their run status, their
             # log file, and the total runtime if completed.
-            reports_dir = os.path.join(self.prj.metadata.output_dir,
-                                       "reports")
+            reports_dir = os.path.join(self.prj.metadata.output_dir, "reports")
             status_html_path = os.path.join(reports_dir, "status.html")
             if not os.path.exists(os.path.dirname(status_html_path)):
                 os.makedirs(os.path.dirname(status_html_path))
@@ -753,13 +741,12 @@ class Summarizer(Executor):
                     else:
                         button_class = "table-secondary"
                         flag = "Unknown"
-                    
+
                     # Create table entry for each sample
                     html_file.write(STATUS_ROW_HEADER)
                     # First Col: Sample_Name (w/ link to sample page)
                     page_name = sample_name + ".html"
-                    page_path = os.path.join(reports_dir,
-                                    page_name).replace(' ', '_').lower()
+                    page_path = os.path.join(reports_dir, page_name).replace(' ', '_').lower()
                     page_relpath = os.path.relpath(page_path, reports_dir)
                     html_file.write(STATUS_ROW_LINK.format(
                                         row_class="",
@@ -787,8 +774,8 @@ class Summarizer(Executor):
                     else:
                         log_name = str(single_sample.iloc[0]['annotation']) + "_log.md"
                         # Currently unused. Future?
-                        #profile_name = str(single_sample.iloc[0]['annotation']) + "_profile.tsv"
-                        #command_name = str(single_sample.iloc[0]['annotation']) + "_commands.sh"
+                        # profile_name = str(single_sample.iloc[0]['annotation']) + "_profile.tsv"
+                        # command_name = str(single_sample.iloc[0]['annotation']) + "_commands.sh"
                     log_file = os.path.join(self.prj.metadata.results_subdir,
                                             sample_name, log_name)
                     log_relpath = os.path.relpath(log_file, reports_dir)
@@ -819,7 +806,7 @@ class Summarizer(Executor):
                 html_file.write(STATUS_FOOTER)
                 html_file.write(HTML_FOOTER)
                 html_file.close()
-        
+
         def create_sample_html(single_sample, all_samples, sample_name,
                                sample_stats, filename, index_html):
             # Produce an HTML page containing all of a sample's objects
@@ -854,7 +841,7 @@ class Summarizer(Executor):
                     command_name = str(single_sample.iloc[0]['annotation']) + "_commands.sh"
                 # Get relative path to the log file
                 log_file = os.path.join(self.prj.metadata.results_subdir,
-                                        sample_name, log_name)              
+                                        sample_name, log_name)
                 log_relpath = os.path.relpath(log_file, reports_dir)
                 # Grab the status flag for the current sample
                 flag = glob.glob(os.path.join(self.prj.metadata.results_subdir,
@@ -878,7 +865,7 @@ class Summarizer(Executor):
                                     sample_name, "stats.tsv"), reports_dir)
                 profile_relpath = os.path.relpath(os.path.join(
                                     self.prj.metadata.results_subdir,
-                                    sample_name, profile_name), reports_dir)              
+                                    sample_name, profile_name), reports_dir)
                 command_relpath = os.path.relpath(os.path.join(
                                     self.prj.metadata.results_subdir,
                                     sample_name, command_name), reports_dir)
@@ -889,19 +876,19 @@ class Summarizer(Executor):
                                     profile_file=profile_relpath,
                                     commands_file=command_relpath,
                                     stats_file=stats_relpath))
-                
+
                 # Add the sample's statistics as a table
                 html_file.write("\t<div class='container-fluid'>\n")
-                html_file.write(TABLE_HEADER)   
+                html_file.write(TABLE_HEADER)
                 for key, value in sample_stats.items():
                     html_file.write(TABLE_COLS.format(col_val=str(key)))
                 html_file.write(TABLE_COLS_FOOTER)
 
-                # Produce table rows      
-                html_file.write(TABLE_ROW_HEADER)                    
+                # Produce table rows
+                html_file.write(TABLE_ROW_HEADER)
                 for key, value in sample_stats.items():
                     # Treat sample_name as a link to sample page
-                    if key=='sample_name':                       
+                    if key == 'sample_name':
                         html_filename = str(value) + ".html"
                         html_page = os.path.join(reports_dir,
                                                  html_filename).lower()
@@ -914,7 +901,7 @@ class Summarizer(Executor):
                     else:
                         html_file.write(TABLE_ROWS.format(
                             row_val=str(value)))
-                html_file.write(TABLE_ROW_FOOTER)                                   
+                html_file.write(TABLE_ROW_FOOTER)
                 html_file.write(TABLE_FOOTER)
                 html_file.write("\t\t<hr>\n")
 
@@ -933,7 +920,7 @@ class Summarizer(Executor):
                         page_path = os.path.join(
                                         self.prj.metadata.results_subdir,
                                         sample_name, row['filename'])
-                        page_relpath = os.path.relpath(page_path, reports_dir)                      
+                        page_relpath = os.path.relpath(page_path, reports_dir)
                         if os.path.isfile(image_path):
                             # If the object has a valid image, use it!
                             if str(image_path).lower().endswith(('.png', '.jpg', '.jpeg', '.svg', '.gif')):
@@ -975,7 +962,7 @@ class Summarizer(Executor):
             # Use relative linking structure
             relpath = os.path.relpath(status_page, wd)
             status_link = NAVBAR_MENU_LINK.format(html_page=relpath,
-                                                  page_name="Status")                               
+                                                  page_name="Status")
             # Create list of object page links
             obj_links = []
             # If the number of objects is 20 or less, use a drop-down menu
@@ -987,7 +974,7 @@ class Summarizer(Executor):
                 obj_links.append(NAVBAR_DROPDOWN_LINK.format(
                                     html_page=relpath,
                                     page_name="All objects"))
-                obj_links.append(NAVBAR_DROPDOWN_DIVIDER)             
+                obj_links.append(NAVBAR_DROPDOWN_DIVIDER)
                 for key in objs['key'].drop_duplicates().sort_values():
                     page_name = key + ".html"
                     page_path = os.path.join(reports_dir, page_name).replace(' ', '_').lower()
@@ -1015,7 +1002,7 @@ class Summarizer(Executor):
                 sample_links.append(NAVBAR_DROPDOWN_LINK.format(
                                         html_page=relpath,
                                         page_name="All samples"))
-                sample_links.append(NAVBAR_DROPDOWN_DIVIDER)   
+                sample_links.append(NAVBAR_DROPDOWN_DIVIDER)
                 for sample_name in objs['sample_name'].drop_duplicates().sort_values():
                     page_name = sample_name + ".html"
                     page_path = os.path.join(reports_dir, page_name).replace(' ', '_').lower()
@@ -1036,7 +1023,7 @@ class Summarizer(Executor):
                                "\n".join(obj_links),
                                "\n".join(sample_links),
                                NAVBAR_FOOTER]))
-                               
+
         def create_project_objects():
             # If a sample produces result summaries add those as additional
             # figures or links to the index.html page
@@ -1049,7 +1036,7 @@ class Summarizer(Executor):
                 ifaces = self.prj.interfaces_by_protocol[alpha_cased(protocol)]
                 for iface in ifaces:
                     pl = iface.fetch_pipelines(protocol)
-                    summary_results = iface.get_attribute(pl,"summary_results")
+                    summary_results = iface.get_attribute(pl, "summary_results")
                     for result in summary_results:
                         caption = str(result['caption'])
                         file_path = str(result['path'])
@@ -1067,7 +1054,7 @@ class Summarizer(Executor):
                             img = ".".join([label, ext])
                             search = os.path.join(self.prj.metadata.output_dir, subdir, '*{}'.format(img))
                             if glob.glob(search):
-                                img_path = str(glob.glob(search)[0])                  
+                                img_path = str(glob.glob(search)[0])
                                 img_relpath = os.path.relpath(img_path, self.prj.metadata.output_dir)
                                 if num_figures <= 3:
                                     # Add to single row
@@ -1085,7 +1072,6 @@ class Summarizer(Executor):
                                         path=file_relpath,
                                         image=img_relpath,
                                         label=caption))
-                                    
                             else:
                                 # No thumbnail exists, add as a link in a list
                                 obj_links.append(OBJECTS_LINK.format(
@@ -1093,7 +1079,6 @@ class Summarizer(Executor):
                                                     label=caption))
                         else:
                             _LOGGER.warn("Summarizer was unable to find the: " + caption)
-                
             return ("\n".join(["\t\t<h5>PEPATAC project objects</h5>",
                                "\t\t<div class='container'>",
                                "\t\t<div class='row justify-content-start'>",
@@ -1103,13 +1088,12 @@ class Summarizer(Executor):
                                OBJECTS_LIST_HEADER,
                                "\n".join(obj_links),
                                OBJECTS_LIST_FOOTER]))
-                
+
         def create_index_html(objs, stats):
             # Generate an index.html style project home page w/ sample summary
             # statistics
             objs.drop_duplicates(keep='last', inplace=True)
-            reports_dir = os.path.join(self.prj.metadata.output_dir,
-                                       "reports")
+            reports_dir = os.path.join(self.prj.metadata.output_dir, "reports")
             # Generate parent index.html page
             objs_html_path = "{root}_objs_summary.html".format(
                 root=os.path.join(self.prj.metadata.output_dir, self.prj.name))
@@ -1117,7 +1101,7 @@ class Summarizer(Executor):
             object_parent_path = os.path.join(reports_dir, "objects.html")
             # Generate parent samples.html page
             sample_parent_path = os.path.join(reports_dir, "samples.html")
-            
+
             objs_html_file = open(objs_html_path, 'w')
             objs_html_file.write(HTML_HEAD_OPEN)
             objs_html_file.write(TABLE_STYLE_ROTATED_HEADER)
@@ -1151,11 +1135,11 @@ class Summarizer(Executor):
                 for key in unique_columns:
                     objs_html_file.write(TABLE_COLS.format(col_val=str(key)))
                 objs_html_file.write(TABLE_COLS_FOOTER)
-                
+
                 # Produce table rows
                 sample_pos = 0
                 col_pos = 0
-                num_columns = len(unique_columns)                
+                num_columns = len(unique_columns)
                 for row in stats:
                     # Match row value to column
                     table_row = []
@@ -1165,7 +1149,6 @@ class Summarizer(Executor):
                             value = ''
                         table_row.append(value)
                         col_pos += 1
-                    #print (str(len(table_row)))  # DEBUGGING
                     # Reset column position counter
                     col_pos = 0
                     sample_name = str(stats[sample_pos]['sample_name'])
@@ -1173,12 +1156,12 @@ class Summarizer(Executor):
                     objs_html_file.write(TABLE_ROW_HEADER)
                     for value in table_row:
                         # Treat sample_name as a link to sample page
-                        if value==sample_name:
+                        if value == sample_name:
                             html_filename = str(value) + ".html"
                             html_page = os.path.join(reports_dir,
                                                      html_filename).lower()
                             page_relpath = os.path.relpath(html_page,
-                                            self.prj.metadata.output_dir)
+                                           self.prj.metadata.output_dir)
                             create_sample_html(single_sample, objs, value,
                                                stats[sample_pos],
                                                html_filename,
@@ -1211,7 +1194,7 @@ class Summarizer(Executor):
 
             # Create status page with each sample's status listed
             create_status_html(objs)
-            
+
             # Add project level objects
             pobjs = create_project_objects()
             objs_html_file.write("\t\t<hr>\n")
@@ -1221,19 +1204,13 @@ class Summarizer(Executor):
             # Complete and close HTML file
             objs_html_file.write(HTML_FOOTER)
             objs_html_file.close()
-            
+
             _LOGGER.info(
                 "Summary (n=" + str(len(stats)) + "): " + tsv_outfile_path)
 
         # First, the generic summarize will pull together all the fits
         # and stats from each sample into project-combined spreadsheets.
-<<<<<<< HEAD
-
         # Create stats_summary file
-
-=======
-        # Create stats_summary file
->>>>>>> Update project_objects creation
         for sample in self.prj.samples:
             _LOGGER.info(self.counter.show(sample.sample_name,
                                            sample.protocol))
@@ -1270,7 +1247,7 @@ class Summarizer(Executor):
         for sample in self.prj.samples:
             _LOGGER.info(self.counter.show(sample.sample_name, sample.protocol))
             sample_output_folder = sample_folder(self.prj, sample)
-            # Now process any reported figures <DEPRECATED>            
+            # Now process any reported figures <DEPRECATED>
             # figs_file = os.path.join(sample_output_folder, "figures.tsv")
             # if os.path.isfile(figs_file):
                 # _LOGGER.info("Found figures file: '%s'", figs_file)
@@ -1281,7 +1258,7 @@ class Summarizer(Executor):
                 # figs_file, header=None, names=['key', 'value', 'pl'])
             # t['sample_name'] = sample.name
             # figs = figs.append(t, ignore_index=True)
-            
+
             # Now process any reported objects
             # TODO: only use the objects tsv once confirmed working
             objs_file = os.path.join(sample_output_folder, "objects.tsv")
@@ -1310,18 +1287,11 @@ class Summarizer(Executor):
         for row in stats:
             tsv_writer.writerow(row)
 
-<<<<<<< HEAD
-        try:
-
-            figs_tsv_path = "{root}_figs_summary.tsv".format(
-                root=os.path.join(self.prj.metadata.output_dir, self.prj.name))
-=======
         tsv_outfile.close()
 
         # try:
             # figs_tsv_path = "{root}_figs_summary.tsv".format(
                 # root=os.path.join(self.prj.metadata.output_dir, self.prj.name))
->>>>>>> Update project_objects creation
 
             # figs_html_path = "{root}_figs_summary.html".format(
                 # root=os.path.join(self.prj.metadata.output_dir, self.prj.name))
@@ -1361,7 +1331,7 @@ class Summarizer(Executor):
             for iface in ifaces:
                 _LOGGER.debug(iface)
                 pl = iface.fetch_pipelines(protocol)
-                summarizers = iface.get_attribute(pl,"summarizers")
+                summarizers = iface.get_attribute(pl, "summarizers")
                 for summarizer in summarizers:
                     summarizer_abspath = os.path.join(
                         os.path.dirname(iface.pipe_iface_file), summarizer)
@@ -1369,27 +1339,14 @@ class Summarizer(Executor):
                     try:
                         subprocess.call([summarizer_abspath, self.prj.config_file])
                     except OSError:
-<<<<<<< HEAD
                         _LOGGER.warn("Summarizer was unable to run: " + str(summarizer))
-
-
-
-        tsv_outfile.close()            
-        
-=======
-                        _LOGGER.warn("Summarizer was unable to run: " + str(summarizer))     
->>>>>>> Update project_objects creation
-        # all samples are parsed. 
+        # all samples are parsed.
         # Produce figures html file. <DEPRECATED>
-        #create_figures_html(figs) <DEPRECATED>
+        # create_figures_html(figs) <DEPRECATED>
         # Produce objects html file.
         create_index_html(objs, stats)
-<<<<<<< HEAD
-        
-=======
 
 
->>>>>>> Update project_objects creation
 def aggregate_exec_skip_reasons(skip_reasons_sample_pairs):
     """
     Collect the reasons for skipping submission/execution of each sample
@@ -1407,14 +1364,12 @@ def aggregate_exec_skip_reasons(skip_reasons_sample_pairs):
     return samples_by_skip_reason
 
 
-
 def create_failure_message(reason, samples):
     """ Explain lack of submission for a single reason, 1 or more samples. """
     color = Fore.LIGHTRED_EX
     reason_text = color + reason + Style.RESET_ALL
     samples_text = ", ".join(samples)
     return "{}: {}".format(reason_text, samples_text)
-
 
 
 def query_yes_no(question, default="no"):
@@ -1453,7 +1408,6 @@ def query_yes_no(question, default="no"):
                 "(or 'y' or 'n').\n")
 
 
-
 def destroy_sample_results(result_outfolder, args):
     """
     This function will delete all results for this sample
@@ -1470,7 +1424,6 @@ def destroy_sample_results(result_outfolder, args):
         _LOGGER.info(result_outfolder + " does not exist.")
 
 
-
 def uniqify(seq):
     """
     Fast way to uniqify while preserving input order.
@@ -1479,7 +1432,6 @@ def uniqify(seq):
     seen = set()
     seen_add = seen.add
     return [x for x in seq if not (x in seen or seen_add(x))]
-
 
 
 class LooperCounter(object):
@@ -1519,7 +1471,6 @@ class LooperCounter(object):
         return "LooperCounter of size {}".format(self.total)
 
 
-
 def _submission_status_text(curr, total, sample_name, sample_protocol, color):
     return color + \
            "## [{n} of {N}] {sample} ({protocol})".format(
@@ -1527,13 +1478,11 @@ def _submission_status_text(curr, total, sample_name, sample_protocol, color):
            Style.RESET_ALL
 
 
-
 class _VersionInHelpParser(argparse.ArgumentParser):
     def format_help(self):
         """ Add version information to help text. """
         return "version: {}\n".format(__version__) + \
                super(_VersionInHelpParser, self).format_help()
-
 
 
 def main():
@@ -1566,7 +1515,7 @@ def main():
             # pipelines directory in project metadata pipelines directory.
 
             if not hasattr(prj.metadata, "pipelines_dir") or \
-                            len(prj.metadata.pipelines_dir) == 0:
+                           len(prj.metadata.pipelines_dir) == 0:
                 raise AttributeError(
                         "Looper requires at least one pipeline(s) location.")
 
@@ -1597,7 +1546,6 @@ def main():
 
         if args.command == "clean":
             return Cleaner(prj)(args)
-
 
 
 if __name__ == '__main__':
