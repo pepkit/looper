@@ -68,15 +68,11 @@ class Project(peppy.Project):
         :param str path_config_file: path to the project's config file.
         :return str: inferred name for project.
         """
-
-        if self.name:
-            return self.name
-
         import os
 
         maybe_project_name = os.path.basename(os.path.dirname(path_config_file))
         
-        if maybe_project_name == "metadata"
+        if maybe_project_name == "metadata":
             maybe_project_name = os.path.basename(os.path.dirname(os.path.dirname(path_config_file)))
         
         return maybe_project_name
