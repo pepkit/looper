@@ -625,8 +625,8 @@ class Summarizer(Executor):
                 html_file.write(HTML_HEAD_OPEN)
                 html_file.write(create_navbar(objs, reports_dir))
                 html_file.write(HTML_HEAD_CLOSE)
-                html_file.write("\t<h4>Click link to view all samples for each object</h4>\n")
-                html_file.write("\t\t<ul style='list-style-type:circle'>\n")
+                html_file.write(GENERIC_HEADER.format(header="Objects"))
+                html_file.write(GENERIC_LIST_HEADER)
                 for key in objs['key'].drop_duplicates().sort_values():
                     page_name = key + ".html"
                     page_path = os.path.join(reports_dir, page_name).replace(' ', '_').lower()
@@ -648,8 +648,8 @@ class Summarizer(Executor):
                 html_file.write(HTML_HEAD_OPEN)
                 html_file.write(create_navbar(objs, reports_dir))
                 html_file.write(HTML_HEAD_CLOSE)
-                html_file.write("\t<h4>Click link to view all objects for each sample</h4>\n")
-                html_file.write("\t\t<ul style='list-style-type:circle'>\n")
+                html_file.write(GENERIC_HEADER.format(header="Samples"))
+                html_file.write(GENERIC_LIST_HEADER)
                 for sample in self.prj.samples:
                     sample_name = str(sample.sample_name)
                     page_name = sample_name + ".html"

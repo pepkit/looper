@@ -172,10 +172,13 @@ NAVBAR_VARS = ["HTML_NAVBAR_STYLE_BASIC", "HTML_NAVBAR_BASIC", "NAVBAR_HEADER",
                "NAVBAR_MENU_LINK", "NAVBAR_SEARCH_FOOTER", "NAVBAR_FOOTER"]
 
 # Generic HTML vars
+GENERIC_HEADER = \
+"""\
+    <h4>{header}</h4>
+"""
 GENERIC_LIST_HEADER = \
 """\
-<h3>Click to see each object type for all samples</h3>
-    <ul style="list-style-type:circle">
+      <ul style="list-style-type:circle">
 """
 
 GENERIC_LIST_ENTRY = \
@@ -185,12 +188,12 @@ GENERIC_LIST_ENTRY = \
 
 GENERIC_LIST_FOOTER = \
 """
-    </ul> 
+      </ul> 
 """
 
 GENERIC_VARS = ["HTML_HEAD_OPEN", "HTML_TITLE", "HTML_HEAD_CLOSE",
-                "HTML_FOOTER", "GENERIC_LIST_HEADER", "GENERIC_LIST_ENTRY",
-                "GENERIC_LIST_FOOTER"]
+                "HTML_FOOTER", "GENERIC_HEADER", "GENERIC_LIST_HEADER",
+                "GENERIC_LIST_ENTRY", "GENERIC_LIST_FOOTER"]
 
 # Table-related
 TABLE_STYLE_BASIC = \
@@ -291,7 +294,7 @@ TABLE_HEADER = \
       <h5>PEPATAC stats summary</h5>
 
       <div class="table-responsive-sm">
-        <table class="table table-hover table-header-rotated">                           
+        <table class="table table-sm table-hover table-header-rotated">                           
           <thead>
             <tr class="stats-firstrow">
 """
@@ -419,7 +422,7 @@ STATUS_TABLE_HEAD = \
 """\
         <div class="d-flex justify-content-between">
           <div class="table-responsive-sm">
-            <table class="table table-hover table-bordered">
+            <table class="table table-sm table-hover table-bordered">
               <thead>
                 <th>Sample name</th>
                 <th>Status</th>
@@ -478,7 +481,7 @@ OBJECTS_LIST_HEADER = \
 """
 OBJECTS_LINK = \
 """\
-            <li class="list-group-item"><a href='{path}'>'{label}'</a></li>\
+            <li class="list-group-item" style="height: 30px; padding: 2.5px 15px;"><a href='{path}'>'{label}'</a></li>\
 """
 OBJECTS_LIST_FOOTER = \
 """\
