@@ -57,25 +57,26 @@ class Project(peppy.Project):
 
 
     @staticmethod
-    def infer_name(path_config_file):
+    def infer_name(config_filepath):
         """
-        Infer project name from config file path if not already set.
+        Infer project name from config file path.
         
-        If the name attribute is not set, first assume the name is the folder in
-        which the config file resides, unless that folder is named "metadata",
-        in which case the project name is the parent of that folder.
+        First assume the name is the folder in which the config file resides,
+        unless that folder is named "metadata", in which case the project name
+        is the parent of that folder.
         
         :param str path_config_file: path to the project's config file.
         :return str: inferred name for project.
         """
         import os
 
-        maybe_project_name = os.path.basename(os.path.dirname(path_config_file))
+        config_folder = os.path.dirname(config_filepath)
+        project_name = os.path.basename(config_folder)
         
-        if maybe_project_name == "metadata":
-            maybe_project_name = os.path.basename(os.path.dirname(os.path.dirname(path_config_file)))
+        if project_name == "metadata":
+            project_name = os.path.basename(os.path.dirname(config_folder))
         
-        return maybe_project_name
+        return project_name
 
 
     def build_submission_bundles(self, protocol, priority=True):
