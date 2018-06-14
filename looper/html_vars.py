@@ -274,6 +274,8 @@ TABLE_STYLE_ROTATED_HEADER = \
         
         .table td.text {
             max-width: 150px;
+            <!-- top|right|bottom|left -->
+            padding: 0px 0px 0px 0px;
         }
         .table td.text span {
             white-space: nowrap;
@@ -281,11 +283,16 @@ TABLE_STYLE_ROTATED_HEADER = \
             text-overflow: ellipsis;
             display: inline-block;
             max-width: 100%;
+            vertical-align: middle;
         }
         .table td.text span:active {
             white-space: normal;
             text-overflow: clip;
             max-width: 100%;
+        }
+        th, td {
+            <!-- top|right|bottom|left -->
+            padding: 0px 0px 0px 0px;
         }
         </style>
 """
@@ -317,7 +324,7 @@ TABLE_ROW_HEADER = \
 
 TABLE_ROWS = \
 """\
-              <td class="text" style="padding: 2.5px 5px 2.5px 5px;"><span>{row_val}</span></td>
+              <td class="text"><span>{row_val}</span></td>
 """
 TABLE_ROW_FOOTER = \
 """\
@@ -333,7 +340,7 @@ TABLE_FOOTER = \
 
 TABLE_ROWS_LINK = \
 """\
-              <td style="cursor:pointer; padding: 2.5px 5px 2.5px 5px;" onclick="location.href='{html_page}'"><a class="LN1 LN2 LN3 LN4 LN5" href="{page_name}" target="_top">{link_name}</a></td>
+              <td style="cursor:pointer" onclick="location.href='{html_page}'"><a class="LN1 LN2 LN3 LN4 LN5" href="{page_name}" target="_top">{link_name}</a></td>
 """
 
 LINKS_STYLE_BASIC = \
@@ -443,11 +450,11 @@ STATUS_ROW_HEADER = \
 """
 STATUS_ROW_VALUE = \
 """\
-                  <td style="padding: 2.5px 5px 2.5px 5px;" class='{row_class}'>{value}</td>
+                  <td class='{row_class}'>{value}</td>
 """
 STATUS_ROW_LINK = \
 """\
-                  <td class='{row_class}' style="cursor:pointer; padding: 2.5px 5px 2.5px 5px;" onclick="location.href='{file_link}'"><a href="{file_link}" target="_top">{link_name}</a></td>
+                  <td class='{row_class}' style="cursor:pointer" onclick="location.href='{file_link}'"><a href="{file_link}" target="_top">{link_name}</a></td>
 """
 STATUS_ROW_FOOTER = \
 """\
@@ -481,7 +488,7 @@ OBJECTS_LIST_HEADER = \
 """
 OBJECTS_LINK = \
 """\
-            <li class="list-group-item" style="padding: 2.5px 5px 2.5px 5px;"><a href='{path}'>'{label}'</a></li>\
+            <li class="list-group-item" style="padding: 1px 3px 1px 3px;"><a href='{path}'>'{label}'</a></li>\
 """
 OBJECTS_LIST_FOOTER = \
 """\
