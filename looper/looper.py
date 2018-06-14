@@ -1037,30 +1037,25 @@ class Summarizer(Executor):
                 for iface in ifaces:
                     pl = iface.fetch_pipelines(protocol)
                     summary_results = iface.get_attribute(pl, "summary_results")
+                    if not summary_results: continue
                     for result in summary_results:
                         caption = str(result['caption'])
                         file_path = str(result['path'])
-                        img_path = str(result['thumbnail_path'])
-                        subdir = os.path.dirname(result['path'])
-                        ext = file_path.split('.')[-1]
-                        label = file_path.split('.')[-2]
-                        file = ".".join([label, ext])
-                        search = os.path.join(self.prj.metadata.output_dir, subdir, '*{}'.format(file))
-                        if glob.glob(search):
-                            file_path = str(glob.glob(search)[0])
-                            file_relpath = os.path.relpath(file_path, self.prj.metadata.output_dir)
-                            ext = img_path.split('.')[-1]
-                            label = img_path.split('.')[-2]
-                            img = ".".join([label, ext])
-                            search = os.path.join(self.prj.metadata.output_dir, subdir, '*{}'.format(img))
-                            if glob.glob(search):
-                                img_path = str(glob.glob(search)[0])
-                                img_relpath = os.path.relpath(img_path, self.prj.metadata.output_dir)
+                        thumbnail_path = str(result['thumbnail_path'])
+
+                        file_path_formatted = file_path.format(**self.prj)
+                        thumbnail_path_formatted = thumbnail_path.format(**self.prj)
+                        
+                        file_path_abs = os.path.join(self.prj.metadata.output_dir, file_path_formatted)
+                        thumbnail_path_abs = os.path.join(self.prj.metadata.output_dir, thumbnail_path_formatted)
+
+                        if os.path.isfile(file_path_abs):
+                            if os.path.isfile(thumbnail_path_abs):
                                 if num_figures < 3:
                                     # Add to single row
                                     obj_figs.append(HTML_FIGURE.format(
-                                        path=file_relpath,
-                                        image=img_relpath,
+                                        path=file_path_formatted,
+                                        image=thumbnail_path_formatted,
                                         label=caption))
                                     num_figures += 1
                                 else:
@@ -1069,16 +1064,17 @@ class Summarizer(Executor):
                                     obj_figs.append("\t\t\t</div>")
                                     obj_figs.append("\t\t\t<div class='row justify-content-start'>")
                                     obj_figs.append(HTML_FIGURE.format(
-                                        path=file_relpath,
-                                        image=img_relpath,
+                                        path=file_path_formatted,
+                                        image=thumbnail_path_formatted,
                                         label=caption))
                             else:
                                 # No thumbnail exists, add as a link in a list
                                 obj_links.append(OBJECTS_LINK.format(
-                                                    path=file_relpath,
+                                                    path=file_path_formatted,
                                                     label=caption))
                         else:
                             _LOGGER.warn("Summarizer was unable to find the: " + caption)
+
             while num_figures < 3:
                 # Add additional empty columns for clean format
                 obj_figs.append("\t\t\t  <div class='col'>")
@@ -1211,7 +1207,7 @@ class Summarizer(Executor):
             objs_html_file.close()
 
             _LOGGER.info(
-                "Summary (n=" + str(len(stats)) + "): " + tsv_outfile_path)
+                "Summary (n=" + str(len(stats)) + "): " + objs_html_path)
 
         # First, the generic summarize will pull together all the fits
         # and stats from each sample into project-combined spreadsheets.
