@@ -39,22 +39,22 @@ HTML_HEAD_CLOSE = \
 """
 HTML_BUTTON = \
 """\
-		<hr>
-		<div class='container-fluid'>
-			<p class='text-left'>
-			<a class='btn btn-info' href='{file_path}' role='button'>{label}</a>
-			</p>
-		</div>
-		<hr>
+	  <hr>
+	  <div class='container-fluid'>
+		  <p class='text-left'>
+		  <a class='btn btn-info' href='{file_path}' role='button'>{label}</a>
+		  </p>
+	  </div>
+	  <hr>
 """
 HTML_FIGURE = \
 """\
-          <div class="col">
-            <figure class="figure">
-              <a href='{path}'><img style="width: 100%; height: 100%" src='{image}' class="figure-img img-fluid rounded img-thumbnail" alt=""></a>
-              <a href='{path}'><figcaption class="figure-caption text-left">'{label}'</figcaption></a>
-            </figure>
-          </div>\
+              <div class="col">
+                <figure class="figure">
+                  <a href='{path}'><img style="width: 100%; height: 100%" src='{image}' class="figure-img img-fluid rounded img-thumbnail" alt=""></a>
+                  <a href='{path}'><figcaption class="figure-caption text-left">'{label}'</figcaption></a>
+                </figure>
+              </div>\
 """
 HTML_FOOTER = \
 """\
