@@ -274,6 +274,8 @@ TABLE_STYLE_ROTATED_HEADER = \
         
         .table td.text {
             max-width: 150px;
+            <!-- top|right|bottom|left -->
+            padding: 0px 0px 0px 0px;
         }
         .table td.text span {
             white-space: nowrap;
@@ -289,7 +291,8 @@ TABLE_STYLE_ROTATED_HEADER = \
             max-width: 100%;
         }
         th, td {
-            padding: 1px 3px 1px 3px;
+            <!-- top|right|bottom|left -->
+            padding: 0px 0px 0px 0px;
         }
         </style>
 """
