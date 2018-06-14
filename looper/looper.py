@@ -1031,7 +1031,7 @@ class Summarizer(Executor):
 
             for protocol in set(all_protocols):
                 obj_figs = []
-                num_figures = 1
+                num_figures = 0
                 obj_links = []
                 ifaces = self.prj.interfaces_by_protocol[alpha_cased(protocol)]
                 for iface in ifaces:
@@ -1056,7 +1056,7 @@ class Summarizer(Executor):
                             if glob.glob(search):
                                 img_path = str(glob.glob(search)[0])
                                 img_relpath = os.path.relpath(img_path, self.prj.metadata.output_dir)
-                                if num_figures <= 3:
+                                if num_figures < 3:
                                     # Add to single row
                                     obj_figs.append(HTML_FIGURE.format(
                                         path=file_relpath,
@@ -1066,8 +1066,8 @@ class Summarizer(Executor):
                                 else:
                                     # Close the previous row and start new one
                                     num_figures = 1
-                                    obj_figs.append("\t\t</div>")
-                                    obj_figs.append("\t\t<div class='row justify-content-start'>")
+                                    obj_figs.append("\t\t\t</div>")
+                                    obj_figs.append("\t\t\t<div class='row justify-content-start'>")
                                     obj_figs.append(HTML_FIGURE.format(
                                         path=file_relpath,
                                         image=img_relpath,
@@ -1079,11 +1079,16 @@ class Summarizer(Executor):
                                                     label=caption))
                         else:
                             _LOGGER.warn("Summarizer was unable to find the: " + caption)
+            while num_figures < 3:
+                # Add additional empty columns for clean format
+                obj_figs.append("\t\t\t  <div class='col'>")
+                obj_figs.append("\t\t\t  </div>")
+                num_figures += 1
             return ("\n".join(["\t\t<h5>PEPATAC project objects</h5>",
                                "\t\t<div class='container'>",
-                               "\t\t<div class='row justify-content-start'>",
+                               "\t\t\t<div class='row justify-content-start'>",
                                "\n".join(obj_figs),
-                               "\t\t</div>",
+                               "\t\t\t</div>",
                                "\t\t</div>",
                                OBJECTS_LIST_HEADER,
                                "\n".join(obj_links),
