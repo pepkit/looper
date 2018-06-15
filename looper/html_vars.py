@@ -218,7 +218,6 @@ TABLE_STYLE_BASIC = \
 """
 TABLE_STYLE_ROTATED_HEADER = \
 """\
-        <style>
         .table-header-rotated th.row-header{
           width: auto;
         }
@@ -271,11 +270,13 @@ TABLE_STYLE_ROTATED_HEADER = \
           text-align: left;
           // white-space: nowrap; /*whether to display in one line or not*/
         }
-        
+"""
+TABLE_STYLE_TEXT = \
+"""
         .table td.text {
             max-width: 150px;
             <!-- top|right|bottom|left -->
-            padding: 0px 0px 0px 0px;
+            padding: 0px 4px 0px 4px;
         }
         .table td.text span {
             white-space: nowrap;
@@ -290,11 +291,11 @@ TABLE_STYLE_ROTATED_HEADER = \
             text-overflow: clip;
             max-width: 100%;
         }
-        th, td {
+        .table th, td {
             <!-- top|right|bottom|left -->
-            padding: 0px 0px 0px 0px;
+            padding: 0px 4px 0px 4px;
+            vertical-align: middle;
         }
-        </style>
 """
 TABLE_HEADER = \
 """
@@ -324,7 +325,7 @@ TABLE_ROW_HEADER = \
 
 TABLE_ROWS = \
 """\
-              <td class="text"><span>{row_val}</span></td>
+              <td class="text" style="padding: 0px 4px 0px 4px; vertical-align: middle"><span>{row_val}</span></td>
 """
 TABLE_ROW_FOOTER = \
 """\
@@ -340,7 +341,7 @@ TABLE_FOOTER = \
 
 TABLE_ROWS_LINK = \
 """\
-              <td style="cursor:pointer" onclick="location.href='{html_page}'"><a class="LN1 LN2 LN3 LN4 LN5" href="{page_name}" target="_top">{link_name}</a></td>
+              <td style="cursor:pointer; padding: 0px 4px 0px 4px; vertical-align: middle" onclick="location.href='{html_page}'"><a class="LN1 LN2 LN3 LN4 LN5" href="{page_name}" target="_top">{link_name}</a></td>
 """
 
 LINKS_STYLE_BASIC = \
@@ -375,7 +376,7 @@ TABLE_VARS = ["TABLE_STYLE_BASIC", "TABLE_HEADER", "TABLE_COLS",
               "TABLE_COLS_FOOTER", "TABLE_ROW_HEADER", "TABLE_ROWS",
               "TABLE_ROW_FOOTER", "TABLE_FOOTER",
               "TABLE_ROWS_LINK", "LINKS_STYLE_BASIC",
-              "TABLE_STYLE_ROTATED_HEADER"]
+              "TABLE_STYLE_ROTATED_HEADER", "TABLE_STYLE_TEXT"]
 
 # Sample-page-related
 SAMPLE_HEADER = \
@@ -401,6 +402,53 @@ SAMPLE_BUTTONS = \
         </div>
         <hr>
 """
+SAMPLE_TABLE_HEADER = \
+"""\
+      <h5>PEPATAC stats summary</h5>
+        <div class="table-responsive-sm">
+          <table class="table table-sm table-hover table-bordered" style="white-space: nowrap; width: 1%;">                           
+            <tbody>
+"""
+SAMPLE_TABLE_FIRSTROW = \
+"""\
+              <tr class="table-light">
+                <th style="padding: 0px 2px 0px 2px; vertical-align: middle">{row_name}</th>
+                <td style="cursor:pointer; padding: 0px 2px 0px 2px; vertical-align: middle" onclick="location.href='{html_page}'"><a href="{page_name}" target="_top">{link_name}</a></td>
+              </tr>
+"""
+SAMPLE_TABLE_ROW = \
+"""\
+              <tr>
+                <th style="padding: 0px 2px 0px 2px; vertical-align: middle">{row_name}</th>
+                <td class="text" style="padding: 0px 2px 0px 2px; vertical-align: middle"><span>{row_val}</span></td>
+              </tr>
+"""
+SAMPLE_TABLE_STYLE = \
+"""\
+        .table td.text {
+            max-width: 50%;
+            <!-- top|right|bottom|left -->
+            padding: 0px 0px 0px 0px;
+        }
+        .table td.text span {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: inline-block;
+            max-width: 100%;
+            vertical-align: middle;
+        }
+        .table td.text span:active {
+            white-space: normal;
+            text-overflow: clip;
+            max-width: 100%;
+        }
+        .table th, td {
+            <!-- top|right|bottom|left -->
+            padding: 0px 2px 0px 2px;
+            vertical-align: middle;
+        }
+"""
 
 SAMPLE_PLOTS = \
 """\
@@ -416,8 +464,9 @@ SAMPLE_FOOTER = \
     </body>
 </html>
 """
-SAMPLE_VARS = ["SAMPLE_HEADER", "SAMPLE_BUTTONS",
-               "SAMPLE_PLOTS", "SAMPLE_FOOTER"]
+SAMPLE_VARS = ["SAMPLE_HEADER", "SAMPLE_BUTTONS", "SAMPLE_PLOTS",
+               "SAMPLE_FOOTER", "SAMPLE_TABLE_HEADER", "SAMPLE_TABLE_STYLE",
+               "SAMPLE_TABLE_FIRSTROW", "SAMPLE_TABLE_ROW"]
 
 # Status-page-related
 STATUS_HEADER = \
@@ -450,11 +499,11 @@ STATUS_ROW_HEADER = \
 """
 STATUS_ROW_VALUE = \
 """\
-                  <td class='{row_class}'>{value}</td>
+                  <td class='{row_class}' style="padding: 0px 4px 0px 4px; vertical-align: middle">{value}</td>
 """
 STATUS_ROW_LINK = \
 """\
-                  <td class='{row_class}' style="cursor:pointer" onclick="location.href='{file_link}'"><a href="{file_link}" target="_top">{link_name}</a></td>
+                  <td class='{row_class}' style="cursor:pointer; padding: 0px 4px 0px 4px; vertical-align: middle" onclick="location.href='{file_link}'"><a href="{file_link}" target="_top">{link_name}</a></td>
 """
 STATUS_ROW_FOOTER = \
 """\

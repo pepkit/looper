@@ -692,17 +692,17 @@ class Summarizer(Executor):
                                             label=str(row['sample_name'])))
                         # Otherwise treat as a link
                         else:
-                            links.append(OBJECTS_LINK.format(
-                                            path=page_relpath,
+                            links.append(GENERIC_LIST_ENTRY.format(
+                                            page=page_relpath,
                                             label=str(row['sample_name'])))
                     # If no image file present, it's just a link
                     else:
-                        links.append(OBJECTS_LINK.format(
-                                        path=page_relpath,
+                        links.append(GENERIC_LIST_ENTRY.format(
+                                        page=page_relpath,
                                         label=str(row['sample_name'])))
-                html_file.write(OBJECTS_LIST_HEADER)
+                html_file.write(GENERIC_LIST_HEADER)
                 html_file.write("\n".join(links))
-                html_file.write(OBJECTS_LIST_FOOTER)
+                html_file.write(GENERIC_LIST_FOOTER)
                 html_file.write("\t\t\t<hr>\n")
                 html_file.write("\n".join(figures))
                 html_file.write("\t\t\t<hr>\n")
@@ -821,7 +821,9 @@ class Summarizer(Executor):
                 os.makedirs(os.path.dirname(sample_html_path))
             with open(sample_html_path, 'w') as html_file:
                 html_file.write(HTML_HEAD_OPEN)
-                html_file.write(TABLE_STYLE_ROTATED_HEADER)
+                html_file.write("\t\t<style>\n")
+                html_file.write(SAMPLE_TABLE_STYLE)
+                html_file.write("\t\t</style>\n")
                 html_file.write(create_navbar(all_samples, reports_dir))
                 html_file.write(HTML_HEAD_CLOSE)
                 html_file.write("\t\t<h4>{}</h4>\n".format(str(sample_name)))
@@ -881,13 +883,12 @@ class Summarizer(Executor):
 
                 # Add the sample's statistics as a table
                 html_file.write("\t<div class='container-fluid'>\n")
-                html_file.write(TABLE_HEADER)
-                for key, value in sample_stats.items():
-                    html_file.write(TABLE_COLS.format(col_val=str(key)))
-                html_file.write(TABLE_COLS_FOOTER)
+                html_file.write(SAMPLE_TABLE_HEADER)
+                # for key, value in sample_stats.items():
+                    # html_file.write(TABLE_COLS.format(col_val=str(key)))
+                # html_file.write(TABLE_COLS_FOOTER)
 
                 # Produce table rows
-                html_file.write(TABLE_ROW_HEADER)
                 for key, value in sample_stats.items():
                     # Treat sample_name as a link to sample page
                     if key == 'sample_name':
@@ -895,17 +896,18 @@ class Summarizer(Executor):
                         html_page = os.path.join(reports_dir,
                                                  html_filename).lower()
                         page_relpath = os.path.relpath(html_page, reports_dir)
-                        html_file.write(TABLE_ROWS_LINK.format(
+                        html_file.write(SAMPLE_TABLE_FIRSTROW.format(
+                                            row_name=str(key),
                                             html_page=page_relpath,
                                             page_name=html_filename,
                                             link_name=str(value)))
                     # Otherwise add as a static cell value
                     else:
-                        html_file.write(TABLE_ROWS.format(
+                        html_file.write(SAMPLE_TABLE_ROW.format(
+                            row_name=str(key),
                             row_val=str(value)))
-                html_file.write(TABLE_ROW_FOOTER)
                 html_file.write(TABLE_FOOTER)
-                html_file.write("\t\t<hr>\n")
+                html_file.write("\t  <hr>\n")
 
                 # Add all the objects for the current sample
                 html_file.write("\t\t<div class='container-fluid'>\n")
@@ -1039,25 +1041,30 @@ class Summarizer(Executor):
                 for iface in ifaces:
                     pl = iface.fetch_pipelines(protocol)
                     summary_results = iface.get_attribute(pl, "summary_results")
-                    if not summary_results: continue
                     for result in summary_results:
                         caption = str(result['caption'])
                         file_path = str(result['path'])
-                        thumbnail_path = str(result['thumbnail_path'])
-
-                        file_path_formatted = file_path.format(**self.prj)
-                        thumbnail_path_formatted = thumbnail_path.format(**self.prj)
-                        
-                        file_path_abs = os.path.join(self.prj.metadata.output_dir, file_path_formatted)
-                        thumbnail_path_abs = os.path.join(self.prj.metadata.output_dir, thumbnail_path_formatted)
-
-                        if os.path.isfile(file_path_abs):
-                            if os.path.isfile(thumbnail_path_abs):
+                        img_path = str(result['thumbnail_path'])
+                        subdir = os.path.dirname(result['path'])
+                        ext = file_path.split('.')[-1]
+                        label = file_path.split('.')[-2]
+                        file = ".".join([label, ext])
+                        search = os.path.join(self.prj.metadata.output_dir, subdir, '*{}'.format(file))
+                        if glob.glob(search):
+                            file_path = str(glob.glob(search)[0])
+                            file_relpath = os.path.relpath(file_path, self.prj.metadata.output_dir)
+                            ext = img_path.split('.')[-1]
+                            label = img_path.split('.')[-2]
+                            img = ".".join([label, ext])
+                            search = os.path.join(self.prj.metadata.output_dir, subdir, '*{}'.format(img))
+                            if glob.glob(search):
+                                img_path = str(glob.glob(search)[0])
+                                img_relpath = os.path.relpath(img_path, self.prj.metadata.output_dir)
                                 if num_figures < 3:
                                     # Add to single row
                                     obj_figs.append(HTML_FIGURE.format(
-                                        path=file_path_formatted,
-                                        image=thumbnail_path_formatted,
+                                        path=file_relpath,
+                                        image=img_relpath,
                                         label=caption))
                                     num_figures += 1
                                 else:
@@ -1066,17 +1073,16 @@ class Summarizer(Executor):
                                     obj_figs.append("\t\t\t</div>")
                                     obj_figs.append("\t\t\t<div class='row justify-content-start'>")
                                     obj_figs.append(HTML_FIGURE.format(
-                                        path=file_path_formatted,
-                                        image=thumbnail_path_formatted,
+                                        path=file_relpath,
+                                        image=img_relpath,
                                         label=caption))
                             else:
                                 # No thumbnail exists, add as a link in a list
                                 obj_links.append(OBJECTS_LINK.format(
-                                                    path=file_path_formatted,
+                                                    path=file_relpath,
                                                     label=caption))
                         else:
                             _LOGGER.warn("Summarizer was unable to find the: " + caption)
-
             while num_figures < 3:
                 # Add additional empty columns for clean format
                 obj_figs.append("\t\t\t  <div class='col'>")
@@ -1107,7 +1113,10 @@ class Summarizer(Executor):
 
             objs_html_file = open(objs_html_path, 'w')
             objs_html_file.write(HTML_HEAD_OPEN)
+            objs_html_file.write("\t\t<style>\n")
             objs_html_file.write(TABLE_STYLE_ROTATED_HEADER)
+            objs_html_file.write(TABLE_STYLE_TEXT)
+            objs_html_file.write("\t\t</style>\n")
             objs_html_file.write(HTML_TITLE.format(project_name=self.prj.name))
             navbar = create_navbar(objs, self.prj.metadata.output_dir)
             objs_html_file.write(navbar)
@@ -1209,7 +1218,7 @@ class Summarizer(Executor):
             objs_html_file.close()
 
             _LOGGER.info(
-                "Summary (n=" + str(len(stats)) + "): " + objs_html_path)
+                "Summary (n=" + str(len(stats)) + "): " + tsv_outfile_path)
 
         # First, the generic summarize will pull together all the fits
         # and stats from each sample into project-combined spreadsheets.
