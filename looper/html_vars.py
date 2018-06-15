@@ -499,11 +499,11 @@ STATUS_ROW_HEADER = \
 """
 STATUS_ROW_VALUE = \
 """\
-                  <td class='{row_class}'>{value}</td>
+                  <td class='{row_class}' style="padding: 0px 4px 0px 4px; vertical-align: middle">{value}</td>
 """
 STATUS_ROW_LINK = \
 """\
-                  <td class='{row_class}' style="cursor:pointer" onclick="location.href='{file_link}'"><a href="{file_link}" target="_top">{link_name}</a></td>
+                  <td class='{row_class}' style="cursor:pointer; padding: 0px 4px 0px 4px; vertical-align: middle" onclick="location.href='{file_link}'"><a href="{file_link}" target="_top">{link_name}</a></td>
 """
 STATUS_ROW_FOOTER = \
 """\
