@@ -821,7 +821,9 @@ class Summarizer(Executor):
                 os.makedirs(os.path.dirname(sample_html_path))
             with open(sample_html_path, 'w') as html_file:
                 html_file.write(HTML_HEAD_OPEN)
-                html_file.write(TABLE_STYLE_ROTATED_HEADER)
+                html_file.write("\t\t<style>\n")
+                html_file.write(SAMPLE_TABLE_STYLE)
+                html_file.write("\t\t</style>\n")
                 html_file.write(create_navbar(all_samples, reports_dir))
                 html_file.write(HTML_HEAD_CLOSE)
                 html_file.write("\t\t<h4>{}</h4>\n".format(str(sample_name)))
@@ -881,10 +883,10 @@ class Summarizer(Executor):
 
                 # Add the sample's statistics as a table
                 html_file.write("\t<div class='container-fluid'>\n")
-                html_file.write(TABLE_HEADER)
-                for key, value in sample_stats.items():
-                    html_file.write(TABLE_COLS.format(col_val=str(key)))
-                html_file.write(TABLE_COLS_FOOTER)
+                html_file.write(SAMPLE_TABLE_HEADER)
+                # for key, value in sample_stats.items():
+                    # html_file.write(TABLE_COLS.format(col_val=str(key)))
+                # html_file.write(TABLE_COLS_FOOTER)
 
                 # Produce table rows
                 html_file.write(TABLE_ROW_HEADER)
@@ -895,15 +897,16 @@ class Summarizer(Executor):
                         html_page = os.path.join(reports_dir,
                                                  html_filename).lower()
                         page_relpath = os.path.relpath(html_page, reports_dir)
-                        html_file.write(TABLE_ROWS_LINK.format(
+                        html_file.write(SAMPLE_TABLE_FIRSTROW.format(
+                                            row_name=str(key),
                                             html_page=page_relpath,
                                             page_name=html_filename,
                                             link_name=str(value)))
                     # Otherwise add as a static cell value
                     else:
-                        html_file.write(TABLE_ROWS.format(
+                        html_file.write(SAMPLE_TABLE_ROW.format(
+                            row_name=str(key),
                             row_val=str(value)))
-                html_file.write(TABLE_ROW_FOOTER)
                 html_file.write(TABLE_FOOTER)
                 html_file.write("\t\t<hr>\n")
 
@@ -1107,7 +1110,10 @@ class Summarizer(Executor):
 
             objs_html_file = open(objs_html_path, 'w')
             objs_html_file.write(HTML_HEAD_OPEN)
+            objs_html_file.write("\t\t<style>\n")
             objs_html_file.write(TABLE_STYLE_ROTATED_HEADER)
+            objs_html_file.write(TABLE_STYLE_TEXT)
+            objs_html_file.write("\t\t</style>\n")
             objs_html_file.write(HTML_TITLE.format(project_name=self.prj.name))
             navbar = create_navbar(objs, self.prj.metadata.output_dir)
             objs_html_file.write(navbar)
