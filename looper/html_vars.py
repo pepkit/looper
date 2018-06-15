@@ -276,7 +276,7 @@ TABLE_STYLE_TEXT = \
         .table td.text {
             max-width: 150px;
             <!-- top|right|bottom|left -->
-            padding: 0px 0px 0px 0px;
+            padding: 0px 4px 0px 4px;
         }
         .table td.text span {
             white-space: nowrap;
@@ -291,9 +291,10 @@ TABLE_STYLE_TEXT = \
             text-overflow: clip;
             max-width: 100%;
         }
-        th, td {
+        .table th, td {
             <!-- top|right|bottom|left -->
-            padding: 0px 0px 0px 0px;
+            padding: 0px 4px 0px 4px;
+            vertical-align: middle;
         }
 """
 TABLE_HEADER = \
@@ -324,7 +325,7 @@ TABLE_ROW_HEADER = \
 
 TABLE_ROWS = \
 """\
-              <td class="text"><span>{row_val}</span></td>
+              <td class="text" style="padding: 0px 4px 0px 4px; vertical-align: middle"><span>{row_val}</span></td>
 """
 TABLE_ROW_FOOTER = \
 """\
@@ -340,7 +341,7 @@ TABLE_FOOTER = \
 
 TABLE_ROWS_LINK = \
 """\
-              <td style="cursor:pointer" onclick="location.href='{html_page}'"><a class="LN1 LN2 LN3 LN4 LN5" href="{page_name}" target="_top">{link_name}</a></td>
+              <td style="cursor:pointer; padding: 0px 4px 0px 4px; vertical-align: middle" onclick="location.href='{html_page}'"><a class="LN1 LN2 LN3 LN4 LN5" href="{page_name}" target="_top">{link_name}</a></td>
 """
 
 LINKS_STYLE_BASIC = \
@@ -411,19 +412,19 @@ SAMPLE_TABLE_HEADER = \
 SAMPLE_TABLE_FIRSTROW = \
 """\
               <tr class="table-light">
-                <th>{row_name}</th>
-                <td style="cursor:pointer" onclick="location.href='{html_page}'"><a href="{page_name}" target="_top">{link_name}</a></td>
+                <th style="padding: 0px 2px 0px 2px; vertical-align: middle">{row_name}</th>
+                <td style="cursor:pointer; padding: 0px 2px 0px 2px; vertical-align: middle" onclick="location.href='{html_page}'"><a href="{page_name}" target="_top">{link_name}</a></td>
               </tr>
 """
 SAMPLE_TABLE_ROW = \
 """\
               <tr>
-                <th>{row_name}</th>
-                <td class="text"><span>{row_val}</span></td>
+                <th style="padding: 0px 2px 0px 2px; vertical-align: middle">{row_name}</th>
+                <td class="text" style="padding: 0px 2px 0px 2px; vertical-align: middle"><span>{row_val}</span></td>
               </tr>
 """
 SAMPLE_TABLE_STYLE = \
-"""
+"""\
         .table td.text {
             max-width: 50%;
             <!-- top|right|bottom|left -->
@@ -442,9 +443,10 @@ SAMPLE_TABLE_STYLE = \
             text-overflow: clip;
             max-width: 100%;
         }
-        th, td {
+        .table th, td {
             <!-- top|right|bottom|left -->
-            padding: 0px 0px 0px 0px;
+            padding: 0px 2px 0px 2px;
+            vertical-align: middle;
         }
 """
 
