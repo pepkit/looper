@@ -934,17 +934,17 @@ class Summarizer(Executor):
                                                 image=image_relpath))
                             # Otherwise treat as a link
                             else:
-                                links.append(OBJECTS_LINK.format(
+                                links.append(GENERIC_LIST_ENTRY.format(
                                                 label=str(row['key']),
-                                                path=page_relpath))
+                                                page=page_relpath))
                         # Otherwise it's just a link
                         else:
-                            links.append(OBJECTS_LINK.format(
+                            links.append(GENERIC_LIST_ENTRY.format(
                                             label=str(row['key']),
-                                            path=page_relpath))
-                html_file.write(OBJECTS_LIST_HEADER)
+                                            page=page_relpath))
+                html_file.write(GENERIC_LIST_HEADER)
                 html_file.write("\n".join(links))
-                html_file.write(OBJECTS_LIST_FOOTER)
+                html_file.write(GENERIC_LIST_FOOTER)
                 html_file.write("\t\t\t<hr>\n")
                 html_file.write("\n".join(figures))
                 html_file.write("\t\t</div>\n")
