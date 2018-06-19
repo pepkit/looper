@@ -223,7 +223,6 @@ TABLE_STYLE_ROTATED_HEADER = \
         }
         .table-header-rotated td{
           width: 60px;
-          <!-- border-top: 1px solid #dddddd; -->
           border-left: 1px solid #dddddd;
           border-right: 1px solid #dddddd;
           vertical-align: middle;
@@ -239,21 +238,21 @@ TABLE_STYLE_ROTATED_HEADER = \
           padding: 0;
           font-size: 14px;
           line-height: 0.8;
+          border-top: none !important;
         }
         .table-header-rotated th.rotate-45 > div{
           position: relative;
           top: 0px;
-          left: 60px; /* 120 * tan(45) / 2 = 40 where 120 is the height on the cell and 45 is the transform angle*/
+          left: 60px;
           height: 100%;
           -ms-transform:skew(-45deg,0deg);
           -moz-transform:skew(-45deg,0deg);
           -webkit-transform:skew(-45deg,0deg);
           -o-transform:skew(-45deg,0deg);
           transform:skew(-45deg,0deg);
-          overflow: hidden;
+          overflow: ellipsis;
           border-left: 1px solid #dddddd;
           border-right: 1px solid #dddddd;
-          <!-- border-top: 1px solid #dddddd; -->
         }
         .table-header-rotated th.rotate-45 span {
           -ms-transform:skew(45deg,0deg) rotate(315deg);
@@ -262,13 +261,11 @@ TABLE_STYLE_ROTATED_HEADER = \
           -o-transform:skew(45deg,0deg) rotate(315deg);
           transform:skew(45deg,0deg) rotate(315deg);
           position: absolute;
-          bottom: 30px; /* 60 cos(45) = 28 with an additional 2px margin*/
-          left: -25px; /*Because it looked good, but there is probably a mathematical link here as well*/
+          bottom: 30px;
+          left: -25px;
           display: inline-block;
-          // width: 100%;
-          width: 85px; /* 120 / cos(45) - 60 cos (45) = 85 where 120 is the height of the cell, 60 the width of the cell and 45 the transform angle*/
+          width: 85px;
           text-align: left;
-          // white-space: nowrap; /*whether to display in one line or not*/
         }
 """
 TABLE_STYLE_TEXT = \
