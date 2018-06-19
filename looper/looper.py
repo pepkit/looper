@@ -628,7 +628,7 @@ class Summarizer(Executor):
                 html_file.write(GENERIC_LIST_HEADER)
                 for key in objs['key'].drop_duplicates().sort_values():
                     page_name = key + ".html"
-                    page_path = os.path.join(reports_dir, page_name).replace(' ', '_').lower()
+                    page_path = os.path.join(reports_dir, page_name.replace(' ', '_').lower())
                     page_relpath = os.path.relpath(page_path, reports_dir)
                     html_file.write(GENERIC_LIST_ENTRY.format(
                                     page=page_relpath, label=key))
@@ -652,7 +652,7 @@ class Summarizer(Executor):
                 for sample in self.prj.samples:
                     sample_name = str(sample.sample_name)
                     page_name = sample_name + ".html"
-                    page_path = os.path.join(reports_dir, page_name).replace(' ', '_').lower()
+                    page_path = os.path.join(reports_dir, page_name.replace(' ', '_').lower())
                     page_relpath = os.path.relpath(page_path, reports_dir)
                     html_file.write(GENERIC_LIST_ENTRY.format(
                                     page=page_relpath, label=sample_name))
@@ -664,7 +664,7 @@ class Summarizer(Executor):
             # plots from each sample
             reports_dir = os.path.join(self.prj.metadata.output_dir, "reports")
             object_path = os.path.join(reports_dir,
-                                       filename).replace(' ', '_').lower()
+                                       filename.replace(' ', '_').lower())
             if not os.path.exists(os.path.dirname(object_path)):
                 os.makedirs(os.path.dirname(object_path))
             with open(object_path, 'w') as html_file:
@@ -745,7 +745,7 @@ class Summarizer(Executor):
                     html_file.write(STATUS_ROW_HEADER)
                     # First Col: Sample_Name (w/ link to sample page)
                     page_name = sample_name + ".html"
-                    page_path = os.path.join(reports_dir, page_name).replace(' ', '_').lower()
+                    page_path = os.path.join(reports_dir, page_name.replace(' ', '_').lower())
                     page_relpath = os.path.relpath(page_path, reports_dir)
                     html_file.write(STATUS_ROW_LINK.format(
                                         row_class="",
@@ -816,7 +816,7 @@ class Summarizer(Executor):
             reports_dir = os.path.join(self.prj.metadata.output_dir,
                                        "reports")
             sample_html_path = os.path.join(reports_dir,
-                                            filename).replace(' ', '_').lower()
+                                            filename.replace(' ', '_').lower())
             if not os.path.exists(os.path.dirname(sample_html_path)):
                 os.makedirs(os.path.dirname(sample_html_path))
             with open(sample_html_path, 'w') as html_file:
@@ -894,7 +894,7 @@ class Summarizer(Executor):
                     if key == 'sample_name':
                         html_filename = str(value) + ".html"
                         html_page = os.path.join(reports_dir,
-                                                 html_filename).lower()
+                                                 html_filename.lower())
                         page_relpath = os.path.relpath(html_page, reports_dir)
                         html_file.write(SAMPLE_TABLE_FIRSTROW.format(
                                             row_name=str(key),
@@ -934,17 +934,17 @@ class Summarizer(Executor):
                                                 image=image_relpath))
                             # Otherwise treat as a link
                             else:
-                                links.append(OBJECTS_LINK.format(
+                                links.append(GENERIC_LIST_ENTRY.format(
                                                 label=str(row['key']),
-                                                path=page_relpath))
+                                                page=page_relpath))
                         # Otherwise it's just a link
                         else:
-                            links.append(OBJECTS_LINK.format(
+                            links.append(GENERIC_LIST_ENTRY.format(
                                             label=str(row['key']),
-                                            path=page_relpath))
-                html_file.write(OBJECTS_LIST_HEADER)
+                                            page=page_relpath))
+                html_file.write(GENERIC_LIST_HEADER)
                 html_file.write("\n".join(links))
-                html_file.write(OBJECTS_LIST_FOOTER)
+                html_file.write(GENERIC_LIST_FOOTER)
                 html_file.write("\t\t\t<hr>\n")
                 html_file.write("\n".join(figures))
                 html_file.write("\t\t</div>\n")
@@ -981,7 +981,7 @@ class Summarizer(Executor):
                 obj_links.append(NAVBAR_DROPDOWN_DIVIDER)
                 for key in objs['key'].drop_duplicates().sort_values():
                     page_name = key + ".html"
-                    page_path = os.path.join(reports_dir, page_name).replace(' ', '_').lower()
+                    page_path = os.path.join(reports_dir, page_name.replace(' ', '_').lower())
                     relpath = os.path.relpath(page_path, wd)
                     obj_links.append(NAVBAR_DROPDOWN_LINK.format(
                                         html_page=relpath,
@@ -1009,7 +1009,7 @@ class Summarizer(Executor):
                 sample_links.append(NAVBAR_DROPDOWN_DIVIDER)
                 for sample_name in objs['sample_name'].drop_duplicates().sort_values():
                     page_name = sample_name + ".html"
-                    page_path = os.path.join(reports_dir, page_name).replace(' ', '_').lower()
+                    page_path = os.path.join(reports_dir, page_name.replace(' ', '_').lower())
                     relpath = os.path.relpath(page_path, wd)
                     sample_links.append(NAVBAR_DROPDOWN_LINK.format(
                                             html_page=relpath,
@@ -1032,34 +1032,37 @@ class Summarizer(Executor):
             # If a sample produces result summaries add those as additional
             # figures or links to the index.html page
             all_protocols = [sample.protocol for sample in self.prj.samples]
-
+            # For each protocol look for project summarizers
             for protocol in set(all_protocols):
                 obj_figs = []
                 num_figures = 0
                 obj_links = []
                 ifaces = self.prj.interfaces_by_protocol[alpha_cased(protocol)]
+                # Check the interface files for summarizers
                 for iface in ifaces:
                     pl = iface.fetch_pipelines(protocol)
                     summary_results = iface.get_attribute(pl, "summary_results")
+                    # Build the HTML for each summary result
                     for result in summary_results:
                         caption = str(result['caption'])
-                        file_path = str(result['path'])
-                        img_path = str(result['thumbnail_path'])
-                        subdir = os.path.dirname(result['path'])
-                        ext = file_path.split('.')[-1]
-                        label = file_path.split('.')[-2]
-                        file = ".".join([label, ext])
-                        search = os.path.join(self.prj.metadata.output_dir, subdir, '*{}'.format(file))
+                        result_file = str(result['path']).replace(
+                                        '{name}', str(self.prj.name))
+                        result_img = str(result['thumbnail_path']).replace(
+                                        '{name}', str(self.prj.name))
+                        search = os.path.join(self.prj.metadata.output_dir,
+                                              '{}'.format(result_file))
                         if glob.glob(search):
                             file_path = str(glob.glob(search)[0])
-                            file_relpath = os.path.relpath(file_path, self.prj.metadata.output_dir)
-                            ext = img_path.split('.')[-1]
-                            label = img_path.split('.')[-2]
-                            img = ".".join([label, ext])
-                            search = os.path.join(self.prj.metadata.output_dir, subdir, '*{}'.format(img))
+                            file_relpath = os.path.relpath(
+                                            file_path,
+                                            self.prj.metadata.output_dir)
+                            search = os.path.join(self.prj.metadata.output_dir,
+                                                  '{}'.format(result_img))
                             if glob.glob(search):
                                 img_path = str(glob.glob(search)[0])
-                                img_relpath = os.path.relpath(img_path, self.prj.metadata.output_dir)
+                                img_relpath = os.path.relpath(
+                                                img_path,
+                                                self.prj.metadata.output_dir)
                                 if num_figures < 3:
                                     # Add to single row
                                     obj_figs.append(HTML_FIGURE.format(
@@ -1171,7 +1174,7 @@ class Summarizer(Executor):
                         if value == sample_name:
                             html_filename = str(value) + ".html"
                             html_page = os.path.join(reports_dir,
-                                                     html_filename).lower()
+                                                     html_filename.lower())
                             page_relpath = os.path.relpath(html_page,
                                            self.prj.metadata.output_dir)
                             create_sample_html(single_sample, objs, value,
@@ -1255,57 +1258,56 @@ class Summarizer(Executor):
 
         self.counter.reset()
 
-        # Create figures summary file
-        for sample in self.prj.samples:
-            _LOGGER.info(self.counter.show(sample.sample_name, sample.protocol))
-            sample_output_folder = sample_folder(self.prj, sample)
-            #Now process any reported figures <DEPRECATED>
-            figs_file = os.path.join(sample_output_folder, "figures.tsv")
-            if os.path.isfile(figs_file):
-                _LOGGER.info("Found figures file: '%s'", figs_file)
-            else:
-                _LOGGER.warn("No figures file '%s'", figs_file)
-                continue
-            t = _pd.read_table(
-                figs_file, header=None, names=['key', 'value', 'pl'])
-            t['sample_name'] = sample.name
-            figs = figs.append(t, ignore_index=True)
+        # # Create figures summary file <DEPRECATED>
+        # for sample in self.prj.samples:
+            # _LOGGER.info(self.counter.show(sample.sample_name, sample.protocol))
+            # sample_output_folder = sample_folder(self.prj, sample)
+            # #Now process any reported figures 
+            # figs_file = os.path.join(sample_output_folder, "figures.tsv")
+            # if os.path.isfile(figs_file):
+                # _LOGGER.info("Found figures file: '%s'", figs_file)
+            # else:
+                # _LOGGER.warn("No figures file '%s'", figs_file)
+                # continue
+            # t = _pd.read_table(
+                # figs_file, header=None, names=['key', 'value', 'pl'])
+            # t['sample_name'] = sample.name
+            # figs = figs.append(t, ignore_index=True)
 
-        self.counter.reset()
+        # self.counter.reset()
 
-        try:
-            figs_tsv_path = "{root}_figs_summary.tsv".format(
-                root=os.path.join(self.prj.metadata.output_dir, self.prj.name))
+        # try:
+            # figs_tsv_path = "{root}_figs_summary.tsv".format(
+                # root=os.path.join(self.prj.metadata.output_dir, self.prj.name))
 
-            figs_html_path = "{root}_figs_summary.html".format(
-                root=os.path.join(self.prj.metadata.output_dir, self.prj.name))
+            # figs_html_path = "{root}_figs_summary.html".format(
+                # root=os.path.join(self.prj.metadata.output_dir, self.prj.name))
 
-            figs_html_file = open(figs_html_path, 'w')
-            html_header = "<html><h1>Summary of sample figures for project {}</h1>\n".format(self.prj.name)
-            figs_html_file.write(html_header)
-            sample_img_header = "<h3>{sample_name}</h3>\n"
-            sample_img_code = "<p><a href='{path}'><img src='{path}'>{key}</a></p>\n"
+            # figs_html_file = open(figs_html_path, 'w')
+            # html_header = "<html><h1>Summary of sample figures for project {}</h1>\n".format(self.prj.name)
+            # figs_html_file.write(html_header)
+            # sample_img_header = "<h3>{sample_name}</h3>\n"
+            # sample_img_code = "<p><a href='{path}'><img src='{path}'>{key}</a></p>\n"
 
-            figs.drop_duplicates(keep='last', inplace=True)
-            for sample_name in figs['sample_name'].drop_duplicates().sort_values():
-                f = figs[figs['sample_name'] == sample_name]
-                figs_html_file.write(sample_img_header.format(sample_name=sample_name))
+            # figs.drop_duplicates(keep='last', inplace=True)
+            # for sample_name in figs['sample_name'].drop_duplicates().sort_values():
+                # f = figs[figs['sample_name'] == sample_name]
+                # figs_html_file.write(sample_img_header.format(sample_name=sample_name))
 
-                for i, row in f.iterrows():
-                    figs_html_file.write(sample_img_code.format(
-                        key=str(row['key']), path=row['value']))
+                # for i, row in f.iterrows():
+                    # figs_html_file.write(sample_img_code.format(
+                        # key=str(row['key']), path=row['value']))
 
-            html_footer = "</html>"
-            figs_html_file.write(html_footer)
+            # html_footer = "</html>"
+            # figs_html_file.write(html_footer)
 
-            figs_html_file.close()
-        except ValueError:
-            _LOGGER.info("No figure files found.")
+            # figs_html_file.close()
+        # except ValueError:
+            # _LOGGER.info("No figure files found.")
 
         # Create objects summary file
         for sample in self.prj.samples:
-            # Now process any reported objects
-            # TODO: only use the objects tsv once confirmed working
+            # Process any reported objects
             _LOGGER.info(self.counter.show(sample.sample_name, sample.protocol))
             sample_output_folder = sample_folder(self.prj, sample)
             objs_file = os.path.join(sample_output_folder, "objects.tsv")
