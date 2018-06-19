@@ -56,29 +56,6 @@ class Project(peppy.Project):
         return ["output_dir", "results_subdir", "submission_subdir"]
 
 
-    @staticmethod
-    def infer_name(config_filepath):
-        """
-        Infer project name from config file path.
-        
-        First assume the name is the folder in which the config file resides,
-        unless that folder is named "metadata", in which case the project name
-        is the parent of that folder.
-        
-        :param str path_config_file: path to the project's config file.
-        :return str: inferred name for project.
-        """
-        import os
-
-        config_folder = os.path.dirname(config_filepath)
-        project_name = os.path.basename(config_folder)
-        
-        if project_name == "metadata":
-            project_name = os.path.basename(os.path.dirname(config_folder))
-        
-        return project_name
-
-
     def build_submission_bundles(self, protocol, priority=True):
         """
         Create pipelines to submit for each sample of a particular protocol.
