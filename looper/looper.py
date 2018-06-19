@@ -628,7 +628,7 @@ class Summarizer(Executor):
                 html_file.write(GENERIC_LIST_HEADER)
                 for key in objs['key'].drop_duplicates().sort_values():
                     page_name = key + ".html"
-                    page_path = os.path.join(reports_dir, page_name).replace(' ', '_').lower()
+                    page_path = os.path.join(reports_dir, page_name.replace(' ', '_').lower())
                     page_relpath = os.path.relpath(page_path, reports_dir)
                     html_file.write(GENERIC_LIST_ENTRY.format(
                                     page=page_relpath, label=key))
@@ -652,7 +652,7 @@ class Summarizer(Executor):
                 for sample in self.prj.samples:
                     sample_name = str(sample.sample_name)
                     page_name = sample_name + ".html"
-                    page_path = os.path.join(reports_dir, page_name).replace(' ', '_').lower()
+                    page_path = os.path.join(reports_dir, page_name.replace(' ', '_').lower())
                     page_relpath = os.path.relpath(page_path, reports_dir)
                     html_file.write(GENERIC_LIST_ENTRY.format(
                                     page=page_relpath, label=sample_name))
@@ -664,7 +664,7 @@ class Summarizer(Executor):
             # plots from each sample
             reports_dir = os.path.join(self.prj.metadata.output_dir, "reports")
             object_path = os.path.join(reports_dir,
-                                       filename).replace(' ', '_').lower()
+                                       filename.replace(' ', '_').lower())
             if not os.path.exists(os.path.dirname(object_path)):
                 os.makedirs(os.path.dirname(object_path))
             with open(object_path, 'w') as html_file:
@@ -745,7 +745,7 @@ class Summarizer(Executor):
                     html_file.write(STATUS_ROW_HEADER)
                     # First Col: Sample_Name (w/ link to sample page)
                     page_name = sample_name + ".html"
-                    page_path = os.path.join(reports_dir, page_name).replace(' ', '_').lower()
+                    page_path = os.path.join(reports_dir, page_name.replace(' ', '_').lower())
                     page_relpath = os.path.relpath(page_path, reports_dir)
                     html_file.write(STATUS_ROW_LINK.format(
                                         row_class="",
@@ -816,7 +816,7 @@ class Summarizer(Executor):
             reports_dir = os.path.join(self.prj.metadata.output_dir,
                                        "reports")
             sample_html_path = os.path.join(reports_dir,
-                                            filename).replace(' ', '_').lower()
+                                            filename.replace(' ', '_').lower())
             if not os.path.exists(os.path.dirname(sample_html_path)):
                 os.makedirs(os.path.dirname(sample_html_path))
             with open(sample_html_path, 'w') as html_file:
@@ -894,7 +894,7 @@ class Summarizer(Executor):
                     if key == 'sample_name':
                         html_filename = str(value) + ".html"
                         html_page = os.path.join(reports_dir,
-                                                 html_filename).lower()
+                                                 html_filename.lower())
                         page_relpath = os.path.relpath(html_page, reports_dir)
                         html_file.write(SAMPLE_TABLE_FIRSTROW.format(
                                             row_name=str(key),
@@ -981,7 +981,7 @@ class Summarizer(Executor):
                 obj_links.append(NAVBAR_DROPDOWN_DIVIDER)
                 for key in objs['key'].drop_duplicates().sort_values():
                     page_name = key + ".html"
-                    page_path = os.path.join(reports_dir, page_name).replace(' ', '_').lower()
+                    page_path = os.path.join(reports_dir, page_name.replace(' ', '_').lower())
                     relpath = os.path.relpath(page_path, wd)
                     obj_links.append(NAVBAR_DROPDOWN_LINK.format(
                                         html_page=relpath,
@@ -1009,7 +1009,7 @@ class Summarizer(Executor):
                 sample_links.append(NAVBAR_DROPDOWN_DIVIDER)
                 for sample_name in objs['sample_name'].drop_duplicates().sort_values():
                     page_name = sample_name + ".html"
-                    page_path = os.path.join(reports_dir, page_name).replace(' ', '_').lower()
+                    page_path = os.path.join(reports_dir, page_name.replace(' ', '_').lower())
                     relpath = os.path.relpath(page_path, wd)
                     sample_links.append(NAVBAR_DROPDOWN_LINK.format(
                                             html_page=relpath,
@@ -1174,7 +1174,7 @@ class Summarizer(Executor):
                         if value == sample_name:
                             html_filename = str(value) + ".html"
                             html_page = os.path.join(reports_dir,
-                                                     html_filename).lower()
+                                                     html_filename.lower())
                             page_relpath = os.path.relpath(html_page,
                                            self.prj.metadata.output_dir)
                             create_sample_html(single_sample, objs, value,
