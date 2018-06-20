@@ -810,17 +810,22 @@ class Summarizer(Executor):
                 html_file.write(HTML_FOOTER)
                 html_file.close()
 
-        def create_sample_html(single_sample, all_samples, sample_name,
-                               sample_stats, filename, index_html):
+        # def create_sample_html(single_sample, all_samples, sample_name,
+                               # sample_stats, filename, index_html):
+        def create_sample_html(all_samples, sample_name, sample_stats,
+                               index_html):
             # Produce an HTML page containing all of a sample's objects
             # and the sample summary statistics
-            reports_dir = os.path.join(self.prj.metadata.output_dir,
-                                       "reports")
-            sample_html_path = os.path.join(reports_dir,
-                                            filename.replace(' ', '_').lower())
-            if not os.path.exists(os.path.dirname(sample_html_path)):
-                os.makedirs(os.path.dirname(sample_html_path))
-            with open(sample_html_path, 'w') as html_file:
+            reports_dir = os.path.join(self.prj.metadata.output_dir, "reports")
+            html_filename = sample_name + ".html"
+            html_page = os.path.join(
+                reports_dir, html_filename.replace(' ', '_').lower())
+            sample_page_relpath = os.path.relpath(
+                html_page, self.prj.metadata.output_dir)
+            single_sample = all_samples[all_samples['sample_name'] == sample_name]
+            if not os.path.exists(os.path.dirname(html_page)):
+                os.makedirs(os.path.dirname(html_page))
+            with open(html_page, 'w') as html_file:
                 html_file.write(HTML_HEAD_OPEN)
                 html_file.write("\t\t<style>\n")
                 html_file.write(SAMPLE_TABLE_STYLE)
@@ -885,17 +890,10 @@ class Summarizer(Executor):
                 # Add the sample's statistics as a table
                 html_file.write("\t<div class='container-fluid'>\n")
                 html_file.write(SAMPLE_TABLE_HEADER)
-                # for key, value in sample_stats.items():
-                    # html_file.write(TABLE_COLS.format(col_val=str(key)))
-                # html_file.write(TABLE_COLS_FOOTER)
-
                 # Produce table rows
                 for key, value in sample_stats.items():
                     # Treat sample_name as a link to sample page
                     if key == 'sample_name':
-                        html_filename = str(value) + ".html"
-                        html_page = os.path.join(reports_dir,
-                                                 html_filename.lower())
                         page_relpath = os.path.relpath(html_page, reports_dir)
                         html_file.write(SAMPLE_TABLE_FIRSTROW.format(
                                             row_name=str(key),
@@ -952,6 +950,9 @@ class Summarizer(Executor):
                 html_file.write("\t\t<hr>\n")
                 html_file.write(HTML_FOOTER)
                 html_file.close()
+
+            # Return the path to the newly created sample page
+            return sample_page_relpath
 
         def create_navbar(objs, wd):
             # Return a string containing the navbar prebuilt html
@@ -1030,80 +1031,82 @@ class Summarizer(Executor):
                                "\n".join(sample_links),
                                NAVBAR_FOOTER]))
 
-        def create_project_objects(protocol):
-            # If a sample produces result summaries add those as additional
-            # figures or links to the index.html page
-            # all_protocols = [sample.protocol for sample in self.prj.samples]
-            # For each protocol look for project summarizers
-            # for protocol in set(all_protocols):
-            obj_figs = []
-            num_figures = 0
-            obj_links = []
-            ifaces = self.prj.interfaces_by_protocol[alpha_cased(protocol)]
-            # Check the interface files for summarizers
-            for iface in ifaces:
-                pl = iface.fetch_pipelines(protocol)
-                summary_results = iface.get_attribute(pl, "summary_results")
-                # Build the HTML for each summary result
-                for result in summary_results:
-                    caption = str(result['caption'])
-                    result_file = str(result['path']).replace(
-                                    '{name}', str(self.prj.name))
-                    result_img = str(result['thumbnail_path']).replace(
-                                    '{name}', str(self.prj.name))
-                    search = os.path.join(self.prj.metadata.output_dir,
-                                          '{}'.format(result_file))
-                    if glob.glob(search):
-                        file_path = str(glob.glob(search)[0])
-                        file_relpath = os.path.relpath(
-                                        file_path,
-                                        self.prj.metadata.output_dir)
+        def create_project_objects():
+            # If a protocol produces project level summaries add those as
+            # additional figures/links
+            all_protocols = [sample.protocol for sample in self.prj.samples]
+            # For each protocol report the project summarizers' results
+            for protocol in set(all_protocols):
+                obj_figs = []
+                num_figures = 0
+                obj_links = []
+                ifaces = self.prj.interfaces_by_protocol[alpha_cased(protocol)]
+                # Check the interface files for summarizers
+                for iface in ifaces:
+                    pl = iface.fetch_pipelines(protocol)
+                    summary_results = iface.get_attribute(pl, "summary_results")
+                    # Build the HTML for each summary result
+                    for result in summary_results:
+                        caption = str(result['caption'])
+                        result_file = str(result['path']).replace(
+                                        '{name}', str(self.prj.name))
+                        result_img = str(result['thumbnail_path']).replace(
+                                        '{name}', str(self.prj.name))
                         search = os.path.join(self.prj.metadata.output_dir,
-                                              '{}'.format(result_img))
+                                              '{}'.format(result_file))
+                        # Confirm the file itself was produced
                         if glob.glob(search):
-                            img_path = str(glob.glob(search)[0])
-                            img_relpath = os.path.relpath(
-                                            img_path,
+                            file_path = str(glob.glob(search)[0])
+                            file_relpath = os.path.relpath(
+                                            file_path,
                                             self.prj.metadata.output_dir)
-                            if num_figures < 3:
+                            search = os.path.join(self.prj.metadata.output_dir,
+                                                  '{}'.format(result_img))
+                            # Add as a figure if thumbnail exists
+                            if glob.glob(search):
+                                img_path = str(glob.glob(search)[0])
+                                img_relpath = os.path.relpath(
+                                                img_path,
+                                                self.prj.metadata.output_dir)
                                 # Add to single row
-                                obj_figs.append(HTML_FIGURE.format(
-                                    path=file_relpath,
-                                    image=img_relpath,
-                                    label=caption))
-                                num_figures += 1
-                            else:
-                                # Close the previous row and start new one
-                                num_figures = 1
-                                obj_figs.append("\t\t\t</div>")
-                                obj_figs.append("\t\t\t<div class='row justify-content-start'>")
-                                obj_figs.append(HTML_FIGURE.format(
-                                    path=file_relpath,
-                                    image=img_relpath,
-                                    label=caption))
-                        else:
+                                if num_figures < 3:
+                                    obj_figs.append(HTML_FIGURE.format(
+                                        path=file_relpath,
+                                        image=img_relpath,
+                                        label=caption))
+                                    num_figures += 1
+                                # Close the previous row and start a new one
+                                else:
+                                    num_figures = 1
+                                    obj_figs.append("\t\t\t</div>")
+                                    obj_figs.append("\t\t\t<div class='row justify-content-start'>")
+                                    obj_figs.append(HTML_FIGURE.format(
+                                        path=file_relpath,
+                                        image=img_relpath,
+                                        label=caption))
                             # No thumbnail exists, add as a link in a list
-                            obj_links.append(OBJECTS_LINK.format(
-                                                path=file_relpath,
-                                                label=caption))
-                    else:
-                        _LOGGER.warn("Summarizer was unable to find the: " + caption)
-            while num_figures < 3:
-                # Add additional empty columns for clean format
-                obj_figs.append("\t\t\t  <div class='col'>")
-                obj_figs.append("\t\t\t  </div>")
-                num_figures += 1
-            return ("\n".join(["\t\t<h5>Looper project objects</h5>",
-                               "\t\t<div class='container'>",
-                               "\t\t\t<div class='row justify-content-start'>",
-                               "\n".join(obj_figs),
-                               "\t\t\t</div>",
-                               "\t\t</div>",
-                               OBJECTS_LIST_HEADER,
-                               "\n".join(obj_links),
-                               OBJECTS_LIST_FOOTER]))
+                            else:
+                                obj_links.append(OBJECTS_LINK.format(
+                                                    path=file_relpath,
+                                                    label=caption))
+                        else:
+                            _LOGGER.warn("Summarizer was unable to find the: " + caption)
+                while num_figures < 3:
+                    # Add additional empty columns for clean format
+                    obj_figs.append("\t\t\t  <div class='col'>")
+                    obj_figs.append("\t\t\t  </div>")
+                    num_figures += 1
+                return ("\n".join(["\t\t<h5>Looper project objects</h5>",
+                                   "\t\t<div class='container'>",
+                                   "\t\t\t<div class='row justify-content-start'>",
+                                   "\n".join(obj_figs),
+                                   "\t\t\t</div>",
+                                   "\t\t</div>",
+                                   OBJECTS_LIST_HEADER,
+                                   "\n".join(obj_links),
+                                   OBJECTS_LIST_FOOTER]))
 
-        def create_index_html(objs, stats, protocol):
+        def create_index_html(objs, stats):
             # Generate an index.html style project home page w/ sample summary
             # statistics
             objs.drop_duplicates(keep='last', inplace=True)
@@ -1169,25 +1172,20 @@ class Summarizer(Executor):
                     # Reset column position counter
                     col_pos = 0
                     sample_name = str(stats[sample_pos]['sample_name'])
-                    single_sample = objs[objs['sample_name'] == sample_name]
                     objs_html_file.write(TABLE_ROW_HEADER)
-                    for value in table_row:
-                        # Treat sample_name as a link to sample page
+                    for value in table_row:                 
                         if value == sample_name:
-                            html_filename = str(value) + ".html"
-                            html_page = os.path.join(reports_dir,
-                                                     html_filename.lower())
-                            page_relpath = os.path.relpath(html_page,
-                                           self.prj.metadata.output_dir)
-                            create_sample_html(single_sample, objs, value,
-                                               stats[sample_pos],
-                                               html_filename,
-                                               objs_html_path)
+                            # Generate individual sample page and return link
+                            sample_page = create_sample_html(objs,
+                                                             sample_name,
+                                                             stats[sample_pos],
+                                                             objs_html_path)
+                            # Treat sample_name as a link to sample page
                             objs_html_file.write(TABLE_ROWS_LINK.format(
-                                html_page=page_relpath,
-                                page_name=page_relpath,
-                                link_name=str(value)))
-                        # Otherwise add as a static cell value
+                                html_page=sample_page,
+                                page_name=sample_page,
+                                link_name=sample_name))
+                        # If not the sample name, add as an unlinked cell value
                         else:
                             objs_html_file.write(TABLE_ROWS.format(
                                 row_val=str(value)))
@@ -1207,16 +1205,13 @@ class Summarizer(Executor):
                                    objs_html_path)
 
             # Create parent objects page with links to each object type
-            #create_object_parent_html(objs, protocol)
-            # Do I need to add protocol, or is it open to all functions
-            # in this class? huh, it works fine...
             create_object_parent_html(objs)
 
             # Create status page with each sample's status listed
             create_status_html(objs)
 
             # Add project level objects
-            prj_objs = create_project_objects(protocol)
+            prj_objs = create_project_objects()
             objs_html_file.write("\t\t<hr>\n")
             objs_html_file.write(prj_objs)
             objs_html_file.write("\t\t<hr>\n")
@@ -1365,10 +1360,10 @@ class Summarizer(Executor):
                         subprocess.call([summarizer_abspath, self.prj.config_file])
                     except OSError:
                         _LOGGER.warn("Summarizer was unable to run: " + str(summarizer))
-            # Produce objects html file.
-            create_index_html(objs, stats, protocol)
 
-        # all samples are parsed.
+        # Produce objects html file.
+        create_index_html(objs, stats)
+
         # Produce figures html file. <DEPRECATED>
         # create_figures_html(figs) <DEPRECATED>
 
