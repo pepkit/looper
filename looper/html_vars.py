@@ -30,7 +30,7 @@ HTML_HEAD_OPEN = \
 """
 HTML_TITLE = \
 """\
-        <title>PEPATAC project summary for {project_name}</title>
+        <title>{pipeline} project summary for {project_name}</title>
 """
 HTML_HEAD_CLOSE = \
 """\
@@ -75,7 +75,7 @@ NAVBAR_HEADER = \
 """\
         <div id="top"></div>
         <nav class="navbar sticky-top navbar-expand-lg navbar-dark bg-primary">
-          <a class="navbar-brand" href="#top">PEPATAC</a>
+          <a class="navbar-brand" href="#top">{pipeline}</a>
           <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
           </button>
@@ -296,7 +296,7 @@ TABLE_STYLE_TEXT = \
 """
 TABLE_HEADER = \
 """
-      <h5>PEPATAC stats summary</h5>
+      <h5>{pipeline} stats summary</h5>
 
       <div class="table-responsive-sm">
         <table class="table table-sm table-hover table-header-rotated">                           
@@ -401,7 +401,7 @@ SAMPLE_BUTTONS = \
 """
 SAMPLE_TABLE_HEADER = \
 """\
-      <h5>PEPATAC stats summary</h5>
+      <h5>{pipeline} stats summary</h5>
         <div class="table-responsive-sm">
           <table class="table table-sm table-hover table-bordered" style="white-space: nowrap; width: 1%;">                           
             <tbody>

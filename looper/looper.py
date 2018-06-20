@@ -612,7 +612,7 @@ class Summarizer(Executor):
             _LOGGER.info(
                 "Summary (n=" + str(len(stats)) + "): " + tsv_outfile_path)
 
-        def create_object_parent_html(objs):
+        def create_object_parent_html(objs, protocol):
             # Generates a page listing all the project objects with links
             # to individual object pages
             reports_dir = os.path.join(self.prj.metadata.output_dir,
@@ -622,7 +622,7 @@ class Summarizer(Executor):
                 os.makedirs(os.path.dirname(object_parent_path))
             with open(object_parent_path, 'w') as html_file:
                 html_file.write(HTML_HEAD_OPEN)
-                html_file.write(create_navbar(objs, reports_dir))
+                html_file.write(create_navbar(objs, reports_dir, protocol))
                 html_file.write(HTML_HEAD_CLOSE)
                 html_file.write(GENERIC_HEADER.format(header="Objects"))
                 html_file.write(GENERIC_LIST_HEADER)
@@ -635,7 +635,7 @@ class Summarizer(Executor):
                 html_file.write(HTML_FOOTER)
                 html_file.close()
 
-        def create_sample_parent_html(objs):
+        def create_sample_parent_html(objs, protocol):
             # Generates a page listing all the project samples with links
             # to individual sample pages
             reports_dir = os.path.join(self.prj.metadata.output_dir,
@@ -645,7 +645,7 @@ class Summarizer(Executor):
                 os.makedirs(os.path.dirname(sample_parent_path))
             with open(sample_parent_path, 'w') as html_file:
                 html_file.write(HTML_HEAD_OPEN)
-                html_file.write(create_navbar(objs, reports_dir))
+                html_file.write(create_navbar(objs, reports_dir, protocol))
                 html_file.write(HTML_HEAD_CLOSE)
                 html_file.write(GENERIC_HEADER.format(header="Samples"))
                 html_file.write(GENERIC_LIST_HEADER)
@@ -659,7 +659,7 @@ class Summarizer(Executor):
                 html_file.write(HTML_FOOTER)
                 html_file.close()
 
-        def create_object_html(objs, nb, type, filename, index_html):
+        def create_object_html(objs, nb, type, filename, index_html, protocol):
             # Generates a page for an individual object type with all of its
             # plots from each sample
             reports_dir = os.path.join(self.prj.metadata.output_dir, "reports")
@@ -669,7 +669,7 @@ class Summarizer(Executor):
                 os.makedirs(os.path.dirname(object_path))
             with open(object_path, 'w') as html_file:
                 html_file.write(HTML_HEAD_OPEN)
-                html_file.write(create_navbar(nb, reports_dir))
+                html_file.write(create_navbar(nb, reports_dir, protocol))
                 html_file.write(HTML_HEAD_CLOSE)
                 html_file.write("\t\t<h4>{} objects</h4>\n".format(str(type)))
                 links = []
@@ -709,7 +709,7 @@ class Summarizer(Executor):
                 html_file.write(HTML_FOOTER)
                 html_file.close()
 
-        def create_status_html(all_samples):
+        def create_status_html(all_samples, protocol):
             # Generates a page listing all the samples, their run status, their
             # log file, and the total runtime if completed.
             reports_dir = os.path.join(self.prj.metadata.output_dir, "reports")
@@ -718,7 +718,7 @@ class Summarizer(Executor):
                 os.makedirs(os.path.dirname(status_html_path))
             with open(status_html_path, 'w') as html_file:
                 html_file.write(HTML_HEAD_OPEN)
-                html_file.write(create_navbar(all_samples, reports_dir))
+                html_file.write(create_navbar(all_samples, reports_dir, protocol))
                 html_file.write(HTML_HEAD_CLOSE)
                 html_file.write(STATUS_HEADER)
                 html_file.write(STATUS_TABLE_HEAD)
@@ -810,7 +810,8 @@ class Summarizer(Executor):
                 html_file.close()
 
         def create_sample_html(single_sample, all_samples, sample_name,
-                               sample_stats, filename, index_html):
+                               sample_stats, filename, index_html, 
+                               protocol):
             # Produce an HTML page containing all of a sample's objects
             # and the sample summary statistics
             reports_dir = os.path.join(self.prj.metadata.output_dir,
@@ -824,7 +825,7 @@ class Summarizer(Executor):
                 html_file.write("\t\t<style>\n")
                 html_file.write(SAMPLE_TABLE_STYLE)
                 html_file.write("\t\t</style>\n")
-                html_file.write(create_navbar(all_samples, reports_dir))
+                html_file.write(create_navbar(all_samples, reports_dir, protocol))
                 html_file.write(HTML_HEAD_CLOSE)
                 html_file.write("\t\t<h4>{}</h4>\n".format(str(sample_name)))
                 if single_sample.empty:
@@ -883,7 +884,7 @@ class Summarizer(Executor):
 
                 # Add the sample's statistics as a table
                 html_file.write("\t<div class='container-fluid'>\n")
-                html_file.write(SAMPLE_TABLE_HEADER)
+                html_file.write(SAMPLE_TABLE_HEADER.format(pipeline=protocol))
                 # for key, value in sample_stats.items():
                     # html_file.write(TABLE_COLS.format(col_val=str(key)))
                 # html_file.write(TABLE_COLS_FOOTER)
@@ -952,7 +953,7 @@ class Summarizer(Executor):
                 html_file.write(HTML_FOOTER)
                 html_file.close()
 
-        def create_navbar(objs, wd):
+        def create_navbar(objs, wd, protocol):
             # Return a string containing the navbar prebuilt html
             # Includes link to all the pages
             objs_html_path = "{root}_objs_summary.html".format(
@@ -960,7 +961,8 @@ class Summarizer(Executor):
             reports_dir = os.path.join(self.prj.metadata.output_dir,
                                        "reports")
             index_page_relpath = os.path.relpath(objs_html_path, wd)
-            navbar_header = NAVBAR_HEADER.format(index_html=index_page_relpath)
+            navbar_header = NAVBAR_HEADER.format(pipeline=protocol,
+                                                 index_html=index_page_relpath)
             # Add link to STATUS page
             status_page = os.path.join(reports_dir, "status.html")
             # Use relative linking structure
@@ -1028,70 +1030,70 @@ class Summarizer(Executor):
                                "\n".join(sample_links),
                                NAVBAR_FOOTER]))
 
-        def create_project_objects():
+        def create_project_objects(protocol):
             # If a sample produces result summaries add those as additional
             # figures or links to the index.html page
-            all_protocols = [sample.protocol for sample in self.prj.samples]
+            # all_protocols = [sample.protocol for sample in self.prj.samples]
             # For each protocol look for project summarizers
-            for protocol in set(all_protocols):
-                obj_figs = []
-                num_figures = 0
-                obj_links = []
-                ifaces = self.prj.interfaces_by_protocol[alpha_cased(protocol)]
-                # Check the interface files for summarizers
-                for iface in ifaces:
-                    pl = iface.fetch_pipelines(protocol)
-                    summary_results = iface.get_attribute(pl, "summary_results")
-                    # Build the HTML for each summary result
-                    for result in summary_results:
-                        caption = str(result['caption'])
-                        result_file = str(result['path']).replace(
-                                        '{name}', str(self.prj.name))
-                        result_img = str(result['thumbnail_path']).replace(
-                                        '{name}', str(self.prj.name))
+            # for protocol in set(all_protocols):
+            obj_figs = []
+            num_figures = 0
+            obj_links = []
+            ifaces = self.prj.interfaces_by_protocol[alpha_cased(protocol)]
+            # Check the interface files for summarizers
+            for iface in ifaces:
+                pl = iface.fetch_pipelines(protocol)
+                summary_results = iface.get_attribute(pl, "summary_results")
+                # Build the HTML for each summary result
+                for result in summary_results:
+                    caption = str(result['caption'])
+                    result_file = str(result['path']).replace(
+                                    '{name}', str(self.prj.name))
+                    result_img = str(result['thumbnail_path']).replace(
+                                    '{name}', str(self.prj.name))
+                    search = os.path.join(self.prj.metadata.output_dir,
+                                          '{}'.format(result_file))
+                    if glob.glob(search):
+                        file_path = str(glob.glob(search)[0])
+                        file_relpath = os.path.relpath(
+                                        file_path,
+                                        self.prj.metadata.output_dir)
                         search = os.path.join(self.prj.metadata.output_dir,
-                                              '{}'.format(result_file))
+                                              '{}'.format(result_img))
                         if glob.glob(search):
-                            file_path = str(glob.glob(search)[0])
-                            file_relpath = os.path.relpath(
-                                            file_path,
+                            img_path = str(glob.glob(search)[0])
+                            img_relpath = os.path.relpath(
+                                            img_path,
                                             self.prj.metadata.output_dir)
-                            search = os.path.join(self.prj.metadata.output_dir,
-                                                  '{}'.format(result_img))
-                            if glob.glob(search):
-                                img_path = str(glob.glob(search)[0])
-                                img_relpath = os.path.relpath(
-                                                img_path,
-                                                self.prj.metadata.output_dir)
-                                if num_figures < 3:
-                                    # Add to single row
-                                    obj_figs.append(HTML_FIGURE.format(
-                                        path=file_relpath,
-                                        image=img_relpath,
-                                        label=caption))
-                                    num_figures += 1
-                                else:
-                                    # Close the previous row and start new one
-                                    num_figures = 1
-                                    obj_figs.append("\t\t\t</div>")
-                                    obj_figs.append("\t\t\t<div class='row justify-content-start'>")
-                                    obj_figs.append(HTML_FIGURE.format(
-                                        path=file_relpath,
-                                        image=img_relpath,
-                                        label=caption))
+                            if num_figures < 3:
+                                # Add to single row
+                                obj_figs.append(HTML_FIGURE.format(
+                                    path=file_relpath,
+                                    image=img_relpath,
+                                    label=caption))
+                                num_figures += 1
                             else:
-                                # No thumbnail exists, add as a link in a list
-                                obj_links.append(OBJECTS_LINK.format(
-                                                    path=file_relpath,
-                                                    label=caption))
+                                # Close the previous row and start new one
+                                num_figures = 1
+                                obj_figs.append("\t\t\t</div>")
+                                obj_figs.append("\t\t\t<div class='row justify-content-start'>")
+                                obj_figs.append(HTML_FIGURE.format(
+                                    path=file_relpath,
+                                    image=img_relpath,
+                                    label=caption))
                         else:
-                            _LOGGER.warn("Summarizer was unable to find the: " + caption)
+                            # No thumbnail exists, add as a link in a list
+                            obj_links.append(OBJECTS_LINK.format(
+                                                path=file_relpath,
+                                                label=caption))
+                    else:
+                        _LOGGER.warn("Summarizer was unable to find the: " + caption)
             while num_figures < 3:
                 # Add additional empty columns for clean format
                 obj_figs.append("\t\t\t  <div class='col'>")
                 obj_figs.append("\t\t\t  </div>")
                 num_figures += 1
-            return ("\n".join(["\t\t<h5>PEPATAC project objects</h5>",
+            return ("\n".join(["\t\t<h5>{pipeline} project objects</h5>".format(pipeline=protocol),
                                "\t\t<div class='container'>",
                                "\t\t\t<div class='row justify-content-start'>",
                                "\n".join(obj_figs),
@@ -1101,7 +1103,7 @@ class Summarizer(Executor):
                                "\n".join(obj_links),
                                OBJECTS_LIST_FOOTER]))
 
-        def create_index_html(objs, stats):
+        def create_index_html(objs, stats, protocol):
             # Generate an index.html style project home page w/ sample summary
             # statistics
             objs.drop_duplicates(keep='last', inplace=True)
@@ -1120,8 +1122,9 @@ class Summarizer(Executor):
             objs_html_file.write(TABLE_STYLE_ROTATED_HEADER)
             objs_html_file.write(TABLE_STYLE_TEXT)
             objs_html_file.write("\t\t</style>\n")
-            objs_html_file.write(HTML_TITLE.format(project_name=self.prj.name))
-            navbar = create_navbar(objs, self.prj.metadata.output_dir)
+            objs_html_file.write(HTML_TITLE.format(pipeline=protocol,
+                                                   project_name=self.prj.name))
+            navbar = create_navbar(objs, self.prj.metadata.output_dir, protocol)
             objs_html_file.write(navbar)
             objs_html_file.write(HTML_HEAD_CLOSE)
 
@@ -1133,7 +1136,7 @@ class Summarizer(Executor):
 
             # Add stats summary table to index page
             if os.path.isfile(stats_file):
-                objs_html_file.write(TABLE_HEADER)
+                objs_html_file.write(TABLE_HEADER.format(pipeline=protocol))
                 # Produce table columns
                 sample_pos = 0
                 # Get unique column name list
@@ -1180,7 +1183,8 @@ class Summarizer(Executor):
                             create_sample_html(single_sample, objs, value,
                                                stats[sample_pos],
                                                html_filename,
-                                               objs_html_path)
+                                               objs_html_path,
+                                               protocol)
                             objs_html_file.write(TABLE_ROWS_LINK.format(
                                 html_page=page_relpath,
                                 page_name=page_relpath,
@@ -1195,25 +1199,25 @@ class Summarizer(Executor):
             else:
                 _LOGGER.warn("No stats file '%s'", stats_file)
             # Create parent samples page with links to each sample
-            create_sample_parent_html(objs)
+            create_sample_parent_html(objs, protocol)
 
             # Create objects pages
             for key in objs['key'].drop_duplicates().sort_values():
                 objects = objs[objs['key'] == key]
                 object_filename = str(key) + ".html"
-                create_object_html(
-                    objects, objs, key, object_filename, objs_html_path)
+                create_object_html(objects, objs, key, object_filename,
+                                   objs_html_path, protocol)
 
             # Create parent objects page with links to each object type
-            create_object_parent_html(objs)
+            create_object_parent_html(objs, protocol)
 
             # Create status page with each sample's status listed
-            create_status_html(objs)
+            create_status_html(objs, protocol)
 
             # Add project level objects
-            pobjs = create_project_objects()
+            prj_objs = create_project_objects(protocol)
             objs_html_file.write("\t\t<hr>\n")
-            objs_html_file.write(pobjs)
+            objs_html_file.write(prj_objs)
             objs_html_file.write("\t\t<hr>\n")
 
             # Complete and close HTML file
@@ -1360,11 +1364,12 @@ class Summarizer(Executor):
                         subprocess.call([summarizer_abspath, self.prj.config_file])
                     except OSError:
                         _LOGGER.warn("Summarizer was unable to run: " + str(summarizer))
+            # Produce objects html file.
+            create_index_html(objs, stats, protocol)
+
         # all samples are parsed.
         # Produce figures html file. <DEPRECATED>
         # create_figures_html(figs) <DEPRECATED>
-        # Produce objects html file.
-        create_index_html(objs, stats)
 
 
 def aggregate_exec_skip_reasons(skip_reasons_sample_pairs):
