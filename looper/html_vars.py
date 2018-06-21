@@ -291,9 +291,9 @@ TABLE_STYLE_TEXT = \
             text-overflow: clip;
             max-width: 100%;
         }
-        .table th, td {
-            <!-- top|right|bottom|left -->
-            padding: 0px 4px 0px 4px;
+        .table-condensed > tbody > tr > td,
+        .table-condensed > tbody > tr > th {
+            padding: 0px 2px 0px 2px;
             vertical-align: middle;
         }
 """
@@ -302,7 +302,7 @@ TABLE_HEADER = \
       <h5>Looper stats summary</h5>
 
       <div class="table-responsive-sm">
-        <table class="table table-sm table-hover table-header-rotated">                           
+        <table class="table table-sm table-hover table-header-rotated table-condensed">                           
           <thead>
             <tr class="stats-firstrow">
 """
@@ -325,7 +325,7 @@ TABLE_ROW_HEADER = \
 
 TABLE_ROWS = \
 """\
-              <td class="text" style="padding: 0px 4px 0px 4px; vertical-align: middle"><span>{row_val}</span></td>
+              <td class="text"><span>{row_val}</span></td>
 """
 TABLE_ROW_FOOTER = \
 """\
@@ -341,7 +341,7 @@ TABLE_FOOTER = \
 
 TABLE_ROWS_LINK = \
 """\
-              <td style="cursor:pointer; padding: 0px 4px 0px 4px; vertical-align: middle" onclick="location.href='{html_page}'"><a class="LN1 LN2 LN3 LN4 LN5" href="{page_name}" target="_top">{link_name}</a></td>
+              <td style="cursor:pointer" onclick="location.href='{html_page}'"><a class="LN1 LN2 LN3 LN4 LN5" href="{page_name}" target="_top">{link_name}</a></td>
 """
 
 LINKS_STYLE_BASIC = \
@@ -406,21 +406,21 @@ SAMPLE_TABLE_HEADER = \
 """\
       <h5>Looper stats summary</h5>
         <div class="table-responsive-sm">
-          <table class="table table-sm table-hover table-bordered" style="white-space: nowrap; width: 1%;">                           
+          <table class="table table-sm table-hover table-bordered table-condensed" style="white-space: nowrap; width: 1%;">                           
             <tbody>
 """
 SAMPLE_TABLE_FIRSTROW = \
 """\
               <tr class="table-light">
-                <th style="padding: 0px 2px 0px 2px; vertical-align: middle">{row_name}</th>
-                <td style="cursor:pointer; padding: 0px 2px 0px 2px; vertical-align: middle" onclick="location.href='{html_page}'"><a href="{page_name}" target="_top">{link_name}</a></td>
+                <th>{row_name}</th>
+                <td style="cursor:pointer" onclick="location.href='{html_page}'"><a href="{page_name}" target="_top">{link_name}</a></td>
               </tr>
 """
 SAMPLE_TABLE_ROW = \
 """\
               <tr>
-                <th style="padding: 0px 2px 0px 2px; vertical-align: middle">{row_name}</th>
-                <td class="text" style="padding: 0px 2px 0px 2px; vertical-align: middle"><span>{row_val}</span></td>
+                <th>{row_name}</th>
+                <td class="text"><span>{row_val}</span></td>
               </tr>
 """
 SAMPLE_TABLE_STYLE = \
@@ -443,8 +443,8 @@ SAMPLE_TABLE_STYLE = \
             text-overflow: clip;
             max-width: 100%;
         }
-        .table th, td {
-            <!-- top|right|bottom|left -->
+        .table-condensed > tbody > tr > td,
+        .table-condensed > tbody > tr > th {
             padding: 0px 2px 0px 2px;
             vertical-align: middle;
         }
