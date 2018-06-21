@@ -813,7 +813,7 @@ class Summarizer(Executor):
                                             row_class="",
                                             value=str(time)))
                         except IndexError:
-                            warnings.append("Summary file is incomplete")                        
+                            warnings.append("The stats_summary.tsv file is incomplete")                        
                     else:
                         html_file.write(STATUS_ROW_VALUE.format(
                                             row_class=button_class,
@@ -1066,6 +1066,7 @@ class Summarizer(Executor):
                 obj_figs = []
                 num_figures = 0
                 obj_links = []
+                warnings = []
                 ifaces = self.prj.interfaces_by_protocol[alpha_cased(protocol)]
                 # Check the interface files for summarizers
                 for iface in ifaces:
@@ -1116,7 +1117,11 @@ class Summarizer(Executor):
                                                     path=file_relpath,
                                                     label=caption))
                         else:
-                            _LOGGER.warn("Summarizer was unable to find the: " + caption)
+                            warnings.append(caption)
+
+                if warnings:
+                    _LOGGER.warn("Summarizer was unable to find: " +
+                                 ', '.join(str(file) for file in warnings))
                 while num_figures < 3:
                     # Add additional empty columns for clean format
                     obj_figs.append("\t\t\t  <div class='col'>")
