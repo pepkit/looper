@@ -667,6 +667,7 @@ class Summarizer(Executor):
                 html_file.write("\t\t<h4>{} objects</h4>\n".format(str(type)))
                 links = []
                 figures = []
+                warnings = []
                 for i, row in objs.iterrows():
                     page_path = os.path.join(
                                  self.prj.metadata.results_subdir,
@@ -690,16 +691,14 @@ class Summarizer(Executor):
                                             page=page_relpath,
                                             label=str(row['sample_name'])))
                         else:
-                            _LOGGER.warn("There is no file named: " +
-                                         str(row['filename']))
+                            warnings.append(str(row['filename']))
                     # If no thumbnail image is present, add as a link
                     elif os.path.isfile(page_path):
                         links.append(GENERIC_LIST_ENTRY.format(
                                         page=page_relpath,
                                         label=str(row['sample_name'])))
                     else:
-                        _LOGGER.warn("There is no file named: " +
-                                     str(row['filename']))
+                        warnings.append(str(row['filename']))
 
                 html_file.write(GENERIC_LIST_HEADER)
                 html_file.write("\n".join(links))
@@ -709,6 +708,13 @@ class Summarizer(Executor):
                 html_file.write("\t\t\t<hr>\n")
                 html_file.write(HTML_FOOTER)
                 html_file.close()
+
+            if warnings:
+                _LOGGER.warn(filename.replace(' ', '_').lower() +
+                             " references nonexistent object files")
+                _LOGGER.debug(filename.replace(' ', '_').lower() +
+                              " nonexistent files: " +
+                              ','.join(str(file) for file in warnings))
 
         def create_status_html(all_samples):
             # Generates a page listing all the samples, their run status, their
@@ -723,6 +729,7 @@ class Summarizer(Executor):
                 html_file.write(HTML_HEAD_CLOSE)
                 html_file.write(STATUS_HEADER)
                 html_file.write(STATUS_TABLE_HEAD)
+                warnings = []
                 for sample in self.prj.samples:
                     sample_name = str(sample.sample_name)
                     # Grab the status flag for the current sample
@@ -806,7 +813,7 @@ class Summarizer(Executor):
                                             row_class="",
                                             value=str(time)))
                         except IndexError:
-                            _LOGGER.warn("Summary file is incomplete")                        
+                            warnings.append("Summary file is incomplete")                        
                     else:
                         html_file.write(STATUS_ROW_VALUE.format(
                                             row_class=button_class,
@@ -816,6 +823,7 @@ class Summarizer(Executor):
                 html_file.write(STATUS_FOOTER)
                 html_file.write(HTML_FOOTER)
                 html_file.close()
+                _LOGGER.warn(''.join(list(set(warnings))))
 
         def create_sample_html(all_samples, sample_name, sample_stats,
                                index_html):
@@ -918,6 +926,7 @@ class Summarizer(Executor):
                 html_file.write("\t\t<h5>{sample} objects</h5>\n".format(sample=sample_name))
                 links = []
                 figures = []
+                warnings = []
                 for sample_name in single_sample['sample_name'].drop_duplicates().sort_values():
                     o = single_sample[single_sample['sample_name'] == sample_name]
                     for i, row in o.iterrows():
@@ -944,8 +953,7 @@ class Summarizer(Executor):
                                                 page=page_relpath))
                             # If neither, there is no object by that name
                             else:
-                                _LOGGER.warn("There is no file named: " +
-                                             str(row['filename']))
+                                warnings.append(str(row['filename']))
                         # If no thumbnail image, it's just a link
                         elif os.path.isfile(page_path):
                             links.append(GENERIC_LIST_ENTRY.format(
@@ -953,8 +961,7 @@ class Summarizer(Executor):
                                             page=page_relpath))
                         # If no file present, there is no object by that name
                         else:
-                            _LOGGER.warn("There is no file named: " +
-                                         str(row['filename']))
+                            warnings.append(str(row['filename']))
 
                 html_file.write(GENERIC_LIST_HEADER)
                 html_file.write("\n".join(links))
@@ -966,6 +973,10 @@ class Summarizer(Executor):
                 html_file.write(HTML_FOOTER)
                 html_file.close()
 
+            # TODO: accumulate warnings from these functions and only display
+            #       after all samples are processed
+            # _LOGGER.warn("The following files do not exist: " +
+                         # '\t'.join(str(file) for file in warnings))
             # Return the path to the newly created sample page
             return sample_page_relpath
 
