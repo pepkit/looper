@@ -823,7 +823,8 @@ class Summarizer(Executor):
                 html_file.write(STATUS_FOOTER)
                 html_file.write(HTML_FOOTER)
                 html_file.close()
-                _LOGGER.warn("Warning: " + ''.join(list(set(warnings))))
+                if warnings:
+                    _LOGGER.warn("Warning: " + ''.join(list(set(warnings))))
 
         def create_sample_html(all_samples, sample_name, sample_stats,
                                index_html):
@@ -975,7 +976,7 @@ class Summarizer(Executor):
 
             # TODO: accumulate warnings from these functions and only display
             #       after all samples are processed
-            # _LOGGER.warn("Warnings: The following files do not exist: " +
+            # _LOGGER.warn("Warning: The following files do not exist: " +
                          # '\t'.join(str(file) for file in warnings))
             # Return the path to the newly created sample page
             return sample_page_relpath
