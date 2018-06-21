@@ -580,19 +580,13 @@ class Summarizer(Executor):
         objs = _pd.DataFrame()
 
         def create_figures_html(figs):
-            # QUESTION: Is not being used? ...Original usage was?
-            # figs_tsv_path = "{root}_figs_summary.tsv".format(
-                # root=os.path.join(self.prj.metadata.output_dir, self.prj.name))
-
             figs_html_path = "{root}_figs_summary.html".format(
                 root=os.path.join(self.prj.metadata.output_dir, self.prj.name))
-
             figs_html_file = open(figs_html_path, 'w')
             html_header = "<html><h1>Summary of sample figures for project {}</h1>\n".format(self.prj.name)
             figs_html_file.write(html_header)
             sample_img_header = "<h3>{sample_name}</h3>\n"
             sample_img_code = "<p><a href='{path}'><img src='{path}'>{key}</a></p>\n"
-
             figs.drop_duplicates(keep='last', inplace=True)
             for sample_name in figs['sample_name'].drop_duplicates().sort_values():
                 f = figs[figs['sample_name'] == sample_name]
@@ -607,12 +601,10 @@ class Summarizer(Executor):
 
             html_footer = "</html>"
             figs_html_file.write(html_footer)
-
             figs_html_file.close()
             _LOGGER.info(
                 "Summary (n=" + str(len(stats)) + "): " + tsv_outfile_path)
 
-        #def create_object_parent_html(objs, protocol):
         def create_object_parent_html(objs):
             # Generates a page listing all the project objects with links
             # to individual object pages
@@ -683,7 +675,8 @@ class Summarizer(Executor):
                                   self.prj.metadata.results_subdir,
                                   row['sample_name'], row['anchor_image'])
                     page_relpath = os.path.relpath(page_path, reports_dir)
-                    if os.path.isfile(image_path):
+                    # Check for the presence of both the file and thumbnail
+                    if os.path.isfile(image_path) and os.path.isfile(page_path):
                         image_relpath = os.path.relpath(image_path, reports_dir)
                         # If the object has a valid image, use it!
                         if str(image_path).lower().endswith(('.png', '.jpg', '.jpeg', '.svg', '.gif')):
@@ -692,15 +685,22 @@ class Summarizer(Executor):
                                             image=image_relpath,
                                             label=str(row['sample_name'])))
                         # Otherwise treat as a link
-                        else:
+                        elif os.path.isfile(page_path):
                             links.append(GENERIC_LIST_ENTRY.format(
                                             page=page_relpath,
                                             label=str(row['sample_name'])))
-                    # If no image file present, it's just a link
-                    else:
+                        else:
+                            _LOGGER.warn("There is no file named: " +
+                                         str(row['filename']))
+                    # If no thumbnail image is present, add as a link
+                    elif os.path.isfile(page_path):
                         links.append(GENERIC_LIST_ENTRY.format(
                                         page=page_relpath,
                                         label=str(row['sample_name'])))
+                    else:
+                        _LOGGER.warn("There is no file named: " +
+                                     str(row['filename']))
+
                 html_file.write(GENERIC_LIST_HEADER)
                 html_file.write("\n".join(links))
                 html_file.write(GENERIC_LIST_FOOTER)
@@ -779,10 +779,17 @@ class Summarizer(Executor):
                     log_file = os.path.join(self.prj.metadata.results_subdir,
                                             sample_name, log_name)
                     log_relpath = os.path.relpath(log_file, reports_dir)
-                    html_file.write(STATUS_ROW_LINK.format(
-                                        row_class="",
-                                        file_link=log_relpath,
-                                        link_name=log_name))
+                    if os.path.isfile(log_file):
+                        html_file.write(STATUS_ROW_LINK.format(
+                                            row_class="",
+                                            file_link=log_relpath,
+                                            link_name=log_name))
+                    else:
+                        # Leave cell empty
+                        html_file.write(STATUS_ROW_LINK.format(
+                                            row_class="",
+                                            file_link="",
+                                            link_name=""))
                     # Fourth Col: Sample runtime (if completed)
                     # If Completed, use stats.tsv
                     stats_file = os.path.join(
@@ -801,17 +808,15 @@ class Summarizer(Executor):
                         except IndexError:
                             _LOGGER.warn("Summary file is incomplete")                        
                     else:
-                        # TODO: If still running, use _profile.tsv?
                         html_file.write(STATUS_ROW_VALUE.format(
                                             row_class=button_class,
                                             value="Unknown"))
                     html_file.write(STATUS_ROW_FOOTER)
+
                 html_file.write(STATUS_FOOTER)
                 html_file.write(HTML_FOOTER)
                 html_file.close()
 
-        # def create_sample_html(single_sample, all_samples, sample_name,
-                               # sample_stats, filename, index_html):
         def create_sample_html(all_samples, sample_name, sample_stats,
                                index_html):
             # Produce an HTML page containing all of a sample's objects
@@ -905,9 +910,9 @@ class Summarizer(Executor):
                         html_file.write(SAMPLE_TABLE_ROW.format(
                             row_name=str(key),
                             row_val=str(value)))
+
                 html_file.write(TABLE_FOOTER)
                 html_file.write("\t  <hr>\n")
-
                 # Add all the objects for the current sample
                 html_file.write("\t\t<div class='container-fluid'>\n")
                 html_file.write("\t\t<h5>{sample} objects</h5>\n".format(sample=sample_name))
@@ -924,23 +929,33 @@ class Summarizer(Executor):
                                         self.prj.metadata.results_subdir,
                                         sample_name, row['filename'])
                         page_relpath = os.path.relpath(page_path, reports_dir)
-                        if os.path.isfile(image_path):
-                            # If the object has a valid image, use it!
+                        # If the object has a thumbnail image, add as a figure
+                        if os.path.isfile(image_path) and os.path.isfile(page_path):
+                            # If the object has a valid image, add as a figure
                             if str(image_path).lower().endswith(('.png', '.jpg', '.jpeg', '.svg', '.gif')):
                                 figures.append(SAMPLE_PLOTS.format(
                                                 label=str(row['key']),
                                                 path=page_relpath,
                                                 image=image_relpath))
                             # Otherwise treat as a link
-                            else:
+                            elif os.path.isfile(page_path):
                                 links.append(GENERIC_LIST_ENTRY.format(
                                                 label=str(row['key']),
                                                 page=page_relpath))
-                        # Otherwise it's just a link
-                        else:
+                            # If neither, there is no object by that name
+                            else:
+                                _LOGGER.warn("There is no file named: " +
+                                             str(row['filename']))
+                        # If no thumbnail image, it's just a link
+                        elif os.path.isfile(page_path):
                             links.append(GENERIC_LIST_ENTRY.format(
                                             label=str(row['key']),
                                             page=page_relpath))
+                        # If no file present, there is no object by that name
+                        else:
+                            _LOGGER.warn("There is no file named: " +
+                                         str(row['filename']))
+
                 html_file.write(GENERIC_LIST_HEADER)
                 html_file.write("\n".join(links))
                 html_file.write(GENERIC_LIST_FOOTER)
@@ -957,7 +972,7 @@ class Summarizer(Executor):
         def create_navbar(objs, wd):
             # Return a string containing the navbar prebuilt html
             # Includes link to all the pages
-            objs_html_path = "{root}_objs_summary.html".format(
+            objs_html_path = "{root}_summary.html".format(
                 root=os.path.join(self.prj.metadata.output_dir, self.prj.name))
             reports_dir = os.path.join(self.prj.metadata.output_dir,
                                        "reports")
@@ -1112,7 +1127,7 @@ class Summarizer(Executor):
             objs.drop_duplicates(keep='last', inplace=True)
             reports_dir = os.path.join(self.prj.metadata.output_dir, "reports")
             # Generate parent index.html page
-            objs_html_path = "{root}_objs_summary.html".format(
+            objs_html_path = "{root}_summary.html".format(
                 root=os.path.join(self.prj.metadata.output_dir, self.prj.name))
             # Generate parent objects.html page
             object_parent_path = os.path.join(reports_dir, "objects.html")
