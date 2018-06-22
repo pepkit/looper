@@ -9,6 +9,7 @@ Contents
 ^^^^^^^^
 
 .. toctree::
+	:titlesonly:
 	:caption: Getting started
 	:maxdepth: 1
 
