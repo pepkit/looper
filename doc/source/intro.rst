@@ -1,5 +1,6 @@
+.. |logo| image:: _static/logo_looper.svg
 
-Introduction
+|logo| Introduction
 =====================================
 
 Looper is a pipeline submitting engine. Once you've built a command-line pipeline, Looper helps you deploy that pipeline across lots of samples. Looper standardizes the way the user (you) communicates with pipelines. While most pipelines specify a unique interface, looper lets you to use the same interface for every pipeline and every project. As you have more projects, this will save you time.
