@@ -1,4 +1,6 @@
-Extended tutorial
+.. |logo| image:: _static/logo_looper.svg
+
+|logo| Extended tutorial
 ***************************************************
 
 The best way to learn is by example, so here's an extended tutorial to get you started using looper to run pre-made pipelines on a pre-made project.

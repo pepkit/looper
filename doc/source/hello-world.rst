@@ -1,5 +1,6 @@
+.. |logo| image:: _static/logo_looper.svg
 
-Installing and Hello, World!
+|logo| Installing and Hello, World!
 =====================================
 
 Release versions are posted on the GitHub `looper releases page <https://github.com/pepkit/looper/releases>`_. You can install the latest release directly from GitHub using pip:

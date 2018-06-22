@@ -240,7 +240,8 @@ class PipelineInterface(object):
         """
 
         # The key may contain extra command-line flags; split key from flags.
-        # The strict key is the script name itself, something like "ATACseq.py"
+        # The strict key was previously the script name itself, something like
+        # "ATACseq.py", but now is typically just something like "atacseq".
         strict_pipeline_key, _, pipeline_key_args = pipeline_key.partition(' ')
 
         full_pipe_path = \

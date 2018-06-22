@@ -1,5 +1,7 @@
-Looper documentation
-^^^^^^^^^^^^^^^^^^^^
+.. |logo| image:: _static/logo_looper.svg
+
+|logo| Looper documentation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Looper is a python application that deploys pipelines across samples with minimal effort. To get started, proceed with the :doc:`Introduction <intro>`. If you're looking for actual pipelines, you can find a list in the `Hello, Looper! example repository <https://github.com/databio/hello_looper>`_.
 
@@ -36,6 +38,7 @@ Contents
 	faq.rst
 	changelog.rst
 	support.rst
+	contributing.rst
 
 
 

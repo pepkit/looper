@@ -315,7 +315,7 @@ class SubmissionConductor(object):
             prj_argtext = self.prj.get_arg_string(self.pl_key)
             assert all(map(lambda cmd_part: isinstance(cmd_part, str),
                            [self.cmd_base, prj_argtext, looper_argtext])), \
-                "Each command component mut be a string."
+                "Each command component must be a string."
 
             # Ensure that each sample is individually represented on disk,
             # specific to subtype as applicable (should just be a single
