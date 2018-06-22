@@ -111,13 +111,12 @@ def parse_arguments():
                  "'running' or 'failed'). Set this option to ignore flags "
                  "and submit the runs anyway.")
     run_subparser.add_argument(
-            "--ignore-duplicate-names",
+            "--allow-duplicate-names",
             action="store_true",
-            help="Ignore duplicate names? Default: False. "
+            help="Allow duplicate names? Default: False. "
                  "By default, pipelines will not be submitted if a sample name"
                  " is duplicated, since samples names should be unique.  "
-                 " Set this option to override this setting and "
-                 "and submit the runs anyway.")
+                 " Set this option to override this setting.")
     run_subparser.add_argument(
             "--compute", dest="compute",
             help="YAML file with looper environment compute settings.")
