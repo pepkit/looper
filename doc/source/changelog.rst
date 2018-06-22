@@ -6,6 +6,12 @@ Changelog
 
     - Support for custom summarizers
 
+    - Add ``allow-duplicate-names`` command-line options
+
+    - Allow any variables in environment config files or other ``compute`` sections to be used in submission templates
+
+    - Add nice universal project-level HTML reporting
+
 
 - **v0.8.1** (*2018-04-02*):
 
