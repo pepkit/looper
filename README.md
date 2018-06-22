@@ -5,44 +5,4 @@
 [![Documentation Status](http://readthedocs.org/projects/looper/badge/?version=latest)](http://looper.readthedocs.io/en/latest/?badge=latest)
 [![Build Status](https://travis-ci.org/pepkit/looper.svg?branch=master)](https://travis-ci.org/pepkit/looper)
 
-`Looper` is a pipeline submission engine. The typical use case is to run a bioinformatics pipeline across many different input samples. `Looper`'s key advantages are the following:
-
-* **it completely divides sample handling from pipeline processing**. This modular approach simplifies the pipeline-building process because pipelines no longer need to worry about sample metadata parsing. 
-* **it subscribes to a single, standardized project metadata format**. `Looper` reads project metadata in [standard PEP format](http://pepkit.github.io) using [peppy](http://github.com/pepkit/peppy). It then maps sample inputs to any command-line tool. This means you only need to learn 1 way to format your project metadata, and it will work with any pipeline.
-* **it provides a universal implementation of sample-parallelization**, so individual pipelines do not need reinvent the wheel. This allows looper to provide a convenient interface for submitting pipelines either to local compute or to any cluster resource manager, so individual pipeline authors do not need to worry about cluster job submission at all.
-* **it is compatible with any command-line tool**. Looper was conceived to use [pypiper pipelines](https://github.com/databio/pypiper/), but it is in fact compatible with any tool that can be run via the command line.
-
-You can download the latest version from the [releases page](https://github.com/pepkit/looper/releases). You can find a list of looper-compatible pipelines in the [hello looper! repository](https://github.com/pepkit/hello_looper/blob/master/looper_pipelines.md). 
-
-## Install and quick start
-
-Detailed instructions are in the [Read the Docs documentation](http://looper.readthedocs.org/), and that's the best place to start. To get running quickly, you can install the latest release and put the `looper` executable in your `$PATH`: 
-
-```
-pip install --user https://github.com/pepkit/looper/zipball/master
-export PATH=$PATH:~/.local/bin
-```
-
-To use looper with your project, you must define your project using [standard PEP project definition format](http://pepkit.github.io), which is a `yaml` config file passed as an argument to looper. To test, follow the basic tutorial in the [hello looper repository](https://github.com/pepkit/hello_looper). You run it through looper with this command:
-
-```bash
-looper run project_config.yaml
-```
-
-## Installation troubleshooting
-
-Looper supports Python 2.7 and Python 3, and has been tested in Linux. If you clone this repository and then an attempt at local installation, e.g. with `pip install --upgrade ./`, fails, this may be due to an issue with `setuptools` and `six`. A `FileNotFoundError` (Python 3) or an `IOError` (Python2), with a message/traceback about a nonexistent `METADATA` file means that this is even more likely the cause. To get around this, you can first manually `pip install --upgrade six` or `pip install six==1.11.0`, as upgrading from `six` from 1.10.0 to 1.11.0 resolves this issue, then retry the `looper` installation.
-
-## Contributing
-
-Pull requests or issues are welcome.
-
-- After adding tests in `tests` for a new feature or a bug fix, please run the test suite.
-- To do so, the only additional dependencies needed beyond those for the package can be 
-installed with:
-
-  ```pip install -r requirements/requirements-dev.txt```
-  
-- Once those are installed, the tests can be run with `pytest`. Alternatively, 
-`python setup.py test` can be used.
-
+`Looper` is a pipeline submission engine. The typical use case is to run a bioinformatics pipeline across many different input samples. Detailed instructions are in the [Read the Docs documentation](http://looper.readthedocs.org/),

@@ -13,16 +13,20 @@
 .. |collate| image:: _static/collate.svg
 .. |file_yaml| image:: _static/file_yaml.svg
 .. |html| image:: _static/HTML.svg
+.. |modular| image:: _static/modular.svg
 
 
-|flexible_pipelines| **Flexible pipelines** 
-	Use looper with any pipeline, any library, in any domain. We designed it to work with `pypiper <http://pypiper.readthedocs.io/>`_, but looper has an infinitely flexible command-line argument system that will let you configure it to work with  any script (pipeline) that accepts command-line arguments. You can also configure looper to submit multiple pipelines per sample.
-
-|computing| **Flexible computing**
-	If you don't change any settings, looper will simply run your jobs serially. But Looper includes a template system that will let you process your pipelines on any cluster resource manager (SLURM, SGE, etc.). We include default templates for SLURM and SGE, but it's easy to add your own as well. Looper also gives you a way to determine which compute queue/partition to submit on-the-fly, by passing the ``--compute`` parameter to your call to ``looper run``, making it simple to use by default, but very flexible if you have complex resource needs.
+|modular| **Modular approach to sample handling** 
+	Looper **completely divides sample handling from pipeline processing**. This modular approach simplifies the pipeline-building process because pipelines no longer need to worry about sample metadata parsing. 
 
 |file_yaml| **Standardized project format**
-	Looper reads a flexible standard format for describing projects, which we call PEP (Portable Encapsulated Projects). Once you describe your project in this format, other PEP-compatible tools can also read your project. For example, you may use the `pepr <https://github.com/pepkit/pepr>`_ R package or the (pending) ``pep`` python package to import all your sample metadata (and pipeline results) in an R or python analysis environment. With a standardized project definition, the possibilities are endless.
+	Looper subscribes to a single, standardized project metadata format called `standard PEP format <http://pepkit.github.io>`_. This means **you only need to learn 1 way to format your project metadata, and it will work with any pipeline**. You can also use the `pepr <https://github.com/pepkit/pepr>`_ R package or the `peppy <https://github.com/pepkit/peppy>`_ python package to import all your sample metadata (and pipeline results) in an R or python analysis environment.
+
+|computing| **Universal parallelization implementation**
+	Looper's sample-level parallelization applies to all pipelines, so individual pipelines do not need reinvent the wheel. This allows looper to provide a convenient interface for submitting pipelines either to local compute or to any cluster resource manager, so individual pipeline authors do not need to worry about cluster job submission at all.If you don't change any settings, looper will simply run your jobs serially. But Looper includes a template system that will let you process your pipelines on any cluster resource manager (SLURM, SGE, etc.). We include default templates for SLURM and SGE, but it's easy to add your own as well. Looper also gives you a way to determine which compute queue/partition to submit on-the-fly, by passing the ``--compute`` parameter to your call to ``looper run``, making it simple to use by default, but very flexible if you have complex resource needs.
+
+|flexible_pipelines| **Flexible pipelines** 
+	Use looper with any pipeline, any library, in any domain. We designed it to work with `pypiper <http://pypiper.readthedocs.io/>`_, but **looper has an infinitely flexible command-line argument system that will let you configure it to work with  any script (pipeline) that accepts command-line arguments**. You can also configure looper to submit multiple pipelines per sample.
 
 |subprojects| **Subprojects**
 	Subprojects make it easy to define two very similar projects without duplicating project metadata.

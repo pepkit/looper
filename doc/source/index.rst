@@ -38,6 +38,7 @@ Contents
 	faq.rst
 	changelog.rst
 	support.rst
+	contributing.rst
 
 
 
