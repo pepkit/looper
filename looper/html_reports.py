@@ -704,19 +704,28 @@ class HTMLReportBuilder():
                 # Grab the status flag for the current sample
                 flag = glob.glob(os.path.join(
                                     prj.metadata.results_subdir,
-                                    sample_name, '*.flag'))
-                if "completed" in str(flag):
-                    button_class = "table-success"
-                    flag = "Completed"
-                elif "running" in str(flag):
-                    button_class = "table-warning"
-                    flag = "Running"
-                elif "failed" in str(flag):
+                                    sample_name, '*.flag'))               
+                if not flag:
                     button_class = "table-danger"
-                    flag = "Failed"
+                    flag = "Missing"
+                    _LOGGER.warn("create_status_html: No flag file found for {}".format(sample_name))
+                elif len(flag) > 1:
+                    button_class = "table-warning"
+                    flag = "Multiple"
+                    _LOGGER.warn("create_status_html: Multiple flag files found for {}".format(sample_name))
                 else:
-                    button_class = "table-secondary"
-                    flag = "Unknown"
+                    if "completed" in str(flag):
+                        button_class = "table-success"
+                        flag = "Completed"
+                    elif "running" in str(flag):
+                        button_class = "table-warning"
+                        flag = "Running"
+                    elif "failed" in str(flag):
+                        button_class = "table-danger"
+                        flag = "Failed"
+                    else:
+                        button_class = "table-secondary"
+                        flag = "Unknown"
 
                 # Create table entry for each sample
                 html_file.write(STATUS_ROW_HEADER)
@@ -838,19 +847,28 @@ class HTMLReportBuilder():
             log_relpath = os.path.relpath(log_file, reports_dir)
             # Grab the status flag for the current sample
             flag = glob.glob(os.path.join(prj.metadata.results_subdir,
-                                          sample_name, '*.flag'))[0]
-            if "completed" in str(flag):
-                button_class = "btn btn-success"
-                flag = "Completed"
-            elif "running" in str(flag):
-                button_class = "btn btn-warning"
-                flag = "Running"
-            elif "failed" in str(flag):
+                                          sample_name, '*.flag'))
+            if not flag:  
                 button_class = "btn btn-danger"
-                flag = "Failed"
+                flag = "Missing"
+                _LOGGER.warn("create_sample_html: No flag file found for {}".format(sample_name))
+            elif len(flag) > 1:
+                button_class = "btn btn-warning"
+                flag = "Multiple"
+                _LOGGER.warn("create_sample_html: Multiple flag files found for {}".format(sample_name))
             else:
-                button_class = "btn btn-secondary"
-                flag = "Unknown"
+                if "completed" in str(flag):
+                    button_class = "btn btn-success"
+                    flag = "Completed"
+                elif "running" in str(flag):
+                    button_class = "btn btn-warning"
+                    flag = "Running"
+                elif "failed" in str(flag):
+                    button_class = "btn btn-danger"
+                    flag = "Failed"
+                else:
+                    button_class = "btn btn-secondary"
+                    flag = "Unknown"
             # Create buttons linking the sample's STATUS, LOG, PROFILE,
             # COMMANDS, and STATS files
             stats_relpath = os.path.relpath(os.path.join(
