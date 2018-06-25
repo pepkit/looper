@@ -729,7 +729,7 @@ class Summarizer(Executor):
                 html_file.write(HTML_HEAD_CLOSE)
                 html_file.write(STATUS_HEADER)
                 html_file.write(STATUS_TABLE_HEAD)
-                warnings = []
+                warning = False
                 for sample in self.prj.samples:
                     sample_name = str(sample.sample_name)
                     # Grab the status flag for the current sample
@@ -813,7 +813,7 @@ class Summarizer(Executor):
                                             row_class="",
                                             value=str(time)))
                         except IndexError:
-                            warnings.append("The stats_summary.tsv file is incomplete")                        
+                            warning = True                       
                     else:
                         html_file.write(STATUS_ROW_VALUE.format(
                                             row_class=button_class,
@@ -823,8 +823,8 @@ class Summarizer(Executor):
                 html_file.write(STATUS_FOOTER)
                 html_file.write(HTML_FOOTER)
                 html_file.close()
-                if warnings:
-                    _LOGGER.warn("Warning: " + ''.join(list(set(warnings))))
+                if warning:
+                    _LOGGER.warn("Warning: The stats_summary.tsv file is incomplete")
 
         def create_sample_html(all_samples, sample_name, sample_stats,
                                index_html):
