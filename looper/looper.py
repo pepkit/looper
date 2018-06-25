@@ -1528,12 +1528,6 @@ def _submission_status_text(curr, total, sample_name, sample_protocol, color):
            Style.RESET_ALL
 
 
-def uniqify(seq): # Dave Kirby
-    # Order preserving
-    seen = set()
-    return [x for x in seq if x not in seen and not seen.add(x)]
-
-
 class _VersionInHelpParser(argparse.ArgumentParser):
     def format_help(self):
         """ Add version information to help text. """
