@@ -56,24 +56,6 @@ class Project(peppy.Project):
         return ["output_dir", "results_subdir", "submission_subdir"]
 
 
-    @staticmethod
-    def infer_name(path_config_file):
-        """
-        Infer project name from config file path.
-        
-        The assumption is that the config file lives in a 'metadata' subfolder 
-        within a folder with a name representative of the project.
-        
-        :param str path_config_file: path to the project's config file.
-        :return str: inferred name for project.
-        """
-        import os
-        metadata_folder_path = os.path.dirname(path_config_file)
-        proj_root_path, _ = os.path.split(metadata_folder_path)
-        _, proj_root_name = os.path.split(proj_root_path)
-        return proj_root_name
-
-
     def build_submission_bundles(self, protocol, priority=True):
         """
         Create pipelines to submit for each sample of a particular protocol.
@@ -206,7 +188,7 @@ class Project(peppy.Project):
                     pipe_iface, sample_subtype, strict_pipe_key,
                     full_pipe_path_with_flags)
 
-                # Enforce bundle unqiueness for each strict pipeline key.
+                # Enforce bundle uniqueness for each strict pipeline key.
                 maybe_new_bundle = (full_pipe_path_with_flags,
                                     sample_subtype, pipe_iface)
                 old_bundle = bundle_by_strict_pipe_key.setdefault(
@@ -241,8 +223,7 @@ def process_pipeline_interfaces(pipeline_interface_locations):
     :param Iterable[str] pipeline_interface_locations: locations, each of
         which should be either a directory path or a filepath, that specifies
         pipeline interface and protocol mappings information. Each such file
-        should be have a pipelines section and a protocol mappings section
-        whereas each folder should have a file for each of those sections.
+        should have a pipelines section and a protocol mappings section.
     :return Mapping[str, Iterable[PipelineInterfaec]]: mapping from protocol
         name to interface(s) for which that protocol is mapped
     """
