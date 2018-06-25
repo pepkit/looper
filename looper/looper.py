@@ -669,9 +669,10 @@ class Summarizer(Executor):
                         subprocess.call([summarizer_abspath, self.prj.config_file])
                     except OSError:
                         _LOGGER.warn("Summarizer was unable to run: " + str(summarizer))
-        #HTMLReportBuilder(self.prj)()
-        # Produce HTML report main page
-        HTMLReportBuilder.create_index_html(self.prj, objs, stats)
+
+        # Produce HTML report
+        report_builder = HTMLReportBuilder(self.prj)
+        report_builder(objs, stats)
 
 def aggregate_exec_skip_reasons(skip_reasons_sample_pairs):
     """
