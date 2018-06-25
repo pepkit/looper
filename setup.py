@@ -77,7 +77,7 @@ setup(
     keywords="bioinformatics, sequencing, ngs",
     url="https://github.com/epigen/looper",
     author=u"Nathan Sheffield, Vince Reuter, Johanna Klughammer, Andre Rendeiro",
-    license="GPL2",
+    license="BSD2",
     entry_points={
         "console_scripts": [
             'looper = looper.looper:main'

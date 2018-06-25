@@ -40,7 +40,7 @@ class SubmissionConductor(object):
 
     def __init__(self, pipeline_key, pipeline_interface, cmd_base, prj,
                  dry_run=False, delay=0, sample_subtype=None, extra_args=None,
-                 ignore_flags=False, partition=None,
+                 ignore_flags=False, compute_variables=None,
                  max_cmds=None, max_size=None, automatic=True):
         """
         Create a job submission manager.
@@ -70,8 +70,9 @@ class SubmissionConductor(object):
             each command within each job generated
         :param bool ignore_flags: Whether to ignore flag files present in
             the sample folder for each sample considered for submission
-        :param str partition: Name of the cluster partition to which job(s)
-            will be submitted
+        :param str compute variables: A dict with variables that will be made
+            available to the compute package. For example, this should include
+            the name of the cluster partition to which job(s) will be submitted
         :param int | NoneType max_cmds: Upper bound on number of commands to
             include in a single job script.
         :param int | float | NoneType max_size: Upper bound on total file
@@ -91,7 +92,7 @@ class SubmissionConductor(object):
         self.delay = float(delay)
 
         self.sample_subtype = sample_subtype or Sample
-        self.partition = partition
+        self.compute_variables = compute_variables
         if extra_args:
             self.extra_args_text = "{}".format(" ".join(extra_args))
         else:
@@ -302,8 +303,9 @@ class SubmissionConductor(object):
                          "(%.2f Gb)", len(self._pool), self._curr_size)
             settings = self.pl_iface.choose_resource_package(
                 self.pl_key, self._curr_size)
-            if self.partition:
-                settings["partition"] = self.partition
+            if self.compute_variables:
+                #settings["partition"] = self.partition
+                settings.update(self.compute_variables)
             if self.uses_looper_args:
                 settings.setdefault("cores", 1)
                 looper_argtext = \
@@ -313,7 +315,7 @@ class SubmissionConductor(object):
             prj_argtext = self.prj.get_arg_string(self.pl_key)
             assert all(map(lambda cmd_part: isinstance(cmd_part, str),
                            [self.cmd_base, prj_argtext, looper_argtext])), \
-                "Each command component mut be a string."
+                "Each command component must be a string."
 
             # Ensure that each sample is individually represented on disk,
             # specific to subtype as applicable (should just be a single
@@ -441,6 +443,11 @@ class SubmissionConductor(object):
         for k, v in template_values.items():
             placeholder = "{" + str(k).upper() + "}"
             script_data = script_data.replace(placeholder, str(v))
+        
+        keys_left = re.findall(r'!$\{(.+?)\}', script_data)
+
+        if len(keys_left) > 0:
+            _LOGGER.warn("> Warning: Submission template variables are not all populated: '%s'", str(keys_left))
 
         submission_script = submission_base + ".sub"
         script_dirpath = os.path.dirname(submission_script)
@@ -453,3 +460,4 @@ class SubmissionConductor(object):
             sub_file.write(script_data)
 
         return submission_script
+

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Looper: a pipeline submission engine. https://github.com/peppykit/looper
+Looper: a pipeline submission engine. https://github.com/pepkit/looper
 """
 
 import abc
@@ -26,10 +26,11 @@ from .project import Project
 from .submission_manager import SubmissionConductor
 from .utils import fetch_flag_files, sample_folder
 
+from .html_reports import HTMLReportBuilder
+
 from peppy import \
     ProjectContext, COMPUTE_SETTINGS_VARNAME, SAMPLE_EXECUTION_TOGGLE
 from peppy.utils import alpha_cased
-
 
 
 SUBMISSION_FAILURE_MESSAGE = "Cluster resource failure"
@@ -41,7 +42,6 @@ _LEVEL_BY_VERBOSITY = [logging.ERROR, logging.CRITICAL, logging.WARN,
 _FAIL_DISPLAY_PROPORTION_THRESHOLD = 0.5
 _MAX_FAIL_SAMPLE_DISPLAY = 20
 _LOGGER = logging.getLogger()
-
 
 
 def parse_arguments():
@@ -56,8 +56,8 @@ def parse_arguments():
     # Main looper program help text messages
     banner = "%(prog)s - Loop through samples and submit pipelines."
     additional_description = "For subcommand-specific options, type: " \
-            "'%(prog)s <subcommand> -h'"
-    additional_description += "\nhttps://github.com/peppykit/looper"
+                             "'%(prog)s <subcommand> -h'"
+    additional_description += "\nhttps://github.com/pepkit/looper"
 
     parser = _VersionInHelpParser(
             description=banner,
@@ -87,11 +87,12 @@ def parse_arguments():
     msg_by_cmd = {
             "run": "Main Looper function: Submit jobs for samples.",
             "summarize": "Summarize statistics of project samples.",
-            "destroy": "Remove all files of the project.", 
-            "check": "Checks flag status of current runs.", 
+            "destroy": "Remove all files of the project.",
+            "check": "Checks flag status of current runs.",
             "clean": "Runs clean scripts to remove intermediate "
                      "files of already processed jobs."}
     subparsers = parser.add_subparsers(dest="command")
+
     def add_subparser(cmd):
         message = msg_by_cmd[cmd]
         return subparsers.add_parser(cmd, description=message, help=message)
@@ -111,6 +112,13 @@ def parse_arguments():
                  "'running' or 'failed'). Set this option to ignore flags "
                  "and submit the runs anyway.")
     run_subparser.add_argument(
+            "--allow-duplicate-names",
+            action="store_true",
+            help="Allow duplicate names? Default: False. "
+                 "By default, pipelines will not be submitted if a sample name"
+                 " is duplicated, since samples names should be unique.  "
+                 " Set this option to override this setting.")
+    run_subparser.add_argument(
             "--compute", dest="compute",
             help="YAML file with looper environment compute settings.")
     run_subparser.add_argument(
@@ -127,7 +135,7 @@ def parse_arguments():
     run_subparser.add_argument(
             "--lump", type=float, default=None,
             help="Maximum total input file size for a lump/batch of commands "
-                 "in a single job")
+                 "in a single job (in GB)")
     run_subparser.add_argument(
             "--lumpn", type=int, default=None,
             help="Number of individual scripts grouped into single submission")
@@ -148,7 +156,7 @@ def parse_arguments():
 
     # Common arguments
     for subparser in [run_subparser, summarize_subparser,
-                destroy_subparser, check_subparser, clean_subparser]:
+                      destroy_subparser, check_subparser, clean_subparser]:
         subparser.add_argument(
                 "config_file",
                 help="Project configuration file (YAML).")
@@ -167,8 +175,8 @@ def parse_arguments():
                      "for which protocol is not in this collection.")
         protocols.add_argument(
                 "--include-protocols", nargs='*', dest="include_protocols",
-                help="Operate only on samples associated with these protocols; "
-                     "if not provided, all samples are used.")
+                help="Operate only on samples associated with these protocols;"
+                     " if not provided, all samples are used.")
         subparser.add_argument(
                 "--sp", dest="subproject",
                 help="Name of subproject to use, as designated in the "
@@ -202,16 +210,21 @@ def parse_arguments():
     return args, remaining_args
 
 
-
 class Executor(object):
-    """ Base class that ensures the program's Sample counter starts. """
+    """ Base class that ensures the program's Sample counter starts.
+
+    Looper is made up of a series of child classes that each extend the base
+    Executor class. Each child class does a particular task (such as run the
+    project, summarize the project, destroy the project, etc). The parent
+    Executor class simply holds the code that is common to all child classes,
+    such as counting samples as the class does its thing."""
 
     __metaclass__ = abc.ABCMeta
 
     def __init__(self, prj):
         """
         The Project defines the instance; establish an iteration counter.
-        
+
         :param Project prj: Project with which to work/operate on
         """
         super(Executor, self).__init__()
@@ -222,7 +235,6 @@ class Executor(object):
     def __call__(self, *args, **kwargs):
         """ Do the work of the subcommand/program. """
         pass
-
 
 
 class Checker(Executor):
@@ -274,16 +286,15 @@ class Checker(Executor):
                              len(files), "\n".join(files))
 
 
-
 class Cleaner(Executor):
     """ Remove all intermediate files (defined by pypiper clean scripts). """
-    
+
     def __call__(self, args, preview_flag=True):
         """
         Execute the file cleaning process.
-        
+
         :param argparse.Namespace args: command-line options and arguments
-        :param bool preview_flag: whether to halt before actually removing files 
+        :param bool preview_flag: whether to halt before actually removing files
         """
         _LOGGER.info("Files to clean:")
 
@@ -318,20 +329,19 @@ class Cleaner(Executor):
         return self(args, preview_flag=False)
 
 
-
 class Destroyer(Executor):
     """ Destroyer of files and folders associated with Project's Samples """
-    
+
     def __call__(self, args, preview_flag=True):
         """
         Completely remove all output produced by any pipelines.
-    
+
         :param argparse.Namespace args: command-line options and arguments
         :param bool preview_flag: whether to halt before actually removing files
         """
-    
+
         _LOGGER.info("Results to destroy:")
-    
+
         for sample in self.prj.samples:
             _LOGGER.info(
                 self.counter.show(sample.sample_name, sample.protocol))
@@ -341,15 +351,15 @@ class Destroyer(Executor):
                 _LOGGER.info(str(sample_output_folder))
             else:
                 destroy_sample_results(sample_output_folder, args)
-    
+
         if not preview_flag:
             _LOGGER.info("Destroy complete.")
             return 0
-    
+
         if args.dry_run:
             _LOGGER.info("Dry run. No files destroyed.")
             return 0
-    
+
         if not query_yes_no("Are you sure you want to permanently delete "
                             "all pipeline results for this project?"):
             _LOGGER.info("Destroy action aborted by user.")
@@ -361,17 +371,16 @@ class Destroyer(Executor):
         return self(args, preview_flag=False)
 
 
-
 class Runner(Executor):
     """ The true submitter of pipelines """
 
     def __call__(self, args, remaining_args):
         """
         Do the Sample submission.
-        
-        :param argparse.Namespace args: parsed command-line options and 
-            arguments, recognized by looper 
-        :param list remaining_args: command-line options and arguments not 
+
+        :param argparse.Namespace args: parsed command-line options and
+            arguments, recognized by looper
+        :param list remaining_args: command-line options and arguments not
             recognized by looper, germane to samples/pipelines
         """
 
@@ -405,7 +414,7 @@ class Runner(Executor):
                         pl_key, pl_iface, script_with_flags, self.prj,
                         args.dry_run, args.time_delay, sample_subtype,
                         remaining_args, args.ignore_flags,
-                        self.prj.compute.partition,
+                        self.prj.compute,
                         max_cmds=args.lumpn, max_size=args.lump)
                 submission_conductors[pl_key] = conductor
                 pipe_keys_by_protocol[proto_key].append(pl_key)
@@ -436,9 +445,12 @@ class Runner(Executor):
                     sample.sample_name, sample.protocol))
             skip_reasons = []
 
-            # Don't submit samples with duplicate names.
+            # Don't submit samples with duplicate names unless suppressed.
             if sample.sample_name in processed_samples:
-                skip_reasons.append("Duplicate sample name")
+                if args.ignore_duplicate_names:
+                    _LOGGER.warn("Duplicate name detected, but submitting anyway")
+                else:
+                    skip_reasons.append("Duplicate sample name")
 
             # Check if sample should be run.
             if sample.is_dormant():
@@ -473,7 +485,7 @@ class Runner(Executor):
             sample.to_yaml(subs_folder_path=self.prj.metadata.submission_subdir)
 
             pipe_keys = pipe_keys_by_protocol.get(alpha_cased(sample.protocol)) \
-                        or pipe_keys_by_protocol.get(GENERIC_PROTOCOL_KEY)
+                or pipe_keys_by_protocol.get(GENERIC_PROTOCOL_KEY)
             _LOGGER.debug("Considering %d pipeline(s)", len(pipe_keys))
 
             pl_fails = []
@@ -555,20 +567,23 @@ class Runner(Executor):
         """
 
 
-
 class Summarizer(Executor):
     """ Project/Sample output summarizer """
-    
+
     def __call__(self):
         """ Do the summarization. """
         import csv
 
         columns = []
         stats = []
-        figs = _pd.DataFrame()
-
+        objs = _pd.DataFrame()
+        
+        # First, the generic summarize will pull together all the fits
+        # and stats from each sample into project-combined spreadsheets.
+        # Create stats_summary file
         for sample in self.prj.samples:
-            _LOGGER.info(self.counter.show(sample.sample_name, sample.protocol))
+            _LOGGER.info(self.counter.show(sample.sample_name,
+                                           sample.protocol))
             sample_output_folder = sample_folder(self.prj, sample)
 
             # Grab the basic info from the annotation sheet for this sample.
@@ -588,7 +603,6 @@ class Summarizer(Executor):
 
             t.drop_duplicates(subset=['key', 'pl'], keep='last', inplace=True)
             # t.duplicated(subset= ['key'], keep = False)
-
             t.loc[:, 'plkey'] = t['pl'] + ":" + t['key']
             dupes = t.duplicated(subset=['key'], keep=False)
             t.loc[dupes, 'key'] = t.loc[dupes, 'plkey']
@@ -597,26 +611,25 @@ class Summarizer(Executor):
             stats.append(sample_stats)
             columns.extend(t.key.tolist())
 
-        self.counter.reset()
-
+        self.counter.reset() 
+        
+        # Create objects summary file
         for sample in self.prj.samples:
+            # Process any reported objects
             _LOGGER.info(self.counter.show(sample.sample_name, sample.protocol))
             sample_output_folder = sample_folder(self.prj, sample)
-            # Now process any reported figures
-            figs_file = os.path.join(sample_output_folder, "figures.tsv")
-            if os.path.isfile(figs_file):
-                _LOGGER.info("Found figures file: '%s'", figs_file)
+            objs_file = os.path.join(sample_output_folder, "objects.tsv")
+            if os.path.isfile(objs_file):
+                _LOGGER.info("Found objects file: '%s'", objs_file)
             else:
-                _LOGGER.warn("No figures file '%s'", figs_file)
+                _LOGGER.warn("No objects file '%s'", objs_file)
                 continue
-
-            t = _pd.read_table(
-                figs_file, header=None, names=['key', 'value', 'pl'])
+            t = _pd.read_table(objs_file, header=None,
+                               names=['key', 'filename', 'anchor_text',
+                                      'anchor_image', 'annotation'])
             t['sample_name'] = sample.name
-            figs = figs.append(t, ignore_index=True)
-
-        # all samples are parsed. Produce file.
-
+            objs = objs.append(t, ignore_index=True)
+        
         tsv_outfile_path = os.path.join(self.prj.metadata.output_dir, self.prj.name)
         if hasattr(self.prj, "subproject") and self.prj.subproject:
             tsv_outfile_path += '_' + self.prj.subproject
@@ -633,35 +646,32 @@ class Summarizer(Executor):
 
         tsv_outfile.close()
 
-        figs_tsv_path = "{root}_figs_summary.tsv".format(
-            root=os.path.join(self.prj.metadata.output_dir, self.prj.name))
-
-        figs_html_path = "{root}_figs_summary.html".format(
-            root=os.path.join(self.prj.metadata.output_dir, self.prj.name))
-
-        figs_html_file = open(figs_html_path, 'w')
-        html_header = "<html><h1>Summary of sample figures for project {}</h1>\n".format(self.prj.name)
-        figs_html_file.write(html_header)
-        sample_img_header = "<h3>{sample_name}</h3>\n"
-        sample_img_code = "<p><a href='{path}'><img src='{path}'>{key}</a></p>\n"
-
-        figs.drop_duplicates(keep='last', inplace=True)
-        for sample_name in figs['sample_name'].drop_duplicates().sort_values():
-            f = figs[figs['sample_name'] == sample_name]
-            figs_html_file.write(sample_img_header.format(sample_name=sample_name))
-
-            for i, row in f.iterrows():
-                figs_html_file.write(sample_img_code.format(
-                    key=str(row['key']), path=row['value']))
-
-        html_footer = "</html>"
-        figs_html_file.write(html_footer)
-
-        figs_html_file.close()
         _LOGGER.info(
             "Summary (n=" + str(len(stats)) + "): " + tsv_outfile_path)
 
+        # Next, looper can run custom summarizers, if they exist.
+        all_protocols = [sample.protocol for sample in self.prj.samples]
 
+        _LOGGER.debug("Protocols: " + str(all_protocols))
+        _LOGGER.debug(self.prj.interfaces_by_protocol)
+        for protocol in set(all_protocols):
+            ifaces = self.prj.interfaces_by_protocol[alpha_cased(protocol)]
+            for iface in ifaces:
+                _LOGGER.debug(iface)
+                pl = iface.fetch_pipelines(protocol)
+                summarizers = iface.get_attribute(pl, "summarizers")
+                for summarizer in summarizers:
+                    summarizer_abspath = os.path.join(
+                        os.path.dirname(iface.pipe_iface_file), summarizer)
+                    _LOGGER.debug([summarizer_abspath, self.prj.config_file])
+                    try:
+                        subprocess.call([summarizer_abspath, self.prj.config_file])
+                    except OSError:
+                        _LOGGER.warn("Summarizer was unable to run: " + str(summarizer))
+
+        # Produce HTML report
+        report_builder = HTMLReportBuilder(self.prj)
+        report_builder(objs, stats)
 
 def aggregate_exec_skip_reasons(skip_reasons_sample_pairs):
     """
@@ -680,14 +690,12 @@ def aggregate_exec_skip_reasons(skip_reasons_sample_pairs):
     return samples_by_skip_reason
 
 
-
 def create_failure_message(reason, samples):
     """ Explain lack of submission for a single reason, 1 or more samples. """
     color = Fore.LIGHTRED_EX
     reason_text = color + reason + Style.RESET_ALL
     samples_text = ", ".join(samples)
     return "{}: {}".format(reason_text, samples_text)
-
 
 
 def query_yes_no(question, default="no"):
@@ -726,7 +734,6 @@ def query_yes_no(question, default="no"):
                 "(or 'y' or 'n').\n")
 
 
-
 def destroy_sample_results(result_outfolder, args):
     """
     This function will delete all results for this sample
@@ -743,7 +750,6 @@ def destroy_sample_results(result_outfolder, args):
         _LOGGER.info(result_outfolder + " does not exist.")
 
 
-
 def uniqify(seq):
     """
     Fast way to uniqify while preserving input order.
@@ -752,7 +758,6 @@ def uniqify(seq):
     seen = set()
     seen_add = seen.add
     return [x for x in seq if not (x in seen or seen_add(x))]
-
 
 
 class LooperCounter(object):
@@ -792,7 +797,6 @@ class LooperCounter(object):
         return "LooperCounter of size {}".format(self.total)
 
 
-
 def _submission_status_text(curr, total, sample_name, sample_protocol, color):
     return color + \
            "## [{n} of {N}] {sample} ({protocol})".format(
@@ -800,13 +804,11 @@ def _submission_status_text(curr, total, sample_name, sample_protocol, color):
            Style.RESET_ALL
 
 
-
 class _VersionInHelpParser(argparse.ArgumentParser):
     def format_help(self):
         """ Add version information to help text. """
         return "version: {}\n".format(__version__) + \
                super(_VersionInHelpParser, self).format_help()
-
 
 
 def main():
@@ -839,7 +841,7 @@ def main():
             # pipelines directory in project metadata pipelines directory.
 
             if not hasattr(prj.metadata, "pipelines_dir") or \
-                            len(prj.metadata.pipelines_dir) == 0:
+                           len(prj.metadata.pipelines_dir) == 0:
                 raise AttributeError(
                         "Looper requires at least one pipeline(s) location.")
 
@@ -870,7 +872,6 @@ def main():
 
         if args.command == "clean":
             return Cleaner(prj)(args)
-
 
 
 if __name__ == '__main__':
