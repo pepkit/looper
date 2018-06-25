@@ -1179,10 +1179,7 @@ class Summarizer(Executor):
                     for key, value in stats[sample_pos].items():
                         col_names.append(key)
                     sample_pos += 1
-                unique_columns = []
-                for name in col_names:
-                    if name not in unique_columns:
-                        unique_columns.append(name)
+                unique_columns = uniqify(col_names)
                 # Write table column names to index.html file
                 for key in unique_columns:
                     objs_html_file.write(TABLE_COLS.format(col_val=str(key)))
@@ -1529,6 +1526,12 @@ def _submission_status_text(curr, total, sample_name, sample_protocol, color):
            "## [{n} of {N}] {sample} ({protocol})".format(
                n=curr, N=total, sample=sample_name, protocol=sample_protocol) + \
            Style.RESET_ALL
+
+
+def uniqify(seq): # Dave Kirby
+    # Order preserving
+    seen = set()
+    return [x for x in seq if x not in seen and not seen.add(x)]
 
 
 class _VersionInHelpParser(argparse.ArgumentParser):
