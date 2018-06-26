@@ -576,7 +576,7 @@ class HTMLReportBuilder():
 
     def __init__(self, prj):
         """
-        The Project defines the instance; establish an iteration counter.
+        The Project defines the instance.
 
         :param Project prj: Project with which to work/operate on
         """
@@ -632,23 +632,27 @@ class HTMLReportBuilder():
                 html_file.write(HTML_FOOTER)
                 html_file.close()
 
-        def create_object_html(objs, nb, type, filename, index_html):
+        def create_object_html(single_object, all_objects):
             # Generates a page for an individual object type with all of its
             # plots from each sample
             reports_dir = os.path.join(self.prj.metadata.output_dir, "reports")
-            object_path = os.path.join(reports_dir,
-                                       filename.replace(' ', '_').lower())
+            # Generate object type and filename
+            type = single_object['key'].drop_duplicates()
+            filename = str(type) + ".html"
+            object_path = os.path.join(
+                            reports_dir, filename.replace(' ', '_').lower())
             if not os.path.exists(os.path.dirname(object_path)):
                 os.makedirs(os.path.dirname(object_path))
             with open(object_path, 'w') as html_file:
                 html_file.write(HTML_HEAD_OPEN)
-                html_file.write(create_navbar(nb, reports_dir))
+                html_file.write(create_navbar(all_objects, reports_dir))
                 html_file.write(HTML_HEAD_CLOSE)
+                
                 html_file.write("\t\t<h4>{} objects</h4>\n".format(str(type)))
                 links = []
                 figures = []
                 warnings = []
-                for i, row in objs.iterrows():
+                for i, row in single_object.iterrows():
                     page_path = os.path.join(
                                  self.prj.metadata.results_subdir,
                                  row['sample_name'], row['filename'])
@@ -690,7 +694,8 @@ class HTMLReportBuilder():
                 html_file.close()
 
             if warnings:
-                _LOGGER.warn("Warning: " + filename.replace(' ', '_').lower() +
+                _LOGGER.warn("create_object_html: " +
+                             filename.replace(' ', '_').lower() +
                              " references nonexistent object files")
                 _LOGGER.debug(filename.replace(' ', '_').lower() +
                               " nonexistent files: " +
@@ -1230,10 +1235,8 @@ class HTMLReportBuilder():
 
             # Create objects pages
             for key in objs['key'].drop_duplicates().sort_values():
-                objects = objs[objs['key'] == key]
-                object_filename = str(key) + ".html"
-                create_object_html(
-                    objects, objs, key, object_filename, objs_html_path)
+                single_object = objs[objs['key'] == key]
+                create_object_html(single_object, objs)
 
             # Create parent objects page with links to each object type
             create_object_parent_html(objs)
