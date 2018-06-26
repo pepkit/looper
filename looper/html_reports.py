@@ -8,7 +8,7 @@ import logging
 from peppy.utils import alpha_cased
 
 _LOGGER = logging.getLogger('HTMLReportBuilder')
-    
+
 __author__ = "Jason Smith"
 __email__ = "jasonsmith@virginia.edu"
 
@@ -75,7 +75,6 @@ HTML_FOOTER = \
     </body>
 </html>
 """
-
 HTML_VARS = ["HTML_HEAD_OPEN", "HTML_TITLE", "HTML_HEAD_CLOSE",
              "HTML_BUTTON", "HTML_FIGURE", "HTML_FOOTER"]
 
@@ -177,7 +176,6 @@ HTML_NAVBAR_BASIC = \
         <li class="navbar"><a href='{samples_html}'>Samples</a></li>
     </ul>
 """
-
 NAVBAR_VARS = ["HTML_NAVBAR_STYLE_BASIC", "HTML_NAVBAR_BASIC", "NAVBAR_HEADER",
                "NAVBAR_LOGO", "NAVBAR_DROPDOWN_HEADER", "NAVBAR_DROPDOWN_LINK",
                "NAVBAR_DROPDOWN_DIVIDER", "NAVBAR_DROPDOWN_FOOTER",
@@ -192,17 +190,14 @@ GENERIC_LIST_HEADER = \
 """\
       <ul style="list-style-type:circle">
 """
-
 GENERIC_LIST_ENTRY = \
 """\
         <li><a href='{page}'>{label}</a></li>
 """
-
 GENERIC_LIST_FOOTER = \
 """
       </ul> 
 """
-
 GENERIC_VARS = ["HTML_HEAD_OPEN", "HTML_TITLE", "HTML_HEAD_CLOSE",
                 "HTML_FOOTER", "GENERIC_HEADER", "GENERIC_LIST_HEADER",
                 "GENERIC_LIST_ENTRY", "GENERIC_LIST_FOOTER"]
@@ -315,12 +310,10 @@ TABLE_HEADER = \
           <thead>
             <tr class="stats-firstrow">
 """
-
 TABLE_COLS = \
 """\
               <th class="rotate-45"><div><span>{col_val}</span></div></th>
 """
-
 TABLE_COLS_FOOTER = \
 """\
             </tr>
@@ -331,7 +324,6 @@ TABLE_ROW_HEADER = \
 """\
             <tr>    
 """
-
 TABLE_ROWS = \
 """\
               <td class="text"><span>{row_val}</span></td>
@@ -340,19 +332,16 @@ TABLE_ROW_FOOTER = \
 """\
             </tr>
 """
-
 TABLE_FOOTER = \
 """\
           </tbody>
         </table>
       </div>
 """
-
 TABLE_ROWS_LINK = \
 """\
               <td style="cursor:pointer" onclick="location.href='{html_page}'"><a class="LN1 LN2 LN3 LN4 LN5" href="{page_name}" target="_top">{link_name}</a></td>
 """
-
 LINKS_STYLE_BASIC = \
 """
 a.LN1 {
@@ -458,7 +447,6 @@ SAMPLE_TABLE_STYLE = \
             vertical-align: middle;
         }
 """
-
 SAMPLE_PLOTS = \
 """\
             <figure class="figure">
@@ -466,7 +454,6 @@ SAMPLE_PLOTS = \
                 <a href='{path}'><figcaption class="figure-caption text-left">'{label}'</figcaption></a>
             </figure>
 """
-
 SAMPLE_FOOTER = \
 """
         <p><a href='{index_html_path}'>Return to summary page</a></p>
@@ -526,11 +513,10 @@ STATUS_FOOTER = \
         </div>
         <hr>
 """
-
 STATUS_VARS = ["STATUS_HEADER", "STATUS_TABLE_HEAD", "STATUS_BUTTON",
                "STATUS_ROW_HEADER", "STATUS_ROW_VALUE", "STATUS_ROW_LINK",
                "STATUS_ROW_FOOTER", "STATUS_FOOTER"]
-          
+
 # Objects-page-related
 OBJECTS_HEADER = \
 """\
@@ -570,7 +556,7 @@ OBJECTS_VARS = ["OBJECTS_HEADER", "OBJECTS_LIST_HEADER", "OBJECTS_LINK",
 
 __all__ = HTML_VARS + NAVBAR_VARS + GENERIC_VARS + \
           TABLE_VARS + SAMPLE_VARS + STATUS_VARS + OBJECTS_VARS
-          
+
 class HTMLReportBuilder():
     """ Generate HTML summary report for project/samples """
 
@@ -582,12 +568,19 @@ class HTMLReportBuilder():
         """
         super(HTMLReportBuilder, self).__init__()
         self.prj = prj
-        
+
     def __call__(self, objs, stats):
+        """ Do the work of the subcommand/program. """
 
         def create_object_parent_html(all_objects):
-            # Generates a page listing all the project objects with links
-            # to individual object pages
+            """
+            Generates a page listing all the project objects with links
+            to individual object pages
+            
+            :param panda.DataFrame all_objects: project level dataframe 
+                containing any reported objects for all samples
+            """
+
             reports_dir = os.path.join(self.prj.metadata.output_dir,
                                        "reports")
             object_parent_path = os.path.join(reports_dir, "objects.html")
@@ -609,8 +602,14 @@ class HTMLReportBuilder():
                 html_file.close()
 
         def create_sample_parent_html(all_samples):
-            # Generates a page listing all the project samples with links
-            # to individual sample pages
+            """
+            Generates a page listing all the project samples with links
+            to individual sample pages
+            
+            :param panda.DataFrame all_samples: project level dataframe 
+                containing any reported objects for all samples 
+            """
+
             reports_dir = os.path.join(self.prj.metadata.output_dir,
                                        "reports")
             sample_parent_path = os.path.join(reports_dir, "samples.html")
@@ -633,8 +632,16 @@ class HTMLReportBuilder():
                 html_file.close()
 
         def create_object_html(single_object, all_objects):
-            # Generates a page for an individual object type with all of its
-            # plots from each sample
+            """
+            Generates a page for an individual object type with all of its
+            plots from each sample
+            
+            :param panda.DataFrame single_object: contains reference 
+                information for an individual object type for all samples
+            :param panda.DataFrame all_objects: project level dataframe 
+                containing any reported objects for all samples
+            """
+
             reports_dir = os.path.join(self.prj.metadata.output_dir, "reports")
             # Generate object type and filename
             type = single_object['key'].drop_duplicates()
@@ -701,128 +708,17 @@ class HTMLReportBuilder():
                               " nonexistent files: " +
                               ','.join(str(file) for file in warnings))
 
-        def create_status_html(all_samples):
-            # Generates a page listing all the samples, their run status, their
-            # log file, and the total runtime if completed.
-            reports_dir = os.path.join(self.prj.metadata.output_dir, "reports")
-            status_html_path = os.path.join(reports_dir, "status.html")
-            if not os.path.exists(os.path.dirname(status_html_path)):
-                os.makedirs(os.path.dirname(status_html_path))
-            with open(status_html_path, 'w') as html_file:
-                html_file.write(HTML_HEAD_OPEN)
-                html_file.write(create_navbar(all_samples, reports_dir))
-                html_file.write(HTML_HEAD_CLOSE)
-                html_file.write(STATUS_HEADER)
-                html_file.write(STATUS_TABLE_HEAD)
-                warning = False
-                for sample in self.prj.samples:
-                    sample_name = str(sample.sample_name)
-                    # Grab the status flag for the current sample
-                    flag = glob.glob(os.path.join(
-                                        self.prj.metadata.results_subdir,
-                                        sample_name, '*.flag'))               
-                    if not flag:
-                        button_class = "table-danger"
-                        flag = "Missing"
-                        _LOGGER.warn("create_status_html: No flag file found for {}".format(sample_name))
-                    elif len(flag) > 1:
-                        button_class = "table-warning"
-                        flag = "Multiple"
-                        _LOGGER.warn("create_status_html: Multiple flag files found for {}".format(sample_name))
-                    else:
-                        if "completed" in str(flag):
-                            button_class = "table-success"
-                            flag = "Completed"
-                        elif "running" in str(flag):
-                            button_class = "table-warning"
-                            flag = "Running"
-                        elif "failed" in str(flag):
-                            button_class = "table-danger"
-                            flag = "Failed"
-                        else:
-                            button_class = "table-secondary"
-                            flag = "Unknown"
-
-                    # Create table entry for each sample
-                    html_file.write(STATUS_ROW_HEADER)
-                    # First Col: Sample_Name (w/ link to sample page)
-                    page_name = sample_name + ".html"
-                    page_path = os.path.join(reports_dir, page_name.replace(' ', '_').lower())
-                    page_relpath = os.path.relpath(page_path, reports_dir)
-                    html_file.write(STATUS_ROW_LINK.format(
-                                        row_class="",
-                                        file_link=page_relpath,
-                                        link_name=sample_name))
-                    # Second Col: Status (color-coded)
-                    html_file.write(STATUS_ROW_VALUE.format(
-                                        row_class=button_class,
-                                        value=flag))
-                    # Third Col: Log File (w/ link to file)
-                    single_sample = all_samples[all_samples['sample_name'] == sample_name]
-                    if single_sample.empty:
-                        # When there is no objects.tsv file, search for the
-                        # presence of log, profile, and command files
-                        log_name = os.path.basename(str(glob.glob(os.path.join(
-                                    self.prj.metadata.results_subdir,
-                                    sample_name, '*log.md'))[0]))
-                        # Currently unused. Future?
-                        # profile_name = os.path.basename(str(glob.glob(os.path.join(
-                                            # self.prj.metadata.results_subdir,
-                                            # sample_name, '*profile.tsv'))[0]))
-                        # command_name = os.path.basename(str(glob.glob(os.path.join(
-                                            # self.prj.metadata.results_subdir,
-                                            # sample_name, '*commands.sh'))[0]))
-                    else:
-                        log_name = str(single_sample.iloc[0]['annotation']) + "_log.md"
-                        # Currently unused. Future?
-                        # profile_name = str(single_sample.iloc[0]['annotation']) + "_profile.tsv"
-                        # command_name = str(single_sample.iloc[0]['annotation']) + "_commands.sh"
-                    log_file = os.path.join(self.prj.metadata.results_subdir,
-                                            sample_name, log_name)
-                    log_relpath = os.path.relpath(log_file, reports_dir)
-                    if os.path.isfile(log_file):
-                        html_file.write(STATUS_ROW_LINK.format(
-                                            row_class="",
-                                            file_link=log_relpath,
-                                            link_name=log_name))
-                    else:
-                        # Leave cell empty
-                        html_file.write(STATUS_ROW_LINK.format(
-                                            row_class="",
-                                            file_link="",
-                                            link_name=""))
-                    # Fourth Col: Sample runtime (if completed)
-                    # If Completed, use stats.tsv
-                    stats_file = os.path.join(
-                                    self.prj.metadata.results_subdir,
-                                    sample_name, "stats.tsv")
-                    if os.path.isfile(stats_file):
-                        t = _pd.read_table(stats_file, header=None,
-                                           names=['key', 'value', 'pl'])
-                        t.drop_duplicates(subset=['key', 'pl'],
-                                          keep='last', inplace=True)
-                        try:
-                            time = str(t[t['key'] == 'Time'].iloc[0]['value'])
-                            html_file.write(STATUS_ROW_VALUE.format(
-                                            row_class="",
-                                            value=str(time)))
-                        except IndexError:
-                            warning = True                       
-                    else:
-                        html_file.write(STATUS_ROW_VALUE.format(
-                                            row_class=button_class,
-                                            value="Unknown"))
-                    html_file.write(STATUS_ROW_FOOTER)
-
-                html_file.write(STATUS_FOOTER)
-                html_file.write(HTML_FOOTER)
-                html_file.close()
-                if warning:
-                    _LOGGER.warn("The stats_summary.tsv file is incomplete")
-
         def create_sample_html(all_samples, sample_name, sample_stats):
-            # Produce an HTML page containing all of a sample's objects
-            # and the sample summary statistics
+            """
+            Produce an HTML page containing all of a sample's objects
+            and the sample summary statistics
+            
+            :param panda.DataFrame all_samples: project level dataframe 
+                containing any reported objects for all samples
+            :param str sample_name: the name of the current sample
+            :param list stats: pipeline run statistics for the current sample
+            """
+
             reports_dir = os.path.join(self.prj.metadata.output_dir, "reports")
             html_filename = sample_name + ".html"
             html_page = os.path.join(
@@ -983,17 +879,154 @@ class HTMLReportBuilder():
             # Return the path to the newly created sample page
             return sample_page_relpath
 
+        def create_status_html(all_samples):
+            """
+            Generates a page listing all the samples, their run status, their
+            log file, and the total runtime if completed.
+            
+            :param panda.DataFrame all_samples: project level dataframe 
+                containing any reported objects for all samples
+            """
+
+            reports_dir = os.path.join(self.prj.metadata.output_dir, "reports")
+            status_html_path = os.path.join(reports_dir, "status.html")
+            if not os.path.exists(os.path.dirname(status_html_path)):
+                os.makedirs(os.path.dirname(status_html_path))
+            with open(status_html_path, 'w') as html_file:
+                html_file.write(HTML_HEAD_OPEN)
+                html_file.write(create_navbar(all_samples, reports_dir))
+                html_file.write(HTML_HEAD_CLOSE)
+                html_file.write(STATUS_HEADER)
+                html_file.write(STATUS_TABLE_HEAD)
+                warning = False
+                for sample in self.prj.samples:
+                    sample_name = str(sample.sample_name)
+                    # Grab the status flag for the current sample
+                    flag = glob.glob(os.path.join(
+                                        self.prj.metadata.results_subdir,
+                                        sample_name, '*.flag'))               
+                    if not flag:
+                        button_class = "table-danger"
+                        flag = "Missing"
+                        _LOGGER.warn("create_status_html: No flag file found for {}".format(sample_name))
+                    elif len(flag) > 1:
+                        button_class = "table-warning"
+                        flag = "Multiple"
+                        _LOGGER.warn("create_status_html: Multiple flag files found for {}".format(sample_name))
+                    else:
+                        if "completed" in str(flag):
+                            button_class = "table-success"
+                            flag = "Completed"
+                        elif "running" in str(flag):
+                            button_class = "table-warning"
+                            flag = "Running"
+                        elif "failed" in str(flag):
+                            button_class = "table-danger"
+                            flag = "Failed"
+                        else:
+                            button_class = "table-secondary"
+                            flag = "Unknown"
+
+                    # Create table entry for each sample
+                    html_file.write(STATUS_ROW_HEADER)
+                    # First Col: Sample_Name (w/ link to sample page)
+                    page_name = sample_name + ".html"
+                    page_path = os.path.join(reports_dir, page_name.replace(' ', '_').lower())
+                    page_relpath = os.path.relpath(page_path, reports_dir)
+                    html_file.write(STATUS_ROW_LINK.format(
+                                        row_class="",
+                                        file_link=page_relpath,
+                                        link_name=sample_name))
+                    # Second Col: Status (color-coded)
+                    html_file.write(STATUS_ROW_VALUE.format(
+                                        row_class=button_class,
+                                        value=flag))
+                    # Third Col: Log File (w/ link to file)
+                    single_sample = all_samples[all_samples['sample_name'] == sample_name]
+                    if single_sample.empty:
+                        # When there is no objects.tsv file, search for the
+                        # presence of log, profile, and command files
+                        log_name = os.path.basename(str(glob.glob(os.path.join(
+                                    self.prj.metadata.results_subdir,
+                                    sample_name, '*log.md'))[0]))
+                        # Currently unused. Future?
+                        # profile_name = os.path.basename(str(glob.glob(os.path.join(
+                                            # self.prj.metadata.results_subdir,
+                                            # sample_name, '*profile.tsv'))[0]))
+                        # command_name = os.path.basename(str(glob.glob(os.path.join(
+                                            # self.prj.metadata.results_subdir,
+                                            # sample_name, '*commands.sh'))[0]))
+                    else:
+                        log_name = str(single_sample.iloc[0]['annotation']) + "_log.md"
+                        # Currently unused. Future?
+                        # profile_name = str(single_sample.iloc[0]['annotation']) + "_profile.tsv"
+                        # command_name = str(single_sample.iloc[0]['annotation']) + "_commands.sh"
+                    log_file = os.path.join(self.prj.metadata.results_subdir,
+                                            sample_name, log_name)
+                    log_relpath = os.path.relpath(log_file, reports_dir)
+                    if os.path.isfile(log_file):
+                        html_file.write(STATUS_ROW_LINK.format(
+                                            row_class="",
+                                            file_link=log_relpath,
+                                            link_name=log_name))
+                    else:
+                        # Leave cell empty
+                        html_file.write(STATUS_ROW_LINK.format(
+                                            row_class="",
+                                            file_link="",
+                                            link_name=""))
+                    # Fourth Col: Sample runtime (if completed)
+                    # If Completed, use stats.tsv
+                    stats_file = os.path.join(
+                                    self.prj.metadata.results_subdir,
+                                    sample_name, "stats.tsv")
+                    if os.path.isfile(stats_file):
+                        t = _pd.read_table(stats_file, header=None,
+                                           names=['key', 'value', 'pl'])
+                        t.drop_duplicates(subset=['key', 'pl'],
+                                          keep='last', inplace=True)
+                        try:
+                            time = str(t[t['key'] == 'Time'].iloc[0]['value'])
+                            html_file.write(STATUS_ROW_VALUE.format(
+                                            row_class="",
+                                            value=str(time)))
+                        except IndexError:
+                            warning = True                       
+                    else:
+                        html_file.write(STATUS_ROW_VALUE.format(
+                                            row_class=button_class,
+                                            value="Unknown"))
+                    html_file.write(STATUS_ROW_FOOTER)
+
+                html_file.write(STATUS_FOOTER)
+                html_file.write(HTML_FOOTER)
+                html_file.close()
+                if warning:
+                    _LOGGER.warn("The stats_summary.tsv file is incomplete")
+
         def create_navbar(objs, wd):
-            # Return a string containing the navbar prebuilt html
-            # Includes link to all the pages
-            objs_html_path = "{root}_summary.html".format(
+            """
+            Return a string containing the navbar prebuilt html.
+            Generates links to each page relative to the directory
+            of interest.
+            
+            :param pandas.DataFrame objs: project results dataframe containing
+                sample or object data
+            :param path wd: the working directory of the current HTML page 
+                being generated, enables navbar links relative to page
+            """
+
+            # Generate full index.html path
+            index_html_path = "{root}_summary.html".format(
                 root=os.path.join(self.prj.metadata.output_dir, self.prj.name))
             reports_dir = os.path.join(self.prj.metadata.output_dir,
                                        "reports")
-            index_page_relpath = os.path.relpath(objs_html_path, wd)
+            # Generate index.html path relative to the HTML file under 
+            # construction
+            index_page_relpath = os.path.relpath(index_html_path, wd)
             navbar_header = NAVBAR_HEADER.format(logo=NAVBAR_LOGO,
                                                  index_html=index_page_relpath)
-            # Add link to STATUS page
+            # Add link to status.html page
             status_page = os.path.join(reports_dir, "status.html")
             # Use relative linking structure
             relpath = os.path.relpath(status_page, wd)
@@ -1061,8 +1094,8 @@ class HTMLReportBuilder():
                                NAVBAR_FOOTER]))
 
         def create_project_objects():
-            # If a protocol produces project level summaries add those as
-            # additional figures/links
+            """ Add project level summaries as additional figures/links """
+
             all_protocols = [sample.protocol for sample in self.prj.samples]
             # For each protocol report the project summarizers' results
             for protocol in set(all_protocols):
@@ -1141,19 +1174,27 @@ class HTMLReportBuilder():
                                    OBJECTS_LIST_FOOTER]))
 
         def create_index_html(objs, stats):
-            # Generate an index.html style project home page w/ sample summary
-            # statistics
+            """
+            Generate an index.html style project home page w/ sample summary
+            statistics
+            
+            :param panda.DataFrame objs: project level dataframe containing
+                any reported objects for all samples
+            :param list stats: a summary file of pipeline statistics for each
+                analyzed sample                
+            """
+
             objs.drop_duplicates(keep='last', inplace=True)
             reports_dir = os.path.join(self.prj.metadata.output_dir, "reports")
-            # Generate parent index.html page
-            objs_html_path = "{root}_summary.html".format(
+            # Generate parent index.html page path
+            index_html_path = "{root}_summary.html".format(
                 root=os.path.join(self.prj.metadata.output_dir, self.prj.name))
-            # Generate parent objects.html page
+            # Generate parent objects.html page path
             object_parent_path = os.path.join(reports_dir, "objects.html")
-            # Generate parent samples.html page
+            # Generate parent samples.html page path
             sample_parent_path = os.path.join(reports_dir, "samples.html")
 
-            objs_html_file = open(objs_html_path, 'w')
+            objs_html_file = open(index_html_path, 'w')
             objs_html_file.write(HTML_HEAD_OPEN)
             objs_html_file.write("\t\t<style>\n")
             objs_html_file.write(TABLE_STYLE_ROTATED_HEADER)
@@ -1175,7 +1216,8 @@ class HTMLReportBuilder():
             objs_html_file.write(HTML_BUTTON.format(
                 file_path=stats_relpath, label="Stats Summary File"))
 
-            # Add stats summary table to index page
+            # Add stats summary table to index page and produce individual
+            # sample pages
             if os.path.isfile(tsv_outfile_path):
                 objs_html_file.write(TABLE_HEADER)
                 # Produce table columns
@@ -1229,6 +1271,7 @@ class HTMLReportBuilder():
                 objs_html_file.write(TABLE_FOOTER)
             else:
                 _LOGGER.warn("No stats file '%s'", stats_file)
+
             # Create parent samples page with links to each sample
             create_sample_parent_html(objs)
 
@@ -1260,9 +1303,7 @@ class HTMLReportBuilder():
         create_index_html(objs, stats)
 
 def uniqify(seq):
-    """
-    Fast way to uniqify while preserving input order.
-    """
+    """ Fast way to uniqify while preserving input order. """
     # http://stackoverflow.com/questions/480214/
     seen = set()
     seen_add = seen.add
