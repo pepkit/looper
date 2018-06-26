@@ -585,7 +585,7 @@ class HTMLReportBuilder():
         
     def __call__(self, objs, stats):
 
-        def create_object_parent_html(objs):
+        def create_object_parent_html(all_objects):
             # Generates a page listing all the project objects with links
             # to individual object pages
             reports_dir = os.path.join(self.prj.metadata.output_dir,
@@ -595,11 +595,11 @@ class HTMLReportBuilder():
                 os.makedirs(os.path.dirname(object_parent_path))
             with open(object_parent_path, 'w') as html_file:
                 html_file.write(HTML_HEAD_OPEN)
-                html_file.write(create_navbar(objs, reports_dir))
+                html_file.write(create_navbar(all_objects, reports_dir))
                 html_file.write(HTML_HEAD_CLOSE)
                 html_file.write(GENERIC_HEADER.format(header="Objects"))
                 html_file.write(GENERIC_LIST_HEADER)
-                for key in objs['key'].drop_duplicates().sort_values():
+                for key in all_objects['key'].drop_duplicates().sort_values():
                     page_name = key + ".html"
                     page_path = os.path.join(reports_dir, page_name.replace(' ', '_').lower())
                     page_relpath = os.path.relpath(page_path, reports_dir)
@@ -608,7 +608,7 @@ class HTMLReportBuilder():
                 html_file.write(HTML_FOOTER)
                 html_file.close()
 
-        def create_sample_parent_html(objs):
+        def create_sample_parent_html(all_samples):
             # Generates a page listing all the project samples with links
             # to individual sample pages
             reports_dir = os.path.join(self.prj.metadata.output_dir,
@@ -618,7 +618,7 @@ class HTMLReportBuilder():
                 os.makedirs(os.path.dirname(sample_parent_path))
             with open(sample_parent_path, 'w') as html_file:
                 html_file.write(HTML_HEAD_OPEN)
-                html_file.write(create_navbar(objs, reports_dir))
+                html_file.write(create_navbar(all_samples, reports_dir))
                 html_file.write(HTML_HEAD_CLOSE)
                 html_file.write(GENERIC_HEADER.format(header="Samples"))
                 html_file.write(GENERIC_LIST_HEADER)
@@ -820,8 +820,7 @@ class HTMLReportBuilder():
                 if warning:
                     _LOGGER.warn("The stats_summary.tsv file is incomplete")
 
-        def create_sample_html(all_samples, sample_name, sample_stats,
-                               index_html):
+        def create_sample_html(all_samples, sample_name, sample_stats):
             # Produce an HTML page containing all of a sample's objects
             # and the sample summary statistics
             reports_dir = os.path.join(self.prj.metadata.output_dir, "reports")
@@ -1213,9 +1212,9 @@ class HTMLReportBuilder():
                     for value in table_row:                 
                         if value == sample_name:
                             # Generate individual sample page and return link
-                            sample_page = create_sample_html(
-                                            objs, sample_name,
-                                            stats[sample_pos], objs_html_path)
+                            sample_page = create_sample_html(objs,
+                                                             sample_name,
+                                                             stats[sample_pos])
                             # Treat sample_name as a link to sample page
                             objs_html_file.write(TABLE_ROWS_LINK.format(
                                 html_page=sample_page,
