@@ -770,11 +770,9 @@ class HTMLReportBuilder():
                     if not flag:  
                         button_class = "btn btn-danger"
                         flag = "Missing"
-                        _LOGGER.warn("create_sample_html: No flag file found for {}".format(sample_name))
                     elif len(flag) > 1:
                         button_class = "btn btn-warning"
                         flag = "Multiple"
-                        _LOGGER.warn("create_sample_html: Multiple flag files found for {}".format(sample_name))
                     else:
                         if "completed" in str(flag):
                             button_class = "btn btn-success"
@@ -929,11 +927,11 @@ class HTMLReportBuilder():
                         if not flag:
                             button_class = "table-danger"
                             flag = "Missing"
-                            _LOGGER.warn("create_status_html: No flag file found for {}".format(sample_name))
+                            _LOGGER.warn("No flag file found for {}".format(sample_name))
                         elif len(flag) > 1:
                             button_class = "table-warning"
                             flag = "Multiple"
-                            _LOGGER.warn("create_status_html: Multiple flag files found for {}".format(sample_name))
+                            _LOGGER.warn("Multiple flag files found for {}".format(sample_name))
                         else:
                             if "completed" in str(flag):
                                 button_class = "table-success"
