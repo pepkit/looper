@@ -280,7 +280,7 @@ TABLE_STYLE_TEXT = \
         .table td.text {
             max-width: 150px;
             <!-- top|right|bottom|left -->
-            padding: 0px 4px 0px 4px;
+            padding: 0px 2px 0px 2px;
         }
         .table td.text span {
             white-space: nowrap;
@@ -424,9 +424,9 @@ SAMPLE_TABLE_ROW = \
 SAMPLE_TABLE_STYLE = \
 """\
         .table td.text {
-            max-width: 50%;
+            max-width: 500px;
             <!-- top|right|bottom|left -->
-            padding: 0px 0px 0px 0px;
+            padding: 0px 2px 0px 2px;
         }
         .table td.text span {
             white-space: nowrap;
