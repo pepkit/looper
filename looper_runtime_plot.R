@@ -1,7 +1,7 @@
 #! /usr/bin/env Rscript
 ###############################################################################
 #06/04/18
-#Last Updated 06/21/18
+#Last Updated 06/27/18
 #Original Author: Jason Smith
 #looper_runtime_plot.R
 #
@@ -18,10 +18,25 @@
 ####                              DEPENDENCIES                             ####
 ###############################################################################
 ##### LOAD ARGUMENTPARSER #####
-if(suppressPackageStartupMessages(!require(argparser))) {
-    install.packages("argparser")
+loadLibrary <- tryCatch (
+    {
+        suppressWarnings(suppressPackageStartupMessages(library(argparser)))
+    },
+    error=function(e) {
+        message("Error: Install the \"argparser\"",
+                " library before proceeding.")
+        return(NULL)
+    },
+    warning=function(e) {
+        message(e)
+        return(TRUE)
+    }
+)
+if (length(loadLibrary)!=0) {
+    suppressWarnings(library(argparser))
+} else {
+    quit()
 }
-suppressPackageStartupMessages(library(argparser, quietly=TRUE))
 
 # Create a parser
 p <- arg_parser("Produce an ATACseq pipeline (PEPATAC) runtime plot")
@@ -37,25 +52,29 @@ p <- add_argument(p, "config",
 argv <- parse_args(p)
 
 ##### LOAD ADDITIONAL DEPENDENCIES #####
-warnSetting <- getOption("warn")
-options(warn = -1)
-if(suppressPackageStartupMessages(!require(ggplot2))) {
-    install.packages("ggplot2")
+required_libraries <- c("ggplot2", "grid", "stringr", "pepr")
+for (i in required_libraries) {
+    loadLibrary <- tryCatch (
+        {
+            suppressPackageStartupMessages(
+                suppressWarnings(library(i, character.only=TRUE)))
+        },
+        error=function(e) {
+            message("Error: Install the \"", i,
+                    "\" library before proceeding.")
+            return(NULL)
+        },
+        warning=function(e) {
+            message(e)
+            return(1)
+        }
+    )
+    if (length(loadLibrary)!=0) {
+        suppressWarnings(library(i, character.only=TRUE))
+    } else {
+        quit()
+    }
 }
-if(suppressPackageStartupMessages(!require(grid))) {
-    install.packages("grid")
-}
-if(suppressPackageStartupMessages(!require(stringr))) {
-    install.packages("stringr")
-}
-if(suppressPackageStartupMessages(!require(pepr))) {
-    devtools::install_github("pepkit/pepr")
-}
-suppressPackageStartupMessages(library(ggplot2))
-suppressPackageStartupMessages(library(grid))
-suppressPackageStartupMessages(library(stringr))
-suppressPackageStartupMessages(library(pepr))
-options(warn = warnSetting)
 
 ###############################################################################
 ####                               FUNCTIONS                               ####
@@ -251,8 +270,8 @@ invisible(capture.output(outputDir <- config(prj)$metadata$output_dir))
 invisible(capture.output(numSamples <- length(samples(prj)$sample_name)))
 for (i in 1:numSamples) {
     invisible(capture.output(sampleName <- samples(prj)$sample_name[i]))
-    timeFile <- file.path(outputDir, "results_pipeline",
-                          sampleName, "ATACseq_profile.tsv")
+    timeFile <- Sys.glob(file.path(outputDir, "results_pipeline",
+                                   sampleName, "*_profile.tsv"))
     plotRuntime(timeFile, sampleName)
 }
 
