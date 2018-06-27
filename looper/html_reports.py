@@ -276,7 +276,7 @@ TABLE_STYLE_ROTATED_HEADER = \
         }
 """
 TABLE_STYLE_TEXT = \
-"""
+"""\
         .table td.text {
             max-width: 150px;
             <!-- top|right|bottom|left -->
@@ -495,11 +495,11 @@ STATUS_ROW_HEADER = \
 """
 STATUS_ROW_VALUE = \
 """\
-                  <td class='{row_class}' style="padding: 0px 4px 0px 4px; vertical-align: middle">{value}</td>
+                  <td class='{row_class}'>{value}</td>
 """
 STATUS_ROW_LINK = \
 """\
-                  <td class='{row_class}' style="cursor:pointer; padding: 0px 4px 0px 4px; vertical-align: middle" onclick="location.href='{file_link}'"><a href="{file_link}" target="_top">{link_name}</a></td>
+                  <td class='{row_class}' style="cursor:pointer" onclick="location.href='{file_link}'"><a href="{file_link}" target="_top">{link_name}</a></td>
 """
 STATUS_ROW_FOOTER = \
 """\
@@ -906,6 +906,9 @@ class HTMLReportBuilder(object):
                 os.makedirs(os.path.dirname(status_html_path))
             with open(status_html_path, 'w') as html_file:
                 html_file.write(HTML_HEAD_OPEN)
+                html_file.write("\t\t<style>\n")
+                html_file.write(TABLE_STYLE_TEXT)
+                html_file.write("\t\t</style>\n")
                 html_file.write(create_navbar(all_samples, reports_dir))
                 html_file.write(HTML_HEAD_CLOSE)
                 html_file.write(STATUS_HEADER)
