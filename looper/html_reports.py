@@ -83,7 +83,7 @@ NAVBAR_HEADER = \
 """\
         <div id="top"></div>
         <nav class="navbar sticky-top navbar-expand-lg navbar-dark bg-primary">
-          <a class="navbar-left" href="#top"><img src="{logo}" width="30" height="30" class="d-inline-block align-middle img-responsive" alt="LOOPER"></a>
+          <a class="navbar-left" href="#top"><img src="{logo}" class="d-inline-block align-middle img-responsive" alt="LOOPER" style="max-height:60px; margin-top:-10px; margin-bottom:-10px"></a>
           <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
           </button>
