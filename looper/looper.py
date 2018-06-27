@@ -660,7 +660,7 @@ class Summarizer(Executor):
                 _LOGGER.debug(iface)
                 pl = iface.fetch_pipelines(protocol)
                 summarizers = iface.get_attribute(pl, "summarizers")
-                for summarizer in summarizers:
+                for summarizer in set(summarizers):
                     summarizer_abspath = os.path.join(
                         os.path.dirname(iface.pipe_iface_file), summarizer)
                     _LOGGER.debug([summarizer_abspath, self.prj.config_file])
@@ -671,7 +671,9 @@ class Summarizer(Executor):
 
         # Produce HTML report
         report_builder = HTMLReportBuilder(self.prj)
-        report_builder(objs, stats)
+        report_path = report_builder(objs, stats)
+        _LOGGER.info(
+                "HTML Report (n=" + str(len(stats)) + "): " + report_path)
 
 def aggregate_exec_skip_reasons(skip_reasons_sample_pairs):
     """

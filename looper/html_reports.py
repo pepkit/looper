@@ -1233,16 +1233,16 @@ class HTMLReportBuilder(object):
             # Generate parent samples.html page path
             sample_parent_path = os.path.join(reports_dir, "samples.html")
 
-            objs_html_file = open(index_html_path, 'w')
-            objs_html_file.write(HTML_HEAD_OPEN)
-            objs_html_file.write("\t\t<style>\n")
-            objs_html_file.write(TABLE_STYLE_ROTATED_HEADER)
-            objs_html_file.write(TABLE_STYLE_TEXT)
-            objs_html_file.write("\t\t</style>\n")
-            objs_html_file.write(HTML_TITLE.format(project_name=self.prj.name))
+            index_html_file = open(index_html_path, 'w')
+            index_html_file.write(HTML_HEAD_OPEN)
+            index_html_file.write("\t\t<style>\n")
+            index_html_file.write(TABLE_STYLE_ROTATED_HEADER)
+            index_html_file.write(TABLE_STYLE_TEXT)
+            index_html_file.write("\t\t</style>\n")
+            index_html_file.write(HTML_TITLE.format(project_name=self.prj.name))
             navbar = create_navbar(objs, self.prj.metadata.output_dir)
-            objs_html_file.write(navbar)
-            objs_html_file.write(HTML_HEAD_CLOSE)
+            index_html_file.write(navbar)
+            index_html_file.write(HTML_HEAD_CLOSE)
 
             # Add stats_summary.tsv button link
             tsv_outfile_path = os.path.join(self.prj.metadata.output_dir,
@@ -1252,13 +1252,13 @@ class HTMLReportBuilder(object):
             tsv_outfile_path += '_stats_summary.tsv'
             stats_relpath = os.path.relpath(tsv_outfile_path,
                                             self.prj.metadata.output_dir)
-            objs_html_file.write(HTML_BUTTON.format(
+            index_html_file.write(HTML_BUTTON.format(
                 file_path=stats_relpath, label="Stats Summary File"))
 
             # Add stats summary table to index page and produce individual
             # sample pages
             if os.path.isfile(tsv_outfile_path):
-                objs_html_file.write(TABLE_HEADER)
+                index_html_file.write(TABLE_HEADER)
                 # Produce table columns
                 sample_pos = 0
                 # Get unique column name list
@@ -1270,8 +1270,8 @@ class HTMLReportBuilder(object):
                 unique_columns = uniqify(col_names)
                 # Write table column names to index.html file
                 for key in unique_columns:
-                    objs_html_file.write(TABLE_COLS.format(col_val=str(key)))
-                objs_html_file.write(TABLE_COLS_FOOTER)
+                    index_html_file.write(TABLE_COLS.format(col_val=str(key)))
+                index_html_file.write(TABLE_COLS_FOOTER)
 
                 # Produce table rows
                 sample_pos = 0
@@ -1289,7 +1289,7 @@ class HTMLReportBuilder(object):
                     # Reset column position counter
                     col_pos = 0
                     sample_name = str(stats[sample_pos]['sample_name'])
-                    objs_html_file.write(TABLE_ROW_HEADER)
+                    index_html_file.write(TABLE_ROW_HEADER)
                     for value in table_row:                 
                         if value == sample_name:
                             # Generate individual sample page and return link
@@ -1297,17 +1297,17 @@ class HTMLReportBuilder(object):
                                                              sample_name,
                                                              stats[sample_pos])
                             # Treat sample_name as a link to sample page
-                            objs_html_file.write(TABLE_ROWS_LINK.format(
+                            index_html_file.write(TABLE_ROWS_LINK.format(
                                 html_page=sample_page,
                                 page_name=sample_page,
                                 link_name=sample_name))
                         # If not the sample name, add as an unlinked cell value
                         else:
-                            objs_html_file.write(TABLE_ROWS.format(
+                            index_html_file.write(TABLE_ROWS.format(
                                 row_val=str(value)))
-                    objs_html_file.write(TABLE_ROW_FOOTER)
+                    index_html_file.write(TABLE_ROW_FOOTER)
                     sample_pos += 1
-                objs_html_file.write(TABLE_FOOTER)
+                index_html_file.write(TABLE_FOOTER)
             else:
                 _LOGGER.warn("No stats file '%s'", stats_file)
 
@@ -1327,20 +1327,21 @@ class HTMLReportBuilder(object):
 
             # Add project level objects
             prj_objs = create_project_objects()
-            objs_html_file.write("\t\t<hr>\n")
-            objs_html_file.write(prj_objs)
-            objs_html_file.write("\t\t<hr>\n")
+            index_html_file.write("\t\t<hr>\n")
+            index_html_file.write(prj_objs)
+            index_html_file.write("\t\t<hr>\n")
 
             # Complete and close HTML file
-            objs_html_file.write(HTML_FOOTER)
-            objs_html_file.close()
+            index_html_file.write(HTML_FOOTER)
+            index_html_file.close()
+            
+            # Return the path to the completed index.html file
+            return index_html_path
 
-            _LOGGER.info(
-                "Summary (n=" + str(len(stats)) + "): " + tsv_outfile_path)
-
-        _LOGGER.info("create_index_html")
         # Generate HTML report
-        create_index_html(objs, stats)
+        index_html_path = create_index_html(objs, stats)
+        return index_html_path
+
 
 def uniqify(seq):
     """ Fast way to uniqify while preserving input order. """
