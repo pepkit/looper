@@ -647,9 +647,10 @@ class HTMLReportBuilder(object):
             """
 
             reports_dir = os.path.join(self.prj.metadata.output_dir, "reports")
-            # Generate object type and filename
-            type = single_object['key'].drop_duplicates()
-            filename = str(type) + ".html"
+            # Generate object filename
+            for key in single_object['key'].drop_duplicates().sort_values():
+                type = str(key)
+                filename = str(key) + ".html"
             object_path = os.path.join(
                             reports_dir, filename.replace(' ', '_').lower())
             if not os.path.exists(os.path.dirname(object_path)):
