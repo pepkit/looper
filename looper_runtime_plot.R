@@ -12,7 +12,7 @@
 #usage: Rscript /path/to/Rscript/looper_runtime_plot.R 
 #       /path/to/project_config.yaml
 #
-#requirements: argparser, ggplot2, grid, stringr, pepr
+#requirements: argparser, dplyr, ggplot2, grid, stringr, pepr
 #
 ###############################################################################
 ####                              DEPENDENCIES                             ####
@@ -52,7 +52,7 @@ p <- add_argument(p, "config",
 argv <- parse_args(p)
 
 ##### LOAD ADDITIONAL DEPENDENCIES #####
-required_libraries <- c("ggplot2", "grid", "stringr", "pepr")
+required_libraries <- c("dplyr", "ggplot2", "grid", "stringr", "pepr")
 for (i in required_libraries) {
     loadLibrary <- tryCatch (
         {
@@ -192,7 +192,7 @@ dedupSequential = function(dupDF) {
 }
 
 # Produce a runtime plot for a sample
-plotRuntime = function(timeFile, sampleName) {
+getRuntime = function(timeFile, sampleName) {
     # Get just the first line to get pipeline start time
     startTime  <- readLines(timeFile, n=1)
 
@@ -229,7 +229,7 @@ plotRuntime = function(timeFile, sampleName) {
     combinedTime$cmd   <- as.character(combinedTime$cmd)
     # Set order for plotting purposes
     combinedTime$order <- as.factor(as.numeric(row.names(combinedTime)))
-
+    
     # Create plot
     p <- ggplot(data=combinedTime, aes(x=order, y=time)) +
                 geom_bar(stat="identity", position=position_dodge())+
@@ -253,6 +253,8 @@ plotRuntime = function(timeFile, sampleName) {
         file=buildFilePath(sampleName, "_Runtime.png", prj), 
         width=unit(8,"inches"), 
         height=unit(5.5,"inches"))
+    
+    return(combinedTime)
 }
 
 ###############################################################################
@@ -266,13 +268,37 @@ prj = Project(configFile)
 ####                                 MAIN                                  ####
 ###############################################################################
 # For each sample in the project, produce a runtime summary plot
+if (!is.null(config(prj)$name)) {
+    accumName <- file.path(config(prj)$metadata$output_dir,
+                           paste(config(prj)$name, "average_runtime.csv",
+                                 sep="_"))
+} else {
+    accumName <- file.path(config(prj)$metadata$output_dir,
+                           "average_runtime.csv")
+}
 invisible(capture.output(outputDir <- config(prj)$metadata$output_dir))
 invisible(capture.output(numSamples <- length(samples(prj)$sample_name)))
+accumulated <- data.frame(cmd=as.character(), time=as.numeric(), order=as.numeric())
 for (i in 1:numSamples) {
     invisible(capture.output(sampleName <- samples(prj)$sample_name[i]))
     timeFile <- Sys.glob(file.path(outputDir, "results_pipeline",
                                    sampleName, "*_profile.tsv"))
-    plotRuntime(timeFile, sampleName)
+    combinedTime <- getRuntime(timeFile, sampleName)
+    if (i == 1) {
+        accumulated <- combinedTime
+    } else {
+        accumulated <- full_join(accumulated, combinedTime, by=c("cmd","order"))
+    }
 }
+accumulated <- accumulated[,-c(2,3)]
+final <- data.frame(cmd=as.character(), average_time=as.numeric())
+for (i in 1:nrow(accumulated)) {
+    cmd <- accumulated$cmd[i]
+    tmp <- accumulated[,-1]
+    average_time <- as.numeric(sum(tmp[i,], na.rm=TRUE))/(ncol(tmp)-1)
+    average = data.frame(cbind(cmd, average_time))
+    final <- rbind(final, average)
+}
+write.csv(final, accumName, row.names=FALSE)
 
 write("Completed!\n", stdout())
