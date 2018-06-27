@@ -557,7 +557,7 @@ OBJECTS_VARS = ["OBJECTS_HEADER", "OBJECTS_LIST_HEADER", "OBJECTS_LINK",
 __all__ = HTML_VARS + NAVBAR_VARS + GENERIC_VARS + \
           TABLE_VARS + SAMPLE_VARS + STATUS_VARS + OBJECTS_VARS
 
-class HTMLReportBuilder():
+class HTMLReportBuilder(object):
     """ Generate HTML summary report for project/samples """
 
     def __init__(self, prj):
