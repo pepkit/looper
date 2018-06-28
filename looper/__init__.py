@@ -94,7 +94,10 @@ def setup_looper_logger(level, additional_locations=None, devmode=False):
 
     # Add the handlers.
     formatter = logging.Formatter(fmt=(fmt or DEFAULT_LOGGING_FMT))
+
     for loc in where:
+        if not loc:
+            continue
         if isinstance(loc, str):
             # File destination
             dirpath = os.path.abspath(os.path.dirname(loc))
