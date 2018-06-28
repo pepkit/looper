@@ -669,6 +669,7 @@ class Summarizer(Executor):
         _LOGGER.info(
                 "HTML Report (n=" + str(len(stats)) + "): " + report_path)
 
+
 def aggregate_exec_skip_reasons(skip_reasons_sample_pairs):
     """
     Collect the reasons for skipping submission/execution of each sample
