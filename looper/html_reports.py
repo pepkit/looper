@@ -6,6 +6,7 @@ import pandas as _pd
 import logging
 
 from peppy.utils import alpha_cased
+from collections import OrderedDict
 
 _LOGGER = logging.getLogger('HTMLReportBuilder')
 
@@ -1264,6 +1265,7 @@ class HTMLReportBuilder(object):
                 num_columns = len(col_names)
                 for row in stats:
                     # Match row value to column
+                    # Row is disordered and does not handle empty cells
                     table_row = []
                     while col_pos < num_columns:
                         value = row.get(col_names[col_pos])
@@ -1275,12 +1277,14 @@ class HTMLReportBuilder(object):
                     col_pos = 0
                     sample_name = str(stats[sample_pos]['sample_name'])
                     index_html_file.write(TABLE_ROW_HEADER)
-                    for value in table_row:                 
+                    # Order table_row by col_names
+                    sample_stats = OrderedDict(zip(col_names, table_row))
+                    for value in table_row:
                         if value == sample_name:
                             # Generate individual sample page and return link
                             sample_page = create_sample_html(objs,
                                                              sample_name,
-                                                             stats[sample_pos])
+                                                             sample_stats)
                             # Treat sample_name as a link to sample page
                             index_html_file.write(TABLE_ROWS_LINK.format(
                                 html_page=sample_page,
