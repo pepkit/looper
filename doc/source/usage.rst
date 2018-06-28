@@ -22,7 +22,7 @@ Here you can see the command-line usage instructions for the main looper command
 
 .. code-block:: none
 
-	version: 0.9.0-dev
+	version: 0.9.0
 	usage: looper [-h] [-V] [--logfile LOGFILE] [--verbosity {0,1,2,3,4}] [--dbg]
 	              {run,summarize,destroy,check,clean} ...
 	
@@ -53,7 +53,7 @@ Here you can see the command-line usage instructions for the main looper command
 
 .. code-block:: none
 
-	version: 0.9.0-dev
+	version: 0.9.0
 	usage: looper run [-h] [-t TIME_DELAY] [--ignore-flags]
 	                  [--allow-duplicate-names] [--compute COMPUTE] [--env ENV]
 	                  [--limit LIMIT] [--lump LUMP] [--lumpn LUMPN]
@@ -106,7 +106,7 @@ Here you can see the command-line usage instructions for the main looper command
 
 .. code-block:: none
 
-	version: 0.9.0-dev
+	version: 0.9.0
 	usage: looper summarize [-h] [--file-checks] [-d]
 	                        [--exclude-protocols [EXCLUDE_PROTOCOLS [EXCLUDE_PROTOCOLS ...]]
 	                        | --include-protocols
@@ -137,7 +137,7 @@ Here you can see the command-line usage instructions for the main looper command
 
 .. code-block:: none
 
-	version: 0.9.0-dev
+	version: 0.9.0
 	usage: looper destroy [-h] [--file-checks] [-d]
 	                      [--exclude-protocols [EXCLUDE_PROTOCOLS [EXCLUDE_PROTOCOLS ...]]
 	                      | --include-protocols
@@ -168,7 +168,7 @@ Here you can see the command-line usage instructions for the main looper command
 
 .. code-block:: none
 
-	version: 0.9.0-dev
+	version: 0.9.0
 	usage: looper check [-h] [-A] [-F [FLAGS [FLAGS ...]]] [--file-checks] [-d]
 	                    [--exclude-protocols [EXCLUDE_PROTOCOLS [EXCLUDE_PROTOCOLS ...]]
 	                    | --include-protocols
@@ -204,7 +204,7 @@ Here you can see the command-line usage instructions for the main looper command
 
 .. code-block:: none
 
-	version: 0.9.0-dev
+	version: 0.9.0
 	usage: looper clean [-h] [--file-checks] [-d]
 	                    [--exclude-protocols [EXCLUDE_PROTOCOLS [EXCLUDE_PROTOCOLS ...]]
 	                    | --include-protocols
