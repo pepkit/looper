@@ -569,7 +569,7 @@ class HTMLReportBuilder(object):
         super(HTMLReportBuilder, self).__init__()
         self.prj = prj
 
-    def __call__(self, objs, stats):
+    def __call__(self, objs, stats, columns):
         """ Do the work of the subcommand/program. """
 
         def create_object_parent_html(all_objects):
@@ -924,7 +924,6 @@ class HTMLReportBuilder(object):
                     sample_dir = os.path.join(
                             self.prj.metadata.results_subdir, sample_name)
                     # Confirm sample directory exists, then build page
-                    _LOGGER.info("sample_dir: " + str(sample_dir))
                     if os.path.exists(sample_dir):                        
                         # Grab the status flag for the current sample
                         flag = glob.glob(os.path.join(sample_dir, '*.flag'))               
@@ -1212,7 +1211,7 @@ class HTMLReportBuilder(object):
                                    "\n".join(obj_links),
                                    OBJECTS_LIST_FOOTER]))
 
-        def create_index_html(objs, stats):
+        def create_index_html(objs, stats, col_names):
             """
             Generate an index.html style project home page w/ sample summary
             statistics
@@ -1224,14 +1223,9 @@ class HTMLReportBuilder(object):
             """
 
             objs.drop_duplicates(keep='last', inplace=True)
-            reports_dir = os.path.join(self.prj.metadata.output_dir, "reports")
             # Generate parent index.html page path
             index_html_path = "{root}_summary.html".format(
                 root=os.path.join(self.prj.metadata.output_dir, self.prj.name))
-            # Generate parent objects.html page path
-            object_parent_path = os.path.join(reports_dir, "objects.html")
-            # Generate parent samples.html page path
-            sample_parent_path = os.path.join(reports_dir, "samples.html")
 
             index_html_file = open(index_html_path, 'w')
             index_html_file.write(HTML_HEAD_OPEN)
@@ -1260,28 +1254,19 @@ class HTMLReportBuilder(object):
             if os.path.isfile(tsv_outfile_path):
                 index_html_file.write(TABLE_HEADER)
                 # Produce table columns
-                sample_pos = 0
-                # Get unique column name list
-                col_names = []
-                while sample_pos < len(stats):
-                    for key, value in stats[sample_pos].items():
-                        col_names.append(key)
-                    sample_pos += 1
-                unique_columns = uniqify(col_names)
-                # Write table column names to index.html file
-                for key in unique_columns:
+                for key in col_names:
                     index_html_file.write(TABLE_COLS.format(col_val=str(key)))
                 index_html_file.write(TABLE_COLS_FOOTER)
 
                 # Produce table rows
                 sample_pos = 0
                 col_pos = 0
-                num_columns = len(unique_columns)
+                num_columns = len(col_names)
                 for row in stats:
                     # Match row value to column
                     table_row = []
                     while col_pos < num_columns:
-                        value = row.get(unique_columns[col_pos])
+                        value = row.get(col_names[col_pos])
                         if value is None:
                             value = ''
                         table_row.append(value)
@@ -1339,7 +1324,7 @@ class HTMLReportBuilder(object):
             return index_html_path
 
         # Generate HTML report
-        index_html_path = create_index_html(objs, stats)
+        index_html_path = create_index_html(objs, stats, columns)
         return index_html_path
 
 
