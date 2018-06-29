@@ -61,7 +61,7 @@ for (i in required_libraries) {
         },
         error=function(e) {
             message("Error: Install the \"", i,
-                    "\" library before proceeding.")
+                    "\" R library before proceeding.")
             return(NULL)
         },
         warning=function(e) {
@@ -194,16 +194,44 @@ dedupSequential = function(dupDF) {
 # Produce a runtime plot for a sample
 getRuntime = function(timeFile, sampleName) {
     # Get just the first line to get pipeline start time
-    startTime  <- readLines(timeFile, n=1)
+    if (length(timeFile) == 0 || !file.exists(timeFile)) {
+        fileMissing <<- TRUE
+        return(data.frame(cmd=as.character(),
+                          time=as.numeric(),
+                          order=as.numeric()))
+    } else {
+        fileMissing <<- FALSE
+        startTime  <- readLines(timeFile, n=1)
+    }    
 
     # Extract just the starting time timestamp
     startTime  <- word(startTime, -1, sep=" ")
 
     # Get the run times for each pipeline command
     # Ignore any lines containing '#'
-    timeStamps <- read.delim2(timeFile, skip=2, header = FALSE,
-                              as.is=TRUE, comment.char = '#')
-
+    # TODO: Handle an empty file for a still running or failed sample
+    timeStamps <- tryCatch(
+        {
+            read.delim2(timeFile, skip=2, header = FALSE,
+                        as.is=TRUE, comment.char = '#')
+        },
+        error=function(e) {
+            message("The profile.tsv file for ", sampleName, " contains no ",
+                    "commands.  Check if ", sampleName, " has yet to be run.")
+            timeStamps <- data.frame(cmd=as.character(),
+                                     time=as.numeric(),
+                                     order=as.numeric())
+            return(timeStamps)
+        },
+        warning=function(e) {
+            message("The profile.tsv file for ", sampleName, " is incomplete.")
+            message("WARNING: ", e)
+        }
+    )
+    if (nrow(timeStamps) == 0 ) {
+        # The profile.tsv contains no commands
+        return(timeStamps)
+    }
     # Remove leading directory structure
     for (i in 1:nrow(timeStamps)) {
         timeStamps[i,1]  <- sub('.*\\/', '', timeStamps[i,1])   
@@ -276,30 +304,48 @@ if (!is.null(config(prj)$name)) {
     accumName <- file.path(config(prj)$metadata$output_dir,
                            "average_runtime.csv")
 }
-invisible(capture.output(outputDir <- config(prj)$metadata$output_dir))
+invisible(capture.output(outputDir  <- config(prj)$metadata$output_dir))
 invisible(capture.output(numSamples <- length(samples(prj)$sample_name)))
-accumulated <- data.frame(cmd=as.character(), time=as.numeric(), order=as.numeric())
+accumulated <- data.frame(cmd=as.character(), time=as.numeric(),
+                          order=as.numeric())
 for (i in 1:numSamples) {
     invisible(capture.output(sampleName <- samples(prj)$sample_name[i]))
-    timeFile <- Sys.glob(file.path(outputDir, "results_pipeline",
-                                   sampleName, "*_profile.tsv"))
-    combinedTime <- getRuntime(timeFile, sampleName)
+    timeFile        <- Sys.glob(file.path(outputDir, "results_pipeline",
+                                          sampleName, "*_profile.tsv"))
+    combinedTime    <- getRuntime(timeFile, sampleName)
     if (i == 1) {
         accumulated <- combinedTime
     } else {
-        accumulated <- full_join(accumulated, combinedTime, by=c("cmd","order"))
+        accumulated <- full_join(subset(accumulated, select=-c(order)),
+                                 subset(combinedTime, select=-c(order)),
+                                 by=c("cmd"))
     }
 }
-accumulated <- subset(accumulated, select=-c(order))
-final <- data.frame(cmd=as.character(), average_time=as.numeric())
-for (i in 1:nrow(accumulated)) {
-    cmd <- accumulated$cmd[i]
-    tmp <- subset(accumulated, select=-c(cmd))
-    average_time <- as.numeric(sum(tmp[i,], na.rm=TRUE))/numSamples
-    average = data.frame(cbind(cmd, average_time))
-    final <- rbind(final, average)
+#accumulated <- subset(accumulated, select=-c(order))
+final       <- data.frame(cmd=as.character(), average_time=as.numeric())
+if (nrow(accumulated) == 0) {
+    # Do nothing
+    final <- NULL
+} else {
+    for (i in 1:nrow(accumulated)) {
+        cmd          <- accumulated$cmd[i]
+        tmp          <- subset(accumulated, select=-c(cmd))
+        average_time <- as.numeric(sum(tmp[i,], na.rm=TRUE))/numSamples
+        average      <- data.frame(cbind(cmd, average_time))
+        final        <- rbind(final, average)
+    }
 }
 
-write.csv(final, accumName, row.names=FALSE)
-
-write("Completed!\n", stdout())
+if (is.null(final)) {
+    if (fileMissing) {
+        write("WARNING: Profile.tsv file(s) was/were missing.",
+              stdout())
+    } else {
+        write("WARNING: Profile.tsv file(s) contained no commands.",
+              stdout())
+    }
+} else {
+    write.csv(final, accumName, row.names=FALSE)
+    write(paste("Average command runtime (n=", numSamples, "): ",
+                accumName, sep=""), stdout())
+}
