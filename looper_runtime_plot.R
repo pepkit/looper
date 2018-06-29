@@ -290,15 +290,17 @@ for (i in 1:numSamples) {
         accumulated <- full_join(accumulated, combinedTime, by=c("cmd","order"))
     }
 }
-accumulated <- accumulated[,-c(2,3)]
+accumulated <- subset(accumulated, select=-c(order))
 final <- data.frame(cmd=as.character(), average_time=as.numeric())
 for (i in 1:nrow(accumulated)) {
     cmd <- accumulated$cmd[i]
     tmp <- accumulated[,-1]
-    average_time <- as.numeric(sum(tmp[i,], na.rm=TRUE))/(ncol(tmp)-1)
+    tmp <- subset(accumulated, select=-c(cmd))
+    average_time <- as.numeric(sum(tmp[i,], na.rm=TRUE))/numSamples
     average = data.frame(cbind(cmd, average_time))
     final <- rbind(final, average)
 }
+
 write.csv(final, accumName, row.names=FALSE)
 
 write("Completed!\n", stdout())
