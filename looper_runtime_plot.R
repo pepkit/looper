@@ -175,12 +175,13 @@ dedupSequential = function(dupDF) {
     while (counter <= nrow(dupDF)) {
         currentCmd <- dupDF[counter, 1]
         total      <- dupDF[counter, 2]
-        if (counter + 1 < nrow(dupDF)) {
+        if (counter + 1 <= nrow(dupDF)) {
             nextCmd     <- dupDF[counter + 1, 1]
             while (nextCmd == currentCmd) {
                 counter <- counter + 1
                 total   <- total + dupDF[counter, 2]
                 nextCmd <- dupDF[counter + 1, 1]
+                if (is.na(nextCmd)) {break}
             }
         }
         dedupDF[currentPos, 1] <- currentCmd
