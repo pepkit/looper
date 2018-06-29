@@ -313,16 +313,21 @@ for (i in 1:numSamples) {
     invisible(capture.output(sampleName <- samples(prj)$sample_name[i]))
     timeFile        <- Sys.glob(file.path(outputDir, "results_pipeline",
                                           sampleName, "*_profile.tsv"))
+    write(paste("Plotting runtime: ", sampleName, sep=""), stdout())
     combinedTime    <- getRuntime(timeFile, sampleName)
     if (i == 1) {
         accumulated <- combinedTime
     } else {
-        accumulated <- full_join(subset(accumulated, select=-c(order)),
-                                 subset(combinedTime, select=-c(order)),
-                                 by=c("cmd"))
+        # accumulated <- full_join(subset(accumulated, select=-c(order)),
+                                 # subset(combinedTime, select=-c(order)),
+                                 # by=c("cmd"))
+        #accumulated <- full_join(accumulated, combinedTime, by=c("cmd"))
+        accumulated <- suppressWarnings(merge(accumulated, combinedTime, by=c("cmd", "order"), all=TRUE))
     }
 }
-#accumulated <- subset(accumulated, select=-c(order))
+
+accumulated <- accumulated[order(accumulated$order), ]
+accumulated <- subset(accumulated, select=-c(order))
 final       <- data.frame(cmd=as.character(), average_time=as.numeric())
 if (nrow(accumulated) == 0) {
     # Do nothing
