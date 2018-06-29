@@ -1,5 +1,12 @@
 Changelog
 ******************************
+- **v0.9.1** (*2018-06-30*):
+
+  - Fixed
+
+    - Fixed several bugs with ``looper summarize`` that caused failure on edge cases.
+
+
 - **v0.9.0** (*2018-06-25*):
 
   - New
