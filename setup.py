@@ -83,7 +83,6 @@ setup(
             'looper = looper.looper:main'
         ],
     },
-    dependency_links=["git+git://github.com/vreuter/pep.git@support-looper#egg=pep"],
     scripts=scripts,
     package_data={'looper': ['submit_templates/*']},
     include_package_data=True,
