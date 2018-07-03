@@ -298,8 +298,8 @@ joinTimes = function (new, preexist) {
         return (preexist)
     } else if (length(new$cmd) < length(preexist$cmd)) {
         #message("B")
-        # The to-be-added data.frame contains less total commands, but they
-        # are all present in the pre-existing data.frame
+        # The to-be-added data.frame contains less commands than the
+        # pre-existing data.frame
         rebuiltNew  <- data.frame(cmd=preexist$cmd,
                                   time=rep(0, nrow(preexist)),
                                   order=rep(1:nrow(preexist)),
@@ -327,8 +327,8 @@ joinTimes = function (new, preexist) {
         return(joinedTimes)
     } else if (length(new$cmd) > length(preexist$cmd)) {
         #message("C")
-        # The to-be-added data.frame contains more total commands but they
-        # include all the pre-existing commands
+        # The to-be-added data.frame contains more commands than are present
+        # in the pre-existing data.frame
         rebuiltPre  <- data.frame(cmd=new$cmd,
                                   time=rep(0, nrow(new)),
                                   order=rep(1:nrow(new)),
