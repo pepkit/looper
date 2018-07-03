@@ -193,7 +193,7 @@ dedupSequential = function(dupDF) {
 }
 
 # Produce a runtime plot for a sample
-getRuntime = function(timeFile, sampleName) {
+getRuntime = function(timeFile, sampleName, createPlot=TRUE) {
     # Get just the first line to get pipeline start time
     if (length(timeFile) == 0 || !file.exists(timeFile)) {
         fileMissing <<- TRUE
@@ -260,30 +260,133 @@ getRuntime = function(timeFile, sampleName) {
     combinedTime$order <- as.factor(as.numeric(row.names(combinedTime)))
     
     # Create plot
-    p <- ggplot(data=combinedTime, aes(x=order, y=time)) +
-                geom_bar(stat="identity", position=position_dodge())+
-                scale_fill_brewer(palette="Paired")+
-                theme_minimal() +
-                coord_flip() +
-                labs(y = paste("Time (s)\n", "[Start: ", startTime, " | ", 
-                               "End: ", finishTime, "]", sep=""),
-                     x = "PEPATAC Command") +
-                scale_x_discrete(labels=combinedTime$cmd) +
-                theme(plot.title = element_text(hjust = 0.5))
-    
-    # Produce both PDF and PNG
-    set_panel_size(
-        p, 
-        file=buildFilePath(sampleName, "_Runtime.pdf", prj), 
-        width=unit(8,"inches"), 
-        height=unit(5.5,"inches"))
-    set_panel_size(
-        p, 
-        file=buildFilePath(sampleName, "_Runtime.png", prj), 
-        width=unit(8,"inches"), 
-        height=unit(5.5,"inches"))
+    if (createPlot) {
+        p <- ggplot(data=combinedTime, aes(x=order, y=time)) +
+                    geom_bar(stat="identity", position=position_dodge())+
+                    scale_fill_brewer(palette="Paired")+
+                    theme_minimal() +
+                    coord_flip() +
+                    labs(y = paste("Time (s)\n", "[Start: ", startTime, " | ", 
+                                   "End: ", finishTime, "]", sep=""),
+                         x = "PEPATAC Command") +
+                    scale_x_discrete(labels=combinedTime$cmd) +
+                    theme(plot.title = element_text(hjust = 0.5))
+        
+        # Produce both PDF and PNG
+        set_panel_size(
+            p, 
+            file=buildFilePath(sampleName, "_Runtime.pdf", prj), 
+            width=unit(8,"inches"), 
+            height=unit(5.5,"inches"))
+        set_panel_size(
+            p, 
+            file=buildFilePath(sampleName, "_Runtime.png", prj), 
+            width=unit(8,"inches"), 
+            height=unit(5.5,"inches"))
+    }
     
     return(combinedTime)
+}
+
+joinTimes = function (new, preexist) {
+    combined <- sort(union(levels(preexist$order), levels(new$order)))
+    if (length(new$cmd) == length(preexist$cmd) &&
+        all(is.element(new$cmd, preexist$cmd))) {
+        #message("A")
+        # Both data.frames have the same commands in number and value
+        preexist <- full_join(preexist, new, by=c("cmd", "order"))
+        return (preexist)
+    } else if (length(new$cmd) < length(preexist$cmd)) {
+        #message("B")
+        # The to-be-added data.frame contains less total commands, but they
+        # are all present in the pre-existing data.frame
+        rebuiltNew  <- data.frame(cmd=preexist$cmd,
+                                  time=rep(0, nrow(preexist)),
+                                  order=rep(1:nrow(preexist)),
+                                  stringsAsFactors=FALSE)
+        uniqueCmds  <- data.frame(cmd=as.character(), time=as.numeric(),
+                                  order=as.numeric(), stringsAsFactors=FALSE)
+        for (i in 1:nrow(new)) {
+             if (new$cmd[i] %in% preexist$cmd) {
+                rowPos <- grep(new$cmd[i], preexist$cmd)
+                rebuiltNew[rowPos, ] <- data.frame(cmd=new$cmd[i],
+                                                   time=new$time[i],
+                                                   order=rowPos,
+                                                   stringsAsFactors=FALSE)
+             } else {
+                uniqueCmds <- rbind(uniqueCmds, new[i, ])
+             }
+        }
+        uniqueCmds$order <- as.factor(uniqueCmds$order)
+        joinedTimes <- left_join(
+                        mutate(preexist, order=factor(order, levels=combined)),
+                        mutate(rebuiltNew,
+                               order=factor(order, levels=combined)),
+                        by=c("cmd","order"))
+        joinedTimes$order <- as.factor(rep(1:nrow(joinedTimes)))
+        return(joinedTimes)
+    } else if (length(new$cmd) > length(preexist$cmd)) {
+        #message("C")
+        # The to-be-added data.frame contains more total commands but they
+        # include all the pre-existing commands
+        rebuiltPre  <- data.frame(cmd=new$cmd,
+                                  time=rep(0, nrow(new)),
+                                  order=rep(1:nrow(new)),
+                                  stringsAsFactors=FALSE)
+        uniqueCmds  <- data.frame(cmd=as.character(), time=as.numeric(),
+                                  order=as.numeric(), stringsAsFactors=FALSE)
+        for (i in 1:nrow(preexist)) {
+             if (preexist$cmd[i] %in% new$cmd) {
+                rowPos <- grep(preexist$cmd[i], new$cmd)
+                rebuiltPre[rowPos, ] <- data.frame(cmd=preexist$cmd[i],
+                                                   time=preexist$time[i],
+                                                   order=rowPos,
+                                                   stringsAsFactors=FALSE)
+             } else {
+                uniqueCmds <- rbind(uniqueCmds, preexist[i, ])
+             }
+        }
+        uniqueCmds$order <- as.factor(uniqueCmds$order)
+        joinedTimes <- left_join(
+                        mutate(new, order=factor(order, levels=combined)),
+                        mutate(rebuiltPre,
+                               order=factor(order, levels=combined)),
+                        by=c("cmd","order"))
+        joinedTimes <- suppressWarnings(full_join(
+                        joinedTimes, uniqueCmds,by=c("cmd","order")))
+        joinedTimes$order <- as.factor(rep(1:nrow(joinedTimes)))
+        return(joinedTimes)
+    } else {
+        #message("D")
+        # Both data.frames are the same length but contain different cmds
+        rebuiltNew  <- data.frame(cmd=preexist$cmd,
+                                  time=rep(0, nrow(preexist)),
+                                  order=rep(1:nrow(preexist)),
+                                  stringsAsFactors=FALSE)
+        uniqueCmds  <- data.frame(cmd=as.character(), time=as.numeric(),
+                                  order=as.numeric(), stringsAsFactors=FALSE)
+        for (i in 1:nrow(new)) {
+             if (new$cmd[i] %in% preexist$cmd) {
+                rowPos <- grep(new$cmd[i], preexist$cmd)
+                rebuiltNew[rowPos, ] <- data.frame(cmd=new$cmd[i],
+                                                   time=new$time[i],
+                                                   order=rowPos,
+                                                   stringsAsFactors=FALSE)
+             } else {
+                uniqueCmds <- rbind(uniqueCmds, new[i, ])
+             }
+        }
+        uniqueCmds$order <- as.factor(uniqueCmds$order)
+        joinedTimes <- left_join(
+                        mutate(preexist, order=factor(order, levels=combined)),
+                        mutate(rebuiltNew,
+                               order=factor(order, levels=combined)),
+                        by=c("cmd","order"))
+        joinedTimes <- suppressWarnings(full_join(
+                        joinedTimes, uniqueCmds,by=c("cmd","order")))
+        joinedTimes$order <- as.factor(rep(1:nrow(joinedTimes)))
+        return(joinedTimes)
+    }  
 }
 
 ###############################################################################
@@ -313,20 +416,22 @@ for (i in 1:numSamples) {
     invisible(capture.output(sampleName <- samples(prj)$sample_name[i]))
     timeFile        <- Sys.glob(file.path(outputDir, "results_pipeline",
                                           sampleName, "*_profile.tsv"))
-    write(paste("Plotting runtime: ", sampleName, sep=""), stdout())
-    combinedTime    <- getRuntime(timeFile, sampleName)
-    if (i == 1) {
-        accumulated <- combinedTime
+    if (length(timeFile) != 0) {
+        write(paste("Plotting runtime: ", sampleName, sep=""), stdout())
+        combinedTime    <- getRuntime(timeFile, sampleName)
+        if (nrow(accumulated) == 0) {
+            accumulated <- combinedTime
+        } else {
+            accumulated <- joinTimes(combinedTime, accumulated)
+        }
     } else {
-        # accumulated <- full_join(subset(accumulated, select=-c(order)),
-                                 # subset(combinedTime, select=-c(order)),
-                                 # by=c("cmd"))
-        #accumulated <- full_join(accumulated, combinedTime, by=c("cmd"))
-        accumulated <- suppressWarnings(merge(accumulated, combinedTime, by=c("cmd", "order"), all=TRUE))
+        write(paste("Could not find the profile.tsv file for \'", sampleName,
+                    "\' at location:", file.path(outputDir, "results_pipeline",
+                                               sampleName), sep=""), stdout())
     }
 }
 
-accumulated <- accumulated[order(accumulated$order), ]
+accumulated <- accumulated[order(as.numeric(row.names(accumulated))), ]
 accumulated <- subset(accumulated, select=-c(order))
 final       <- data.frame(cmd=as.character(), average_time=as.numeric())
 if (nrow(accumulated) == 0) {
