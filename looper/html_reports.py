@@ -1175,7 +1175,7 @@ class HTMLReportBuilder(object):
                                     obj_figs.append(HTML_FIGURE.format(
                                         path=file_relpath,
                                         image=img_relpath,
-                                        label=caption))
+                                        label='{}: Click to see full-size figure'.format(caption)))
                                     num_figures += 1
                                 # Close the previous row and start a new one
                                 else:
@@ -1185,12 +1185,11 @@ class HTMLReportBuilder(object):
                                     obj_figs.append(HTML_FIGURE.format(
                                         path=file_relpath,
                                         image=img_relpath,
-                                        label=caption))
+                                        label='{}: Click to see full-size figure'.format(caption)))
                             # No thumbnail exists, add as a link in a list
                             else:
                                 obj_links.append(OBJECTS_LINK.format(
-                                                    path=file_relpath,
-                                                    label=caption))
+                                    path=file_relpath, label='{}: Click to see full-size figure'.format(caption)))
                         else:
                             warnings.append(caption)
 
