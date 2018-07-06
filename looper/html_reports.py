@@ -36,7 +36,7 @@ HTML_HEAD_OPEN = \
          * Copyright 2011-2018 Twitter, Inc.
          * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)
          -->
-        <link rel="stylesheet" href="https://bootswatch.com/4/flatly/bootstrap.min.css">
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootswatch/4.1.1/flatly/bootstrap.min.css">
 """
 HTML_TITLE = \
 """\
