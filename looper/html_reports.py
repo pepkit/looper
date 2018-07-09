@@ -481,6 +481,7 @@ STATUS_TABLE_HEAD = \
                 <th>Status</th>
                 <th>Log file</th>
                 <th>Runtime</th>
+                <th>Peak memory use</th>
               </thead>
               <tbody>
 """
@@ -916,7 +917,7 @@ class HTMLReportBuilder(object):
                 html_file.write(STATUS_TABLE_HEAD)
                 # Alert user if the stats_summary.tsv is incomplete
                 # Likely indicates pipeline is still running
-                stats_warning = False
+                status_warning = False
                 # Alert user to samples that are included in the project
                 # but have not been run
                 sample_warning = []
@@ -999,26 +1000,54 @@ class HTMLReportBuilder(object):
                                                 file_link="",
                                                 link_name=""))
                         # Fourth Col: Sample runtime (if completed)
-                        # If Completed, use stats.tsv
-                        stats_file = os.path.join(
-                                        self.prj.metadata.results_subdir,
-                                        sample_name, "stats.tsv")
-                        if os.path.isfile(stats_file):
-                            t = _pd.read_table(stats_file, header=None,
-                                               names=['key', 'value', 'pl'])
-                            t.drop_duplicates(subset=['key', 'pl'],
-                                              keep='last', inplace=True)
+                        # Use stats.tsv <deprecated>
+                        # * Use log_file instead
+                        # stats_file = os.path.join(
+                                        # self.prj.metadata.results_subdir,
+                                        # sample_name, "stats.tsv")
+                        if os.path.isfile(log_file):
+                            # t = _pd.read_table(stats_file, header=None,
+                                               # names=['key', 'value', 'pl'])
+                            # t.drop_duplicates(subset=['key', 'pl'],
+                                              # keep='last', inplace=True)
+                            # alternate method: better to use log_file?
+                            t = _pd.read_table(log_file, header=None,
+                                                  names=['key', 'value'])
+                            t.drop_duplicates(subset=['value'], keep='last',
+                                                 inplace=True)
+                            t['key'] = t['key'].str.replace('> `', '')
+                            t['key'] = t['key'].str.replace('`', '')
                             try:
                                 time = str(t[t['key'] == 'Time'].iloc[0]['value'])
                                 html_file.write(STATUS_ROW_VALUE.format(
                                                 row_class="",
                                                 value=str(time)))
                             except IndexError:
-                                stats_warning = True                       
+                                status_warning = True                       
                         else:
                             html_file.write(STATUS_ROW_VALUE.format(
                                                 row_class=button_class,
                                                 value="Unknown"))
+                        # Fifth Col: Sample peak memory use (if completed)
+                        # Use *_log.md file
+                        if os.path.isfile(log_file):
+                            m = _pd.read_table(log_file, header=None, sep=':',
+                                               names=['key', 'value'])
+                            m.drop_duplicates(subset=['value'], keep='last',
+                                              inplace=True)
+                            m['key'] = m['key'].str.replace('*', '')
+                            m['key'] = m['key'].str.replace('^\s+', '')
+                            try:
+                                mem = str(m[m['key'] == 'Peak memory used'].iloc[0]['value'])
+                                html_file.write(STATUS_ROW_VALUE.format(
+                                                row_class="",
+                                                value=mem.replace(' ', '')))
+                            except IndexError:
+                                status_warning = True                       
+                        else:
+                            html_file.write(STATUS_ROW_VALUE.format(
+                                                row_class=button_class,
+                                                value="NA"))
                         html_file.write(STATUS_ROW_FOOTER)
                     else:
                         # Sample was not run through the pipeline
@@ -1030,8 +1059,9 @@ class HTMLReportBuilder(object):
                 html_file.close()
                 
                 # Alert the user to any warnings generated
-                if stats_warning:
-                    _LOGGER.warn("The stats_summary.tsv file is incomplete")
+                if status_warning:
+                    _LOGGER.warn("The pipeline is still running..." +
+                                 "Unable to complete Status.html")
                 if sample_warning:
                     if len(sample_warning)==1:
                         _LOGGER.warn("{} is not present in {}".format(
