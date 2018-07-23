@@ -58,7 +58,7 @@ def setup_looper_logger(level, additional_locations=None, devmode=False):
     fmt = DEV_LOGGING_FMT if devmode else DEFAULT_LOGGING_FMT
 
     # Establish the logger.
-    LOOPER_LOGGER = logging.getLogger("looper")
+    LOOPER_LOGGER = logging.getLogger()
     # First remove any previously-added handlers
     LOOPER_LOGGER.handlers = []
     LOOPER_LOGGER.propagate = False
@@ -94,7 +94,10 @@ def setup_looper_logger(level, additional_locations=None, devmode=False):
 
     # Add the handlers.
     formatter = logging.Formatter(fmt=(fmt or DEFAULT_LOGGING_FMT))
+
     for loc in where:
+        if not loc:
+            continue
         if isinstance(loc, str):
             # File destination
             dirpath = os.path.abspath(os.path.dirname(loc))

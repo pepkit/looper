@@ -1,5 +1,12 @@
 Changelog
 ******************************
+- **v0.9.1** (*2018-06-30*):
+
+  - Fixed
+
+    - Fixed several bugs with ``looper summarize`` that caused failure on edge cases.
+
+
 - **v0.9.0** (*2018-06-25*):
 
   - New
@@ -8,7 +15,7 @@ Changelog
 
     - Add ``allow-duplicate-names`` command-line options
 
-    - Allow any variables in environment config files or other ``compute`` sections to be used in submission templates
+    - Allow any variables in environment config files or other ``compute`` sections to be used in submission templates. This allows looper to be used with containers.
 
     - Add nice universal project-level HTML reporting
 

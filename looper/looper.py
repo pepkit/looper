@@ -600,19 +600,17 @@ class Summarizer(Executor):
 
             t = _pd.read_table(
                 stats_file, header=None, names=['key', 'value', 'pl'])
-
             t.drop_duplicates(subset=['key', 'pl'], keep='last', inplace=True)
             # t.duplicated(subset= ['key'], keep = False)
             t.loc[:, 'plkey'] = t['pl'] + ":" + t['key']
             dupes = t.duplicated(subset=['key'], keep=False)
             t.loc[dupes, 'key'] = t.loc[dupes, 'plkey']
-
             sample_stats.update(t.set_index('key')['value'].to_dict())
             stats.append(sample_stats)
             columns.extend(t.key.tolist())
 
-        self.counter.reset() 
-        
+        self.counter.reset()
+
         # Create objects summary file
         for sample in self.prj.samples:
             # Process any reported objects
@@ -634,16 +632,12 @@ class Summarizer(Executor):
         if hasattr(self.prj, "subproject") and self.prj.subproject:
             tsv_outfile_path += '_' + self.prj.subproject
         tsv_outfile_path += '_stats_summary.tsv'
-
         tsv_outfile = open(tsv_outfile_path, 'w')
-
         tsv_writer = csv.DictWriter(tsv_outfile, fieldnames=uniqify(columns),
-                                    delimiter='\t', extrasaction='ignore')
+                                    delimiter='\t', extrasaction='ignore')     
         tsv_writer.writeheader()
-
         for row in stats:
             tsv_writer.writerow(row)
-
         tsv_outfile.close()
 
         _LOGGER.info(
@@ -660,7 +654,7 @@ class Summarizer(Executor):
                 _LOGGER.debug(iface)
                 pl = iface.fetch_pipelines(protocol)
                 summarizers = iface.get_attribute(pl, "summarizers")
-                for summarizer in summarizers:
+                for summarizer in set(summarizers):
                     summarizer_abspath = os.path.join(
                         os.path.dirname(iface.pipe_iface_file), summarizer)
                     _LOGGER.debug([summarizer_abspath, self.prj.config_file])
@@ -671,7 +665,10 @@ class Summarizer(Executor):
 
         # Produce HTML report
         report_builder = HTMLReportBuilder(self.prj)
-        report_builder(objs, stats)
+        report_path = report_builder(objs, stats, uniqify(columns))
+        _LOGGER.info(
+                "HTML Report (n=" + str(len(stats)) + "): " + report_path)
+
 
 def aggregate_exec_skip_reasons(skip_reasons_sample_pairs):
     """
