@@ -341,7 +341,7 @@ TABLE_FOOTER = \
 """
 TABLE_ROWS_LINK = \
 """\
-              <td style="cursor:pointer" onclick="location.href='{html_page}'"><a class="LN1 LN2 LN3 LN4 LN5" href="{page_name}" target="_top">{link_name}</a></td>
+              <td style="cursor:pointer" onclick="location.href='{html_page}'"><a class="LN1 LN2 LN3 LN4 LN5" href="{page_name}">{link_name}</a></td>
 """
 LINKS_STYLE_BASIC = \
 """
