@@ -46,6 +46,7 @@ HTML_HEAD_CLOSE = \
 """\
     </head>
     <body>
+      <div class="container">
 """
 HTML_BUTTON = \
 """\
@@ -73,6 +74,78 @@ HTML_FOOTER = \
         <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
         <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js" integrity="sha384-smHYKdLADwkXOn1EmN1qk/HfnUcbVRZyYmZ4qpPea6sjB/pTJ0euyQp0Mk8ck+5T" crossorigin="anonymous"></script>
+
+        <!-- D3.js -->
+        <script src="https://d3js.org/d3.v5.min.js"></script>
+        <!-- Plotly -->
+        <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+        <script type="text/javascript">
+          var table = document.getElementById("data-table");
+
+          function graphCol(colname){
+            /* Creates a graph using Plotly.js */
+            categories = getX();
+            Ydata = getY(colname);
+
+            var data = [{
+              x: categories,
+              y: Ydata,
+              type: 'bar',
+            }];
+
+            var layout = {
+              title: colname
+            };
+            chart = document.getElementById('charts');
+            Plotly.newPlot(chart, data, layout);
+          }
+          function getX(){
+            /* Get the sample names (the x values in the bar chart) */
+            var rows = [];
+            for(var i = 1, row; row = table.rows[i]; i++){
+              rows.push(row.cells[0].textContent);
+            }
+            return rows;
+          }
+          function getY(colname){
+            /* Gets the data in the specified column name (the y values in the bar chart) */
+            var data = [];
+            var colnum;
+            // find which column number is the one matching the column name
+            for(var i = 0; i < table.rows[0].cells.length; i++){
+              if(table.rows[0].cells[i].textContent == colname){
+                colnum = i;
+                break;
+              }
+            }
+            // add the data from the column to an array
+            for(var i = 1, row; row = table.rows[i]; i++){
+              data.push(row.cells[colnum].textContent);
+            }
+            return data;
+          }
+
+          function columnClicked(colname){
+            /* The function that is called when a column's header is clicked */
+            graphCol(colname);
+          }
+
+          function modifyNumericColumns(){
+            /* Changes a column's header if the data is visualizable */
+
+            var table = document.getElementById("data-table");
+            for(var i = 0; i < table.rows[1].cells.length; i++) {  
+                //iterate through first row, which will show if a column's data is numeric
+                if(!isNaN(table.rows[1].cells[i].textContent)){
+                  element = table.rows[0].cells[i]
+                  text = element.textContent;
+                  element.innerHTML = "<span class='visualize'><a href='#' title='Click to visualize this column' onclick='columnClicked(\""+text+"\");return false;'>" + text + "</a></span>";
+                }
+            }
+          }
+          modifyNumericColumns();
+          </script>
+      </div>
     </body>
 </html>
 """
@@ -226,8 +299,11 @@ TABLE_STYLE_BASIC = \
 """
 TABLE_STYLE_ROTATED_HEADER = \
 """\
-        .table-header-rotated th.row-header{
-          width: auto;
+        .container{
+          margin-top: 20px;
+        }
+        .nav-link{
+          margin: 0px 10px 0px 10px;
         }
         .table-header-rotated td{
           width: 60px;
@@ -246,7 +322,7 @@ TABLE_STYLE_ROTATED_HEADER = \
           padding: 0;
           font-size: 14px;
           line-height: 0.8;
-          border-top: none !important;
+          border-top: none;
         }
         .table-header-rotated th.rotate-45 > div{
           position: relative;
@@ -261,6 +337,21 @@ TABLE_STYLE_ROTATED_HEADER = \
           overflow: ellipsis;
           border-left: 1px solid #dddddd;
           border-right: 1px solid #dddddd;
+        }
+        .table-header-rotated th.rotate-45 span.visualize {
+          -ms-transform:      rotate(315deg);
+          -moz-transform:     rotate(315deg);
+          -webkit-transform:  rotate(315deg);
+          -o-transform:       rotate(315deg);
+          transform:          rotate(315deg);
+          /*
+          border-top: 1px solid #dddddd;
+          border-bottom: 1px solid #dddddd;
+          
+          don't know how to fix the problem with the table lines not showing up
+          */
+          position: absolute;
+          left: 10px;
         }
         .table-header-rotated th.rotate-45 span {
           -ms-transform:skew(45deg,0deg) rotate(315deg);
@@ -280,7 +371,6 @@ TABLE_STYLE_TEXT = \
 """\
         .table td.text {
             max-width: 150px;
-            <!-- top|right|bottom|left -->
             padding: 0px 2px 0px 2px;
         }
         .table td.text span {
@@ -301,13 +391,20 @@ TABLE_STYLE_TEXT = \
             padding: 0px 2px 0px 2px;
             vertical-align: middle;
         }
+        .fix-col{
+          position: absolute;
+          background: white;
+        }
 """
 TABLE_HEADER = \
 """
-      <h5>Looper stats summary</h5>
-
-      <div class="table-responsive-sm">
-        <table class="table table-sm table-hover table-header-rotated table-condensed">                           
+      <div class="row" style="margin-top: 20px; margin-bottom: 20px;">
+        <h2 class="col-10">Looper stats summary</h2>
+        <button type='button' href='{file_path}' class='btn btn-outline-primary'>{label}</button>
+      </div>
+      
+      <div class="table-responsive-sm" style="overflow-x: scroll;">
+        <table class="table table-sm table-striped table-header-rotated table-condensed" id="data-table">                           
           <thead>
             <tr class="stats-firstrow">
 """
@@ -341,41 +438,51 @@ TABLE_FOOTER = \
 """
 TABLE_ROWS_LINK = \
 """\
-              <td style="cursor:pointer" onclick="location.href='{html_page}'"><a class="LN1 LN2 LN3 LN4 LN5" href="{page_name}" target="_top">{link_name}</a></td>
+              <td style="cursor:pointer" onclick="location.href='{html_page}'" class="fix-col"><a class="LN1 LN2 LN3 LN4 LN5" href="{page_name}" target="_top">{link_name}</a></td>
 """
 LINKS_STYLE_BASIC = \
 """
-a.LN1 {
-  font-style:normal;
-  font-weight:bold;
-  font-size:1.0em;
-}
+      a.LN1 {
+        font-style:normal;
+        font-weight:bold;
+        font-size:1.0em;
+      }
 
-a.LN2:link {
-  color:#A4DCF5;
-  text-decoration:none;
-}
+      a.LN2:link {
+        color:#A4DCF5;
+        text-decoration:none;
+      }
 
-a.LN3:visited {
-  color:#A4DCF5;
-  text-decoration:none;
-}
+      a.LN3:visited {
+        color:#A4DCF5;
+        text-decoration:none;
+      }
 
-a.LN4:hover {
-  color:#A4DCF5;
-  text-decoration:none;
-}
+      a.LN4:hover {
+        color:#A4DCF5;
+        text-decoration:none;
+      }
 
-a.LN5:active {
-  color:#A4DCF5;
-  text-decoration:none;
-}
+      a.LN5:active {
+        color:#A4DCF5;
+        text-decoration:none;
+      }
+"""
+TABLE_VISUALIZATION = \
+"""
+      <div>
+        <div id="charts">
+          
+        </div>
+        <h4 align="center">Click on a table header to visualize that column!</h4>
+      </div>
 """
 TABLE_VARS = ["TABLE_STYLE_BASIC", "TABLE_HEADER", "TABLE_COLS",
               "TABLE_COLS_FOOTER", "TABLE_ROW_HEADER", "TABLE_ROWS",
               "TABLE_ROW_FOOTER", "TABLE_FOOTER",
               "TABLE_ROWS_LINK", "LINKS_STYLE_BASIC",
-              "TABLE_STYLE_ROTATED_HEADER", "TABLE_STYLE_TEXT"]
+              "TABLE_STYLE_ROTATED_HEADER", "TABLE_STYLE_TEXT",
+              "TABLE_VISUALIZATION"]
 
 # Sample-page-related
 SAMPLE_HEADER = \
@@ -828,6 +935,7 @@ class HTMLReportBuilder(object):
                                 row_val=str(value)))
 
                     html_file.write(TABLE_FOOTER)
+                    html_file.write(TABLE_VISUALIZATION)
                     html_file.write("\t  <hr>\n")
                     # Add all the objects for the current sample
                     html_file.write("\t\t<div class='container-fluid'>\n")
@@ -1276,13 +1384,11 @@ class HTMLReportBuilder(object):
             tsv_outfile_path += '_stats_summary.tsv'
             stats_relpath = os.path.relpath(tsv_outfile_path,
                                             self.prj.metadata.output_dir)
-            index_html_file.write(HTML_BUTTON.format(
-                file_path=stats_relpath, label="Stats Summary File"))
 
             # Add stats summary table to index page and produce individual
             # sample pages
             if os.path.isfile(tsv_outfile_path):
-                index_html_file.write(TABLE_HEADER)
+                index_html_file.write(TABLE_HEADER.format(file_path=stats_relpath, label="Stats Summary File"))
                 # Produce table columns
                 for key in col_names:
                     index_html_file.write(TABLE_COLS.format(col_val=str(key)))
