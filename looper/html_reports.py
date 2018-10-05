@@ -139,7 +139,7 @@ HTML_FOOTER = \
                 if(!isNaN(table.rows[1].cells[i].textContent)){
                   element = table.rows[0].cells[i]
                   text = element.textContent;
-                  element.innerHTML = "<span class='visualize'><a href='#' title='Click to visualize this column' onclick='columnClicked(\""+text+"\");return false;'>" + text + "</a></span>";
+                  element.innerHTML = "<span class='visualize'><a href='#' title='Click to visualize this column' onclick='columnClicked(\\""+text+"\\");return false;'>" + text + "</a></span>";
                 }
             }
           }
@@ -936,6 +936,7 @@ class HTMLReportBuilder(object):
 
                     html_file.write(TABLE_FOOTER)
                     html_file.write(TABLE_VISUALIZATION)
+                    print('table_visualization should have showed up')
                     html_file.write("\t  <hr>\n")
                     # Add all the objects for the current sample
                     html_file.write("\t\t<div class='container-fluid'>\n")
