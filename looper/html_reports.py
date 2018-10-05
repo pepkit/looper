@@ -935,8 +935,6 @@ class HTMLReportBuilder(object):
                                 row_val=str(value)))
 
                     html_file.write(TABLE_FOOTER)
-                    html_file.write(TABLE_VISUALIZATION)
-                    print('table_visualization should have showed up')
                     html_file.write("\t  <hr>\n")
                     # Add all the objects for the current sample
                     html_file.write("\t\t<div class='container-fluid'>\n")
@@ -1433,6 +1431,7 @@ class HTMLReportBuilder(object):
                     index_html_file.write(TABLE_ROW_FOOTER)
                     sample_pos += 1
                 index_html_file.write(TABLE_FOOTER)
+                index_html_file.write(TABLE_VISUALIZATION)
             else:
                 _LOGGER.warn("No stats file '%s'", stats_file)
 
