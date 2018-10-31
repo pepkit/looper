@@ -562,6 +562,7 @@ __all__ = HTML_VARS + NAVBAR_VARS + GENERIC_VARS + \
 class HTMLReportBuilder(object):
     """ Generate HTML summary report for project/samples """
 
+
     def __init__(self, prj):
         """
         The Project defines the instance.
@@ -571,62 +572,78 @@ class HTMLReportBuilder(object):
         super(HTMLReportBuilder, self).__init__()
         self.prj = prj
 
+
     def __call__(self, objs, stats, columns):
         """ Do the work of the subcommand/program. """
 
-        def create_object_parent_html(all_objects):
+
+        def create_object_parent_html(objs, stats):
             """
             Generates a page listing all the project objects with links
             to individual object pages
             
-            :param panda.DataFrame all_objects: project level dataframe 
-                containing any reported objects for all samples
+            :param panda.DataFrame objs: project level dataframe containing
+                any reported objects for all samples
+            :param list stats: a summary file of pipeline statistics for each
+                analyzed sample
             """
 
             reports_dir = os.path.join(self.prj.metadata.output_dir,
                                        "reports")
             object_parent_path = os.path.join(reports_dir, "objects.html")
+
             if not os.path.exists(os.path.dirname(object_parent_path)):
                 os.makedirs(os.path.dirname(object_parent_path))
+
             with open(object_parent_path, 'w') as html_file:
                 html_file.write(HTML_HEAD_OPEN)
-                html_file.write(create_navbar(all_objects, reports_dir))
+                html_file.write(create_navbar(objs, stats, reports_dir))
                 html_file.write(HTML_HEAD_CLOSE)
                 html_file.write(GENERIC_HEADER.format(header="Objects"))
                 html_file.write(GENERIC_LIST_HEADER)
-                for key in all_objects['key'].drop_duplicates().sort_values():
-                    page_name = key + ".html"
-                    page_path = os.path.join(reports_dir, page_name.replace(' ', '_').lower())
-                    page_relpath = os.path.relpath(page_path, reports_dir)
-                    html_file.write(GENERIC_LIST_ENTRY.format(
-                                    page=page_relpath, label=key))
+
+                if not objs.empty:
+                    for key in objs['key'].drop_duplicates().sort_values():
+                        page_name = key + ".html"
+                        page_path = os.path.join(reports_dir, page_name.replace(' ', '_').lower())
+                        page_relpath = os.path.relpath(page_path, reports_dir)
+                        html_file.write(GENERIC_LIST_ENTRY.format(
+                                        page=page_relpath, label=key))
+
                 html_file.write(HTML_FOOTER)
                 html_file.close()
 
-        def create_sample_parent_html(all_samples):
+
+        def create_sample_parent_html(objs, stats):
             """
             Generates a page listing all the project samples with links
             to individual sample pages
-            
-            :param panda.DataFrame all_samples: project level dataframe 
-                containing any reported objects for all samples 
+
+            :param panda.DataFrame objs: project level dataframe containing
+                any reported objects for all samples
+            :param list stats: a summary file of pipeline statistics for each
+                analyzed sample
             """
 
             reports_dir = os.path.join(self.prj.metadata.output_dir,
                                        "reports")
             sample_parent_path = os.path.join(reports_dir, "samples.html")
+
             if not os.path.exists(os.path.dirname(sample_parent_path)):
                 os.makedirs(os.path.dirname(sample_parent_path))
+
             with open(sample_parent_path, 'w') as html_file:
                 html_file.write(HTML_HEAD_OPEN)
-                html_file.write(create_navbar(all_samples, reports_dir))
+                html_file.write(create_navbar(objs, stats, reports_dir))
                 html_file.write(HTML_HEAD_CLOSE)
                 html_file.write(GENERIC_HEADER.format(header="Samples"))
                 html_file.write(GENERIC_LIST_HEADER)
+
                 for sample in self.prj.samples:
                     sample_name = str(sample.sample_name)
                     sample_dir = os.path.join(
                             self.prj.metadata.results_subdir, sample_name)
+
                     # Confirm sample directory exists, then build page
                     if os.path.exists(sample_dir):   
                         page_name = sample_name + ".html"
@@ -634,10 +651,12 @@ class HTMLReportBuilder(object):
                         page_relpath = os.path.relpath(page_path, reports_dir)
                         html_file.write(GENERIC_LIST_ENTRY.format(
                                         page=page_relpath, label=sample_name))
+
                 html_file.write(HTML_FOOTER)
                 html_file.close()
 
-        def create_object_html(single_object, all_objects):
+
+        def create_object_html(single_object, all_objects, stats):
             """
             Generates a page for an individual object type with all of its
             plots from each sample
@@ -646,22 +665,26 @@ class HTMLReportBuilder(object):
                 information for an individual object type for all samples
             :param panda.DataFrame all_objects: project level dataframe 
                 containing any reported objects for all samples
+            :param list stats: a summary file of pipeline statistics for each
+                analyzed sample
             """
 
             reports_dir = os.path.join(self.prj.metadata.output_dir, "reports")
+
             # Generate object filename
             for key in single_object['key'].drop_duplicates().sort_values():
                 type = str(key)
                 filename = str(key) + ".html"
             object_path = os.path.join(
                             reports_dir, filename.replace(' ', '_').lower())
+
             if not os.path.exists(os.path.dirname(object_path)):
                 os.makedirs(os.path.dirname(object_path))
+
             with open(object_path, 'w') as html_file:
                 html_file.write(HTML_HEAD_OPEN)
-                html_file.write(create_navbar(all_objects, reports_dir))
+                html_file.write(create_navbar(all_objects, stats, reports_dir))
                 html_file.write(HTML_HEAD_CLOSE)
-                
                 html_file.write("\t\t<h4>{} objects</h4>\n".format(str(type)))
                 links = []
                 figures = []
@@ -715,13 +738,16 @@ class HTMLReportBuilder(object):
                               " nonexistent files: " +
                               ','.join(str(file) for file in warnings))
 
-        def create_sample_html(all_samples, sample_name, sample_stats):
+
+        def create_sample_html(objs, stats, sample_name, sample_stats):
             """
             Produce an HTML page containing all of a sample's objects
             and the sample summary statistics
-            
-            :param panda.DataFrame all_samples: project level dataframe 
-                containing any reported objects for all samples
+
+            :param panda.DataFrame objs: project level dataframe containing
+                any reported objects for all samples
+            :param list stats: a summary file of pipeline statistics for each
+                analyzed sample
             :param str sample_name: the name of the current sample
             :param list stats: pipeline run statistics for the current sample
             """
@@ -732,19 +758,25 @@ class HTMLReportBuilder(object):
                 reports_dir, html_filename.replace(' ', '_').lower())
             sample_page_relpath = os.path.relpath(
                 html_page, self.prj.metadata.output_dir)
-            single_sample = all_samples[all_samples['sample_name'] == sample_name]
+
+            single_sample = _pd.DataFrame()
+            if not objs.empty:
+                single_sample = objs[objs['sample_name'] == sample_name]
+
             if not os.path.exists(os.path.dirname(html_page)):
                 os.makedirs(os.path.dirname(html_page))
+
             with open(html_page, 'w') as html_file:
                 html_file.write(HTML_HEAD_OPEN)
                 html_file.write("\t\t<style>\n")
                 html_file.write(SAMPLE_TABLE_STYLE)
                 html_file.write("\t\t</style>\n")
-                html_file.write(create_navbar(all_samples, reports_dir))
+                html_file.write(create_navbar(objs, stats, reports_dir))
                 html_file.write(HTML_HEAD_CLOSE)
                 html_file.write("\t\t<h4>{}</h4>\n".format(str(sample_name)))
                 sample_dir = os.path.join(
                         self.prj.metadata.results_subdir, sample_name)
+
                 # Confirm sample directory exists, then build page
                 if os.path.exists(sample_dir):                    
                     if single_sample.empty:
@@ -835,41 +867,42 @@ class HTMLReportBuilder(object):
                     links = []
                     figures = []
                     warnings = []
-                    for sample_name in single_sample['sample_name'].drop_duplicates().sort_values():
-                        o = single_sample[single_sample['sample_name'] == sample_name]
-                        for i, row in o.iterrows():
-                            image_path = os.path.join(
-                                            self.prj.metadata.results_subdir,
-                                            sample_name, row['anchor_image'])
-                            image_relpath = os.path.relpath(image_path, reports_dir)
-                            page_path = os.path.join(
-                                            self.prj.metadata.results_subdir,
-                                            sample_name, row['filename'])
-                            page_relpath = os.path.relpath(page_path, reports_dir)
-                            # If the object has a thumbnail image, add as a figure
-                            if os.path.isfile(image_path) and os.path.isfile(page_path):
-                                # If the object has a valid image, add as a figure
-                                if str(image_path).lower().endswith(('.png', '.jpg', '.jpeg', '.svg', '.gif')):
-                                    figures.append(SAMPLE_PLOTS.format(
-                                                    label=str(row['key']),
-                                                    path=page_relpath,
-                                                    image=image_relpath))
-                                # Otherwise treat as a link
+                    if not single_sample.empty:
+                        for sample_name in single_sample['sample_name'].drop_duplicates().sort_values():
+                            o = single_sample[single_sample['sample_name'] == sample_name]
+                            for i, row in o.iterrows():
+                                image_path = os.path.join(
+                                                self.prj.metadata.results_subdir,
+                                                sample_name, row['anchor_image'])
+                                image_relpath = os.path.relpath(image_path, reports_dir)
+                                page_path = os.path.join(
+                                                self.prj.metadata.results_subdir,
+                                                sample_name, row['filename'])
+                                page_relpath = os.path.relpath(page_path, reports_dir)
+                                # If the object has a thumbnail image, add as a figure
+                                if os.path.isfile(image_path) and os.path.isfile(page_path):
+                                    # If the object has a valid image, add as a figure
+                                    if str(image_path).lower().endswith(('.png', '.jpg', '.jpeg', '.svg', '.gif')):
+                                        figures.append(SAMPLE_PLOTS.format(
+                                                        label=str(row['key']),
+                                                        path=page_relpath,
+                                                        image=image_relpath))
+                                    # Otherwise treat as a link
+                                    elif os.path.isfile(page_path):
+                                        links.append(GENERIC_LIST_ENTRY.format(
+                                                        label=str(row['key']),
+                                                        page=page_relpath))
+                                    # If neither, there is no object by that name
+                                    else:
+                                        warnings.append(str(row['filename']))
+                                # If no thumbnail image, it's just a link
                                 elif os.path.isfile(page_path):
                                     links.append(GENERIC_LIST_ENTRY.format(
                                                     label=str(row['key']),
                                                     page=page_relpath))
-                                # If neither, there is no object by that name
+                                # If no file present, there is no object by that name
                                 else:
                                     warnings.append(str(row['filename']))
-                            # If no thumbnail image, it's just a link
-                            elif os.path.isfile(page_path):
-                                links.append(GENERIC_LIST_ENTRY.format(
-                                                label=str(row['key']),
-                                                page=page_relpath))
-                            # If no file present, there is no object by that name
-                            else:
-                                warnings.append(str(row['filename']))
 
                     html_file.write(GENERIC_LIST_HEADER)
                     html_file.write("\n".join(links))
@@ -893,38 +926,47 @@ class HTMLReportBuilder(object):
             # Return the path to the newly created sample page
             return sample_page_relpath
 
-        def create_status_html(all_samples):
+
+        def create_status_html(objs, stats):
             """
             Generates a page listing all the samples, their run status, their
             log file, and the total runtime if completed.
             
-            :param panda.DataFrame all_samples: project level dataframe 
-                containing any reported objects for all samples
+            :param panda.DataFrame objs: project level dataframe containing
+                any reported objects for all samples
+            :param list stats: a summary file of pipeline statistics for each
+                analyzed sample 
             """
 
             reports_dir = os.path.join(self.prj.metadata.output_dir, "reports")
             status_html_path = os.path.join(reports_dir, "status.html")
+
             if not os.path.exists(os.path.dirname(status_html_path)):
                 os.makedirs(os.path.dirname(status_html_path))
+
             with open(status_html_path, 'w') as html_file:
                 html_file.write(HTML_HEAD_OPEN)
                 html_file.write("\t\t<style>\n")
                 html_file.write(TABLE_STYLE_TEXT)
                 html_file.write("\t\t</style>\n")
-                html_file.write(create_navbar(all_samples, reports_dir))
+                html_file.write(create_navbar(objs, stats, reports_dir))
                 html_file.write(HTML_HEAD_CLOSE)
                 html_file.write(STATUS_HEADER)
                 html_file.write(STATUS_TABLE_HEAD)
+
                 # Alert user if the stats_summary.tsv is incomplete
                 # Likely indicates pipeline is still running
                 status_warning = False
+
                 # Alert user to samples that are included in the project
                 # but have not been run
                 sample_warning = []
+
                 for sample in self.prj.samples:
                     sample_name = str(sample.sample_name)
                     sample_dir = os.path.join(
                             self.prj.metadata.results_subdir, sample_name)
+
                     # Confirm sample directory exists, then build page
                     if os.path.exists(sample_dir):                        
                         # Grab the status flag for the current sample
@@ -966,7 +1008,9 @@ class HTMLReportBuilder(object):
                                             row_class=button_class,
                                             value=flag))
                         # Third Col: Log File (w/ link to file)
-                        single_sample = all_samples[all_samples['sample_name'] == sample_name]
+                        single_sample = _pd.DataFrame()
+                        if not objs.empty:
+                            single_sample = objs[objs['sample_name'] == sample_name]
                         if single_sample.empty:
                             # When there is no objects.tsv file, search for the
                             # presence of log, profile, and command files
@@ -1073,14 +1117,17 @@ class HTMLReportBuilder(object):
                             self.prj.metadata.results_subdir,
                             ' '.join(str(sample) for sample in sample_warning)))
 
-        def create_navbar(objs, wd):
+
+        def create_navbar(objs, stats, wd):
             """
             Return a string containing the navbar prebuilt html.
             Generates links to each page relative to the directory
             of interest.
             
             :param pandas.DataFrame objs: project results dataframe containing
-                sample or object data
+                object data
+            :param list stats: a summary file of pipeline statistics for each
+                analyzed sample 
             :param path wd: the working directory of the current HTML page 
                 being generated, enables navbar links relative to page
             """
@@ -1103,69 +1150,115 @@ class HTMLReportBuilder(object):
                                                   page_name="Status")
             # Create list of object page links
             obj_links = []
-            # If the number of objects is 20 or less, use a drop-down menu
-            if len(objs['key'].drop_duplicates()) <= 20:
-                # Create drop-down menu item for all the objects
-                obj_links.append(NAVBAR_DROPDOWN_HEADER.format(menu_name="Objects"))
-                objects_page = os.path.join(reports_dir, "objects.html")
-                relpath = os.path.relpath(objects_page, wd)
-                obj_links.append(NAVBAR_DROPDOWN_LINK.format(
-                                    html_page=relpath,
-                                    page_name="All objects"))
-                obj_links.append(NAVBAR_DROPDOWN_DIVIDER)
-                for key in objs['key'].drop_duplicates().sort_values():
-                    page_name = key + ".html"
-                    page_path = os.path.join(reports_dir, page_name.replace(' ', '_').lower())
-                    relpath = os.path.relpath(page_path, wd)
+            if not objs.dropna().empty:                
+                # If the number of objects is 20 or less, use a drop-down menu
+                if len(objs['key'].drop_duplicates()) <= 20:
+                    # Create drop-down menu item for all the objects
+                    obj_links.append(
+                        NAVBAR_DROPDOWN_HEADER.format(menu_name="Objects"))
+                    objects_page = os.path.join(reports_dir, "objects.html")
+                    relpath = os.path.relpath(objects_page, wd)
                     obj_links.append(NAVBAR_DROPDOWN_LINK.format(
                                         html_page=relpath,
-                                        page_name=key))
-                obj_links.append(NAVBAR_DROPDOWN_FOOTER)
-            else:
-                # Create a menu link to the objects parent page
-                objects_page = os.path.join(reports_dir, "objects.html")
-                relpath = os.path.relpath(objects_page, wd)
-                obj_links.append(NAVBAR_MENU_LINK.format(
-                                    html_page=relpath,
-                                    page_name="Objects"))
+                                        page_name="All objects"))
+                    obj_links.append(NAVBAR_DROPDOWN_DIVIDER)
+                    for key in objs['key'].drop_duplicates().sort_values():
+                        page_name = key + ".html"
+                        page_path = os.path.join(
+                            reports_dir, page_name.replace(' ', '_').lower())
+                        relpath = os.path.relpath(page_path, wd)
+                        obj_links.append(NAVBAR_DROPDOWN_LINK.format(
+                                            html_page=relpath,
+                                            page_name=key))
+                    obj_links.append(NAVBAR_DROPDOWN_FOOTER)
+                else:
+                    # Create a menu link to the objects parent page
+                    objects_page = os.path.join(reports_dir, "objects.html")
+                    relpath = os.path.relpath(objects_page, wd)
+                    obj_links.append(NAVBAR_MENU_LINK.format(
+                                        html_page=relpath,
+                                        page_name="Objects"))
 
             # Create list of sample page links
             sample_links = []
-            # If the number of samples is 20 or less, use a drop-down menu
-            if len(objs['sample_name'].drop_duplicates()) <= 20:
-                # Create drop-down menu item for all the samples
-                sample_links.append(NAVBAR_DROPDOWN_HEADER.format(menu_name="Samples"))
-                samples_page = os.path.join(reports_dir, "samples.html")
-                relpath = os.path.relpath(samples_page, wd)
-                sample_links.append(NAVBAR_DROPDOWN_LINK.format(
-                                        html_page=relpath,
-                                        page_name="All samples"))
-                sample_links.append(NAVBAR_DROPDOWN_DIVIDER)
-                for sample_name in objs['sample_name'].drop_duplicates().sort_values():
+            if stats:
+                if len(stats) <= 20:
+                    sample_links.append(
+                    NAVBAR_DROPDOWN_HEADER.format(menu_name="Samples"))
+                    samples_page = os.path.join(reports_dir, "samples.html")
+                    relpath = os.path.relpath(samples_page, wd)
+                    sample_links.append(NAVBAR_DROPDOWN_LINK.format(
+                                            html_page=relpath,
+                                            page_name="All samples"))
+                    sample_links.append(NAVBAR_DROPDOWN_DIVIDER)
+
+                    for sample in stats:
+                        for entry, val in sample.items():
+                            if entry == "sample_name":
+                                sample_name = str(val)
+                                break
+                            else:
+                                _LOGGER.warn("Could not determine sample name in stats.tsv")
+                                sample_name = ""
+
                     page_name = sample_name + ".html"
-                    page_path = os.path.join(reports_dir, page_name.replace(' ', '_').lower())
+                    page_path = os.path.join(
+                        reports_dir, page_name.replace(' ', '_').lower())
                     relpath = os.path.relpath(page_path, wd)
                     sample_links.append(NAVBAR_DROPDOWN_LINK.format(
                                             html_page=relpath,
                                             page_name=sample_name))
-                sample_links.append(NAVBAR_DROPDOWN_FOOTER)
-            else:
+
+                    sample_links.append(NAVBAR_DROPDOWN_FOOTER)
+
+                else:
                 # Create a menu link to the samples parent page
-                samples_page = os.path.join(reports_dir, "samples.html")
-                relpath = os.path.relpath(samples_page, wd)
-                sample_links.append(NAVBAR_MENU_LINK.format(
-                                        html_page=relpath,
-                                        page_name="Samples"))
+                    samples_page = os.path.join(reports_dir, "samples.html")
+                    relpath = os.path.relpath(samples_page, wd)
+                    sample_links.append(NAVBAR_MENU_LINK.format(
+                                            html_page=relpath,
+                                            page_name="Samples"))
+            
+            # Deprecated version. Requires objects.tsv file, not stats.tsv
+
+            # If the number of samples is 20 or less, use a drop-down menu
+            # if len(objs['sample_name'].drop_duplicates()) <= 20:
+                # # Create drop-down menu item for all the samples
+                # sample_links.append(
+                    # NAVBAR_DROPDOWN_HEADER.format(menu_name="Samples"))
+                # samples_page = os.path.join(reports_dir, "samples.html")
+                # relpath = os.path.relpath(samples_page, wd)
+                # sample_links.append(NAVBAR_DROPDOWN_LINK.format(
+                                        # html_page=relpath,
+                                        # page_name="All samples"))
+                # sample_links.append(NAVBAR_DROPDOWN_DIVIDER)
+                # for sample_name in objs['sample_name'].drop_duplicates().sort_values():
+                    # page_name = sample_name + ".html"
+                    # page_path = os.path.join(reports_dir, page_name.replace(' ', '_').lower())
+                    # relpath = os.path.relpath(page_path, wd)
+                    # sample_links.append(NAVBAR_DROPDOWN_LINK.format(
+                                            # html_page=relpath,
+                                            # page_name=sample_name))
+                # sample_links.append(NAVBAR_DROPDOWN_FOOTER)
+            # else:
+                # # Create a menu link to the samples parent page
+                # samples_page = os.path.join(reports_dir, "samples.html")
+                # relpath = os.path.relpath(samples_page, wd)
+                # sample_links.append(NAVBAR_MENU_LINK.format(
+                                        # html_page=relpath,
+                                        # page_name="Samples"))
 
             return ("\n".join([navbar_header, status_link,
                                "\n".join(obj_links),
                                "\n".join(sample_links),
                                NAVBAR_FOOTER]))
 
+
         def create_project_objects():
             """ Add project level summaries as additional figures/links """
 
             all_protocols = [sample.protocol for sample in self.prj.samples]
+
             # For each protocol report the project summarizers' results
             for protocol in set(all_protocols):
                 obj_figs = []
@@ -1173,64 +1266,76 @@ class HTMLReportBuilder(object):
                 obj_links = []
                 warnings = []
                 ifaces = self.prj.interfaces_by_protocol[alpha_cased(protocol)]
+
                 # Check the interface files for summarizers
                 for iface in ifaces:
                     pl = iface.fetch_pipelines(protocol)
                     summary_results = iface.get_attribute(pl, "summary_results")
-                    # Build the HTML for each summary result
-                    for result in summary_results:
-                        caption = str(result['caption'])
-                        result_file = str(result['path']).replace(
-                                        '{name}', str(self.prj.name))
-                        result_img = str(result['thumbnail_path']).replace(
-                                        '{name}', str(self.prj.name))
-                        search = os.path.join(self.prj.metadata.output_dir,
-                                              '{}'.format(result_file))
-                        # Confirm the file itself was produced
-                        if glob.glob(search):
-                            file_path = str(glob.glob(search)[0])
-                            file_relpath = os.path.relpath(
-                                            file_path,
-                                            self.prj.metadata.output_dir)
-                            search = os.path.join(self.prj.metadata.output_dir,
-                                                  '{}'.format(result_img))
-                            # Add as a figure if thumbnail exists
-                            if glob.glob(search):
-                                img_path = str(glob.glob(search)[0])
-                                img_relpath = os.path.relpath(
-                                                img_path,
-                                                self.prj.metadata.output_dir)
-                                # Add to single row
-                                if num_figures < 3:
-                                    obj_figs.append(HTML_FIGURE.format(
-                                        path=file_relpath,
-                                        image=img_relpath,
-                                        label='{}: Click to see full-size figure'.format(caption)))
-                                    num_figures += 1
-                                # Close the previous row and start a new one
-                                else:
-                                    num_figures = 1
-                                    obj_figs.append("\t\t\t</div>")
-                                    obj_figs.append("\t\t\t<div class='row justify-content-start'>")
-                                    obj_figs.append(HTML_FIGURE.format(
-                                        path=file_relpath,
-                                        image=img_relpath,
-                                        label='{}: Click to see full-size figure'.format(caption)))
-                            # No thumbnail exists, add as a link in a list
-                            else:
-                                obj_links.append(OBJECTS_LINK.format(
-                                    path=file_relpath, label='{}: Click to see full-size figure'.format(caption)))
-                        else:
-                            warnings.append(caption)
 
+                    # Build the HTML for each summary result
+                    if summary_results is not None:
+                        for result in summary_results:
+                            caption = str(result['caption'])
+                            result_file = str(result['path']).replace(
+                                            '{name}', str(self.prj.name))
+                            result_img = str(result['thumbnail_path']).replace(
+                                            '{name}', str(self.prj.name))
+                            search = os.path.join(self.prj.metadata.output_dir,
+                                                  '{}'.format(result_file))
+
+                            # Confirm the file itself was produced
+                            if glob.glob(search):
+                                file_path = str(glob.glob(search)[0])
+                                file_relpath = os.path.relpath(
+                                                file_path,
+                                                self.prj.metadata.output_dir)
+                                search = os.path.join(self.prj.metadata.output_dir,
+                                                      '{}'.format(result_img))
+
+                                # Add as a figure if thumbnail exists
+                                if glob.glob(search):
+                                    img_path = str(glob.glob(search)[0])
+                                    img_relpath = os.path.relpath(
+                                                    img_path,
+                                                    self.prj.metadata.output_dir)
+
+                                    # Add to single row
+                                    if num_figures < 3:
+                                        obj_figs.append(HTML_FIGURE.format(
+                                            path=file_relpath,
+                                            image=img_relpath,
+                                            label='{}: Click to see full-size figure'.format(caption)))
+                                        num_figures += 1
+
+                                    # Close the previous row and start a new one
+                                    else:
+                                        num_figures = 1
+                                        obj_figs.append("\t\t\t</div>")
+                                        obj_figs.append("\t\t\t<div class='row justify-content-start'>")
+                                        obj_figs.append(HTML_FIGURE.format(
+                                            path=file_relpath,
+                                            image=img_relpath,
+                                            label='{}: Click to see full-size figure'.format(caption)))
+
+                                # No thumbnail exists, add as a link in a list
+                                else:
+                                    obj_links.append(OBJECTS_LINK.format(
+                                        path=file_relpath, label='{}: Click to see full-size figure'.format(caption)))
+
+                            else:
+                                warnings.append(caption)
+                    else:
+                        _LOGGER.warn("No summarizer found for this pipeline.")
                 if warnings:
                     _LOGGER.warn("Summarizer was unable to find: " +
                                  ', '.join(str(file) for file in warnings))
+
                 while num_figures < 3:
                     # Add additional empty columns for clean format
                     obj_figs.append("\t\t\t  <div class='col'>")
                     obj_figs.append("\t\t\t  </div>")
                     num_figures += 1
+
                 return ("\n".join(["\t\t<h5>Looper project objects</h5>",
                                    "\t\t<div class='container'>",
                                    "\t\t\t<div class='row justify-content-start'>",
@@ -1240,6 +1345,7 @@ class HTMLReportBuilder(object):
                                    OBJECTS_LIST_HEADER,
                                    "\n".join(obj_links),
                                    OBJECTS_LIST_FOOTER]))
+
 
         def create_index_html(objs, stats, col_names):
             """
@@ -1252,7 +1358,8 @@ class HTMLReportBuilder(object):
                 analyzed sample                
             """
 
-            objs.drop_duplicates(keep='last', inplace=True)
+            if not objs.dropna().empty:
+                objs.drop_duplicates(keep='last', inplace=True)
             # Generate parent index.html page path
             index_html_path = "{root}_summary.html".format(
                 root=os.path.join(self.prj.metadata.output_dir, self.prj.name))
@@ -1264,7 +1371,7 @@ class HTMLReportBuilder(object):
             index_html_file.write(TABLE_STYLE_TEXT)
             index_html_file.write("\t\t</style>\n")
             index_html_file.write(HTML_TITLE.format(project_name=self.prj.name))
-            navbar = create_navbar(objs, self.prj.metadata.output_dir)
+            navbar = create_navbar(objs, stats, self.prj.metadata.output_dir)
             index_html_file.write(navbar)
             index_html_file.write(HTML_HEAD_CLOSE)
 
@@ -1312,6 +1419,7 @@ class HTMLReportBuilder(object):
                         if value == sample_name:
                             # Generate individual sample page and return link
                             sample_page = create_sample_html(objs,
+                                                             stats,
                                                              sample_name,
                                                              sample_stats)
                             # Treat sample_name as a link to sample page
@@ -1327,21 +1435,22 @@ class HTMLReportBuilder(object):
                     sample_pos += 1
                 index_html_file.write(TABLE_FOOTER)
             else:
-                _LOGGER.warn("No stats file '%s'", stats_file)
+                _LOGGER.warn("No stats file '%s'", tsv_outfile_path)
 
             # Create parent samples page with links to each sample
-            create_sample_parent_html(objs)
+            create_sample_parent_html(objs, stats)
 
             # Create objects pages
-            for key in objs['key'].drop_duplicates().sort_values():
-                single_object = objs[objs['key'] == key]
-                create_object_html(single_object, objs)
+            if not objs.dropna().empty:
+                for key in objs['key'].drop_duplicates().sort_values():
+                    single_object = objs[objs['key'] == key]
+                    create_object_html(single_object, objs, stats)
 
             # Create parent objects page with links to each object type
-            create_object_parent_html(objs)
+            create_object_parent_html(objs, stats)
 
             # Create status page with each sample's status listed
-            create_status_html(objs)
+            create_status_html(objs, stats)
 
             # Add project level objects
             prj_objs = create_project_objects()
