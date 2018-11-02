@@ -554,7 +554,7 @@ class Runner(Executor):
                 len(samples_by_reason), ", ".join(samples_by_reason.keys())))
             full_fail_msgs = [create_failure_message(reason, samples)
                               for reason, samples in samples_by_reason.items()]
-            _LOGGER.info("\nSamples by failure:\n{}".
+            _LOGGER.info("\nSummary of failures:\n{}".
                          format("\n".join(full_fail_msgs)))
 
         """
