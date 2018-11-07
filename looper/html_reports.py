@@ -37,6 +37,8 @@ HTML_HEAD_OPEN = \
          * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)
          -->
         <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootswatch/4.1.1/flatly/bootstrap.min.css">
+        <link rel="stylesheet" href="https://cdn.datatables.net/1.10.18/css/jquery.dataTables.min.css">
+
 """
 HTML_TITLE = \
 """\
@@ -73,6 +75,92 @@ HTML_FOOTER = \
         <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
         <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js" integrity="sha384-smHYKdLADwkXOn1EmN1qk/HfnUcbVRZyYmZ4qpPea6sjB/pTJ0euyQp0Mk8ck+5T" crossorigin="anonymous"></script>
+
+        <!-- D3.js -->
+        <script src="https://d3js.org/d3.v5.min.js"></script>
+        <!-- Plotly -->
+        <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+        <!-- DataTables JQuery extension -->
+        <script src="https://cdn.datatables.net/1.10.18/js/jquery.dataTables.min.js"></script>
+        <script src="https://cdn.datatables.net/fixedcolumns/3.2.6/js/dataTables.fixedColumns.min.js"></script>
+        <script src="https://cdn.datatables.net/responsive/2.2.3/js/dataTables.responsive.min.js"></script>
+
+        <script type="text/javascript">
+          $(document).ready(function() {
+            $('#data-table').DataTable({
+              scrollX: true,
+              fixedColumns: {
+                leftColumns: 1
+              }
+            });
+          } );
+
+          var table = document.getElementById("data-table");
+
+          function graphCol(colname){
+            /* Creates a graph using Plotly.js */
+            categories = getX();
+            Ydata = getY(colname);
+
+            var data = [{
+              x: categories,
+              y: Ydata,
+              type: 'bar',
+            }];
+
+            var layout = {
+              title: colname
+            };
+            chart = document.getElementById('charts');
+            Plotly.newPlot(chart, data, layout);
+          }
+          function getX(){
+            /* Get the sample names (the x values in the bar chart) */
+            var rows = [];
+            for(var i = 1, row; row = table.rows[i]; i++){
+              rows.push(row.cells[0].textContent);
+            }
+            return rows;
+          }
+          function getY(colname){
+            /* Gets the data in the specified column name (the y values in the bar chart) */
+            var data = [];
+            var colnum;
+            // find which column number is the one matching the column name
+            for(var i = 0; i < table.rows[0].cells.length; i++){
+              if(table.rows[0].cells[i].textContent == colname){
+                colnum = i;
+                break;
+              }
+            }
+            // add the data from the column to an array
+            for(var i = 1, row; row = table.rows[i]; i++){
+              data.push(row.cells[colnum].textContent);
+            }
+            return data;
+          }
+
+          function columnClicked(colname){
+            /* The function that is called when a column's header is clicked */
+            graphCol(colname);
+          }
+
+          function modifyNumericColumns(){
+            /* Changes a column's header if the data is visualizable */
+
+            var table = document.getElementById("data-table");
+            for(var i = 0; i < table.rows[1].cells.length; i++) {  
+                //iterate through first row, which will show if a column's data is numeric
+                if(!isNaN(table.rows[1].cells[i].textContent)){
+                  element = table.rows[0].cells[i]
+                  text = element.textContent;
+                  element.innerHTML = "<span class='visualize'><a href='#' title='Click to visualize this column' onclick='columnClicked(\\""+text+"\\");return false;'>" + text + "</a></span>";
+                }
+            }
+          }
+          modifyNumericColumns();
+          </script>
+      </div>
     </body>
 </html>
 """
@@ -304,12 +392,16 @@ TABLE_STYLE_TEXT = \
 """
 TABLE_HEADER = \
 """
-      <h5>Looper stats summary</h5>
 
-      <div class="table-responsive-sm">
-        <table class="table table-sm table-hover table-header-rotated table-condensed">                           
+      <div class="row" style="margin-top: 20px; margin-bottom: 20px;">
+        <h2 class="col-10">Looper stats summary</h2>
+        <button type='button' href='{file_path}' class='btn btn-outline-primary'>{label}</button>
+      </div>
+      
+      <div>
+        <table class="display compact" id="data-table">
           <thead>
-            <tr class="stats-firstrow">
+            <tr>
 """
 TABLE_COLS = \
 """\
