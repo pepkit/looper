@@ -48,6 +48,7 @@ HTML_HEAD_CLOSE = \
 """\
     </head>
     <body>
+      <div class="container">
 """
 HTML_BUTTON = \
 """\
@@ -80,6 +81,7 @@ HTML_FOOTER = \
         <script src="https://d3js.org/d3.v5.min.js"></script>
         <!-- Plotly -->
         <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+
         <!-- DataTables JQuery extension -->
         <script src="https://cdn.datatables.net/1.10.18/js/jquery.dataTables.min.js"></script>
         <script src="https://cdn.datatables.net/fixedcolumns/3.2.6/js/dataTables.fixedColumns.min.js"></script>
@@ -314,8 +316,11 @@ TABLE_STYLE_BASIC = \
 """
 TABLE_STYLE_ROTATED_HEADER = \
 """\
-        .table-header-rotated th.row-header{
-          width: auto;
+        .container{
+          margin-top: 20px;
+        }
+        .nav-link{
+          margin: 0px 10px 0px 10px;
         }
         .table-header-rotated td{
           width: 60px;
@@ -334,7 +339,7 @@ TABLE_STYLE_ROTATED_HEADER = \
           padding: 0;
           font-size: 14px;
           line-height: 0.8;
-          border-top: none !important;
+          border-top: none;
         }
         .table-header-rotated th.rotate-45 > div{
           position: relative;
@@ -349,6 +354,21 @@ TABLE_STYLE_ROTATED_HEADER = \
           overflow: ellipsis;
           border-left: 1px solid #dddddd;
           border-right: 1px solid #dddddd;
+        }
+        .table-header-rotated th.rotate-45 span.visualize {
+          -ms-transform:      rotate(315deg);
+          -moz-transform:     rotate(315deg);
+          -webkit-transform:  rotate(315deg);
+          -o-transform:       rotate(315deg);
+          transform:          rotate(315deg);
+          /*
+          border-top: 1px solid #dddddd;
+          border-bottom: 1px solid #dddddd;
+          
+          don't know how to fix the problem with the table lines not showing up
+          */
+          position: absolute;
+          left: 10px;
         }
         .table-header-rotated th.rotate-45 span {
           -ms-transform:skew(45deg,0deg) rotate(315deg);
@@ -368,7 +388,6 @@ TABLE_STYLE_TEXT = \
 """\
         .table td.text {
             max-width: 150px;
-            <!-- top|right|bottom|left -->
             padding: 0px 2px 0px 2px;
         }
         .table td.text span {
@@ -389,10 +408,13 @@ TABLE_STYLE_TEXT = \
             padding: 0px 2px 0px 2px;
             vertical-align: middle;
         }
+        .fix-col{
+          position: absolute;
+          background: white;
+        }
 """
 TABLE_HEADER = \
 """
-
       <div class="row" style="margin-top: 20px; margin-bottom: 20px;">
         <h2 class="col-10">Looper stats summary</h2>
         <button type='button' href='{file_path}' class='btn btn-outline-primary'>{label}</button>
@@ -437,37 +459,47 @@ TABLE_ROWS_LINK = \
 """
 LINKS_STYLE_BASIC = \
 """
-a.LN1 {
-  font-style:normal;
-  font-weight:bold;
-  font-size:1.0em;
-}
+      a.LN1 {
+        font-style:normal;
+        font-weight:bold;
+        font-size:1.0em;
+      }
 
-a.LN2:link {
-  color:#A4DCF5;
-  text-decoration:none;
-}
+      a.LN2:link {
+        color:#A4DCF5;
+        text-decoration:none;
+      }
 
-a.LN3:visited {
-  color:#A4DCF5;
-  text-decoration:none;
-}
+      a.LN3:visited {
+        color:#A4DCF5;
+        text-decoration:none;
+      }
 
-a.LN4:hover {
-  color:#A4DCF5;
-  text-decoration:none;
-}
+      a.LN4:hover {
+        color:#A4DCF5;
+        text-decoration:none;
+      }
 
-a.LN5:active {
-  color:#A4DCF5;
-  text-decoration:none;
-}
+      a.LN5:active {
+        color:#A4DCF5;
+        text-decoration:none;
+      }
+"""
+TABLE_VISUALIZATION = \
+"""
+      <div>
+        <div id="charts">
+          
+        </div>
+        <h4 align="center">Click on a table header to visualize that column!</h4>
+      </div>
 """
 TABLE_VARS = ["TABLE_STYLE_BASIC", "TABLE_HEADER", "TABLE_COLS",
               "TABLE_COLS_FOOTER", "TABLE_ROW_HEADER", "TABLE_ROWS",
               "TABLE_ROW_FOOTER", "TABLE_FOOTER",
               "TABLE_ROWS_LINK", "LINKS_STYLE_BASIC",
-              "TABLE_STYLE_ROTATED_HEADER", "TABLE_STYLE_TEXT"]
+              "TABLE_STYLE_ROTATED_HEADER", "TABLE_STYLE_TEXT",
+              "TABLE_VISUALIZATION"]
 
 # Sample-page-related
 SAMPLE_HEADER = \
@@ -1475,13 +1507,11 @@ class HTMLReportBuilder(object):
             tsv_outfile_path += '_stats_summary.tsv'
             stats_relpath = os.path.relpath(tsv_outfile_path,
                                             self.prj.metadata.output_dir)
-            index_html_file.write(HTML_BUTTON.format(
-                file_path=stats_relpath, label="Stats Summary File"))
 
             # Add stats summary table to index page and produce individual
             # sample pages
             if os.path.isfile(tsv_outfile_path):
-                index_html_file.write(TABLE_HEADER)
+                index_html_file.write(TABLE_HEADER.format(file_path=stats_relpath, label="Stats Summary File"))
                 # Produce table columns
                 for key in col_names:
                     index_html_file.write(TABLE_COLS.format(col_val=str(key)))
@@ -1526,6 +1556,7 @@ class HTMLReportBuilder(object):
                     index_html_file.write(TABLE_ROW_FOOTER)
                     sample_pos += 1
                 index_html_file.write(TABLE_FOOTER)
+                index_html_file.write(TABLE_VISUALIZATION)
             else:
                 _LOGGER.warn("No stats file '%s'", tsv_outfile_path)
 
