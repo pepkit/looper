@@ -655,7 +655,12 @@ class Summarizer(Executor):
         _LOGGER.debug("Protocols: " + str(all_protocols))
         _LOGGER.debug(self.prj.interfaces_by_protocol)
         for protocol in set(all_protocols):
-            ifaces = self.prj.interfaces_by_protocol[alpha_cased(protocol)]
+            try:
+                ifaces = self.prj.interfaces_by_protocol[alpha_cased(protocol)]
+            except KeyError:
+                _LOGGER.warn("No interface for protocol '{}', skipping summary".
+                             format(protocol))
+                continue
             for iface in ifaces:
                 _LOGGER.debug(iface)
                 pl = iface.fetch_pipelines(protocol)
