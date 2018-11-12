@@ -453,7 +453,7 @@ class Runner(Executor):
 
             # Don't submit samples with duplicate names unless suppressed.
             if sample.sample_name in processed_samples:
-                if args.ignore_duplicate_names:
+                if args.allow_duplicate_names:
                     _LOGGER.warn("Duplicate name detected, but submitting anyway")
                 else:
                     skip_reasons.append("Duplicate sample name")
