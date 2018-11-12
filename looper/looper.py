@@ -154,6 +154,11 @@ def parse_arguments():
             "-F", "--flags", nargs='*', default=FLAGS,
             help="Check on only these flags/status values.")
 
+    destroy_subparser.add_argument(
+            "--force-yes", action="store_true",
+            help="Provide upfront confirmation of destruction intent, "
+                 "to skip console query")
+
     # Common arguments
     for subparser in [run_subparser, summarize_subparser,
                       destroy_subparser, check_subparser, clean_subparser]:
@@ -360,8 +365,9 @@ class Destroyer(Executor):
             _LOGGER.info("Dry run. No files destroyed.")
             return 0
 
-        if not query_yes_no("Are you sure you want to permanently delete "
-                            "all pipeline results for this project?"):
+        if not args.force_yes and not query_yes_no(
+            "Are you sure you want to permanently delete all pipeline results "
+            "for this project?"):
             _LOGGER.info("Destroy action aborted by user.")
             return 1
 
@@ -447,7 +453,7 @@ class Runner(Executor):
 
             # Don't submit samples with duplicate names unless suppressed.
             if sample.sample_name in processed_samples:
-                if args.ignore_duplicate_names:
+                if args.allow_duplicate_names:
                     _LOGGER.warn("Duplicate name detected, but submitting anyway")
                 else:
                     skip_reasons.append("Duplicate sample name")
@@ -514,7 +520,7 @@ class Runner(Executor):
         # Report what went down.
         max_samples = min(len(self.prj.samples), args.limit or float("inf"))
         _LOGGER.info("\nLooper finished")
-        _LOGGER.info("Samples qualified for job generation: %d of %d",
+        _LOGGER.info("Samples valid for job generation: %d of %d",
                      len(processed_samples), max_samples)
         _LOGGER.info("Successful samples: %d of %d",
                      max_samples - len(failures), max_samples)
@@ -649,19 +655,25 @@ class Summarizer(Executor):
         _LOGGER.debug("Protocols: " + str(all_protocols))
         _LOGGER.debug(self.prj.interfaces_by_protocol)
         for protocol in set(all_protocols):
-            ifaces = self.prj.interfaces_by_protocol[alpha_cased(protocol)]
+            try:
+                ifaces = self.prj.interfaces_by_protocol[alpha_cased(protocol)]
+            except KeyError:
+                _LOGGER.warn("No interface for protocol '{}', skipping summary".
+                             format(protocol))
+                continue
             for iface in ifaces:
                 _LOGGER.debug(iface)
                 pl = iface.fetch_pipelines(protocol)
                 summarizers = iface.get_attribute(pl, "summarizers")
-                for summarizer in set(summarizers):
-                    summarizer_abspath = os.path.join(
-                        os.path.dirname(iface.pipe_iface_file), summarizer)
-                    _LOGGER.debug([summarizer_abspath, self.prj.config_file])
-                    try:
-                        subprocess.call([summarizer_abspath, self.prj.config_file])
-                    except OSError:
-                        _LOGGER.warn("Summarizer was unable to run: " + str(summarizer))
+                if summarizers is not None:
+                    for summarizer in set(summarizers):
+                        summarizer_abspath = os.path.join(
+                            os.path.dirname(iface.pipe_iface_file), summarizer)
+                        _LOGGER.debug([summarizer_abspath, self.prj.config_file])
+                        try:
+                            subprocess.call([summarizer_abspath, self.prj.config_file])
+                        except OSError:
+                            _LOGGER.warn("Summarizer was unable to run: " + str(summarizer))
 
         # Produce HTML report
         report_builder = HTMLReportBuilder(self.prj)
