@@ -1,5 +1,19 @@
 Changelog
 ******************************
+- **v0.9.2** (*2018-11-12*):
+
+  - Fixed
+
+    - Fixed bugs with ``looper summarize`` when no summarizers were present
+
+    - Added CLI flag to force ``looper destroy`` for programmatic access
+
+    - Fixed a bug for samples with duplicate names
+
+    - Added new display features (graphs, table display) for HTML summary output.
+
+
+
 - **v0.9.1** (*2018-06-30*):
 
   - Fixed
