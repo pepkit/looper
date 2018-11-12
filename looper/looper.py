@@ -154,6 +154,11 @@ def parse_arguments():
             "-F", "--flags", nargs='*', default=FLAGS,
             help="Check on only these flags/status values.")
 
+    destroy_subparser.add_argument(
+            "--force-yes", action="store_true",
+            help="Provide upfront confirmation of destruction intent, "
+                 "to skip console query")
+
     # Common arguments
     for subparser in [run_subparser, summarize_subparser,
                       destroy_subparser, check_subparser, clean_subparser]:
@@ -360,8 +365,9 @@ class Destroyer(Executor):
             _LOGGER.info("Dry run. No files destroyed.")
             return 0
 
-        if not query_yes_no("Are you sure you want to permanently delete "
-                            "all pipeline results for this project?"):
+        if not args.force_yes and not query_yes_no(
+            "Are you sure you want to permanently delete all pipeline results "
+            "for this project?"):
             _LOGGER.info("Destroy action aborted by user.")
             return 1
 
