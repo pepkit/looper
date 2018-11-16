@@ -1449,7 +1449,7 @@ class HTMLReportBuilder(object):
                             else:
                                 warnings.append(caption)
                     else:
-                        _LOGGER.warn("No summarizer found for this pipeline.")
+                        _LOGGER.debug("No custom summarizers were found for this pipeline. Proceeded with default only.")
                 if warnings:
                     _LOGGER.warn("Summarizer was unable to find: " +
                                  ', '.join(str(file) for file in warnings))
