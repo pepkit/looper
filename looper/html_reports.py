@@ -1228,8 +1228,9 @@ class HTMLReportBuilder(object):
                 
                 # Alert the user to any warnings generated
                 if status_warning:
-                    _LOGGER.warn("The pipeline is still running..." +
-                                 "Unable to complete Status.html")
+                    _LOGGER.warn("The stats table is incomplete, likely because " +
+                                 "one or more jobs either failed or is still running.")
+                  
                 if sample_warning:
                     if len(sample_warning)==1:
                         _LOGGER.warn("{} is not present in {}".format(
