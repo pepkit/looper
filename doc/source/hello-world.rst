@@ -37,7 +37,7 @@ Now, to test looper, follow the commands in the `Hello, Looper! example reposito
 
 	# Run it:
 	cd hello_looper-master
-	looper run project_config.yaml
+	looper run project/project_config.yaml
 
 
 .. HINT::
