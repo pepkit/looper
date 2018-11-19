@@ -995,10 +995,20 @@ class HTMLReportBuilder(object):
                         for sample_name in single_sample['sample_name'].drop_duplicates().sort_values():
                             o = single_sample[single_sample['sample_name'] == sample_name]
                             for i, row in o.iterrows():
-                                image_path = os.path.join(
-                                                self.prj.metadata.results_subdir,
-                                                sample_name, row['anchor_image'])
-                                image_relpath = os.path.relpath(image_path, reports_dir)
+                                try:
+                                    # Image thumbnails are optional
+                                    # This references to "image" should really
+                                    # be "thumbnail"
+                                    image_path = os.path.join(
+                                                    self.prj.metadata.results_subdir,
+                                                    sample_name, row['anchor_image'])
+                                    image_relpath = os.path.relpath(image_path, reports_dir)
+                                except AttributeError:
+                                    image_path = ""
+                                    image_relpath = ""
+
+                                # These references to "page" should really be
+                                # "object", because they can be anything.
                                 page_path = os.path.join(
                                                 self.prj.metadata.results_subdir,
                                                 sample_name, row['filename'])
