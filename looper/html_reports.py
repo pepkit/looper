@@ -1267,18 +1267,19 @@ class HTMLReportBuilder(object):
                         for entry, val in sample.items():
                             if entry == "sample_name":
                                 sample_name = str(val)
+                                page_name = sample_name + ".html"
+                                page_path = os.path.join(
+                                    reports_dir, page_name.replace(' ', '_').lower())
+                                relpath = os.path.relpath(page_path, wd)
+                                sample_links.append(NAVBAR_DROPDOWN_LINK.format(
+                                                        html_page=relpath,
+                                                        page_name=sample_name))
                                 break
                             else:
                                 _LOGGER.warn("Could not determine sample name in stats.tsv")
                                 sample_name = ""
 
-                    page_name = sample_name + ".html"
-                    page_path = os.path.join(
-                        reports_dir, page_name.replace(' ', '_').lower())
-                    relpath = os.path.relpath(page_path, wd)
-                    sample_links.append(NAVBAR_DROPDOWN_LINK.format(
-                                            html_page=relpath,
-                                            page_name=sample_name))
+                    
 
                     sample_links.append(NAVBAR_DROPDOWN_FOOTER)
 
