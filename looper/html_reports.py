@@ -156,7 +156,7 @@ HTML_FOOTER = \
                 if(!isNaN(table.rows[1].cells[i].textContent)){
                   element = table.rows[0].cells[i]
                   text = element.textContent;
-                  $("#plot-cols").append("<li><a href='#' title='Click to visualize this column' onclick='columnClicked(\""+text+"\");return false;'>" + text + "</a></li>");
+                  $("#plot-cols").append("<li><a href='#' title='Click to visualize this column' onclick='columnClicked(\\""+text+"\\");return false;'>" + text + "</a></li>");
                 }
             }
           }
