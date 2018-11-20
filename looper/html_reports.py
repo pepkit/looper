@@ -42,7 +42,7 @@ HTML_HEAD_OPEN = \
 """
 HTML_TITLE = \
 """\
-        <title>Looper project summary for {project_name}</title>
+        <title>Looper: {project_name} summary</title>
 """
 HTML_HEAD_CLOSE = \
 """\
