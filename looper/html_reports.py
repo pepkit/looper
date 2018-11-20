@@ -156,7 +156,7 @@ HTML_FOOTER = \
                 if(!isNaN(table.rows[1].cells[i].textContent)){
                   element = table.rows[0].cells[i]
                   text = element.textContent;
-                  element.innerHTML = "<span class='visualize'><a href='#' title='Click to visualize this column' onclick='columnClicked(\\""+text+"\\");return false;'>" + text + "</a></span>";
+                  $("#plot-cols").append("<li><a href='#' title='Click to visualize this column' onclick='columnClicked(\""+text+"\");return false;'>" + text + "</a></li>");
                 }
             }
           }
@@ -314,76 +314,6 @@ TABLE_STYLE_BASIC = \
             }
         </style>
 """
-TABLE_STYLE_ROTATED_HEADER = \
-"""\
-        .container{
-          margin-top: 20px;
-        }
-        .nav-link{
-          margin: 0px 10px 0px 10px;
-        }
-        .table-header-rotated td{
-          width: 60px;
-          border-left: 1px solid #dddddd;
-          border-right: 1px solid #dddddd;
-          vertical-align: middle;
-          text-align: center;
-        }
-        .table-header-rotated th.rotate-45{
-          height: 120px;
-          width: 60px;
-          min-width: 60px;
-          max-width: 60px;
-          position: relative;
-          vertical-align: bottom;
-          padding: 0;
-          font-size: 14px;
-          line-height: 0.8;
-          border-top: none;
-        }
-        .table-header-rotated th.rotate-45 > div{
-          position: relative;
-          top: 0px;
-          left: 60px;
-          height: 100%;
-          -ms-transform:skew(-45deg,0deg);
-          -moz-transform:skew(-45deg,0deg);
-          -webkit-transform:skew(-45deg,0deg);
-          -o-transform:skew(-45deg,0deg);
-          transform:skew(-45deg,0deg);
-          overflow: ellipsis;
-          border-left: 1px solid #dddddd;
-          border-right: 1px solid #dddddd;
-        }
-        .table-header-rotated th.rotate-45 span.visualize {
-          -ms-transform:      rotate(315deg);
-          -moz-transform:     rotate(315deg);
-          -webkit-transform:  rotate(315deg);
-          -o-transform:       rotate(315deg);
-          transform:          rotate(315deg);
-          /*
-          border-top: 1px solid #dddddd;
-          border-bottom: 1px solid #dddddd;
-          
-          don't know how to fix the problem with the table lines not showing up
-          */
-          position: absolute;
-          left: 10px;
-        }
-        .table-header-rotated th.rotate-45 span {
-          -ms-transform:skew(45deg,0deg) rotate(315deg);
-          -moz-transform:skew(45deg,0deg) rotate(315deg);
-          -webkit-transform:skew(45deg,0deg) rotate(315deg);
-          -o-transform:skew(45deg,0deg) rotate(315deg);
-          transform:skew(45deg,0deg) rotate(315deg);
-          position: absolute;
-          bottom: 30px;
-          left: -25px;
-          display: inline-block;
-          width: 85px;
-          text-align: left;
-        }
-"""
 TABLE_STYLE_TEXT = \
 """\
         .table td.text {
@@ -487,19 +417,25 @@ LINKS_STYLE_BASIC = \
 """
 TABLE_VISUALIZATION = \
 """
-      <div>
-        <div id="charts">
-          
+      <div class="row">
+        <div id="chartableColumns" class="col-3" style="margin: 20px;">
+          <h4 style="margin: 20px;">Plottable Columns</h3>
+          <ul id="plot-cols">
+
+          </ul>
         </div>
-        <h4 align="center">Click on a table header to visualize that column!</h4>
+        <div class="col">
+          <div id="charts">
+
+          </div>
+        </div>
       </div>
 """
 TABLE_VARS = ["TABLE_STYLE_BASIC", "TABLE_HEADER", "TABLE_COLS",
               "TABLE_COLS_FOOTER", "TABLE_ROW_HEADER", "TABLE_ROWS",
               "TABLE_ROW_FOOTER", "TABLE_FOOTER",
               "TABLE_ROWS_LINK", "LINKS_STYLE_BASIC",
-              "TABLE_STYLE_ROTATED_HEADER", "TABLE_STYLE_TEXT",
-              "TABLE_VISUALIZATION"]
+              "TABLE_STYLE_TEXT", "TABLE_VISUALIZATION"]
 
 # Sample-page-related
 SAMPLE_HEADER = \
@@ -1502,8 +1438,6 @@ class HTMLReportBuilder(object):
             index_html_file = open(index_html_path, 'w')
             index_html_file.write(HTML_HEAD_OPEN)
             index_html_file.write("\t\t<style>\n")
-            index_html_file.write(TABLE_STYLE_ROTATED_HEADER)
-            index_html_file.write(TABLE_STYLE_TEXT)
             index_html_file.write("\t\t</style>\n")
             index_html_file.write(HTML_TITLE.format(project_name=self.prj.name))
             navbar = create_navbar(objs, stats, self.prj.metadata.output_dir)
