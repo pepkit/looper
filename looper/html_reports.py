@@ -93,7 +93,17 @@ HTML_FOOTER = \
               scrollX: true,
               fixedColumns: {
                 leftColumns: 1
+              },
+              columnDefs: [ 
+              {
+                targets: 0,
+                render: $.fn.dataTable.render.ellipsis(1000, true)
+              },
+              {
+                targets: '_all',
+                render: $.fn.dataTable.render.ellipsis(17, true)
               }
+              ]
             });
           } );
 
@@ -314,35 +324,6 @@ TABLE_STYLE_BASIC = \
             }
         </style>
 """
-TABLE_STYLE_TEXT = \
-"""\
-        .table td.text {
-            max-width: 150px;
-            padding: 0px 2px 0px 2px;
-        }
-        .table td.text span {
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            display: inline-block;
-            max-width: 100%;
-            vertical-align: middle;
-        }
-        .table td.text span:active {
-            white-space: normal;
-            text-overflow: clip;
-            max-width: 100%;
-        }
-        .table-condensed > tbody > tr > td,
-        .table-condensed > tbody > tr > th {
-            padding: 0px 2px 0px 2px;
-            vertical-align: middle;
-        }
-        .fix-col{
-          position: absolute;
-          background: white;
-        }
-"""
 TABLE_HEADER = \
 """
       <div class="row" style="margin-top: 20px; margin-bottom: 20px;">
@@ -357,7 +338,7 @@ TABLE_HEADER = \
 """
 TABLE_COLS = \
 """\
-              <th class="rotate-45"><div><span>{col_val}</span></div></th>
+            <th>{col_val}</th>
 """
 TABLE_COLS_FOOTER = \
 """\
@@ -371,7 +352,7 @@ TABLE_ROW_HEADER = \
 """
 TABLE_ROWS = \
 """\
-              <td class="text"><span>{row_val}</span></td>
+              <td class="text">{row_val}</td>
 """
 TABLE_ROW_FOOTER = \
 """\
@@ -434,8 +415,7 @@ TABLE_VISUALIZATION = \
 TABLE_VARS = ["TABLE_STYLE_BASIC", "TABLE_HEADER", "TABLE_COLS",
               "TABLE_COLS_FOOTER", "TABLE_ROW_HEADER", "TABLE_ROWS",
               "TABLE_ROW_FOOTER", "TABLE_FOOTER",
-              "TABLE_ROWS_LINK", "LINKS_STYLE_BASIC",
-              "TABLE_STYLE_TEXT", "TABLE_VISUALIZATION"]
+              "TABLE_ROWS_LINK", "LINKS_STYLE_BASIC", "TABLE_VISUALIZATION"]
 
 # Sample-page-related
 SAMPLE_HEADER = \
@@ -486,7 +466,6 @@ SAMPLE_TABLE_STYLE = \
 """\
         .table td.text {
             max-width: 500px;
-            <!-- top|right|bottom|left -->
             padding: 0px 2px 0px 2px;
         }
         .table td.text span {
@@ -1017,7 +996,6 @@ class HTMLReportBuilder(object):
             with open(status_html_path, 'w') as html_file:
                 html_file.write(HTML_HEAD_OPEN)
                 html_file.write("\t\t<style>\n")
-                html_file.write(TABLE_STYLE_TEXT)
                 html_file.write("\t\t</style>\n")
                 html_file.write(create_navbar(objs, stats, reports_dir))
                 html_file.write(HTML_HEAD_CLOSE)
