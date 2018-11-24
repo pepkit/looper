@@ -852,7 +852,9 @@ def main():
             if not hasattr(prj.metadata, "pipelines_dir") or \
                            len(prj.metadata.pipelines_dir) == 0:
                 raise AttributeError(
-                        "Looper requires at least one pipeline(s) location.")
+                    "Looper requires at least one pipeline(s) location; set "
+                    "with 'pipeline_interfaces' in the metadata section of a "
+                    "project config file.")
 
             if not prj.interfaces_by_protocol:
                 _LOGGER.error(
