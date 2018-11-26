@@ -83,11 +83,56 @@ HTML_FOOTER = \
         <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 
         <!-- DataTables JQuery extension -->
-        <script src="https://cdn.datatables.net/1.10.18/js/jquery.dataTables.min.js"></script>
+        <script src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"></script>
         <script src="https://cdn.datatables.net/fixedcolumns/3.2.6/js/dataTables.fixedColumns.min.js"></script>
         <script src="https://cdn.datatables.net/responsive/2.2.3/js/dataTables.responsive.min.js"></script>
 
         <script type="text/javascript">
+          /* 
+          modified DataTable plug-in from https://datatables.net/blog/2016-02-26
+          to include comma inserter regex from StackOverflow https://stackoverflow.com/questions/2901102/how-to-print-a-number-with-commas-as-thousands-separators-in-javascript
+          */
+          $.fn.dataTable.render.ellipsis = function ( cutoff, wordbreak, escapeHtml ) {
+              var esc = function ( t ) {
+                  return t
+                      .replace( /&/g, '&amp;' )
+                      .replace( /</g, '&lt;' )
+                      .replace( />/g, '&gt;' )
+                      .replace( /"/g, '&quot;' );
+              };
+              function numberWithCommas(x) {
+                  var parts = x.toString().split(".");
+                  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+                  return parts.join(".");
+              }
+              return function ( d, type, row ) {
+                  // Order, search and type get the original data
+                  if ( type !== 'display' ) {
+                      return d;
+                  }
+                  if ( typeof d !== 'number' && typeof d !== 'string' ) {
+                      return d;
+                  }
+                  d = d.toString(); // cast numbers
+                  if(!isNaN(d)){
+                      return numberWithCommas(d);
+                  }
+                  if ( d.length < cutoff ) {
+                      return d;
+                  }
+                  var shortened = d.substr(0, cutoff-1);
+                  // Find the last white space character in the string
+                  if ( wordbreak ) {
+                      shortened = shortened.replace(/\s([^\s]*)$/, '');
+                  }
+                  // Protect against uncontrolled HTML input
+                  if ( escapeHtml ) {
+                      shortened = esc( shortened );
+                  }
+                  return '<span class="ellipsis" title="'+esc(d)+'">'+shortened+'&#8230;</span>';
+              };
+          };
+
           $(document).ready(function() {
             $('#data-table').DataTable({
               scrollX: true,
@@ -95,15 +140,15 @@ HTML_FOOTER = \
                 leftColumns: 1
               },
               columnDefs: [ 
-              {
-                targets: 0,
-                render: $.fn.dataTable.render.ellipsis(1000, true)
-              },
-              {
-                targets: '_all',
-                render: $.fn.dataTable.render.ellipsis(17, true)
-              }
-              ]
+                {
+                  targets: 0,
+                  render: $.fn.dataTable.render.ellipsis(1000, true)
+                },
+                {
+                  targets: '_all',
+                  render: $.fn.dataTable.render.ellipsis(17, true)
+                }
+              ],
             });
           } );
 
@@ -995,8 +1040,7 @@ class HTMLReportBuilder(object):
 
             with open(status_html_path, 'w') as html_file:
                 html_file.write(HTML_HEAD_OPEN)
-                html_file.write("\t\t<style>\n")
-                html_file.write("\t\t</style>\n")
+                html_file.write("\t\t<style>th{background-color:white;}</style>\n")
                 html_file.write(create_navbar(objs, stats, reports_dir))
                 html_file.write(HTML_HEAD_CLOSE)
                 html_file.write(STATUS_HEADER)
