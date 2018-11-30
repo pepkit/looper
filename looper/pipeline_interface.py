@@ -527,10 +527,12 @@ class PipelineInterface(object):
             # For unmapped pipeline, Return empty config instead of None.
             return self.pipe_iface[pipeline_name] or dict()
         except KeyError:
+            names = ", ".format(
+                ["'{}'".format(p) for p in self.pipe_iface_config.keys()])
             _LOGGER.error(
-                "Missing pipeline description: %s not found; %d known: %s",
-                pipeline_name, len(self.pipe_iface_config),
-                ", ".format(self.pipe_iface_config.keys()))
+                "Missing pipeline description: '{}' not found; {} known: {}".
+                format(pipeline_name, len(self.pipe_iface_config), names))
+
             # TODO: use defaults or force user to define this?
             raise MissingPipelineConfigurationException(pipeline_name)
 
