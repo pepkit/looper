@@ -7,11 +7,10 @@ import logging
 import os
 import random
 
-import mock
 import pytest
 import yaml
 
-from looper.pipeline_interface import PipelineInterface
+from looper.pipeline_interface import PipelineInterface, PL_KEY, PROTOMAP_KEY
 from looper.project import Project
 from looper.exceptions import \
     InvalidResourceSpecificationException, \
@@ -61,7 +60,7 @@ def basic_pipe_iface_data(request):
 @pytest.fixture
 def bundled_piface(request):
     pipelines = request.getfixturevalue("basic_pipe_iface_data")
-    return {"protocol_mapping": {"ATAC": "ATACSeq.py"}, "pipelines": pipelines}
+    return {PROTOMAP_KEY: {"ATAC": "ATACSeq.py"}, PL_KEY: pipelines}
 
 
 
@@ -78,7 +77,7 @@ def pi_with_resources(request, bundled_piface, resources):
             if size:
                 rp_data[file_size_name] = size
     pipe_iface_config = PipelineInterface(bundled_piface)
-    for pipe_data in pipe_iface_config.pipelines:
+    for pipe_data in pipe_iface_config.pipelines.values():
         pipe_data["resources"] = resources
     return pipe_iface_config
 
@@ -87,15 +86,28 @@ def pi_with_resources(request, bundled_piface, resources):
 @pytest.mark.parametrize(argnames="from_file", argvalues=[False, True])
 def test_constructor_input_types(tmpdir, from_file, bundled_piface):
     """ PipelineInterface constructor handles Mapping or filepath. """
+
+    from peppy import AttributeDict
+
     if from_file:
         pipe_iface_config = tmpdir.join("pipe-iface-conf.yaml").strpath
         with open(tmpdir.join("pipe-iface-conf.yaml").strpath, 'w') as f:
             yaml.safe_dump(bundled_piface, f)
     else:
         pipe_iface_config = bundled_piface
+
     pi = PipelineInterface(pipe_iface_config)
-    assert bundled_piface == pi.pipe_iface_config
+
+    # Check for the protocol mapping and pipeline interface keys.
+    assert PL_KEY in pi, "Missing pipeline key ({})".format(PL_KEY)
+    assert PROTOMAP_KEY in pi, \
+        "Missing protocol mapping key: ({})".format(PROTOMAP_KEY)
+
     assert pi.pipe_iface_file == (pipe_iface_config if from_file else None)
+
+    # Validate protocol mapping and interfaces contents.
+    assert AttributeDict(bundled_piface[PL_KEY]) == pi[PL_KEY]
+    assert AttributeDict(bundled_piface[PROTOMAP_KEY]) == pi[PROTOMAP_KEY]
 
 
 
@@ -114,7 +126,7 @@ def test_unconfigured_pipeline_exception(
     """ Each public function throws same exception given unmapped pipeline. """
     pi = pi_with_resources
     if not use_resources:
-        for pipeline in pi.pipelines:
+        for pipeline in pi.pipelines.values():
             try:
                 del pipeline["resources"][DEFAULT_COMPUTE_RESOURCES_NAME]
             except KeyError:
@@ -148,8 +160,8 @@ class PipelineInterfaceNameResolutionTests:
         pipelines = [name + ext for name, ext in name_and_ext_pairs]
         pi_conf_data = {pipeline: {"name": name}
                         for pipeline, name in zip(pipelines, names)}
-        pi = PipelineInterface({"protocol_mapping": {"ATAC": "ATACSeq.py"},
-                                "pipelines": pi_conf_data})
+        pi = PipelineInterface({PROTOMAP_KEY: {"ATAC": "ATACSeq.py"},
+                                PL_KEY: pi_conf_data})
         for pipeline, expected_name in zip(pipelines, names):
             assert expected_name == pi.get_pipeline_name(pipeline)
 
@@ -165,7 +177,7 @@ class PipelineInterfaceResourcePackageTests:
             self, use_new_file_size, pi_with_resources, huge_resources):
         """ If provided, resources specification needs 'default.' """
         pi = pi_with_resources
-        for name, pipeline in pi:
+        for name, pipeline in pi.iterpipes():
             try:
                 del pipeline["resources"][DEFAULT_COMPUTE_RESOURCES_NAME]
             except KeyError:
@@ -193,7 +205,7 @@ class PipelineInterfaceResourcePackageTests:
             self, use_new_file_size, file_size, pi_with_resources):
         """ Compute resource specification is optional. """
         pi = pi_with_resources
-        for pipe_data in pi.pipelines:
+        for pipe_data in pi.pipelines.values():
             del pipe_data["resources"]
         for pipe_name in pi.pipeline_names:
             assert {} == pi.choose_resource_package(pipe_name, int(file_size))
@@ -208,10 +220,10 @@ class PipelineInterfaceResourcePackageTests:
             self, use_new_file_size, pi_with_resources,
             file_size, expected_package_name, midsize_resources):
         """ Minimal resource package sufficient for pipeline and file size. """
-        for pipe_data in pi_with_resources.pipelines:
+        for pipe_data in pi_with_resources.pipelines.values():
             pipe_data["resources"].update(
                     {"midsize": copy.deepcopy(midsize_resources)})
-        for pipe_name, pipe_data in pi_with_resources:
+        for pipe_name, pipe_data in pi_with_resources.iterpipes():
             observed_package = pi_with_resources.choose_resource_package(
                 pipe_name, file_size)
             expected_package = copy.deepcopy(
@@ -223,7 +235,7 @@ class PipelineInterfaceResourcePackageTests:
             self, use_new_file_size, pi_with_resources):
         """ Negative min file size in resource package spec is prohibited. """
         file_size_attr = "min_file_size" if use_new_file_size else "file_size"
-        for pipe_data in pi_with_resources.pipelines:
+        for pipe_data in pi_with_resources.pipelines.values():
             for package_data in pipe_data["resources"].values():
                 package_data[file_size_attr] = -5 * random.random()
         for pipe_name in pi_with_resources.pipeline_names:
@@ -257,12 +269,12 @@ class PipelineInterfaceResourcePackageTests:
 
         # Add resource package spec data and create PipelineInterface.
         pipe_iface_data = copy.deepcopy(bundled_piface)
-        for pipe_data in pipe_iface_data["pipelines"].values():
+        for pipe_data in pipe_iface_data[PL_KEY].values():
             pipe_data["resources"] = resources_data
         pi = PipelineInterface(pipe_iface_data)
 
         # We should always get default resource package for mini file.
-        for pipe_name, pipe_data in pi:
+        for pipe_name, pipe_data in pi.iterpipes():
             default_resource_package = \
                     pipe_data["resources"][DEFAULT_COMPUTE_RESOURCES_NAME]
             clear_file_size(default_resource_package)
@@ -276,7 +288,7 @@ class PipelineInterfaceResourcePackageTests:
             self, use_new_file_size, min_file_size, pi_with_resources):
         """ Default resource package sets minimum file size to zero. """
 
-        for pipe_name, pipe_data in pi_with_resources:
+        for pipe_name, pipe_data in pi_with_resources.iterpipes():
             # Establish faulty default package setting for file size.
             default_resource_package = pipe_data["resources"]["default"]
             if use_new_file_size:
@@ -320,7 +332,7 @@ class PipelineInterfaceResourcePackageTests:
                     resource_package_data["default"].pop("file_size")
 
         # Create the PipelineInterface.
-        for pipe_data in bundled_piface["pipelines"].values():
+        for pipe_data in bundled_piface[PL_KEY].values():
             pipe_data["resources"] = resource_package_data
         pi = PipelineInterface(bundled_piface)
 
@@ -366,8 +378,8 @@ class ConstructorPathParsingTests:
 
     @pytest.fixture(scope="function")
     def bundled_piface(self, pipe_iface_data):
-        return {"protocol_mapping": {"ATAC": "ATACSeq.py"},
-                "pipelines": pipe_iface_data}
+        return {PROTOMAP_KEY: {"ATAC": "ATACSeq.py"},
+                PL_KEY: pipe_iface_data}
 
 
     @pytest.fixture(scope="function", autouse=True)
@@ -427,7 +439,7 @@ class ConstructorPathParsingTests:
         """
         for add_path, pipe_key in zip(self.ADD_PATH, self.PIPELINE_KEYS):
             if add_path:
-                bundled_piface["pipelines"][pipe_key]["path"] = pipe_path
+                bundled_piface[PL_KEY][pipe_key]["path"] = pipe_path
         pi = PipelineInterface(bundled_piface)
         for add_path, pipe_key in zip(self.ADD_PATH, self.PIPELINE_KEYS):
             if add_path:
@@ -445,10 +457,10 @@ class ConstructorPathParsingTests:
             self, pipe_path, envvars, expected,
             config_bundles, piface_config_bundles, bundled_piface):
         """ User/environment variables are expanded. """
-        for piface_data in bundled_piface["pipelines"].values():
+        for piface_data in bundled_piface[PL_KEY].values():
             piface_data["path"] = pipe_path
         pi = PipelineInterface(bundled_piface)
-        for _, piface_data in pi:
+        for piface_data in pi.pipelines.values():
             assert expected == piface_data["path"]
 
 
