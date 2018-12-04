@@ -494,7 +494,7 @@ class PipelineInterface(AttributeDict):
         """
         try:
             return os.path.dirname(self.pipe_iface_file)
-        except AttributeError:
+        except (AttributeError, TypeError):
             return None
 
 
