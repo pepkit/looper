@@ -105,11 +105,18 @@ def test_basic_construction(tmpdir, from_file, bundled_piface):
         "Missing protocol mapping key: ({})".format(PROTOMAP_KEY)
 
     assert pi.pipe_iface_file == (pipe_iface_config if from_file else None)
+    if from_file:
+        assert pi.pipelines_path == tmpdir.strpath
+    else:
+        assert pi.pipelines_path is None
 
     # Validate protocol mapping and interfaces contents.
     assert AttributeDict(bundled_piface[PL_KEY]) == pi[PL_KEY]
     assert AttributeDict(bundled_piface[PROTOMAP_KEY]) == pi[PROTOMAP_KEY]
+
+    # Certain access modes should agree with one another.
     assert pi.pipelines == pi[PL_KEY]
+    assert list(pi.pipelines.keys()) == pi.pipeline_names
 
 
 
