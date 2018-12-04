@@ -481,7 +481,7 @@ class PipelineInterface(AttributeDict):
             interface is aware
         """
         # TODO: could consider keying on name.
-        return self.pipelines.keys()
+        return list(self.pipelines.keys())
 
 
     @property
