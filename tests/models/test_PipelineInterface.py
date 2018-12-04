@@ -6,6 +6,7 @@ import itertools
 import logging
 import os
 import random
+import warnings
 
 import pytest
 import yaml
@@ -40,7 +41,6 @@ def pytest_generate_tests(metafunc):
     except AttributeError:
         _LOGGER.debug("No indirect parameterization for test class: '{}'".
                       format(metafunc.cls))
-        pass
     else:
         for name, values in parameters.items():
             metafunc.parametrize(argnames=name, argvalues=values)
@@ -165,6 +165,34 @@ def test_unconfigured_pipeline_exception(
             kwargs[parameter] = "missing-pipeline"
     with pytest.raises(MissingPipelineConfigurationException):
         func.__call__(**kwargs)
+
+
+
+@pytest.mark.parametrize(
+    argnames=["pipe_name", "extension"],
+    argvalues=list(itertools.product(PIPELINE_NAMES, EXTENSIONS)))
+def test_deprecation_of_direct_pipeline_access(
+        recwarn, pipe_name, extension, pi_with_resources):
+    """ Specific pipeline access is granted via getitem but is deprecated. """
+
+    # Pipeline key is name + extension; ensure it's present.
+    pk = pipe_name + extension
+    assert pk in pi_with_resources.pipelines
+
+    warnings.simplefilter('always')    # Capture DeprecationWarning with recwarn
+    assert 0 == len(recwarn)           # Start fresh
+
+    # Modern access pattern doesn't warn.
+    pipe_dat_1 = pi_with_resources.select_pipeline(pk)
+    assert 0 == len(recwarn)
+
+    # Old access pattern does warn.
+    pipe_dat_2 = pi_with_resources[pk]
+    assert 1 == len(recwarn)
+    w = recwarn.pop(DeprecationWarning)
+    assert "select_pipeline" in str(w.message)
+
+    assert pipe_dat_1 == pipe_dat_2    # Concordance b/w result of each mode
 
 
 
