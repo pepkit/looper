@@ -12,13 +12,11 @@ import warnings
 
 import yaml
 
-from .exceptions import \
-    InvalidResourceSpecificationException, \
-    MissingPipelineConfigurationException
+from .exceptions import InvalidResourceSpecificationException, \
+    MissingPipelineConfigurationException, PipelineInterfaceConfigError
 from peppy import utils, AttributeDict, Sample
 from peppy.const import DEFAULT_COMPUTE_RESOURCES_NAME
 from peppy.utils import is_command_callable
-
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -41,6 +39,8 @@ class PipelineInterface(AttributeDict):
         configuration data, or pre-parsed configuration data.
     """
 
+    REQUIRED_SECTIONS = [PL_KEY, PROTOMAP_KEY]
+
     def __init__(self, config):
         super(PipelineInterface, self).__init__(_attribute_identity=False)
 
@@ -56,9 +56,9 @@ class PipelineInterface(AttributeDict):
             self.source = config
 
         # Check presence of 2 main sections (protocol mapping and pipelines).
-        for section in [PROTOMAP_KEY, PL_KEY]:
-            assert section in config, "{} config must declare section '{}'".\
-                format(self.__class__.__name__, section)
+        missing = [s for s in self.REQUIRED_SECTIONS if s not in config]
+        if missing:
+            raise PipelineInterfaceConfigError(missing)
 
         # Format and add the protocol mappings and individual interfaces.
         config = expand_pl_paths(config)
@@ -596,7 +596,6 @@ def standardize_protocols(piface):
     piface[PROTOMAP_KEY] = {utils.alpha_cased(proto): pipekey for
                             proto, pipekey in piface[PROTOMAP_KEY].items()}
     return piface
-
 
 
 def _import_sample_subtype(pipeline_filepath, subtype_name=None):

@@ -12,12 +12,12 @@ import yaml
 
 from looper.pipeline_interface import PipelineInterface, PL_KEY, PROTOMAP_KEY
 from looper.project import Project
-from looper.exceptions import \
-    InvalidResourceSpecificationException, \
-    MissingPipelineConfigurationException
+from looper.exceptions import InvalidResourceSpecificationException, \
+    MissingPipelineConfigurationException, PipelineInterfaceConfigError
 from peppy import Project, Sample, DEFAULT_COMPUTE_RESOURCES_NAME, \
     SAMPLE_ANNOTATIONS_KEY, SAMPLE_NAME_COLNAME
 from .conftest import ATAC_PROTOCOL_NAME, write_config_data
+from tests.helpers import powerset
 
 
 __author__ = "Vince Reuter"
@@ -59,6 +59,7 @@ def basic_pipe_iface_data(request):
 
 @pytest.fixture
 def bundled_piface(request):
+    """ Provide an essentially minimal collection of PI config data. """
     pipelines = request.getfixturevalue("basic_pipe_iface_data")
     return {PROTOMAP_KEY: {"ATAC": "ATACSeq.py"}, PL_KEY: pipelines}
 
@@ -108,6 +109,27 @@ def test_constructor_input_types(tmpdir, from_file, bundled_piface):
     # Validate protocol mapping and interfaces contents.
     assert AttributeDict(bundled_piface[PL_KEY]) == pi[PL_KEY]
     assert AttributeDict(bundled_piface[PROTOMAP_KEY]) == pi[PROTOMAP_KEY]
+
+
+
+@pytest.mark.parametrize(
+    "exclude", powerset(PipelineInterface.REQUIRED_SECTIONS))
+def test_requires_pipelines_and_protocol_mapping(
+        basic_pipe_iface_data, bundled_piface, exclude):
+    """ Check PipelineInterface's requirement for important sections. """
+    pipe_iface_config = copy.deepcopy(bundled_piface)
+    missing = [s for s in PipelineInterface.REQUIRED_SECTIONS if s not in pipe_iface_config]
+    assert [] == missing, \
+        "Missing PI config section(s): {}".format(", ".join(missing))
+    pipe_iface_config = {
+        k: v for k, v in pipe_iface_config.items() if k not in exclude}
+    assert [] == [s for s in exclude if s in pipe_iface_config]
+    # For < 3.3 compat., no contextlib specialization here
+    if exclude:
+        with pytest.raises(PipelineInterfaceConfigError):
+            PipelineInterface(pipe_iface_config)
+    else:
+        PipelineInterface(pipe_iface_config)
 
 
 
