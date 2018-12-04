@@ -15,8 +15,8 @@ from looper.pipeline_interface import PipelineInterface, PL_KEY, PROTOMAP_KEY
 from looper.project import Project
 from looper.exceptions import InvalidResourceSpecificationException, \
     MissingPipelineConfigurationException, PipelineInterfaceConfigError
-from peppy import Project, Sample, DEFAULT_COMPUTE_RESOURCES_NAME, \
-    SAMPLE_ANNOTATIONS_KEY, SAMPLE_NAME_COLNAME
+from peppy import AttributeDict, Project, Sample, \
+    DEFAULT_COMPUTE_RESOURCES_NAME, SAMPLE_ANNOTATIONS_KEY, SAMPLE_NAME_COLNAME
 from .conftest import ATAC_PROTOCOL_NAME, write_config_data
 from tests.helpers import powerset
 
@@ -88,8 +88,6 @@ def pi_with_resources(request, bundled_piface, resources):
 def test_basic_construction(tmpdir, from_file, bundled_piface):
     """ PipelineInterface constructor handles Mapping or filepath. """
 
-    from peppy import AttributeDict
-
     if from_file:
         pipe_iface_config = tmpdir.join("pipe-iface-conf.yaml").strpath
         with open(tmpdir.join("pipe-iface-conf.yaml").strpath, 'w') as f:
@@ -117,6 +115,38 @@ def test_basic_construction(tmpdir, from_file, bundled_piface):
     # Certain access modes should agree with one another.
     assert pi.pipelines == pi[PL_KEY]
     assert list(pi.pipelines.keys()) == pi.pipeline_names
+
+
+
+def test_iterpipes(pi_with_resources):
+    """ Test iteration over pipeline keys and interface data. """
+
+    missing, unequal = [], []
+    seen = 0
+
+    known = pi_with_resources[PL_KEY]
+    assert len(known) > 0
+
+    def get_err_msg(obs, context):
+        return "{} of {} known pipeline(s) {}: {}".format(
+            len(obs), len(known), context, ", ".join(obs))
+
+    for pipe, data in pi_with_resources.iterpipes():
+        seen += 1
+        if pipe not in known:
+            missing.append(pipe)
+        elif data != pi_with_resources.select_pipeline(pipe):
+            unequal.append(pipe)
+
+    assert len(known) == seen
+    assert [] == missing, get_err_msg(missing, "missing")
+    try:
+        assert [] == unequal
+    except AssertionError:
+        print(get_err_msg(unequal, "with unmatched data"))
+        print("KNOWN: {}".format(known))
+        print("ITERPIPES: {}".format(", ".join(pi_with_resources.iterpipes())))
+        raise
 
 
 
