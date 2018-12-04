@@ -85,7 +85,7 @@ def pi_with_resources(request, bundled_piface, resources):
 
 
 @pytest.mark.parametrize(argnames="from_file", argvalues=[False, True])
-def test_constructor_input_types(tmpdir, from_file, bundled_piface):
+def test_basic_construction(tmpdir, from_file, bundled_piface):
     """ PipelineInterface constructor handles Mapping or filepath. """
 
     from peppy import AttributeDict
@@ -109,6 +109,7 @@ def test_constructor_input_types(tmpdir, from_file, bundled_piface):
     # Validate protocol mapping and interfaces contents.
     assert AttributeDict(bundled_piface[PL_KEY]) == pi[PL_KEY]
     assert AttributeDict(bundled_piface[PROTOMAP_KEY]) == pi[PROTOMAP_KEY]
+    assert pi.pipelines == pi[PL_KEY]
 
 
 
