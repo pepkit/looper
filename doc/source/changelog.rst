@@ -1,5 +1,21 @@
 Changelog
 ******************************
+
+- **Unreleased**
+
+  - Changed
+
+    - ``PipelineInterface`` now derives from ``peppy.AttributeDict``.
+
+    - Iteration on ``PipelineInterface`` is now over a composite mapping, containing both a collection of protocol-to-pipeline bindings and a mapping from pipeline key to interface data. To iterate over as before, use ``iterpipes``.
+
+    - Index-like syntax on ``PipelineInterface`` now refers to the composite (protocol mapping and interfaces); that mode of access to an individual pipeline works but is deprecated in favor of ``select_pipeline``.
+
+    - Reference on ``PipelineInterface`` to ``pipe_iface`` is deprecated, in favor of ``pipelines``.
+
+    - Reference on ``PipelineInterface`` to ``protomap`` is deprecated, in favor of ``protocol_mapping``.
+
+
 - **v0.9.2** (*2018-11-12*):
 
   - Fixed
