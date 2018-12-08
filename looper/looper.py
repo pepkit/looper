@@ -599,7 +599,7 @@ class Summarizer(Executor):
             # Version 0.3 standardized all stats into a single file
             stats_file = os.path.join(sample_output_folder, "stats.tsv")
             if os.path.isfile(stats_file):
-                _LOGGER.info("Found stats file: '%s'", stats_file)
+                _LOGGER.info("Using stats file: '%s'", stats_file)
             else:
                 _LOGGER.warn("No stats file '%s'", stats_file)
                 continue
@@ -624,7 +624,7 @@ class Summarizer(Executor):
             sample_output_folder = sample_folder(self.prj, sample)
             objs_file = os.path.join(sample_output_folder, "objects.tsv")
             if os.path.isfile(objs_file):
-                _LOGGER.info("Found objects file: '%s'", objs_file)
+                _LOGGER.info("Using objects file: '%s'", objs_file)
             else:
                 _LOGGER.warn("No objects file '%s'", objs_file)
                 continue
