@@ -185,31 +185,6 @@ def build_parser():
                 help="Name of subproject to use, as designated in the "
                      "project's configuration file")
 
-    # To enable the loop to pass args directly on to the pipelines...
-    args, remaining_args = parser.parse_known_args()
-
-    # Set the logging level.
-    if args.dbg:
-        # Debug mode takes precedence and will listen for all messages.
-        level = args.logging_level or logging.DEBUG
-    elif args.verbosity is not None:
-        # Verbosity-framed specification trumps logging_level.
-        level = _LEVEL_BY_VERBOSITY[args.verbosity]
-    else:
-        # Normally, we're not in debug mode, and there's not verbosity.
-        level = LOGGING_LEVEL
-
-    # Establish the project-root logger and attach one for this module.
-    setup_looper_logger(level=level,
-                        additional_locations=(args.logfile, ),
-                        devmode=args.dbg)
-    global _LOGGER
-    _LOGGER = logging.getLogger(__name__)
-
-    if len(remaining_args) > 0:
-        _LOGGER.debug("Remaining arguments passed to pipelines: {}".
-                      format(" ".join([str(x) for x in remaining_args])))
-
     return parser
 
 
@@ -819,8 +794,31 @@ class _VersionInHelpParser(argparse.ArgumentParser):
 
 
 def main():
-    # Parse command-line arguments and establish logger.
-    args, remaining_args = build_parser().parse_known_args()
+    
+    parser = build_parser()
+    args, remaining_args = parser.parse_known_args()
+
+    # Set the logging level.
+    if args.dbg:
+        # Debug mode takes precedence and will listen for all messages.
+        level = args.logging_level or logging.DEBUG
+    elif args.verbosity is not None:
+        # Verbosity-framed specification trumps logging_level.
+        level = _LEVEL_BY_VERBOSITY[args.verbosity]
+    else:
+        # Normally, we're not in debug mode, and there's not verbosity.
+        level = LOGGING_LEVEL
+
+    # Establish the project-root logger and attach one for this module.
+    setup_looper_logger(level=level,
+                        additional_locations=(args.logfile, ),
+                        devmode=args.dbg)
+    global _LOGGER
+    _LOGGER = logging.getLogger(__name__)
+
+    if len(remaining_args) > 0:
+        _LOGGER.debug("Remaining arguments passed to pipelines: {}".
+                      format(" ".join([str(x) for x in remaining_args])))
 
     _LOGGER.info("Command: {} (Looper version: {})".
                  format(args.command, __version__))
