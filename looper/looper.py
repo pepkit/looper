@@ -44,13 +44,11 @@ _MAX_FAIL_SAMPLE_DISPLAY = 20
 _LOGGER = logging.getLogger()
 
 
-def parse_arguments():
+def build_parser():
     """
-    Argument Parsing.
+    Building argument parser.
 
-    :return argparse.Namespace, list[str]: namespace parsed according to
-        arguments defined here, and additional options arguments undefined
-        here and to be handled downstream
+    :return argparse.ArgumentParser
     """
 
     # Main looper program help text messages
@@ -212,7 +210,7 @@ def parse_arguments():
         _LOGGER.debug("Remaining arguments passed to pipelines: {}".
                       format(" ".join([str(x) for x in remaining_args])))
 
-    return args, remaining_args
+    return parser
 
 
 class Executor(object):
@@ -822,7 +820,7 @@ class _VersionInHelpParser(argparse.ArgumentParser):
 
 def main():
     # Parse command-line arguments and establish logger.
-    args, remaining_args = parse_arguments()
+    args, remaining_args = build_parser().parse_known_args()
 
     _LOGGER.info("Command: {} (Looper version: {})".
                  format(args.command, __version__))

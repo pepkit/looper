@@ -15,6 +15,8 @@ Changelog
 
     - Reference on ``PipelineInterface`` to ``protomap`` is deprecated, in favor of ``protocol_mapping``.
 
+    - Rename ``parse_arguments`` to ``build_parser``, which returns ``argparse.ArgumentParser`` object
+
 
 - **v0.9.2** (*2018-11-12*):
 
