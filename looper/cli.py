@@ -186,7 +186,8 @@ _RUN_OPTS = [
 _ALL_COMMAND_OPTS = [
     ReqCliOpt("config_file", "Project configuration file (YAML)."),
     ToggleCliOpt("file-checks", "Perform input file checks."),
-    ToggleCliOpt("dry-run", "Don't actually submit the project/subproject."),
+    ToggleCliOpt("dry-run", "Don't actually submit the project/subproject.",
+                 short="d"),
     OptCliOpt("sp", "Name of subproject to use, as designated in the project's "
                     "configuration file", dest="subproject"),
     ExclOptGroup([
