@@ -6,7 +6,7 @@ import copy
 import logging
 import os
 
-from . import __version__, COMPUTE_SETTINGS_VARNAME, FLAGS
+from . import __version__, COMPUTE_SETTINGS_VARNAME
 
 
 # Descending by severity for correspondence with logic inversion.
@@ -218,9 +218,11 @@ _RUN_OPTS = [
               type=int, default=None)
 ]
 
+CONFIG_FILE_OPTNAME = "config_file"
+
 # options to add for each program/subcommand
 _ALL_COMMAND_OPTS = [
-    ReqCliOpt("config_file", "Project configuration file (YAML)."),
+    ReqCliOpt(CONFIG_FILE_OPTNAME, "Project configuration file (YAML)."),
     ToggleCliOpt("file-checks", "Perform input file checks."),
     ToggleCliOpt("dry-run", "Don't actually submit the project/subproject.",
                  short="d"),
@@ -245,6 +247,9 @@ PROGRAM_CLI_PARSERS = [
     Subparser("run", "Main Looper function: Submit jobs for samples.", _RUN_OPTS),
     Subparser("summarize", "Summarize statistics of project samples.")
 ]
+
+
+OPTS_BY_PROG = {}
 
 
 def build_parser():
