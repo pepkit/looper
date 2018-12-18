@@ -16,9 +16,21 @@ _LEVEL_BY_VERBOSITY = [
 
 
 class CliOpt(object):
+    """ Base class for a CLI option """
+
     __metaclass__ = abc.ABCMeta
 
     def __init__(self, name, help, suppress=False, **kwargs):
+        """
+        Create option with name and help message, and possible other settings.
+
+        :param str name: name for this option; determines Namespace attribute;
+            for an non-required option, this also determines the long form.
+        :param str help: help text for this option
+        :param bool suppress: whether to suppress help message
+        :param kwargs: variable keyword arguments, passed to a the add_argument
+            method on a target object
+        """
         if "help" in kwargs:
             raise ValueError("Found help as a variable keyword argument; "
                              "it must be provided as a positional")
@@ -29,17 +41,30 @@ class CliOpt(object):
 
     @property
     def as_argparse(self):
+        """
+        :return tuple, dict: positional and keyword arguments to add_argument.
+        """
         return self._positionals, self._keywords
 
     @property
     def _keywords(self):
+        """
+        :return dict: keyword arguments for add_argument call
+        """
         kwargs = copy.deepcopy(self._kwargs)
         kwargs["help"] = argparse.SUPPRESS if self._suppress else self._help
         return kwargs
 
     @abc.abstractproperty
     def _positionals(self):
+        """
+        :return tuple: positional arguments for add_argument call
+        """
         pass
+
+    def __str__(self):
+        return "{}: ({}, {})".format(
+            self.__class__.__name__, self._positionals, self._kwargs)
 
 
 class ReqCliOpt(CliOpt):
@@ -49,8 +74,10 @@ class ReqCliOpt(CliOpt):
 
 
 class OptCliOpt(CliOpt):
+    """ Optional CLI option """
 
     def __init__(self, name, help, short=None, **kwargs):
+        """ Optional CLI option adds hook for one-letter opt name use. """
         super(OptCliOpt, self).__init__(name, help, **kwargs)
         if short and len(short) > 1:
             raise ValueError("Multi-character short name: {}".format(short))
@@ -63,6 +90,7 @@ class OptCliOpt(CliOpt):
 
 
 class ToggleCliOpt(OptCliOpt):
+    """ Flag-like CLI option; sets a flag to true """
 
     @property
     def _keywords(self):
@@ -72,8 +100,16 @@ class ToggleCliOpt(OptCliOpt):
 
 
 class ExclOptGroup(object):
+    """ Mutually exclusive option group """
 
     def __init__(self, opts, required=False):
+        """
+        Create a group by specifying its members, and whether one is required.
+
+        :param Iterable[CliOpt] opts: collection of the group's member options
+        :param bool required: whether specification of one of the group's
+            members is required
+        """
         if len(opts) < 2:
             raise ValueError("Too few opts for group: {}".format(len(opts)))
         non_opts = [o for o in opts if not isinstance(o, CliOpt)]
@@ -85,57 +121,46 @@ class ExclOptGroup(object):
 
     @property
     def options(self):
+        """ Each option in the group """
         return copy.deepcopy(self._opts)
+
+    def __str__(self):
+        return "{}:\n{}".format(
+            self.__class__.__name__, "\n".join(map(str, self.options)))
 
 
 class Subparser(object):
+    """ Specification of subparser for a particular program/subcommand """
 
     def __init__(self, name, message, opts=None):
+        """
+
+        :param str name: name for a particular prgogram/subcommand
+        :param str message: description and help message
+        :param Iterable[CliOpt | ExclCliGroup] opts: collection of options
+            and option groups specific to a program/subcommand
+        """
         self.name = name
         self._message = message
         self._opts = opts
 
     @property
     def description(self):
+        """ Subcommand description """
         return self._message
 
     @property
     def help(self):
+        """ Subcommand help message """
         return self._message
 
     @property
     def options(self):
+        """ The collection of options/groups specific for this program """
         return copy.deepcopy(self._opts) if self._opts else []
 
 
 class _LooperCliParser(argparse.ArgumentParser):
-
-    """
-    def __init__(self, non_sub=None, *args, **kwargs):
-        super(_LooperCliParser, self).__init__(*args, **kwargs)
-        for opt in (non_sub or []):
-            self.add_opt(opt)
-        def update_sub(sp):
-            for opt in _ALL_COMMAND_OPTS:
-                if isinstance(opt, CliOpt):
-                    pos, kwd = opt.as_argparse
-                    sp.add_argument(*pos, **kwd)
-                elif isinstance(opt, ExclOptGroup):
-                    g = sp.add_mutually_exclusive_group(required=opt.required)
-                    for a, kw in map(lambda o: o.as_argparse, opt.options):
-                        g.add_argument(*a, **kw)
-                else:
-                    raise TypeError("Neither single option nor group: {} "
-                                    "({})".format(o, type(o)))
-        subparsers = self.add_subparsers(dest="cmd")
-        for prog_spec in PROGRAM_CLI_PARSERS:
-            sub = subparsers.add_parser(prog_spec.name, help=prog_spec.help,
-                                        description=prog_spec.description)
-            for o in prog_spec.options:
-                args, kwargs = o.as_argparse
-                sub.add_argument(*args, **kwargs)
-            update_sub(sub)
-    """
 
     def format_help(self):
         """ Add version information to help text. """
@@ -143,6 +168,12 @@ class _LooperCliParser(argparse.ArgumentParser):
                super(_LooperCliParser, self).format_help()
 
     def add_opt(self, opt):
+        """
+        Add an option to this parser.
+
+        :param CliOpt opt: specification of a CLI option
+        :return _LooperCliParser: updated instance
+        """
         try:
             args, kwargs = opt.as_argparse
         except AttributeError:
@@ -150,8 +181,10 @@ class _LooperCliParser(argparse.ArgumentParser):
                 "Not a valid CLI option type: {} ({})".format(opt, type(opt)))
         else:
             self.add_argument(*args, **kwargs)
+            return self
 
 
+# looper check options
 _CHECK_OPTS = [
     ToggleCliOpt("all-folders",
                  "Check status for all project's output folders, not just those "
@@ -159,10 +192,12 @@ _CHECK_OPTS = [
     OptCliOpt("flags", "Check on only these flags/status values.", short="F")
 ]
 
+# looper destroy options
 _DESTROY_OPTS = [
     ToggleCliOpt("force-yes", "Provide upfront confirmation of destruction "
                               "intent, to skip console query")]
 
+# looper run options
 _RUN_OPTS = [
     OptCliOpt("time-delay", "Time delay in seconds between job submissions.",
               short="t", type=int, default=0),
@@ -183,6 +218,7 @@ _RUN_OPTS = [
               type=int, default=None)
 ]
 
+# options to add for each program/subcommand
 _ALL_COMMAND_OPTS = [
     ReqCliOpt("config_file", "Project configuration file (YAML)."),
     ToggleCliOpt("file-checks", "Perform input file checks."),
@@ -200,6 +236,7 @@ _ALL_COMMAND_OPTS = [
     ])
 ]
 
+# Specification of parser for each program/subcommand
 PROGRAM_CLI_PARSERS = [
     Subparser("check", "Checks flag status of current runs.", _CHECK_OPTS),
     Subparser("clean", "Runs clean scripts to remove intermediate files of "
@@ -214,7 +251,7 @@ def build_parser():
     """
     Building argument parser.
 
-    :return argparse.ArgumentParser
+    :return looper.cli._LooperCliParser
     """
 
     # Main looper program help text messages
@@ -240,10 +277,14 @@ def build_parser():
             "-V", "--version",
             action="version",
             version="%(prog)s {v}".format(v=__version__))
+
+    # Add the logging options.
     for a, kw in map(lambda o: o.as_argparse, log_opts):
         parser.add_argument(*a, **kw)
+
     subparsers = parser.add_subparsers(dest="command")
 
+    # Update a parser/subparser with a CLI option.
     def update(obj, opt):
         try:
             if isinstance(opt, CliOpt):
@@ -259,12 +300,15 @@ def build_parser():
             raise TypeError("Could not add a {} as an argument to a {}"
                             .format(type(opt), type(obj)))
 
+    # Add each program
     for prog_spec in PROGRAM_CLI_PARSERS:
         sub = subparsers.add_parser(prog_spec.name,
             description=prog_spec.description, help=prog_spec.help)
         for opt in prog_spec.options:
+            # Program-dependent options
             update(sub, opt)
         for opt in _ALL_COMMAND_OPTS:
+            # Program-independent options
             update(sub, opt)
 
     return parser
