@@ -19,8 +19,8 @@ from ._version import __version__
 # the locations of some of the peppy declarations. Effectively, concentrate
 # the connection between peppy and looper here, to the extent possible.
 from peppy import \
-    FLAGS, IMPLICATIONS_DECLARATION, SAMPLE_INDEPENDENT_PROJECT_SECTIONS, \
-    SAMPLE_NAME_COLNAME
+    COMPUTE_SETTINGS_VARNAME, FLAGS, IMPLICATIONS_DECLARATION, \
+    SAMPLE_INDEPENDENT_PROJECT_SECTIONS, SAMPLE_NAME_COLNAME
 
 
 __classes__ = ["PipelineInterface"]

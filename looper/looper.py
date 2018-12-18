@@ -28,164 +28,15 @@ from .utils import fetch_flag_files, sample_folder
 
 from .html_reports import HTMLReportBuilder
 
-from peppy import \
-    ProjectContext, COMPUTE_SETTINGS_VARNAME, SAMPLE_EXECUTION_TOGGLE
+from peppy import ProjectContext, SAMPLE_EXECUTION_TOGGLE
 from peppy.utils import alpha_cased
 
 
 SUBMISSION_FAILURE_MESSAGE = "Cluster resource failure"
 
-# Descending by severity for correspondence with logic inversion.
-# That is, greater verbosity setting corresponds to lower logging level.
-_LEVEL_BY_VERBOSITY = [logging.ERROR, logging.CRITICAL, logging.WARN,
-                       logging.INFO, logging.DEBUG]
 _FAIL_DISPLAY_PROPORTION_THRESHOLD = 0.5
 _MAX_FAIL_SAMPLE_DISPLAY = 20
 _LOGGER = logging.getLogger()
-
-
-def build_parser():
-    """
-    Building argument parser.
-
-    :return argparse.ArgumentParser
-    """
-
-    # Main looper program help text messages
-    banner = "%(prog)s - Loop through samples and submit pipelines."
-    additional_description = "For subcommand-specific options, type: " \
-                             "'%(prog)s <subcommand> -h'"
-    additional_description += "\nhttps://github.com/pepkit/looper"
-
-    parser = _VersionInHelpParser(
-            description=banner,
-            epilog=additional_description,
-            formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument(
-            "-V", "--version",
-            action="version",
-            version="%(prog)s {v}".format(v=__version__))
-
-    # Logging control
-    parser.add_argument(
-            "--logfile", dest="logfile",
-            help="Optional output file for looper logs")
-    parser.add_argument(
-            "--verbosity", dest="verbosity",
-            type=int, choices=range(len(_LEVEL_BY_VERBOSITY)),
-            help="Choose level of verbosity")
-    parser.add_argument(
-            "--logging-level", dest="logging_level",
-            help=argparse.SUPPRESS)
-    parser.add_argument(
-            "--dbg", dest="dbg", action="store_true",
-            help="Turn on debug mode")
-
-    # Individual subcommands
-    msg_by_cmd = {
-            "run": "Main Looper function: Submit jobs for samples.",
-            "summarize": "Summarize statistics of project samples.",
-            "destroy": "Remove all files of the project.",
-            "check": "Checks flag status of current runs.",
-            "clean": "Runs clean scripts to remove intermediate "
-                     "files of already processed jobs."}
-    subparsers = parser.add_subparsers(dest="command")
-
-    def add_subparser(cmd):
-        message = msg_by_cmd[cmd]
-        return subparsers.add_parser(cmd, description=message, help=message)
-
-    # Run command
-    run_subparser = add_subparser("run")
-    run_subparser.add_argument(
-            "-t", "--time-delay", dest="time_delay",
-            type=int, default=0,
-            help="Time delay in seconds between job submissions.")
-    run_subparser.add_argument(
-            "--ignore-flags", dest="ignore_flags",
-            action="store_true",
-            help="Ignore run status flags? Default: False. "
-                 "By default, pipelines will not be submitted if a pypiper "
-                 "flag file exists marking the run (e.g. as "
-                 "'running' or 'failed'). Set this option to ignore flags "
-                 "and submit the runs anyway.")
-    run_subparser.add_argument(
-            "--allow-duplicate-names",
-            action="store_true",
-            help="Allow duplicate names? Default: False. "
-                 "By default, pipelines will not be submitted if a sample name"
-                 " is duplicated, since samples names should be unique.  "
-                 " Set this option to override this setting.")
-    run_subparser.add_argument(
-            "--compute", dest="compute",
-            help="YAML file with looper environment compute settings.")
-    run_subparser.add_argument(
-            "--env", dest="env",
-            default=os.getenv("{}".format(COMPUTE_SETTINGS_VARNAME), ""),
-            help="Employ looper environment compute settings.")
-    run_subparser.add_argument(
-            "--limit", dest="limit", default=None,
-            type=int,
-            help="Limit to n samples.")
-    # Note that defaults for otherwise numeric lump parameters are set to
-    # null by default so that the logic that parses their values may
-    # distinguish between explicit 0 and lack of specification.
-    run_subparser.add_argument(
-            "--lump", type=float, default=None,
-            help="Maximum total input file size for a lump/batch of commands "
-                 "in a single job (in GB)")
-    run_subparser.add_argument(
-            "--lumpn", type=int, default=None,
-            help="Number of individual scripts grouped into single submission")
-
-    # Other commands
-    summarize_subparser = add_subparser("summarize")
-    destroy_subparser = add_subparser("destroy")
-    check_subparser = add_subparser("check")
-    clean_subparser = add_subparser("clean")
-
-    check_subparser.add_argument(
-            "-A", "--all-folders", action="store_true",
-            help="Check status for all project's output folders, not just "
-                 "those for samples specified in the config file used")
-    check_subparser.add_argument(
-            "-F", "--flags", nargs='*', default=FLAGS,
-            help="Check on only these flags/status values.")
-
-    destroy_subparser.add_argument(
-            "--force-yes", action="store_true",
-            help="Provide upfront confirmation of destruction intent, "
-                 "to skip console query")
-
-    # Common arguments
-    for subparser in [run_subparser, summarize_subparser,
-                      destroy_subparser, check_subparser, clean_subparser]:
-        subparser.add_argument(
-                "config_file",
-                help="Project configuration file (YAML).")
-        subparser.add_argument(
-                "--file-checks", dest="file_checks",
-                action="store_false",
-                help="Perform input file checks. Default=True.")
-        subparser.add_argument(
-                "-d", "--dry-run", dest="dry_run",
-                action="store_true",
-                help="Don't actually submit the project/subproject.")
-        protocols = subparser.add_mutually_exclusive_group()
-        protocols.add_argument(
-                "--exclude-protocols", nargs='*', dest="exclude_protocols",
-                help="Operate only on samples that either lack a protocol or "
-                     "for which protocol is not in this collection.")
-        protocols.add_argument(
-                "--include-protocols", nargs='*', dest="include_protocols",
-                help="Operate only on samples associated with these protocols;"
-                     " if not provided, all samples are used.")
-        subparser.add_argument(
-                "--sp", dest="subproject",
-                help="Name of subproject to use, as designated in the "
-                     "project's configuration file")
-
-    return parser
 
 
 class Executor(object):
@@ -786,14 +637,9 @@ def _submission_status_text(curr, total, sample_name, sample_protocol, color):
            Style.RESET_ALL
 
 
-class _VersionInHelpParser(argparse.ArgumentParser):
-    def format_help(self):
-        """ Add version information to help text. """
-        return "version: {}\n".format(__version__) + \
-               super(_VersionInHelpParser, self).format_help()
-
-
 def main():
+
+    from .cli import build_parser
     
     parser = build_parser()
     args, remaining_args = parser.parse_known_args()
@@ -804,7 +650,7 @@ def main():
         level = args.logging_level or logging.DEBUG
     elif args.verbosity is not None:
         # Verbosity-framed specification trumps logging_level.
-        level = _LEVEL_BY_VERBOSITY[args.verbosity]
+        level = LEVEL_BY_VERBOSITY[args.verbosity]
     else:
         # Normally, we're not in debug mode, and there's not verbosity.
         level = LOGGING_LEVEL
