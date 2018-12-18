@@ -27,10 +27,6 @@ class CliOpt(object):
         self._suppress = suppress
         self._kwargs = kwargs
 
-    @abc.abstractproperty
-    def _positionals(self):
-        pass
-
     @property
     def as_argparse(self):
         return self._positionals, self._keywords
@@ -40,6 +36,10 @@ class CliOpt(object):
         kwargs = copy.deepcopy(self._kwargs)
         kwargs["help"] = argparse.SUPPRESS if self._suppress else self._help
         return kwargs
+
+    @abc.abstractproperty
+    def _positionals(self):
+        pass
 
 
 class ReqCliOpt(CliOpt):
