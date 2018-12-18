@@ -188,7 +188,7 @@ _ALL_COMMAND_OPTS = [
     ToggleCliOpt("file-checks", "Perform input file checks."),
     ToggleCliOpt("dry-run", "Don't actually submit the project/subproject."),
     OptCliOpt("sp", "Name of subproject to use, as designated in the project's "
-                    "configuration file"),
+                    "configuration file", dest="subproject"),
     ExclOptGroup([
         OptCliOpt("include-protocols",
                   "Operate only on samples associated with these protocols; "
@@ -241,7 +241,7 @@ def build_parser():
             version="%(prog)s {v}".format(v=__version__))
     for a, kw in map(lambda o: o.as_argparse, log_opts):
         parser.add_argument(*a, **kw)
-    subparsers = parser.add_subparsers(dest="cmd")
+    subparsers = parser.add_subparsers(dest="command")
 
     def update(obj, opt):
         try:
