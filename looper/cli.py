@@ -1,6 +1,5 @@
 """ Command-line interface """
 
-import abc
 import argparse
 import copy
 import logging
@@ -17,8 +16,6 @@ _LEVEL_BY_VERBOSITY = [
 
 class CliOpt(object):
     """ Base class for a CLI option """
-
-    __metaclass__ = abc.ABCMeta
 
     def __init__(self, name, help, short=None, **kwargs):
         """
