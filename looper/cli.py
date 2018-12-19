@@ -20,83 +20,39 @@ class CliOpt(object):
 
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, name, help, suppress=False, **kwargs):
+    def __init__(self, name, help, short=None, **kwargs):
         """
         Create option with name and help message, and possible other settings.
 
         :param str name: name for this option; determines Namespace attribute;
             for an non-required option, this also determines the long form.
         :param str help: help text for this option
-        :param bool suppress: whether to suppress help message
+        :param str short: short option name; optiona;
         :param kwargs: variable keyword arguments, passed to a the add_argument
             method on a target object
         """
         if "help" in kwargs:
             raise ValueError("Found help as a variable keyword argument; "
                              "it must be provided as a positional")
-        self._name = name
-        self._help = help
-        self._suppress = suppress
-        self._kwargs = kwargs
+        if short and len(short) != 2:
+            raise ValueError("Short option name should be 2 characters; "
+                             "got {} ({})".format(len(short), short))
+        self.name = name
+        self.short = short
+        self._kwargs = copy.deepcopy(kwargs)
+        self._kwargs["help"] = help
 
     @property
     def as_argparse(self):
         """
         :return tuple, dict: positional and keyword arguments to add_argument.
         """
-        return self._positionals, self._keywords
-
-    @property
-    def _keywords(self):
-        """
-        :return dict: keyword arguments for add_argument call
-        """
-        kwargs = copy.deepcopy(self._kwargs)
-        kwargs["help"] = argparse.SUPPRESS if self._suppress else self._help
-        return kwargs
-
-    @abc.abstractproperty
-    def _positionals(self):
-        """
-        :return tuple: positional arguments for add_argument call
-        """
-        pass
+        args = (self.short, self.name) if self.short else (self.name, )
+        return args, copy.deepcopy(self._kwargs)
 
     def __str__(self):
-        return "{}: ({}, {})".format(
-            self.__class__.__name__, self._positionals, self._kwargs)
-
-
-class ReqCliOpt(CliOpt):
-    @property
-    def _positionals(self):
-        return (self._name, )
-
-
-class OptCliOpt(CliOpt):
-    """ Optional CLI option """
-
-    def __init__(self, name, help, short=None, **kwargs):
-        """ Optional CLI option adds hook for one-letter opt name use. """
-        super(OptCliOpt, self).__init__(name, help, **kwargs)
-        if short and len(short) > 1:
-            raise ValueError("Multi-character short name: {}".format(short))
-        self._short = short
-
-    @property
-    def _positionals(self):
-        long_name = "--" + self._name
-        return ("-" + self._short, long_name) if self._short else (long_name,)
-
-
-class ToggleCliOpt(OptCliOpt):
-    """ Flag-like CLI option; sets a flag to true """
-
-    @property
-    def _keywords(self):
-        kwargs = super(ToggleCliOpt, self)._keywords
-        kwargs["action"] = "store_true"
-        return kwargs
+        args, kwargs = self.as_argparse
+        return "{}: ({}, {})".format(self.__class__.__name__, args, kwargs)
 
 
 class ExclOptGroup(object):
@@ -186,55 +142,56 @@ class _LooperCliParser(argparse.ArgumentParser):
 
 # looper check options
 _CHECK_OPTS = [
-    ToggleCliOpt("all-folders",
-                 "Check status for all project's output folders, not just those "
-                 "for samples specified in the config file used", short="A"),
-    OptCliOpt("flags", "Check on only these flags/status values.", short="F")
+    CliOpt("--all-folders",
+           "Check status for all project's output folders, not just those "
+           "for samples specified in the config file used",
+           short="-A", action="store_true"),
+    CliOpt("--flags", "Check on only these flags/status values.", short="-F")
 ]
 
 # looper destroy options
 _DESTROY_OPTS = [
-    ToggleCliOpt("force-yes", "Provide upfront confirmation of destruction "
-                              "intent, to skip console query")]
+    CliOpt("force-yes", "Provide upfront confirmation of destruction intent, "
+                        "to skip console query", action="store_true")
+]
 
 # looper run options
 _RUN_OPTS = [
-    OptCliOpt("time-delay", "Time delay in seconds between job submissions.",
-              short="t", type=int, default=0),
-    ToggleCliOpt("ignore-flags", "Ignore run status flags? Default: False. "
+    CliOpt("--time-delay", "Time delay in seconds between job submissions.",
+           short="-t", type=int, default=0),
+    CliOpt("--ignore-flags", "Ignore run status flags? Default: False. "
                  "By default, pipelines will not be submitted if a pypiper "
                  "flag file exists marking the run (e.g. as "
                  "'running' or 'failed'). Set this option to ignore flags "
-                 "and submit the runs anyway."),
-    OptCliOpt("compute", "YAML file with looper environment compute settings."),
-    OptCliOpt("env", "Employ looper environment compute settings.",
-              default=os.getenv("{}".format(COMPUTE_SETTINGS_VARNAME), "")),
-    OptCliOpt("limit", "Limit to n samples", default=None, type=int),
-    OptCliOpt("lump", "Maximum total input file size for a lump/batch of "
-                      "commands in a single job (in GB)",
-              type=float, default=None),
-    OptCliOpt("lumpn",
-              "Number of individual scripts grouped into single submission",
-              type=int, default=None)
+                 "and submit the runs anyway.", action="store_true"),
+    CliOpt("--compute", "YAML file with looper environment compute settings."),
+    CliOpt("--env", "Employ looper environment compute settings.",
+           default=os.getenv("{}".format(COMPUTE_SETTINGS_VARNAME), "")),
+    CliOpt("--limit", "Limit to n samples", default=None, type=int),
+    CliOpt("--lump", "Maximum total input file size for a lump/batch of commands "
+                     "in a single job (in GB)",
+           type=float, default=None),
+    CliOpt("--lumpn", type=int, default=None,
+           help="Number of individual scripts grouped into single submission")
 ]
 
 CONFIG_FILE_OPTNAME = "config_file"
 
 # options to add for each program/subcommand
 _ALL_COMMAND_OPTS = [
-    ReqCliOpt(CONFIG_FILE_OPTNAME, "Project configuration file (YAML)."),
-    ToggleCliOpt("file-checks", "Perform input file checks."),
-    ToggleCliOpt("dry-run", "Don't actually submit the project/subproject.",
-                 short="d"),
-    OptCliOpt("sp", "Name of subproject to use, as designated in the project's "
-                    "configuration file", dest="subproject"),
+    CliOpt(CONFIG_FILE_OPTNAME, "Project configuration file (YAML)."),
+    CliOpt("--file-checks", "Perform input file checks.", action="store_true"),
+    CliOpt("--dry-run", "Don't actually submit the project/subproject.",
+           short="-d", action="store_true"),
+    CliOpt("--sp", "Name of subproject to use, as designated in the project's "
+                   "configuration file", dest="subproject"),
     ExclOptGroup([
-        OptCliOpt("include-protocols",
-                  "Operate only on samples associated with these protocols; "
-                  "if not provided, all samples are used.", nargs='*'),
-        OptCliOpt("exclude-protocols",
-                  "Operate only on samples that either lack a protocol or for "
-                  "which protocol is not in this collection.", nargs='*')
+        CliOpt("--include-protocols",
+               "Operate only on samples associated with these protocols; "
+               "if not provided, all samples are used.", nargs='*'),
+        CliOpt("--exclude-protocols",
+               "Operate only on samples that either lack a protocol or for "
+               "which protocol is not in this collection.", nargs='*')
     ])
 ]
 
@@ -267,11 +224,11 @@ def build_parser():
 
     # Logging control
     log_opts = [
-        OptCliOpt("logfile", "Optional output file for looper logs"),
-        OptCliOpt("verbosity", "Choose level of verbosity",
-                  type=int, choices=list(range(len(_LEVEL_BY_VERBOSITY)))),
-        OptCliOpt("logging-level", "Logging module level", suppress=True),
-        ToggleCliOpt("dbg", "Turn on debug mode")
+        CliOpt("--logfile", "Optional output file for looper logs"),
+        CliOpt("--verbosity", "Choose level of verbosity",
+               type=int, choices=list(range(len(_LEVEL_BY_VERBOSITY)))),
+        CliOpt("--logging-level", help=argparse.SUPPRESS),
+        CliOpt("--dbg", "Turn on debug mode", action="store_true")
     ]
 
     parser = _LooperCliParser(
@@ -300,7 +257,8 @@ def build_parser():
                 for a, kw in map(lambda o: o.as_argparse, opt.options):
                     g.add_argument(*a, **kw)
             else:
-                raise TypeError("Neither an option group nor singleton: {} ({})".format(opt, type(opt)))
+                raise TypeError("Neither an option group nor singleton: {} ({})".
+                                format(opt, type(opt)))
         except AttributeError:
             raise TypeError("Could not add a {} as an argument to a {}"
                             .format(type(opt), type(obj)))
