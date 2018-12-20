@@ -42,7 +42,7 @@ HTML_HEAD_OPEN = \
 """
 HTML_TITLE = \
 """\
-        <title>Looper project summary for {project_name}</title>
+        <title>Looper: {project_name} summary</title>
 """
 HTML_HEAD_CLOSE = \
 """\
@@ -83,17 +83,72 @@ HTML_FOOTER = \
         <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 
         <!-- DataTables JQuery extension -->
-        <script src="https://cdn.datatables.net/1.10.18/js/jquery.dataTables.min.js"></script>
+        <script src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"></script>
         <script src="https://cdn.datatables.net/fixedcolumns/3.2.6/js/dataTables.fixedColumns.min.js"></script>
         <script src="https://cdn.datatables.net/responsive/2.2.3/js/dataTables.responsive.min.js"></script>
 
         <script type="text/javascript">
+          /* 
+          modified DataTable plug-in from https://datatables.net/blog/2016-02-26
+          to include comma inserter regex from StackOverflow https://stackoverflow.com/questions/2901102/how-to-print-a-number-with-commas-as-thousands-separators-in-javascript
+          */
+          $.fn.dataTable.render.ellipsis = function ( cutoff, wordbreak, escapeHtml ) {
+              var esc = function ( t ) {
+                  return t
+                      .replace( /&/g, '&amp;' )
+                      .replace( /</g, '&lt;' )
+                      .replace( />/g, '&gt;' )
+                      .replace( /"/g, '&quot;' );
+              };
+              function numberWithCommas(x) {
+                  var parts = x.toString().split(".");
+                  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+                  return parts.join(".");
+              }
+              return function ( d, type, row ) {
+                  // Order, search and type get the original data
+                  if ( type !== 'display' ) {
+                      return d;
+                  }
+                  if ( typeof d !== 'number' && typeof d !== 'string' ) {
+                      return d;
+                  }
+                  d = d.toString(); // cast numbers
+                  if(!isNaN(d)){
+                      return numberWithCommas(d);
+                  }
+                  if ( d.length < cutoff ) {
+                      return d;
+                  }
+                  var shortened = d.substr(0, cutoff-1);
+                  // Find the last white space character in the string
+                  if ( wordbreak ) {
+                      shortened = shortened.replace(/\s([^\s]*)$/, '');
+                  }
+                  // Protect against uncontrolled HTML input
+                  if ( escapeHtml ) {
+                      shortened = esc( shortened );
+                  }
+                  return '<span class="ellipsis" title="'+esc(d)+'">'+shortened+'&#8230;</span>';
+              };
+          };
+
           $(document).ready(function() {
             $('#data-table').DataTable({
               scrollX: true,
               fixedColumns: {
                 leftColumns: 1
-              }
+              },
+              columnDefs: [ 
+                {
+                  targets: 0,
+                  render: $.fn.dataTable.render.ellipsis(1000, true)
+                },
+                {
+                  targets: '_all',
+                  render: $.fn.dataTable.render.ellipsis(17, true)
+                }
+              ],
             });
           } );
 
@@ -156,7 +211,7 @@ HTML_FOOTER = \
                 if(!isNaN(table.rows[1].cells[i].textContent)){
                   element = table.rows[0].cells[i]
                   text = element.textContent;
-                  element.innerHTML = "<span class='visualize'><a href='#' title='Click to visualize this column' onclick='columnClicked(\\""+text+"\\");return false;'>" + text + "</a></span>";
+                  $("#plot-cols").append("<li><a href='#' title='Click to visualize this column' onclick='columnClicked(\\""+text+"\\");return false;'>" + text + "</a></li>");
                 }
             }
           }
@@ -314,105 +369,6 @@ TABLE_STYLE_BASIC = \
             }
         </style>
 """
-TABLE_STYLE_ROTATED_HEADER = \
-"""\
-        .container{
-          margin-top: 20px;
-        }
-        .nav-link{
-          margin: 0px 10px 0px 10px;
-        }
-        .table-header-rotated td{
-          width: 60px;
-          border-left: 1px solid #dddddd;
-          border-right: 1px solid #dddddd;
-          vertical-align: middle;
-          text-align: center;
-        }
-        .table-header-rotated th.rotate-45{
-          height: 120px;
-          width: 60px;
-          min-width: 60px;
-          max-width: 60px;
-          position: relative;
-          vertical-align: bottom;
-          padding: 0;
-          font-size: 14px;
-          line-height: 0.8;
-          border-top: none;
-        }
-        .table-header-rotated th.rotate-45 > div{
-          position: relative;
-          top: 0px;
-          left: 60px;
-          height: 100%;
-          -ms-transform:skew(-45deg,0deg);
-          -moz-transform:skew(-45deg,0deg);
-          -webkit-transform:skew(-45deg,0deg);
-          -o-transform:skew(-45deg,0deg);
-          transform:skew(-45deg,0deg);
-          overflow: ellipsis;
-          border-left: 1px solid #dddddd;
-          border-right: 1px solid #dddddd;
-        }
-        .table-header-rotated th.rotate-45 span.visualize {
-          -ms-transform:      rotate(315deg);
-          -moz-transform:     rotate(315deg);
-          -webkit-transform:  rotate(315deg);
-          -o-transform:       rotate(315deg);
-          transform:          rotate(315deg);
-          /*
-          border-top: 1px solid #dddddd;
-          border-bottom: 1px solid #dddddd;
-          
-          don't know how to fix the problem with the table lines not showing up
-          */
-          position: absolute;
-          left: 10px;
-        }
-        .table-header-rotated th.rotate-45 span {
-          -ms-transform:skew(45deg,0deg) rotate(315deg);
-          -moz-transform:skew(45deg,0deg) rotate(315deg);
-          -webkit-transform:skew(45deg,0deg) rotate(315deg);
-          -o-transform:skew(45deg,0deg) rotate(315deg);
-          transform:skew(45deg,0deg) rotate(315deg);
-          position: absolute;
-          bottom: 30px;
-          left: -25px;
-          display: inline-block;
-          width: 85px;
-          text-align: left;
-        }
-"""
-TABLE_STYLE_TEXT = \
-"""\
-        .table td.text {
-            max-width: 150px;
-            padding: 0px 2px 0px 2px;
-        }
-        .table td.text span {
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            display: inline-block;
-            max-width: 100%;
-            vertical-align: middle;
-        }
-        .table td.text span:active {
-            white-space: normal;
-            text-overflow: clip;
-            max-width: 100%;
-        }
-        .table-condensed > tbody > tr > td,
-        .table-condensed > tbody > tr > th {
-            padding: 0px 2px 0px 2px;
-            vertical-align: middle;
-        }
-        .fix-col{
-          position: absolute;
-          background: white;
-        }
-"""
 TABLE_HEADER = \
 """
       <div class="row" style="margin-top: 20px; margin-bottom: 20px;">
@@ -427,7 +383,7 @@ TABLE_HEADER = \
 """
 TABLE_COLS = \
 """\
-              <th class="rotate-45"><div><span>{col_val}</span></div></th>
+            <th>{col_val}</th>
 """
 TABLE_COLS_FOOTER = \
 """\
@@ -441,7 +397,7 @@ TABLE_ROW_HEADER = \
 """
 TABLE_ROWS = \
 """\
-              <td class="text"><span>{row_val}</span></td>
+              <td class="text">{row_val}</td>
 """
 TABLE_ROW_FOOTER = \
 """\
@@ -487,19 +443,24 @@ LINKS_STYLE_BASIC = \
 """
 TABLE_VISUALIZATION = \
 """
-      <div>
-        <div id="charts">
-          
+      <div class="row">
+        <div id="chartableColumns" class="col-3" style="margin: 20px;">
+          <h4 style="margin: 20px;">Plottable Columns</h3>
+          <ul id="plot-cols">
+
+          </ul>
         </div>
-        <h4 align="center">Click on a table header to visualize that column!</h4>
+        <div class="col">
+          <div id="charts">
+
+          </div>
+        </div>
       </div>
 """
 TABLE_VARS = ["TABLE_STYLE_BASIC", "TABLE_HEADER", "TABLE_COLS",
               "TABLE_COLS_FOOTER", "TABLE_ROW_HEADER", "TABLE_ROWS",
               "TABLE_ROW_FOOTER", "TABLE_FOOTER",
-              "TABLE_ROWS_LINK", "LINKS_STYLE_BASIC",
-              "TABLE_STYLE_ROTATED_HEADER", "TABLE_STYLE_TEXT",
-              "TABLE_VISUALIZATION"]
+              "TABLE_ROWS_LINK", "LINKS_STYLE_BASIC", "TABLE_VISUALIZATION"]
 
 # Sample-page-related
 SAMPLE_HEADER = \
@@ -550,7 +511,6 @@ SAMPLE_TABLE_STYLE = \
 """\
         .table td.text {
             max-width: 500px;
-            <!-- top|right|bottom|left -->
             padding: 0px 2px 0px 2px;
         }
         .table td.text span {
@@ -855,7 +815,7 @@ class HTMLReportBuilder(object):
                 html_file.close()
 
             if warnings:
-                _LOGGER.warn("create_object_html: " +
+                _LOGGER.warning("create_object_html: " +
                              filename.replace(' ', '_').lower() +
                              " references nonexistent object files")
                 _LOGGER.debug(filename.replace(' ', '_').lower() +
@@ -995,10 +955,20 @@ class HTMLReportBuilder(object):
                         for sample_name in single_sample['sample_name'].drop_duplicates().sort_values():
                             o = single_sample[single_sample['sample_name'] == sample_name]
                             for i, row in o.iterrows():
-                                image_path = os.path.join(
-                                                self.prj.metadata.results_subdir,
-                                                sample_name, row['anchor_image'])
-                                image_relpath = os.path.relpath(image_path, reports_dir)
+                                try:
+                                    # Image thumbnails are optional
+                                    # This references to "image" should really
+                                    # be "thumbnail"
+                                    image_path = os.path.join(
+                                                    self.prj.metadata.results_subdir,
+                                                    sample_name, row['anchor_image'])
+                                    image_relpath = os.path.relpath(image_path, reports_dir)
+                                except AttributeError:
+                                    image_path = ""
+                                    image_relpath = ""
+
+                                # These references to "page" should really be
+                                # "object", because they can be anything.
                                 page_path = os.path.join(
                                                 self.prj.metadata.results_subdir,
                                                 sample_name, row['filename'])
@@ -1039,13 +1009,13 @@ class HTMLReportBuilder(object):
                     html_file.close()
                 else:
                     # Sample was not run through the pipeline
-                    _LOGGER.warn("{} is not present in {}".format(
+                    _LOGGER.warning("{} is not present in {}".format(
                         sample_name, self.prj.metadata.results_subdir))
                     html_file.write(HTML_FOOTER)
                     html_file.close()
             # TODO: accumulate warnings from these functions and only display
             #       after all samples are processed
-            # _LOGGER.warn("Warning: The following files do not exist: " +
+            # _LOGGER.warning("Warning: The following files do not exist: " +
                          # '\t'.join(str(file) for file in warnings))
             # Return the path to the newly created sample page
             return sample_page_relpath
@@ -1070,9 +1040,7 @@ class HTMLReportBuilder(object):
 
             with open(status_html_path, 'w') as html_file:
                 html_file.write(HTML_HEAD_OPEN)
-                html_file.write("\t\t<style>\n")
-                html_file.write(TABLE_STYLE_TEXT)
-                html_file.write("\t\t</style>\n")
+                html_file.write("\t\t<style>th{background-color:white;}</style>\n")
                 html_file.write(create_navbar(objs, stats, reports_dir))
                 html_file.write(HTML_HEAD_CLOSE)
                 html_file.write(STATUS_HEADER)
@@ -1098,11 +1066,11 @@ class HTMLReportBuilder(object):
                         if not flag:
                             button_class = "table-danger"
                             flag = "Missing"
-                            _LOGGER.warn("No flag file found for {}".format(sample_name))
+                            _LOGGER.warning("No flag file found for {}".format(sample_name))
                         elif len(flag) > 1:
                             button_class = "table-warning"
                             flag = "Multiple"
-                            _LOGGER.warn("Multiple flag files found for {}".format(sample_name))
+                            _LOGGER.warning("Multiple flag files found for {}".format(sample_name))
                         else:
                             if "completed" in str(flag):
                                 button_class = "table-success"
@@ -1228,16 +1196,17 @@ class HTMLReportBuilder(object):
                 
                 # Alert the user to any warnings generated
                 if status_warning:
-                    _LOGGER.warn("The pipeline is still running..." +
-                                 "Unable to complete Status.html")
+                    _LOGGER.warning("The stats table is incomplete, likely because " +
+                                 "one or more jobs either failed or is still running.")
+                  
                 if sample_warning:
                     if len(sample_warning)==1:
-                        _LOGGER.warn("{} is not present in {}".format(
+                        _LOGGER.warning("{} is not present in {}".format(
                             ''.join(str(sample) for sample in sample_warning),
                             self.prj.metadata.results_subdir))
                     else:
                         warn_msg = "The following samples are not present in {}: {}"
-                        _LOGGER.warn(warn_msg.format(
+                        _LOGGER.warning(warn_msg.format(
                             self.prj.metadata.results_subdir,
                             ' '.join(str(sample) for sample in sample_warning)))
 
@@ -1320,18 +1289,19 @@ class HTMLReportBuilder(object):
                         for entry, val in sample.items():
                             if entry == "sample_name":
                                 sample_name = str(val)
+                                page_name = sample_name + ".html"
+                                page_path = os.path.join(
+                                    reports_dir, page_name.replace(' ', '_').lower())
+                                relpath = os.path.relpath(page_path, wd)
+                                sample_links.append(NAVBAR_DROPDOWN_LINK.format(
+                                                        html_page=relpath,
+                                                        page_name=sample_name))
                                 break
                             else:
-                                _LOGGER.warn("Could not determine sample name in stats.tsv")
+                                _LOGGER.warning("Could not determine sample name in stats.tsv")
                                 sample_name = ""
 
-                    page_name = sample_name + ".html"
-                    page_path = os.path.join(
-                        reports_dir, page_name.replace(' ', '_').lower())
-                    relpath = os.path.relpath(page_path, wd)
-                    sample_links.append(NAVBAR_DROPDOWN_LINK.format(
-                                            html_page=relpath,
-                                            page_name=sample_name))
+                    
 
                     sample_links.append(NAVBAR_DROPDOWN_FOOTER)
 
@@ -1449,9 +1419,9 @@ class HTMLReportBuilder(object):
                             else:
                                 warnings.append(caption)
                     else:
-                        _LOGGER.warn("No summarizer found for this pipeline.")
+                        _LOGGER.debug("No custom summarizers were found for this pipeline. Proceeded with default only.")
                 if warnings:
-                    _LOGGER.warn("Summarizer was unable to find: " +
+                    _LOGGER.warning("Summarizer was unable to find: " +
                                  ', '.join(str(file) for file in warnings))
 
                 while num_figures < 3:
@@ -1491,8 +1461,6 @@ class HTMLReportBuilder(object):
             index_html_file = open(index_html_path, 'w')
             index_html_file.write(HTML_HEAD_OPEN)
             index_html_file.write("\t\t<style>\n")
-            index_html_file.write(TABLE_STYLE_ROTATED_HEADER)
-            index_html_file.write(TABLE_STYLE_TEXT)
             index_html_file.write("\t\t</style>\n")
             index_html_file.write(HTML_TITLE.format(project_name=self.prj.name))
             navbar = create_navbar(objs, stats, self.prj.metadata.output_dir)
@@ -1558,7 +1526,7 @@ class HTMLReportBuilder(object):
                 index_html_file.write(TABLE_FOOTER)
                 index_html_file.write(TABLE_VISUALIZATION)
             else:
-                _LOGGER.warn("No stats file '%s'", tsv_outfile_path)
+                _LOGGER.warning("No stats file '%s'", tsv_outfile_path)
 
             # Create parent samples page with links to each sample
             create_sample_parent_html(objs, stats)

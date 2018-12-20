@@ -12,7 +12,8 @@ else:
 import mock
 import pytest
 
-from looper.pipeline_interface import PipelineInterface
+from looper.pipeline_interface import \
+    PipelineInterface, SUBTYPE_MAPPING_SECTION as SUBTYPES_KEY
 from peppy import Sample
 from .conftest import write_config_data, ATAC_PROTOCOL_NAME
 
@@ -21,8 +22,6 @@ __author__ = "Vince Reuter"
 __email__ = "vreuter@virginia.edu"
 
 
-
-SUBTYPES_KEY = PipelineInterface.SUBTYPE_MAPPING_SECTION
 SAMPLE_IMPORT = "from peppy import Sample"
 
 

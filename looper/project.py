@@ -174,7 +174,7 @@ class Project(peppy.Project):
                 # Skip and warn about nonexistent alleged pipeline path.
                 if not (os.path.exists(full_pipe_path) or
                             is_command_callable(full_pipe_path)):
-                    _LOGGER.warn("Missing pipeline script: '%s'",
+                    _LOGGER.warninging("Missing pipeline script: '%s'",
                                  full_pipe_path)
                     continue
 
@@ -230,7 +230,7 @@ def process_pipeline_interfaces(pipeline_interface_locations):
     interface_by_protocol = defaultdict(list)
     for pipe_iface_location in pipeline_interface_locations:
         if not os.path.exists(pipe_iface_location):
-            _LOGGER.warn("Ignoring nonexistent pipeline interface "
+            _LOGGER.warning("Ignoring nonexistent pipeline interface "
                          "location: '%s'", pipe_iface_location)
             continue
         pipe_iface = PipelineInterface(pipe_iface_location)

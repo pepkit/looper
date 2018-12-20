@@ -68,43 +68,30 @@ def pytest_generate_tests(metafunc):
             # Provide test case with two PipelineInterface config bundles.
             metafunc.parametrize(
                     argnames="config_bundles",
-                    argvalues=[(atacseq_iface_without_resources(),
+                    argvalues=[(copy.deepcopy(ATACSEQ_IFACE_WITHOUT_RESOURCES),
                                 {"name": "sans-path"})])
 
 
 
-@pytest.fixture(scope="function")
-def atacseq_iface_without_resources():
-    """
-    Provide the ATAC-Seq pipeline interface as a fixture, without resources.
-
-    Note that this represents the configuration data for the interface for a
-    single pipeline. In order to use this in the form that a PipelineInterface
-    expects, this needs to be the value to which a key is mapped within a
-    larger Mapping.
-
-    :return Mapping: all of the pipeline interface configuration data for
-        ATAC-Seq, minus the resources section
-    """
-    return {
-        "name": "ATACseq",
-        "looper_args": True,
-        "required_input_files": ["read1", "read2"],
-        "all_input_files": ["read1", "read2"],
-        "ngs_input_files": ["read1", "read2"],
-        "arguments": {
-            "--sample-name": "sample_name",
-            "--genome": "genome",
-            "--input": "read1",
-            "--input2": "read2",
-            "--single-or-paired": "read_type"
-        },
-        "optional_arguments": {
-            "--frip-ref-peaks": "FRIP_ref",
-            "--prealignments": "prealignments",
-            "--genome-size": "macs_genome_size"
-        }
+ATACSEQ_IFACE_WITHOUT_RESOURCES = {
+    "name": "ATACseq",
+    "looper_args": True,
+    "required_input_files": ["read1", "read2"],
+    "all_input_files": ["read1", "read2"],
+    "ngs_input_files": ["read1", "read2"],
+    "arguments": {
+        "--sample-name": "sample_name",
+        "--genome": "genome",
+        "--input": "read1",
+        "--input2": "read2",
+        "--single-or-paired": "read_type"
+    },
+    "optional_arguments": {
+        "--frip-ref-peaks": "FRIP_ref",
+        "--prealignments": "prealignments",
+        "--genome-size": "macs_genome_size"
     }
+}
 
 
 
@@ -116,25 +103,23 @@ def atac_pipe_name():
 
 
 @pytest.fixture(scope="function")
-def atacseq_iface_with_resources(
-        atacseq_iface_without_resources, resources):
+def atacseq_iface_with_resources(resources):
     """
+    Resources-specifying pipeline interface containing ATAC-seq.
 
-    :param dict atacseq_iface_without_resources: PipelineInterface config
-        data, minus a resources section
     :param Mapping resources: resources section of PipelineInterface
         configuration data
     :return Mapping: pipeline interface data for ATAC-Seq pipeline, with all
         of the base sections plus resources section
     """
-    iface_data = copy.deepcopy(atacseq_iface_without_resources)
+    iface_data = copy.deepcopy(ATACSEQ_IFACE_WITHOUT_RESOURCES)
     iface_data["resources"] = copy.deepcopy(resources)
     return iface_data
 
 
 
 @pytest.fixture(scope="function")
-def atacseq_piface_data(atacseq_iface_with_resources, atac_pipe_name):
+def atacseq_piface_data(atac_pipe_name):
     """
     Provide a test case with data for an ATACSeq PipelineInterface.
 
@@ -142,7 +127,7 @@ def atacseq_piface_data(atacseq_iface_with_resources, atac_pipe_name):
         interface data pertains
     :return dict: configuration data needed to create PipelineInterface
     """
-    return {atac_pipe_name: copy.deepcopy(atacseq_iface_with_resources)}
+    return {atac_pipe_name: copy.deepcopy(ATACSEQ_IFACE_WITHOUT_RESOURCES)}
 
 
 

@@ -44,13 +44,11 @@ _MAX_FAIL_SAMPLE_DISPLAY = 20
 _LOGGER = logging.getLogger()
 
 
-def parse_arguments():
+def build_parser():
     """
-    Argument Parsing.
+    Building argument parser.
 
-    :return argparse.Namespace, list[str]: namespace parsed according to
-        arguments defined here, and additional options arguments undefined
-        here and to be handled downstream
+    :return argparse.ArgumentParser
     """
 
     # Main looper program help text messages
@@ -187,32 +185,7 @@ def parse_arguments():
                 help="Name of subproject to use, as designated in the "
                      "project's configuration file")
 
-    # To enable the loop to pass args directly on to the pipelines...
-    args, remaining_args = parser.parse_known_args()
-
-    # Set the logging level.
-    if args.dbg:
-        # Debug mode takes precedence and will listen for all messages.
-        level = args.logging_level or logging.DEBUG
-    elif args.verbosity is not None:
-        # Verbosity-framed specification trumps logging_level.
-        level = _LEVEL_BY_VERBOSITY[args.verbosity]
-    else:
-        # Normally, we're not in debug mode, and there's not verbosity.
-        level = LOGGING_LEVEL
-
-    # Establish the project-root logger and attach one for this module.
-    setup_looper_logger(level=level,
-                        additional_locations=(args.logfile, ),
-                        devmode=args.dbg)
-    global _LOGGER
-    _LOGGER = logging.getLogger(__name__)
-
-    if len(remaining_args) > 0:
-        _LOGGER.debug("Remaining arguments passed to pipelines: {}".
-                      format(" ".join([str(x) for x in remaining_args])))
-
-    return args, remaining_args
+    return parser
 
 
 class Executor(object):
@@ -282,6 +255,11 @@ class Checker(Executor):
             except:
                 # No files for flag.
                 continue
+            # If checking on a specific flag, do not limit the number of
+            # reported filepaths, but do not report empty file lists
+            if len(flags) == 1 and len(files) > 0:
+                _LOGGER.info("%s (%d):\n%s", flag.upper(),
+                             len(files), "\n".join(files))
             # Regardless of whether 0-count flags are previously reported,
             # don't report an empty file list for a flag that's absent.
             # If the flag-to-files mapping is defaultdict, absent flag (key)
@@ -410,7 +388,7 @@ class Runner(Executor):
             submission_bundles = self.prj.build_submission_bundles(proto_key)
             if not submission_bundles:
                 if proto_key != GENERIC_PROTOCOL_KEY:
-                    _LOGGER.warn("No mapping for protocol: '%s'", proto)
+                    _LOGGER.warning("No mapping for protocol: '%s'", proto)
                 continue
             mapped_protos.add(proto)
             for pl_iface, sample_subtype, pl_key, script_with_flags in \
@@ -454,7 +432,7 @@ class Runner(Executor):
             # Don't submit samples with duplicate names unless suppressed.
             if sample.sample_name in processed_samples:
                 if args.allow_duplicate_names:
-                    _LOGGER.warn("Duplicate name detected, but submitting anyway")
+                    _LOGGER.warning("Duplicate name detected, but submitting anyway")
                 else:
                     skip_reasons.append("Duplicate sample name")
 
@@ -475,7 +453,7 @@ class Runner(Executor):
                     skip_reasons.append("No pipeline for protocol")
 
             if skip_reasons:
-                _LOGGER.warn(
+                _LOGGER.warning(
                     "> Not submitted: {}".format(", ".join(skip_reasons)))
                 failures[sample.name] = skip_reasons
                 continue
@@ -599,9 +577,9 @@ class Summarizer(Executor):
             # Version 0.3 standardized all stats into a single file
             stats_file = os.path.join(sample_output_folder, "stats.tsv")
             if os.path.isfile(stats_file):
-                _LOGGER.info("Found stats file: '%s'", stats_file)
+                _LOGGER.info("Using stats file: '%s'", stats_file)
             else:
-                _LOGGER.warn("No stats file '%s'", stats_file)
+                _LOGGER.warning("No stats file '%s'", stats_file)
                 continue
 
             t = _pd.read_table(
@@ -624,9 +602,9 @@ class Summarizer(Executor):
             sample_output_folder = sample_folder(self.prj, sample)
             objs_file = os.path.join(sample_output_folder, "objects.tsv")
             if os.path.isfile(objs_file):
-                _LOGGER.info("Found objects file: '%s'", objs_file)
+                _LOGGER.info("Using objects file: '%s'", objs_file)
             else:
-                _LOGGER.warn("No objects file '%s'", objs_file)
+                _LOGGER.warning("No objects file '%s'", objs_file)
                 continue
             t = _pd.read_table(objs_file, header=None,
                                names=['key', 'filename', 'anchor_text',
@@ -658,7 +636,7 @@ class Summarizer(Executor):
             try:
                 ifaces = self.prj.interfaces_by_protocol[alpha_cased(protocol)]
             except KeyError:
-                _LOGGER.warn("No interface for protocol '{}', skipping summary".
+                _LOGGER.warning("No interface for protocol '{}', skipping summary".
                              format(protocol))
                 continue
             for iface in ifaces:
@@ -673,7 +651,7 @@ class Summarizer(Executor):
                         try:
                             subprocess.call([summarizer_abspath, self.prj.config_file])
                         except OSError:
-                            _LOGGER.warn("Summarizer was unable to run: " + str(summarizer))
+                            _LOGGER.warning("Summarizer was unable to run: " + str(summarizer))
 
         # Produce HTML report
         report_builder = HTMLReportBuilder(self.prj)
@@ -821,8 +799,31 @@ class _VersionInHelpParser(argparse.ArgumentParser):
 
 
 def main():
-    # Parse command-line arguments and establish logger.
-    args, remaining_args = parse_arguments()
+    
+    parser = build_parser()
+    args, remaining_args = parser.parse_known_args()
+
+    # Set the logging level.
+    if args.dbg:
+        # Debug mode takes precedence and will listen for all messages.
+        level = args.logging_level or logging.DEBUG
+    elif args.verbosity is not None:
+        # Verbosity-framed specification trumps logging_level.
+        level = _LEVEL_BY_VERBOSITY[args.verbosity]
+    else:
+        # Normally, we're not in debug mode, and there's not verbosity.
+        level = LOGGING_LEVEL
+
+    # Establish the project-root logger and attach one for this module.
+    setup_looper_logger(level=level,
+                        additional_locations=(args.logfile, ),
+                        devmode=args.dbg)
+    global _LOGGER
+    _LOGGER = logging.getLogger(__name__)
+
+    if len(remaining_args) > 0:
+        _LOGGER.debug("Remaining arguments passed to pipelines: {}".
+                      format(" ".join([str(x) for x in remaining_args])))
 
     _LOGGER.info("Command: {} (Looper version: {})".
                  format(args.command, __version__))
@@ -852,7 +853,9 @@ def main():
             if not hasattr(prj.metadata, "pipelines_dir") or \
                            len(prj.metadata.pipelines_dir) == 0:
                 raise AttributeError(
-                        "Looper requires at least one pipeline(s) location.")
+                    "Looper requires at least one pipeline(s) location; set "
+                    "with 'pipeline_interfaces' in the metadata section of a "
+                    "project config file.")
 
             if not prj.interfaces_by_protocol:
                 _LOGGER.error(

@@ -1,5 +1,30 @@
 Changelog
 ******************************
+
+- **v0.10.0 (*2018-12-20*)**
+
+  - Changed
+
+    - ``PipelineInterface`` now derives from ``peppy.AttributeDict``.
+
+    - On ``PipelineInterface``, iteration over pipelines now is with ``iterpipes``.
+
+    - Rename ``parse_arguments`` to ``build_parser``, which returns ``argparse.ArgumentParser`` object
+
+    - Integers in HTML reports are made more human-readable by including commas.
+
+    - Column headers in HTML reports are now stricly for sorting; there's a separate list for plottable columns.
+
+    - More informative error messages
+
+  - Fixed
+
+    - HTML samples list is fully populated.
+
+    - Existence of an object lacking an anchor image is no longer problematic for ``summarize``.
+
+    - Basic package test in Python 3 now succeeds: ``python3 setup.py test``.
+
 - **v0.9.2** (*2018-11-12*):
 
   - Fixed
@@ -11,7 +36,6 @@ Changelog
     - Fixed a bug for samples with duplicate names
 
     - Added new display features (graphs, table display) for HTML summary output.
-
 
 
 - **v0.9.1** (*2018-06-30*):
