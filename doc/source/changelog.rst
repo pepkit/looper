@@ -17,11 +17,15 @@ Changelog
 
     - More informative error messages
 
+    - Updated function calls to account for a couple of deprecations.
+
   - Fixed
 
     - HTML samples list is fully populated.
 
     - Existence of an object lacking an anchor image is no longer problematic for ``summarize``.
+
+    - Basic package test in Python 3 now succeeds: ``python3 setup.py test``.
 
 - **v0.9.2** (*2018-11-12*):
 
