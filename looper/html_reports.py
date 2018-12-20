@@ -815,7 +815,7 @@ class HTMLReportBuilder(object):
                 html_file.close()
 
             if warnings:
-                _LOGGER.warn("create_object_html: " +
+                _LOGGER.warning("create_object_html: " +
                              filename.replace(' ', '_').lower() +
                              " references nonexistent object files")
                 _LOGGER.debug(filename.replace(' ', '_').lower() +
@@ -1009,13 +1009,13 @@ class HTMLReportBuilder(object):
                     html_file.close()
                 else:
                     # Sample was not run through the pipeline
-                    _LOGGER.warn("{} is not present in {}".format(
+                    _LOGGER.warning("{} is not present in {}".format(
                         sample_name, self.prj.metadata.results_subdir))
                     html_file.write(HTML_FOOTER)
                     html_file.close()
             # TODO: accumulate warnings from these functions and only display
             #       after all samples are processed
-            # _LOGGER.warn("Warning: The following files do not exist: " +
+            # _LOGGER.warning("Warning: The following files do not exist: " +
                          # '\t'.join(str(file) for file in warnings))
             # Return the path to the newly created sample page
             return sample_page_relpath
@@ -1066,11 +1066,11 @@ class HTMLReportBuilder(object):
                         if not flag:
                             button_class = "table-danger"
                             flag = "Missing"
-                            _LOGGER.warn("No flag file found for {}".format(sample_name))
+                            _LOGGER.warning("No flag file found for {}".format(sample_name))
                         elif len(flag) > 1:
                             button_class = "table-warning"
                             flag = "Multiple"
-                            _LOGGER.warn("Multiple flag files found for {}".format(sample_name))
+                            _LOGGER.warning("Multiple flag files found for {}".format(sample_name))
                         else:
                             if "completed" in str(flag):
                                 button_class = "table-success"
@@ -1196,17 +1196,17 @@ class HTMLReportBuilder(object):
                 
                 # Alert the user to any warnings generated
                 if status_warning:
-                    _LOGGER.warn("The stats table is incomplete, likely because " +
+                    _LOGGER.warning("The stats table is incomplete, likely because " +
                                  "one or more jobs either failed or is still running.")
                   
                 if sample_warning:
                     if len(sample_warning)==1:
-                        _LOGGER.warn("{} is not present in {}".format(
+                        _LOGGER.warning("{} is not present in {}".format(
                             ''.join(str(sample) for sample in sample_warning),
                             self.prj.metadata.results_subdir))
                     else:
                         warn_msg = "The following samples are not present in {}: {}"
-                        _LOGGER.warn(warn_msg.format(
+                        _LOGGER.warning(warn_msg.format(
                             self.prj.metadata.results_subdir,
                             ' '.join(str(sample) for sample in sample_warning)))
 
@@ -1298,7 +1298,7 @@ class HTMLReportBuilder(object):
                                                         page_name=sample_name))
                                 break
                             else:
-                                _LOGGER.warn("Could not determine sample name in stats.tsv")
+                                _LOGGER.warning("Could not determine sample name in stats.tsv")
                                 sample_name = ""
 
                     
@@ -1421,7 +1421,7 @@ class HTMLReportBuilder(object):
                     else:
                         _LOGGER.debug("No custom summarizers were found for this pipeline. Proceeded with default only.")
                 if warnings:
-                    _LOGGER.warn("Summarizer was unable to find: " +
+                    _LOGGER.warning("Summarizer was unable to find: " +
                                  ', '.join(str(file) for file in warnings))
 
                 while num_figures < 3:
@@ -1526,7 +1526,7 @@ class HTMLReportBuilder(object):
                 index_html_file.write(TABLE_FOOTER)
                 index_html_file.write(TABLE_VISUALIZATION)
             else:
-                _LOGGER.warn("No stats file '%s'", tsv_outfile_path)
+                _LOGGER.warning("No stats file '%s'", tsv_outfile_path)
 
             # Create parent samples page with links to each sample
             create_sample_parent_html(objs, stats)

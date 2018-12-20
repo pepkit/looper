@@ -121,7 +121,7 @@ class PipelineInterface(AttributeDict):
             msg += " for pipeline {}".format(pipeline_name)
             if self.pipe_iface_file is not None:
                 msg += " in file {}".format(self.pipe_iface_file)
-            _LOGGER.warn(msg)
+            _LOGGER.warning(msg)
 
         universal_compute = {}
         try:
@@ -331,7 +331,7 @@ class PipelineInterface(AttributeDict):
                 try:
                     arg = getattr(sample, sample_attr)
                 except AttributeError:
-                    _LOGGER.warn(
+                    _LOGGER.warning(
                         "> Note (missing optional attribute): '%s' requests "
                         "sample attribute '%s' for option '%s'",
                         pipeline_name, sample_attr, pipe_opt)
@@ -636,14 +636,14 @@ def _import_sample_subtype(pipeline_filepath, subtype_name=None):
         # SystemExit would be caught as BaseException, but SystemExit is
         # particularly suggestive of an a script without a conditional
         # check on __main__, and as such warrant a tailored message.
-        _LOGGER.warn("'%s' appears to attempt to run on import; "
+        _LOGGER.warning("'%s' appears to attempt to run on import; "
                      "does it lack a conditional on '__main__'? "
                      "Using base type: %s",
                      pipeline_filepath, base_type.__name__)
         return base_type
 
     except (BaseException, Exception) as e:
-        _LOGGER.warn("Using base %s because of inability to "
+        _LOGGER.warning("Using base %s because of inability to "
                      "import a subtype from '%s': %r",
                      base_type.__name__, pipeline_filepath, e)
         return base_type

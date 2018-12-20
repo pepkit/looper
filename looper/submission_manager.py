@@ -227,7 +227,7 @@ class SubmissionConductor(object):
             except AttributeError:
                 # TODO: inform about WHICH missing attribute(s)?
                 fail_message = "Pipeline required attribute(s) missing"
-                _LOGGER.warn("> Not submitted: %s", fail_message)
+                _LOGGER.warning("> Not submitted: %s", fail_message)
                 skip_reasons.append(fail_message)
                 
             # Check for any missing requirements before submitting.
@@ -238,10 +238,10 @@ class SubmissionConductor(object):
                 missing_reqs_msg = "{}: {}".format(
                     missing_reqs_general, missing_reqs_specific)
                 if self.prj.permissive:
-                    _LOGGER.warn(missing_reqs_msg)
+                    _LOGGER.warning(missing_reqs_msg)
                 else:
                     raise error_type(missing_reqs_msg)
-                _LOGGER.warn("> Not submitted: %s", missing_reqs_msg)
+                _LOGGER.warning("> Not submitted: %s", missing_reqs_msg)
                 skip_reasons.append(missing_reqs_general)
 
             # Check if single_or_paired value is recognized.
@@ -266,7 +266,7 @@ class SubmissionConductor(object):
                 # TODO: inform about which missing attribute(s).
                 fail_message = "Required attribute(s) missing " \
                                "for pipeline arguments string"
-                _LOGGER.warn("> Not submitted: %s", fail_message)
+                _LOGGER.warning("> Not submitted: %s", fail_message)
                 skip_reasons.append(fail_message)
                 
             if not skip_reasons:
@@ -327,7 +327,7 @@ class SubmissionConductor(object):
                     exp_fpath = os.path.join(
                             self.prj.metadata.submission_subdir, exp_fname)
                     if not os.path.isfile(exp_fpath):
-                        _LOGGER.warn("Missing %s file will be created: '%s'",
+                        _LOGGER.warning("Missing %s file will be created: '%s'",
                                      Sample.__name__, exp_fpath)
                 else:
                     subtype_name = s.__class__.__name__
@@ -447,7 +447,7 @@ class SubmissionConductor(object):
         keys_left = re.findall(r'!$\{(.+?)\}', script_data)
 
         if len(keys_left) > 0:
-            _LOGGER.warn("> Warning: Submission template variables are not all populated: '%s'", str(keys_left))
+            _LOGGER.warning("> Warning: Submission template variables are not all populated: '%s'", str(keys_left))
 
         submission_script = submission_base + ".sub"
         script_dirpath = os.path.dirname(submission_script)

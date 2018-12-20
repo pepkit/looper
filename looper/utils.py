@@ -59,7 +59,7 @@ def create_looper_args_text(pl_key, submission_settings, prj):
     try:
         mem_alloc = submission_settings["mem"]
     except KeyError:
-        _LOGGER.warn("Submission settings lack memory specification")
+        _LOGGER.warning("Submission settings lack memory specification")
     else:
         if float(mem_alloc) > 1:
             opt_arg_pairs.append(("-M", mem_alloc))
