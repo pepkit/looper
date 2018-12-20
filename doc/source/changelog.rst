@@ -17,8 +17,6 @@ Changelog
 
     - More informative error messages
 
-    - Updated function calls to account for a couple of deprecations.
-
   - Fixed
 
     - HTML samples list is fully populated.
