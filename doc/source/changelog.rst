@@ -11,9 +11,17 @@ Changelog
 
     - Rename ``parse_arguments`` to ``build_parser``, which returns ``argparse.ArgumentParser`` object
 
-    - HTML report updates
+    - Integers in HTML reports are made more human-readable by including commas.
+
+    - Column headers in HTML reports are now stricly for sorting; there's a separate list for plottable columns.
 
     - More informative error messages
+
+  - Fixed
+
+    - HTML samples list is fully populated.
+
+    - Existence of an object lacking an anchor image is no longer problematic for ``summarize``.
 
 - **v0.9.2** (*2018-11-12*):
 
@@ -26,7 +34,6 @@ Changelog
     - Fixed a bug for samples with duplicate names
 
     - Added new display features (graphs, table display) for HTML summary output.
-
 
 
 - **v0.9.1** (*2018-06-30*):
