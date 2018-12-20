@@ -6,6 +6,7 @@ import itertools
 import logging
 import os
 import random
+import sys
 import warnings
 
 import pytest
@@ -193,11 +194,15 @@ def test_unconfigured_pipeline_exception(
                 # Already no default resource package.
                 pass
 
+    def parse_param_names(f):
+        return inspect.getargspec(f).args if sys.version_info < (3, 0) \
+            else [p for p in inspect.signature(f).parameters.keys()]
+
     # Each of the functions being tested should take pipeline_name arg,
     # and we want to test behavior for the call on an unknown pipeline.
     funcname, kwargs = funcname_and_kwargs
     func = getattr(pi, funcname)
-    required_parameters = inspect.getargspec(func).args
+    required_parameters = parse_param_names(func)
     for parameter in ["pipeline_name", "pipeline"]:
         if parameter in required_parameters and parameter not in kwargs:
             kwargs[parameter] = "missing-pipeline"
