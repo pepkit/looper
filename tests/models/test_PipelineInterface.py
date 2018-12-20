@@ -504,7 +504,7 @@ class ConstructorPathParsingTests:
         """ PipelineInterface config sections need not specify path. """
         pi = PipelineInterface(bundled_piface)
         for pipe_key in self.PIPELINE_KEYS:
-            piface_config = pi[pipe_key]
+            piface_config = pi.select_pipeline(pipe_key)
             # Specific negative test of interest.
             assert "path" not in piface_config
             # Positive control validation.
@@ -531,9 +531,9 @@ class ConstructorPathParsingTests:
         pi = PipelineInterface(bundled_piface)
         for add_path, pipe_key in zip(self.ADD_PATH, self.PIPELINE_KEYS):
             if add_path:
-                assert expected == pi[pipe_key]["path"]
+                assert expected == pi.select_pipeline(pipe_key)["path"]
             else:
-                assert "path" not in pi[pipe_key]
+                assert "path" not in pi.select_pipeline(pipe_key)
 
 
     @pytest.mark.parametrize(
