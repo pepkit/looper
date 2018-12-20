@@ -257,10 +257,9 @@ class Checker(Executor):
                 continue
             # If checking on a specific flag, do not limit the number of
             # reported filepaths, but do not report empty file lists
-            if len(flags) == 1:
-            	if 0 < len(files):
-            		_LOGGER.info("%s (%d):\n%s", flag.upper(),
-                             	 len(files), "\n".join(files))
+            if len(flags) == 1 and len(files) > 0:
+                _LOGGER.info("%s (%d):\n%s", flag.upper(),
+                             len(files), "\n".join(files))
             # Regardless of whether 0-count flags are previously reported,
             # don't report an empty file list for a flag that's absent.
             # If the flag-to-files mapping is defaultdict, absent flag (key)
