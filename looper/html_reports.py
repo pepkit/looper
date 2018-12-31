@@ -774,13 +774,37 @@ class HTMLReportBuilder(object):
                 figures = []
                 warnings = []
                 for i, row in single_object.iterrows():
-                    page_path = os.path.join(
-                                 self.prj.metadata.results_subdir,
-                                 row['sample_name'], row['filename'])
-                    image_path = os.path.join(
-                                  self.prj.metadata.results_subdir,
-                                  row['sample_name'], row['anchor_image'])
-                    page_relpath = os.path.relpath(page_path, reports_dir)
+                    # Set the PATH to a page for the sample. Catch any errors.
+                    try:
+                      page_path = os.path.join(
+                        self.prj.metadata.results_subdir,
+                        row['sample_name'], row['filename'])
+                    except AttributeError:
+                      err_msg = "{} does not include a valid page path."
+                      # Report the sample that fails, if that information exists
+                      if str(row['sample_name']):
+                        _LOGGER.warn(err_msg.format(row['sample_name']))
+                      else:
+                        _LOGGER.warn(err_msg.format("Unknown sample"))
+                      page_path = ""
+                    if not page_path.strip():
+                      page_relpath = os.path.relpath(page_path, reports_dir)
+                    else:
+                      page_relpath = ""
+                    # Set the PATH to the image. Catch any errors.
+                    try:
+                      image_path = os.path.join(
+                        self.prj.metadata.results_subdir,
+                        row['sample_name'], row['anchor_image'])
+                    except AttributeError:
+                      err_msg = "{} does not include a valid image path."
+                      # Report the sample that fails, if that information exists
+                      if str(row['sample_name']):
+                        _LOGGER.warn(err_msg.format(row['sample_name']))
+                      else:
+                        _LOGGER.warn(err_msg.format(" Unknown"))
+                      image_path = ""
+                    
                     # Check for the presence of both the file and thumbnail
                     if os.path.isfile(image_path) and os.path.isfile(page_path):
                         image_relpath = os.path.relpath(image_path, reports_dir)
