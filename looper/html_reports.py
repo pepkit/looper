@@ -780,10 +780,12 @@ class HTMLReportBuilder(object):
                         self.prj.metadata.results_subdir,
                         row['sample_name'], row['filename'])
                     except AttributeError:
-                      err_msg = "{} does not include a valid page path."
+                      err_msg = ("Sample: {} | " +
+                                 "Missing valid page path for: {}")
                       # Report the sample that fails, if that information exists
-                      if str(row['sample_name']):
-                        _LOGGER.warn(err_msg.format(row['sample_name']))
+                      if str(row['sample_name']) and str(row['filename']):
+                        _LOGGER.warn(err_msg.format(row['sample_name'],
+                                                    row['filename']))
                       else:
                         _LOGGER.warn(err_msg.format("Unknown sample"))
                       page_path = ""
@@ -791,43 +793,57 @@ class HTMLReportBuilder(object):
                       page_relpath = os.path.relpath(page_path, reports_dir)
                     else:
                       page_relpath = ""
-                    # Set the PATH to the image. Catch any errors.
-                    try:
-                      image_path = os.path.join(
-                        self.prj.metadata.results_subdir,
-                        row['sample_name'], row['anchor_image'])
-                    except AttributeError:
-                      err_msg = "{} does not include a valid image path."
-                      # Report the sample that fails, if that information exists
-                      if str(row['sample_name']):
-                        _LOGGER.warn(err_msg.format(row['sample_name']))
-                      else:
-                        _LOGGER.warn(err_msg.format(" Unknown"))
-                      image_path = ""
-                    
+
+                    # Set the PATH to the image/file. Catch any errors.
+                    # Check if the object is an HTML document
+                    if str(row['filename']).lower().endswith(".html"):
+                      image_path = page_path                      
+                    else:
+                      try:
+                        image_path = os.path.join(
+                          self.prj.metadata.results_subdir,
+                          row['sample_name'], row['anchor_image'])
+                      except AttributeError:
+                        _LOGGER.warn(str(row))
+                        err_msg = ("Sample: {} | " +
+                                   "Missing valid image path for: {}")
+                        # Report the sample that fails, if that information exists
+                        if str(row['sample_name']) and str(row['filename']):
+                          _LOGGER.warn(err_msg.format(row['sample_name'],
+                                                      row['filename']))
+                        else:
+                          _LOGGER.warn(err_msg.format("Unknown", "Unknown"))
+                        image_path = ""
+
                     # Check for the presence of both the file and thumbnail
                     if os.path.isfile(image_path) and os.path.isfile(page_path):
-                        image_relpath = os.path.relpath(image_path, reports_dir)
-                        # If the object has a valid image, use it!
-                        if str(image_path).lower().endswith(('.png', '.jpg', '.jpeg', '.svg', '.gif')):
-                            figures.append(OBJECTS_PLOTS.format(
-                                            path=page_relpath,
-                                            image=image_relpath,
-                                            label=str(row['sample_name'])))
-                        # Otherwise treat as a link
-                        elif os.path.isfile(page_path):
-                            links.append(GENERIC_LIST_ENTRY.format(
-                                            page=page_relpath,
-                                            label=str(row['sample_name'])))
-                        else:
-                            warnings.append(str(row['filename']))
-                    # If no thumbnail image is present, add as a link
-                    elif os.path.isfile(page_path):
+                      image_relpath = os.path.relpath(image_path, reports_dir)
+                      _LOGGER.debug(str(image_relpath))
+                      # If the object has a valid image, use it!
+                      if str(image_path).lower().endswith(('.png', '.jpg', '.jpeg', '.svg', '.gif')):
+                          figures.append(OBJECTS_PLOTS.format(
+                                          path=page_relpath,
+                                          image=image_relpath,
+                                          label=str(row['sample_name'])))
+                      # Or if that "image" is an HTML document
+                      elif str(image_path).lower().endswith('.html'):
                         links.append(GENERIC_LIST_ENTRY.format(
+                                      page=image_relpath,
+                                      label=str(row['sample_name'])))
+                      # Otherwise treat as a link
+                      elif os.path.isfile(page_path):
+                          links.append(GENERIC_LIST_ENTRY.format(
                                         page=page_relpath,
                                         label=str(row['sample_name'])))
+                      else:
+                          warnings.append(str(row['filename']))
+                    # If no thumbnail image is present, add as a link
+                    elif os.path.isfile(page_path):
+                      links.append(GENERIC_LIST_ENTRY.format(
+                                    page=page_relpath,
+                                    label=str(row['sample_name'])))
                     else:
-                        warnings.append(str(row['filename']))
+                      warnings.append(str(row['filename']))
 
                 html_file.write(GENERIC_LIST_HEADER)
                 html_file.write("\n".join(links))
@@ -840,8 +856,8 @@ class HTMLReportBuilder(object):
 
             if warnings:
                 _LOGGER.warning("create_object_html: " +
-                             filename.replace(' ', '_').lower() +
-                             " references nonexistent object files")
+                                filename.replace(' ', '_').lower() +
+                                " references nonexistent object files")
                 _LOGGER.debug(filename.replace(' ', '_').lower() +
                               " nonexistent files: " +
                               ','.join(str(file) for file in warnings))
