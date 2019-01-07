@@ -411,18 +411,16 @@ class SubmissionConductor(object):
                 [prj_argtext, looper_argtext, self.extra_args_text]))
         extra_parts_text = " ".join(extra_parts)
 
+        def get_final_cmd(c):
+            return "{} {}".format(c, extra_parts_text) if extra_parts_text else c
+
+        def get_base_cmd(argstr):
+            b = self.cmd_base
+            return (argstr and "{} {}".format(b, argstring.strip(" "))) or b
+
         # Create the individual commands to lump into this job.
-        commands = []
-        for _, argstring in self._pool:
-            if argstring:
-                base = "{} {}".format(self.cmd_base, argstring.strip(" "))
-            else:
-                base = self.cmd_base
-            if extra_parts_text:
-                cmd = "{} {}".format(base, extra_parts_text)
-            else:
-                cmd = base
-            commands.append(cmd)
+        commands = [get_final_cmd(get_base_cmd(argstring))
+                    for _, argstring in self._pool]
 
         jobname = self._jobname()
         submission_base = os.path.join(
