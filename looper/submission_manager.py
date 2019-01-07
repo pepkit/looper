@@ -406,10 +406,8 @@ class SubmissionConductor(object):
         """
 
         # Determine the command text for the project, looper, and extra args.
-        extra_parts = list(filter(
-                lambda cmd_part: bool(cmd_part),
-                [prj_argtext, looper_argtext, self.extra_args_text]))
-        extra_parts_text = " ".join(extra_parts)
+        texts = [prj_argtext, looper_argtext, self.extra_args_text]
+        extra_parts_text = " ".join([t for t in texts if t])
 
         def get_final_cmd(c):
             return "{} {}".format(c, extra_parts_text) if extra_parts_text else c
@@ -439,7 +437,8 @@ class SubmissionConductor(object):
         keys_left = re.findall(r'!$\{(.+?)\}', script_data)
 
         if len(keys_left) > 0:
-            _LOGGER.warning("> Warning: Submission template variables are not all populated: '%s'", str(keys_left))
+            _LOGGER.warning("> Warning: Submission template variables are not "
+                            "all populated: '%s'", str(keys_left))
 
         submission_script = submission_base + ".sub"
         script_dirpath = os.path.dirname(submission_script)
