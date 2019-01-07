@@ -37,7 +37,6 @@ class SubmissionConductor(object):
 
     """
 
-
     def __init__(self, pipeline_key, pipeline_interface, cmd_base, prj,
                  dry_run=False, delay=0, sample_subtype=None, extra_args=None,
                  ignore_flags=False, compute_variables=None,
@@ -123,22 +122,6 @@ class SubmissionConductor(object):
         self._num_good_job_submissions = 0
         self._num_total_job_submissions = 0
         self._num_cmds_submitted = 0
-
-
-    @property
-    def is_full(self):
-        """
-        Determine whether it's time to submit a job for the pool of commands.
-
-        Instances of this class maintain a sort of 'pool' of commands that
-        expands as each new command is added, until a time that it's deemed
-        'full' and th
-
-        :return bool: Whether this conductor's pool of commands is 'full' and
-            ready for submission, as determined by its parameterization
-        """
-        return self.max_cmds == len(self._pool) or \
-               self._curr_size >= self.max_size
 
 
     @property
@@ -274,7 +257,7 @@ class SubmissionConductor(object):
                 this_sample_size = float(sample.input_file_size)
                 self._curr_size += this_sample_size
 
-        if self.automatic and self.is_full:
+        if self.automatic and self._is_full:
             self.submit()
 
         return skip_reasons
@@ -298,7 +281,7 @@ class SubmissionConductor(object):
             _LOGGER.debug("No submission (no pooled samples): %s", self.pl_name)
             submitted = False
 
-        elif force or self.is_full:
+        elif force or self._is_full:
             _LOGGER.info("Determining submission settings for %d sample(s) "
                          "(%.2f Gb)", len(self._pool), self._curr_size)
             settings = self.pl_iface.choose_resource_package(
@@ -373,6 +356,23 @@ class SubmissionConductor(object):
         return submitted
 
 
+    @property
+    def _is_full(self):
+        """
+        Determine whether it's time to submit a job for the pool of commands.
+
+        Instances of this class maintain a sort of 'pool' of commands that
+        expands as each new command is added, until a time that it's deemed
+        'full' and th
+
+        :return bool: Whether this conductor's pool of commands is 'full' and
+            ready for submission, as determined by its parameterization
+        """
+        return self.max_cmds == len(self._pool) or \
+               self._curr_size >= self.max_size
+
+
+
     def _jobname(self):
         """ Create the name for a job submission. """
         if 1 == self.max_cmds:
@@ -390,7 +390,6 @@ class SubmissionConductor(object):
             # name concordant with 1-based, not 0-based indexing.
             name = "lump{}".format(self._num_total_job_submissions + 1)
         return "{}_{}".format(self.pl_key, name)
-
 
 
     def _reset_pool(self):
@@ -428,7 +427,6 @@ class SubmissionConductor(object):
             else:
                 cmd = base
             commands.append(cmd)
-
 
         jobname = self._jobname()
         submission_base = os.path.join(
