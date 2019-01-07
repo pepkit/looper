@@ -69,7 +69,7 @@ class SubmissionConductor(object):
             each command within each job generated
         :param bool ignore_flags: Whether to ignore flag files present in
             the sample folder for each sample considered for submission
-        :param str compute variables: A dict with variables that will be made
+        :param str compute_variables: A dict with variables that will be made
             available to the compute package. For example, this should include
             the name of the cluster partition to which job(s) will be submitted
         :param int | NoneType max_cmds: Upper bound on number of commands to
@@ -92,10 +92,7 @@ class SubmissionConductor(object):
 
         self.sample_subtype = sample_subtype or Sample
         self.compute_variables = compute_variables
-        if extra_args:
-            self.extra_args_text = "{}".format(" ".join(extra_args))
-        else:
-            self.extra_args_text = ""
+        self.extra_args_text = (extra_args and " ".join(extra_args)) or ""
         self.uses_looper_args = \
                 pipeline_interface.uses_looper_args(pipeline_key)
         self.ignore_flags = ignore_flags
