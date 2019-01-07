@@ -149,17 +149,6 @@ class SubmissionConductor(object):
         return self._num_good_job_submissions
 
 
-    @property
-    def samples(self):
-        """
-        Return a collection of pooled samples.
-
-        :return Iterable[str]: collection of samples currently in the active
-            pool for this submission conductor
-        """
-        return [s for s, _ in self._pool]
-
-
     def add_sample(self, sample, sample_subtype=Sample):
         """
         Add a sample for submission to this conductor.
@@ -336,7 +325,7 @@ class SubmissionConductor(object):
                     subprocess.check_call(submission_command, shell=True)
                 except subprocess.CalledProcessError:
                     self._failed_sample_names.extend(
-                            [s.name for s in self.samples])
+                            [s.name for s in self._samples])
                     self._reset_pool()
                     raise JobSubmissionException(sub_cmd, script)
                 time.sleep(self.delay)
@@ -371,6 +360,16 @@ class SubmissionConductor(object):
         return self.max_cmds == len(self._pool) or \
                self._curr_size >= self.max_size
 
+
+    @property
+    def _samples(self):
+        """
+        Return a collection of pooled samples.
+
+        :return Iterable[str]: collection of samples currently in the active
+            pool for this submission conductor
+        """
+        return [s for s, _ in self._pool]
 
 
     def _jobname(self):
