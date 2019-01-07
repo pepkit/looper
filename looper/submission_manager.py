@@ -441,10 +441,16 @@ class SubmissionConductor(object):
                             "all populated: '%s'", str(keys_left))
 
         submission_script = submission_base + ".sub"
+
+        # TODO: use divvy.
+        # from divvy.utils import write_submit_script
+        # _LOGGER.info("> Creating submission script; command count: %d", len(commands))
+        # write_submit_script(submission_script, self._template, template_values)
+
+        # TODO: here onward would be removed.
         script_dirpath = os.path.dirname(submission_script)
         if not os.path.isdir(script_dirpath):
             os.makedirs(script_dirpath)
-
         _LOGGER.info("> Submission script for %d sample(s): '%s'",
                      len(self._pool), submission_script)
         with open(submission_script, 'w') as sub_file:
