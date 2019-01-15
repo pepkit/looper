@@ -40,6 +40,7 @@ DEV_LOGGING_FMT = "%(module)s:%(lineno)d (%(funcName)s) [%(levelname)s] > %(mess
 _LEVEL_BY_VERBOSITY = [logging.ERROR, logging.CRITICAL, logging.WARN,
                        logging.INFO, logging.DEBUG]
 
+
 def setup_looper_logger(level, additional_locations=None, devmode=False):
     """
     Establish a logger for a looper CLI program.
@@ -172,6 +173,10 @@ def build_parser():
     parser.add_argument(
             "--dbg", dest="dbg", action="store_true",
             help="Turn on debug mode")
+    parser.add_argument(
+            "--env", dest="env",
+            default=os.getenv(COMPUTE_SETTINGS_VARNAME, ""),
+            help="Employ looper environment compute settings.")
 
     # Individual subcommands
     msg_by_cmd = {
@@ -211,10 +216,6 @@ def build_parser():
     run_subparser.add_argument(
             "--compute", dest="compute",
             help="YAML file with looper environment compute settings.")
-    run_subparser.add_argument(
-            "--env", dest="env",
-            default=os.getenv("{}".format(COMPUTE_SETTINGS_VARNAME), ""),
-            help="Employ looper environment compute settings.")
     run_subparser.add_argument(
             "--limit", dest="limit", default=None,
             type=int,

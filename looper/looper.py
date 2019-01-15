@@ -644,7 +644,6 @@ def _submission_status_text(curr, total, sample_name, sample_protocol, color):
 
 
 
-
 def main():
     
     parser = build_parser()
