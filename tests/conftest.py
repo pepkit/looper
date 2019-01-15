@@ -37,14 +37,14 @@ PROJECT_CONFIG_LINES = """metadata:
   pipeline_interfaces: pipelines
   merge_table: merge.csv
 
-derived_columns: [{derived_column_names}]
+derived_attributes: [{derived_column_names}]
 
 data_sources:
   src1: "{basedir}/data/{sample_name}{col_modifier}.txt"
   src3: "{basedir}/data/{sample_name}.txt"
   src2: "{basedir}/data/{sample_name}-bamfile.bam"
 
-implied_columns:
+implied_attributes:
   sample_name:
     a:
       genome: hg38
