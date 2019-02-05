@@ -686,8 +686,8 @@ def main():
     _LOGGER.info("Results subdir: " + prj.metadata.results_subdir)
 
     with ProjectContext(prj,
-            include_protocols=args.include_protocols,
-            exclude_protocols=args.exclude_protocols) as prj:
+            include_samples=args.include_samples,
+            exclude_samples=args.exclude_samples) as prj:
 
         if args.command == "run":
             if args.compute:
