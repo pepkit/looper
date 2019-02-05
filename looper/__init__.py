@@ -264,14 +264,20 @@ def build_parser():
                 "-d", "--dry-run", dest="dry_run",
                 action="store_true",
                 help="Don't actually submit the project/subproject.")
-        protocols = subparser.add_mutually_exclusive_group()
+        fetch_samples_group = \
+            subparser.add_argument_group("select samples",
+                                         "This group of arguments lets you specify samples to use by "
+                                         "exclusion OR inclusion of the samples attribute values.")
+        fetch_samples_group.add_argument("--attribute", nargs=1, dest="selection_attribute",
+                                         help="Specify the attribute for samples exclusion OR inclusion")
+        protocols = fetch_samples_group.add_mutually_exclusive_group()
         protocols.add_argument(
-                "--exclude-protocols", nargs='*', dest="exclude_protocols",
-                help="Operate only on samples that either lack a protocol or "
-                     "for which protocol is not in this collection.")
+                "--exclude-samples", nargs='*', dest="exclude_samples",
+                help="Operate only on samples that either lack this attribute value or "
+                     "for which this value is not in this collection.")
         protocols.add_argument(
-                "--include-protocols", nargs='*', dest="include_protocols",
-                help="Operate only on samples associated with these protocols;"
+                "--include-samples", nargs='*', dest="include_samples",
+                help="Operate only on samples associated with these attribute values;"
                      " if not provided, all samples are used.")
         subparser.add_argument(
                 "--sp", dest="subproject",
