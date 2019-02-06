@@ -138,6 +138,27 @@ class _VersionInHelpParser(argparse.ArgumentParser):
                super(_VersionInHelpParser, self).format_help()
 
 
+class _StoreBoolActionType(argparse.Action):
+    """
+    Enables the storage of a boolean const and custom type definition needed for systematic html interface generation.
+    To get the _StoreTrueAction output use default=False in the add_argument function
+    and default=True to _StoreFalseAction
+    """
+    def __init__(self, option_strings, dest, type, default, required=False, help=None):
+        super(_StoreBoolActionType, self).__init__(
+            option_strings=option_strings,
+            dest=dest,
+            nargs=0,
+            const=not(default),
+            default=default,
+            type=type,
+            required=required,
+            help=help)
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        setattr(namespace, self.dest, self.const)
+
+        
 def build_parser():
     """
     Building argument parser.
@@ -197,23 +218,23 @@ def build_parser():
     run_subparser = add_subparser("run")
     run_subparser.add_argument(
             "-t", "--time-delay", dest="time_delay",
-            type=int, default=0,
+            type=time_delay, default=0,
             help="Time delay in seconds between job submissions.")
     run_subparser.add_argument(
-            "--ignore-flags", dest="ignore_flags",
-            action="store_true",
+            "--ignore-flags", dest="ignore_flags", default=False,
+            action=_StoreBoolActionType, type=ignore_flags,
             help="Ignore run status flags? Default: False. "
                  "By default, pipelines will not be submitted if a pypiper "
                  "flag file exists marking the run (e.g. as "
                  "'running' or 'failed'). Set this option to ignore flags "
-                 "and submit the runs anyway.")
+                 "and submit the runs anyway. Default=False")
     run_subparser.add_argument(
-            "--allow-duplicate-names",
-            action="store_true",
+            "--allow-duplicate-names", default=False,
+            action=_StoreBoolActionType, type=allow_duplicate_names,
             help="Allow duplicate names? Default: False. "
                  "By default, pipelines will not be submitted if a sample name"
                  " is duplicated, since samples names should be unique.  "
-                 " Set this option to override this setting.")
+                 " Set this option to override this setting. Default=False")
     run_subparser.add_argument(
             "--compute", dest="compute",
             help="YAML file with looper environment compute settings.")
@@ -225,11 +246,11 @@ def build_parser():
     # null by default so that the logic that parses their values may
     # distinguish between explicit 0 and lack of specification.
     run_subparser.add_argument(
-            "--lump", type=float, default=None,
+            "--lump", type=lump, default=None,
             help="Maximum total input file size for a lump/batch of commands "
                  "in a single job (in GB)")
     run_subparser.add_argument(
-            "--lumpn", type=int, default=None,
+            "--lumpn", type=lumpn, default=None,
             help="Number of individual scripts grouped into single submission")
 
     # Other commands
@@ -239,17 +260,17 @@ def build_parser():
     clean_subparser = add_subparser("clean")
 
     check_subparser.add_argument(
-            "-A", "--all-folders", action="store_true",
+            "-A", "--all-folders", action=_StoreBoolActionType, default=False, type=all_folders,
             help="Check status for all project's output folders, not just "
-                 "those for samples specified in the config file used")
+                 "those for samples specified in the config file used. Default=False")
     check_subparser.add_argument(
             "-F", "--flags", nargs='*', default=FLAGS, type=flags,
             help="Check on only these flags/status values.")
 
     destroy_subparser.add_argument(
-            "--force-yes", action="store_true",
+            "--force-yes", action=_StoreBoolActionType, default=False, type=force_yes,
             help="Provide upfront confirmation of destruction intent, "
-                 "to skip console query")
+                 "to skip console query.  Default=False")
 
     # Common arguments
     for subparser in [run_subparser, summarize_subparser,
@@ -259,12 +280,12 @@ def build_parser():
                 help="Project configuration file (YAML).")
         subparser.add_argument(
                 "--file-checks", dest="file_checks",
-                action="store_false",
+                action=_StoreBoolActionType, default=True, type=file_checks,
                 help="Perform input file checks. Default=True.")
         subparser.add_argument(
                 "-d", "--dry-run", dest="dry_run",
-                action="store_true",
-                help="Don't actually submit the project/subproject.")
+                action=_StoreBoolActionType, default=False, type=dry_run,
+                help="Don't actually submit the project/subproject.  Default=False")
         fetch_samples_group = \
             subparser.add_argument_group("select samples",
                                          "This group of arguments lets you specify samples to use by "
