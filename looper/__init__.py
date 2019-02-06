@@ -142,7 +142,7 @@ class _StoreBoolActionType(argparse.Action):
     """
     Enables the storage of a boolean const and custom type definition needed for systematic html interface generation.
     To get the _StoreTrueAction output use default=False in the add_argument function
-    and default=True to _StoreFalseAction
+    and default=True to get _StoreFalseAction output.
     """
     def __init__(self, option_strings, dest, type, default, required=False, help=None):
         super(_StoreBoolActionType, self).__init__(
