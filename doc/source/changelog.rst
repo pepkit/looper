@@ -7,6 +7,8 @@ Changelog
 
     - Using ``attmap`` for "attribute-style key-vale store" implementation
 
+    - Removed Python 3.4 support.
+
 
 - **v0.10.0 (*2018-12-20*)**
 
