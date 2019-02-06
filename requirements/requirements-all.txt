@@ -1,4 +1,4 @@
-attmap
+attmap>=0.1.8
 colorama>=0.3.9
 pandas>=0.20.2
 pyyaml>=3.12
