@@ -27,9 +27,7 @@ from .utils import fetch_flag_files, sample_folder
 
 from .html_reports import HTMLReportBuilder
 
-from peppy import \
-    ProjectContext, COMPUTE_SETTINGS_VARNAME, SAMPLE_EXECUTION_TOGGLE
-from peppy.utils import alpha_cased
+from peppy import ProjectContext, SAMPLE_EXECUTION_TOGGLE
 
 
 SUBMISSION_FAILURE_MESSAGE = "Cluster resource failure"
@@ -643,8 +641,8 @@ def _submission_status_text(curr, total, sample_name, sample_protocol, color):
            Style.RESET_ALL
 
 
-
 def main():
+    """ Primary workflow """
     
     parser = build_parser()
     args, remaining_args = parser.parse_known_args()
@@ -686,8 +684,8 @@ def main():
     _LOGGER.info("Results subdir: " + prj.metadata.results_subdir)
 
     with ProjectContext(prj,
-            include_protocols=args.include_protocols,
-            exclude_protocols=args.exclude_protocols) as prj:
+            include_samples=args.include_protocols,
+            exclude_samples=args.exclude_protocols) as prj:
 
         if args.command == "run":
             if args.compute:
