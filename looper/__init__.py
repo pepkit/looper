@@ -14,6 +14,7 @@ from sys import stdout
 
 from .pipeline_interface import PipelineInterface
 from ._version import __version__
+from .parser_types import *
 
 # Not used here, but make this the main import interface between peppy and
 # looper, so that other modules within this package need not worry about
@@ -218,7 +219,7 @@ def build_parser():
             help="YAML file with looper environment compute settings.")
     run_subparser.add_argument(
             "--limit", dest="limit", default=None,
-            type=int,
+            type=limit,
             help="Limit to n samples.")
     # Note that defaults for otherwise numeric lump parameters are set to
     # null by default so that the logic that parses their values may
@@ -242,7 +243,7 @@ def build_parser():
             help="Check status for all project's output folders, not just "
                  "those for samples specified in the config file used")
     check_subparser.add_argument(
-            "-F", "--flags", nargs='*', default=FLAGS,
+            "-F", "--flags", nargs='*', default=FLAGS, type=flags,
             help="Check on only these flags/status values.")
 
     destroy_subparser.add_argument(
