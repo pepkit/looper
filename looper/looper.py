@@ -233,8 +233,7 @@ class Runner(Executor):
             else:
                 _LOGGER.error("No protocols; does the project point to at "
                               "least one pipelines location that exists? {}".
-                              format(self.prj.__class__.__name__,
-                                     ", ".format(pipe_locs)))
+                              format(", ".format(pipe_locs)))
                 return
 
         protocols = {s.protocol for s in self.prj.samples
