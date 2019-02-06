@@ -580,13 +580,13 @@ def pipe_iface(request):
 
 
 def basic_entries():
-    """ AttributeDict data that lack nested strcuture. """
+    """ AttMap data that lack nested strcuture. """
     for k, v in zip(_BASE_KEYS, _BASE_VALUES):
         yield k, v
 
 
 
 def nested_entries():
-    """ AttributeDict data with some nesting going on. """
+    """ AttMap data with some nesting going on. """
     for k, v in _SEASON_HIERARCHY.items():
         yield k, v
