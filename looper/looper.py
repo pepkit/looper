@@ -218,6 +218,25 @@ class Runner(Executor):
             recognized by looper, germane to samples/pipelines
         """
 
+        if args.compute:
+            self.prj.set_compute(args.compute)
+
+        if not self.prj.interfaces_by_protocol:
+            pipe_locs = getattr(self.prj.metadata, "pipeline_interfaces", [])
+            # TODO: should these cases be handled as equally exceptional?
+            # That is, should they either both raise errors, or both log errors?
+            if len(pipe_locs) == 0:
+                raise AttributeError(
+                    "Looper requires at least one pointer to pipeline(s), set "
+                    "with the pipeline_interfaces key in the metadata section "
+                    "of a project config file")
+            else:
+                _LOGGER.error("No protocols; does the project point to at "
+                              "least one pipelines location that exists? {}".
+                              format(self.prj.__class__.__name__,
+                                     ", ".format(pipe_locs)))
+                return
+
         protocols = {s.protocol for s in self.prj.samples
                      if hasattr(s, "protocol")}
         failures = defaultdict(list)  # Collect problems by sample.
@@ -687,25 +706,6 @@ def main():
             exclude_samples=args.exclude_protocols) as prj:
 
         if args.command == "run":
-            if args.compute:
-                prj.set_compute(args.compute)
-
-            # TODO split here, spawning separate run process for each
-            # pipelines directory in project metadata pipelines directory.
-
-            if not hasattr(prj.metadata, "pipelines_dir") or \
-                           len(prj.metadata.pipelines_dir) == 0:
-                raise AttributeError(
-                    "Looper requires at least one pipeline(s) location; set "
-                    "with 'pipeline_interfaces' in the metadata section of a "
-                    "project config file.")
-
-            if not prj.interfaces_by_protocol:
-                _LOGGER.error(
-                        "The Project knows no protocols. Does it point "
-                        "to at least one pipelines location that exists?")
-                return
-
             run = Runner(prj)
             try:
                 run(args, remaining_args)
