@@ -16,7 +16,6 @@ __author__ = "Vince Reuter"
 __email__ = "vreuter@virginia.edu"
 
 
-
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -43,18 +42,15 @@ class Project(peppy.Project):
         self.interfaces_by_protocol = \
             process_pipeline_interfaces(self.metadata.pipelines_dir)
 
-
     @property
     def required_metadata(self):
         """ Which metadata attributes are required. """
         return ["output_dir"]
 
-
     @property
     def project_folders(self):
         """ Keys for paths to folders to ensure exist. """
         return ["output_dir", "results_subdir", "submission_subdir"]
-
 
     def build_submission_bundles(self, protocol, priority=True):
         """
