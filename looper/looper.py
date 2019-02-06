@@ -27,9 +27,7 @@ from .utils import fetch_flag_files, sample_folder
 
 from .html_reports import HTMLReportBuilder
 
-from peppy import \
-    ProjectContext, COMPUTE_SETTINGS_VARNAME, SAMPLE_EXECUTION_TOGGLE
-from peppy.utils import alpha_cased
+from peppy import ProjectContext, SAMPLE_EXECUTION_TOGGLE
 
 
 SUBMISSION_FAILURE_MESSAGE = "Cluster resource failure"
@@ -220,6 +218,24 @@ class Runner(Executor):
             recognized by looper, germane to samples/pipelines
         """
 
+        if args.compute:
+            self.prj.set_compute(args.compute)
+
+        if not self.prj.interfaces_by_protocol:
+            pipe_locs = getattr(self.prj.metadata, "pipeline_interfaces", [])
+            # TODO: should these cases be handled as equally exceptional?
+            # That is, should they either both raise errors, or both log errors?
+            if len(pipe_locs) == 0:
+                raise AttributeError(
+                    "Looper requires at least one pointer to pipeline(s), set "
+                    "with the pipeline_interfaces key in the metadata section "
+                    "of a project config file")
+            else:
+                _LOGGER.error("No protocols; does the project point to at "
+                              "least one pipelines location that exists? {}".
+                              format(", ".format(pipe_locs)))
+                return
+
         protocols = {s.protocol for s in self.prj.samples
                      if hasattr(s, "protocol")}
         failures = defaultdict(list)  # Collect problems by sample.
@@ -234,12 +250,11 @@ class Runner(Executor):
         pipe_keys_by_protocol = defaultdict(list)
         mapped_protos = set()
         for proto in protocols | {GENERIC_PROTOCOL_KEY}:
-            proto_key = alpha_cased(proto)
             _LOGGER.debug("Determining sample type, script, and flags for "
                           "pipeline(s) associated with protocol: %s", proto)
-            submission_bundles = self.prj.build_submission_bundles(proto_key)
+            submission_bundles = self.prj.build_submission_bundles(proto)
             if not submission_bundles:
-                if proto_key != GENERIC_PROTOCOL_KEY:
+                if proto != GENERIC_PROTOCOL_KEY:
                     _LOGGER.warning("No mapping for protocol: '%s'", proto)
                 continue
             mapped_protos.add(proto)
@@ -253,7 +268,7 @@ class Runner(Executor):
                         self.prj.compute,
                         max_cmds=args.lumpn, max_size=args.lump)
                 submission_conductors[pl_key] = conductor
-                pipe_keys_by_protocol[proto_key].append(pl_key)
+                pipe_keys_by_protocol[proto].append(pl_key)
 
         # Determine number of samples eligible for processing.
         num_samples = len(self.prj.samples)
@@ -320,7 +335,7 @@ class Runner(Executor):
             # that the file is fresh, with respect to this run of looper.
             sample.to_yaml(subs_folder_path=self.prj.metadata.submission_subdir)
 
-            pipe_keys = pipe_keys_by_protocol.get(alpha_cased(sample.protocol)) \
+            pipe_keys = pipe_keys_by_protocol.get(sample.protocol) \
                 or pipe_keys_by_protocol.get(GENERIC_PROTOCOL_KEY)
             _LOGGER.debug("Considering %d pipeline(s)", len(pipe_keys))
 
@@ -486,7 +501,7 @@ class Summarizer(Executor):
         _LOGGER.debug(self.prj.interfaces_by_protocol)
         for protocol in set(all_protocols):
             try:
-                ifaces = self.prj.interfaces_by_protocol[alpha_cased(protocol)]
+                ifaces = self.prj.interfaces_by_protocol[protocol]
             except KeyError:
                 _LOGGER.warning("No interface for protocol '{}', skipping summary".
                              format(protocol))
@@ -643,9 +658,9 @@ def _submission_status_text(curr, total, sample_name, sample_protocol, color):
            Style.RESET_ALL
 
 
-
 def main():
-    
+    """ Primary workflow """
+
     parser = build_parser()
     args, remaining_args = parser.parse_known_args()
 
@@ -690,25 +705,6 @@ def main():
             exclude_samples=args.exclude_samples) as prj:
 
         if args.command == "run":
-            if args.compute:
-                prj.set_compute(args.compute)
-
-            # TODO split here, spawning separate run process for each
-            # pipelines directory in project metadata pipelines directory.
-
-            if not hasattr(prj.metadata, "pipelines_dir") or \
-                           len(prj.metadata.pipelines_dir) == 0:
-                raise AttributeError(
-                    "Looper requires at least one pipeline(s) location; set "
-                    "with 'pipeline_interfaces' in the metadata section of a "
-                    "project config file.")
-
-            if not prj.interfaces_by_protocol:
-                _LOGGER.error(
-                        "The Project knows no protocols. Does it point "
-                        "to at least one pipelines location that exists?")
-                return
-
             run = Runner(prj)
             try:
                 run(args, remaining_args)
