@@ -12,11 +12,12 @@ import warnings
 import pytest
 import yaml
 
+from attmap import AttMap
 from looper.pipeline_interface import PipelineInterface, PL_KEY, PROTOMAP_KEY
 from looper.project import Project
 from looper.exceptions import InvalidResourceSpecificationException, \
     MissingPipelineConfigurationException, PipelineInterfaceConfigError
-from peppy import AttributeDict, Project, Sample, \
+from peppy import Project, Sample, \
     DEFAULT_COMPUTE_RESOURCES_NAME, SAMPLE_ANNOTATIONS_KEY, SAMPLE_NAME_COLNAME
 from .conftest import ATAC_PROTOCOL_NAME, write_config_data
 from tests.helpers import powerset
@@ -110,8 +111,8 @@ def test_basic_construction(tmpdir, from_file, bundled_piface):
         assert pi.pipelines_path is None
 
     # Validate protocol mapping and interfaces contents.
-    assert AttributeDict(bundled_piface[PL_KEY]) == pi[PL_KEY]
-    assert AttributeDict(bundled_piface[PROTOMAP_KEY]) == pi[PROTOMAP_KEY]
+    assert AttMap(bundled_piface[PL_KEY]) == pi[PL_KEY]
+    assert AttMap(bundled_piface[PROTOMAP_KEY]) == pi[PROTOMAP_KEY]
 
     # Certain access modes should agree with one another.
     assert pi.pipelines == pi[PL_KEY]

@@ -7,14 +7,13 @@ import logging
 import os
 
 import peppy
-from peppy.utils import alpha_cased, is_command_callable
+from peppy.utils import is_command_callable
 from .pipeline_interface import PipelineInterface
 from .utils import partition
 
 
 __author__ = "Vince Reuter"
 __email__ = "vreuter@virginia.edu"
-
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -43,18 +42,15 @@ class Project(peppy.Project):
         self.interfaces_by_protocol = \
             process_pipeline_interfaces(self.metadata.pipelines_dir)
 
-
     @property
     def required_metadata(self):
         """ Which metadata attributes are required. """
         return ["output_dir"]
 
-
     @property
     def project_folders(self):
         """ Keys for paths to folders to ensure exist. """
         return ["output_dir", "results_subdir", "submission_subdir"]
-
 
     def build_submission_bundles(self, protocol, priority=True):
         """
@@ -76,8 +72,6 @@ class Project(peppy.Project):
             partition an interface's pipeline scripts into disjoint subsets of
             those already mapped and those not yet mapped
         """
-
-        protocol = alpha_cased(protocol)
 
         if not priority:
             raise NotImplementedError(
@@ -236,7 +230,7 @@ def process_pipeline_interfaces(pipeline_interface_locations):
         pipe_iface = PipelineInterface(pipe_iface_location)
         for proto_name in pipe_iface.protomap:
             _LOGGER.log(5, "Adding protocol name: '%s'", proto_name)
-            interface_by_protocol[alpha_cased(proto_name)].append(pipe_iface)
+            interface_by_protocol[proto_name].append(pipe_iface)
     return interface_by_protocol
 
 

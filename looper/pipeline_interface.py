@@ -14,7 +14,8 @@ import yaml
 
 from .exceptions import InvalidResourceSpecificationException, \
     MissingPipelineConfigurationException, PipelineInterfaceConfigError
-from peppy import utils, AttributeDict, Sample
+from attmap import AttMap
+from peppy import utils, Sample
 from peppy.const import DEFAULT_COMPUTE_RESOURCES_NAME
 from peppy.utils import is_command_callable
 
@@ -28,7 +29,7 @@ SUBTYPE_MAPPING_SECTION = "sample_subtypes"
 
 
 @utils.copy
-class PipelineInterface(AttributeDict):
+class PipelineInterface(AttMap):
     """
     This class parses, holds, and returns information for a yaml file that
     specifies how to interact with each individual pipeline. This
@@ -42,7 +43,7 @@ class PipelineInterface(AttributeDict):
     REQUIRED_SECTIONS = [PL_KEY, PROTOMAP_KEY]
 
     def __init__(self, config):
-        super(PipelineInterface, self).__init__(_attribute_identity=False)
+        super(PipelineInterface, self).__init__()
 
         if isinstance(config, Mapping):
             self.pipe_iface_file = None
@@ -65,7 +66,6 @@ class PipelineInterface(AttributeDict):
         config = standardize_protocols(config)
         self.add_entries(config)
 
-
     def __getitem__(self, item):
         """ Mapping index-like syntax is interpreted as pipeline request. """
         try:
@@ -83,7 +83,6 @@ class PipelineInterface(AttributeDict):
                 warnings.warn(msg, DeprecationWarning)
                 return pipe
 
-
     def __repr__(self):
         """ String representation """
         source = self.pipe_iface_file or "Mapping"
@@ -92,7 +91,6 @@ class PipelineInterface(AttributeDict):
         pipelines = ", ".join(self.pipelines.keys())
         return "{} from {}, with {} pipeline(s): {}".format(
                 self.__class__.__name__, source, num_pipelines, pipelines)
-
 
     def choose_resource_package(self, pipeline_name, file_size):
         """
@@ -387,8 +385,7 @@ class PipelineInterface(AttributeDict):
         :return str | Iterable[str] | NoneType: pipeline(s) to which the given
             protocol is mapped, otherwise null
         """
-        protocol_key = utils.alpha_cased(protocol)
-        return self.protocol_mapping.get(protocol_key)
+        return self.protocol_mapping.get(protocol)
 
 
     def fetch_sample_subtype(
@@ -438,10 +435,8 @@ class PipelineInterface(AttributeDict):
                               "in interface from '%s': '%s'", subtype_name,
                               strict_pipe_key, self.source)
             else:
-                temp_subtypes = {
-                        utils.alpha_cased(p): st for p, st in subtypes.items()}
                 try:
-                    subtype_name = temp_subtypes[utils.alpha_cased(protocol)]
+                    subtype_name = subtypes[protocol]
                 except KeyError:
                     # Designate lack of need for import attempt and provide
                     # class with name to format message below.
@@ -450,7 +445,7 @@ class PipelineInterface(AttributeDict):
                                   "'%s': '%s', '%s'; known: %s",
                                   subtype.__name__, self.source,
                                   strict_pipe_key, protocol,
-                                  ", ".join(temp_subtypes.keys()))
+                                  ", ".join(subtypes.keys()))
 
         # subtype_name is defined if and only if subtype remained null.
         # The import helper function can return null if the import attempt
@@ -587,14 +582,14 @@ def standardize_protocols(piface):
     """
     Handle casing and punctuation of protocol keys in pipeline interface.
 
-    :param Mapping piface: Pipeline interface data to standardize.
-    :return Mapping: Same as the input, but with protocol keys case and
+    :param MutableMapping piface: Pipeline interface data to standardize.
+    :return MutableMapping: Same as the input, but with protocol keys case and
         punctuation handled in a more uniform way for matching later.
     """
+    from copy import copy as cp
     assert PROTOMAP_KEY in piface, "For protocol mapping standardization, " \
         "pipeline interface data must contain key '{}'".format(PROTOMAP_KEY)
-    piface[PROTOMAP_KEY] = {utils.alpha_cased(proto): pipekey for
-                            proto, pipekey in piface[PROTOMAP_KEY].items()}
+    piface[PROTOMAP_KEY] = cp(piface[PROTOMAP_KEY])
     return piface
 
 

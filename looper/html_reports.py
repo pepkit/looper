@@ -5,7 +5,6 @@ import glob
 import pandas as _pd
 import logging
 
-from peppy.utils import alpha_cased
 from collections import OrderedDict
 
 _LOGGER = logging.getLogger('HTMLReportBuilder')
@@ -1399,7 +1398,7 @@ class HTMLReportBuilder(object):
                 num_figures = 0
                 obj_links = []
                 warnings = []
-                ifaces = self.prj.interfaces_by_protocol[alpha_cased(protocol)]
+                ifaces = self.prj.interfaces_by_protocol[protocol]
 
                 # Check the interface files for summarizers
                 for iface in ifaces:
