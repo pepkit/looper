@@ -175,7 +175,7 @@ class Project(peppy.Project):
                 # Determine which interface and Sample subtype to use.
                 sample_subtype = \
                     pipe_iface.fetch_sample_subtype(
-                        protocol, strict_pipe_key, full_pipe_path)
+                            protocol, strict_pipe_key, full_pipe_path)
 
                 # Package the pipeline's interface, subtype, command, and key.
                 submission_bundle = SubmissionBundle(

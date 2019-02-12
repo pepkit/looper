@@ -701,8 +701,9 @@ def main():
     _LOGGER.info("Results subdir: " + prj.metadata.results_subdir)
 
     with ProjectContext(prj,
-            include_samples=args.include_samples,
-            exclude_samples=args.exclude_samples) as prj:
+            selector_attribute=args.selector_attribute,
+            selector_include=args.selector_include,
+            selector_exclude=args.selector_exclude) as prj:
 
         if args.command == "run":
             run = Runner(prj)
