@@ -9,7 +9,7 @@ def checkbox_f(x, caravel=False):
     caravel_data = attmap.AttMap({
                 "element_type": "checkbox",
                 "element_args": {
-                    "checked": "False"
+                    # "checked": "False"
                 }})
     return caravel_data if caravel else eval(x)
 
@@ -35,17 +35,8 @@ def range_010(x, caravel=False):
 
 # Definitions
 
-def ignore_flags(x, caravel=False):
-    caravel_data = attmap.AttMap({
-                "element_type": "checkbox",
-                "element_args": {
-                    "checked": "True"
-                }})
-    return caravel_data if caravel else eval(x)
-
-
 file_checks = checkbox_t
-allow_duplicate_names = all_folders = force_yes = dry_run = checkbox_f
+allow_duplicate_names = all_folders = force_yes = dry_run = ignore_flags = checkbox_f
 lumpn = limit = range_010
 
 

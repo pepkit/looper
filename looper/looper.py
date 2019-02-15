@@ -700,9 +700,7 @@ def main():
 
     _LOGGER.info("Results subdir: " + prj.metadata.results_subdir)
 
-    with ProjectContext(prj,
-            selector_attribute=args.selector_attribute,
-            selector_include=args.selector_include,
+    with ProjectContext(prj, selector_attribute=args.selector_attribute, selector_include=args.selector_include,
             selector_exclude=args.selector_exclude) as prj:
 
         if args.command == "run":
