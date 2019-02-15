@@ -15,6 +15,7 @@ from sys import stdout
 from .pipeline_interface import PipelineInterface
 from ._version import __version__
 from .parser_types import *
+from functools import partial
 
 # Not used here, but make this the main import interface between peppy and
 # looper, so that other modules within this package need not worry about
@@ -218,11 +219,11 @@ def build_parser():
     run_subparser = add_subparser("run")
     run_subparser.add_argument(
             "-t", "--time-delay", dest="time_delay",
-            type=time_delay, default=0,
+            type=partial(range, min=0, max=30, value=0), default=0,
             help="Time delay in seconds between job submissions.")
     run_subparser.add_argument(
             "--ignore-flags", dest="ignore_flags", default=False,
-            action=_StoreBoolActionType, type=ignore_flags,
+            action=_StoreBoolActionType, type=partial(checkbox, checked=False),
             help="Ignore run status flags? Default: False. "
                  "By default, pipelines will not be submitted if a pypiper "
                  "flag file exists marking the run (e.g. as "
@@ -230,7 +231,7 @@ def build_parser():
                  "and submit the runs anyway. Default=False")
     run_subparser.add_argument(
             "--allow-duplicate-names", default=False,
-            action=_StoreBoolActionType, type=allow_duplicate_names,
+            action=_StoreBoolActionType, type=partial(checkbox, checked=False),
             help="Allow duplicate names? Default: False. "
                  "By default, pipelines will not be submitted if a sample name"
                  " is duplicated, since samples names should be unique.  "
@@ -240,17 +241,17 @@ def build_parser():
             help="YAML file with looper environment compute settings.")
     run_subparser.add_argument(
             "--limit", dest="limit", default=None,
-            type=limit,
+            type=partial(range, min=0, max=10),
             help="Limit to n samples.")
     # Note that defaults for otherwise numeric lump parameters are set to
     # null by default so that the logic that parses their values may
     # distinguish between explicit 0 and lack of specification.
     run_subparser.add_argument(
-            "--lump", type=lump, default=None,
+            "--lump", type=partial(range, min=0, max=100, step=0.1, value=100), default=None,
             help="Maximum total input file size for a lump/batch of commands "
                  "in a single job (in GB)")
     run_subparser.add_argument(
-            "--lumpn", type=lumpn, default=None,
+            "--lumpn", type=partial(range, min=0, max=10), default=None,
             help="Number of individual scripts grouped into single submission")
 
     # Other commands
@@ -260,15 +261,15 @@ def build_parser():
     clean_subparser = add_subparser("clean")
 
     check_subparser.add_argument(
-            "-A", "--all-folders", action=_StoreBoolActionType, default=False, type=all_folders,
+            "-A", "--all-folders", action=_StoreBoolActionType, default=False, type=partial(checkbox, checked=False),
             help="Check status for all project's output folders, not just "
                  "those for samples specified in the config file used. Default=False")
     check_subparser.add_argument(
-            "-F", "--flags", nargs='*', default=FLAGS, type=flags,
+            "-F", "--flags", nargs='*', default=FLAGS, type=partial(select, options=FLAGS),
             help="Check on only these flags/status values.")
 
     destroy_subparser.add_argument(
-            "--force-yes", action=_StoreBoolActionType, default=False, type=force_yes,
+            "--force-yes", action=_StoreBoolActionType, default=False, type=partial(checkbox, checked=False),
             help="Provide upfront confirmation of destruction intent, "
                  "to skip console query.  Default=False")
 
@@ -280,11 +281,11 @@ def build_parser():
                 help="Project configuration file (YAML).")
         subparser.add_argument(
                 "--file-checks", dest="file_checks",
-                action=_StoreBoolActionType, default=True, type=file_checks,
+                action=_StoreBoolActionType, default=True, type=partial(checkbox, checked=True),
                 help="Perform input file checks. Default=True.")
         subparser.add_argument(
                 "-d", "--dry-run", dest="dry_run",
-                action=_StoreBoolActionType, default=False, type=dry_run,
+                action=_StoreBoolActionType, default=False, type=partial(checkbox, checked=False),
                 help="Don't actually submit the project/subproject.  Default=False")
         fetch_samples_group = \
             subparser.add_argument_group("select samples",

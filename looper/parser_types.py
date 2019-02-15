@@ -1,72 +1,40 @@
 """ Definitions of the parser argument types """
 
 import attmap
-from peppy import FLAGS
 
 # Templates
 
-def checkbox_f(x, caravel=False):
-    caravel_data = attmap.AttMap({
-                "element_type": "checkbox",
-                "element_args": {
-                    # "checked": "False"
-                }})
-    return caravel_data if caravel else eval(x)
 
-
-def checkbox_t(x, caravel=False):
-    caravel_data = attmap.AttMap({
-                "element_type": "checkbox",
-                "element_args": {
-                    "checked": "True"
-                }})
-    return caravel_data if caravel else eval(x)
-
-
-def range_010(x, caravel=False):
+def range(x, caravel=False, min=0, max=10, step=1, value=0):
     caravel_data = attmap.AttMap({
                 "element_type": "range",
                 "element_args": {
-                    "min": "0",
-                    "max": "10"
+                    "min": str(min),
+                    "max": str(max),
+                    "step": str(step),
+                    "value": str(value)
                 }})
-    return caravel_data if caravel else int(x)
+    if step < 1:
+        return caravel_data if caravel else float(x)
+    else:
+        return caravel_data if caravel else int(x)
 
 
-# Definitions
+def checkbox(x, caravel=False, checked=False):
+    caravel_data = attmap.AttMap({
+                "element_type": "checkbox",
+                "element_args": {
+                }})
+    if checked:
+        caravel_data.add_entries({"element_args": {'checked': 'True'}})
+    return caravel_data if caravel else eval(x)
 
-file_checks = checkbox_t
-allow_duplicate_names = all_folders = force_yes = dry_run = ignore_flags = checkbox_f
-lumpn = limit = range_010
 
-
-def flags(x, caravel=False):
+def select(x, options, caravel=False):
+    assert isinstance(options, list), "options argument has to be a list, got '{}'.".format(type(options))
     caravel_data = attmap.AttMap({
                 "element_type": "select",
                 "element_args": {
-                    "option": FLAGS
+                    "option": options
                 }})
     return caravel_data if caravel else x
-
-
-def time_delay(x, caravel=False):
-    caravel_data = attmap.AttMap({
-                "element_type": "range",
-                "element_args": {
-                    "min": "0",
-                    "max": "30",
-                    "value": "0"
-                }})
-    return caravel_data if caravel else int(x)
-
-
-def lump(x, caravel=False):
-    caravel_data = attmap.AttMap({
-                "element_type": "range",
-                "element_args": {
-                    "min": "0",
-                    "max": "100",
-                    "value": "100",
-                    "step": "0.1"
-                }})
-    return caravel_data if caravel else float(x)
