@@ -5,7 +5,7 @@ import attmap
 # Templates
 
 
-def range(x, caravel=False, min=0, max=10, step=1, value=0):
+def html_range(x, caravel=False, min=0, max=10, step=1, value=0):
     caravel_data = attmap.AttMap({
                 "element_type": "range",
                 "element_args": {
@@ -20,7 +20,7 @@ def range(x, caravel=False, min=0, max=10, step=1, value=0):
         return caravel_data if caravel else int(x)
 
 
-def checkbox(x, caravel=False, checked=False):
+def html_checkbox(x, caravel=False, checked=False):
     caravel_data = attmap.AttMap({
                 "element_type": "checkbox",
                 "element_args": {
@@ -30,7 +30,7 @@ def checkbox(x, caravel=False, checked=False):
     return caravel_data if caravel else eval(x)
 
 
-def select(x, options, caravel=False):
+def html_select(x, options, caravel=False):
     assert isinstance(options, list), "options argument has to be a list, got '{}'.".format(type(options))
     caravel_data = attmap.AttMap({
                 "element_type": "select",
