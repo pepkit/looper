@@ -43,7 +43,8 @@ _LEVEL_BY_VERBOSITY = [logging.ERROR, logging.CRITICAL, logging.WARN,
                        logging.INFO, logging.DEBUG]
 
 
-def setup_looper_logger(level, additional_locations=None, devmode=False):
+def setup_looper_logger(level, additional_locations=None, devmode=False,
+                        formatter_template=None):
     """
     Establish a logger for a looper CLI program.
 
@@ -56,12 +57,14 @@ def setup_looper_logger(level, additional_locations=None, devmode=False):
     :param tuple(str | FileIO[str]) additional_locations: supplementary
         destination(s) to which to ship logs
     :param bool devmode: whether to use developer logging config
+    :param str formatter_template: message template for the logging formatter
     :return logging.Logger: project-root logger
     """
 
     logging.addLevelName(5, "VERY_FINE")
 
-    fmt = DEV_LOGGING_FMT if devmode else DEFAULT_LOGGING_FMT
+    fmt = formatter_template or \
+        (DEV_LOGGING_FMT if devmode else DEFAULT_LOGGING_FMT)
 
     # Establish the logger.
     LOOPER_LOGGER = logging.getLogger()
@@ -98,9 +101,9 @@ def setup_looper_logger(level, additional_locations=None, devmode=False):
                      "target destinations; using {} as root logger location(s)".
                      format(additional_locations, LOGGING_LOCATIONS))
 
-    # Add the handlers.
-    formatter = logging.Formatter(fmt=(fmt or DEFAULT_LOGGING_FMT))
+    formatter = logging.Formatter(fmt=fmt)
 
+    # Add the handlers.
     for loc in where:
         if not loc:
             continue
