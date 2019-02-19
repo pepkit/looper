@@ -270,12 +270,10 @@ def build_parser():
         protocols = subparser.add_mutually_exclusive_group()
         protocols.add_argument(
                 "--selector-exclude", nargs='*',
-                help="Operate only on samples that either lack a protocol or "
-                     "for which protocol is not in this collection.")
+                help="Exclude samples with this value in the selector-attribute")
         protocols.add_argument(
                 "--selector-include", nargs='*',
-                help="Operate only on samples associated with these protocols;"
-                     " if not provided, all samples are used.")
+                help="Include only samples with this value in the selector-attribute")
         subparser.add_argument(
                 "--selector-attribute", type=str, default=None,
                 help="Choose the attribute on which to employ selector args.")
