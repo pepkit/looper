@@ -269,15 +269,15 @@ def build_parser():
                 help="Don't actually submit the project/subproject.")
         protocols = subparser.add_mutually_exclusive_group()
         protocols.add_argument(
-                "--selector-exclude", nargs='*', dest="exclude_protocols",
+                "--selector-exclude", nargs='*',
                 help="Operate only on samples that either lack a protocol or "
                      "for which protocol is not in this collection.")
         protocols.add_argument(
-                "--selector-include", nargs='*', dest="include_protocols",
+                "--selector-include", nargs='*',
                 help="Operate only on samples associated with these protocols;"
                      " if not provided, all samples are used.")
         protocols.add_argument(
-                "--selector-attribute", nargs='*', dest="include_protocols",
+                "--selector-attribute", nargs='*',
                 help="Choose the attribute on which to employ selector args.")
         subparser.add_argument(
                 "--sp", dest="subproject",
