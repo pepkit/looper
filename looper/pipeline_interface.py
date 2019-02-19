@@ -66,23 +66,6 @@ class PipelineInterface(AttMap):
         config = standardize_protocols(config)
         self.add_entries(config)
 
-    def __getitem__(self, item):
-        """ Mapping index-like syntax is interpreted as pipeline request. """
-        try:
-            return super(PipelineInterface, self).__getitem__(item)
-        except KeyError:
-            try:
-                pipe = self.select_pipeline(item)
-            except MissingPipelineConfigurationException:
-                raise KeyError(
-                    "{} is neither an interface key nor a known pipeline; known "
-                    "pipelines: {}".format(item, ", ".join(self.pipelines.keys())))
-            else:
-                msg = "Directly requesting pipeline on {} is deprecated; please " \
-                      "use select_pipeline".format(self.__class__.__name__)
-                warnings.warn(msg, DeprecationWarning)
-                return pipe
-
     def __repr__(self):
         """ String representation """
         source = self.pipe_iface_file or "Mapping"
