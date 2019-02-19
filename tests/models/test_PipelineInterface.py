@@ -215,7 +215,7 @@ def test_unconfigured_pipeline_exception(
 @pytest.mark.parametrize(
     argnames=["pipe_name", "extension"],
     argvalues=list(itertools.product(PIPELINE_NAMES, EXTENSIONS)))
-def test_deprecation_of_direct_pipeline_access(
+def test_prohibition_of_direct_pipeline_access(
         recwarn, pipe_name, extension, pi_with_resources):
     """ Specific pipeline access is granted via getitem but is deprecated. """
 
@@ -227,16 +227,12 @@ def test_deprecation_of_direct_pipeline_access(
     assert 0 == len(recwarn)           # Start fresh
 
     # Modern access pattern doesn't warn.
-    pipe_dat_1 = pi_with_resources.select_pipeline(pk)
+    _ = pi_with_resources.select_pipeline(pk)
     assert 0 == len(recwarn)
 
-    # Old access pattern does warn.
-    pipe_dat_2 = pi_with_resources[pk]
-    assert 1 == len(recwarn)
-    w = recwarn.pop(DeprecationWarning)
-    assert "select_pipeline" in str(w.message)
-
-    assert pipe_dat_1 == pipe_dat_2    # Concordance b/w result of each mode
+    # Old access pattern is an exception.
+    with pytest.raises(KeyError):
+        pi_with_resources[pk]
 
 
 
