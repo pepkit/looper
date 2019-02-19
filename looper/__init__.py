@@ -276,7 +276,7 @@ def build_parser():
                 "--selector-include", nargs='*',
                 help="Operate only on samples associated with these protocols;"
                      " if not provided, all samples are used.")
-        protocols.add_argument(
+        subparser.add_argument(
                 "--selector-attribute", type=str, default=None,
                 help="Choose the attribute on which to employ selector args.")
         subparser.add_argument(
