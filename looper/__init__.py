@@ -299,13 +299,15 @@ def build_parser():
                                          default="protocol")
         protocols = fetch_samples_group.add_mutually_exclusive_group()
         protocols.add_argument(
-                "--selector-exclude", nargs='*', dest="selector_exclude",
+                "--selector-exclude", nargs='*',
                 help="Operate only on samples that either lack this attribute value or "
                      "for which this value is not in this collection.")
         protocols.add_argument(
-                "--selector-include", nargs='*', dest="selector_include",
+                "--selector-include", nargs='*',
                 help="Operate only on samples associated with these attribute values;"
-                     " if not provided, all samples are used.")
+        protocols.add_argument(
+                "--selector-attribute", type=str, default=None,
+                help="Choose the attribute on which to employ selector args.")
         subparser.add_argument(
                 "--sp", dest="subproject",
                 help="Name of subproject to use, as designated in the "
