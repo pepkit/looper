@@ -29,10 +29,6 @@ class Project(peppy.Project):
     :type config_file: str
     :param subproject: name indicating subproject to use, optional
     :type subproject: str
-    :param default_compute: path to default compute environment
-        configuration data, optional
-    :type default_compute: str
-
     """
     def __init__(self, config_file, subproject=None, **kwargs):
         super(Project, self).__init__(
