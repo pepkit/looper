@@ -222,11 +222,11 @@ def build_parser():
     run_subparser = add_subparser("run")
     run_subparser.add_argument(
             "-t", "--time-delay", dest="time_delay",
-            type=partial(html_range, min=0, max=30, value=0), default=0,
+            type=html_range(min=0, max=30, value=0), default=0,
             help="Time delay in seconds between job submissions.")
     run_subparser.add_argument(
             "--ignore-flags", dest="ignore_flags", default=False,
-            action=_StoreBoolActionType, type=partial(html_checkbox, checked=False),
+            action=_StoreBoolActionType, type=html_checkbox(checked=False),
             help="Ignore run status flags? Default: False. "
                  "By default, pipelines will not be submitted if a pypiper "
                  "flag file exists marking the run (e.g. as "
@@ -234,7 +234,7 @@ def build_parser():
                  "and submit the runs anyway. Default=False")
     run_subparser.add_argument(
             "--allow-duplicate-names", default=False,
-            action=_StoreBoolActionType, type=partial(html_checkbox, checked=False),
+            action=_StoreBoolActionType, type=html_checkbox(checked=False),
             help="Allow duplicate names? Default: False. "
                  "By default, pipelines will not be submitted if a sample name"
                  " is duplicated, since samples names should be unique.  "
@@ -244,17 +244,17 @@ def build_parser():
             help="YAML file with looper environment compute settings.")
     run_subparser.add_argument(
             "--limit", dest="limit", default=None,
-            type=partial(html_range, min=0, max=10),
+            type=html_range(min=0, max=10),
             help="Limit to n samples.")
     # Note that defaults for otherwise numeric lump parameters are set to
     # null by default so that the logic that parses their values may
     # distinguish between explicit 0 and lack of specification.
     run_subparser.add_argument(
-            "--lump", type=partial(html_range, min=0, max=100, step=0.1, value=100), default=None,
+            "--lump", type=html_range(min=0, max=100, step=0.1, value=100), default=None,
             help="Maximum total input file size for a lump/batch of commands "
                  "in a single job (in GB)")
     run_subparser.add_argument(
-            "--lumpn", type=partial(html_range, min=1, max=10, value=1), default=None,
+            "--lumpn", type=html_range(min=1, max=10, value=1), default=None,
             help="Number of individual scripts grouped into single submission")
 
     # Other commands
@@ -264,15 +264,15 @@ def build_parser():
     clean_subparser = add_subparser("clean")
 
     check_subparser.add_argument(
-            "-A", "--all-folders", action=_StoreBoolActionType, default=False, type=partial(html_checkbox, checked=False),
+            "-A", "--all-folders", action=_StoreBoolActionType, default=False, type=html_checkbox(checked=False),
             help="Check status for all project's output folders, not just "
                  "those for samples specified in the config file used. Default=False")
     check_subparser.add_argument(
-            "-F", "--flags", nargs='*', default=FLAGS, type=partial(html_select, options=FLAGS),
+            "-F", "--flags", nargs='*', default=FLAGS, type=html_select(options=FLAGS),
             help="Check on only these flags/status values.")
 
     destroy_subparser.add_argument(
-            "--force-yes", action=_StoreBoolActionType, default=False, type=partial(html_checkbox, checked=False),
+            "--force-yes", action=_StoreBoolActionType, default=False, type=html_checkbox(checked=False),
             help="Provide upfront confirmation of destruction intent, "
                  "to skip console query.  Default=False")
 
@@ -284,11 +284,11 @@ def build_parser():
                 help="Project configuration file (YAML).")
         subparser.add_argument(
                 "--file-checks", dest="file_checks",
-                action=_StoreBoolActionType, default=True, type=partial(html_checkbox, checked=True),
+                action=_StoreBoolActionType, default=True, type=html_checkbox(checked=True),
                 help="Perform input file checks. Default=True.")
         subparser.add_argument(
                 "-d", "--dry-run", dest="dry_run",
-                action=_StoreBoolActionType, default=False, type=partial(html_checkbox, checked=False),
+                action=_StoreBoolActionType, default=False, type=html_checkbox(checked=False),
                 help="Don't actually submit the project/subproject.  Default=False")
         fetch_samples_group = \
             subparser.add_argument_group("select samples",
@@ -299,15 +299,13 @@ def build_parser():
                                          default="protocol")
         protocols = fetch_samples_group.add_mutually_exclusive_group()
         protocols.add_argument(
-                "--selector-exclude", nargs='*',
+                "--selector-exclude", nargs='*', dest="selector_exclude",
                 help="Operate only on samples that either lack this attribute value or "
                      "for which this value is not in this collection.")
         protocols.add_argument(
-                "--selector-include", nargs='*',
+                "--selector-include", nargs='*', dest="selector_include",
                 help="Operate only on samples associated with these attribute values;"
-        protocols.add_argument(
-                "--selector-attribute", type=str, default=None,
-                help="Choose the attribute on which to employ selector args.")
+                     " if not provided, all samples are used.")
         subparser.add_argument(
                 "--sp", dest="subproject",
                 help="Name of subproject to use, as designated in the "

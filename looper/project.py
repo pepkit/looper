@@ -164,7 +164,7 @@ class Project(peppy.Project):
                 # Skip and warn about nonexistent alleged pipeline path.
                 if not (os.path.exists(full_pipe_path) or
                             is_command_callable(full_pipe_path)):
-                    _LOGGER.warninging("Missing pipeline script: '%s'",
+                    _LOGGER.warning("Missing pipeline script: '%s'",
                                  full_pipe_path)
                     continue
 
