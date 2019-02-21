@@ -177,8 +177,8 @@ def build_parser():
 
     parser = _VersionInHelpParser(
             description=banner,
-            epilog=additional_description,
-            formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+            epilog=additional_description)
+
     parser.add_argument(
             "-V", "--version",
             action="version",
@@ -187,21 +187,21 @@ def build_parser():
     # Logging control
     parser.add_argument(
             "--logfile", dest="logfile",
-            help="Optional output file for looper logs")
+            help="Optional output file for looper logs (default: %(default)s)")
     parser.add_argument(
             "--verbosity", dest="verbosity",
             type=int, choices=range(len(_LEVEL_BY_VERBOSITY)),
-            help="Choose level of verbosity")
+            help="Choose level of verbosity (default: %(default)s)")
     parser.add_argument(
             "--logging-level", dest="logging_level",
             help=argparse.SUPPRESS)
     parser.add_argument(
             "--dbg", dest="dbg", action="store_true",
-            help="Turn on debug mode")
+            help="Turn on debug mode (default: %(default)s)")
     parser.add_argument(
             "--env", dest="env",
             default=None,
-            help="Environment variable that points to the DIVCFG file. Default: DIVCFG")
+            help="Environment variable that points to the DIVCFG file. (default: DIVCFG)")
 
     # Individual subcommands
     msg_by_cmd = {
