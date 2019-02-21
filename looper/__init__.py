@@ -15,7 +15,6 @@ from sys import stdout
 from .pipeline_interface import PipelineInterface
 from ._version import __version__
 from .parser_types import *
-from functools import partial
 
 # Not used here, but make this the main import interface between peppy and
 # looper, so that other modules within this package need not worry about
@@ -23,8 +22,8 @@ from functools import partial
 # the connection between peppy and looper here, to the extent possible.
 from peppy import \
     FLAGS, IMPLICATIONS_DECLARATION, SAMPLE_INDEPENDENT_PROJECT_SECTIONS, \
-    SAMPLE_NAME_COLNAME,
-from divvy.const import COMPUTE_SETTINGS_VARNAME
+    SAMPLE_NAME_COLNAME
+
 __classes__ = ["PipelineInterface"]
 
 
