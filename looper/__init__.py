@@ -23,8 +23,8 @@ from functools import partial
 # the connection between peppy and looper here, to the extent possible.
 from peppy import \
     FLAGS, IMPLICATIONS_DECLARATION, SAMPLE_INDEPENDENT_PROJECT_SECTIONS, \
-    SAMPLE_NAME_COLNAME, COMPUTE_SETTINGS_VARNAME
-
+    SAMPLE_NAME_COLNAME,
+from divvy.const import COMPUTE_SETTINGS_VARNAME
 __classes__ = ["PipelineInterface"]
 
 
@@ -201,8 +201,8 @@ def build_parser():
             help="Turn on debug mode")
     parser.add_argument(
             "--env", dest="env",
-            default=os.getenv(COMPUTE_SETTINGS_VARNAME, ""),
-            help="Employ looper environment compute settings.")
+            default=None,
+            help="Environment variable that points to the DIVCFG file. Default: DIVCFG")
 
     # Individual subcommands
     msg_by_cmd = {
