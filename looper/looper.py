@@ -714,8 +714,8 @@ def main():
             try:
                 run(args, remaining_args)
             except IOError:
-                _LOGGER.error("{} pipelines_dir: '{}'".format(
-                        prj.__class__.__name__, prj.metadata.pipelines_dir))
+                _LOGGER.error("{} pipeline_interfaces: '{}'".format(
+                        prj.__class__.__name__, prj.metadata.pipeline_interfaces))
                 raise
 
         if args.command == "destroy":

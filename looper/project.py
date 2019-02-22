@@ -36,7 +36,7 @@ class Project(peppy.Project):
                 no_environment_exception=RuntimeError,
                 no_compute_exception=RuntimeError, **kwargs)
         self.interfaces_by_protocol = \
-            process_pipeline_interfaces(self.metadata.pipelines_dir)
+            process_pipeline_interfaces(self.metadata.pipeline_interfaces)
 
     @property
     def required_metadata(self):
