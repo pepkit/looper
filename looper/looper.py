@@ -218,9 +218,6 @@ class Runner(Executor):
             recognized by looper, germane to samples/pipelines
         """
 
-        if args.compute:
-            self.prj.set_compute(args.compute)
-
         if not self.prj.interfaces_by_protocol:
             pipe_locs = getattr(self.prj.metadata, "pipeline_interfaces", [])
             # TODO: should these cases be handled as equally exceptional?
