@@ -691,7 +691,7 @@ def main():
     # (checked in this very order), which is implemented in divvy, the underlying package for
     # computing environment configuration
     if getattr(args, 'env', None) is None:
-        _LOGGER.debug("compute_env_file: " + "DIVCFG")
+        _LOGGER.debug("compute_env_file: DIVCFG or PEPENV")
     else:
         _LOGGER.debug("compute_env_file: " + str(getattr(args, 'env', None)))
     _LOGGER.info("Building Project")
