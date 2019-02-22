@@ -243,7 +243,7 @@ def build_parser():
             help="YAML file with looper environment compute settings.")
     run_subparser.add_argument(
             "--limit", dest="limit", default=None,
-            type=html_range(min=0, max=10),
+            type=html_range(min=0, max=10, value=10),
             help="Limit to n samples.")
     # Note that defaults for otherwise numeric lump parameters are set to
     # null by default so that the logic that parses their values may
