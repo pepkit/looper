@@ -99,7 +99,7 @@ class SubmissionConductor(object):
         self.prj = prj
         self.automatic = automatic
 
-        with open(self.prj.compute.submission_template, 'r') as template_file:
+        with open(self.prj.dcc.compute.submission_template, 'r') as template_file:
             self._template = template_file.read()
 
         if max_cmds is None and max_size is None:
@@ -314,7 +314,7 @@ class SubmissionConductor(object):
                 _LOGGER.info("> DRY RUN: I would have submitted this: '%s'",
                              script)
             else:
-                sub_cmd = self.prj.compute.submission_command
+                sub_cmd = self.prj.dcc.compute.submission_command
                 submission_command = "{} {}".format(sub_cmd, script)
                 # Capture submission command return value so that we can
                 # intercept and report basic submission failures; #167
@@ -428,33 +428,33 @@ class SubmissionConductor(object):
         template_values["CODE"] = "\n".join(commands)
         template_values["LOGFILE"] = logfile
 
-        script_data = copy.copy(self._template)
+        # script_data = copy.copy(self._template)
 
-        for k, v in template_values.items():
-            placeholder = "{" + str(k).upper() + "}"
-            script_data = script_data.replace(placeholder, str(v))
-        
-        keys_left = re.findall(r'!$\{(.+?)\}', script_data)
-
-        if len(keys_left) > 0:
-            _LOGGER.warning("> Warning: Submission template variables are not "
-                            "all populated: '%s'", str(keys_left))
+        # for k, v in template_values.items():
+        #     placeholder = "{" + str(k).upper() + "}"
+        #     script_data = script_data.replace(placeholder, str(v))
+        #
+        # keys_left = re.findall(r'!$\{(.+?)\}', script_data)
+        #
+        # if len(keys_left) > 0:
+        #     _LOGGER.warning("> Warning: Submission template variables are not "
+        #                     "all populated: '%s'", str(keys_left))
 
         submission_script = submission_base + ".sub"
 
         # TODO: use divvy.
-        # from divvy.utils import write_submit_script
-        # _LOGGER.info("> Creating submission script; command count: %d", len(commands))
-        # write_submit_script(submission_script, self._template, template_values)
+        from divvy.utils import write_submit_script
+        _LOGGER.info("> Creating submission script; command count: %d", len(commands))
+        write_submit_script(submission_script, self._template, template_values)
 
-        # TODO: here onward would be removed.
-        script_dirpath = os.path.dirname(submission_script)
-        if not os.path.isdir(script_dirpath):
-            os.makedirs(script_dirpath)
-        _LOGGER.info("> Submission script for %d sample(s): '%s'",
-                     len(self._pool), submission_script)
-        with open(submission_script, 'w') as sub_file:
-            sub_file.write(script_data)
-
-        return submission_script
+        # # TODO: here onward would be removed.
+        # script_dirpath = os.path.dirname(submission_script)
+        # if not os.path.isdir(script_dirpath):
+        #     os.makedirs(script_dirpath)
+        # _LOGGER.info("> Submission script for %d sample(s): '%s'",
+        #              len(self._pool), submission_script)
+        # with open(submission_script, 'w') as sub_file:
+        #     sub_file.write(script_data)
+        #
+        # return submission_script
 

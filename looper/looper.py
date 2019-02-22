@@ -262,7 +262,7 @@ class Runner(Executor):
                         pl_key, pl_iface, script_with_flags, self.prj,
                         args.dry_run, args.time_delay, sample_subtype,
                         remaining_args, args.ignore_flags,
-                        self.prj.compute,
+                        self.prj.dcc.compute,
                         max_cmds=args.lumpn, max_size=args.lump)
                 submission_conductors[pl_key] = conductor
                 pipe_keys_by_protocol[proto].append(pl_key)
