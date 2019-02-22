@@ -686,7 +686,14 @@ def main():
     _LOGGER.info("Command: {} (Looper version: {})".
                  format(args.command, __version__))
     # Initialize project
-    _LOGGER.debug("compute_env_file: " + str(getattr(args, 'env', None)))
+
+    # Although the value of args.env might be None, the actual env variable used will be DIVCFG or PEPENV
+    # (checked in this very order), which is implemented in divvy, the underlying package for
+    # computing environment configuration
+    if getattr(args, 'env', None) is None:
+        _LOGGER.debug("compute_env_file: " + "DIVCFG")
+    else:
+        _LOGGER.debug("compute_env_file: " + str(getattr(args, 'env', None)))
     _LOGGER.info("Building Project")
     if args.subproject is not None:
         _LOGGER.info("Using subproject: %s", args.subproject)
