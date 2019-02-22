@@ -239,7 +239,7 @@ def build_parser():
                  " is duplicated, since samples names should be unique.  "
                  " Set this option to override this setting. Default=False")
     run_subparser.add_argument(
-            "--compute", dest="compute",
+            "--compute", dest="compute", default="default",
             help="YAML file with looper environment compute settings.")
     run_subparser.add_argument(
             "--limit", dest="limit", default=None,

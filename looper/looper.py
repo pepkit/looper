@@ -702,6 +702,8 @@ def main():
         file_checks=args.file_checks,
         compute_env_file=getattr(args, 'env', None))
 
+    prj.dcc.activate_package(args.compute)
+
     _LOGGER.info("Results subdir: " + prj.metadata.results_subdir)
 
     with ProjectContext(prj, selector_attribute=args.selector_attribute, selector_include=args.selector_include,

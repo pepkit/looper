@@ -445,7 +445,7 @@ class SubmissionConductor(object):
         # TODO: use divvy.
         from divvy.utils import write_submit_script
         _LOGGER.info("> Creating submission script; command count: %d", len(commands))
-        write_submit_script(submission_script, self._template, template_values)
+        return write_submit_script(submission_script, self._template, template_values)
 
         # # TODO: here onward would be removed.
         # script_dirpath = os.path.dirname(submission_script)
