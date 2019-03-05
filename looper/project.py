@@ -36,7 +36,7 @@ class Project(peppy.Project):
                 no_environment_exception=RuntimeError,
                 no_compute_exception=RuntimeError, **kwargs)
         self.interfaces_by_protocol = \
-            process_pipeline_interfaces(self.metadata.pipelines_dir)
+            process_pipeline_interfaces(self.metadata.pipeline_interfaces)
 
     @property
     def required_metadata(self):
@@ -164,14 +164,14 @@ class Project(peppy.Project):
                 # Skip and warn about nonexistent alleged pipeline path.
                 if not (os.path.exists(full_pipe_path) or
                             is_command_callable(full_pipe_path)):
-                    _LOGGER.warninging("Missing pipeline script: '%s'",
+                    _LOGGER.warning("Missing pipeline script: '%s'",
                                  full_pipe_path)
                     continue
 
                 # Determine which interface and Sample subtype to use.
                 sample_subtype = \
                     pipe_iface.fetch_sample_subtype(
-                        protocol, strict_pipe_key, full_pipe_path)
+                            protocol, strict_pipe_key, full_pipe_path)
 
                 # Package the pipeline's interface, subtype, command, and key.
                 submission_bundle = SubmissionBundle(

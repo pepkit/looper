@@ -8,6 +8,13 @@ Changelog
     - Using ``attmap`` for "attribute-style key-vale store" implementation
 
     - Removed Python 3.4 support.
+    
+    - UI: change parameter names ``in/exclude-samples`` to ``selector-in/exclude``.
+    
+  - New:
+
+    - Add ``selector-attribute`` paramenter for more generic sample selection.
+      
 
 
 - **v0.10.0 (*2018-12-20*)**

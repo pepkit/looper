@@ -218,9 +218,6 @@ class Runner(Executor):
             recognized by looper, germane to samples/pipelines
         """
 
-        if args.compute:
-            self.prj.set_compute(args.compute)
-
         if not self.prj.interfaces_by_protocol:
             pipe_locs = getattr(self.prj.metadata, "pipeline_interfaces", [])
             # TODO: should these cases be handled as equally exceptional?
@@ -265,7 +262,7 @@ class Runner(Executor):
                         pl_key, pl_iface, script_with_flags, self.prj,
                         args.dry_run, args.time_delay, sample_subtype,
                         remaining_args, args.ignore_flags,
-                        self.prj.compute,
+                        self.prj.dcc.compute,
                         max_cmds=args.lumpn, max_size=args.lump)
                 submission_conductors[pl_key] = conductor
                 pipe_keys_by_protocol[proto].append(pl_key)
@@ -660,7 +657,7 @@ def _submission_status_text(curr, total, sample_name, sample_protocol, color):
 
 def main():
     """ Primary workflow """
-    
+
     parser = build_parser()
     args, remaining_args = parser.parse_known_args()
 
@@ -689,7 +686,14 @@ def main():
     _LOGGER.info("Command: {} (Looper version: {})".
                  format(args.command, __version__))
     # Initialize project
-    _LOGGER.debug("compute_env_file: " + str(getattr(args, 'env', None)))
+
+    # Although the value of args.env might be None, the actual env variable used will be DIVCFG or PEPENV
+    # (checked in this very order), which is implemented in divvy, the underlying package for
+    # computing environment configuration
+    if getattr(args, 'env', None) is None:
+        _LOGGER.debug("compute_env_file: DIVCFG or PEPENV")
+    else:
+        _LOGGER.debug("compute_env_file: " + str(getattr(args, 'env', None)))
     _LOGGER.info("Building Project")
     if args.subproject is not None:
         _LOGGER.info("Using subproject: %s", args.subproject)
@@ -698,18 +702,20 @@ def main():
         file_checks=args.file_checks,
         compute_env_file=getattr(args, 'env', None))
 
+    prj.dcc.activate_package(args.compute)
+
     _LOGGER.info("Results subdir: " + prj.metadata.results_subdir)
 
     with ProjectContext(prj, selector_attribute=args.selector_attribute, selector_include=args.selector_include,
-                        selector_exclude=args.selector_exclude) as prj:
+            selector_exclude=args.selector_exclude) as prj:
 
         if args.command == "run":
             run = Runner(prj)
             try:
                 run(args, remaining_args)
             except IOError:
-                _LOGGER.error("{} pipelines_dir: '{}'".format(
-                        prj.__class__.__name__, prj.metadata.pipelines_dir))
+                _LOGGER.error("{} pipeline_interfaces: '{}'".format(
+                        prj.__class__.__name__, prj.metadata.pipeline_interfaces))
                 raise
 
         if args.command == "destroy":
