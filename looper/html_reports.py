@@ -642,9 +642,9 @@ OBJECTS_VARS = ["OBJECTS_HEADER", "OBJECTS_LIST_HEADER", "OBJECTS_LINK",
 __all__ = HTML_VARS + NAVBAR_VARS + GENERIC_VARS + \
           TABLE_VARS + SAMPLE_VARS + STATUS_VARS + OBJECTS_VARS
 
+
 class HTMLReportBuilder(object):
     """ Generate HTML summary report for project/samples """
-
 
     def __init__(self, prj):
         """
@@ -655,10 +655,17 @@ class HTMLReportBuilder(object):
         super(HTMLReportBuilder, self).__init__()
         self.prj = prj
 
-
     def __call__(self, objs, stats, columns):
         """ Do the work of the subcommand/program. """
 
+        def get_reports_dir():
+            """
+            Get the reports directory path depending on the subproject activation status
+
+            :return str: path to the reports directory
+            """
+            rep_dir_name = "reports" if self.prj.subproject is None else "reports_" + self.prj.subproject
+            return os.path.join(self.prj.metadata.output_dir, rep_dir_name)
 
         def create_object_parent_html(objs, stats):
             """
@@ -671,8 +678,7 @@ class HTMLReportBuilder(object):
                 analyzed sample
             """
 
-            reports_dir = os.path.join(self.prj.metadata.output_dir,
-                                       "reports")
+            reports_dir = get_reports_dir()
             object_parent_path = os.path.join(reports_dir, "objects.html")
 
             if not os.path.exists(os.path.dirname(object_parent_path)):
@@ -708,8 +714,7 @@ class HTMLReportBuilder(object):
                 analyzed sample
             """
 
-            reports_dir = os.path.join(self.prj.metadata.output_dir,
-                                       "reports")
+            reports_dir = get_reports_dir()
             sample_parent_path = os.path.join(reports_dir, "samples.html")
 
             if not os.path.exists(os.path.dirname(sample_parent_path)):
@@ -752,7 +757,7 @@ class HTMLReportBuilder(object):
                 analyzed sample
             """
 
-            reports_dir = os.path.join(self.prj.metadata.output_dir, "reports")
+            reports_dir = get_reports_dir()
 
             # Generate object filename
             for key in single_object['key'].drop_duplicates().sort_values():
@@ -875,7 +880,7 @@ class HTMLReportBuilder(object):
             :param list stats: pipeline run statistics for the current sample
             """
 
-            reports_dir = os.path.join(self.prj.metadata.output_dir, "reports")
+            reports_dir = get_reports_dir()
             html_filename = sample_name + ".html"
             html_page = os.path.join(
                 reports_dir, html_filename.replace(' ', '_').lower())
@@ -1070,8 +1075,7 @@ class HTMLReportBuilder(object):
             :param list stats: a summary file of pipeline statistics for each
                 analyzed sample 
             """
-
-            reports_dir = os.path.join(self.prj.metadata.output_dir, "reports")
+            reports_dir = get_reports_dir()
             status_html_path = os.path.join(reports_dir, "status.html")
 
             if not os.path.exists(os.path.dirname(status_html_path)):
@@ -1265,10 +1269,14 @@ class HTMLReportBuilder(object):
             """
 
             # Generate full index.html path
-            index_html_path = "{root}_summary.html".format(
-                root=os.path.join(self.prj.metadata.output_dir, self.prj.name))
-            reports_dir = os.path.join(self.prj.metadata.output_dir,
-                                       "reports")
+            if self.prj.subproject is None:
+                index_html_path = "{root}_summary.html".format(
+                    root=os.path.join(self.prj.metadata.output_dir, self.prj.name))
+            else:
+                index_html_path = "{root}_summary.html".format(
+                    root=os.path.join(self.prj.metadata.output_dir, self.prj.name) + "_{}".format(self.prj.subproject))
+
+            reports_dir = get_reports_dir()
             # Generate index.html path relative to the HTML file under 
             # construction
             index_page_relpath = os.path.relpath(index_html_path, wd)
@@ -1494,8 +1502,12 @@ class HTMLReportBuilder(object):
             if not objs.dropna().empty:
                 objs.drop_duplicates(keep='last', inplace=True)
             # Generate parent index.html page path
-            index_html_path = "{root}_summary.html".format(
-                root=os.path.join(self.prj.metadata.output_dir, self.prj.name))
+            if self.prj.subproject is None:
+                index_html_path = "{root}_summary.html".format(
+                    root=os.path.join(self.prj.metadata.output_dir, self.prj.name))
+            else:
+                index_html_path = "{root}_summary.html".format(
+                    root=os.path.join(self.prj.metadata.output_dir, self.prj.name) + "_{}".format(self.prj.subproject))
 
             index_html_file = open(index_html_path, 'w')
             index_html_file.write(HTML_HEAD_OPEN)
