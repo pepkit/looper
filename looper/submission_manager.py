@@ -311,9 +311,9 @@ class SubmissionConductor(object):
             self._num_total_job_submissions += 1
 
             # Determine whether to actually do the submission.
+            _LOGGER.info("Submission script: %s", script)
             if self.dry_run:
-                _LOGGER.info("> DRY RUN: I would have submitted this: '%s'",
-                             script)
+                _LOGGER.info("Dry run, not submitted")
             else:
                 sub_cmd = self.prj.dcc.compute.submission_command
                 submission_command = "{} {}".format(sub_cmd, script)
