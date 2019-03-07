@@ -667,6 +667,17 @@ class HTMLReportBuilder(object):
             rep_dir_name = "reports" if self.prj.subproject is None else "reports_" + self.prj.subproject
             return os.path.join(self.prj.metadata.output_dir, rep_dir_name)
 
+        def get_index_html_path():
+            """
+            Get the index HTML path depending on the subproject activation status
+
+            :return str: path to the index HTML
+            """
+            index_html_root = os.path.join(self.prj.metadata.output_dir, self.prj.name)
+            if self.prj.subproject is not None:
+                index_html_root += "_" + self.prj.subproject
+            return index_html_root + "_summary.html"
+
         def create_object_parent_html(objs, stats):
             """
             Generates a page listing all the project objects with links
@@ -1269,12 +1280,7 @@ class HTMLReportBuilder(object):
             """
 
             # Generate full index.html path
-            if self.prj.subproject is None:
-                index_html_path = "{root}_summary.html".format(
-                    root=os.path.join(self.prj.metadata.output_dir, self.prj.name))
-            else:
-                index_html_path = "{root}_summary.html".format(
-                    root=os.path.join(self.prj.metadata.output_dir, self.prj.name) + "_{}".format(self.prj.subproject))
+            index_html_path = get_index_html_path()
 
             reports_dir = get_reports_dir()
             # Generate index.html path relative to the HTML file under 
@@ -1502,12 +1508,7 @@ class HTMLReportBuilder(object):
             if not objs.dropna().empty:
                 objs.drop_duplicates(keep='last', inplace=True)
             # Generate parent index.html page path
-            if self.prj.subproject is None:
-                index_html_path = "{root}_summary.html".format(
-                    root=os.path.join(self.prj.metadata.output_dir, self.prj.name))
-            else:
-                index_html_path = "{root}_summary.html".format(
-                    root=os.path.join(self.prj.metadata.output_dir, self.prj.name) + "_{}".format(self.prj.subproject))
+            index_html_path = get_index_html_path()
 
             index_html_file = open(index_html_path, 'w')
             index_html_file.write(HTML_HEAD_OPEN)
