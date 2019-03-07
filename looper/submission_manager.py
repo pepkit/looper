@@ -26,15 +26,13 @@ _LOGGER = logging.getLogger(__name__)
 
 class SubmissionConductor(object):
     """
-    Orchestration of submission of pipeline jobs.
+    Collects and then submits pipeline jobs.
 
-    This class implements the notion of a 'pool' of commands to submit as a
-    single cluster job. Eager to submit a job, each instance's collection of
-    commands expands until such time as its parameterization (determined at
-    construction time) and the state of its command pool indicate that the
-    'pool' has been filled and it's therefore time to submit the job. Total
-    input file size and the number of individual commands are the criteria
-    that may be used to determine whether it's time to submit a job.
+    This class holds a 'pool' of commands to submit as a single cluster job.
+    Eager to submit a job, each instance's collection of commands expands until
+    it reaches the 'pool' has been filled, and it's therefore time to submit the
+    job. The pool fills as soon as a fill criteria has been reached, which can
+    be either total input file size or the number of individual commands.
 
     """
 
