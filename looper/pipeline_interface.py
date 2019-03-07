@@ -98,21 +98,21 @@ class PipelineInterface(AttMap):
             raise ValueError("Attempted selection of resource package for "
                              "negative file size: {}".format(file_size))
 
-        def warn(msg):
+        def notify(msg):
             msg += " for pipeline {}".format(pipeline_name)
             if self.pipe_iface_file is not None:
                 msg += " in file {}".format(self.pipe_iface_file)
-            _LOGGER.warning(msg)
+            _LOGGER.debug(msg)
 
         universal_compute = {}
         try:
             universal_compute = self.select_pipeline(pipeline_name)["compute"]
         except KeyError:
-            warn("No universal compute settings")
+            notify("No universal compute settings")
         try:
             resources = self.select_pipeline(pipeline_name)["resources"]
         except KeyError:
-            warn("No resources")
+            notify("No resources")
             return {}
 
         # Require default resource package specification.

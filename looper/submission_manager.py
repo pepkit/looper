@@ -269,7 +269,7 @@ class SubmissionConductor(object):
             submitted = False
 
         elif force or self._is_full:
-            _LOGGER.info("Determining submission settings for %d sample(s) "
+            _LOGGER.debug("Determining submission settings for %d sample(s) "
                          "(%.2f Gb)", len(self._pool), self._curr_size)
             settings = self.pl_iface.choose_resource_package(
                 self.pl_key, self._curr_size)
@@ -311,7 +311,8 @@ class SubmissionConductor(object):
             self._num_total_job_submissions += 1
 
             # Determine whether to actually do the submission.
-            _LOGGER.info("Submission script: %s", script)
+            _LOGGER.info("Job script (n=%d; %.2f Gb): %s",
+                         len(self._pool), self._curr_size, script)
             if self.dry_run:
                 _LOGGER.info("Dry run, not submitted")
             else:
