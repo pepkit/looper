@@ -430,5 +430,6 @@ class SubmissionConductor(object):
         template_values["LOGFILE"] = logfile
         submission_script = submission_base + ".sub"
 
-        _LOGGER.info("> Creating submission script; command count: %d", len(commands))
+
+        _LOGGER.debug("> Creating submission script; command count: %d", len(commands))
         return write_submit_script(submission_script, self._template, template_values)
