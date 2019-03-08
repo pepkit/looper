@@ -10,7 +10,14 @@ from peppy import \
     FLAGS, SAMPLE_INDEPENDENT_PROJECT_SECTIONS, SAMPLE_NAME_COLNAME
 
 
-_LOGGER = logging.getLogger(__name__)
+
+def get_logger(name):
+    l = logging.getLogger(name)
+    l.whisper = lambda msg, *args, **kwargs: l.log(5, msg, *args, **kwargs)
+    return l
+
+
+_LOGGER = get_logger(__name__)
 
 
 
@@ -168,9 +175,9 @@ def partition(items, test):
     :return: list[object], list[object]: partitioned items sequences
     """
     passes, fails = [], []
-    _LOGGER.log(5, "Testing {} items: {}".format(len(items), items))
+    _LOGGER.whisper("Testing {} items: {}".format(len(items), items))
     for item in items:
-        _LOGGER.log(5, "Testing item {}".format(item))
+        _LOGGER.whisper("Testing item {}".format(item))
         group = passes if test(item) else fails
         group.append(item)
     return passes, fails

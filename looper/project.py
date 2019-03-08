@@ -3,20 +3,19 @@
 from collections import defaultdict, namedtuple
 from functools import partial
 import itertools
-import logging
 import os
 
 import peppy
 from peppy.utils import is_command_callable
 from .pipeline_interface import PipelineInterface
-from .utils import partition
+from .utils import get_logger, partition
 
 
 __author__ = "Vince Reuter"
 __email__ = "vreuter@virginia.edu"
 
 
-_LOGGER = logging.getLogger(__name__)
+_LOGGER = get_logger(__name__)
 
 
 
@@ -225,7 +224,7 @@ def process_pipeline_interfaces(pipeline_interface_locations):
             continue
         pipe_iface = PipelineInterface(pipe_iface_location)
         for proto_name in pipe_iface.protomap:
-            _LOGGER.log(5, "Adding protocol name: '%s'", proto_name)
+            _LOGGER.whisper("Adding protocol name: '%s'", proto_name)
             interface_by_protocol[proto_name].append(pipe_iface)
     return interface_by_protocol
 
