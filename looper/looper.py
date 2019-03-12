@@ -695,8 +695,6 @@ def main():
     else:
         _LOGGER.debug("compute_env_file: " + str(getattr(args, 'env', None)))
     _LOGGER.info("Building Project")
-    if args.subproject is not None:
-        _LOGGER.info("Using subproject: %s", args.subproject)
     prj = Project(
         args.config_file, subproject=args.subproject,
         file_checks=args.file_checks,
