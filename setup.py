@@ -77,7 +77,7 @@ setup(
         "Topic :: Scientific/Engineering :: Bio-Informatics"
     ],
     keywords="bioinformatics, sequencing, ngs",
-    url="https://github.com/epigen/looper",
+    url="https://github.com/pepkit/looper",
     author=u"Nathan Sheffield, Vince Reuter, Johanna Klughammer, Andre Rendeiro",
     license="BSD2",
     entry_points={
