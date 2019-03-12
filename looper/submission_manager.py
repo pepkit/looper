@@ -77,6 +77,7 @@ class SubmissionConductor(object):
             size of inputs used by the commands lumped into single job script.
         :param bool automatic: Whether the submission should be automatic once
             the pool reaches capacity.
+        :param bool rerun: whether this conductor is being used to rerun jobs
         """
 
         super(SubmissionConductor, self).__init__()
