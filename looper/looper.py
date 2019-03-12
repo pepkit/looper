@@ -448,8 +448,8 @@ class Summarizer(Executor):
                 _LOGGER.warning("No stats file '%s'", stats_file)
                 continue
 
-            t = _pd.read_table(
-                stats_file, header=None, names=['key', 'value', 'pl'])
+            t = _pd.read_csv(
+                stats_file, sep="\t", header=None, names=['key', 'value', 'pl'])
             t.drop_duplicates(subset=['key', 'pl'], keep='last', inplace=True)
             # t.duplicated(subset= ['key'], keep = False)
             t.loc[:, 'plkey'] = t['pl'] + ":" + t['key']
@@ -472,9 +472,9 @@ class Summarizer(Executor):
             else:
                 _LOGGER.warning("No objects file '%s'", objs_file)
                 continue
-            t = _pd.read_table(objs_file, header=None,
-                               names=['key', 'filename', 'anchor_text',
-                                      'anchor_image', 'annotation'])
+            t = _pd.read_csv(objs_file, sep="\t", header=None,
+                             names=['key', 'filename', 'anchor_text',
+                                    'anchor_image', 'annotation'])
             t['sample_name'] = sample.name
             objs = objs.append(t, ignore_index=True)
         
