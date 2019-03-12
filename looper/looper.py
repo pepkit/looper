@@ -703,7 +703,9 @@ def main():
         compute_env_file=getattr(args, 'env', None))
 
     if hasattr(args, "compute"):
-        prj.dcc.activate_package(args.compute)
+        # Default is already loaded
+        if args.compute != "default":
+            prj.dcc.activate_package(args.compute)
 
     _LOGGER.info("Results subdir: " + prj.metadata.results_subdir)
 
