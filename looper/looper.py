@@ -346,7 +346,7 @@ class Runner(Executor):
                 # TODO: check return value from add() to determine whether
                 # TODO (cont.) to grow the failures list.
                 try:
-                    curr_pl_fails = conductor.add_sample(sample, rerun)
+                    curr_pl_fails = conductor.add_sample(sample, rerun=rerun)
                 except JobSubmissionException as e:
                     failed_submission_scripts.append(e.script)
                 else:
