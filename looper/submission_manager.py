@@ -39,7 +39,7 @@ class SubmissionConductor(object):
     def __init__(self, pipeline_key, pipeline_interface, cmd_base, prj,
                  dry_run=False, delay=0, sample_subtype=None, extra_args=None,
                  ignore_flags=False, compute_variables=None,
-                 max_cmds=None, max_size=None, automatic=True):
+                 max_cmds=None, max_size=None, automatic=True, rerun=False):
         """
         Create a job submission manager.
 
@@ -97,6 +97,7 @@ class SubmissionConductor(object):
         self.ignore_flags = ignore_flags
         self.prj = prj
         self.automatic = automatic
+        self.rerun = rerun
 
         with open(self.prj.dcc.compute.submission_template, 'r') as template_file:
             self._template = template_file.read()
@@ -172,15 +173,27 @@ class SubmissionConductor(object):
         # TODO (cont.): between three cases: flag files, failure(s), and submission.
         # TODO (cont.): this is similar to the 'Missing input files' case.
         skip_reasons = []
-        
-        if not self.ignore_flags and len(flag_files) > 0:
+
+        halt_this_sample = False
+
+        if len(flag_files) > 0:
             flag_files_text = ", ".join(['{}'.format(fp) for fp in flag_files])
-            _LOGGER.info("> Skipping sample '%s' for pipeline '%s', "
-                         "flag(s) found: %s", sample.name, self.pl_name,
-                         flag_files_text)
-            _LOGGER.debug("NO SUBMISSION")
-        
-        else:
+
+            if not self.ignore_flags:
+                _LOGGER.info("> Skipping sample '%s' for pipeline '%s', "
+                             "flag(s) found: %s", sample.name, self.pl_name,
+                             flag_files_text)
+                _LOGGER.debug("NO SUBMISSION")
+                halt_this_sample = True
+            
+            # But rescue the sample in case rerun/failed passes
+            failed_flag = any(x.contains("FAILED") for x in flag_files)
+            if self.rerun and failed_flag:
+                _LOGGER.info("> Re-running sample '%s' for pipeline '%s'.",
+                     sample.name, self.pl_name)
+                halt_this_sample = False
+            
+        if not halt_this_sample:    
             sample = sample_subtype(sample)
             _LOGGER.debug("Created %s instance: '%s'",
                           sample_subtype.__name__, sample.name)
