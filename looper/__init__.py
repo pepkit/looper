@@ -234,7 +234,7 @@ def build_parser():
                  "'running' or 'failed'). Set this option to ignore flags "
                  "and submit the runs anyway. Default=False")
 
-    for subparser in list(run_subparser, rerun_subparser):
+    for subparser in [run_subparser, rerun_subparser]:
 
 	    subparser.add_argument(
 	            "-t", "--time-delay", dest="time_delay",
