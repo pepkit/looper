@@ -39,7 +39,7 @@ class SubmissionConductor(object):
     def __init__(self, pipeline_key, pipeline_interface, cmd_base, prj,
                  dry_run=False, delay=0, sample_subtype=None, extra_args=None,
                  ignore_flags=False, compute_variables=None,
-                 max_cmds=None, max_size=None, automatic=True, rerun=False):
+                 max_cmds=None, max_size=None, automatic=True):
         """
         Create a job submission manager.
 
@@ -77,7 +77,6 @@ class SubmissionConductor(object):
             size of inputs used by the commands lumped into single job script.
         :param bool automatic: Whether the submission should be automatic once
             the pool reaches capacity.
-        :param bool rerun: whether this conductor is being used to rerun jobs
         """
 
         super(SubmissionConductor, self).__init__()
@@ -98,7 +97,6 @@ class SubmissionConductor(object):
         self.ignore_flags = ignore_flags
         self.prj = prj
         self.automatic = automatic
-        self.rerun = rerun
 
         with open(self.prj.dcc.compute.submission_template, 'r') as template_file:
             self._template = template_file.read()
@@ -147,7 +145,7 @@ class SubmissionConductor(object):
         return self._num_good_job_submissions
 
 
-    def add_sample(self, sample, sample_subtype=Sample):
+    def add_sample(self, sample, sample_subtype=Sample, rerun=False):
         """
         Add a sample for submission to this conductor.
 
@@ -157,6 +155,8 @@ class SubmissionConductor(object):
             with this new sample; this is used to tailor-make the sample
             instance as required by its protocol/pipeline and supported
             by the pipeline interface.
+        :param bool rerun: whether the given sample is being rerun rather than
+            run for the first time
         :return bool: Indication of whether the given sample was added to
             the current 'pool.'
         :raise TypeError: If sample subtype is provided but does not extend
@@ -182,7 +182,7 @@ class SubmissionConductor(object):
                 halt_this_sample = True
             # But rescue the sample in case rerun/failed passes
             failed_flag = any("failed" in x for x in flag_files)
-            if self.rerun and failed_flag:
+            if rerun and failed_flag:
                 _LOGGER.info("> Re-running failed sample '%s' for pipeline '%s'.",
                      sample.name, self.pl_name)
                 halt_this_sample = False
