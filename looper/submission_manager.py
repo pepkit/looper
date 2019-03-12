@@ -180,18 +180,20 @@ class SubmissionConductor(object):
             flag_files_text = ", ".join(['{}'.format(fp) for fp in flag_files])
 
             if not self.ignore_flags:
-                _LOGGER.info("> Skipping sample '%s' for pipeline '%s', "
-                             "flag(s) found: %s", sample.name, self.pl_name,
-                             flag_files_text)
-                _LOGGER.debug("NO SUBMISSION")
                 halt_this_sample = True
-            
             # But rescue the sample in case rerun/failed passes
-            failed_flag = any(x.contains("FAILED") for x in flag_files)
+            failed_flag = any("failed" in x for x in flag_files)
             if self.rerun and failed_flag:
-                _LOGGER.info("> Re-running sample '%s' for pipeline '%s'.",
+                _LOGGER.info("> Re-running failed sample '%s' for pipeline '%s'.",
                      sample.name, self.pl_name)
                 halt_this_sample = False
+            else:
+                _LOGGER.info("> Skipping sample '%s' for pipeline '%s', "
+                             "%s found: %s", sample.name, self.pl_name,
+                             "flags" if len(flag_files) > 1 else "flag",
+                             flag_files_text)
+                _LOGGER.debug("NO SUBMISSION")
+
             
         if not halt_this_sample:    
             sample = sample_subtype(sample)
