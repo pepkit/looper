@@ -228,8 +228,9 @@ class Runner(Executor):
                     "with the pipeline_interfaces key in the metadata section "
                     "of a project config file")
             else:
-                _LOGGER.error("No protocols; does the project point to at "
-                              "least one pipelines location that exists? {}".
+                _LOGGER.error("No protocols found; does the PEP point to at "
+                              "least one pipeline interface that exists? "
+                              " Pipeline  interfaces: {}".
                               format(", ".format(pipe_locs)))
                 return
 
