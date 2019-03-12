@@ -264,8 +264,7 @@ class Runner(Executor):
                         args.dry_run, args.time_delay, sample_subtype,
                         remaining_args, args.ignore_flags,
                         self.prj.dcc.compute,
-                        max_cmds=args.lumpn, max_size=args.lump,
-                        rerun=args.rerun)
+                        max_cmds=args.lumpn, max_size=args.lump)
                 submission_conductors[pl_key] = conductor
                 pipe_keys_by_protocol[proto].append(pl_key)
 
@@ -339,6 +338,7 @@ class Runner(Executor):
             _LOGGER.debug("Considering %d pipeline(s)", len(pipe_keys))
 
             pl_fails = []
+            rerun = args.command == "rerun"
             for pl_key in pipe_keys:
                 num_commands_possible += 1
                 # TODO: of interest to track failures by pipeline?
@@ -346,7 +346,7 @@ class Runner(Executor):
                 # TODO: check return value from add() to determine whether
                 # TODO (cont.) to grow the failures list.
                 try:
-                    curr_pl_fails = conductor.add_sample(sample)
+                    curr_pl_fails = conductor.add_sample(sample, rerun)
                 except JobSubmissionException as e:
                     failed_submission_scripts.append(e.script)
                 else:
@@ -712,12 +712,7 @@ def main():
     with ProjectContext(prj, selector_attribute=args.selector_attribute, selector_include=args.selector_include,
             selector_exclude=args.selector_exclude) as prj:
 
-        args.rerun = False
-        if args.command == "rerun":
-            args.command = "run"
-            args.rerun = True
-
-        if args.command == "run":
+        if args.command in ["run", "rerun"]:
             run = Runner(prj)
             try:
                 run(args, remaining_args)
