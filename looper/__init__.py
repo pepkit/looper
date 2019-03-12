@@ -224,8 +224,10 @@ def build_parser():
     run_subparser = add_subparser("run")
     rerun_subparser = add_subparser("rerun")
 
-    # run-specific argument
-    run_subparser.add_argument(
+
+    for subparser in [run_subparser, rerun_subparser]:
+
+        subparser.add_argument(
             "--ignore-flags", dest="ignore_flags", default=False,
             action=_StoreBoolActionType, type=html_checkbox(checked=False),
             help="Ignore run status flags? Default: False. "
@@ -233,9 +235,6 @@ def build_parser():
                  "flag file exists marking the run (e.g. as "
                  "'running' or 'failed'). Set this option to ignore flags "
                  "and submit the runs anyway. Default=False")
-
-    for subparser in [run_subparser, rerun_subparser]:
-
 	    subparser.add_argument(
 	            "-t", "--time-delay", dest="time_delay",
 	            type=html_range(min=0, max=30, value=0), default=0,
@@ -286,7 +285,7 @@ def build_parser():
                  "to skip console query.  Default=False")
 
     # Common arguments
-    for subparser in [run_subparser, summarize_subparser,
+    for subparser in [run_subparser, rerun_subparser, summarize_subparser,
                       destroy_subparser, check_subparser, clean_subparser]:
         subparser.add_argument(
                 "config_file",
