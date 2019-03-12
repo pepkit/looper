@@ -3,6 +3,10 @@ Changelog
 
 - **v0.11 (*unreleased*)**
 
+  - Added
+
+    - Implemented ``looper rerun`` command.
+
   - Changed
 
     - Using ``attmap`` for "attribute-style key-vale store" implementation
