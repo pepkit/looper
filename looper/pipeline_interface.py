@@ -621,9 +621,8 @@ def _import_sample_subtype(pipeline_filepath, subtype_name=None):
         return base_type
 
     except (BaseException, Exception) as e:
-        _LOGGER.warning("Using base %s because of inability to "
-                     "import a subtype from '%s': %r",
-                     base_type.__name__, pipeline_filepath, e)
+        _LOGGER.debug("Can't import subtype from '%s', using base %s: %r",
+                     pipeline_filepath, base_type.__name__,  e)
         return base_type
 
     else:
