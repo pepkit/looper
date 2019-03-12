@@ -264,7 +264,8 @@ class Runner(Executor):
                         args.dry_run, args.time_delay, sample_subtype,
                         remaining_args, args.ignore_flags,
                         self.prj.dcc.compute,
-                        max_cmds=args.lumpn, max_size=args.lump)
+                        max_cmds=args.lumpn, max_size=args.lump,
+                        rerun=args.rerun)
                 submission_conductors[pl_key] = conductor
                 pipe_keys_by_protocol[proto].append(pl_key)
 
@@ -708,6 +709,11 @@ def main():
 
     with ProjectContext(prj, selector_attribute=args.selector_attribute, selector_include=args.selector_include,
             selector_exclude=args.selector_exclude) as prj:
+
+        args.rerun = False
+        if args.command == "rerun":
+            args.command = "run"
+            args.rerun = True
 
         if args.command == "run":
             run = Runner(prj)
