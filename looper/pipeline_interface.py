@@ -14,13 +14,14 @@ import yaml
 
 from .exceptions import InvalidResourceSpecificationException, \
     MissingPipelineConfigurationException, PipelineInterfaceConfigError
+from .utils import get_logger
 from attmap import AttMap
 from peppy import utils, Sample
 from peppy.const import DEFAULT_COMPUTE_RESOURCES_NAME
 from peppy.utils import is_command_callable
 
 
-_LOGGER = logging.getLogger(__name__)
+_LOGGER = get_logger(__name__)
 
 
 PL_KEY = "pipelines"
@@ -210,15 +211,15 @@ class PipelineInterface(AttMap):
         # TODO: determine how to deal with pipelines_path (i.e., could be null)
         if not os.path.isabs(script_path_only) and not \
                 is_command_callable(script_path_only):
-            _LOGGER.log(5, "Expanding non-absolute script path: '%s'",
-                        script_path_only)
+            _LOGGER.whisper("Expanding non-absolute script path: '%s'",
+                            script_path_only)
             script_path_only = os.path.join(
                     self.pipelines_path, script_path_only)
-            _LOGGER.log(5, "Absolute script path: '%s'", script_path_only)
+            _LOGGER.whisper("Absolute script path: '%s'", script_path_only)
             script_path_with_flags = os.path.join(
                     self.pipelines_path, script_path_with_flags)
-            _LOGGER.log(5, "Absolute script path with flags: '%s'",
-                        script_path_with_flags)
+            _LOGGER.whisper("Absolute script path with flags: '%s'",
+                            script_path_with_flags)
 
         return strict_pipeline_key, script_path_only, script_path_with_flags
 
@@ -553,9 +554,9 @@ def expand_pl_paths(piface):
     for pipe_data in piface[PL_KEY].values():
         if "path" in pipe_data:
             pipe_path = pipe_data["path"]
-            _LOGGER.log(5, "Expanding path: '%s'", pipe_path)
+            _LOGGER.whisper("Expanding path: '%s'", pipe_path)
             pipe_path = utils.expandpath(pipe_path)
-            _LOGGER.log(5, "Expanded: '%s'", pipe_path)
+            _LOGGER.whisper("Expanded: '%s'", pipe_path)
             pipe_data["path"] = pipe_path
     return piface
 
