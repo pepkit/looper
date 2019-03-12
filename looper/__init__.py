@@ -223,46 +223,43 @@ def build_parser():
     # Run and rerun command
     run_subparser = add_subparser("run")
     rerun_subparser = add_subparser("rerun")
-
-
     for subparser in [run_subparser, rerun_subparser]:
-
         subparser.add_argument(
-            "--ignore-flags", dest="ignore_flags", default=False,
-            action=_StoreBoolActionType, type=html_checkbox(checked=False),
-            help="Ignore run status flags? Default: False. "
-                 "By default, pipelines will not be submitted if a pypiper "
-                 "flag file exists marking the run (e.g. as "
-                 "'running' or 'failed'). Set this option to ignore flags "
-                 "and submit the runs anyway. Default=False")
-	    subparser.add_argument(
-	            "-t", "--time-delay", dest="time_delay",
-	            type=html_range(min=0, max=30, value=0), default=0,
-	            help="Time delay in seconds between job submissions.")
-	    subparser.add_argument(
-	            "--allow-duplicate-names", default=False,
-	            action=_StoreBoolActionType, type=html_checkbox(checked=False),
-	            help="Allow duplicate names? Default: False. "
-	                 "By default, pipelines will not be submitted if a sample name"
-	                 " is duplicated, since samples names should be unique.  "
-	                 " Set this option to override this setting. Default=False")
-	    subparser.add_argument(
-	            "--compute", dest="compute", default="default",
-	            help="YAML file with looper environment compute settings.")
-	    subparser.add_argument(
-	            "--limit", dest="limit", default=None,
-	            type=html_range(min=0, max=10, value=10),
-	            help="Limit to n samples.")
-	    # Note that defaults for otherwise numeric lump parameters are set to
-	    # null by default so that the logic that parses their values may
-	    # distinguish between explicit 0 and lack of specification.
-	    subparser.add_argument(
-	            "--lump", type=html_range(min=0, max=100, step=0.1, value=100), default=None,
-	            help="Maximum total input file size for a lump/batch of commands "
-	                 "in a single job (in GB)")
-	    subparser.add_argument(
-	            "--lumpn", type=html_range(min=1, max=10, value=1), default=None,
-	            help="Number of individual scripts grouped into single submission")
+                "--ignore-flags", dest="ignore_flags", default=False,
+                action=_StoreBoolActionType, type=html_checkbox(checked=False),
+                help="Ignore run status flags? Default: False. "
+                     "By default, pipelines will not be submitted if a pypiper "
+                     "flag file exists marking the run (e.g. as "
+                     "'running' or 'failed'). Set this option to ignore flags "
+                     "and submit the runs anyway. Default=False")
+        subparser.add_argument(
+                "-t", "--time-delay", dest="time_delay",
+                type=html_range(min=0, max=30, value=0), default=0,
+                help="Time delay in seconds between job submissions.")
+        subparser.add_argument(
+                "--allow-duplicate-names", default=False,
+                action=_StoreBoolActionType, type=html_checkbox(checked=False),
+                help="Allow duplicate names? Default: False. "
+                     "By default, pipelines will not be submitted if a sample name"
+                     " is duplicated, since samples names should be unique.  "
+                     " Set this option to override this setting. Default=False")
+        subparser.add_argument(
+                "--compute", dest="compute", default="default",
+                help="YAML file with looper environment compute settings.")
+        subparser.add_argument(
+                "--limit", dest="limit", default=None,
+                type=html_range(min=0, max=10, value=10),
+                help="Limit to n samples.")
+        # Note that defaults for otherwise numeric lump parameters are set to
+        # null by default so that the logic that parses their values may
+        # distinguish between explicit 0 and lack of specification.
+        subparser.add_argument(
+                "--lump", type=html_range(min=0, max=100, step=0.1, value=100), default=None,
+                help="Maximum total input file size for a lump/batch of commands "
+                     "in a single job (in GB)")
+        subparser.add_argument(
+                "--lumpn", type=html_range(min=1, max=10, value=1), default=None,
+                help="Number of individual scripts grouped into single submission")
 
 
     # Other commands
