@@ -1,7 +1,5 @@
 ## Using divvy with looper
 
-*This docs page should move to `looper`*.
-
 What is the source of values used to populate the variables? Well, they are pooled together from several sources. Divvy uses a hierarchical system to collect data values from global and local sources, which enables you to re-use settings across projects and environments. To start, there are a few built-ins:
 
 Built-in variables:
