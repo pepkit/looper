@@ -10,6 +10,7 @@ import logging
 import os
 import subprocess
 import sys
+import yaml
 
 # Need specific sequence of actions for colorama imports?
 from colorama import init
@@ -696,10 +697,14 @@ def main():
     else:
         _LOGGER.debug("compute_env_file: " + str(getattr(args, 'env', None)))
     _LOGGER.info("Building Project")
-    prj = Project(
-        args.config_file, subproject=args.subproject,
-        file_checks=args.file_checks,
-        compute_env_file=getattr(args, 'env', None))
+    try:
+        prj = Project(
+            args.config_file, subproject=args.subproject,
+            file_checks=args.file_checks,
+            compute_env_file=getattr(args, 'env', None))
+    except yaml.parser.ParserError as e:
+        print("Project config parse failed -- {}".format(e))
+        sys.exit(1)
 
     if hasattr(args, "compute"):
         prj.dcc.activate_package(args.compute)
