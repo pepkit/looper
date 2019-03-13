@@ -190,7 +190,7 @@ class SubmissionConductor(object):
                 _LOGGER.info("> Skipping sample '%s' for pipeline '%s', "
                              "%s found: %s", sample.name, self.pl_name,
                              "flags" if len(flag_files) > 1 else "flag",
-                             ", ".join(['{}'.format(fp) for fp in flag_files]))
+                             ", ".join(['{}'.format(os.path.basename(fp)) for fp in flag_files]))
                 _LOGGER.debug("NO SUBMISSION")
 
         if not halt_this_sample:    
