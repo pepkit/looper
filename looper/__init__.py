@@ -248,7 +248,7 @@ def build_parser():
                 help="YAML file with looper environment compute settings.")
         subparser.add_argument(
                 "--limit", dest="limit", default=None,
-                type=html_range(min=0, max=10, value=10),
+                type=html_range(min=1, max="num_samples", value="num_samples"),
                 help="Limit to n samples.")
         # Note that defaults for otherwise numeric lump parameters are set to
         # null by default so that the logic that parses their values may
@@ -258,7 +258,7 @@ def build_parser():
                 help="Maximum total input file size for a lump/batch of commands "
                      "in a single job (in GB)")
         subparser.add_argument(
-                "--lumpn", type=html_range(min=1, max=10, value=1), default=None,
+                "--lumpn", type=html_range(min=1, max="num_samples", value="num_samples"), default=None,
                 help="Number of individual scripts grouped into single submission")
 
 
