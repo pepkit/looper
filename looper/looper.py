@@ -339,6 +339,7 @@ class Runner(Executor):
             _LOGGER.debug("Considering %d pipeline(s)", len(pipe_keys))
 
             pl_fails = []
+            rerun = args.command == "rerun"
             for pl_key in pipe_keys:
                 num_commands_possible += 1
                 # TODO: of interest to track failures by pipeline?
@@ -346,7 +347,7 @@ class Runner(Executor):
                 # TODO: check return value from add() to determine whether
                 # TODO (cont.) to grow the failures list.
                 try:
-                    curr_pl_fails = conductor.add_sample(sample)
+                    curr_pl_fails = conductor.add_sample(sample, rerun=rerun)
                 except JobSubmissionException as e:
                     failed_submission_scripts.append(e.script)
                 else:
@@ -448,8 +449,8 @@ class Summarizer(Executor):
                 _LOGGER.warning("No stats file '%s'", stats_file)
                 continue
 
-            t = _pd.read_table(
-                stats_file, header=None, names=['key', 'value', 'pl'])
+            t = _pd.read_csv(
+                stats_file, sep="\t", header=None, names=['key', 'value', 'pl'])
             t.drop_duplicates(subset=['key', 'pl'], keep='last', inplace=True)
             # t.duplicated(subset= ['key'], keep = False)
             t.loc[:, 'plkey'] = t['pl'] + ":" + t['key']
@@ -472,9 +473,9 @@ class Summarizer(Executor):
             else:
                 _LOGGER.warning("No objects file '%s'", objs_file)
                 continue
-            t = _pd.read_table(objs_file, header=None,
-                               names=['key', 'filename', 'anchor_text',
-                                      'anchor_image', 'annotation'])
+            t = _pd.read_csv(objs_file, sep="\t", header=None,
+                             names=['key', 'filename', 'anchor_text',
+                                    'anchor_image', 'annotation'])
             t['sample_name'] = sample.name
             objs = objs.append(t, ignore_index=True)
         
@@ -707,14 +708,16 @@ def main():
         sys.exit(1)
 
     if hasattr(args, "compute"):
-        prj.dcc.activate_package(args.compute)
+        # Default is already loaded
+        if args.compute != "default":
+            prj.dcc.activate_package(args.compute)
 
     _LOGGER.info("Results subdir: " + prj.metadata.results_subdir)
 
     with ProjectContext(prj, selector_attribute=args.selector_attribute, selector_include=args.selector_include,
             selector_exclude=args.selector_exclude) as prj:
 
-        if args.command == "run":
+        if args.command in ["run", "rerun"]:
             run = Runner(prj)
             try:
                 run(args, remaining_args)

@@ -145,7 +145,7 @@ class SubmissionConductor(object):
         return self._num_good_job_submissions
 
 
-    def add_sample(self, sample, sample_subtype=Sample):
+    def add_sample(self, sample, sample_subtype=Sample, rerun=False):
         """
         Add a sample for submission to this conductor.
 
@@ -155,6 +155,8 @@ class SubmissionConductor(object):
             with this new sample; this is used to tailor-make the sample
             instance as required by its protocol/pipeline and supported
             by the pipeline interface.
+        :param bool rerun: whether the given sample is being rerun rather than
+            run for the first time
         :return bool: Indication of whether the given sample was added to
             the current 'pool.'
         :raise TypeError: If sample subtype is provided but does not extend
@@ -172,15 +174,26 @@ class SubmissionConductor(object):
         # TODO (cont.): between three cases: flag files, failure(s), and submission.
         # TODO (cont.): this is similar to the 'Missing input files' case.
         skip_reasons = []
-        
-        if not self.ignore_flags and len(flag_files) > 0:
-            flag_files_text = ", ".join(['{}'.format(fp) for fp in flag_files])
-            _LOGGER.info("> Skipping sample '%s' for pipeline '%s', "
-                         "flag(s) found: %s", sample.name, self.pl_name,
-                         flag_files_text)
-            _LOGGER.debug("NO SUBMISSION")
-        
-        else:
+
+        halt_this_sample = False
+
+        if len(flag_files) > 0:
+            if not self.ignore_flags:
+                halt_this_sample = True
+            # But rescue the sample in case rerun/failed passes
+            failed_flag = any("failed" in x for x in flag_files)
+            if rerun and failed_flag:
+                _LOGGER.info("> Re-running failed sample '%s' for pipeline '%s'.",
+                     sample.name, self.pl_name)
+                halt_this_sample = False
+            else:
+                _LOGGER.info("> Skipping sample '%s' for pipeline '%s', "
+                             "%s found: %s", sample.name, self.pl_name,
+                             "flags" if len(flag_files) > 1 else "flag",
+                             ", ".join(['{}'.format(fp) for fp in flag_files]))
+                _LOGGER.debug("NO SUBMISSION")
+
+        if not halt_this_sample:    
             sample = sample_subtype(sample)
             _LOGGER.debug("Created %s instance: '%s'",
                           sample_subtype.__name__, sample.name)
