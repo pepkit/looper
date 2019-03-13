@@ -3,12 +3,12 @@
 import attmap
 
 
-def html_range(caravel=False, min=0, max=10, step=1, value=0):
+def html_range(caravel=False, min_val=0, max_val=10, step=1, value=0):
     caravel_data = attmap.AttMap({
                 "element_type": "range",
                 "element_args": {
-                    "min": min,
-                    "max": max,
+                    "min": min_val,
+                    "max": max_val,
                     "step": step,
                     "value": value
                 }})
