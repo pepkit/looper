@@ -12,11 +12,19 @@
               <li class="nav-item">
                 <a class="nav-link" href="{{status_html_page}}">{{status_page_name}}</a>
               </li>
-              <!-- if there is more than 20 objects -->
-              {% if dropdown_keys is none %}
-                <li class="nav-item">
-                  <a class="nav-link" href="{{objects_html_page}}">{{objects_page_name}}</a>
-                </li>  
+              <!-- if there is more than 20 objects or 0 -->
+              {% if dropdown_keys_objects is none %}
+              <!-- no objects at all -->
+                {% if objects_html_page is none %}
+                  <li class="nav-item">
+                    <!-- intentionally no href attribute, inactive link -->
+                    <a class="nav-link">{{objects_page_name}}</a>
+                  </li> 
+                {% else %}
+                  <li class="nav-item">
+                    <a class="nav-link" href="{{objects_html_page}}">{{objects_page_name}}</a>
+                  </li>  
+                {% endif %}
               <!-- if there is less than 20 objects -->
               {% else %}
                 <li class="nav-item dropdown">
@@ -32,9 +40,15 @@
                 </li>
               {% endif %}
               {% if sample_names is none %}
-                <li class="nav-item">
-                  <a class="nav-link" href="{{samples_html_page}}">{{samples_page_name}}</a>
-                </li>  
+                {% if samples_html_page is none %}
+                  <li class="nav-item">
+                    <a class="nav-link">{{samples_page_name}}</a>
+                  </li>
+                {% else %}
+                  <li class="nav-item">
+                    <a class="nav-link" href="{{samples_html_page}}">{{samples_page_name}}</a>
+                  </li>
+                {% endif %}  
               {% else %}
                 <li class="nav-item dropdown">
                   <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">

@@ -1308,21 +1308,16 @@ class HTMLReportBuilder(object):
             objects_relpath = os.path.relpath(objects_page, wd)
             samples_page = os.path.join(reports_dir, "sample.html")
             samples_relpath = os.path.relpath(samples_page, wd)
-            dropdown_keys_objects = None
-            sample_names = None
-            dropdown_relpaths_objects = None
-            dropdown_relpaths_samples = None
-            sample_names = None
+            dropdown_keys_objects = dropdown_relpaths_objects = dropdown_relpaths_samples = sample_names = None
             if not objs.dropna().empty:
                 # If the number of objects is 20 or less, use a drop-down menu
                 if len(objs['key'].drop_duplicates()) <= 20:
                     # TODO: all objects entry
-                    # need to pass a list of 'keys' and a list of relpaths
                     navbar_dropdown_data_objects = _get_navbar_dropdown_data_objects(objs, reports_dir, wd)
                     dropdown_relpaths_objects = navbar_dropdown_data_objects[0]
                     dropdown_keys_objects = navbar_dropdown_data_objects[1]
                 else:
-                    dropdown_relpaths = objects_relpath
+                    dropdown_relpaths_objects = objects_relpath
             if stats:
                 if len(stats) <= 20:
                     #TODO: all samples entry
