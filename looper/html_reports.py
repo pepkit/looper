@@ -4,6 +4,7 @@ import os
 import glob
 import pandas as _pd
 import logging
+import jinja2
 
 from collections import OrderedDict
 
@@ -11,6 +12,8 @@ _LOGGER = logging.getLogger('HTMLReportBuilder')
 
 __author__ = "Jason Smith"
 __email__ = "jasonsmith@virginia.edu"
+
+TEMPLATES_DIRNAME = "jinja_templates"
 
 # HTML generator vars 
 HTML_HEAD_OPEN = \
@@ -1611,6 +1614,27 @@ class HTMLReportBuilder(object):
         # Generate HTML report
         index_html_path = create_index_html(objs, stats, columns)
         return index_html_path
+
+    def render_jinja_template(self, name, args=dict()):
+        """
+
+        :param str name: name of the template
+        :param dict args: arguments to pass to the template
+        :return str: rendered template
+        """
+        assert isinstance(args, dict), "args has to be a dict"
+        template = self.j_env.get_template(name)
+        return template.render(**args)
+
+
+def get_templates_dir():
+    out_dir = os.path.dirname(__file__)
+    jinja_templ_dir = os.path.join(out_dir, TEMPLATES_DIRNAME)
+    return jinja_templ_dir
+
+
+def get_jinja_env():
+    return jinja2.Environment(loader=jinja2.FileSystemLoader(get_templates_dir()))
 
 
 def uniqify(seq):
