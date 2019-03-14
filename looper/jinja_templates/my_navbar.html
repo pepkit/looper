@@ -1,0 +1,56 @@
+        <div id="top"></div>
+        <nav class="navbar sticky-top navbar-expand-lg navbar-dark bg-primary">
+          <a class="navbar-left" href="#top"><img src="{{ logo }}" class="d-inline-block align-middle img-responsive" alt="LOOPER" style="max-height:60px; margin-top:-10px; margin-bottom:-10px"></a>
+          <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+          </button>
+          <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav mr-auto">
+              <li class="nav-item active">
+                <a class="nav-link" href="{{index_html}}">Summary<span class="sr-only">(current)</span></a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="{{status_html_page}}">{{status_page_name}}</a>
+              </li>
+              <!-- if there is more than 20 objects -->
+              {% if dropdown_keys is none %}
+                <li class="nav-item">
+                  <a class="nav-link" href="{{objects_html_page}}">{{objects_page_name}}</a>
+                </li>  
+              <!-- if there is less than 20 objects -->
+              {% else %}
+                <li class="nav-item dropdown">
+                  <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    {{menu_name_objects}}
+                  </a>
+                  <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                    {% for key in dropdown_keys_objects %}
+                      {% set i = loop.index - 1 %}
+                      <a class="dropdown-item" href="{{ objects_html_page[i] }}">{{ key }}</a>
+                    {% endfor %}
+                  </div>
+                </li>
+              {% endif %}
+              {% if sample_names is none %}
+                <li class="nav-item">
+                  <a class="nav-link" href="{{samples_html_page}}">{{samples_page_name}}</a>
+                </li>  
+              {% else %}
+                <li class="nav-item dropdown">
+                  <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  {{menu_name_samples}}
+                  </a>
+                  <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                    {% for sample_name in sample_names %}
+                      {% set i = loop.index - 1 %}
+                      <a class="dropdown-item" href="{{ samples_html_page[i] }}">
+                      {{ sample_name }}</a>
+                    {% endfor %}
+                  </div>
+                </li>
+              {% endif %}
+            </ul>
+          </div>
+        </nav>
+
+
