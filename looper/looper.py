@@ -21,9 +21,9 @@ import pandas as _pd
 from . import \
     setup_looper_logger, FLAGS, GENERIC_PROTOCOL_KEY, \
     LOGGING_LEVEL, __version__, build_parser, _LEVEL_BY_VERBOSITY
+from .conductor import SubmissionConductor
 from .exceptions import JobSubmissionException
 from .project import Project
-from .submission_manager import SubmissionConductor
 from .utils import fetch_flag_files, sample_folder
 
 from .html_reports import HTMLReportBuilder
@@ -209,7 +209,7 @@ class Destroyer(Executor):
 class Runner(Executor):
     """ The true submitter of pipelines """
 
-    def __call__(self, args, remaining_args):
+    def __call__(self, args, remaining_args, rerun=False):
         """
         Do the Sample submission.
 
@@ -217,6 +217,8 @@ class Runner(Executor):
             arguments, recognized by looper
         :param list remaining_args: command-line options and arguments not
             recognized by looper, germane to samples/pipelines
+        :param bool rerun: whether the given sample is being rerun rather than
+            run for the first time
         """
 
         if not self.prj.interfaces_by_protocol:
@@ -339,7 +341,6 @@ class Runner(Executor):
             _LOGGER.debug("Considering %d pipeline(s)", len(pipe_keys))
 
             pl_fails = []
-            rerun = args.command == "rerun"
             for pl_key in pipe_keys:
                 num_commands_possible += 1
                 # TODO: of interest to track failures by pipeline?
@@ -720,7 +721,7 @@ def main():
         if args.command in ["run", "rerun"]:
             run = Runner(prj)
             try:
-                run(args, remaining_args)
+                run(args, remaining_args, rerun=args.command == "rerun")
             except IOError:
                 _LOGGER.error("{} pipeline_interfaces: '{}'".format(
                         prj.__class__.__name__, prj.metadata.pipeline_interfaces))
