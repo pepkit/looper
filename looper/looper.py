@@ -153,7 +153,7 @@ class Cleaner(Executor):
             _LOGGER.info("Dry run. No files cleaned.")
             return 0
 
-        if not query_yes_no("Are you sure you want to permanently delete all "
+        if not args.force_yes and not query_yes_no("Are you sure you want to permanently delete all "
                             "intermediate pipeline results for this project?"):
             _LOGGER.info("Clean action aborted by user.")
             return 1

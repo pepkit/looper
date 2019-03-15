@@ -281,6 +281,11 @@ def build_parser():
             help="Provide upfront confirmation of destruction intent, "
                  "to skip console query.  Default=False")
 
+    clean_subparser.add_argument(
+            "--force-yes", action=_StoreBoolActionType, default=False, type=html_checkbox(checked=False),
+            help="Provide upfront confirmation of cleaning intent, "
+                 "to skip console query.  Default=False")
+
     # Common arguments
     for subparser in [run_subparser, rerun_subparser, summarize_subparser,
                       destroy_subparser, check_subparser, clean_subparser]:
@@ -295,6 +300,7 @@ def build_parser():
                 "-d", "--dry-run", dest="dry_run",
                 action=_StoreBoolActionType, default=False, type=html_checkbox(checked=False),
                 help="Don't actually submit the project/subproject.  Default=False")
+
         fetch_samples_group = \
             subparser.add_argument_group("select samples",
                                          "This group of arguments lets you specify samples to use by "
