@@ -42,9 +42,8 @@ HTML_HEAD_OPEN = \
          * Copyright 2011-2018 Twitter, Inc.
          * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)
          -->
-        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootswatch/4.1.1/flatly/bootstrap.min.css">
         <link rel="stylesheet" href="https://cdn.datatables.net/1.10.18/css/jquery.dataTables.min.css">
-
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css">
 """
 HTML_TITLE = \
 """\
@@ -289,34 +288,34 @@ NAVBAR_FOOTER = \
           </div>
         </nav>
 """
-HTML_NAVBAR_STYLE_BASIC = \
-"""\
-    <style>
-        ul.navbar {
-            list-style-type: none;
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-            background-color: #333333;
-        }
-
-        li.navbar {
-            float: left;
-        }
-
-        li.navbar a {
-            display: block;
-            color: white;
-            text-align: center;
-            padding: 16px;
-            text-decoration: none;
-        }
-
-        li.navbar a:hover {
-            background-color: #111111;
-        }
-    </style>
-"""
+# HTML_NAVBAR_STYLE_BASIC = \
+# """\
+#     <style>
+#         ul.navbar {
+#             list-style-type: none;
+#             margin: 0;
+#             padding: 0;
+#             overflow: hidden;
+#             background-color: #333333;
+#         }
+#
+#         li.navbar {
+#             float: left;
+#         }
+#
+#         li.navbar a {
+#             display: block;
+#             color: white;
+#             text-align: center;
+#             padding: 16px;
+#             text-decoration: none;
+#         }
+#
+#         li.navbar a:hover {
+#             background-color: #111111;
+#         }
+#     </style>
+# """
 HTML_NAVBAR_BASIC = \
 """\
     <ul class="navbar">
@@ -1288,17 +1287,15 @@ class HTMLReportBuilder(object):
                         page_name = sample_name + ".html"
                         page_path = os.path.join(reports_dir, page_name.replace(' ', '_').lower())
                         relpath = os.path.relpath(page_path, wd)
+                        relpaths.append(relpath)
+                        sample_names.append(sample_name)
                         break
                     else:
                         _LOGGER.warning("Could not determine sample name in stats.tsv")
-                        sample_name = ""
-                    relpaths.append(relpath)
-                    sample_names.append(sample_name)
             return relpaths,  sample_names
 
         def create_navbar(objs, stats, wd):
             # paths
-            _LOGGER.warning("using Jinja templates for navbar creation!")
             index_html_path = get_index_html_path()
             reports_dir = get_reports_dir()
             index_page_relpath = os.path.relpath(index_html_path, wd)
