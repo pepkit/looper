@@ -32,6 +32,8 @@
                     {{menu_name_objects}}
                   </a>
                   <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                    <a class="dropdown-item" href="{{ all_objects }}">All objects</a>
+                    <div class="dropdown-divider"></div>
                     {% for key in dropdown_keys_objects %}
                       {% set i = loop.index - 1 %}
                       <a class="dropdown-item" href="{{ objects_html_page[i] }}">{{ key }}</a>
@@ -55,6 +57,8 @@
                   {{menu_name_samples}}
                   </a>
                   <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                    <a class="dropdown-item" href="{{ all_samples }}">All samples</a>
+                    <div class="dropdown-divider"></div>
                     {% for sample_name in sample_names %}
                       {% set i = loop.index - 1 %}
                       <a class="dropdown-item" href="{{ samples_html_page[i] }}">{{ sample_name }}</a>

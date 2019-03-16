@@ -1303,13 +1303,12 @@ class HTMLReportBuilder(object):
             status_relpath = os.path.relpath(status_page, wd)
             objects_page = os.path.join(reports_dir, "objects.html")
             objects_relpath = os.path.relpath(objects_page, wd)
-            samples_page = os.path.join(reports_dir, "sample.html")
+            samples_page = os.path.join(reports_dir, "samples.html")
             samples_relpath = os.path.relpath(samples_page, wd)
             dropdown_keys_objects = dropdown_relpaths_objects = dropdown_relpaths_samples = sample_names = None
             if not objs.dropna().empty:
                 # If the number of objects is 20 or less, use a drop-down menu
                 if len(objs['key'].drop_duplicates()) <= 20:
-                    # TODO: all objects entry
                     navbar_dropdown_data_objects = _get_navbar_dropdown_data_objects(objs, reports_dir, wd)
                     dropdown_relpaths_objects = navbar_dropdown_data_objects[0]
                     dropdown_keys_objects = navbar_dropdown_data_objects[1]
@@ -1317,7 +1316,6 @@ class HTMLReportBuilder(object):
                     dropdown_relpaths_objects = objects_relpath
             if stats:
                 if len(stats) <= 20:
-                    #TODO: all samples entry
                     navbar_dropdown_data_samples = _get_navbar_dropdown_data_samples(stats, reports_dir, wd)
                     dropdown_relpaths_samples = navbar_dropdown_data_samples[0]
                     sample_names = navbar_dropdown_data_samples[1]
@@ -1327,8 +1325,10 @@ class HTMLReportBuilder(object):
             template_vars = dict(logo=NAVBAR_LOGO, index_html=index_page_relpath, status_html_page=status_relpath,
                                     status_page_name="Status", dropdown_keys_objects=dropdown_keys_objects,
                                     objects_page_name="Objects", samples_page_name="Samples",
-                                    objects_html_page=dropdown_relpaths_objects, samples_html_page=dropdown_relpaths_samples, menu_name_objects="Objects",
-                                    menu_name_samples="Samples", sample_names=sample_names)
+                                    objects_html_page=dropdown_relpaths_objects,
+                                    samples_html_page=dropdown_relpaths_samples, menu_name_objects="Objects",
+                                    menu_name_samples="Samples", sample_names=sample_names, all_samples=samples_relpath,
+                                    all_objects=objects_relpath)
             return self.render_jinja_template("my_navbar.html", template_vars)
 
         def create_navbar_old(objs, stats, wd):
