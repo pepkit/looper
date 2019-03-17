@@ -2,17 +2,15 @@
 
 import attmap
 
-# Templates
 
-
-def html_range(caravel=False, min=0, max=10, step=1, value=0):
+def html_range(caravel=False, min_val=0, max_val=10, step=1, value=0):
     caravel_data = attmap.AttMap({
                 "element_type": "range",
                 "element_args": {
-                    "min": str(min),
-                    "max": str(max),
-                    "step": str(step),
-                    "value": str(value)
+                    "min": min_val,
+                    "max": max_val,
+                    "step": step,
+                    "value": value
                 }})
 
     if step < 1:
@@ -30,7 +28,7 @@ def html_checkbox(caravel=False, checked=False):
                 "element_args": {
                 }})
     if checked:
-        caravel_data.add_entries({"element_args": {'checked': 'True'}})
+        caravel_data.add_entries({"element_args": {'checked': True}})
 
     def fun(x=None, caravel_data=caravel_data, caravel=caravel):
         return caravel_data if caravel else eval(x)
