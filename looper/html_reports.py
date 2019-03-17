@@ -128,7 +128,7 @@ HTML_FOOTER = \
                   if ( escapeHtml ) {
                       shortened = esc( shortened );
                   }
-                  return '<span class="ellipsis" title="'+esc(d)+'">'+shortened+'&#8230;</span>';
+                  return shortened;
               };
           };
 
@@ -141,11 +141,11 @@ HTML_FOOTER = \
               columnDefs: [ 
                 {
                   targets: 0,
-                  render: $.fn.dataTable.render.ellipsis(1000, true)
+                  render: $.fn.dataTable.render.ellipsis(1000, true, false)
                 },
                 {
                   targets: '_all',
-                  render: $.fn.dataTable.render.ellipsis(17, true)
+                  render: $.fn.dataTable.render.ellipsis(17, true, true)
                 }
               ],
             });
@@ -1512,8 +1512,7 @@ class HTMLReportBuilder(object):
 
             index_html_file = open(index_html_path, 'w')
             index_html_file.write(HTML_HEAD_OPEN)
-            index_html_file.write("\t\t<style>\n")
-            index_html_file.write("\t\t</style>\n")
+            index_html_file.write("\t\t<style>th{background-color:white;}</style>\n")
             index_html_file.write(HTML_TITLE.format(project_name=self.prj.name))
             navbar = create_navbar(objs, stats, self.prj.metadata.output_dir)
             index_html_file.write(navbar)
@@ -1619,3 +1618,5 @@ def uniqify(seq):
     seen = set()
     seen_add = seen.add
     return [x for x in seq if not (x in seen or seen_add(x))]
+
+
