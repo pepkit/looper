@@ -718,45 +718,28 @@ class HTMLReportBuilder(object):
                 html_file.close()
 
 
-        def create_sample_parent_html(objs, stats):
-            """
-            Generates a page listing all the project samples with links
-            to individual sample pages
-
-            :param panda.DataFrame objs: project level dataframe containing
-                any reported objects for all samples
-            :param list stats: a summary file of pipeline statistics for each
-                analyzed sample
-            """
-
+        def create_sample_parent_html(objs, stats, wd):
             reports_dir = get_reports_dir()
             sample_parent_path = os.path.join(reports_dir, "samples.html")
 
             if not os.path.exists(os.path.dirname(sample_parent_path)):
                 os.makedirs(os.path.dirname(sample_parent_path))
+            pages = labels = list()
+            for sample in self.prj.samples:
+                sample_name = str(sample.sample_name)
+                sample_dir = os.path.join(
+                        self.prj.metadata.results_subdir, sample_name)
 
-            with open(sample_parent_path, 'w') as html_file:
-                html_file.write(HTML_HEAD_OPEN)
-                html_file.write(create_navbar(objs, stats, reports_dir))
-                html_file.write(HTML_HEAD_CLOSE)
-                html_file.write(GENERIC_HEADER.format(header="Samples"))
-                html_file.write(GENERIC_LIST_HEADER)
+                # Confirm sample directory exists, then build page
+                if os.path.exists(sample_dir):
+                    page_name = sample_name + ".html"
+                    page_path = os.path.join(reports_dir, page_name.replace(' ', '_').lower())
+                    page_relpath = os.path.relpath(page_path, reports_dir)
+                    pages.append(page_relpath)
+                    labels.append(sample_name)
 
-                for sample in self.prj.samples:
-                    sample_name = str(sample.sample_name)
-                    sample_dir = os.path.join(
-                            self.prj.metadata.results_subdir, sample_name)
-
-                    # Confirm sample directory exists, then build page
-                    if os.path.exists(sample_dir):   
-                        page_name = sample_name + ".html"
-                        page_path = os.path.join(reports_dir, page_name.replace(' ', '_').lower())
-                        page_relpath = os.path.relpath(page_path, reports_dir)
-                        html_file.write(GENERIC_LIST_ENTRY.format(
-                                        page=page_relpath, label=sample_name))
-
-                html_file.write(HTML_FOOTER)
-                html_file.close()
+            args_dict = dict(navbar=create_navbar(objs, stats, wd), labels=labels, pages=pages)
+            return self.render_jinja_template("objects_parent.html", args_dict)
 
 
         def create_object_html(single_object, all_objects, stats):
@@ -1331,101 +1314,6 @@ class HTMLReportBuilder(object):
                                     all_objects=objects_relpath)
             return self.render_jinja_template("my_navbar.html", template_vars)
 
-        def create_navbar_old(objs, stats, wd):
-            """
-            Return a string containing the navbar prebuilt html.
-            Generates links to each page relative to the directory
-            of interest.
-            
-            :param pandas.DataFrame objs: project results dataframe containing
-                object data
-            :param list stats: a summary file of pipeline statistics for each
-                analyzed sample 
-            :param path wd: the working directory of the current HTML page 
-                being generated, enables navbar links relative to page
-            """
-
-            # Generate full index.html path
-            index_html_path = get_index_html_path()
-
-            reports_dir = get_reports_dir()
-            # Generate index.html path relative to the HTML file under 
-            # construction
-            index_page_relpath = os.path.relpath(index_html_path, wd)
-            navbar_header = NAVBAR_HEADER.format(logo=NAVBAR_LOGO,
-                                                 index_html=index_page_relpath)
-            # Add link to status.html page
-            status_page = os.path.join(reports_dir, "status.html")
-            # Use relative linking structure
-            relpath = os.path.relpath(status_page, wd)
-            status_link = NAVBAR_MENU_LINK.format(html_page=relpath,
-                                                  page_name="Status")
-            # Create list of object page links
-            obj_links = []
-            if not objs.dropna().empty:                
-                # If the number of objects is 20 or less, use a drop-down menu
-                if len(objs['key'].drop_duplicates()) <= 20:
-                    obj_links.append(
-                        NAVBAR_DROPDOWN_HEADER.format(menu_name="Objects"))
-                    # Create drop-down menu item for all the objects
-                    objects_page = os.path.join(reports_dir, "objects.html")
-                    relpath = os.path.relpath(objects_page, wd)
-                    obj_links.append(NAVBAR_DROPDOWN_LINK.format(
-                                        html_page=relpath,
-                                        page_name="All objects"))
-                    obj_links.append(NAVBAR_DROPDOWN_DIVIDER)
-                    for key in objs['key'].drop_duplicates().sort_values():
-                        page_name = key + ".html"
-                        page_path = os.path.join(
-                            reports_dir, page_name.replace(' ', '_').lower())
-                        relpath = os.path.relpath(page_path, wd)
-
-                        obj_links.append(NAVBAR_DROPDOWN_LINK.format(
-                                            html_page=relpath,
-                                            page_name=key))
-                    obj_links.append(NAVBAR_DROPDOWN_FOOTER)
-                else:
-                    # Create a menu link to the objects parent page
-                    objects_page = os.path.join(reports_dir, "objects.html")
-                    relpath = os.path.relpath(objects_page, wd)
-                    obj_links.append(NAVBAR_MENU_LINK.format(
-                                        html_page=relpath,
-                                        page_name="Objects"))
-
-            # Create list of sample page links
-            sample_links = []
-            if stats:
-                if len(stats) <= 20:
-                    sample_links.append(NAVBAR_DROPDOWN_HEADER.format(menu_name="Samples"))
-                    samples_page = os.path.join(reports_dir, "samples.html")
-                    relpath = os.path.relpath(samples_page, wd)
-                    sample_links.append(NAVBAR_DROPDOWN_LINK.format(html_page=relpath, page_name="All samples"))
-                    sample_links.append(NAVBAR_DROPDOWN_DIVIDER)
-                    for sample in stats:
-                        for entry, val in sample.items():
-                            if entry == "sample_name":
-                                sample_name = str(val)
-                                page_name = sample_name + ".html"
-                                page_path = os.path.join(
-                                    reports_dir, page_name.replace(' ', '_').lower())
-                                relpath = os.path.relpath(page_path, wd)
-                                sample_links.append(NAVBAR_DROPDOWN_LINK.format(html_page=relpath, page_name=sample_name))
-                                break
-                            else:
-                                _LOGGER.warning("Could not determine sample name in stats.tsv")
-                                sample_name = ""
-                    sample_links.append(NAVBAR_DROPDOWN_FOOTER)
-                else:
-                    # Create a menu link to the samples parent page
-                    samples_page = os.path.join(reports_dir, "samples.html")
-                    relpath = os.path.relpath(samples_page, wd)
-                    sample_links.append(NAVBAR_MENU_LINK.format(html_page=relpath, page_name="Samples"))
-            return ("\n".join([navbar_header, status_link,
-                               "\n".join(obj_links),
-                               "\n".join(sample_links),
-                               NAVBAR_FOOTER]))
-
-
         def create_project_objects():
             """ Add project level summaries as additional figures/links """
 
@@ -1530,6 +1418,8 @@ class HTMLReportBuilder(object):
                 analyzed sample                
             """
 
+            reports_dir = get_reports_dir()
+
             if not objs.dropna().empty:
                 objs.drop_duplicates(keep='last', inplace=True)
             # Generate parent index.html page path
@@ -1606,7 +1496,7 @@ class HTMLReportBuilder(object):
                 _LOGGER.warning("No stats file '%s'", tsv_outfile_path)
 
             # Create parent samples page with links to each sample
-            create_sample_parent_html(objs, stats)
+            create_sample_parent_html(objs, stats, reports_dir)
 
             # Create objects pages
             if not objs.dropna().empty:
