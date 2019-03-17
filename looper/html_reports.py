@@ -682,43 +682,44 @@ class HTMLReportBuilder(object):
                 index_html_root += "_" + self.prj.subproject
             return index_html_root + "_summary.html"
 
-        def create_object_parent_html(objs, stats):
+        def create_object_parent_html(objs, stats, wd):
             """
             Generates a page listing all the project objects with links
             to individual object pages
-            
+
             :param panda.DataFrame objs: project level dataframe containing
                 any reported objects for all samples
             :param list stats: a summary file of pipeline statistics for each
                 analyzed sample
+            :param str wd: path to the reports directory
             """
-
             reports_dir = get_reports_dir()
             object_parent_path = os.path.join(reports_dir, "objects.html")
 
             if not os.path.exists(os.path.dirname(object_parent_path)):
                 os.makedirs(os.path.dirname(object_parent_path))
+            pages = labels = list()
+            if not objs.empty:
+                for key in objs['key'].drop_duplicates().sort_values():
+                    page_name = key + ".html"
+                    page_path = os.path.join(reports_dir, page_name.replace(' ', '_').lower())
+                    page_relpath = os.path.relpath(page_path, reports_dir)
+                    pages.append(page_relpath)
+                    labels.append(key)
 
-            with open(object_parent_path, 'w') as html_file:
-                html_file.write(HTML_HEAD_OPEN)
-                html_file.write(create_navbar(objs, stats, reports_dir))
-                html_file.write(HTML_HEAD_CLOSE)
-                html_file.write(GENERIC_HEADER.format(header="Objects"))
-                html_file.write(GENERIC_LIST_HEADER)
-
-                if not objs.empty:
-                    for key in objs['key'].drop_duplicates().sort_values():
-                        page_name = key + ".html"
-                        page_path = os.path.join(reports_dir, page_name.replace(' ', '_').lower())
-                        page_relpath = os.path.relpath(page_path, reports_dir)
-                        html_file.write(GENERIC_LIST_ENTRY.format(
-                                        page=page_relpath, label=key))
-
-                html_file.write(HTML_FOOTER)
-                html_file.close()
-
+            args_dict = dict(navbar=create_navbar(objs, stats, wd), labels=labels, pages=pages, header="Objects")
+            return self.render_jinja_template("navbar_list_parent.html", args_dict)
 
         def create_sample_parent_html(objs, stats, wd):
+            """
+            Generates a page listing all the project samples with links
+            to individual sample pages
+            :param panda.DataFrame objs: project level dataframe containing
+                any reported objects for all samples
+            :param list stats: a summary file of pipeline statistics for each
+                analyzed sample
+            :param str wd: path to the working directory
+            """
             reports_dir = get_reports_dir()
             sample_parent_path = os.path.join(reports_dir, "samples.html")
 
@@ -738,8 +739,8 @@ class HTMLReportBuilder(object):
                     pages.append(page_relpath)
                     labels.append(sample_name)
 
-            args_dict = dict(navbar=create_navbar(objs, stats, wd), labels=labels, pages=pages)
-            return self.render_jinja_template("objects_parent.html", args_dict)
+            args_dict = dict(navbar=create_navbar(objs, stats, wd), labels=labels, pages=pages, header="Samples")
+            return self.render_jinja_template("navbar_list_parent.html", args_dict)
 
 
         def create_object_html(single_object, all_objects, stats):
@@ -1406,7 +1407,6 @@ class HTMLReportBuilder(object):
                                    "\n".join(obj_links),
                                    OBJECTS_LIST_FOOTER]))
 
-
         def create_index_html(objs, stats, col_names):
             """
             Generate an index.html style project home page w/ sample summary
@@ -1496,7 +1496,7 @@ class HTMLReportBuilder(object):
                 _LOGGER.warning("No stats file '%s'", tsv_outfile_path)
 
             # Create parent samples page with links to each sample
-            create_sample_parent_html(objs, stats, reports_dir)
+            save_template_HTML(template=create_sample_parent_html(objs, stats, reports_dir), path=os.path.join(reports_dir, "samples.html"))
 
             # Create objects pages
             if not objs.dropna().empty:
@@ -1505,8 +1505,7 @@ class HTMLReportBuilder(object):
                     create_object_html(single_object, objs, stats)
 
             # Create parent objects page with links to each object type
-            create_object_parent_html(objs, stats)
-
+            save_template_HTML(template=create_object_parent_html(objs, stats, reports_dir), path=os.path.join(reports_dir, "objects.html"))
             # Create status page with each sample's status listed
             create_status_html(objs, stats)
 
@@ -1537,6 +1536,24 @@ class HTMLReportBuilder(object):
         assert isinstance(args, dict), "args has to be a dict"
         template = self.j_env.get_template(name)
         return template.render(**args)
+
+
+def save_template_HTML(path, template):
+    """
+    Save rendered template as an HTML file
+
+    :param path:
+    :param template:
+    :param reports_dir:
+    :return:
+    """
+
+    if not os.path.exists(os.path.dirname(path)):
+        os.makedirs(os.path.dirname(path))
+
+    with open(path, "w") as f:
+        f.write(template)
+        return True
 
 
 def get_templates_dir():
