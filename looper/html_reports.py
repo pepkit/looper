@@ -5,6 +5,7 @@ import glob
 import pandas as _pd
 import logging
 import jinja2
+import re
 
 from collections import OrderedDict
 
@@ -683,7 +684,6 @@ class HTMLReportBuilder(object):
             return index_html_root + "_summary.html"
 
         def create_object_parent_html(objs, stats, wd):
-            # TODO: The page is not styled properly, bootstrap missing?
             """
             Generates a page listing all the project objects with links
             to individual object pages
@@ -693,6 +693,7 @@ class HTMLReportBuilder(object):
             :param list stats: a summary file of pipeline statistics for each
                 analyzed sample
             :param str wd: path to the reports directory
+            :return str: Rendered parent objects HTML file
             """
             reports_dir = get_reports_dir()
             object_parent_path = os.path.join(reports_dir, "objects.html")
@@ -720,6 +721,7 @@ class HTMLReportBuilder(object):
             :param list stats: a summary file of pipeline statistics for each
                 analyzed sample
             :param str wd: path to the working directory
+            :return str: Rendered parent samples HTML file
             """
             reports_dir = get_reports_dir()
             sample_parent_path = os.path.join(reports_dir, "samples.html")
@@ -1064,194 +1066,138 @@ class HTMLReportBuilder(object):
             # Return the path to the newly created sample page
             return sample_page_relpath
 
-
-        def create_status_html(objs, stats):
+        def create_status_html(objs, stats, wd):
             """
             Generates a page listing all the samples, their run status, their
             log file, and the total runtime if completed.
-            
+
             :param panda.DataFrame objs: project level dataframe containing
                 any reported objects for all samples
             :param list stats: a summary file of pipeline statistics for each
-                analyzed sample 
+                analyzed sample
+            :param str wd: the working directory of the current HTML page
+                being generated, enables navbar links relative to page
+            :return str: rendered status HTML file
             """
             reports_dir = get_reports_dir()
-            status_html_path = os.path.join(reports_dir, "status.html")
+            status_warning = False
+            sample_warning = []
+            log_paths = []
+            log_link_names = []
+            sample_paths = []
+            sample_link_names = []
+            flags = []
+            row_classes = []
+            times = []
+            mems = []
+            table_appearance_by_flag = {
+                "completed": {
+                    "button_class": "table-success",
+                    "flag": "Completed"
+                },
+                "running": {
+                    "button_class": "table-warning",
+                    "flag": "Running"
+                },
+                "failed": {
+                    "button_class": "table-danger",
+                    "flag": "Failed"
+                }
+            }
+            for sample in self.prj.samples:
+                sample_name = str(sample.sample_name)
+                sample_dir = os.path.join(
+                    self.prj.metadata.results_subdir, sample_name)
 
-            if not os.path.exists(os.path.dirname(status_html_path)):
-                os.makedirs(os.path.dirname(status_html_path))
-
-            with open(status_html_path, 'w') as html_file:
-                html_file.write(HTML_HEAD_OPEN)
-                html_file.write("\t\t<style>th{background-color:white;}</style>\n")
-                html_file.write(create_navbar(objs, stats, reports_dir))
-                html_file.write(HTML_HEAD_CLOSE)
-                html_file.write(STATUS_HEADER)
-                html_file.write(STATUS_TABLE_HEAD)
-
-                # Alert user if the stats_summary.tsv is incomplete
-                # Likely indicates pipeline is still running
-                status_warning = False
-
-                # Alert user to samples that are included in the project
-                # but have not been run
-                sample_warning = []
-
-                for sample in self.prj.samples:
-                    sample_name = str(sample.sample_name)
-                    sample_dir = os.path.join(
-                            self.prj.metadata.results_subdir, sample_name)
-
-                    # Confirm sample directory exists, then build page
-                    if os.path.exists(sample_dir):                        
-                        # Grab the status flag for the current sample
-                        flag = glob.glob(os.path.join(sample_dir, '*.flag'))               
-                        if not flag:
-                            button_class = "table-danger"
-                            flag = "Missing"
-                            _LOGGER.warning("No flag file found for {}".format(sample_name))
-                        elif len(flag) > 1:
-                            button_class = "table-warning"
-                            flag = "Multiple"
-                            _LOGGER.warning("Multiple flag files found for {}".format(sample_name))
-                        else:
-                            if "completed" in str(flag):
-                                button_class = "table-success"
-                                flag = "Completed"
-                            elif "running" in str(flag):
-                                button_class = "table-warning"
-                                flag = "Running"
-                            elif "failed" in str(flag):
-                                button_class = "table-danger"
-                                flag = "Failed"
-                            else:
-                                button_class = "table-secondary"
-                                flag = "Unknown"
-
-                        # Create table entry for each sample
-                        html_file.write(STATUS_ROW_HEADER)
-                        # First Col: Sample_Name (w/ link to sample page)
-                        page_name = sample_name + ".html"
-                        page_path = os.path.join(reports_dir, page_name.replace(' ', '_').lower())
-                        page_relpath = os.path.relpath(page_path, reports_dir)
-                        html_file.write(STATUS_ROW_LINK.format(
-                                            row_class="",
-                                            file_link=page_relpath,
-                                            link_name=sample_name))
-                        # Second Col: Status (color-coded)
-                        html_file.write(STATUS_ROW_VALUE.format(
-                                            row_class=button_class,
-                                            value=flag))
-                        # Third Col: Log File (w/ link to file)
-                        single_sample = _pd.DataFrame()
-                        if not objs.empty:
-                            single_sample = objs[objs['sample_name'] == sample_name]
-                        if single_sample.empty:
-                            # When there is no objects.tsv file, search for the
-                            # presence of log, profile, and command files
-                            log_name = os.path.basename(str(glob.glob(os.path.join(
-                                        self.prj.metadata.results_subdir,
-                                        sample_name, '*log.md'))[0]))
-                            # Currently unused. Future?
-                            # profile_name = os.path.basename(str(glob.glob(os.path.join(
-                                                # self.prj.metadata.results_subdir,
-                                                # sample_name, '*profile.tsv'))[0]))
-                            # command_name = os.path.basename(str(glob.glob(os.path.join(
-                                                # self.prj.metadata.results_subdir,
-                                                # sample_name, '*commands.sh'))[0]))
-                        else:
-                            log_name = str(single_sample.iloc[0]['annotation']) + "_log.md"
-                            # Currently unused. Future?
-                            # profile_name = str(single_sample.iloc[0]['annotation']) + "_profile.tsv"
-                            # command_name = str(single_sample.iloc[0]['annotation']) + "_commands.sh"
-                        log_file = os.path.join(self.prj.metadata.results_subdir,
-                                                sample_name, log_name)
-                        log_relpath = os.path.relpath(log_file, reports_dir)
-                        if os.path.isfile(log_file):
-                            html_file.write(STATUS_ROW_LINK.format(
-                                                row_class="",
-                                                file_link=log_relpath,
-                                                link_name=log_name))
-                        else:
-                            # Leave cell empty
-                            html_file.write(STATUS_ROW_LINK.format(
-                                                row_class="",
-                                                file_link="",
-                                                link_name=""))
-                        # Fourth Col: Sample runtime (if completed)
-                        # Use stats.tsv <deprecated>
-                        # * Use log_file instead
-                        # stats_file = os.path.join(
-                                        # self.prj.metadata.results_subdir,
-                                        # sample_name, "stats.tsv")
-                        if os.path.isfile(log_file):
-                            # t = _pd.read_table(stats_file, header=None,
-                                               # names=['key', 'value', 'pl'])
-                            # t.drop_duplicates(subset=['key', 'pl'],
-                                              # keep='last', inplace=True)
-                            # alternate method: better to use log_file?
-                            t = _pd.read_table(log_file, header=None,
-                                                  names=['key', 'value'])
-                            t.drop_duplicates(subset=['value'], keep='last',
-                                                 inplace=True)
-                            t['key'] = t['key'].str.replace('> `', '')
-                            t['key'] = t['key'].str.replace('`', '')
-                            try:
-                                time = str(t[t['key'] == 'Time'].iloc[0]['value'])
-                                html_file.write(STATUS_ROW_VALUE.format(
-                                                row_class="",
-                                                value=str(time)))
-                            except IndexError:
-                                status_warning = True                       
-                        else:
-                            html_file.write(STATUS_ROW_VALUE.format(
-                                                row_class=button_class,
-                                                value="Unknown"))
-                        # Fifth Col: Sample peak memory use (if completed)
-                        # Use *_log.md file
-                        if os.path.isfile(log_file):
-                            m = _pd.read_table(log_file, header=None, sep=':',
-                                               names=['key', 'value'])
-                            m.drop_duplicates(subset=['value'], keep='last',
-                                              inplace=True)
-                            m['key'] = m['key'].str.replace('*', '')
-                            m['key'] = m['key'].str.replace('^\s+', '')
-                            try:
-                                mem = str(m[m['key'] == 'Peak memory used'].iloc[0]['value'])
-                                html_file.write(STATUS_ROW_VALUE.format(
-                                                row_class="",
-                                                value=mem.replace(' ', '')))
-                            except IndexError:
-                                status_warning = True                       
-                        else:
-                            html_file.write(STATUS_ROW_VALUE.format(
-                                                row_class=button_class,
-                                                value="NA"))
-                        html_file.write(STATUS_ROW_FOOTER)
+                # Confirm sample directory exists, then build page
+                if os.path.exists(sample_dir):
+                    # Grab the status flag for the current sample
+                    flag = get_flags(sample_dir)
+                    _LOGGER.warning("Flags for sample {s}: {f}".format(s=sample, f=", ".join(flag)))
+                    if not flag:
+                        button_class = "table-danger"
+                        flag = "Missing"
+                    elif len(flag) > 1:
+                        button_class = "table-warning"
+                        flag = "Multiple"
                     else:
-                        # Sample was not run through the pipeline
-                        sample_warning.append(sample_name)
+                        flag = flag[0]
+                        try:
+                            flag_dict = table_appearance_by_flag[flag]
+                        except KeyError:
+                            button_class = "table-secondary"
+                            flag = "Unknown"
+                        else:
+                            button_class = flag_dict["button_class"]
+                            flag = flag_dict["flag"]
 
-                # Close HTML file
-                html_file.write(STATUS_FOOTER)
-                html_file.write(HTML_FOOTER)
-                html_file.close()
-                
-                # Alert the user to any warnings generated
-                if status_warning:
-                    _LOGGER.warning("The stats table is incomplete, likely because " +
-                                 "one or more jobs either failed or is still running.")
-                  
-                if sample_warning:
-                    if len(sample_warning)==1:
-                        _LOGGER.warning("{} is not present in {}".format(
-                            ''.join(str(sample) for sample in sample_warning),
-                            self.prj.metadata.results_subdir))
-                    else:
-                        warn_msg = "The following samples are not present in {}: {}"
-                        _LOGGER.warning(warn_msg.format(
-                            self.prj.metadata.results_subdir,
-                            ' '.join(str(sample) for sample in sample_warning)))
+                    # get first column data (sample name/link)
+                    page_name = sample_name + ".html"
+                    page_path = os.path.join(reports_dir, page_name.replace(' ', '_').lower())
+                    page_relpath = os.path.relpath(page_path, reports_dir)
+                    sample_paths.append(page_relpath)
+                    sample_link_names.append(sample_name)
+                    # get second column data (status/flag)
+                    flags.append(flag)
+                    # get third column data (log file/link)
+                    single_sample = _pd.DataFrame() if objs.empty else objs[objs['sample_name'] == sample_name]
+                    log_name = os.path.basename(str(glob.glob(os.path.join(
+                        self.prj.metadata.results_subdir, sample_name, '*log.md'))[0])) if single_sample.empty \
+                        else str(single_sample.iloc[0]['annotation']) + "_log.md"
+                    log_file = os.path.join(self.prj.metadata.results_subdir, sample_name, log_name)
+                    file_link = os.path.relpath(log_file, reports_dir) if os.path.isfile(log_file) else ""
+                    link_name = log_name if os.path.isfile(log_file) else ""
+                    log_link_names.append(link_name)
+                    log_paths.append(file_link)
+                    # get fourth column data (runtime)
+                    time = "Unknown"
+                    if os.path.isfile(log_file):
+                        t = _pd.read_table(log_file, header=None, names=['key', 'value'])
+                        t.drop_duplicates(subset=['value'], keep='last', inplace=True)
+                        t['key'] = t['key'].str.replace('> `', '')
+                        t['key'] = t['key'].str.replace('`', '')
+                        try:
+                            time = str(t[t['key'] == 'Time'].iloc[0]['value'])
+                        except IndexError:
+                            status_warning = True
+                    times.append(time)
+                    # get fifth column data (memory use)
+                    mem = "NA"
+                    if os.path.isfile(log_file):
+                        m = _pd.read_table(log_file, header=None, sep=':', names=['key', 'value'])
+                        m.drop_duplicates(subset=['value'], keep='last', inplace=True)
+                        m['key'] = m['key'].str.replace('*', '')
+                        m['key'] = m['key'].str.replace('^\s+', '')
+                        try:
+                            mem = str(m[m['key'] == 'Peak memory used'].iloc[0]['value']).replace(' ', '')
+                        except IndexError:
+                            status_warning = True
+                    mems.append(mem)
+                    row_classes.append(button_class)
+                else:
+                    # Sample was not run through the pipeline
+                    sample_warning.append(sample_name)
+
+            # Alert the user to any warnings generated
+            if status_warning:
+                _LOGGER.warning("The stats table is incomplete, likely because " +
+                                "one or more jobs either failed or is still running.")
+
+            if sample_warning:
+                if len(sample_warning) == 1:
+                    _LOGGER.warning("{} is not present in {}".format(
+                        ''.join(str(sample) for sample in sample_warning),
+                        self.prj.metadata.results_subdir))
+                else:
+                    warn_msg = "The following samples are not present in {}: {}"
+                    _LOGGER.warning(warn_msg.format(
+                        self.prj.metadata.results_subdir,
+                        ' '.join(str(sample) for sample in sample_warning)))
+
+            template_vars = dict(navbar=create_navbar(objs, stats, wd), sample_link_names=sample_link_names,
+                             sample_paths=sample_paths, log_link_names=log_link_names, log_paths=log_paths,
+                             row_classes=row_classes, flags=flags, times=times, mems=mems)
+            return self.render_jinja_template("status.html", template_vars)
 
         def _get_navbar_dropdown_data_objects(objs, reports_dir, wd):
             relpaths = []
@@ -1280,6 +1226,18 @@ class HTMLReportBuilder(object):
             return relpaths,  sample_names
 
         def create_navbar(objs, stats, wd):
+            """
+            Return a string containing the navbar prebuilt html.
+            Generates links to each page relative to the directory
+            of interest.
+
+            :param pandas.DataFrame objs: project results dataframe containing
+                object data
+            :param list stats: a summary file of pipeline statistics for each
+                analyzed sample
+            :param path wd: the working directory of the current HTML page
+                being generated, enables navbar links relative to page
+            """
             # paths
             index_html_path = get_index_html_path()
             reports_dir = get_reports_dir()
@@ -1431,8 +1389,7 @@ class HTMLReportBuilder(object):
             index_html_file.write("\t\t<style>\n")
             index_html_file.write("\t\t</style>\n")
             index_html_file.write(HTML_TITLE.format(project_name=self.prj.name))
-            navbar = create_navbar(objs, stats, self.prj.metadata.output_dir)
-            index_html_file.write(navbar)
+            index_html_file.write(create_navbar(objs, stats, self.prj.metadata.output_dir))
             index_html_file.write(HTML_HEAD_CLOSE)
 
             # Add stats_summary.tsv button link
@@ -1508,8 +1465,7 @@ class HTMLReportBuilder(object):
             # Create parent objects page with links to each object type
             save_html(os.path.join(reports_dir, "objects.html"), create_object_parent_html(objs, stats, reports_dir))
             # Create status page with each sample's status listed
-            create_status_html(objs, stats)
-
+            save_html(os.path.join(reports_dir, "status.html"), create_status_html(objs, stats, reports_dir))
             # Add project level objects
             prj_objs = create_project_objects()
             index_html_file.write("\t\t<hr>\n")
@@ -1568,6 +1524,23 @@ def get_templates_dir():
 
 def get_jinja_env():
     return jinja2.Environment(loader=jinja2.FileSystemLoader(get_templates_dir()))
+
+
+def get_flags(sample_dir):
+    """
+    Get the flag(s) present in the directory
+
+    :param str sample_dir: path to the directory to be searched for flags
+    :return list: flags found in the dir
+    """
+    assert os.path.exists(sample_dir), "The provided path ('{}') does not exist".format(sample_dir)
+    flag_files = glob.glob(os.path.join(sample_dir, '*.flag'))
+    if len(flag_files) > 1:
+        _LOGGER.warning("Multiple flag files ({files_count}) found in sample dir '{sample_dir}'".
+                        format(files_count=len(flag_files), sample_dir=sample_dir))
+    if len(flag_files) == 0:
+        _LOGGER.warning("No flag files found in sample dir '{sample_dir}'".format(sample_dir=sample_dir))
+    return [re.search(r'\_([a-z]+)\.flag$', os.path.basename(f)).groups()[0] for f in flag_files]
 
 
 def uniqify(seq):
