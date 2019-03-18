@@ -700,7 +700,8 @@ class HTMLReportBuilder(object):
 
             if not os.path.exists(os.path.dirname(object_parent_path)):
                 os.makedirs(os.path.dirname(object_parent_path))
-            pages = labels = list()
+            pages = list()
+            labels = list()
             if not objs.empty:
                 for key in objs['key'].drop_duplicates().sort_values():
                     page_name = key + ".html"
@@ -728,7 +729,8 @@ class HTMLReportBuilder(object):
 
             if not os.path.exists(os.path.dirname(sample_parent_path)):
                 os.makedirs(os.path.dirname(sample_parent_path))
-            pages = labels = list()
+            pages = list()
+            labels = list()
             for sample in self.prj.samples:
                 sample_name = str(sample.sample_name)
                 sample_dir = os.path.join(
@@ -877,7 +879,7 @@ class HTMLReportBuilder(object):
             if not os.path.exists(os.path.dirname(html_page)):
                 os.makedirs(os.path.dirname(html_page))
             sample_dir = os.path.join(self.prj.metadata.results_subdir, sample_name)
-            table_appearance_by_flag = {
+            button_appearance_by_flag = {
                 "completed": {
                     "button_class": "btn btn-success",
                     "flag": "Completed"
@@ -919,7 +921,7 @@ class HTMLReportBuilder(object):
                 else:
                     flag = flag[0]
                     try:
-                        flag_dict = table_appearance_by_flag[flag]
+                        flag_dict = button_appearance_by_flag[flag]
                     except KeyError:
                         button_class = "btn btn-secondary"
                         flag = "Unknown"
