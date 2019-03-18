@@ -709,8 +709,8 @@ class HTMLReportBuilder(object):
                     pages.append(page_relpath)
                     labels.append(key)
 
-            args_dict = dict(navbar=create_navbar(objs, stats, wd), labels=labels, pages=pages, header="Objects")
-            return self.render_jinja_template("navbar_list_parent.html", args_dict)
+                    template_vars = dict(navbar=create_navbar(objs, stats, wd), labels=labels, pages=pages, header="Objects")
+            return self.render_jinja_template("navbar_list_parent.html", template_vars)
 
         def create_sample_parent_html(objs, stats, wd):
             """
@@ -742,8 +742,8 @@ class HTMLReportBuilder(object):
                     pages.append(page_relpath)
                     labels.append(sample_name)
 
-            args_dict = dict(navbar=create_navbar(objs, stats, wd), labels=labels, pages=pages, header="Samples")
-            return self.render_jinja_template("navbar_list_parent.html", args_dict)
+            template_vars = dict(navbar=create_navbar(objs, stats, wd), labels=labels, pages=pages, header="Samples")
+            return self.render_jinja_template("navbar_list_parent.html", template_vars)
 
 
         def create_object_html(single_object, all_objects, stats):
@@ -868,8 +868,79 @@ class HTMLReportBuilder(object):
                               " nonexistent files: " +
                               ','.join(str(file) for file in warnings))
 
+        def create_sample_html(objs, stats, sample_name, sample_stats, wd):
+            reports_dir = get_reports_dir()
+            html_filename = sample_name + ".html"
+            html_page = os.path.join(reports_dir, html_filename.replace(' ', '_').lower())
+            sample_page_relpath = os.path.relpath(html_page, self.prj.metadata.output_dir)
+            single_sample = _pd.DataFrame() if objs.empty else objs[objs['sample_name'] == sample_name]
+            if not os.path.exists(os.path.dirname(html_page)):
+                os.makedirs(os.path.dirname(html_page))
+            sample_dir = os.path.join(self.prj.metadata.results_subdir, sample_name)
+            table_appearance_by_flag = {
+                "completed": {
+                    "button_class": "btn btn-success",
+                    "flag": "Completed"
+                },
+                "running": {
+                    "button_class": "btn btn-warning",
+                    "flag": "Running"
+                },
+                "failed": {
+                    "button_class": "btn btn-danger",
+                    "flag": "Failed"
+                }
+            }
+            if os.path.exists(sample_dir):
+                if single_sample.empty:
+                    # When there is no objects.tsv file, search for the
+                    # presence of log, profile, and command files
+                    log_name = os.path.basename(str(glob.glob(os.path.join(
+                        self.prj.metadata.results_subdir,
+                        sample_name, '*log.md'))[0]))
+                    profile_name = os.path.basename(str(glob.glob(os.path.join(
+                        self.prj.metadata.results_subdir,
+                        sample_name, '*profile.tsv'))[0]))
+                    command_name = os.path.basename(str(glob.glob(os.path.join(
+                        self.prj.metadata.results_subdir,
+                        sample_name, '*commands.sh'))[0]))
+                else:
+                    log_name = str(single_sample.iloc[0]['annotation']) + "_log.md"
+                    profile_name = str(single_sample.iloc[0]['annotation']) + "_profile.tsv"
+                    command_name = str(single_sample.iloc[0]['annotation']) + "_commands.sh"
+                flag = get_flags(sample_dir)
+                _LOGGER.debug("Flag(s) found for sample {s}: {f}".format(s=sample_name, f=", ".join(flag)))
+                if not flag:
+                    button_class = "btn btn-danger"
+                    flag = "Missing"
+                elif len(flag) > 1:
+                    button_class = "btn btn-warning"
+                    flag = "Multiple"
+                else:
+                    flag = flag[0]
+                    try:
+                        flag_dict = table_appearance_by_flag[flag]
+                    except KeyError:
+                        button_class = "btn btn-secondary"
+                        flag = "Unknown"
+                    else:
+                        button_class = flag_dict["button_class"]
+                        flag = flag_dict["flag"]
+                # get links to the files
+                stats_file_path = os.path.relpath(os.path.join(
+                    self.prj.metadata.results_subdir, sample_name, "stats.tsv"), reports_dir)
+                profile_file_path = os.path.relpath(os.path.join(
+                    self.prj.metadata.results_subdir, sample_name, profile_name), reports_dir)
+                commands_file_path = os.path.relpath(os.path.join(
+                    self.prj.metadata.results_subdir, sample_name, command_name), reports_dir)
+                log_file_path = os.path.relpath(os.path.join(
+                    self.prj.metadata.results_subdir, sample_name, log_name), reports_dir)
 
-        def create_sample_html(objs, stats, sample_name, sample_stats):
+            template_vars = dict(navbar=create_navbar(objs, stats, wd), sample_name=sample_name, stats_file_path=stats_file_path, profile_file_path=profile_file_path, commands_file_path=commands_file_path, log_file_path=log_file_path, button_class=button_class, sample_stats=sample_stats, flag=flag)
+            save_html(html_page, self.render_jinja_template("sample.html", template_vars))
+            return sample_page_relpath
+
+        def create_sample_html_old(objs, stats, sample_name, sample_stats):
             """
             Produce an HTML page containing all of a sample's objects
             and the sample summary statistics
@@ -975,16 +1046,12 @@ class HTMLReportBuilder(object):
                     html_file.write(SAMPLE_TABLE_HEADER)
                     # Produce table rows
                     for key, value in sample_stats.items():
-                        # Treat sample_name as a link to sample page
+                            # Treat sample_name as a link to sample page
                         if key == 'sample_name':
                             page_relpath = os.path.relpath(html_page, reports_dir)
-                            html_file.write(SAMPLE_TABLE_FIRSTROW.format(
-                                                row_name=str(key),
-                                                html_page=page_relpath,
-                                                page_name=html_filename,
-                                                link_name=str(value)))
-                        # Otherwise add as a static cell value
+                            html_file.write(SAMPLE_TABLE_FIRSTROW.format(row_name=str(key),html_page=page_relpath,page_name=html_filename,link_name=str(value)))
                         else:
+                            # Otherwise add as a static cell value
                             html_file.write(SAMPLE_TABLE_ROW.format(
                                 row_name=str(key),
                                 row_val=str(value)))
@@ -1113,7 +1180,7 @@ class HTMLReportBuilder(object):
                 if os.path.exists(sample_dir):
                     # Grab the status flag for the current sample
                     flag = get_flags(sample_dir)
-                    _LOGGER.warning("Flags for sample {s}: {f}".format(s=sample, f=", ".join(flag)))
+                    _LOGGER.debug("Flag(s) found for sample {s}: {f}".format(s=sample, f=", ".join(flag)))
                     if not flag:
                         button_class = "table-danger"
                         flag = "Missing"
@@ -1436,7 +1503,8 @@ class HTMLReportBuilder(object):
                             sample_page = create_sample_html(objs,
                                                              stats,
                                                              sample_name,
-                                                             sample_stats)
+                                                             sample_stats,
+                                                             reports_dir)
                             # Treat sample_name as a link to sample page
                             index_html_file.write(TABLE_ROWS_LINK.format(
                                 html_page=sample_page,

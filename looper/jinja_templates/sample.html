@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+    <head>
+      {% include "head.html" %}
+    </head>
+    {{ navbar }} 
+    <body>
+    	<div id="top"></div>
+    	<div class="container" style="margin-top:20px">
+    	<h4>{{ sample_name }}</h4>
+        <hr>
+        <div class="container-fluid">
+            <p class="text-left">
+            <button type="button" class='{{ button_class }}' disabled>STATUS: {{ flag }}</button>
+            <a class="btn btn-outline-dark ml-2" href='{{ log_file_path }}' role="button">Log file</a>
+            <a class="btn btn-outline-dark ml-2" href='{{ profile_file_path }}' role="button">Pipeline profile</a>
+            <a class="btn btn-outline-dark ml-2" href='{{ commands_file_path }}' role="button">Pipeline commands</a>
+            <a class='btn btn-outline-dark ml-2' href='{{ stats_file_path }}' role='button'>Stats summary file</a>         
+            </p>
+        </div>
+        <hr>
+        <div class='container-fluid'>
+	      	<h5>Looper stats summary</h5>
+	        <div class="table-responsive-sm">
+				<table class="table table-sm table-hover table-bordered table-condensed" style="white-space: nowrap; width: 1%;">             
+					<tbody>
+						{% for row_name, row_value in sample_stats.items() %}
+							<tr>
+								<th>{{ row_name }}</th>
+								<td class="text"><span>{{ row_value }}</span></td>
+							</tr>
+						{% endfor %}
+					</tbody>
+				</table>
+		    </div>
+        </div>
+        <hr>
+        <div class='container-fluid'>
+        	<h5>{{ sample_name }} objects</h5>
+        </div>
+
+
+    	</div>
+    </body>
+    <footer>
+	  {% include "footer.html" %}
+	</footer>
+</html>
