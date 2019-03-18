@@ -683,6 +683,7 @@ class HTMLReportBuilder(object):
             return index_html_root + "_summary.html"
 
         def create_object_parent_html(objs, stats, wd):
+            # TODO: The page is not styled properly, bootstrap missing?
             """
             Generates a page listing all the project objects with links
             to individual object pages
@@ -1496,7 +1497,7 @@ class HTMLReportBuilder(object):
                 _LOGGER.warning("No stats file '%s'", tsv_outfile_path)
 
             # Create parent samples page with links to each sample
-            save_template_HTML(template=create_sample_parent_html(objs, stats, reports_dir), path=os.path.join(reports_dir, "samples.html"))
+            save_html(os.path.join(reports_dir, "samples.html"), create_sample_parent_html(objs, stats, reports_dir))
 
             # Create objects pages
             if not objs.dropna().empty:
@@ -1505,7 +1506,7 @@ class HTMLReportBuilder(object):
                     create_object_html(single_object, objs, stats)
 
             # Create parent objects page with links to each object type
-            save_template_HTML(template=create_object_parent_html(objs, stats, reports_dir), path=os.path.join(reports_dir, "objects.html"))
+            save_html(os.path.join(reports_dir, "objects.html"), create_object_parent_html(objs, stats, reports_dir))
             # Create status page with each sample's status listed
             create_status_html(objs, stats)
 
@@ -1538,28 +1539,30 @@ class HTMLReportBuilder(object):
         return template.render(**args)
 
 
-def save_template_HTML(path, template):
+def save_html(path, template):
     """
     Save rendered template as an HTML file
 
-    :param path:
-    :param template:
-    :param reports_dir:
-    :return:
+    :param str path: the desired location for the file to be produced
+    :param str template: the template or just string
     """
 
     if not os.path.exists(os.path.dirname(path)):
         os.makedirs(os.path.dirname(path))
 
-    with open(path, "w") as f:
+    try:
+        f = open(path, 'w')
+    except IOError:
+        _LOGGER.error("Could not write the HTML file: {}".format(path))
+
+    with f:
         f.write(template)
-        return True
 
 
 def get_templates_dir():
     file_dir = os.path.dirname(__file__)
     jinja_templ_dir = os.path.join(file_dir, TEMPLATES_DIRNAME)
-    _LOGGER.warning("usning templates dir: " + jinja_templ_dir)
+    _LOGGER.info("using templates dir: " + jinja_templ_dir)
     return jinja_templ_dir
 
 
