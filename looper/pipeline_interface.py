@@ -15,7 +15,7 @@ import yaml
 from .exceptions import InvalidResourceSpecificationException, \
     MissingPipelineConfigurationException, PipelineInterfaceConfigError
 from .utils import get_logger
-from attmap import AttMap
+from attmap import PathExAttMap
 from peppy import utils, Sample
 from peppy.const import DEFAULT_COMPUTE_RESOURCES_NAME
 from peppy.utils import is_command_callable
@@ -30,7 +30,7 @@ SUBTYPE_MAPPING_SECTION = "sample_subtypes"
 
 
 @utils.copy
-class PipelineInterface(AttMap):
+class PipelineInterface(PathExAttMap):
     """
     This class parses, holds, and returns information for a yaml file that
     specifies how to interact with each individual pipeline. This

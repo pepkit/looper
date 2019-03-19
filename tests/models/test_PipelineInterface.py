@@ -12,7 +12,7 @@ import warnings
 import pytest
 import yaml
 
-from attmap import AttMap
+from attmap import PathExAttMap
 from looper.pipeline_interface import PipelineInterface, PL_KEY, PROTOMAP_KEY
 from looper.project import Project
 from looper.exceptions import InvalidResourceSpecificationException, \
@@ -111,8 +111,8 @@ def test_basic_construction(tmpdir, from_file, bundled_piface):
         assert pi.pipelines_path is None
 
     # Validate protocol mapping and interfaces contents.
-    assert AttMap(bundled_piface[PL_KEY]) == pi[PL_KEY]
-    assert AttMap(bundled_piface[PROTOMAP_KEY]) == pi[PROTOMAP_KEY]
+    assert PathExAttMap(bundled_piface[PL_KEY]) == pi[PL_KEY]
+    assert PathExAttMap(bundled_piface[PROTOMAP_KEY]) == pi[PROTOMAP_KEY]
 
     # Certain access modes should agree with one another.
     assert pi.pipelines == pi[PL_KEY]
