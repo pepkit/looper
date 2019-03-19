@@ -710,7 +710,7 @@ class HTMLReportBuilder(object):
                     pages.append(page_relpath)
                     labels.append(key)
 
-                    template_vars = dict(navbar=create_navbar(objs, stats, wd), labels=labels, pages=pages, header="Objects")
+            template_vars = dict(navbar=create_navbar(objs, stats, wd), labels=labels, pages=pages, header="Objects")
             return self.render_jinja_template("navbar_list_parent.html", template_vars)
 
         def create_sample_parent_html(objs, stats, wd):
@@ -871,6 +871,20 @@ class HTMLReportBuilder(object):
                               ','.join(str(file) for file in warnings))
 
         def create_sample_html(objs, stats, sample_name, sample_stats, wd):
+            """
+            Produce an HTML page containing all of a sample's objects
+            and the sample summary statistics
+
+            :param panda.DataFrame objs: project level dataframe containing
+                any reported objects for all samples
+            :param list stats: a summary file of pipeline statistics for each
+                analyzed sample
+            :param str sample_name: the name of the current sample
+            :param list stats: pipeline run statistics for the current sample
+            :param str wd: the working directory of the current HTML page
+                being generated, enables navbar links relative to page
+            :return str: path to the produced HTML page
+            """
             reports_dir = get_reports_dir()
             html_filename = sample_name + ".html"
             html_page = os.path.join(reports_dir, html_filename.replace(' ', '_').lower())
@@ -938,202 +952,57 @@ class HTMLReportBuilder(object):
                 log_file_path = os.path.relpath(os.path.join(
                     self.prj.metadata.results_subdir, sample_name, log_name), reports_dir)
 
-            template_vars = dict(navbar=create_navbar(objs, stats, wd), sample_name=sample_name, stats_file_path=stats_file_path, profile_file_path=profile_file_path, commands_file_path=commands_file_path, log_file_path=log_file_path, button_class=button_class, sample_stats=sample_stats, flag=flag)
+            links = []
+            figures = []
+            warnings = []
+            if not single_sample.empty:
+                for sample_name in single_sample['sample_name'].drop_duplicates().sort_values():
+                    o = single_sample[single_sample['sample_name'] == sample_name]
+                    for i, row in o.iterrows():
+                        try:
+                            # Image thumbnails are optional
+                            # This references to "image" should really
+                            # be "thumbnail"
+                            image_path = os.path.join(
+                                self.prj.metadata.results_subdir,
+                                sample_name, row['anchor_image'])
+                            image_relpath = os.path.relpath(image_path, reports_dir)
+                        except AttributeError:
+                            image_path = ""
+                            image_relpath = ""
+
+                        # These references to "page" should really be
+                        # "object", because they can be anything.
+                        page_path = os.path.join(
+                            self.prj.metadata.results_subdir,
+                            sample_name, row['filename'])
+                        page_relpath = os.path.relpath(page_path, reports_dir)
+                        # If the object has a thumbnail image, add as a figure
+                        if os.path.isfile(image_path) and os.path.isfile(page_path):
+                            # If the object has a valid image, add as a figure
+                            if str(image_path).lower().endswith(('.png', '.jpg', '.jpeg', '.svg', '.gif')):
+                                figures.append([page_relpath, str(row['key']), image_relpath])
+                            # Otherwise treat as a link
+                            elif os.path.isfile(page_path):
+                                links.append([str(row['key']), page_relpath])
+                            # If neither, there is no object by that name
+                            else:
+                                warnings.append(str(row['filename']))
+                        # If no thumbnail image, it's just a link
+                        elif os.path.isfile(page_path):
+                            links.append([str(row['key']), page_relpath])
+                        # If no file present, there is no object by that name
+                        else:
+                            warnings.append(str(row['filename']))
+            else:
+                # Sample was not run through the pipeline
+                _LOGGER.warning("{} is not present in {}".format(
+                    sample_name, self.prj.metadata.results_subdir))
+
+            template_vars = dict(navbar=create_navbar(objs, stats, wd), sample_name=sample_name, stats_file_path=stats_file_path, profile_file_path=profile_file_path, commands_file_path=commands_file_path, log_file_path=log_file_path, button_class=button_class, sample_stats=sample_stats, flag=flag, links=links, figures=figures)
             save_html(html_page, self.render_jinja_template("sample.html", template_vars))
             return sample_page_relpath
 
-        def create_sample_html_old(objs, stats, sample_name, sample_stats):
-            """
-            Produce an HTML page containing all of a sample's objects
-            and the sample summary statistics
-
-            :param panda.DataFrame objs: project level dataframe containing
-                any reported objects for all samples
-            :param list stats: a summary file of pipeline statistics for each
-                analyzed sample
-            :param str sample_name: the name of the current sample
-            :param list stats: pipeline run statistics for the current sample
-            """
-
-            reports_dir = get_reports_dir()
-            html_filename = sample_name + ".html"
-            html_page = os.path.join(
-                reports_dir, html_filename.replace(' ', '_').lower())
-            sample_page_relpath = os.path.relpath(
-                html_page, self.prj.metadata.output_dir)
-
-            single_sample = _pd.DataFrame()
-            if not objs.empty:
-                single_sample = objs[objs['sample_name'] == sample_name]
-
-            if not os.path.exists(os.path.dirname(html_page)):
-                os.makedirs(os.path.dirname(html_page))
-
-            with open(html_page, 'w') as html_file:
-                html_file.write(HTML_HEAD_OPEN)
-                html_file.write("\t\t<style>\n")
-                html_file.write(SAMPLE_TABLE_STYLE)
-                html_file.write("\t\t</style>\n")
-                html_file.write(create_navbar(objs, stats, reports_dir))
-                html_file.write(HTML_HEAD_CLOSE)
-                html_file.write("\t\t<h4>{}</h4>\n".format(str(sample_name)))
-                sample_dir = os.path.join(
-                        self.prj.metadata.results_subdir, sample_name)
-
-                # Confirm sample directory exists, then build page
-                if os.path.exists(sample_dir):                    
-                    if single_sample.empty:
-                        # When there is no objects.tsv file, search for the
-                        # presence of log, profile, and command files
-                        log_name = os.path.basename(str(glob.glob(os.path.join(
-                                        self.prj.metadata.results_subdir,
-                                        sample_name, '*log.md'))[0]))
-                        profile_name = os.path.basename(str(glob.glob(os.path.join(
-                                            self.prj.metadata.results_subdir,
-                                            sample_name, '*profile.tsv'))[0]))
-                        command_name = os.path.basename(str(glob.glob(os.path.join(
-                                            self.prj.metadata.results_subdir,
-                                            sample_name, '*commands.sh'))[0]))
-                    else:
-                        log_name = str(single_sample.iloc[0]['annotation']) + "_log.md"
-                        profile_name = str(single_sample.iloc[0]['annotation']) + "_profile.tsv"
-                        command_name = str(single_sample.iloc[0]['annotation']) + "_commands.sh"
-                    # Get relative path to the log file
-                    log_file = os.path.join(self.prj.metadata.results_subdir,
-                                            sample_name, log_name)
-                    log_relpath = os.path.relpath(log_file, reports_dir)
-                    # Grab the status flag for the current sample
-                    flag = glob.glob(os.path.join(self.prj.metadata.results_subdir,
-                                                  sample_name, '*.flag'))
-                    if not flag:  
-                        button_class = "btn btn-danger"
-                        flag = "Missing"
-                    elif len(flag) > 1:
-                        button_class = "btn btn-warning"
-                        flag = "Multiple"
-                    else:
-                        if "completed" in str(flag):
-                            button_class = "btn btn-success"
-                            flag = "Completed"
-                        elif "running" in str(flag):
-                            button_class = "btn btn-warning"
-                            flag = "Running"
-                        elif "failed" in str(flag):
-                            button_class = "btn btn-danger"
-                            flag = "Failed"
-                        else:
-                            button_class = "btn btn-secondary"
-                            flag = "Unknown"
-                    # Create buttons linking the sample's STATUS, LOG, PROFILE,
-                    # COMMANDS, and STATS files
-                    stats_relpath = os.path.relpath(os.path.join(
-                                        self.prj.metadata.results_subdir,
-                                        sample_name, "stats.tsv"), reports_dir)
-                    profile_relpath = os.path.relpath(os.path.join(
-                                        self.prj.metadata.results_subdir,
-                                        sample_name, profile_name), reports_dir)
-                    command_relpath = os.path.relpath(os.path.join(
-                                        self.prj.metadata.results_subdir,
-                                        sample_name, command_name), reports_dir)
-                    html_file.write(SAMPLE_BUTTONS.format(
-                                        button_class=button_class,
-                                        flag=flag,
-                                        log_file=log_relpath,
-                                        profile_file=profile_relpath,
-                                        commands_file=command_relpath,
-                                        stats_file=stats_relpath))
-
-                    # Add the sample's statistics as a table
-                    html_file.write("\t<div class='container-fluid'>\n")
-                    html_file.write(SAMPLE_TABLE_HEADER)
-                    # Produce table rows
-                    for key, value in sample_stats.items():
-                            # Treat sample_name as a link to sample page
-                        if key == 'sample_name':
-                            page_relpath = os.path.relpath(html_page, reports_dir)
-                            html_file.write(SAMPLE_TABLE_FIRSTROW.format(row_name=str(key),html_page=page_relpath,page_name=html_filename,link_name=str(value)))
-                        else:
-                            # Otherwise add as a static cell value
-                            html_file.write(SAMPLE_TABLE_ROW.format(
-                                row_name=str(key),
-                                row_val=str(value)))
-
-                    html_file.write(TABLE_FOOTER)
-                    html_file.write("\t  <hr>\n")
-                    # Add all the objects for the current sample
-                    html_file.write("\t\t<div class='container-fluid'>\n")
-                    html_file.write("\t\t<h5>{sample} objects</h5>\n".format(sample=sample_name))
-                    links = []
-                    figures = []
-                    warnings = []
-                    if not single_sample.empty:
-                        for sample_name in single_sample['sample_name'].drop_duplicates().sort_values():
-                            o = single_sample[single_sample['sample_name'] == sample_name]
-                            for i, row in o.iterrows():
-                                try:
-                                    # Image thumbnails are optional
-                                    # This references to "image" should really
-                                    # be "thumbnail"
-                                    image_path = os.path.join(
-                                                    self.prj.metadata.results_subdir,
-                                                    sample_name, row['anchor_image'])
-                                    image_relpath = os.path.relpath(image_path, reports_dir)
-                                except AttributeError:
-                                    image_path = ""
-                                    image_relpath = ""
-
-                                # These references to "page" should really be
-                                # "object", because they can be anything.
-                                page_path = os.path.join(
-                                                self.prj.metadata.results_subdir,
-                                                sample_name, row['filename'])
-                                page_relpath = os.path.relpath(page_path, reports_dir)
-                                # If the object has a thumbnail image, add as a figure
-                                if os.path.isfile(image_path) and os.path.isfile(page_path):
-                                    # If the object has a valid image, add as a figure
-                                    if str(image_path).lower().endswith(('.png', '.jpg', '.jpeg', '.svg', '.gif')):
-                                        figures.append(SAMPLE_PLOTS.format(
-                                                        label=str(row['key']),
-                                                        path=page_relpath,
-                                                        image=image_relpath))
-                                    # Otherwise treat as a link
-                                    elif os.path.isfile(page_path):
-                                        links.append(GENERIC_LIST_ENTRY.format(
-                                                        label=str(row['key']),
-                                                        page=page_relpath))
-                                    # If neither, there is no object by that name
-                                    else:
-                                        warnings.append(str(row['filename']))
-                                # If no thumbnail image, it's just a link
-                                elif os.path.isfile(page_path):
-                                    links.append(GENERIC_LIST_ENTRY.format(
-                                                    label=str(row['key']),
-                                                    page=page_relpath))
-                                # If no file present, there is no object by that name
-                                else:
-                                    warnings.append(str(row['filename']))
-
-                    html_file.write(GENERIC_LIST_HEADER)
-                    html_file.write("\n".join(links))
-                    html_file.write(GENERIC_LIST_FOOTER)
-                    html_file.write("\t\t\t<hr>\n")
-                    html_file.write("\n".join(figures))
-                    html_file.write("\t\t</div>\n")
-                    html_file.write("\t\t<hr>\n")
-                    html_file.write(HTML_FOOTER)
-                    html_file.close()
-                else:
-                    # Sample was not run through the pipeline
-                    _LOGGER.warning("{} is not present in {}".format(
-                        sample_name, self.prj.metadata.results_subdir))
-                    html_file.write(HTML_FOOTER)
-                    html_file.close()
-            # TODO: accumulate warnings from these functions and only display
-            #       after all samples are processed
-            # _LOGGER.warning("Warning: The following files do not exist: " +
-                         # '\t'.join(str(file) for file in warnings))
-            # Return the path to the newly created sample page
-            return sample_page_relpath
 
         def create_status_html(objs, stats, wd):
             """
