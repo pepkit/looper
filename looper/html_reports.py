@@ -101,7 +101,7 @@ HTML_FOOTER = \
               };
               function numberWithCommas(x) {
                   var parts = x.toString().split(".");
-                  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+                  parts[0] = parts[0].replace(/\\B(?=(\\d{3})+(?!\\d))/g, ",");
                   return parts.join(".");
               }
               return function ( d, type, row ) {
@@ -122,7 +122,7 @@ HTML_FOOTER = \
                   var shortened = d.substr(0, cutoff-1);
                   // Find the last white space character in the string
                   if ( wordbreak ) {
-                      shortened = shortened.replace(/\s([^\s]*)$/, '');
+                      shortened = shortened.replace(/\\s([^\\s]*)$/, '');
                   }
                   // Protect against uncontrolled HTML input
                   if ( escapeHtml ) {
