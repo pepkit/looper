@@ -580,13 +580,13 @@ def pipe_iface(request):
 
 
 def basic_entries():
-    """ PepAttMap data that lack nested strcuture. """
+    """ PathExAttMap data that lack nested strcuture. """
     for k, v in zip(_BASE_KEYS, _BASE_VALUES):
         yield k, v
 
 
 
 def nested_entries():
-    """ PepAttMap data with some nesting going on. """
+    """ PathExAttMap data with some nesting going on. """
     for k, v in _SEASON_HIERARCHY.items():
         yield k, v
