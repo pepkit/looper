@@ -1,10 +1,10 @@
 """ Definitions of the parser argument types """
 
-import attmap
+from attmap import PepAttMap
 
 
 def html_range(caravel=False, min_val=0, max_val=10, step=1, value=0):
-    caravel_data = attmap.AttMap({
+    caravel_data = PepAttMap({
                 "element_type": "range",
                 "element_args": {
                     "min": min_val,
@@ -23,7 +23,7 @@ def html_range(caravel=False, min_val=0, max_val=10, step=1, value=0):
 
 
 def html_checkbox(caravel=False, checked=False):
-    caravel_data = attmap.AttMap({
+    caravel_data = PepAttMap({
                 "element_type": "checkbox",
                 "element_args": {
                 }})
@@ -37,7 +37,7 @@ def html_checkbox(caravel=False, checked=False):
 
 def html_select(options, caravel=False):
     assert isinstance(options, list), "options argument has to be a list, got '{}'.".format(type(options))
-    caravel_data = attmap.AttMap({
+    caravel_data = PepAttMap({
         "element_type": "select",
         "element_args": {
             "option": options
