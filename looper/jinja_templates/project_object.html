@@ -1,0 +1,40 @@
+		<hr>
+		<h5>Looper project objects new</h5>
+		<div class='container'>
+			{% if figures[0] is defined %}
+        		<hr>
+				<div class='row justify-content-start'>
+					<!-- figures go here, every third figure should be put into new row -->
+	        		{% for figure in figures %}
+	        			{% if loop.index % 3 == 0 %}
+	        				</div>
+	        				<div class='row justify-content-start'>
+	        			{% endif %}
+			            <figure class="figure">
+			                <a href='{{ figure[1] }}'>
+			                	<img style="width: 200px; height: 200px" src='{{ figure[2] }}' class="figure-img img-fluid rounded" alt="">
+			                </a>
+			                <a href='{{ figure[1] }} '>
+			                	<figcaption class="figure-caption text-left">'{{ figure[0] }}'</figcaption>
+			                </a>
+			            </figure>
+	        		{% endfor %}
+	        	</div>
+        	{% endif %}
+			<!-- list of links goes here -->
+        	{% if figures[0] is defined %}
+        		<hr>
+        		<ul class="list-group list-group-flush">
+        		{% for figure in figures %}
+		            <figure class="figure">
+		                <a href='{{ figure[1] }}'>
+		                	<img style="width: 200px; height: 200px" src='{{ figure[2] }}' class="figure-img img-fluid rounded" alt="">
+		                </a>
+		                <a href='{{ figure[1] }} '>
+		                	<figcaption class="figure-caption text-left">'{{ figure[0] }}'</figcaption>
+		                </a>
+		            </figure>
+        		{% endfor %}
+        		</ul>
+        	{% endif %}
+		</div>

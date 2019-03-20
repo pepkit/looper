@@ -1191,6 +1191,56 @@ class HTMLReportBuilder(object):
 
             # For each protocol report the project summarizers' results
             for protocol in set(all_protocols):
+                figures = []
+                links = []
+                warnings = []
+                ifaces = self.prj.interfaces_by_protocol[protocol]
+
+                # Check the interface files for summarizers
+                for iface in ifaces:
+                    pl = iface.fetch_pipelines(protocol)
+                    summary_results = iface.get_attribute(pl, "summary_results")
+
+                    # Build the HTML for each summary result
+                    if summary_results is not None:
+                        for result in summary_results:
+                            caption = str(result['caption'])
+                            result_file = str(result['path']).replace('{name}', str(self.prj.name))
+                            result_img = str(result['thumbnail_path']).replace('{name}', str(self.prj.name))
+                            search = os.path.join(self.prj.metadata.output_dir, '{}'.format(result_file))
+
+                            # Confirm the file itself was produced
+                            if glob.glob(search):
+                                file_path = str(glob.glob(search)[0])
+                                file_relpath = os.path.relpath(file_path, self.prj.metadata.output_dir)
+                                search = os.path.join(self.prj.metadata.output_dir, '{}'.format(result_img))
+
+                                # Add as a figure if thumbnail exists
+                                if glob.glob(search):
+                                    img_path = str(glob.glob(search)[0])
+                                    img_relpath = os.path.relpath(img_path, self.prj.metadata.output_dir)
+                                    figures.append([file_relpath, '{}: Click to see full-size figure'.format(caption), img_relpath])
+                                # add as a link otherwise
+                                else:
+                                    links.append(['{}: Click to see full-size figure'.format(caption), file_relpath])
+
+                            else:
+                                warnings.append(caption)
+                    else:
+                        _LOGGER.debug("No custom summarizers were found for this pipeline. Proceeded with default only.")
+                if warnings:
+                    _LOGGER.warning("Summarizer was unable to find: " + ', '.join(str(x) for x in warnings))
+
+            template_vars = dict(figures=figures, links=links)
+            return self.render_jinja_template("project_object.html", template_vars)
+
+        def create_project_objects_old():
+            """ Add project level summaries as additional figures/links """
+
+            all_protocols = [sample.protocol for sample in self.prj.samples]
+
+            # For each protocol report the project summarizers' results
+            for protocol in set(all_protocols):
                 obj_figs = []
                 num_figures = 0
                 obj_links = []
@@ -1276,15 +1326,15 @@ class HTMLReportBuilder(object):
                                    "\n".join(obj_links),
                                    OBJECTS_LIST_FOOTER]))
 
-        def create_index_html(objs, stats, col_names):
+        def create_index_html(objs, stats, columns):
             """
             Generate an index.html style project home page w/ sample summary
             statistics
-            
+
             :param panda.DataFrame objs: project level dataframe containing
                 any reported objects for all samples
             :param list stats: a summary file of pipeline statistics for each
-                analyzed sample                
+                analyzed sample
             """
 
             reports_dir = get_reports_dir()
@@ -1294,41 +1344,27 @@ class HTMLReportBuilder(object):
             # Generate parent index.html page path
             index_html_path = get_index_html_path()
 
-            index_html_file = open(index_html_path, 'w')
-            index_html_file.write(HTML_HEAD_OPEN)
-            index_html_file.write("\t\t<style>th{background-color:white;}</style>\n")
-            index_html_file.write(HTML_TITLE.format(project_name=self.prj.name))
-            index_html_file.write(create_navbar(objs, stats, self.prj.metadata.output_dir))
-            index_html_file.write(HTML_HEAD_CLOSE)
-
             # Add stats_summary.tsv button link
-            tsv_outfile_path = os.path.join(self.prj.metadata.output_dir,
-                                            self.prj.name)
+            tsv_outfile_path = os.path.join(self.prj.metadata.output_dir, self.prj.name)
             if hasattr(self.prj, "subproject") and self.prj.subproject:
                 tsv_outfile_path += '_' + self.prj.subproject
             tsv_outfile_path += '_stats_summary.tsv'
-            stats_relpath = os.path.relpath(tsv_outfile_path,
-                                            self.prj.metadata.output_dir)
+            stats_file_path = os.path.relpath(tsv_outfile_path, self.prj.metadata.output_dir)
 
             # Add stats summary table to index page and produce individual
             # sample pages
             if os.path.isfile(tsv_outfile_path):
-                index_html_file.write(TABLE_HEADER.format(file_path=stats_relpath, label="Stats Summary File"))
-                # Produce table columns
-                for key in col_names:
-                    index_html_file.write(TABLE_COLS.format(col_val=str(key)))
-                index_html_file.write(TABLE_COLS_FOOTER)
-
                 # Produce table rows
                 sample_pos = 0
                 col_pos = 0
-                num_columns = len(col_names)
+                num_columns = len(columns)
+                table_row_data = []
                 for row in stats:
                     # Match row value to column
                     # Row is disordered and does not handle empty cells
                     table_row = []
                     while col_pos < num_columns:
-                        value = row.get(col_names[col_pos])
+                        value = row.get(columns[col_pos])
                         if value is None:
                             value = ''
                         table_row.append(value)
@@ -1336,30 +1372,22 @@ class HTMLReportBuilder(object):
                     # Reset column position counter
                     col_pos = 0
                     sample_name = str(stats[sample_pos]['sample_name'])
-                    index_html_file.write(TABLE_ROW_HEADER)
                     # Order table_row by col_names
-                    sample_stats = OrderedDict(zip(col_names, table_row))
+                    sample_stats = OrderedDict(zip(columns, table_row))
+                    table_cell_data = []
                     for value in table_row:
                         if value == sample_name:
                             # Generate individual sample page and return link
-                            sample_page = create_sample_html(objs,
-                                                             stats,
-                                                             sample_name,
-                                                             sample_stats,
-                                                             reports_dir)
+                            sample_page = create_sample_html(objs, stats, sample_name, sample_stats, reports_dir)
                             # Treat sample_name as a link to sample page
-                            index_html_file.write(TABLE_ROWS_LINK.format(
-                                html_page=sample_page,
-                                page_name=sample_page,
-                                link_name=sample_name))
+                            data = [sample_page, value]
                         # If not the sample name, add as an unlinked cell value
                         else:
-                            index_html_file.write(TABLE_ROWS.format(
-                                row_val=str(value)))
-                    index_html_file.write(TABLE_ROW_FOOTER)
-                    sample_pos += 1
-                index_html_file.write(TABLE_FOOTER)
-                index_html_file.write(TABLE_VISUALIZATION)
+                            data = str(value)
+                        table_cell_data.append(data)
+                        _LOGGER.debug("table cell: {}".format(table_cell_data))
+                    table_row_data.append(table_cell_data)
+                    _LOGGER.debug("table row: {}".format(table_row_data))
             else:
                 _LOGGER.warning("No stats file '%s'", tsv_outfile_path)
 
@@ -1377,21 +1405,130 @@ class HTMLReportBuilder(object):
             # Create status page with each sample's status listed
             save_html(os.path.join(reports_dir, "status.html"), create_status_html(objs, stats, reports_dir))
             # Add project level objects
-            prj_objs = create_project_objects()
-            index_html_file.write("\t\t<hr>\n")
-            index_html_file.write(prj_objs)
-            index_html_file.write("\t\t<hr>\n")
-
+            project_objects = create_project_objects()
             # Complete and close HTML file
-            index_html_file.write(HTML_FOOTER)
-            index_html_file.close()
-            
-            # Return the path to the completed index.html file
-            return index_html_path
 
+            template_vars = dict(project_name=self.prj.name, navbar=create_navbar(objs, stats, self.prj.metadata.output_dir), stats_file_path=stats_file_path, project_objects=project_objects, columns=columns, table_row_data=table_row_data)
+            save_html(index_html_path, self.render_jinja_template("index.html", template_vars))
+            return index_html_path
         # Generate HTML report
         index_html_path = create_index_html(objs, stats, columns)
         return index_html_path
+
+        # def create_index_html(objs, stats, col_names):
+        #     """
+        #     Generate an index.html style project home page w/ sample summary
+        #     statistics
+        #
+        #     :param panda.DataFrame objs: project level dataframe containing
+        #         any reported objects for all samples
+        #     :param list stats: a summary file of pipeline statistics for each
+        #         analyzed sample
+        #     """
+        #
+        #     reports_dir = get_reports_dir()
+        #
+        #     if not objs.dropna().empty:
+        #         objs.drop_duplicates(keep='last', inplace=True)
+        #     # Generate parent index.html page path
+        #     index_html_path = get_index_html_path()
+        #
+        #     index_html_file = open(index_html_path, 'w')
+        #     index_html_file.write(HTML_HEAD_OPEN)
+        #     index_html_file.write("\t\t<style>th{background-color:white;}</style>\n")
+        #     index_html_file.write(HTML_TITLE.format(project_name=self.prj.name))
+        #     index_html_file.write(create_navbar(objs, stats, self.prj.metadata.output_dir))
+        #     index_html_file.write(HTML_HEAD_CLOSE)
+        #
+        #     # Add stats_summary.tsv button link
+        #     tsv_outfile_path = os.path.join(self.prj.metadata.output_dir,
+        #                                     self.prj.name)
+        #     if hasattr(self.prj, "subproject") and self.prj.subproject:
+        #         tsv_outfile_path += '_' + self.prj.subproject
+        #     tsv_outfile_path += '_stats_summary.tsv'
+        #     stats_relpath = os.path.relpath(tsv_outfile_path,
+        #                                     self.prj.metadata.output_dir)
+        #
+        #     # Add stats summary table to index page and produce individual
+        #     # sample pages
+        #     if os.path.isfile(tsv_outfile_path):
+        #         index_html_file.write(TABLE_HEADER.format(file_path=stats_relpath, label="Stats Summary File"))
+        #         # Produce table columns
+        #         for key in col_names:
+        #             index_html_file.write(TABLE_COLS.format(col_val=str(key)))
+        #         index_html_file.write(TABLE_COLS_FOOTER)
+        #
+        #         # Produce table rows
+        #         sample_pos = 0
+        #         col_pos = 0
+        #         num_columns = len(col_names)
+        #         for row in stats:
+        #             # Match row value to column
+        #             # Row is disordered and does not handle empty cells
+        #             table_row = []
+        #             while col_pos < num_columns:
+        #                 value = row.get(col_names[col_pos])
+        #                 if value is None:
+        #                     value = ''
+        #                 table_row.append(value)
+        #                 col_pos += 1
+        #             # Reset column position counter
+        #             col_pos = 0
+        #             sample_name = str(stats[sample_pos]['sample_name'])
+        #             index_html_file.write(TABLE_ROW_HEADER)
+        #             # Order table_row by col_names
+        #             sample_stats = OrderedDict(zip(col_names, table_row))
+        #             for value in table_row:
+        #                 if value == sample_name:
+        #                     # Generate individual sample page and return link
+        #                     sample_page = create_sample_html(objs,
+        #                                                      stats,
+        #                                                      sample_name,
+        #                                                      sample_stats,
+        #                                                      reports_dir)
+        #                     # Treat sample_name as a link to sample page
+        #                     index_html_file.write(TABLE_ROWS_LINK.format(
+        #                         html_page=sample_page,
+        #                         page_name=sample_page,
+        #                         link_name=sample_name))
+        #                 # If not the sample name, add as an unlinked cell value
+        #                 else:
+        #                     index_html_file.write(TABLE_ROWS.format(
+        #                         row_val=str(value)))
+        #             index_html_file.write(TABLE_ROW_FOOTER)
+        #             sample_pos += 1
+        #         index_html_file.write(TABLE_FOOTER)
+        #         index_html_file.write(TABLE_VISUALIZATION)
+        #     else:
+        #         _LOGGER.warning("No stats file '%s'", tsv_outfile_path)
+        #
+        #     # Create parent samples page with links to each sample
+        #     save_html(os.path.join(reports_dir, "samples.html"), create_sample_parent_html(objs, stats, reports_dir))
+        #
+        #     # Create objects pages
+        #     if not objs.dropna().empty:
+        #         for key in objs['key'].drop_duplicates().sort_values():
+        #             single_object = objs[objs['key'] == key]
+        #             create_object_html(single_object, objs, stats, reports_dir)
+        #
+        #     # Create parent objects page with links to each object type
+        #     save_html(os.path.join(reports_dir, "objects.html"), create_object_parent_html(objs, stats, reports_dir))
+        #     # Create status page with each sample's status listed
+        #     save_html(os.path.join(reports_dir, "status.html"), create_status_html(objs, stats, reports_dir))
+        #     # Add project level objects
+        #     prj_objs = create_project_objects()
+        #     index_html_file.write(prj_objs)
+        #
+        #     # Complete and close HTML file
+        #     index_html_file.write(HTML_FOOTER)
+        #     index_html_file.close()
+        #
+        #     # Return the path to the completed index.html file
+        #     return index_html_path
+        #
+        # # Generate HTML report
+        # index_html_path = create_index_html(objs, stats, columns)
+        # return index_html_path
 
     def render_jinja_template(self, name, args=dict()):
         """
