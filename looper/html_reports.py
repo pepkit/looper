@@ -692,7 +692,8 @@ class HTMLReportBuilder(object):
                 any reported objects for all samples
             :param list stats: a summary file of pipeline statistics for each
                 analyzed sample
-            :param str wd: path to the reports directory
+            :param str wd: the working directory of the current HTML page
+                being generated, enables navbar links relative to page
             :return str: Rendered parent objects HTML file
             """
             reports_dir = get_reports_dir()
@@ -721,7 +722,8 @@ class HTMLReportBuilder(object):
                 any reported objects for all samples
             :param list stats: a summary file of pipeline statistics for each
                 analyzed sample
-            :param str wd: path to the working directory
+            :param str wd: the working directory of the current HTML page
+                being generated, enables navbar links relative to page
             :return str: Rendered parent samples HTML file
             """
             reports_dir = get_reports_dir()
@@ -747,128 +749,99 @@ class HTMLReportBuilder(object):
             template_vars = dict(navbar=create_navbar(objs, stats, wd), labels=labels, pages=pages, header="Samples")
             return self.render_jinja_template("navbar_list_parent.html", template_vars)
 
-
-        def create_object_html(single_object, all_objects, stats):
+        def create_object_html(single_object, objs, stats, wd):
             """
             Generates a page for an individual object type with all of its
             plots from each sample
-            
-            :param panda.DataFrame single_object: contains reference 
+
+            :param panda.DataFrame single_object: contains reference
                 information for an individual object type for all samples
-            :param panda.DataFrame all_objects: project level dataframe 
+            :param panda.DataFrame objs: project level dataframe
                 containing any reported objects for all samples
             :param list stats: a summary file of pipeline statistics for each
                 analyzed sample
+            :param str wd: the working directory of the current HTML page
+                being generated, enables navbar links relative to page
             """
 
             reports_dir = get_reports_dir()
 
             # Generate object filename
             for key in single_object['key'].drop_duplicates().sort_values():
-                type = str(key)
-                filename = str(key) + ".html"
-            object_path = os.path.join(
-                            reports_dir, filename.replace(' ', '_').lower())
+                # even though it's always one element, loop to extract the data
+                current_name = str(key)
+                filename = current_name + ".html"
+            object_path = os.path.join(reports_dir, filename.replace(' ', '_').lower())
 
             if not os.path.exists(os.path.dirname(object_path)):
                 os.makedirs(os.path.dirname(object_path))
 
-            with open(object_path, 'w') as html_file:
-                html_file.write(HTML_HEAD_OPEN)
-                html_file.write(create_navbar(all_objects, stats, reports_dir))
-                html_file.write(HTML_HEAD_CLOSE)
-                html_file.write("\t\t<h4>{} objects</h4>\n".format(str(type)))
-                links = []
-                figures = []
-                warnings = []
-                for i, row in single_object.iterrows():
-                    # Set the PATH to a page for the sample. Catch any errors.
-                    try:
-                      page_path = os.path.join(
-                        self.prj.metadata.results_subdir,
-                        row['sample_name'], row['filename'])
-                    except AttributeError:
-                      err_msg = ("Sample: {} | " +
-                                 "Missing valid page path for: {}")
-                      # Report the sample that fails, if that information exists
-                      if str(row['sample_name']) and str(row['filename']):
-                        _LOGGER.warn(err_msg.format(row['sample_name'],
-                                                    row['filename']))
-                      else:
+            links = []
+            figures = []
+            warnings = []
+            for i, row in single_object.iterrows():
+                # Set the PATH to a page for the sample. Catch any errors.
+                try:
+                    page_path = os.path.join(self.prj.metadata.results_subdir, row['sample_name'], row['filename'])
+                except AttributeError:
+                    err_msg = ("Sample: {} | " + "Missing valid page path for: {}")
+                    # Report the sample that fails, if that information exists
+                    if str(row['sample_name']) and str(row['filename']):
+                        _LOGGER.warn(err_msg.format(row['sample_name'], row['filename']))
+                    else:
                         _LOGGER.warn(err_msg.format("Unknown sample"))
-                      page_path = ""
-                    if not page_path.strip():
-                      page_relpath = os.path.relpath(page_path, reports_dir)
-                    else:
-                      page_relpath = ""
+                    page_path = ""
+                if not page_path.strip():
+                    page_relpath = os.path.relpath(page_path, reports_dir)
+                else:
+                    page_relpath = ""
 
-                    # Set the PATH to the image/file. Catch any errors.
-                    # Check if the object is an HTML document
-                    if str(row['filename']).lower().endswith(".html"):
-                      image_path = page_path                      
-                    else:
-                      try:
-                        image_path = os.path.join(
-                          self.prj.metadata.results_subdir,
-                          row['sample_name'], row['anchor_image'])
-                      except AttributeError:
+                # Set the PATH to the image/file. Catch any errors.
+                # Check if the object is an HTML document
+                if str(row['filename']).lower().endswith(".html"):
+                    image_path = page_path
+                else:
+                    try:
+                        image_path = os.path.join(self.prj.metadata.results_subdir,
+                                                  row['sample_name'], row['anchor_image'])
+                    except AttributeError:
                         _LOGGER.warn(str(row))
-                        err_msg = ("Sample: {} | " +
-                                   "Missing valid image path for: {}")
+                        err_msg = ("Sample: {} | " + "Missing valid image path for: {}")
                         # Report the sample that fails, if that information exists
                         if str(row['sample_name']) and str(row['filename']):
-                          _LOGGER.warn(err_msg.format(row['sample_name'],
-                                                      row['filename']))
+                            _LOGGER.warn(err_msg.format(row['sample_name'], row['filename']))
                         else:
-                          _LOGGER.warn(err_msg.format("Unknown", "Unknown"))
+                            _LOGGER.warn(err_msg.format("Unknown", "Unknown"))
                         image_path = ""
 
-                    # Check for the presence of both the file and thumbnail
-                    if os.path.isfile(image_path) and os.path.isfile(page_path):
-                      image_relpath = os.path.relpath(image_path, reports_dir)
-                      _LOGGER.debug(str(image_relpath))
-                      # If the object has a valid image, use it!
-                      if str(image_path).lower().endswith(('.png', '.jpg', '.jpeg', '.svg', '.gif')):
-                          figures.append(OBJECTS_PLOTS.format(
-                                          path=page_relpath,
-                                          image=image_relpath,
-                                          label=str(row['sample_name'])))
-                      # Or if that "image" is an HTML document
-                      elif str(image_path).lower().endswith('.html'):
-                        links.append(GENERIC_LIST_ENTRY.format(
-                                      page=image_relpath,
-                                      label=str(row['sample_name'])))
-                      # Otherwise treat as a link
-                      elif os.path.isfile(page_path):
-                          links.append(GENERIC_LIST_ENTRY.format(
-                                        page=page_relpath,
-                                        label=str(row['sample_name'])))
-                      else:
-                          warnings.append(str(row['filename']))
-                    # If no thumbnail image is present, add as a link
+                # Check for the presence of both the file and thumbnail
+                if os.path.isfile(image_path) and os.path.isfile(page_path):
+                    image_relpath = os.path.relpath(image_path, reports_dir)
+                    _LOGGER.debug(str(image_relpath))
+                    # If the object has a valid image, use it!
+                    if str(image_path).lower().endswith(('.png', '.jpg', '.jpeg', '.svg', '.gif')):
+                        figures.append([page_relpath, str(row['sample_name']), image_relpath])
+                    # Or if that "image" is an HTML document
+                    elif str(image_path).lower().endswith('.html'):
+                        links.append([str(row['sample_name']), image_relpath])
+                    # Otherwise treat as a link
                     elif os.path.isfile(page_path):
-                      links.append(GENERIC_LIST_ENTRY.format(
-                                    page=page_relpath,
-                                    label=str(row['sample_name'])))
+                        links.append([str(row['sample_name']), page_relpath])
                     else:
-                      warnings.append(str(row['filename']))
-
-                html_file.write(GENERIC_LIST_HEADER)
-                html_file.write("\n".join(links))
-                html_file.write(GENERIC_LIST_FOOTER)
-                html_file.write("\t\t\t<hr>\n")
-                html_file.write("\n".join(figures))
-                html_file.write("\t\t\t<hr>\n")
-                html_file.write(HTML_FOOTER)
-                html_file.close()
+                        warnings.append(str(row['filename']))
+                # If no thumbnail image is present, add as a link
+                elif os.path.isfile(page_path):
+                    links.append([str(row['sample_name']), page_relpath])
+                else:
+                    warnings.append(str(row['filename']))
 
             if warnings:
                 _LOGGER.warning("create_object_html: " +
-                                filename.replace(' ', '_').lower() +
-                                " references nonexistent object files")
+                                filename.replace(' ', '_').lower() + " references nonexistent object files")
                 _LOGGER.debug(filename.replace(' ', '_').lower() +
-                              " nonexistent files: " +
-                              ','.join(str(file) for file in warnings))
+                              " nonexistent files: " + ','.join(str(x) for x in warnings))
+            template_vars = dict(navbar=create_navbar(objs, stats, wd), name=current_name, figures=figures, links=links)
+            save_html(object_path, self.render_jinja_template("object.html", args=template_vars))
 
         def create_sample_html(objs, stats, sample_name, sample_stats, wd):
             """
@@ -1002,7 +975,6 @@ class HTMLReportBuilder(object):
             template_vars = dict(navbar=create_navbar(objs, stats, wd), sample_name=sample_name, stats_file_path=stats_file_path, profile_file_path=profile_file_path, commands_file_path=commands_file_path, log_file_path=log_file_path, button_class=button_class, sample_stats=sample_stats, flag=flag, links=links, figures=figures)
             save_html(html_page, self.render_jinja_template("sample.html", template_vars))
             return sample_page_relpath
-
 
         def create_status_html(objs, stats, wd):
             """
@@ -1398,7 +1370,7 @@ class HTMLReportBuilder(object):
             if not objs.dropna().empty:
                 for key in objs['key'].drop_duplicates().sort_values():
                     single_object = objs[objs['key'] == key]
-                    create_object_html(single_object, objs, stats)
+                    create_object_html(single_object, objs, stats, reports_dir)
 
             # Create parent objects page with links to each object type
             save_html(os.path.join(reports_dir, "objects.html"), create_object_parent_html(objs, stats, reports_dir))

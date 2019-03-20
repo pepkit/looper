@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+    <head>
+      {% include "head.html" %}
+    </head>
+    {{ navbar }} 
+    <body>
+    	<div id="top"></div>
+    	<div class="container" style="margin-top:20px">
+    		<h4>{{ name }} objects</h4>
+    		<div class='container-fluid'>
+	        	{% if links[0] is defined or figures[0] is defined %}
+	        	{% endif %}
+	        	<!-- Expects a 2 lists of lists: figures and links -->
+	        	{% if links[0] is defined %}
+	        		<ul style="list-style-type:circle">
+	        		{% for link in links %}
+			    		<li><a href='{{ link[1] }}'>{{ link[0] }}</a></li>
+	        		{% endfor %}
+	        		</ul> 
+	        	{% endif %}
+	        	{% if figures[0] is defined %}
+	        		<hr>
+	        		{% for figure in figures %}
+			            <figure class="figure">
+			                <a href='{{ figure[1] }}'>
+			                	<img style="width: 200px; height: 200px" src='{{ figure[2] }}' class="figure-img img-fluid rounded" alt="">
+			                </a>
+			                <a href='{{ figure[1] }} '>
+			                	<figcaption class="figure-caption text-left">'{{ figure[0] }}'</figcaption>
+			                </a>
+			            </figure>
+	        		{% endfor %}
+	        	{% endif %}
+	    	</div>
+    	</div>
+    </body>
+    <footer>
+	  {% include "footer.html" %}
+	</footer>
+</html>
