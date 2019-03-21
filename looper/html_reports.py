@@ -554,7 +554,7 @@ class HTMLReportBuilder(object):
                                     samples_html_page=dropdown_relpaths_samples, menu_name_objects="Objects",
                                     menu_name_samples="Samples", sample_names=sample_names, all_samples=samples_relpath,
                                     all_objects=objects_relpath, version=v)
-            return self.render_jinja_template("my_navbar.html", template_vars)
+            return self.render_jinja_template("navbar.html", template_vars)
 
         def create_project_objects():
             """ Add project level summaries as additional figures/links """
