@@ -143,27 +143,9 @@
                   ],
                 });
               } );
-    
+
               var table = document.getElementById("data-table");
-    
-              function graphCol(colname){
-                var table = document.getElementById("data-table");
-                /* Creates a graph using Plotly.js */
-                categories = getX();
-                Ydata = getY(colname);
-    
-                var data = [{
-                  x: categories,
-                  y: Ydata,
-                  type: 'bar',
-                }];
-    
-                var layout = {
-                  title: colname
-                };
-                chart = document.getElementById('charts');
-                Plotly.newPlot(chart, data, layout);
-              }
+
               function getX(){
                 /* Get the sample names (the x values in the bar chart) */
                 var rows = [];
@@ -189,12 +171,52 @@
                 }
                 return data;
               }
-    
+
+
+
+
+
+
+
+
+
+              function graphCol(colname){
+                /* Creates a graph using Plotly.js */
+                categories = getX();
+                Ydata = getY(colname);
+
+                var data = [{
+                  x: categories,
+                  y: Ydata,
+                  type: 'bar',
+                }];
+
+                var layout = {
+                  title: colname
+                };
+                chart = document.getElementById('charts');
+                Plotly.newPlot(chart, data, layout);
+              }
+
               function columnClicked(colname){
                 /* The function that is called when a column's header is clicked */
                 graphCol(colname);
               }
 
+              function modifyNumericColumns(){
+                /* Changes a column's header if the data is visualizable */
+
+                var table = document.getElementById("data-table");
+                for(var i = 0; i < table.rows[1].cells.length; i++) {
+                    //iterate through first row, which will show if a column's data is numeric
+                    if(!isNaN(table.rows[1].cells[i].textContent)){
+                      element = table.rows[0].cells[i]
+                      text = element.textContent;
+  $("#plot-cols").append("<li><a href='#' title='Click to visualize this column' onclick='columnClicked(text);return false;'>" + text + "</a></li>");
+                    }
+                }
+              }
+              modifyNumericColumns();
             </script>
       </div>
     </body>
