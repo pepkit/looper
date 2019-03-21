@@ -498,8 +498,6 @@ class Summarizer(Executor):
         # Next, looper can run custom summarizers, if they exist.
         all_protocols = [sample.protocol for sample in self.prj.samples]
 
-        _LOGGER.debug("Protocols: " + str(all_protocols))
-        _LOGGER.debug(self.prj.interfaces_by_protocol)
         for protocol in set(all_protocols):
             try:
                 ifaces = self.prj.interfaces_by_protocol[protocol]
@@ -515,7 +513,6 @@ class Summarizer(Executor):
                     for summarizer in set(summarizers):
                         summarizer_abspath = os.path.join(
                             os.path.dirname(iface.pipe_iface_file), summarizer)
-                        _LOGGER.debug([summarizer_abspath, self.prj.config_file])
                         try:
                             subprocess.call([summarizer_abspath, self.prj.config_file])
                         except OSError:

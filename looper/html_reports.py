@@ -31,18 +31,10 @@ class HTMLReportBuilder(object):
         super(HTMLReportBuilder, self).__init__()
         self.prj = prj
         self.j_env = get_jinja_env()
+        self.reports_dir = self.get_reports_dir()
 
     def __call__(self, objs, stats, columns):
         """ Do the work of the subcommand/program. """
-
-        def get_reports_dir():
-            """
-            Get the reports directory path depending on the subproject activation status
-
-            :return str: path to the reports directory
-            """
-            rep_dir_name = "reports" if self.prj.subproject is None else "reports_" + self.prj.subproject
-            return os.path.join(self.prj.metadata.output_dir, rep_dir_name)
 
         def get_index_html_path():
             """
@@ -68,8 +60,7 @@ class HTMLReportBuilder(object):
                 being generated, enables navbar links relative to page
             :return str: Rendered parent objects HTML file
             """
-            reports_dir = get_reports_dir()
-            object_parent_path = os.path.join(reports_dir, "objects.html")
+            object_parent_path = os.path.join(self.reports_dir, "objects.html")
 
             if not os.path.exists(os.path.dirname(object_parent_path)):
                 os.makedirs(os.path.dirname(object_parent_path))
@@ -78,8 +69,8 @@ class HTMLReportBuilder(object):
             if not objs.empty:
                 for key in objs['key'].drop_duplicates().sort_values():
                     page_name = key + ".html"
-                    page_path = os.path.join(reports_dir, page_name.replace(' ', '_').lower())
-                    page_relpath = os.path.relpath(page_path, reports_dir)
+                    page_path = os.path.join(self.reports_dir, page_name.replace(' ', '_').lower())
+                    page_relpath = os.path.relpath(page_path, self.reports_dir)
                     pages.append(page_relpath)
                     labels.append(key)
 
@@ -98,8 +89,7 @@ class HTMLReportBuilder(object):
                 being generated, enables navbar links relative to page
             :return str: Rendered parent samples HTML file
             """
-            reports_dir = get_reports_dir()
-            sample_parent_path = os.path.join(reports_dir, "samples.html")
+            sample_parent_path = os.path.join(self.reports_dir, "samples.html")
 
             if not os.path.exists(os.path.dirname(sample_parent_path)):
                 os.makedirs(os.path.dirname(sample_parent_path))
@@ -113,8 +103,8 @@ class HTMLReportBuilder(object):
                 # Confirm sample directory exists, then build page
                 if os.path.exists(sample_dir):
                     page_name = sample_name + ".html"
-                    page_path = os.path.join(reports_dir, page_name.replace(' ', '_').lower())
-                    page_relpath = os.path.relpath(page_path, reports_dir)
+                    page_path = os.path.join(self.reports_dir, page_name.replace(' ', '_').lower())
+                    page_relpath = os.path.relpath(page_path, self.reports_dir)
                     pages.append(page_relpath)
                     labels.append(sample_name)
 
@@ -136,14 +126,12 @@ class HTMLReportBuilder(object):
                 being generated, enables navbar links relative to page
             """
 
-            reports_dir = get_reports_dir()
-
             # Generate object filename
             for key in single_object['key'].drop_duplicates().sort_values():
                 # even though it's always one element, loop to extract the data
                 current_name = str(key)
                 filename = current_name + ".html"
-            object_path = os.path.join(reports_dir, filename.replace(' ', '_').lower())
+            object_path = os.path.join(self.reports_dir, filename.replace(' ', '_').lower())
 
             if not os.path.exists(os.path.dirname(object_path)):
                 os.makedirs(os.path.dirname(object_path))
@@ -164,7 +152,7 @@ class HTMLReportBuilder(object):
                         _LOGGER.warn(err_msg.format("Unknown sample"))
                     page_path = ""
                 if not page_path.strip():
-                    page_relpath = os.path.relpath(page_path, reports_dir)
+                    page_relpath = os.path.relpath(page_path, self.reports_dir)
                 else:
                     page_relpath = ""
 
@@ -188,8 +176,7 @@ class HTMLReportBuilder(object):
 
                 # Check for the presence of both the file and thumbnail
                 if os.path.isfile(image_path) and os.path.isfile(page_path):
-                    image_relpath = os.path.relpath(image_path, reports_dir)
-                    _LOGGER.debug(str(image_relpath))
+                    image_relpath = os.path.relpath(image_path, self.reports_dir)
                     # If the object has a valid image, use it!
                     if str(image_path).lower().endswith(('.png', '.jpg', '.jpeg', '.svg', '.gif')):
                         figures.append([page_relpath, str(row['sample_name']), image_relpath])
@@ -230,9 +217,8 @@ class HTMLReportBuilder(object):
                 being generated, enables navbar links relative to page
             :return str: path to the produced HTML page
             """
-            reports_dir = get_reports_dir()
             html_filename = sample_name + ".html"
-            html_page = os.path.join(reports_dir, html_filename.replace(' ', '_').lower())
+            html_page = os.path.join(self.reports_dir, html_filename.replace(' ', '_').lower())
             sample_page_relpath = os.path.relpath(html_page, self.prj.metadata.output_dir)
             single_sample = _pd.DataFrame() if objs.empty else objs[objs['sample_name'] == sample_name]
             if not os.path.exists(os.path.dirname(html_page)):
@@ -270,7 +256,6 @@ class HTMLReportBuilder(object):
                     profile_name = str(single_sample.iloc[0]['annotation']) + "_profile.tsv"
                     command_name = str(single_sample.iloc[0]['annotation']) + "_commands.sh"
                 flag = get_flags(sample_dir)
-                _LOGGER.debug("Flag(s) found for sample {s}: {f}".format(s=sample_name, f=", ".join(flag)))
                 if not flag:
                     button_class = "btn btn-danger"
                     flag = "Missing"
@@ -289,13 +274,13 @@ class HTMLReportBuilder(object):
                         flag = flag_dict["flag"]
                 # get links to the files
                 stats_file_path = os.path.relpath(os.path.join(
-                    self.prj.metadata.results_subdir, sample_name, "stats.tsv"), reports_dir)
+                    self.prj.metadata.results_subdir, sample_name, "stats.tsv"), self.reports_dir)
                 profile_file_path = os.path.relpath(os.path.join(
-                    self.prj.metadata.results_subdir, sample_name, profile_name), reports_dir)
+                    self.prj.metadata.results_subdir, sample_name, profile_name), self.reports_dir)
                 commands_file_path = os.path.relpath(os.path.join(
-                    self.prj.metadata.results_subdir, sample_name, command_name), reports_dir)
+                    self.prj.metadata.results_subdir, sample_name, command_name), self.reports_dir)
                 log_file_path = os.path.relpath(os.path.join(
-                    self.prj.metadata.results_subdir, sample_name, log_name), reports_dir)
+                    self.prj.metadata.results_subdir, sample_name, log_name), self.reports_dir)
 
             links = []
             figures = []
@@ -311,7 +296,7 @@ class HTMLReportBuilder(object):
                             image_path = os.path.join(
                                 self.prj.metadata.results_subdir,
                                 sample_name, row['anchor_image'])
-                            image_relpath = os.path.relpath(image_path, reports_dir)
+                            image_relpath = os.path.relpath(image_path, self.reports_dir)
                         except AttributeError:
                             image_path = ""
                             image_relpath = ""
@@ -321,7 +306,7 @@ class HTMLReportBuilder(object):
                         page_path = os.path.join(
                             self.prj.metadata.results_subdir,
                             sample_name, row['filename'])
-                        page_relpath = os.path.relpath(page_path, reports_dir)
+                        page_relpath = os.path.relpath(page_path, self.reports_dir)
                         # If the object has a thumbnail image, add as a figure
                         if os.path.isfile(image_path) and os.path.isfile(page_path):
                             # If the object has a valid image, add as a figure
@@ -361,7 +346,6 @@ class HTMLReportBuilder(object):
                 being generated, enables navbar links relative to page
             :return str: rendered status HTML file
             """
-            reports_dir = get_reports_dir()
             status_warning = False
             sample_warning = []
             log_paths = []
@@ -395,7 +379,6 @@ class HTMLReportBuilder(object):
                 if os.path.exists(sample_dir):
                     # Grab the status flag for the current sample
                     flag = get_flags(sample_dir)
-                    _LOGGER.debug("Flag(s) found for sample {s}: {f}".format(s=sample, f=", ".join(flag)))
                     if not flag:
                         button_class = "table-danger"
                         flag = "Missing"
@@ -415,8 +398,8 @@ class HTMLReportBuilder(object):
 
                     # get first column data (sample name/link)
                     page_name = sample_name + ".html"
-                    page_path = os.path.join(reports_dir, page_name.replace(' ', '_').lower())
-                    page_relpath = os.path.relpath(page_path, reports_dir)
+                    page_path = os.path.join(self.reports_dir, page_name.replace(' ', '_').lower())
+                    page_relpath = os.path.relpath(page_path, self.reports_dir)
                     sample_paths.append(page_relpath)
                     sample_link_names.append(sample_name)
                     # get second column data (status/flag)
@@ -427,7 +410,7 @@ class HTMLReportBuilder(object):
                         self.prj.metadata.results_subdir, sample_name, '*log.md'))[0])) if single_sample.empty \
                         else str(single_sample.iloc[0]['annotation']) + "_log.md"
                     log_file = os.path.join(self.prj.metadata.results_subdir, sample_name, log_name)
-                    file_link = os.path.relpath(log_file, reports_dir) if os.path.isfile(log_file) else ""
+                    file_link = os.path.relpath(log_file, self.reports_dir) if os.path.isfile(log_file) else ""
                     link_name = log_name if os.path.isfile(log_file) else ""
                     log_link_names.append(link_name)
                     log_paths.append(file_link)
@@ -481,16 +464,17 @@ class HTMLReportBuilder(object):
                              row_classes=row_classes, flags=flags, times=times, mems=mems, version=v)
             return self.render_jinja_template("status.html", template_vars)
 
-        def _get_navbar_dropdown_data_objects(objs, reports_dir, wd):
+        def _get_navbar_dropdown_data_objects(objs, rep_dir, wd):
             relpaths = []
             df_keys = objs['key'].drop_duplicates().sort_values()
             for key in df_keys:
                 page_name = key + ".html"
-                page_path = os.path.join(reports_dir, page_name.replace(' ', '_').lower())
+                page_path = os.path.join(rep_dir, page_name.replace(' ', '_').lower())
+                _LOGGER.debug("page path: {}".format(page_path))
                 relpaths.append(os.path.relpath(page_path, wd))
             return relpaths, df_keys
 
-        def _get_navbar_dropdown_data_samples(stats, reports_dir, wd):
+        def _get_navbar_dropdown_data_samples(stats, rep_dir, wd):
             relpaths = []
             sample_names = []
             for sample in stats:
@@ -498,7 +482,7 @@ class HTMLReportBuilder(object):
                     if entry == "sample_name":
                         sample_name = str(val)
                         page_name = sample_name + ".html"
-                        page_path = os.path.join(reports_dir, page_name.replace(' ', '_').lower())
+                        page_path = os.path.join(rep_dir, page_name.replace(' ', '_').lower())
                         relpath = os.path.relpath(page_path, wd)
                         relpaths.append(relpath)
                         sample_names.append(sample_name)
@@ -512,7 +496,6 @@ class HTMLReportBuilder(object):
             Return a string containing the navbar prebuilt html.
             Generates links to each page relative to the directory
             of interest.
-
             :param pandas.DataFrame objs: project results dataframe containing
                 object data
             :param list stats: a summary file of pipeline statistics for each
@@ -522,38 +505,42 @@ class HTMLReportBuilder(object):
             """
             # paths
             index_html_path = get_index_html_path()
-            reports_dir = get_reports_dir()
             index_page_relpath = os.path.relpath(index_html_path, wd)
-            status_page = os.path.join(reports_dir, "status.html")
+            status_page = os.path.join(self.reports_dir, "status.html")
             status_relpath = os.path.relpath(status_page, wd)
-            objects_page = os.path.join(reports_dir, "objects.html")
+            objects_page = os.path.join(self.reports_dir, "objects.html")
             objects_relpath = os.path.relpath(objects_page, wd)
-            samples_page = os.path.join(reports_dir, "samples.html")
+            samples_page = os.path.join(self.reports_dir, "samples.html")
             samples_relpath = os.path.relpath(samples_page, wd)
-            dropdown_keys_objects = dropdown_relpaths_objects = dropdown_relpaths_samples = sample_names = None
+            dropdown_keys_objects = None
+            dropdown_relpaths_objects = None
+            dropdown_relpaths_samples = None
+            sample_names = None
             if not objs.dropna().empty:
                 # If the number of objects is 20 or less, use a drop-down menu
                 if len(objs['key'].drop_duplicates()) <= 20:
-                    navbar_dropdown_data_objects = _get_navbar_dropdown_data_objects(objs, reports_dir, wd)
+                    navbar_dropdown_data_objects = _get_navbar_dropdown_data_objects(objs, self.reports_dir, wd)
                     dropdown_relpaths_objects = navbar_dropdown_data_objects[0]
                     dropdown_keys_objects = navbar_dropdown_data_objects[1]
                 else:
                     dropdown_relpaths_objects = objects_relpath
             if stats:
                 if len(stats) <= 20:
-                    navbar_dropdown_data_samples = _get_navbar_dropdown_data_samples(stats, reports_dir, wd)
+                    navbar_dropdown_data_samples = _get_navbar_dropdown_data_samples(stats, self.reports_dir, wd)
                     dropdown_relpaths_samples = navbar_dropdown_data_samples[0]
                     sample_names = navbar_dropdown_data_samples[1]
                 else:
                     # Create a menu link to the samples parent page
                     dropdown_relpaths_samples = samples_relpath
+            _LOGGER.debug("dropdown_keys_objects: {}".format(dropdown_keys_objects))
+            _LOGGER.debug("objects_html_page: {}".format(dropdown_relpaths_objects))
             template_vars = dict(logo=NAVBAR_LOGO, index_html=index_page_relpath, status_html_page=status_relpath,
-                                    status_page_name="Status", dropdown_keys_objects=dropdown_keys_objects,
-                                    objects_page_name="Objects", samples_page_name="Samples",
-                                    objects_html_page=dropdown_relpaths_objects,
-                                    samples_html_page=dropdown_relpaths_samples, menu_name_objects="Objects",
-                                    menu_name_samples="Samples", sample_names=sample_names, all_samples=samples_relpath,
-                                    all_objects=objects_relpath, version=v)
+                                 status_page_name="Status", dropdown_keys_objects=dropdown_keys_objects,
+                                 objects_page_name="Objects", samples_page_name="Samples",
+                                 objects_html_page=dropdown_relpaths_objects,
+                                 samples_html_page=dropdown_relpaths_samples, menu_name_objects="Objects",
+                                 menu_name_samples="Samples", sample_names=sample_names, all_samples=samples_relpath,
+                                 all_objects=objects_relpath)
             return self.render_jinja_template("navbar.html", template_vars)
 
         def create_project_objects():
@@ -606,98 +593,6 @@ class HTMLReportBuilder(object):
             template_vars = dict(figures=figures, links=links)
             return self.render_jinja_template("project_object.html", template_vars)
 
-        def create_project_objects_old():
-            """ Add project level summaries as additional figures/links """
-
-            all_protocols = [sample.protocol for sample in self.prj.samples]
-
-            # For each protocol report the project summarizers' results
-            for protocol in set(all_protocols):
-                obj_figs = []
-                num_figures = 0
-                obj_links = []
-                warnings = []
-                ifaces = self.prj.interfaces_by_protocol[protocol]
-
-                # Check the interface files for summarizers
-                for iface in ifaces:
-                    pl = iface.fetch_pipelines(protocol)
-                    summary_results = iface.get_attribute(pl, "summary_results")
-
-                    # Build the HTML for each summary result
-                    if summary_results is not None:
-                        for result in summary_results:
-                            caption = str(result['caption'])
-                            result_file = str(result['path']).replace(
-                                            '{name}', str(self.prj.name))
-                            result_img = str(result['thumbnail_path']).replace(
-                                            '{name}', str(self.prj.name))
-                            search = os.path.join(self.prj.metadata.output_dir,
-                                                  '{}'.format(result_file))
-
-                            # Confirm the file itself was produced
-                            if glob.glob(search):
-                                file_path = str(glob.glob(search)[0])
-                                file_relpath = os.path.relpath(
-                                                file_path,
-                                                self.prj.metadata.output_dir)
-                                search = os.path.join(self.prj.metadata.output_dir,
-                                                      '{}'.format(result_img))
-
-                                # Add as a figure if thumbnail exists
-                                if glob.glob(search):
-                                    img_path = str(glob.glob(search)[0])
-                                    img_relpath = os.path.relpath(
-                                                    img_path,
-                                                    self.prj.metadata.output_dir)
-
-                                    # Add to single row
-                                    if num_figures < 3:
-                                        obj_figs.append(HTML_FIGURE.format(
-                                            path=file_relpath,
-                                            image=img_relpath,
-                                            label='{}: Click to see full-size figure'.format(caption)))
-                                        num_figures += 1
-
-                                    # Close the previous row and start a new one
-                                    else:
-                                        num_figures = 1
-                                        obj_figs.append("\t\t\t</div>")
-                                        obj_figs.append("\t\t\t<div class='row justify-content-start'>")
-                                        obj_figs.append(HTML_FIGURE.format(
-                                            path=file_relpath,
-                                            image=img_relpath,
-                                            label='{}: Click to see full-size figure'.format(caption)))
-
-                                # No thumbnail exists, add as a link in a list
-                                else:
-                                    obj_links.append(OBJECTS_LINK.format(
-                                        path=file_relpath, label='{}: Click to see full-size figure'.format(caption)))
-
-                            else:
-                                warnings.append(caption)
-                    else:
-                        _LOGGER.debug("No custom summarizers were found for this pipeline. Proceeded with default only.")
-                if warnings:
-                    _LOGGER.warning("Summarizer was unable to find: " +
-                                 ', '.join(str(file) for file in warnings))
-
-                while num_figures < 3:
-                    # Add additional empty columns for clean format
-                    obj_figs.append("\t\t\t  <div class='col'>")
-                    obj_figs.append("\t\t\t  </div>")
-                    num_figures += 1
-
-                return ("\n".join(["\t\t<h5>Looper project objects</h5>",
-                                   "\t\t<div class='container'>",
-                                   "\t\t\t<div class='row justify-content-start'>",
-                                   "\n".join(obj_figs),
-                                   "\t\t\t</div>",
-                                   "\t\t</div>",
-                                   OBJECTS_LIST_HEADER,
-                                   "\n".join(obj_links),
-                                   OBJECTS_LIST_FOOTER]))
-
         def create_index_html(objs, stats, col_names):
             """
             Generate an index.html style project home page w/ sample summary
@@ -709,7 +604,7 @@ class HTMLReportBuilder(object):
                 analyzed sample
             """
 
-            reports_dir = get_reports_dir()
+            _LOGGER.debug("Reports dir: {}".format(self.reports_dir))
 
             if not objs.dropna().empty:
                 objs.drop_duplicates(keep='last', inplace=True)
@@ -729,7 +624,7 @@ class HTMLReportBuilder(object):
                 sample_pos = 0
                 col_pos = 0
                 num_columns = len(col_names)
-                table_row_data=[]
+                table_row_data = []
                 for row in stats:
                     # Match row value to column
                     # Row is disordered and does not handle empty cells
@@ -746,37 +641,35 @@ class HTMLReportBuilder(object):
                     _LOGGER.debug("processing sample: {}".format(sample_name))
                     # Order table_row by col_names
                     sample_stats = OrderedDict(zip(col_names, table_row))
-                    table_cell_data=[]
+                    table_cell_data = []
                     for value in table_row:
                         if value == sample_name:
                             # Generate individual sample page and return link
-                            sample_page = create_sample_html(objs, stats, sample_name, sample_stats, reports_dir)
+                            sample_page = create_sample_html(objs, stats, sample_name, sample_stats, self.reports_dir)
                             # Treat sample_name as a link to sample page
                             data = [sample_page, sample_name]
                         # If not the sample name, add as an unlinked cell value
                         else:
                             data = str(value)
                         table_cell_data.append(data)
-                        # _LOGGER.debug("table cell: {}".format(table_cell_data))
                     sample_pos += 1
                     table_row_data.append(table_cell_data)
-                    # _LOGGER.debug("table row: {}".format(table_row_data))
             else:
                 _LOGGER.warning("No stats file '%s'", tsv_outfile_path)
 
             # Create parent samples page with links to each sample
-            save_html(os.path.join(reports_dir, "samples.html"), create_sample_parent_html(objs, stats, reports_dir))
+            save_html(os.path.join(self.reports_dir, "samples.html"), create_sample_parent_html(objs, stats, self.reports_dir))
 
             # Create objects pages
             if not objs.dropna().empty:
                 for key in objs['key'].drop_duplicates().sort_values():
                     single_object = objs[objs['key'] == key]
-                    create_object_html(single_object, objs, stats, reports_dir)
+                    create_object_html(single_object, objs, stats, self.reports_dir)
 
             # Create parent objects page with links to each object type
-            save_html(os.path.join(reports_dir, "objects.html"), create_object_parent_html(objs, stats, reports_dir))
+            save_html(os.path.join(self.reports_dir, "objects.html"), create_object_parent_html(objs, stats, self.reports_dir))
             # Create status page with each sample's status listed
-            save_html(os.path.join(reports_dir, "status.html"), create_status_html(objs, stats, reports_dir))
+            save_html(os.path.join(self.reports_dir, "status.html"), create_status_html(objs, stats, self.reports_dir))
             # Add project level objects
             project_objects = create_project_objects()
             # Complete and close HTML file
@@ -788,7 +681,6 @@ class HTMLReportBuilder(object):
         index_html_path = create_index_html(objs, stats, columns)
         return index_html_path
 
-
     def render_jinja_template(self, name, args=dict()):
         """
 
@@ -799,6 +691,15 @@ class HTMLReportBuilder(object):
         assert isinstance(args, dict), "args has to be a dict"
         template = self.j_env.get_template(name)
         return template.render(**args)
+
+    def get_reports_dir(self):
+        """
+        Get the reports directory path depending on the subproject activation status
+
+        :return str: path to the reports directory
+        """
+        rep_dir_name = "reports" if self.prj.subproject is None else "reports_" + self.prj.subproject
+        return os.path.join(self.prj.metadata.output_dir, rep_dir_name)
 
 
 def save_html(path, template):

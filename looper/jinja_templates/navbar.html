@@ -12,10 +12,10 @@
               <li class="nav-item">
                 <a class="nav-link" href="{{status_html_page}}">{{status_page_name}}</a>
               </li>
-              <!-- if there is more than 20 objects or 0 -->
               {% if dropdown_keys_objects is none %}
-              <!-- no objects at all -->
+              <!-- there is more than 20 objects or 0 -->
                 {% if objects_html_page is none %}
+                <!-- no objects at all -->
                   <li class="nav-item">
                     <!-- intentionally no href attribute, inactive link -->
                     <a class="nav-link">{{objects_page_name}}</a>
@@ -25,11 +25,11 @@
                     <a class="nav-link" href="{{objects_html_page}}">{{objects_page_name}}</a>
                   </li>  
                 {% endif %}
-              <!-- if there is less than 20 objects -->
               {% else %}
+               <!-- there is less than 20 objects -->
                 <li class="nav-item dropdown">
                   <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    {{menu_name_objects}}
+                    {{ menu_name_objects }}
                   </a>
                   <div class="dropdown-menu" aria-labelledby="navbarDropdown">
                     <a class="dropdown-item" href="{{ all_objects }}">All objects</a>
@@ -69,5 +69,4 @@
             </ul>
           </div>
         </nav>
-
 
