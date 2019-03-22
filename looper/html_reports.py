@@ -397,13 +397,11 @@ class HTMLReportBuilder(object):
                     flags.append(flag)
                     # get third column data (log file/link)
                     single_sample = _pd.DataFrame() if objs.empty else objs[objs['sample_name'] == sample_name]
-                    log_name = os.path.basename(str(glob.glob(os.path.join(
-                        self.prj.metadata.results_subdir, sample_name, '*log.md'))[0])) if single_sample.empty \
-                        else str(single_sample.iloc[0]['annotation']) + "_log.md"
+                    log_name = _match_file_for_sample(sample_name, "log.md", self.prj.metadata.results_subdir) \
+                        if single_sample.empty else str(single_sample.iloc[0]['annotation']) + "_log.md"
                     log_file = os.path.join(self.prj.metadata.results_subdir, sample_name, log_name)
-                    file_link = os.path.relpath(log_file, self.reports_dir) if os.path.isfile(log_file) else ""
-                    link_name = log_name if os.path.isfile(log_file) else ""
-                    log_link_names.append(link_name)
+                    file_link = _get_relpath_to_file(log_name, sample_name, self.prj.metadata.results_subdir, self.reports_dir)
+                    log_link_names.append(log_name)
                     log_paths.append(file_link)
                     # get fourth column data (runtime)
                     time = "Unknown"

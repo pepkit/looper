@@ -29,10 +29,16 @@
 	                  					</td>
 	                  					<td class='{{ row_classes[i] }}'>
 	                  						{{ flags[i] }}
-	                  					</td>	
+	                  					</td>
+	                  					{% if log_paths[i] is none %}
+	                  					<td>
+	                  						NA
+	                  					</td>
+	                  					{% else %}
 	                  					<td style="cursor:pointer" onclick="location.href='{{ log_paths[i] }}'">
 	                  						<a href="{{ log_paths[i] }}" target="_top">{{ log_link_names[i] }}</a>
 	                  					</td>
+	                  					{% endif %}
 	                  					<td>
 	                  						{{ times[i] }}
 	                  					</td>
