@@ -97,6 +97,7 @@
         var currCol = statsTable[i];
 
         if(typeof(currCol[1]) !== "number"){ // change so that if the first column is missing values, it will look in the other rows
+            i++;
             continue;
         }
 
