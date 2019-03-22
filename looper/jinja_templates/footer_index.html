@@ -96,7 +96,7 @@
     while(typeof(statsTable[i]) !== "undefined"){
         var currCol = statsTable[i];
 
-        if(typeof(currCol[1]) !== "number"){ // change so that if the first column is missing values, it will look in the other rows
+        if(typeof(parseFloat(currCol[1])) !== "number"){ // change so that if the first column is missing values, it will look in the other rows
             i++;
             continue;
         }
@@ -107,7 +107,7 @@
         var colValues = [];
         var j = 1;
         while(typeof(currCol[j]) !== "undefined"){
-            colValues.push(currCol[j]);
+            colValues.push(parseFloat(currCol[j]));
             j++;
         }
         console.log("column values saved");
