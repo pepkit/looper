@@ -8,14 +8,29 @@
     <body>
     	<div class="container">
         	<h4>{{ sample_name }}</h4>
-            <hr>
             <div class="container-fluid">
                 <p class="text-left">
                 <button type="button" class='{{ button_class }}' disabled>STATUS: {{ flag }}</button>
-                <a class="btn btn-outline-dark ml-2" href='{{ log_file_path }}' role="button">Log file</a>
-                <a class="btn btn-outline-dark ml-2" href='{{ profile_file_path }}' role="button">Pipeline profile</a>
-                <a class="btn btn-outline-dark ml-2" href='{{ commands_file_path }}' role="button">Pipeline commands</a>
-                <a class='btn btn-outline-dark ml-2' href='{{ stats_file_path }}' role='button'>Stats summary file</a>         
+                {% if log_file_path is none %}
+                    <a class="btn btn-outline-dark ml-2 disabled" href='{{ log_file_path }}' role="button">Log file</a>
+                {% else %}
+                    <a class="btn btn-outline-dark ml-2" href='{{ log_file_path }}' role="button">Log file</a>
+                {% endif %}
+                {% if profile_file_path is none %}
+                    <a class="btn btn-outline-dark ml-2 disabled" href='{{ profile_file_path }}' role="button">Pipeline profile</a>
+                {% else %}
+                    <a class="btn btn-outline-dark ml-2" href='{{ profile_file_path }}' role="button">Pipeline profile</a>
+                {% endif %}
+                {% if commands_file_path is none %}
+                    <a class="btn btn-outline-dark ml-2 disabled" href='{{ commands_file_path }}' role="button">Pipeline commands</a>
+                {% else %}
+                    <a class="btn btn-outline-dark ml-2" href='{{ commands_file_path }}' role="button">Pipeline commands</a>
+                {% endif %}
+                {% if stats_file_path is none %}
+                    <a class="btn btn-outline-dark ml-2 disabled" href='{{ stats_file_path }}' role="button">Stats summary file</a>
+                {% else %}
+                    <a class="btn btn-outline-dark ml-2" href='{{ stats_file_path }}' role="button">Stats summary file</a>
+                {% endif %}
                 </p>
             </div>
             <hr>
