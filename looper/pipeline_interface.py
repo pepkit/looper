@@ -11,6 +11,7 @@ else:
 import warnings
 
 import yaml
+from yaml import SafeLoader
 
 from .exceptions import InvalidResourceSpecificationException, \
     MissingPipelineConfigurationException, PipelineInterfaceConfigError
@@ -54,7 +55,7 @@ class PipelineInterface(PathExAttMap):
                           config, self.__class__.__name__)
             self.pipe_iface_file = config
             with open(config, 'r') as f:
-                config = yaml.load(f)
+                config = yaml.load(f, SafeLoader)
             self.source = config
 
         # Check presence of 2 main sections (protocol mapping and pipelines).
