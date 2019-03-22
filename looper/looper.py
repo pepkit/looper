@@ -367,7 +367,7 @@ class Runner(Executor):
                 _LOGGER.info(
                     "{} script(s) for skipped samples: {}".
                     format(len(skipped_sample_scripts),
-                           ", ".join(skipped_sample_scripts)))
+                           "\n".join(skipped_sample_scripts)))
 
         # Report what went down.
         max_samples = min(len(self.prj.samples), args.limit or float("inf"))
