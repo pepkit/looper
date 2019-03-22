@@ -14,48 +14,53 @@
         <div>
           <table class="display compact" id="data-table">
             <thead>
-              <tr>
-							{% for column in columns %}
-								<th>{{ column }}</th>
-							{% endfor %}
-						  </tr>
+                <tr>
+					{% for column in columns %}
+						<th>{{ column }}</th>
+					{% endfor %}
+				</tr>
             </thead>
-					 <tbody>
-					   {% for table_cell_data in table_row_data %}
-							<tr>
-								{% for values in table_cell_data %}
-									{% if values is not string %}
-										<td style="cursor:pointer" onclick="location.href='{{ values[0] }}'">
-											<a class="LN1 LN2 LN3 LN4 LN5" href="{{ values[0] }}">{{ values[1] }}</a>
-										</td>
-									{% else %}
-										<td class="text">
-											{{ values }}
-										</td>
-									{% endif %}
-								{% endfor %}
-							</tr>
-						{% endfor %}
-					</tbody>
-				</table>
-			</div>
-			<div class="row">
-				<div id="chartableColumns" class="col-3" style="margin: 20px;">
-					<h4 style="margin: 20px;">Plot Column</h4>
-					<ul id="plot-cols">
-					</ul>
-				</div>
-				<div class="col">
-					<div id="charts">
+				<tbody>
+				    {% for table_cell_data in table_row_data %}
+						<tr>
+							{% for values in table_cell_data %}
+								{% if values is not string %}
+									<td style="cursor:pointer" onclick="location.href='{{ values[0] }}'">
+										<a class="LN1 LN2 LN3 LN4 LN5" href="{{ values[0] }}">{{ values[1] }}</a>
+									</td>
+								{% else %}
+									<td class="text">
+										{{ values }}
+									</td>
+								{% endif %}
+							{% endfor %}
+						</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
 
-					</div>
+        <div class="test-table">
+
+        </div>
+
+		<div class="row">
+			<div id="chartableColumns" class="col-3" style="margin: 20px;">
+				<h4 style="margin: 20px;">Plot Column</h4>
+				<ul id="plot-cols">
+				</ul>
+			</div>
+			<div class="col">
+				<div id="charts">
+
 				</div>
 			</div>
-    		{{ project_objects }}
+		</div>
+    	{{ project_objects }}
     </div>
-  </body>
-  <footer class="footer">
-    {% include "footer.html" %}
-    {% include "footer_index.html" %}
-  </footer>
+    </body>
+    <footer class="footer">
+        {% include "footer.html" %}
+        {% include "footer_index.html" %}
+    </footer>
 </html>

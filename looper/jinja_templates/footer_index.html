@@ -11,129 +11,138 @@
 <!-- DataTables JQuery extension -->
 <script src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"></script>
 <script type="text/javascript">
-  $.fn.dataTable.render.ellipsis = function ( cutoff, wordbreak, escapeHtml ) {
-      var esc = function ( t ) {
-          return t
-              .replace( /&/g, '&amp;' )
-              .replace( /</g, '&lt;' )
-              .replace( />/g, '&gt;' )
-              .replace( /"/g, '&quot;' );
-      };
-      function numberWithCommas(x) {
-          var parts = x.toString().split(".");
-          parts[0] = parts[0].replace(/\\B(?=(\\d{3})+(?!\\d))/g, ",");
-          return parts.join(".");
-      }
-      return function ( d, type, row ) {
-          // Order, search and type get the original data
-          if ( type !== 'display' ) {
-              return d;
-          }
-          if ( typeof d !== 'number' && typeof d !== 'string' ) {
-              return d;
-          }
-          d = d.toString(); // cast numbers
-          if(!isNaN(d)){
-              return numberWithCommas(d);
-          }
-          if ( d.length < cutoff ) {
-              return d;
-          }
-          var shortened = d.substr(0, cutoff-1);
-          // Find the last white space character in the string
-          if ( wordbreak ) {
-              shortened = shortened.replace(/\\s([^\\s]*)$/, '');
-          }
-          // Protect against uncontrolled HTML input
-          if ( escapeHtml ) {
-              shortened = esc( shortened );
-          }
-          return shortened;
-      };
-  };
-
-  $(document).ready(function() {
-    $('#data-table').DataTable({
-      scrollX: true,
-      fixedColumns: {
-        leftColumns: 1
-      },
-      columnDefs: [
-        {
-          targets: 0,
-          render: $.fn.dataTable.render.ellipsis(1000, true, false)
-        },
-        {
-          targets: '_all',
-          render: $.fn.dataTable.render.ellipsis(17, true, true)
+    $.fn.dataTable.render.ellipsis = function ( cutoff, wordbreak, escapeHtml ) {
+        var esc = function ( t ) {
+            return t
+                .replace( /&/g, '&amp;' )
+                .replace( /</g, '&lt;' )
+                .replace( />/g, '&gt;' )
+                .replace( /"/g, '&quot;' );
+        };
+        function numberWithCommas(x) {
+            var parts = x.toString().split(".");
+            parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+            return parts.join(".");
         }
-      ],
-    });
-  } );
-
-  var table = document.getElementById("data-table");
-
-  function getX(){
-    /* Get the sample names (the x values in the bar chart) */
-    var rows = [];
-    for(var i = 1, row; row = table.rows[i]; i++){
-      rows.push(row.cells[0].textContent);
-    }
-    return rows;
-  }
-  function getY(colname){
-    /* Gets the data in the specified column name (the y values in the bar chart) */
-    var data = [];
-    var colnum;
-    // find which column number is the one matching the column name
-    for(var i = 0; i < table.rows[0].cells.length; i++){
-      if(table.rows[0].cells[i].textContent == colname){
-        colnum = i;
-        break;
-      }
-    }
-    // add the data from the column to an array
-    for(var i = 1, row; row = table.rows[i]; i++){
-      data.push(row.cells[colnum].textContent);
-    }
-    return data;
-  }
-
-  function graphCol(colname){
-    /* Creates a graph using Plotly.js */
-    categories = getX();
-    Ydata = getY(colname);
-
-    var data = [{
-      x: categories,
-      y: Ydata,
-      type: 'bar',
-    }];
-
-    var layout = {
-      title: colname
+        return function ( d, type, row ) {
+            // Order, search and type get the original data
+            if ( type !== 'display' ) {
+                return d;
+            }
+            if ( typeof d !== 'number' && typeof d !== 'string' ) {
+                return d;
+            }
+            d = d.toString(); // cast numbers
+            if(!isNaN(d)){
+                return numberWithCommas(d);
+            }
+            if ( d.length < cutoff ) {
+                return d;
+            }
+            var shortened = d.substr(0, cutoff-1);
+            // Find the last white space character in the string
+            if ( wordbreak ) {
+                shortened = shortened.replace(/\s([^\s]*)$/, '');
+            }
+            // Protect against uncontrolled HTML input
+            if ( escapeHtml ) {
+                shortened = esc( shortened );
+            }
+            return shortened;
+        };
     };
-    chart = document.getElementById('charts');
-    Plotly.newPlot(chart, data, layout);
-  }
 
-  function columnClicked(colname){
-    /* The function that is called when a column's header is clicked */
-    graphCol(colname);
-  }
-
-  function modifyNumericColumns(){
-    /* Changes a column's header if the data is visualizable */
+    $(document).ready(function() {
+        $('#data-table').DataTable({
+            scrollX: true,
+            fixedColumns: {
+              leftColumns: 1
+            },
+            columnDefs: [
+              {
+                targets: 0,
+                render: $.fn.dataTable.render.ellipsis(1000, true, false)
+              },
+              {
+                targets: '_all',
+                render: $.fn.dataTable.render.ellipsis(17, true, true)
+              }
+            ],
+        });
+    } );
 
     var table = document.getElementById("data-table");
-    for(var i = 0; i < table.rows[1].cells.length; i++) {
-        //iterate through first row, which will show if a column's data is numeric
-        if(!isNaN(table.rows[1].cells[i].textContent)){
-          element = table.rows[0].cells[i]
-          text = element.textContent;
-          $("#plot-cols").append("<li><a href='#' title='Click to visualize this column' onclick='columnClicked(text);return false;'>" + text + "</a></li>");
+
+    var statsTable = JSON.parse({{ stats_json }});
+    console.log(statsTable);
+    var i = 0; // denotes the column number
+    while(statsTable[i] !== null){
+
+        i++;
+    }
+    console.log(i);
+
+
+    function getX(){
+      /* Get the sample names (the x values in the bar chart) */
+      var rows = [];
+      for(var i = 1, row; row = table.rows[i]; i++){
+        rows.push(row.cells[0].textContent);
+      }
+      return rows;
+    }
+    function getY(colname){
+      /* Gets the data in the specified column name (the y values in the bar chart) */
+      var data = [];
+      var colnum;
+      // find which column number is the one matching the column name
+      for(var i = 0; i < table.rows[0].cells.length; i++){
+        if(table.rows[0].cells[i].textContent == colname){
+          colnum = i;
+          break;
+        }
+      }
+      // add the data from the column to an array
+      for(var i = 1, row; row = table.rows[i]; i++){
+        data.push(row.cells[colnum].textContent);
+      }
+      return data;
+    }
+
+    function graphCol(colname){
+      /* Creates a graph using Plotly.js */
+      categories = getX();
+      Ydata = getY(colname);
+
+      var data = [{
+        x: categories,
+        y: Ydata,
+        type: 'bar',
+      }];
+
+      var layout = {
+        title: colname
+      };
+      chart = document.getElementById('charts');
+      Plotly.newPlot(chart, data, layout);
+    }
+
+    function columnClicked(colname){
+      /* The function that is called when a column's header is clicked */
+      graphCol(colname);
+    }
+
+    function identifyNumericColumns(){
+        var table = document.getElementById("data-table");
+        for(var i = 0; i < table.rows[1].cells.length; i++) {
+          //iterate through first row, which will show if a column's data is numeric
+          if(!isNaN(table.rows[1].cells[i].textContent)){
+            element = table.rows[0].cells[i]
+            text = element.textContent;
+            $("#plot-cols").append("<li><a href='#' title='Click to visualize this column' onclick='columnClicked(text);return false;'>" + text + "</a></li>");
+          }
         }
     }
-  }
-  modifyNumericColumns();
+
+    identifyNumericColumns();
 </script>
