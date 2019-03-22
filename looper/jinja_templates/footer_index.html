@@ -75,50 +75,80 @@
 
     var table = document.getElementById("data-table");
 
-    var statsTable = JSON.parse({{ stats_json }});
-    console.log(statsTable);
-    var i = 0; // denotes the column number
-    while(statsTable[i] !== null){
 
+    var plotDict = {};
+    var statsTable = {{ stats_json }};
+    //console.log(statsTable);
+    
+    // make a list of the first column values, which are the names of the samples
+    var sample_names = [];
+    var j = 1;
+    while(typeof(statsTable[0][j]) !== "undefined"){
+        sample_names.push(statsTable[0][j]);
+        j++;
+    }
+
+    // populate the values of each column
+    var col_names = [statsTable[0][0]];
+    var i = 1; // denotes the column number
+    while(typeof(statsTable[i]) !== "undefined"){
+        var currCol = statsTable[i];
+
+        if(typeof(currCol[1]) !== "number"){ // change so that if the first column is missing values, it will look in the other rows
+            continue;
+        }
+
+        var colName = currCol[0];
+        col_names.push(colName);
+
+        var colValues = [];
+        var j = 1;
+        while(typeof(currCol[j]) !== "undefined"){
+            colValues.push(currCol[j]);
+            j++;
+        }
+        plotDict[colName] = colValues;
         i++;
     }
-    console.log(i);
+    //console.log(i);
 
 
-    function getX(){
-      /* Get the sample names (the x values in the bar chart) */
-      var rows = [];
-      for(var i = 1, row; row = table.rows[i]; i++){
-        rows.push(row.cells[0].textContent);
-      }
-      return rows;
-    }
-    function getY(colname){
-      /* Gets the data in the specified column name (the y values in the bar chart) */
-      var data = [];
-      var colnum;
-      // find which column number is the one matching the column name
-      for(var i = 0; i < table.rows[0].cells.length; i++){
-        if(table.rows[0].cells[i].textContent == colname){
-          colnum = i;
-          break;
-        }
-      }
-      // add the data from the column to an array
-      for(var i = 1, row; row = table.rows[i]; i++){
-        data.push(row.cells[colnum].textContent);
-      }
-      return data;
-    }
+
+    // function getX(){
+    //   /* Get the sample names (the x values in the bar chart) */
+    //   var rows = [];
+    //   for(var i = 1, row; row = table.rows[i]; i++){
+    //     rows.push(row.cells[0].textContent);
+    //   }
+    //   return rows;
+    // }
+    // function getY(colname){
+    //   /* Gets the data in the specified column name (the y values in the bar chart) */
+    //   var data = [];
+    //   var colnum;
+    //   // find which column number is the one matching the column name
+    //   for(var i = 0; i < table.rows[0].cells.length; i++){
+    //     if(table.rows[0].cells[i].textContent == colname){
+    //       colnum = i;
+    //       break;
+    //     }
+    //   }
+    //   // add the data from the column to an array
+    //   for(var i = 1, row; row = table.rows[i]; i++){
+    //     data.push(row.cells[colnum].textContent);
+    //   }
+    //   return data;
+    // }
 
     function graphCol(colname){
       /* Creates a graph using Plotly.js */
-      categories = getX();
-      Ydata = getY(colname);
+
+      // categories = getX();
+      // Ydata = getY(colname);
 
       var data = [{
-        x: categories,
-        y: Ydata,
+        x: sample_names,
+        y: plotDict[colname],
         type: 'bar',
       }];
 
@@ -129,22 +159,24 @@
       Plotly.newPlot(chart, data, layout);
     }
 
-    function columnClicked(colname){
-      /* The function that is called when a column's header is clicked */
-      graphCol(colname);
-    }
-
-    function identifyNumericColumns(){
-        var table = document.getElementById("data-table");
-        for(var i = 0; i < table.rows[1].cells.length; i++) {
-          //iterate through first row, which will show if a column's data is numeric
-          if(!isNaN(table.rows[1].cells[i].textContent)){
-            element = table.rows[0].cells[i]
-            text = element.textContent;
-            $("#plot-cols").append("<li><a href='#' title='Click to visualize this column' onclick='columnClicked(text);return false;'>" + text + "</a></li>");
-          }
+    function displayPlottableColumns(){
+        for(var i = 0; i < col_names.length; i++){
+            $("#plot-cols").append("<li><a href='#' title='Click to visualize this column' onclick='graphCol(" + col_names[i] + 
+                ");return false;'>" + col_names[i] + "</a></li>");
         }
+
+        // var table = document.getElementById("data-table");
+
+        // for(var i = 0; i < table.rows[1].cells.length; i++) {
+        //   //iterate through first row, which will show if a column's data is numeric
+        //   if(!isNaN(table.rows[1].cells[i].textContent)){
+        //     element = table.rows[0].cells[i]
+        //     text = element.textContent;
+        //     $("#plot-cols").append("<li><a href='#' title='Click to visualize this column' onclick='graphCol(" + text + 
+        //         ");return false;'>" + text + "</a></li>");
+        //   }
+        // }
     }
 
-    identifyNumericColumns();
+    displayPlottableColumns();
 </script>
