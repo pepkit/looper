@@ -88,21 +88,19 @@
         j++;
     }
 
-    console.log("sample names saved");
-
     // populate the values of each column
-    var col_names = [statsTable[0][0]];
+    var col_names = [];
     var i = 1; // denotes the column number
     while(typeof(statsTable[i]) !== "undefined"){
         var currCol = statsTable[i];
 
-        if(typeof(parseFloat(currCol[1])) !== "number"){ // change so that if the first column is missing values, it will look in the other rows
+        if(isNaN(parseFloat(currCol[1]))){ // change so that if the first column is missing values, it will look in the other rows
             i++;
             continue;
         }
 
         var colName = currCol[0];
-        col_names.push(colName);
+        //col_names.push(colName);
 
         var colValues = [];
         var j = 1;
@@ -110,11 +108,9 @@
             colValues.push(parseFloat(currCol[j]));
             j++;
         }
-        console.log("column values saved");
         plotDict[colName] = colValues;
         i++;
     }
-    console.log("all done");
 
 
 
@@ -165,8 +161,8 @@
 
     function displayPlottableColumns(){
         for(var i = 0; i < col_names.length; i++){
-            $("#plot-cols").append("<li><a href='#' title='Click to visualize this column' onclick='graphCol(" + col_names[i] + 
-                ");return false;'>" + col_names[i] + "</a></li>");
+            $("#plot-cols").append("<li><a href='#' title='Click to visualize this column' onclick='graphCol(\"" + col_names[i] + 
+                "\");return false;'>" + col_names[i] + "</a></li>");
         }
 
         // var table = document.getElementById("data-table");
