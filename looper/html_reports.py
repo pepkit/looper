@@ -70,7 +70,8 @@ class HTMLReportBuilder(object):
                     pages.append(page_relpath)
                     labels.append(key)
 
-            template_vars = dict(navbar=create_navbar(objs, stats, wd), labels=labels, pages=pages, header="Objects", version=v)
+            template_vars = dict(navbar=create_navbar(objs, stats, wd), labels=labels, pages=pages, header="Objects",
+                                 version=v)
             return self.render_jinja_template("navbar_list_parent.html", template_vars)
 
         def create_sample_parent_html(objs, stats, wd):
@@ -104,7 +105,8 @@ class HTMLReportBuilder(object):
                     pages.append(page_relpath)
                     labels.append(sample_name)
 
-            template_vars = dict(navbar=create_navbar(objs, stats, wd), labels=labels, pages=pages, header="Samples", version=v)
+            template_vars = dict(navbar=create_navbar(objs, stats, wd), labels=labels, pages=pages, header="Samples",
+                                 version=v)
             return self.render_jinja_template("navbar_list_parent.html", template_vars)
 
         def create_object_html(single_object, objs, stats, wd):
@@ -195,7 +197,8 @@ class HTMLReportBuilder(object):
                                 filename.replace(' ', '_').lower() + " references nonexistent object files")
                 _LOGGER.debug(filename.replace(' ', '_').lower() +
                               " nonexistent files: " + ','.join(str(x) for x in warnings))
-            template_vars = dict(navbar=create_navbar(objs, stats, wd), name=current_name, figures=figures, links=links, version=v)
+            template_vars = dict(navbar=create_navbar(objs, stats, wd), name=current_name, figures=figures, links=links,
+                                 version=v)
             save_html(object_path, self.render_jinja_template("object.html", args=template_vars))
 
         def create_sample_html(objs, stats, sample_name, sample_stats, wd):
@@ -319,7 +322,11 @@ class HTMLReportBuilder(object):
                 _LOGGER.warning("{} is not present in {}".format(
                     sample_name, self.prj.metadata.results_subdir))
 
-            template_vars = dict(navbar=create_navbar(objs, stats, wd), sample_name=sample_name, stats_file_path=stats_file_path, profile_file_path=profile_file_path, commands_file_path=commands_file_path, log_file_path=log_file_path, button_class=button_class, sample_stats=sample_stats, flag=flag, links=links, figures=figures, version=v)
+            template_vars = dict(navbar=create_navbar(objs, stats, wd), sample_name=sample_name,
+                                 stats_file_path=stats_file_path, profile_file_path=profile_file_path,
+                                 commands_file_path=commands_file_path, log_file_path=log_file_path,
+                                 button_class=button_class, sample_stats=sample_stats, flag=flag, links=links,
+                                 figures=figures, version=v)
             save_html(html_page, self.render_jinja_template("sample.html", template_vars))
             return sample_page_relpath
 
@@ -400,7 +407,8 @@ class HTMLReportBuilder(object):
                     log_name = _match_file_for_sample(sample_name, "log.md", self.prj.metadata.results_subdir) \
                         if single_sample.empty else str(single_sample.iloc[0]['annotation']) + "_log.md"
                     log_file = os.path.join(self.prj.metadata.results_subdir, sample_name, log_name)
-                    file_link = _get_relpath_to_file(log_name, sample_name, self.prj.metadata.results_subdir, self.reports_dir)
+                    file_link = _get_relpath_to_file(
+                        log_name, sample_name, self.prj.metadata.results_subdir, self.reports_dir)
                     log_link_names.append(log_name)
                     log_paths.append(file_link)
                     # get fourth column data (runtime)
@@ -565,7 +573,8 @@ class HTMLReportBuilder(object):
                                 if glob.glob(search):
                                     img_path = str(glob.glob(search)[0])
                                     img_relpath = os.path.relpath(img_path, self.prj.metadata.output_dir)
-                                    figures.append([file_relpath, '{}: Click to see full-size figure'.format(caption), img_relpath])
+                                    figures.append([file_relpath, '{}: Click to see full-size figure'.format(caption),
+                                                    img_relpath])
                                 # add as a link otherwise
                                 else:
                                     links.append(['{}: Click to see full-size figure'.format(caption), file_relpath])
@@ -643,7 +652,8 @@ class HTMLReportBuilder(object):
                 _LOGGER.warning("No stats file '%s'", tsv_outfile_path)
 
             # Create parent samples page with links to each sample
-            save_html(os.path.join(self.reports_dir, "samples.html"), create_sample_parent_html(objs, stats, self.reports_dir))
+            save_html(os.path.join(self.reports_dir, "samples.html"),
+                      create_sample_parent_html(objs, stats, self.reports_dir))
 
             # Create objects pages
             if not objs.dropna().empty:
@@ -652,14 +662,19 @@ class HTMLReportBuilder(object):
                     create_object_html(single_object, objs, stats, self.reports_dir)
 
             # Create parent objects page with links to each object type
-            save_html(os.path.join(self.reports_dir, "objects.html"), create_object_parent_html(objs, stats, self.reports_dir))
+            save_html(os.path.join(self.reports_dir, "objects.html"),
+                      create_object_parent_html(objs, stats, self.reports_dir))
             # Create status page with each sample's status listed
-            save_html(os.path.join(self.reports_dir, "status.html"), create_status_html(objs, stats, self.reports_dir))
+            save_html(os.path.join(self.reports_dir, "status.html"),
+                      create_status_html(objs, stats, self.reports_dir))
             # Add project level objects
             project_objects = create_project_objects()
             # Complete and close HTML file
 
-            template_vars = dict(project_name=self.prj.name, navbar=create_navbar(objs, stats, self.prj.metadata.output_dir), stats_file_path=stats_file_path, project_objects=project_objects, columns=col_names, table_row_data=table_row_data, version=v)
+            template_vars = dict(project_name=self.prj.name,
+                                 navbar=create_navbar(objs, stats, self.prj.metadata.output_dir),
+                                 stats_file_path=stats_file_path, project_objects=project_objects, columns=col_names,
+                                 table_row_data=table_row_data, version=v)
             save_html(index_html_path, self.render_jinja_template("index.html", template_vars))
             return index_html_path
         # Generate HTML report
