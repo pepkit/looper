@@ -88,6 +88,8 @@
         j++;
     }
 
+    console.log("sample names saved");
+
     // populate the values of each column
     var col_names = [statsTable[0][0]];
     var i = 1; // denotes the column number
@@ -107,10 +109,11 @@
             colValues.push(currCol[j]);
             j++;
         }
+        console.log("column values saved");
         plotDict[colName] = colValues;
         i++;
     }
-    //console.log(i);
+    console.log("all done");
 
 
 
