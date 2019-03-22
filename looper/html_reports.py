@@ -539,7 +539,7 @@ class HTMLReportBuilder(object):
 
         def create_project_objects():
             _LOGGER.debug("Building project object...")
-            """ Add project level summaries as additional figures/links """
+            """ Render available project level summaries as additional figures/links """
 
             all_protocols = [sample.protocol for sample in self.prj.samples]
 
@@ -670,8 +670,7 @@ class HTMLReportBuilder(object):
             # Add project level objects
             project_objects = create_project_objects()
             # Complete and close HTML file
-
-            template_vars = dict(project_name=self.prj.name,
+            template_vars = dict(project_name=self.prj.name, stats_json=_read_tsv_to_json(tsv_outfile_path),
                                  navbar=create_navbar(objs, stats, self.prj.metadata.output_dir),
                                  stats_file_path=stats_file_path, project_objects=project_objects, columns=col_names,
                                  table_row_data=table_row_data, version=v)
@@ -787,6 +786,17 @@ def _get_relpath_to_file(file_name, sample_name, location, relative_to):
         return None
     return rel_file_path
 
+
+def _read_tsv_to_json(path):
+    """
+    Read a tsv file to a JSON formatted string
+
+    :param path: to file path
+    :return str: JSON formatted string
+    """
+    assert os.path.exists(path), "The file '{}' does not exist".format(path)
+    df = _pd.read_table(path, sep="\t", index_col=False, header=None)
+    return df.to_json()
 
 def uniqify(seq):
     """ Fast way to uniqify while preserving input order. """

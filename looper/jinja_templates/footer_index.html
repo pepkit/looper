@@ -11,6 +11,7 @@
 <!-- DataTables JQuery extension -->
 <script src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"></script>
 <script type="text/javascript">
+
     $.fn.dataTable.render.ellipsis = function ( cutoff, wordbreak, escapeHtml ) {
         var esc = function ( t ) {
             return t
@@ -23,6 +24,7 @@
             var parts = x.toString().split(".");
             parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
             return parts.join(".");
+
         }
         return function ( d, type, row ) {
             // Order, search and type get the original data
