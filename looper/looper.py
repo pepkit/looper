@@ -362,6 +362,12 @@ class Runner(Executor):
             conductor.submit(force=True)
             job_sub_total += conductor.num_job_submissions
             cmd_sub_total += conductor.num_cmd_submissions
+            skipped_sample_scripts = conductor.write_skipped_sample_scripts()
+            if skipped_sample_scripts:
+                _LOGGER.info(
+                    "{} script(s) for skipped samples: {}".
+                    format(len(skipped_sample_scripts),
+                           ", ".join(skipped_sample_scripts)))
 
         # Report what went down.
         max_samples = min(len(self.prj.samples), args.limit or float("inf"))
