@@ -238,20 +238,24 @@ class HTMLReportBuilder(object):
                 if single_sample.empty:
                     # When there is no objects.tsv file, search for the
                     # presence of log, profile, and command files
-                    log_name = os.path.basename(str(glob.glob(os.path.join(
-                        self.prj.metadata.results_subdir,
-                        sample_name, '*log.md'))[0]))
-                    profile_name = os.path.basename(str(glob.glob(os.path.join(
-                        self.prj.metadata.results_subdir,
-                        sample_name, '*profile.tsv'))[0]))
-                    command_name = os.path.basename(str(glob.glob(os.path.join(
-                        self.prj.metadata.results_subdir,
-                        sample_name, '*commands.sh'))[0]))
+                    log_name = _match_file_for_sample(sample_name, 'log.md', self.prj.metadata.results_subdir)
+                    profile_name = _match_file_for_sample(sample_name, 'profile.tsv', self.prj.metadata.results_subdir)
+                    command_name = _match_file_for_sample(sample_name, 'commands.sh', self.prj.metadata.results_subdir)
                 else:
                     log_name = str(single_sample.iloc[0]['annotation']) + "_log.md"
                     profile_name = str(single_sample.iloc[0]['annotation']) + "_profile.tsv"
                     command_name = str(single_sample.iloc[0]['annotation']) + "_commands.sh"
-                flag = get_flags(sample_dir)
+                stats_name = "stats.tsv"
+                flag = _get_flags(sample_dir)
+                # get links to the files
+                stats_file_path = _get_relpath_to_file(
+                    stats_name, sample_name, self.prj.metadata.results_subdir, self.reports_dir)
+                profile_file_path = _get_relpath_to_file(
+                    profile_name, sample_name, self.prj.metadata.results_subdir, self.reports_dir)
+                commands_file_path = _get_relpath_to_file(
+                    command_name, sample_name, self.prj.metadata.results_subdir, self.reports_dir)
+                log_file_path = _get_relpath_to_file(
+                    log_name, sample_name, self.prj.metadata.results_subdir, self.reports_dir)
                 if not flag:
                     button_class = "btn btn-danger"
                     flag = "Missing"
@@ -268,16 +272,6 @@ class HTMLReportBuilder(object):
                     else:
                         button_class = flag_dict["button_class"]
                         flag = flag_dict["flag"]
-                # get links to the files
-                stats_file_path = os.path.relpath(os.path.join(
-                    self.prj.metadata.results_subdir, sample_name, "stats.tsv"), self.reports_dir)
-                profile_file_path = os.path.relpath(os.path.join(
-                    self.prj.metadata.results_subdir, sample_name, profile_name), self.reports_dir)
-                commands_file_path = os.path.relpath(os.path.join(
-                    self.prj.metadata.results_subdir, sample_name, command_name), self.reports_dir)
-                log_file_path = os.path.relpath(os.path.join(
-                    self.prj.metadata.results_subdir, sample_name, log_name), self.reports_dir)
-
             links = []
             figures = []
             warnings = []
@@ -375,7 +369,7 @@ class HTMLReportBuilder(object):
                 # Confirm sample directory exists, then build page
                 if os.path.exists(sample_dir):
                     # Grab the status flag for the current sample
-                    flag = get_flags(sample_dir)
+                    flag = _get_flags(sample_dir)
                     if not flag:
                         button_class = "table-danger"
                         flag = "Missing"
@@ -726,7 +720,7 @@ def get_jinja_env():
     return jinja2.Environment(loader=jinja2.FileSystemLoader(get_templates_dir()))
 
 
-def get_flags(sample_dir):
+def _get_flags(sample_dir):
     """
     Get the flag(s) present in the directory
 
@@ -741,6 +735,44 @@ def get_flags(sample_dir):
     if len(flag_files) == 0:
         _LOGGER.warning("No flag files found in sample dir '{sample_dir}'".format(sample_dir=sample_dir))
     return [re.search(r'\_([a-z]+)\.flag$', os.path.basename(f)).groups()[0] for f in flag_files]
+
+
+def _match_file_for_sample(sample_name, appendix, location):
+    """
+    Safely looks for files matching the appendix in the specified location for the sample
+
+    :param str sample_name: name of the sample that the file name should be found for
+    :param str appendix: the ending  specific for the file
+    :param str location: where to look for the file
+    :return str: the name of the matched file
+    """
+    regex = "*" + appendix
+    search_pattern = os.path.join(location, sample_name, regex)
+    matches = glob.glob(search_pattern)
+    if len(matches) < 1:
+        return None
+    elif len(matches) > 1:
+        _LOGGER.warning("matched mutiple files for '{}'. Returning the first one".format(search_pattern))
+    return os.path.basename(matches[0])
+
+
+def _get_relpath_to_file(file_name, sample_name, location, relative_to):
+    """
+    Safely gets the relative path for the file for the specified sample
+
+    :param str file_name: name of the file
+    :param str sample_name: name of the sample that the file path should be found for
+    :param str location: where to look for the file
+    :param str relative_to: path the result path should be relative to
+    :return str: a path to the file
+    """
+    abs_file_path = os.path.join(location, sample_name, file_name)
+    rel_file_path = os.path.relpath(abs_file_path, relative_to)
+    _LOGGER.debug("Checking for file: '{fp}'. Exists? {exists}.".
+                  format(fp=abs_file_path, exists=os.path.exists(abs_file_path)))
+    if file_name is None or not os.path.exists(abs_file_path):
+        return None
+    return rel_file_path
 
 
 def uniqify(seq):
