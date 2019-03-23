@@ -14,11 +14,11 @@
         <div>
           <table class="display compact" id="data-table">
             <thead>
-              <tr>
-							{% for column in columns %}
-								<th>{{ column }}</th>
-							{% endfor %}
-						  </tr>
+	            <tr>
+					{% for column in columns %}
+						<th>{{ column }}</th>
+					{% endfor %}
+				</tr>
             </thead>
 					 <tbody>
 					   {% for table_cell_data in table_row_data %}

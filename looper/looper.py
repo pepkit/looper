@@ -481,8 +481,7 @@ class Summarizer(Executor):
                 _LOGGER.warning("No objects file '%s'", objs_file)
                 continue
             t = _pd.read_csv(objs_file, sep="\t", header=None,
-                             names=['key', 'filename', 'anchor_text',
-                                    'anchor_image', 'annotation'])
+                             names=['key', 'filename', 'anchor_text', 'anchor_image', 'annotation'])
             t['sample_name'] = sample.name
             objs = objs.append(t, ignore_index=True)
         
@@ -491,8 +490,7 @@ class Summarizer(Executor):
             tsv_outfile_path += '_' + self.prj.subproject
         tsv_outfile_path += '_stats_summary.tsv'
         tsv_outfile = open(tsv_outfile_path, 'w')
-        tsv_writer = csv.DictWriter(tsv_outfile, fieldnames=uniqify(columns),
-                                    delimiter='\t', extrasaction='ignore')     
+        tsv_writer = csv.DictWriter(tsv_outfile, fieldnames=uniqify(columns), delimiter='\t', extrasaction='ignore')
         tsv_writer.writeheader()
         for row in stats:
             tsv_writer.writerow(row)
@@ -527,8 +525,7 @@ class Summarizer(Executor):
         # Produce HTML report
         report_builder = HTMLReportBuilder(self.prj)
         report_path = report_builder(objs, stats, uniqify(columns))
-        _LOGGER.info(
-                "HTML Report (n=" + str(len(stats)) + "): " + report_path)
+        _LOGGER.info("HTML Report (n=" + str(len(stats)) + "): " + report_path)
 
 
 def aggregate_exec_skip_reasons(skip_reasons_sample_pairs):

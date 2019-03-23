@@ -70,7 +70,7 @@ class HTMLReportBuilder(object):
                     pages.append(page_relpath)
                     labels.append(key)
 
-            template_vars = dict(navbar=create_navbar(objs, stats, wd), labels=labels, pages=pages, header="Objects",
+            template_vars = dict(navbar=create_navbar(create_navbar_links(objs, stats, wd)), labels=labels, pages=pages, header="Objects",
                                  version=v)
             return self.render_jinja_template("navbar_list_parent.html", template_vars)
 
@@ -105,7 +105,7 @@ class HTMLReportBuilder(object):
                     pages.append(page_relpath)
                     labels.append(sample_name)
 
-            template_vars = dict(navbar=create_navbar(objs, stats, wd), labels=labels, pages=pages, header="Samples",
+            template_vars = dict(navbar=create_navbar(create_navbar_links(objs, stats, wd)), labels=labels, pages=pages, header="Samples",
                                  version=v)
             return self.render_jinja_template("navbar_list_parent.html", template_vars)
 
@@ -197,7 +197,7 @@ class HTMLReportBuilder(object):
                                 filename.replace(' ', '_').lower() + " references nonexistent object files")
                 _LOGGER.debug(filename.replace(' ', '_').lower() +
                               " nonexistent files: " + ','.join(str(x) for x in warnings))
-            template_vars = dict(navbar=create_navbar(objs, stats, wd), name=current_name, figures=figures, links=links,
+            template_vars = dict(navbar=create_navbar(create_navbar_links(objs, stats, wd)), name=current_name, figures=figures, links=links,
                                  version=v)
             save_html(object_path, self.render_jinja_template("object.html", args=template_vars))
 
@@ -322,7 +322,7 @@ class HTMLReportBuilder(object):
                 _LOGGER.warning("{} is not present in {}".format(
                     sample_name, self.prj.metadata.results_subdir))
 
-            template_vars = dict(navbar=create_navbar(objs, stats, wd), sample_name=sample_name,
+            template_vars = dict(navbar=create_navbar(create_navbar_links(objs, stats, wd)), sample_name=sample_name,
                                  stats_file_path=stats_file_path, profile_file_path=profile_file_path,
                                  commands_file_path=commands_file_path, log_file_path=log_file_path,
                                  button_class=button_class, sample_stats=sample_stats, flag=flag, links=links,
@@ -456,7 +456,7 @@ class HTMLReportBuilder(object):
                         self.prj.metadata.results_subdir,
                         ' '.join(str(sample) for sample in sample_warning)))
 
-            template_vars = dict(navbar=create_navbar(objs, stats, wd), sample_link_names=sample_link_names,
+            template_vars = dict(navbar=create_navbar(create_navbar_links(objs, stats, wd)), sample_link_names=sample_link_names,
                              sample_paths=sample_paths, log_link_names=log_link_names, log_paths=log_paths,
                              row_classes=row_classes, flags=flags, times=times, mems=mems, version=v)
             return self.render_jinja_template("status.html", template_vars)
@@ -487,7 +487,7 @@ class HTMLReportBuilder(object):
                         _LOGGER.warning("Could not determine sample name in stats.tsv")
             return relpaths,  sample_names
 
-        def create_navbar(objs, stats, wd):
+        def create_navbar_links(objs, stats, wd):
             """
             Return a string containing the navbar prebuilt html.
             Generates links to each page relative to the directory
@@ -535,6 +535,10 @@ class HTMLReportBuilder(object):
                                  samples_html_page=dropdown_relpaths_samples, menu_name_objects="Objects",
                                  menu_name_samples="Samples", sample_names=sample_names, all_samples=samples_relpath,
                                  all_objects=objects_relpath)
+            return self.render_jinja_template("navbar_links.html", template_vars)
+
+        def create_navbar(navbar_links):
+            template_vars = dict(navbar_links=navbar_links)
             return self.render_jinja_template("navbar.html", template_vars)
 
         def create_project_objects():
@@ -596,6 +600,8 @@ class HTMLReportBuilder(object):
 
             :param panda.DataFrame objs: project level dataframe containing
                 any reported objects for all samples
+            :param list stats: a summary file of pipeline statistics for each
+                analyzed sample
             :param list stats: a summary file of pipeline statistics for each
                 analyzed sample
             """
@@ -671,7 +677,7 @@ class HTMLReportBuilder(object):
             project_objects = create_project_objects()
             # Complete and close HTML file
             template_vars = dict(project_name=self.prj.name, stats_json=_read_tsv_to_json(tsv_outfile_path),
-                                 navbar=create_navbar(objs, stats, self.prj.metadata.output_dir),
+                                 navbar=create_navbar(create_navbar_links(objs, stats, self.prj.metadata.output_dir)),
                                  stats_file_path=stats_file_path, project_objects=project_objects, columns=col_names,
                                  table_row_data=table_row_data, version=v)
             save_html(index_html_path, self.render_jinja_template("index.html", template_vars))
