@@ -27,13 +27,11 @@ DEFAULT_RESOURCES = {
     "file_size": "0", "cores": "1", "mem": "4000", "time": "00-01:00:00"}
 DEFAULT_RESOURCES_KEY = "default"
 ATAC_SPEC = {
-    PIPE_NAME_KEY: "PEPATAC",
-    PIPE_PATH_KEY: os.path.join("pipelines", ATAC_PIPE),
+    PIPE_NAME_KEY: "PEPATAC", PIPE_PATH_KEY: ATAC_PIPE,
     PIPE_RESOURCES_KEY: {DEFAULT_RESOURCES_KEY: DEFAULT_RESOURCES}
 }
 WGBS_SPEC = {
-    PIPE_NAME_KEY: "WGBS",
-    PIPE_PATH_KEY: os.path.join("pipelines", WGBS_PIPE),
+    PIPE_NAME_KEY: "WGBS", PIPE_PATH_KEY: WGBS_PIPE,
     PIPE_RESOURCES_KEY: {DEFAULT_RESOURCES_KEY: DEFAULT_RESOURCES}
 }
 PIPE_SPECS = {"pepatac.py": ATAC_SPEC, "wgbs.py": WGBS_SPEC}
@@ -169,6 +167,7 @@ def test_convergent_protocol_mapping_keys(tmpdir):
         yaml.dump(pliface_data, f)
     metadata = {"output_dir": outdir, SAMPLE_ANNOTATIONS_KEY: anns_path,
                 "pipeline_interfaces": pliface_filepath}
+    _touch_pipe_files(tmpdir.strpath, pliface_data)
     prjdat = {"metadata": metadata}
     pcfg = tmpdir.join("prj.yaml").strpath
     with open(pcfg, 'w') as f:
@@ -182,7 +181,9 @@ def test_convergent_protocol_mapping_keys(tmpdir):
     print("INTERFACES BY PROTOCOL: {}".format(prj.interfaces_by_protocol))
 
     conductors, pipe_keys = process_protocols(prj, protomap.keys())
-    assert len(conductors) == len(protomap)
+    # Conductors collection is keyed on pipeline, not protocol
+    assert set(conductors.keys()) == set(protomap.values())
+    # Collection of pipeline keys by protocol, not pipeline
     assert len(pipe_keys) == len(protomap)
     multi_pipes = [(p, ks) for p, ks in pipe_keys.items() if len(ks) > 1]
     assert [] == multi_pipes, "{} protocol(s) mapped to multiple pipelines: {}".\
@@ -192,3 +193,10 @@ def test_convergent_protocol_mapping_keys(tmpdir):
 def _count_files(p, *preds):
     return sum(1 for f in os.listdir(p)
                if os.path.isfile(f) and all(map(lambda p: p(f), preds)))
+
+
+def _touch_pipe_files(folder, pliface):
+    for pipe in pliface["pipelines"].values():
+        path = os.path.join(folder, pipe["path"])
+        with open(path, 'w'):
+            print("Writing pipe: {}".format(path))

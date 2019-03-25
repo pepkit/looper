@@ -68,9 +68,6 @@ class Project(peppy.Project):
             those already mapped and those not yet mapped
         """
 
-        # DEBUG
-        print("BUNDLING FOR PROTOCOL: {}".format(protocol))
-
         if not priority:
             raise NotImplementedError(
                 "Currently, only prioritized protocol mapping is supported "
@@ -85,14 +82,9 @@ class Project(peppy.Project):
             pipeline_interfaces = \
                 self.interfaces_by_protocol[protocol]
         except KeyError:
-            # DEBUG
-            print("No interface. Known: {}".format(self.interfaces_by_protocol.keys()))
             # Messaging can be done by the caller.
             _LOGGER.debug("No interface for protocol: %s", protocol)
             return []
-
-        # DEBUG
-        print("PIPELINE INTERFACES: {}".format(pipeline_interfaces))
 
         job_submission_bundles = []
         pipeline_keys_used = set()
@@ -114,11 +106,8 @@ class Project(peppy.Project):
             this_protocol_pipelines = pipe_iface.fetch_pipelines(protocol)
             if not this_protocol_pipelines:
                 _LOGGER.debug("No pipelines; available: {}".format(
-                        ", ".join(pipe_iface.protomap.keys())))
+                        ", ".join(pipe_iface.protocol_mapping.keys())))
                 continue
-
-            # DEBUG
-            print("this_protocol_pipelines: {}".format(this_protocol_pipelines))
 
             # TODO: update once dependency-encoding logic is in place.
             # The proposed dependency-encoding format uses a semicolon
@@ -233,7 +222,7 @@ def process_pipeline_interfaces(pipeline_interface_locations):
                          "location: '%s'", pipe_iface_location)
             continue
         pipe_iface = PipelineInterface(pipe_iface_location)
-        for proto_name in pipe_iface.protomap:
+        for proto_name in pipe_iface.protocol_mapping:
             _LOGGER.whisper("Adding protocol name: '%s'", proto_name)
             interface_by_protocol[proto_name].append(pipe_iface)
     return interface_by_protocol
