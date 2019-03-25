@@ -7,6 +7,7 @@ import os
 
 import peppy
 from peppy.utils import is_command_callable
+from .const import *
 from .pipeline_interface import PipelineInterface
 from .utils import get_logger, partition
 
@@ -16,7 +17,6 @@ __email__ = "vreuter@virginia.edu"
 
 
 _LOGGER = get_logger(__name__)
-
 
 
 class Project(peppy.Project):
@@ -45,7 +45,7 @@ class Project(peppy.Project):
     @property
     def project_folders(self):
         """ Keys for paths to folders to ensure exist. """
-        return ["output_dir", "results_subdir", "submission_subdir"]
+        return ["output_dir", RESULTS_SUBDIR_KEY, SUBMISSION_SUBDIR_KEY]
 
     def build_submission_bundles(self, protocol, priority=True):
         """
@@ -68,6 +68,9 @@ class Project(peppy.Project):
             those already mapped and those not yet mapped
         """
 
+        # DEBUG
+        print("BUNDLING FOR PROTOCOL: {}".format(protocol))
+
         if not priority:
             raise NotImplementedError(
                 "Currently, only prioritized protocol mapping is supported "
@@ -82,9 +85,14 @@ class Project(peppy.Project):
             pipeline_interfaces = \
                 self.interfaces_by_protocol[protocol]
         except KeyError:
+            # DEBUG
+            print("No interface. Known: {}".format(self.interfaces_by_protocol.keys()))
             # Messaging can be done by the caller.
             _LOGGER.debug("No interface for protocol: %s", protocol)
             return []
+
+        # DEBUG
+        print("PIPELINE INTERFACES: {}".format(pipeline_interfaces))
 
         job_submission_bundles = []
         pipeline_keys_used = set()
@@ -108,6 +116,9 @@ class Project(peppy.Project):
                 _LOGGER.debug("No pipelines; available: {}".format(
                         ", ".join(pipe_iface.protomap.keys())))
                 continue
+
+            # DEBUG
+            print("this_protocol_pipelines: {}".format(this_protocol_pipelines))
 
             # TODO: update once dependency-encoding logic is in place.
             # The proposed dependency-encoding format uses a semicolon
@@ -163,8 +174,8 @@ class Project(peppy.Project):
                 # Skip and warn about nonexistent alleged pipeline path.
                 if not (os.path.exists(full_pipe_path) or
                             is_command_callable(full_pipe_path)):
-                    _LOGGER.warning("Missing pipeline script: '%s'",
-                                 full_pipe_path)
+                    _LOGGER.warning(
+                        "Missing pipeline script: '%s'", full_pipe_path)
                     continue
 
                 # Determine which interface and Sample subtype to use.
@@ -204,7 +215,6 @@ class Project(peppy.Project):
             return list(itertools.chain(*job_submission_bundles))
 
 
-
 def process_pipeline_interfaces(pipeline_interface_locations):
     """
     Create a PipelineInterface for each pipeline location given.
@@ -229,13 +239,11 @@ def process_pipeline_interfaces(pipeline_interface_locations):
     return interface_by_protocol
 
 
-
 # Collect PipelineInterface, Sample type, pipeline path, and script with flags.
 SubmissionBundle = namedtuple(
     "SubmissionBundle",
     field_names=["interface", "subtype", "pipeline", "pipeline_with_flags"])
 SUBMISSION_BUNDLE_PIPELINE_KEY_INDEX = 2
-
 
 
 def _is_member(item, items):

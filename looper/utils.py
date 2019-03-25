@@ -8,7 +8,7 @@ import os
 
 from peppy import \
     FLAGS, SAMPLE_INDEPENDENT_PROJECT_SECTIONS, SAMPLE_NAME_COLNAME
-
+from .const import *
 
 
 def get_logger(name):
@@ -18,7 +18,6 @@ def get_logger(name):
 
 
 _LOGGER = get_logger(__name__)
-
 
 
 def create_looper_args_text(pl_key, submission_settings, prj):
@@ -36,7 +35,7 @@ def create_looper_args_text(pl_key, submission_settings, prj):
 
     # Start with copied settings and empty arguments text
     submission_settings = copy.deepcopy(submission_settings)
-    opt_arg_pairs = [("-O", prj.metadata.results_subdir)]
+    opt_arg_pairs = [("-O", prj.metadata[RESULTS_SUBDIR_KEY])]
 
     if hasattr(prj, "pipeline_config"):
         # Index with 'pl_key' instead of 'pipeline'
@@ -155,7 +154,6 @@ def grab_project_data(prj):
     return data
 
 
-
 def partition(items, test):
     """
     Partition items into a pair of disjoint multisets,
@@ -183,7 +181,6 @@ def partition(items, test):
     return passes, fails
 
 
-
 def sample_folder(prj, sample):
     """
     Get the path to this Project's root folder for the given Sample.
@@ -193,5 +190,5 @@ def sample_folder(prj, sample):
         folder path.
     :return str: this Project's root folder for the given Sample
     """
-    return os.path.join(prj.metadata.results_subdir,
+    return os.path.join(prj.metadata[RESULTS_SUBDIR_KEY],
                         sample[SAMPLE_NAME_COLNAME])

@@ -22,7 +22,8 @@ import yaml
 from looper import setup_looper_logger
 from looper.pipeline_interface import PipelineInterface
 from looper.project import Project
-from peppy import setup_peppy_logger, SAMPLE_NAME_COLNAME
+from peppy import setup_peppy_logger, SAMPLE_NAME_COLNAME, \
+    SAMPLE_ANNOTATIONS_KEY
 
 
 _LOGGER = logging.getLogger("peppy")
@@ -180,16 +181,16 @@ _SEASON_HIERARCHY = {
 COMPARISON_FUNCTIONS = ["__eq__", "__ne__", "__len__",
                         "keys", "values", "items"]
 COLUMNS = [SAMPLE_NAME_COLNAME, "val1", "val2", "library"]
-PROJECT_CONFIG_DATA = {"metadata": {"sample_annotation": "annotations.csv"}}
+PROJECT_CONFIG_DATA = {"metadata": {SAMPLE_ANNOTATIONS_KEY: "annotations.csv"}}
 
 
 
 def update_project_conf_data(extension):
     """ Updated Project configuration data mapping based on file extension """
     updated = copy.deepcopy(PROJECT_CONFIG_DATA)
-    filename = updated["metadata"]["sample_annotation"]
+    filename = updated["metadata"][SAMPLE_ANNOTATIONS_KEY]
     base, _ = os.path.splitext(filename)
-    updated["metadata"]["sample_annotation"] = "{}.{}".format(base, extension)
+    updated["metadata"][SAMPLE_ANNOTATIONS_KEY] = "{}.{}".format(base, extension)
     return updated
 
 
@@ -217,7 +218,6 @@ def pytest_generate_tests(metafunc):
                              argvalues=[str, dict])
 
 
-
 @pytest.fixture(scope="session", autouse=True)
 def conf_logs(request):
     """ Configure logging for the testing session. """
@@ -230,12 +230,10 @@ def conf_logs(request):
     _LOGGER = logging.getLogger("looper.{}".format(__name__))
 
 
-
-
 @pytest.fixture(scope="function")
 def sample_annotation_lines():
+    """ Lines for sample (metadata) annotations sheet. """
     return SAMPLE_ANNOTATION_LINES
-
 
 
 @pytest.fixture(scope="function")
@@ -255,7 +253,7 @@ def path_empty_project(request, tmpdir):
 
     # Write the needed files.
     anns_path = os.path.join(
-            tmpdir.strpath, conf_data["metadata"]["sample_annotation"])
+            tmpdir.strpath, conf_data["metadata"][SAMPLE_ANNOTATIONS_KEY])
 
     with open(anns_path, 'w') as anns_file:
         anns_file.write(delimiter.join(COLUMNS))
@@ -264,7 +262,6 @@ def path_empty_project(request, tmpdir):
         yaml.dump(conf_data, conf_file)
 
     return conf_path
-
 
 
 def interactive(
@@ -325,7 +322,6 @@ def interactive(
     return prj, iface
 
 
-
 class _DataSourceFormatMapping(dict):
     """
     Partially format text with braces. This helps since bracing is the
@@ -334,7 +330,6 @@ class _DataSourceFormatMapping(dict):
     """
     def __missing__(self, derived_column):
         return "{" + derived_column + "}"
-
 
 
 def _write_temp(lines, dirpath, fname):
@@ -373,12 +368,10 @@ def _write_temp(lines, dirpath, fname):
     return filepath
 
 
-
 @pytest.fixture(scope="function")
 def project_config_lines():
     """ Provide safer iteration over the lines for Project config file. """
     return PROJECT_CONFIG_LINES
-
 
 
 @pytest.fixture(scope="function")
@@ -395,7 +388,6 @@ def path_project_conf(tmpdir, project_config_lines):
         project_config_lines, tmpdir.strpath, P_CONFIG_FILENAME)
 
 
-
 @pytest.fixture(scope="function")
 def proj_conf_data(path_project_conf):
     """
@@ -407,7 +399,6 @@ def proj_conf_data(path_project_conf):
     """
     with open(path_project_conf, 'r') as conf_file:
         return yaml.safe_load(conf_file)
-
 
 
 @pytest.fixture(scope="function")
@@ -425,11 +416,10 @@ def path_sample_anns(tmpdir, sample_annotation_lines):
     return filepath
 
 
-
 @pytest.fixture(scope="function")
 def p_conf_fname():
+    """ Fixed name for project config file """
     return P_CONFIG_FILENAME
-
 
 
 @pytest.fixture(scope="class")
@@ -460,7 +450,6 @@ def write_project_files(request):
     shutil.rmtree(dirpath)
 
 
-
 # Placed here (rather than near top of file) for data/use locality.
 _TEST_DATA_FOLDER = "data"
 _BAMFILE_PATH = os.path.join(os.path.dirname(__file__),
@@ -469,7 +458,6 @@ _TEST_DATA_FILE_BASENAMES = ["a", "b1", "b2", "b3", "c", "d"]
 _TEST_DATA = {"{}.txt".format(name):
               "This is the content of test file {}.".format(name)
               for name in _TEST_DATA_FILE_BASENAMES}
-
 
 
 def _write_test_data_files(tempdir):
@@ -488,7 +476,6 @@ def _write_test_data_files(tempdir):
         with open(filepath, 'w') as testfile:
             _LOGGER.debug("Writing test data file to '%s'", filepath)
             testfile.write(data)
-
 
 
 @pytest.fixture(scope="class")
@@ -513,11 +500,9 @@ def pipe_iface_config_file(request):
     shutil.rmtree(dirpath)
 
 
-
 def request_class_attribute(req, attr):
     """ Grab `attr` attribute from class of `req`. """
     return getattr(getattr(req, "cls"), attr)
-
 
 
 def _create(request, data_type, **kwargs):
@@ -540,7 +525,6 @@ def _create(request, data_type, **kwargs):
         raise
 
 
-
 @pytest.fixture(scope="function")
 def proj(request):
     """
@@ -560,7 +544,6 @@ def proj(request):
     return p
 
 
-
 @pytest.fixture(scope="function")
 def pipe_iface(request):
     """
@@ -578,12 +561,10 @@ def pipe_iface(request):
     return _create(request, PipelineInterface)
 
 
-
 def basic_entries():
     """ PathExAttMap data that lack nested strcuture. """
     for k, v in zip(_BASE_KEYS, _BASE_VALUES):
         yield k, v
-
 
 
 def nested_entries():

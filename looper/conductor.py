@@ -7,6 +7,7 @@ import re
 import subprocess
 import time
 
+from .const import *
 from .exceptions import JobSubmissionException
 from .utils import \
     create_looper_args_text, grab_project_data, sample_folder
@@ -20,7 +21,6 @@ __email__ = "vreuter@virginia.edu"
 
 
 _LOGGER = logging.getLogger(__name__)
-
 
 
 class SubmissionConductor(object):
@@ -233,7 +233,7 @@ class SubmissionConductor(object):
         try:
             argstring = self.pl_iface.get_arg_string(
                 pipeline_name=self.pl_key, sample=sample,
-                submission_folder_path=self.prj.metadata.submission_subdir)
+                submission_folder_path=self.prj.metadata[SUBMISSION_SUBDIR_KEY])
         except AttributeError:
             argstring = None
             # TODO: inform about which missing attribute(s).
@@ -307,7 +307,7 @@ class SubmissionConductor(object):
                 if type(s) is Sample:
                     exp_fname = "{}.yaml".format(s.name)
                     exp_fpath = os.path.join(
-                            self.prj.metadata.submission_subdir, exp_fname)
+                            self.prj.metadata[SUBMISSION_SUBDIR_KEY], exp_fname)
                     if not os.path.isfile(exp_fpath):
                         _LOGGER.warning("Missing %s file will be created: '%s'",
                                      Sample.__name__, exp_fpath)
@@ -315,7 +315,7 @@ class SubmissionConductor(object):
                     subtype_name = s.__class__.__name__
                     _LOGGER.debug("Writing %s representation to disk: '%s'",
                                   subtype_name, s.name)
-                    s.to_yaml(subs_folder_path=self.prj.metadata.submission_subdir)
+                    s.to_yaml(subs_folder_path=self.prj.metadata[SUBMISSION_SUBDIR_KEY])
 
             script = self.write_script(self._pool, settings,
                 prj_argtext=prj_argtext, looper_argtext=looper_argtext)
@@ -423,7 +423,7 @@ class SubmissionConductor(object):
 
         jobname = self._jobname(pool)
         submission_base = os.path.join(
-                self.prj.metadata.submission_subdir, jobname)
+                self.prj.metadata[SUBMISSION_SUBDIR_KEY], jobname)
         logfile = submission_base + ".log"
         template_values["JOBNAME"] = jobname
         template_values["CODE"] = "\n".join(commands)
