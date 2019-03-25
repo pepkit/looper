@@ -1,27 +1,24 @@
 site_name: Looper
-site_logo: img/looper_logo_dark.svg
+site_logo: img/logo_looper.svg
 site_url: http://code.databio.org/looper/
 repo_url: http://github.com/pepkit/looper
 
 nav:
   - Getting Started: 
     - Introduction: README.md
-    - Philosophy: philosophy.md
     - Features at-a-glance: features.md
-    - Hello world: hello-world.md
-  - Developer guides:    
-    - Building a basic pipeline: basic-pipeline.md
-    - Using the run method: advanced-run-method.md
-    - Automatic command-line arguments: cli.md
-    - Configuring pipelines: configuration.md
-    - Reporting statistics: report.md
-    - Cleaning up intermediate files: clean.md
-    - Best practices: best-practices.md
-  - Toolkits:
-    - "NGSTk: the NGS toolkit": ngstk.md    
+    - Installing and hello world: hello-world.md
+  - How-to guides:    
+    - Defining a project: define-your-project.md
+    - Linking a project to a pipeline: linking-a-pipeline.md
+    - Linking to multiple pipelines: linking-multiple-pipelines.md
+    - Writing a pipeline interface: pipeline-interface.md
+    - Running on a cluster: cluster-computing.md
+    - Running jobs in containers: containers.md
+    - Handling multiple input files: how-to-merge-inputs.md
   - Reference:
-    - Catalog of pipeline outputs: outputs.md
-    - API: autodoc_build/pypiper.md
+    - Usage: usage.md
+    - Configuration files: config-files.md
     - FAQ: faq.md
     - Support: support.md
     - Contributing: contributing.md
