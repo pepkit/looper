@@ -27,21 +27,11 @@ class HTMLReportBuilder(object):
         self.prj = prj
         self.j_env = get_jinja_env()
         self.reports_dir = self.get_reports_dir()
+        self.index_html_path = get_index_html_path(self.prj)
         _LOGGER.debug("Reports dir: {}".format(self.reports_dir))
 
     def __call__(self, objs, stats, columns):
         """ Do the work of the subcommand/program. """
-
-        def get_index_html_path():
-            """
-            Get the index HTML path depending on the subproject activation status
-
-            :return str: path to the index HTML
-            """
-            index_html_root = os.path.join(self.prj.metadata.output_dir, self.prj.name)
-            if self.prj.subproject is not None:
-                index_html_root += "_" + self.prj.subproject
-            return index_html_root + "_summary.html"
 
         def create_object_parent_html(objs, stats, wd):
             """
@@ -70,9 +60,9 @@ class HTMLReportBuilder(object):
                     pages.append(page_relpath)
                     labels.append(key)
 
-            template_vars = dict(navbar=create_navbar(create_navbar_links(objs, stats, wd)), labels=labels, pages=pages, header="Objects",
+            template_vars = dict(navbar=create_navbar(create_navbar_links(objs, stats, wd, self.reports_dir, self.index_html_path)), labels=labels, pages=pages, header="Objects",
                                  version=v)
-            return self.render_jinja_template("navbar_list_parent.html", template_vars)
+            return render_jinja_template("navbar_list_parent.html", self.j_env, template_vars)
 
         def create_sample_parent_html(objs, stats, wd):
             """
@@ -105,9 +95,13 @@ class HTMLReportBuilder(object):
                     pages.append(page_relpath)
                     labels.append(sample_name)
 
-            template_vars = dict(navbar=create_navbar(create_navbar_links(objs, stats, wd)), labels=labels, pages=pages, header="Samples",
+            template_vars = dict(navbar=create_navbar(create_navbar_links(objs, stats, wd, self.reports_dir, self.index_html_path)), labels=labels, pages=pages, header="Samples",
                                  version=v)
-            return self.render_jinja_template("navbar_list_parent.html", template_vars)
+            return render_jinja_template("navbar_list_parent.html", self.j_env, template_vars)
+
+        def create_navbar(navbar_links):
+            template_vars = dict(navbar_links=navbar_links)
+            return render_jinja_template("navbar.html", self.j_env, template_vars)
 
         def create_object_html(single_object, objs, stats, wd):
             """
@@ -197,9 +191,9 @@ class HTMLReportBuilder(object):
                                 filename.replace(' ', '_').lower() + " references nonexistent object files")
                 _LOGGER.debug(filename.replace(' ', '_').lower() +
                               " nonexistent files: " + ','.join(str(x) for x in warnings))
-            template_vars = dict(navbar=create_navbar(create_navbar_links(objs, stats, wd)), name=current_name, figures=figures, links=links,
+            template_vars = dict(navbar=create_navbar(create_navbar_links(objs, stats, wd, self.reports_dir, self.index_html_path)), name=current_name, figures=figures, links=links,
                                  version=v)
-            save_html(object_path, self.render_jinja_template("object.html", args=template_vars))
+            save_html(object_path, render_jinja_template("object.html", self.j_env, args=template_vars))
 
         def create_sample_html(objs, stats, sample_name, sample_stats, wd):
             """
@@ -322,12 +316,12 @@ class HTMLReportBuilder(object):
                 _LOGGER.warning("{} is not present in {}".format(
                     sample_name, self.prj.metadata.results_subdir))
 
-            template_vars = dict(navbar=create_navbar(create_navbar_links(objs, stats, wd)), sample_name=sample_name,
+            template_vars = dict(navbar=create_navbar(create_navbar_links(objs, stats, wd, self.reports_dir, self.index_html_path)), sample_name=sample_name,
                                  stats_file_path=stats_file_path, profile_file_path=profile_file_path,
                                  commands_file_path=commands_file_path, log_file_path=log_file_path,
                                  button_class=button_class, sample_stats=sample_stats, flag=flag, links=links,
                                  figures=figures, version=v)
-            save_html(html_page, self.render_jinja_template("sample.html", template_vars))
+            save_html(html_page, render_jinja_template("sample.html", self.j_env, template_vars))
             return sample_page_relpath
 
         def create_status_html(objs, stats, wd):
@@ -456,95 +450,14 @@ class HTMLReportBuilder(object):
                         self.prj.metadata.results_subdir,
                         ' '.join(str(sample) for sample in sample_warning)))
 
-            template_vars = dict(navbar=create_navbar(create_navbar_links(objs, stats, wd)), sample_link_names=sample_link_names,
+            template_vars = dict(navbar=create_navbar(create_navbar_links(objs, stats, wd, self.reports_dir, self.index_html_path)), sample_link_names=sample_link_names,
                              sample_paths=sample_paths, log_link_names=log_link_names, log_paths=log_paths,
                              row_classes=row_classes, flags=flags, times=times, mems=mems, version=v)
-            return self.render_jinja_template("status.html", template_vars)
-
-        def _get_navbar_dropdown_data_objects(objs, rep_dir, wd):
-            relpaths = []
-            df_keys = objs['key'].drop_duplicates().sort_values()
-            for key in df_keys:
-                page_name = key + ".html"
-                page_path = os.path.join(rep_dir, page_name.replace(' ', '_').lower())
-                relpaths.append(os.path.relpath(page_path, wd))
-            return relpaths, df_keys
-
-        def _get_navbar_dropdown_data_samples(stats, rep_dir, wd):
-            relpaths = []
-            sample_names = []
-            for sample in stats:
-                for entry, val in sample.items():
-                    if entry == "sample_name":
-                        sample_name = str(val)
-                        page_name = sample_name + ".html"
-                        page_path = os.path.join(rep_dir, page_name.replace(' ', '_').lower())
-                        relpath = os.path.relpath(page_path, wd)
-                        relpaths.append(relpath)
-                        sample_names.append(sample_name)
-                        break
-                    else:
-                        _LOGGER.warning("Could not determine sample name in stats.tsv")
-            return relpaths,  sample_names
-
-        def create_navbar_links(objs, stats, wd):
-            """
-            Return a string containing the navbar prebuilt html.
-            Generates links to each page relative to the directory
-            of interest.
-            :param pandas.DataFrame objs: project results dataframe containing
-                object data
-            :param list stats: a summary file of pipeline statistics for each
-                analyzed sample
-            :param path wd: the working directory of the current HTML page
-                being generated, enables navbar links relative to page
-            """
-            _LOGGER.debug("Building navbar with paths relative to: {}...".format(wd))
-            index_html_path = get_index_html_path()
-            index_page_relpath = os.path.relpath(index_html_path, wd)
-            status_page = os.path.join(self.reports_dir, "status.html")
-            status_relpath = os.path.relpath(status_page, wd)
-            objects_page = os.path.join(self.reports_dir, "objects.html")
-            objects_relpath = os.path.relpath(objects_page, wd)
-            samples_page = os.path.join(self.reports_dir, "samples.html")
-            samples_relpath = os.path.relpath(samples_page, wd)
-            dropdown_keys_objects = None
-            dropdown_relpaths_objects = None
-            dropdown_relpaths_samples = None
-            sample_names = None
-            if not objs.dropna().empty:
-                # If the number of objects is 20 or less, use a drop-down menu
-                if len(objs['key'].drop_duplicates()) <= 20:
-                    navbar_dropdown_data_objects = _get_navbar_dropdown_data_objects(objs, self.reports_dir, wd)
-                    dropdown_relpaths_objects = navbar_dropdown_data_objects[0]
-                    dropdown_keys_objects = navbar_dropdown_data_objects[1]
-                else:
-                    dropdown_relpaths_objects = objects_relpath
-            if stats:
-                if len(stats) <= 20:
-                    navbar_dropdown_data_samples = _get_navbar_dropdown_data_samples(stats, self.reports_dir, wd)
-                    dropdown_relpaths_samples = navbar_dropdown_data_samples[0]
-                    sample_names = navbar_dropdown_data_samples[1]
-                else:
-                    # Create a menu link to the samples parent page
-                    dropdown_relpaths_samples = samples_relpath
-            template_vars = dict(index_html=index_page_relpath, status_html_page=status_relpath,
-                                 status_page_name="Status", dropdown_keys_objects=dropdown_keys_objects,
-                                 objects_page_name="Objects", samples_page_name="Samples",
-                                 objects_html_page=dropdown_relpaths_objects,
-                                 samples_html_page=dropdown_relpaths_samples, menu_name_objects="Objects",
-                                 menu_name_samples="Samples", sample_names=sample_names, all_samples=samples_relpath,
-                                 all_objects=objects_relpath)
-            return self.render_jinja_template("navbar_links.html", template_vars)
-
-        def create_navbar(navbar_links):
-            template_vars = dict(navbar_links=navbar_links)
-            return self.render_jinja_template("navbar.html", template_vars)
+            return render_jinja_template("status.html", self.j_env, template_vars)
 
         def create_project_objects():
-            _LOGGER.debug("Building project object...")
             """ Render available project level summaries as additional figures/links """
-
+            _LOGGER.debug("Building project object...")
             all_protocols = [sample.protocol for sample in self.prj.samples]
 
             # For each protocol report the project summarizers' results
@@ -591,7 +504,7 @@ class HTMLReportBuilder(object):
                     _LOGGER.warning("Summarizer was unable to find: " + ', '.join(str(x) for x in warnings))
 
             template_vars = dict(figures=figures, links=links)
-            return self.render_jinja_template("project_object.html", template_vars)
+            return render_jinja_template("project_object.html", self.j_env, template_vars)
 
         def create_index_html(objs, stats, col_names):
             """
@@ -610,7 +523,7 @@ class HTMLReportBuilder(object):
             if not objs.dropna().empty:
                 objs.drop_duplicates(keep='last', inplace=True)
             # Generate parent index.html page path
-            index_html_path = get_index_html_path()
+            index_html_path = get_index_html_path(self.prj)
 
             # Add stats_summary.tsv button link
             tsv_outfile_path = os.path.join(self.prj.metadata.output_dir, self.prj.name)
@@ -677,25 +590,14 @@ class HTMLReportBuilder(object):
             project_objects = create_project_objects()
             # Complete and close HTML file
             template_vars = dict(project_name=self.prj.name, stats_json=_read_tsv_to_json(tsv_outfile_path),
-                                 navbar=create_navbar(create_navbar_links(objs, stats, self.prj.metadata.output_dir)),
+                                 navbar=create_navbar(create_navbar_links(objs, stats, self.prj.metadata.output_dir, self.reports_dir, self.index_html_path)),
                                  stats_file_path=stats_file_path, project_objects=project_objects, columns=col_names,
                                  table_row_data=table_row_data, version=v)
-            save_html(index_html_path, self.render_jinja_template("index.html", template_vars))
+            save_html(index_html_path, render_jinja_template("index.html", self.j_env, template_vars))
             return index_html_path
         # Generate HTML report
         index_html_path = create_index_html(objs, stats, columns)
         return index_html_path
-
-    def render_jinja_template(self, name, args=dict()):
-        """
-
-        :param str name: name of the template
-        :param dict args: arguments to pass to the template
-        :return str: rendered template
-        """
-        assert isinstance(args, dict), "args has to be a dict"
-        template = self.j_env.get_template(name)
-        return template.render(**args)
 
     def get_reports_dir(self):
         """
@@ -705,6 +607,81 @@ class HTMLReportBuilder(object):
         """
         rep_dir_name = "reports" if self.prj.subproject is None else "reports_" + self.prj.subproject
         return os.path.join(self.prj.metadata.output_dir, rep_dir_name)
+
+
+def create_navbar_links(objs, stats, wd, reports_dir, index_html_path):
+    """
+    Return a string containing the navbar prebuilt html.
+    Generates links to each page relative to the directory
+    of interest.
+    :param pandas.DataFrame objs: project results dataframe containing
+        object data
+    :param list stats: a summary file of pipeline statistics for each
+        analyzed sample
+    :param path wd: the working directory of the current HTML page
+        being generated, enables navbar links relative to page
+    """
+    _LOGGER.debug("Building navbar with paths relative to: {}".format(wd))
+    index_page_relpath = os.path.relpath(index_html_path, wd)
+    status_page = os.path.join(reports_dir, "status.html")
+    status_relpath = os.path.relpath(status_page, wd)
+    objects_page = os.path.join(reports_dir, "objects.html")
+    objects_relpath = os.path.relpath(objects_page, wd)
+    samples_page = os.path.join(reports_dir, "samples.html")
+    samples_relpath = os.path.relpath(samples_page, wd)
+    dropdown_keys_objects = None
+    dropdown_relpaths_objects = None
+    dropdown_relpaths_samples = None
+    sample_names = None
+    if not objs.dropna().empty:
+        # If the number of objects is 20 or less, use a drop-down menu
+        if len(objs['key'].drop_duplicates()) <= 20:
+            navbar_dropdown_data_objects = _get_navbar_dropdown_data_objects(objs, reports_dir, wd)
+            dropdown_relpaths_objects = navbar_dropdown_data_objects[0]
+            dropdown_keys_objects = navbar_dropdown_data_objects[1]
+        else:
+            dropdown_relpaths_objects = objects_relpath
+    if stats:
+        if len(stats) <= 20:
+            navbar_dropdown_data_samples = _get_navbar_dropdown_data_samples(stats, reports_dir, wd)
+            dropdown_relpaths_samples = navbar_dropdown_data_samples[0]
+            sample_names = navbar_dropdown_data_samples[1]
+        else:
+            # Create a menu link to the samples parent page
+            dropdown_relpaths_samples = samples_relpath
+    template_vars = dict(index_html=index_page_relpath, status_html_page=status_relpath,
+                         status_page_name="Status", dropdown_keys_objects=dropdown_keys_objects,
+                         objects_page_name="Objects", samples_page_name="Samples",
+                         objects_html_page=dropdown_relpaths_objects,
+                         samples_html_page=dropdown_relpaths_samples, menu_name_objects="Objects",
+                         menu_name_samples="Samples", sample_names=sample_names, all_samples=samples_relpath,
+                         all_objects=objects_relpath)
+    return render_jinja_template("navbar_links.html", get_jinja_env(), template_vars)
+
+
+def get_index_html_path(prj):
+    """
+    Get the index HTML path depending on the subproject activation status
+
+    :return str: path to the index HTML
+    """
+    index_html_root = os.path.join(prj.metadata.output_dir, prj.name)
+    if prj.subproject is not None:
+        index_html_root += "_" + prj.subproject
+    return index_html_root + "_summary.html"
+
+
+def render_jinja_template(name, jinja_env, args=dict()):
+    """
+
+    :param str name: name of the template
+    :param dict args: arguments to pass to the template
+    :param jinja_env:
+    :return str: rendered template
+    """
+    assert isinstance(args, dict), "args has to be a dict"
+    template = jinja_env.get_template(name)
+    return template.render(**args)
 
 
 def save_html(path, template):
@@ -793,6 +770,34 @@ def _get_relpath_to_file(file_name, sample_name, location, relative_to):
     return rel_file_path
 
 
+def _get_navbar_dropdown_data_objects(objs, rep_dir, wd):
+    relpaths = []
+    df_keys = objs['key'].drop_duplicates().sort_values()
+    for key in df_keys:
+        page_name = key + ".html"
+        page_path = os.path.join(rep_dir, page_name.replace(' ', '_').lower())
+        relpaths.append(os.path.relpath(page_path, wd))
+    return relpaths, df_keys
+
+
+def _get_navbar_dropdown_data_samples(stats, rep_dir, wd):
+    relpaths = []
+    sample_names = []
+    for sample in stats:
+        for entry, val in sample.items():
+            if entry == "sample_name":
+                sample_name = str(val)
+                page_name = sample_name + ".html"
+                page_path = os.path.join(rep_dir, page_name.replace(' ', '_').lower())
+                relpath = os.path.relpath(page_path, wd)
+                relpaths.append(relpath)
+                sample_names.append(sample_name)
+                break
+            else:
+                _LOGGER.warning("Could not determine sample name in stats.tsv")
+    return relpaths, sample_names
+
+
 def _read_tsv_to_json(path):
     """
     Read a tsv file to a JSON formatted string
@@ -804,6 +809,7 @@ def _read_tsv_to_json(path):
     _LOGGER.debug("Reading TSV from '{}'".format(path))
     df = _pd.read_table(path, sep="\t", index_col=False, header=None)
     return df.to_json()
+
 
 def uniqify(seq):
     """ Fast way to uniqify while preserving input order. """

@@ -458,8 +458,7 @@ def _run_custom_summarizers(project):
         try:
             ifaces = project.interfaces_by_protocol[protocol]
         except KeyError:
-            _LOGGER.warning("No interface for protocol '{}', skipping summary".
-                            format(protocol))
+            _LOGGER.warning("No interface for protocol '{}', skipping summary".format(protocol))
             continue
         for iface in ifaces:
             _LOGGER.debug(iface)
@@ -486,8 +485,7 @@ def _create_stats_summary(project, counter):
     stats = []
     project_samples = project.samples
     for sample in project_samples:
-        _LOGGER.info(counter.show(sample.sample_name,
-                                       sample.protocol))
+        _LOGGER.info(counter.show(sample.sample_name, sample.protocol))
         sample_output_folder = sample_folder(project, sample)
 
         # Grab the basic info from the annotation sheet for this sample.
