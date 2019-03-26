@@ -57,6 +57,7 @@ def sample_writer(request):
         ext = ".tsv"
     else:
         ext = ".txt"
+
     def write(folder, records):
         anns = os.path.join(folder, "psa" + ext)
         def go(recs, fp):
@@ -72,6 +73,7 @@ def sample_writer(request):
         subanns = os.path.join(folder, "subanns" + ext)
         go(subannotation_data, subanns)
         return anns, subanns
+
     return write
 
 
@@ -137,29 +139,39 @@ def test_troubled_samples_get_no_script(tmpdir):
 
 def test_convergent_protocol_mapping_keys(tmpdir):
     """ Similarly-named protocols do not result in multiple pipelines. """
+
     protomap = OrderedDict([
         ("WGBS", WGBS_PIPE), ("wgbs", WGBS_PIPE), ("ATAC-SEQ", ATAC_PIPE),
         ("ATACseq", ATAC_PIPE), ("ATAC-seq", ATAC_PIPE)])
     records = [("sample" + str(i), p) for i, p in enumerate(protomap)]
+
     outdir = tmpdir.strpath
+
     sep, ext = "\t", ".tsv"
     anns_path = os.path.join(outdir, "anns" + ext)
     records = [SAMPLE_METADATA_HEADER] + records
     with open(anns_path, 'w') as f:
         f.write(os.linesep.join(sep.join(r) for r in records))
+
     pliface_data = {"protocol_mapping": dict(protomap), "pipelines": PIPE_SPECS}
     pliface_filepath = os.path.join(outdir, "pipes.yaml")
+
     with open(pliface_filepath, 'w') as f:
         yaml.dump(pliface_data, f)
+
     metadata = {"output_dir": outdir, SAMPLE_ANNOTATIONS_KEY: anns_path,
                 "pipeline_interfaces": pliface_filepath}
+
     _touch_pipe_files(tmpdir.strpath, pliface_data)
+
     prjdat = {"metadata": metadata}
     pcfg = tmpdir.join("prj.yaml").strpath
     with open(pcfg, 'w') as f:
         yaml.dump(prjdat, f)
     prj = Project(pcfg)
+
     conductors, pipe_keys = process_protocols(prj, protomap.keys())
+
     # Conductors collection is keyed on pipeline, not protocol
     assert set(conductors.keys()) == set(protomap.values())
     # Collection of pipeline keys by protocol, not pipeline
@@ -170,16 +182,14 @@ def test_convergent_protocol_mapping_keys(tmpdir):
 
 
 def _count_files(p, *preds):
+    """ Count the number of files immediately within folder that match predicate(s). """
     return sum(1 for f in os.listdir(p)
                if os.path.isfile(f) and all(map(lambda p: p(f), preds)))
 
 
 def _touch_pipe_files(folder, pliface):
+    """ Ensure existence of files at paths designated as pipeline interfaces. """
     for pipe in pliface["pipelines"].values():
         path = os.path.join(folder, pipe["path"])
         with open(path, 'w'):
             print("Writing pipe: {}".format(path))
-
-
-def _to_dict(m):
-    return {k: _to_dict(v) if isinstance(v, AttMap) else v for k, v in m.items()}
