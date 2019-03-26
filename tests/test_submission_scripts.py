@@ -4,8 +4,7 @@ from collections import OrderedDict
 import os
 import pytest
 import yaml
-from looper import PipelineInterface
-from looper.conductor import SubmissionConductor
+from attmap import AttMap
 from looper.const import *
 from looper.looper import Project, process_protocols
 from peppy import ASSAY_KEY, SAMPLE_ANNOTATIONS_KEY, SAMPLE_NAME_COLNAME, \
@@ -82,7 +81,12 @@ def prj(request, tmpdir):
     outdir = tmpdir.strpath
     anns, subanns = sample_writer(request)(outdir, SAMPLE_METADATA_RECORDS)
     conf_path = os.path.join(outdir, "prj.yaml")
-    metadata = {SAMPLE_ANNOTATIONS_KEY: anns, "output_dir": outdir}
+    pipe_iface_path = os.path.join(outdir, "pliface.yaml")
+    with open(pipe_iface_path, 'w') as f:
+        yaml.dump(PLIFACE_DATA, f)
+    _touch_pipe_files(outdir, PLIFACE_DATA)
+    metadata = {SAMPLE_ANNOTATIONS_KEY: anns,
+                "output_dir": outdir, "pipeline_interfaces": pipe_iface_path}
     if subanns:
         metadata[SAMPLE_SUBANNOTATIONS_KEY] = subanns
     prjdat = {"metadata": metadata}
@@ -91,35 +95,14 @@ def prj(request, tmpdir):
     return Project(conf_path)
 
 
-@pytest.fixture(scope="function")
-def pliface():
-    """ Basic pipeline interface to share across test cases """
-    return PipelineInterface(PLIFACE_DATA)
-
-
-@pytest.fixture(scope="function")
-def conductors(request):
-    """ Submission conductor """
-    kwargs = {"pipeline_interface": pliface, "prj": prj}
-    for k in ["cmd_base", "dry_run", "ignore_flags",
-              "max_cmds", "max_size", "automatic"]:
-        try:
-            v = request.getfixturevalue(k)
-        except Exception:
-            continue
-        if v is not None:
-            kwargs[k] = v
-    return {pl: SubmissionConductor(pipeline_key=pl, **kwargs)
-            for pl in pliface.pipelines.keys()}
-
-
 @pytest.mark.parametrize(["automatic", "max_cmds"], [(True, 1)])
 def test_single_sample_auto_conductor_new_sample_scripts(
         tmpdir, prj, automatic, max_cmds):
     """ Validate base/ideal case of submission conduction w.r.t. scripts. """
     samples = prj.samples
-    conductors, pipe_keys = process_protocols(prj, {s.protocol for s in samples})
-    subdir = tmpdir.join(prj.metadata[SUBMISSION_SUBDIR_KEY]).strpath
+    conductors, pipe_keys = \
+        process_protocols(prj, {s.protocol for s in samples})
+    subdir = prj.metadata[SUBMISSION_SUBDIR_KEY]
     assert 0 == _count_files(subdir)
     for s in samples:
         pks = pipe_keys[s.protocol]
@@ -127,8 +110,11 @@ def test_single_sample_auto_conductor_new_sample_scripts(
             "Multiple pipelines for sample {}: {}".format(s.name, pks)
         c = conductors[pks[0]]
         c.add_sample(s)
-        exp_sub = os.path.join(subdir, s.name + ".sub")
-        assert os.path.isfile(exp_sub)
+        sub_fn_suffix = s.name + ".sub"
+        contents = os.listdir(subdir)
+        assert 1 == len([f for f in contents if sub_fn_suffix in f]), \
+            "No filename containing {} in {}; contents: {}".\
+            format(sub_fn_suffix, subdir, contents)
 
 
 @pytest.mark.skip("Not implemented")
@@ -172,14 +158,7 @@ def test_convergent_protocol_mapping_keys(tmpdir):
     pcfg = tmpdir.join("prj.yaml").strpath
     with open(pcfg, 'w') as f:
         yaml.dump(prjdat, f)
-    # DEBUG
-    with open(anns_path, 'r') as f:
-        print("SAMPLE LINES:\n{}".format(f.readlines()))
     prj = Project(pcfg)
-
-    # DEBUG
-    print("INTERFACES BY PROTOCOL: {}".format(prj.interfaces_by_protocol))
-
     conductors, pipe_keys = process_protocols(prj, protomap.keys())
     # Conductors collection is keyed on pipeline, not protocol
     assert set(conductors.keys()) == set(protomap.values())
@@ -200,3 +179,7 @@ def _touch_pipe_files(folder, pliface):
         path = os.path.join(folder, pipe["path"])
         with open(path, 'w'):
             print("Writing pipe: {}".format(path))
+
+
+def _to_dict(m):
+    return {k: _to_dict(v) if isinstance(v, AttMap) else v for k, v in m.items()}
