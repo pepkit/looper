@@ -29,6 +29,7 @@ from .utils import fetch_flag_files, sample_folder
 from .html_reports import HTMLReportBuilder
 
 from peppy import ProjectContext, SAMPLE_EXECUTION_TOGGLE
+import csv
 
 
 SUBMISSION_FAILURE_MESSAGE = "Cluster resource failure"
@@ -427,105 +428,128 @@ class Runner(Executor):
 
 class Summarizer(Executor):
     """ Project/Sample output summarizer """
+    def __init__(self, prj):
+        # call the inherited initialization
+        super(Summarizer, self).__init__(prj)
+        # pull together all the fits and stats from each sample into project-combined spreadsheets.
+        self.stats, self.columns = _create_stats_summary(self.prj, self.counter)
+        self.objs = _create_obj_summary(self.prj, self.counter)
 
     def __call__(self):
         """ Do the summarization. """
-        import csv
-
-        columns = []
-        stats = []
-        objs = _pd.DataFrame()
-        
-        # First, the generic summarize will pull together all the fits
-        # and stats from each sample into project-combined spreadsheets.
-        # Create stats_summary file
-        for sample in self.prj.samples:
-            _LOGGER.info(self.counter.show(sample.sample_name,
-                                           sample.protocol))
-            sample_output_folder = sample_folder(self.prj, sample)
-
-            # Grab the basic info from the annotation sheet for this sample.
-            # This will correspond to a row in the output.
-            sample_stats = sample.get_sheet_dict()
-            columns.extend(sample_stats.keys())
-            # Version 0.3 standardized all stats into a single file
-            stats_file = os.path.join(sample_output_folder, "stats.tsv")
-            if os.path.isfile(stats_file):
-                _LOGGER.info("Using stats file: '%s'", stats_file)
-            else:
-                _LOGGER.warning("No stats file '%s'", stats_file)
-                continue
-
-            t = _pd.read_csv(
-                stats_file, sep="\t", header=None, names=['key', 'value', 'pl'])
-            t.drop_duplicates(subset=['key', 'pl'], keep='last', inplace=True)
-            # t.duplicated(subset= ['key'], keep = False)
-            t.loc[:, 'plkey'] = t['pl'] + ":" + t['key']
-            dupes = t.duplicated(subset=['key'], keep=False)
-            t.loc[dupes, 'key'] = t.loc[dupes, 'plkey']
-            sample_stats.update(t.set_index('key')['value'].to_dict())
-            stats.append(sample_stats)
-            columns.extend(t.key.tolist())
-
-        self.counter.reset()
-
-        # Create objects summary file
-        for sample in self.prj.samples:
-            # Process any reported objects
-            _LOGGER.info(self.counter.show(sample.sample_name, sample.protocol))
-            sample_output_folder = sample_folder(self.prj, sample)
-            objs_file = os.path.join(sample_output_folder, "objects.tsv")
-            if os.path.isfile(objs_file):
-                _LOGGER.info("Using objects file: '%s'", objs_file)
-            else:
-                _LOGGER.warning("No objects file '%s'", objs_file)
-                continue
-            t = _pd.read_csv(objs_file, sep="\t", header=None,
-                             names=['key', 'filename', 'anchor_text', 'anchor_image', 'annotation'])
-            t['sample_name'] = sample.name
-            objs = objs.append(t, ignore_index=True)
-        
-        tsv_outfile_path = os.path.join(self.prj.metadata.output_dir, self.prj.name)
-        if hasattr(self.prj, "subproject") and self.prj.subproject:
-            tsv_outfile_path += '_' + self.prj.subproject
-        tsv_outfile_path += '_stats_summary.tsv'
-        tsv_outfile = open(tsv_outfile_path, 'w')
-        tsv_writer = csv.DictWriter(tsv_outfile, fieldnames=uniqify(columns), delimiter='\t', extrasaction='ignore')
-        tsv_writer.writeheader()
-        for row in stats:
-            tsv_writer.writerow(row)
-        tsv_outfile.close()
-
-        _LOGGER.info(
-            "Summary (n=" + str(len(stats)) + "): " + tsv_outfile_path)
-
-        # Next, looper can run custom summarizers, if they exist.
-        all_protocols = [sample.protocol for sample in self.prj.samples]
-
-        for protocol in set(all_protocols):
-            try:
-                ifaces = self.prj.interfaces_by_protocol[protocol]
-            except KeyError:
-                _LOGGER.warning("No interface for protocol '{}', skipping summary".
-                             format(protocol))
-                continue
-            for iface in ifaces:
-                _LOGGER.debug(iface)
-                pl = iface.fetch_pipelines(protocol)
-                summarizers = iface.get_attribute(pl, "summarizers")
-                if summarizers is not None:
-                    for summarizer in set(summarizers):
-                        summarizer_abspath = os.path.join(
-                            os.path.dirname(iface.pipe_iface_file), summarizer)
-                        try:
-                            subprocess.call([summarizer_abspath, self.prj.config_file])
-                        except OSError:
-                            _LOGGER.warning("Summarizer was unable to run: " + str(summarizer))
-
-        # Produce HTML report
+        _run_custom_summarizers(self.prj)
+        # initialize the report builder
         report_builder = HTMLReportBuilder(self.prj)
-        report_path = report_builder(objs, stats, uniqify(columns))
-        _LOGGER.info("HTML Report (n=" + str(len(stats)) + "): " + report_path)
+        # run the report builder. a set of HTML pages is produced
+        report_path = report_builder(self.objs, self.stats, uniqify(self.columns))
+        _LOGGER.info("HTML Report (n=" + str(len(self.stats)) + "): " + report_path)
+
+
+def _run_custom_summarizers(project):
+    """
+    Run custom summarizers if any are defined
+
+    :param looper.Project project: the project to be summarized
+    """
+    # Next, looper can run custom summarizers, if they exist.
+    all_protocols = [sample.protocol for sample in project.samples]
+
+    for protocol in set(all_protocols):
+        try:
+            ifaces = project.interfaces_by_protocol[protocol]
+        except KeyError:
+            _LOGGER.warning("No interface for protocol '{}', skipping summary".
+                            format(protocol))
+            continue
+        for iface in ifaces:
+            _LOGGER.debug(iface)
+            pl = iface.fetch_pipelines(protocol)
+            summarizers = iface.get_attribute(pl, "summarizers")
+            if summarizers is not None:
+                for summarizer in set(summarizers):
+                    summarizer_abspath = os.path.join(os.path.dirname(iface.pipe_iface_file), summarizer)
+                    try:
+                        subprocess.call([summarizer_abspath, project.config_file])
+                    except OSError:
+                        _LOGGER.warning("Summarizer was unable to run: " + str(summarizer))
+
+
+def _create_stats_summary(project, counter):
+    """
+    Create stats spreadsheet and columns to be considered in the report, save the spreadsheet to file
+
+    :param looper.Project project: the project to be summarized
+    :param looper.LooperCounter counter: a counter object
+    """
+    # Create stats_summary file
+    columns = []
+    stats = []
+    project_samples = project.samples
+    for sample in project_samples:
+        _LOGGER.info(counter.show(sample.sample_name,
+                                       sample.protocol))
+        sample_output_folder = sample_folder(project, sample)
+
+        # Grab the basic info from the annotation sheet for this sample.
+        # This will correspond to a row in the output.
+        sample_stats = sample.get_sheet_dict()
+        columns.extend(sample_stats.keys())
+        # Version 0.3 standardized all stats into a single file
+        stats_file = os.path.join(sample_output_folder, "stats.tsv")
+        if os.path.isfile(stats_file):
+            _LOGGER.info("Using stats file: '%s'", stats_file)
+        else:
+            _LOGGER.warning("No stats file '%s'", stats_file)
+            continue
+
+        t = _pd.read_csv(stats_file, sep="\t", header=None, names=['key', 'value', 'pl'])
+        t.drop_duplicates(subset=['key', 'pl'], keep='last', inplace=True)
+        t.loc[:, 'plkey'] = t['pl'] + ":" + t['key']
+        dupes = t.duplicated(subset=['key'], keep=False)
+        t.loc[dupes, 'key'] = t.loc[dupes, 'plkey']
+        sample_stats.update(t.set_index('key')['value'].to_dict())
+        stats.append(sample_stats)
+        columns.extend(t.key.tolist())
+    tsv_outfile_path = os.path.join(project.metadata.output_dir, project.name)
+    if hasattr(project, "subproject") and project.subproject:
+        tsv_outfile_path += '_' + project.subproject
+    tsv_outfile_path += '_stats_summary.tsv'
+    tsv_outfile = open(tsv_outfile_path, 'w')
+    tsv_writer = csv.DictWriter(tsv_outfile, fieldnames=uniqify(columns), delimiter='\t', extrasaction='ignore')
+    tsv_writer.writeheader()
+    for row in stats:
+        tsv_writer.writerow(row)
+    tsv_outfile.close()
+    _LOGGER.info("Summary (n=" + str(len(stats)) + "): " + tsv_outfile_path)
+    counter.reset()
+    return stats, columns
+
+
+def _create_obj_summary(project, counter):
+    """
+    Read sample specific objects files and save to a data frame
+
+    :param looper.Project project: the project to be summarized
+    :param looper.LooperCounter counter: a counter object
+    :return pandas.DataFrame: objects spreadsheet
+    """
+    objs = _pd.DataFrame()
+    # Create objects summary file
+    for sample in project.samples:
+        # Process any reported objects
+        _LOGGER.info(counter.show(sample.sample_name, sample.protocol))
+        sample_output_folder = sample_folder(project, sample)
+        objs_file = os.path.join(sample_output_folder, "objects.tsv")
+        if os.path.isfile(objs_file):
+            _LOGGER.info("Using objects file: '%s'", objs_file)
+        else:
+            _LOGGER.warning("No objects file '%s'", objs_file)
+            continue
+        t = _pd.read_csv(objs_file, sep="\t", header=None,
+                         names=['key', 'filename', 'anchor_text', 'anchor_image', 'annotation'])
+        t['sample_name'] = sample.name
+        objs = objs.append(t, ignore_index=True)
+    return objs
 
 
 def aggregate_exec_skip_reasons(skip_reasons_sample_pairs):

@@ -801,6 +801,7 @@ def _read_tsv_to_json(path):
     :return str: JSON formatted string
     """
     assert os.path.exists(path), "The file '{}' does not exist".format(path)
+    _LOGGER.debug("Reading TSV from '{}'".format(path))
     df = _pd.read_table(path, sep="\t", index_col=False, header=None)
     return df.to_json()
 
