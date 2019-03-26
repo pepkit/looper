@@ -7,6 +7,7 @@ import glob
 import itertools
 import os
 import random
+
 import pytest
 import yaml
 from peppy import FLAGS
@@ -160,6 +161,10 @@ class ConductorBasicSettingsSubmissionScriptTests:
                 obs=", ".join(s.name for s in flagged_samples))
         pks, pns = {}, {}
         conductors, pipe_keys = _process_base_pliface(prj)
+        original_arg_string_methods = {}
+        for k, c in conductors.items():
+            original_arg_string_methods[k] = c.pl_iface.get_arg_string
+            #conductors[k].pl_iface.get_arg_string = lambda *args, **kwargs: "testing"
         for s in prj.samples:
             prot = s.protocol
             ks = pipe_keys[prot]
@@ -184,7 +189,9 @@ class ConductorBasicSettingsSubmissionScriptTests:
                 ", ".join([f for f in flag_files_made if not os.path.isfile(f)]))
         num_unflagged = len(prj.samples) - len(flagged_sample_names)
         for s in prj.samples:
-            conductors[pks[s.protocol]].add_sample(s)
+            c = conductors[pks[s.protocol]]
+            #c.pl_iface.get_arg_string = lambda *args, **kwargs: "testing"
+            c.add_sample(s)
         num_subs_obs = _count_submissions(conductors.values())
         assert num_unflagged == num_subs_obs, \
             "{} unflagged sample(s) but {} command submission(s); these should " \
@@ -196,7 +203,10 @@ class ConductorBasicSettingsSubmissionScriptTests:
         all_subs = _find_subs(prj)
         assert len(all_subs) == num_unflagged, "Expected {} submission scripts " \
             "but found {}".format(num_unflagged, len(all_subs))
-        map(lambda c: c.write_skipped_sample_scripts(), conductors)
+        print("CONDUCTORS: {}".format(conductors))
+        for k, c in conductors.items():
+            print("Writing skipped sample scripts: {}".format(k))
+            c.write_skipped_sample_scripts()
         assert len(flagged_samples) == len(flagged_subs())
         assert len(prj.samples) == len(_find_subs(prj))
 
@@ -227,7 +237,7 @@ class ConductorBasicSettingsSubmissionScriptTests:
         assert set(flag_files_made) == set(itertools.chain(*preexisting.values()))
         conductors, pipe_keys = process_protocols(
             prj, set(PLIFACE_DATA), ignore_flags=True)
-        assert all(map(lambda c: c.ignore_flags, conductors)), \
+        assert all(map(lambda c: c.ignore_flags, conductors.values())), \
             "Failed to establish precondition, that flags are to be ignored"
         for s in prj.samples:
             pks = pipe_keys[s.protocol]
@@ -338,8 +348,11 @@ def _find_subs(project, sample=None):
         and specific sample if provided
     """
     name_patt = "{}*.sub".format("*" + sample.name if sample else "")
-    return glob.glob(os.path.join(
-        project.metadata[SUBMISSION_SUBDIR_KEY], name_patt))
+    # DEBUG
+    query = os.path.join(
+        project.metadata[SUBMISSION_SUBDIR_KEY], name_patt)
+    print("SEEKING: {}".format(query))
+    return glob.glob(query)
 
 
 def _process_base_pliface(prj, **kwargs):

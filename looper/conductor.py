@@ -1,6 +1,5 @@
 """ Pipeline job submission orchestration """
 
-import glob
 import logging
 import os
 import re
@@ -245,6 +244,7 @@ class SubmissionConductor(object):
                            "for pipeline arguments string"
             _LOGGER.warning("> Not submitted: %s", fail_message)
             use_this_sample and skip_reasons.append(fail_message)
+            use_this_sample = False
 
         this_sample_size = float(sample.input_file_size)
 
@@ -257,7 +257,7 @@ class SubmissionConductor(object):
             self._curr_size += this_sample_size
             if self.automatic and self._is_full(self._pool, self._curr_size):
                 self.submit()
-        elif argstring:
+        elif argstring is not None:
             # DEBUG
             print("ARGSTRING: {}".format(argstring))
             self._curr_skip_size += this_sample_size
@@ -266,11 +266,6 @@ class SubmissionConductor(object):
                 self._skipped_sample_pools.append(
                     (self._curr_skip_pool, self._curr_skip_size))
                 self._reset_curr_skips()
-        # DEBUG
-        else:
-            print("USE: {}".format(use_this_sample))
-            print("SKIPPING ENTIRELY: {}".format(sample.name))
-            print("ARGSTRING: {}".format(argstring))
 
         return skip_reasons
 

@@ -169,7 +169,6 @@ class PipelineInterface(PathExAttMap):
                 rp_data.update(universal_compute)
                 return rp_data
 
-
     def finalize_pipeline_key_and_paths(self, pipeline_key):
         """
         Determine pipeline's full path, arguments, and strict key.
@@ -475,7 +474,6 @@ class PipelineInterface(PathExAttMap):
         except (AttributeError, TypeError):
             return None
 
-
     @property
     def pipe_iface(self):
         """
@@ -488,7 +486,6 @@ class PipelineInterface(PathExAttMap):
                       format(self.__class__.__name__), DeprecationWarning)
         return self.pipelines
 
-
     @property
     def protomap(self):
         """
@@ -499,7 +496,6 @@ class PipelineInterface(PathExAttMap):
         warnings.warn("Protomap access is deprecated; please use {}"
                       .format(PROTOMAP_KEY), DeprecationWarning)
         return self.protocol_mapping
-
 
     def select_pipeline(self, pipeline_name):
         """
@@ -523,7 +519,6 @@ class PipelineInterface(PathExAttMap):
             # TODO: use defaults or force user to define this?
             raise MissingPipelineConfigurationException(pipeline_name)
 
-
     def uses_looper_args(self, pipeline_name):
         """
         Determine whether indicated pipeline accepts looper arguments.
@@ -536,7 +531,6 @@ class PipelineInterface(PathExAttMap):
         """
         config = self.select_pipeline(pipeline_name)
         return "looper_args" in config and config["looper_args"]
-
 
 
 def expand_pl_paths(piface):
