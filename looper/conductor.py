@@ -10,7 +10,7 @@ import time
 from .const import *
 from .exceptions import JobSubmissionException
 from .utils import \
-    create_looper_args_text, grab_project_data, sample_folder
+    create_looper_args_text, grab_project_data, fetch_sample_flags
 
 from peppy import Sample, VALID_READ_TYPES
 from divvy.utils import write_submit_script
@@ -163,13 +163,14 @@ class SubmissionConductor(object):
         if not issubclass(sample_subtype, Sample):
             raise TypeError("If provided, sample_subtype must extend {}".
                             format(Sample.__name__))
-        
-        sfolder = sample_folder(prj=self.prj, sample=sample)
-        flag_files = glob.glob(os.path.join(sfolder, self.pl_name + "*.flag"))
-        
+
+        flag_files = fetch_sample_flags(self.prj, sample, self.pl_name)
+
         use_this_sample = True
 
-        if len(flag_files) > 0:
+        if flag_files:
+            # DEBUG
+            print("FOUND FLAG FILES: {}".format(flag_files))
             if not self.ignore_flags:
                 use_this_sample = False
             # But rescue the sample in case rerun/failed passes
@@ -182,7 +183,8 @@ class SubmissionConductor(object):
                 _LOGGER.info("> Skipping sample '%s' for pipeline '%s', "
                              "%s found: %s", sample.name, self.pl_name,
                              "flags" if len(flag_files) > 1 else "flag",
-                             ", ".join(['{}'.format(os.path.basename(fp)) for fp in flag_files]))
+                             ", ".join(['{}'.format(
+                                 os.path.basename(fp)) for fp in flag_files]))
                 _LOGGER.debug("NO SUBMISSION")
 
         sample = sample_subtype(sample)
@@ -234,7 +236,9 @@ class SubmissionConductor(object):
             argstring = self.pl_iface.get_arg_string(
                 pipeline_name=self.pl_key, sample=sample,
                 submission_folder_path=self.prj.metadata[SUBMISSION_SUBDIR_KEY])
-        except AttributeError:
+        except AttributeError as e:
+            # DEBUG
+            print("Accepted att err: {}".format(e))
             argstring = None
             # TODO: inform about which missing attribute(s).
             fail_message = "Required attribute(s) missing " \
@@ -245,6 +249,8 @@ class SubmissionConductor(object):
         this_sample_size = float(sample.input_file_size)
 
         if use_this_sample and not skip_reasons:
+            # DEBUG
+            print("SKIP REASONS: {}".format(skip_reasons))
             assert argstring is not None, \
                 "Failed to create argstring for sample: {}".format(sample.name)
             self._pool.append((sample, argstring))
@@ -252,12 +258,19 @@ class SubmissionConductor(object):
             if self.automatic and self._is_full(self._pool, self._curr_size):
                 self.submit()
         elif argstring:
+            # DEBUG
+            print("ARGSTRING: {}".format(argstring))
             self._curr_skip_size += this_sample_size
             self._curr_skip_pool.append((sample, argstring))
             if self._is_full(self._curr_skip_pool, self._curr_skip_size):
                 self._skipped_sample_pools.append(
                     (self._curr_skip_pool, self._curr_skip_size))
                 self._reset_curr_skips()
+        # DEBUG
+        else:
+            print("USE: {}".format(use_this_sample))
+            print("SKIPPING ENTIRELY: {}".format(sample.name))
+            print("ARGSTRING: {}".format(argstring))
 
         return skip_reasons
 
@@ -434,10 +447,14 @@ class SubmissionConductor(object):
         return write_submit_script(submission_script, self._template, template_values)
 
     def write_skipped_sample_scripts(self):
+        """ For any sample skipped during initial processing, write submission script. """
         scripts = []
         for pool, size in self._skipped_sample_pools:
             settings, looptext, prjtext = self._get_settings_looptext_prjtext(size)
-            scripts.append(self.write_script(pool, settings, prjtext, looptext))
+            fp = self.write_script(pool, settings, prjtext, looptext)
+            # DEBUG
+            print("WROTE SCRIPT: {}".format(fp))
+            scripts.append(fp)
         return scripts
 
     def _reset_pool(self):

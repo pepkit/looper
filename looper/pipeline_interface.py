@@ -224,7 +224,6 @@ class PipelineInterface(PathExAttMap):
 
         return strict_pipeline_key, script_path_only, script_path_with_flags
 
-
     def get_arg_string(self, pipeline_name, sample,
                        submission_folder_path="", **null_replacements):
         """
@@ -248,7 +247,6 @@ class PipelineInterface(PathExAttMap):
             _LOGGER.debug("Adding argument for pipeline option '{}': {}".
                           format(option, argument))
             return "{} {} {}".format(argtext, option, argument)
-
 
         default_filepath = os.path.join(
                 submission_folder_path, sample.generate_filename())

@@ -75,7 +75,6 @@ def create_looper_args_text(pl_key, submission_settings, prj):
     return looper_argtext
 
 
-
 def fetch_flag_files(prj=None, results_folder="", flags=FLAGS):
     """
     Find all flag file paths for the given project.
@@ -84,9 +83,9 @@ def fetch_flag_files(prj=None, results_folder="", flags=FLAGS):
         similar metadata and access/usage pattern
     :param str results_folder: path to results folder, corresponding to the
         1:1 sample:folder notion that a looper Project has. That is, this
-        function uses the assumption that if rootdir rather than project is
-        provided, the structure of the file tree rooted at rootdir is such
-        that any flag files to be found are not directly within rootdir but
+        function uses the assumption that if results_folder rather than project
+        is provided, the structure of the file tree rooted at results_folder is
+        such that any flag files to be found are not directly within rootdir but
         are directly within on of its first layer of subfolders.
     :param Iterable[str] | str flags: Collection of flag names or single flag
         name for which to fetch files
@@ -108,7 +107,7 @@ def fetch_flag_files(prj=None, results_folder="", flags=FLAGS):
 
     if prj is None:
         for flag, suffix in flag_suffix_pairs:
-            flag_expr= os.path.join(results_folder, "*", suffix)
+            flag_expr = os.path.join(results_folder, "*", suffix)
             flags_present = glob.glob(flag_expr)
             files_by_flag[flag] = flags_present
     else:
@@ -121,9 +120,39 @@ def fetch_flag_files(prj=None, results_folder="", flags=FLAGS):
                 flags_present = glob.glob(flag_expr)
                 files_by_flag[flag].extend(flags_present)
 
-
     return files_by_flag
 
+
+def fetch_sample_flags(prj, sample, pl_names=None):
+    """
+    Find any flag files present for a sample associated with a project
+
+    :param looper.Project prj: project of interest
+    :param peppy.Sample sample: sample of interest
+    :param str | Iterable[str] pl_names: name of the pipeline for which flag(s)
+        should be found
+    :return Iterable[str]: collection of flag file path(s) associated with the
+        given sample for the given project
+    """
+    sfolder = sample_folder(prj=prj, sample=sample)
+    # DEBUG
+    print("Checking sample folder: {}".format(sfolder))
+    print("CONTENTS: {}".format(os.listdir(sfolder)))
+    if not pl_names:
+        # DEBUG
+        print("No pipeline names")
+        pl_match = lambda _: True
+    else:
+        # DEBUG
+        print("Pipeline names: {}".format(pl_names))
+        if isinstance(pl_names, str):
+            pl_names = [pl_names]
+        pl_match = lambda n: any(n.startswith(pl) for pl in pl_names)
+    res = [os.path.join(sfolder, f) for f in os.listdir(sfolder)
+            if os.path.splitext(f)[1] == ".flag" and pl_match(f)]
+    # DEBUG
+    print("RES: {}".format(res))
+    return res
 
 
 def grab_project_data(prj):
