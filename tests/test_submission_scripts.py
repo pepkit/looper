@@ -300,7 +300,7 @@ def test_convergent_protocol_mapping_keys(tmpdir):
         yaml.dump(prjdat, f)
     prj = Project(pcfg)
 
-    conductors, pipe_keys = process_protocols(prj, protomap.keys())
+    conductors, pipe_keys = process_protocols(prj, set(protomap.keys()))
 
     # Conductors collection is keyed on pipeline, not protocol
     assert set(conductors.keys()) == set(protomap.values())

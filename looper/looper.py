@@ -222,7 +222,7 @@ def process_protocols(prj, protocols, **kwargs):
     # individual commands (samples) may be lumped into a single job.
     submission_conductors = {}
     pipe_keys_by_protocol = defaultdict(list)
-    for proto in protocols | {GENERIC_PROTOCOL_KEY}:
+    for proto in set(protocols) | {GENERIC_PROTOCOL_KEY}:
         _LOGGER.debug("Determining sample type, script, and flags for "
                       "pipeline(s) associated with protocol: %s", proto)
         submission_bundles = prj.build_submission_bundles(proto)
