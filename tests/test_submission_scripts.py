@@ -238,6 +238,11 @@ class ConductorBasicSettingsSubmissionScriptTests:
         map(lambda c: c.write_skipped_sample_scripts(), conductors.values())
         assert len(flagged_samples) == len(flagged_subs())
         assert len(prj.samples) == len(_find_subs(prj))
+        # Writing skipped samples has no effect on submission count.
+        num_subs_obs = _count_submissions(conductors.values())
+        assert num_unflagged == num_subs_obs, \
+            "{} unflagged sample(s) but {} command submission(s); these should " \
+            "match".format(num_unflagged, num_subs_obs)
 
     @staticmethod
     @pytest.mark.parametrize(
@@ -276,16 +281,6 @@ class ConductorBasicSettingsSubmissionScriptTests:
                 format(len(pks), s.protocol, pks)
             conductors[pks[0]].add_sample(s)
         validate(prj, conductors.values())
-    
-    @staticmethod
-    @pytest.mark.skip("Not implemented")
-    @pytest.mark.parametrize("ignore", [False, True])
-    @pytest.mark.parametrize(
-        "flagged_sample", [sn for sn, _ in SAMPLE_METADATA_RECORDS])
-    def test_flagged_samples_are_submitted_iff_ignoring_flags(
-            ignore, tmpdir, prj, flagged_sample):
-        """ When flag exists, submission of a pipe/sample is conditional. """
-        pass
 
 
 def test_convergent_protocol_mapping_keys(tmpdir):
