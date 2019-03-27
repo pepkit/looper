@@ -4,19 +4,23 @@
 
   - Added
 
-    - Implemented ``looper rerun`` command.
+    - Implemented `looper rerun` command.
+
+    - Support use of custom `resources` in pipeline's `compute` section
+
+    - Listen for itemized compute resource specification on command-line with `--resources`
 
   - Changed
 
-    - Using ``attmap`` for "attribute-style key-vale store" implementation
+    - Using `attmap` for "attribute-style key-vale store" implementation
 
     - Removed Python 3.4 support.
     
-    - UI: change parameter names ``in/exclude-samples`` to ``selector-in/exclude``.
+    - UI: change parameter names `in/exclude-samples` to `selector-in/exclude`.
     
   - New:
 
-    - Add ``selector-attribute`` paramenter for more generic sample selection.
+    - Add `selector-attribute` paramenter for more generic sample selection.
       
 
 
