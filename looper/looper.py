@@ -633,9 +633,7 @@ class LooperCounter(object):
     Count samples as you loop through them, and create text for the
     subcommand logging status messages.
 
-    :param total: number of jobs to process
-    :type total: int
-
+    :param int total: number of jobs to process
     """
 
     def __init__(self, total):
