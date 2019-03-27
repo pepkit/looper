@@ -12,7 +12,6 @@ from .utils import \
     create_looper_args_text, grab_project_data, fetch_sample_flags
 
 from peppy import Sample, VALID_READ_TYPES
-from divvy.utils import write_submit_script
 
 
 __author__ = "Vince Reuter"
@@ -95,9 +94,6 @@ class SubmissionConductor(object):
         self.ignore_flags = ignore_flags
         self.prj = prj
         self.automatic = automatic
-
-        with open(self.prj.dcc.compute.submission_template, 'r') as template_file:
-            self._template = template_file.read()
 
         if max_cmds is None and max_size is None:
             self.max_cmds = 1
@@ -431,7 +427,7 @@ class SubmissionConductor(object):
         submission_script = submission_base + ".sub"
 
         _LOGGER.debug("> Creating submission script; command count: %d", len(commands))
-        return write_submit_script(submission_script, self._template, template_values)
+        return self.prj.dcc.write_script(submission_script, template_values)
 
     def write_skipped_sample_scripts(self):
         """ For any sample skipped during initial processing, write submission script. """
