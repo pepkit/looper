@@ -101,14 +101,14 @@ class PipelineInterface(PathExAttMap):
         def notify(msg):
             msg += " for pipeline {}".format(pipeline_name)
             if self.pipe_iface_file is not None:
-                msg += " in file {}".format(self.pipe_iface_file)
+                msg += " in interface {}".format(self.pipe_iface_file)
             _LOGGER.debug(msg)
 
         universal_compute = {}
         try:
             universal_compute = self.select_pipeline(pipeline_name)["compute"]
         except KeyError:
-            notify("No universal compute settings")
+            notify("No compute settings")
         try:
             resources = self.select_pipeline(pipeline_name)["resources"]
         except KeyError:
