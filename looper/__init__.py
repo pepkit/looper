@@ -136,7 +136,6 @@ def setup_looper_logger(level, additional_locations=None, devmode=False,
     return LOOPER_LOGGER
 
 
-
 class _VersionInHelpParser(argparse.ArgumentParser):
     def format_help(self):
         """ Add version information to help text. """
@@ -218,7 +217,6 @@ def build_parser():
 
     subparsers = parser.add_subparsers(dest="command")
 
-
     def add_subparser(cmd):
         message = msg_by_cmd[cmd]
         return subparsers.add_parser(cmd, description=message, help=message)
@@ -250,6 +248,12 @@ def build_parser():
                 "--compute", dest="compute", default="default",
                 help="YAML file with looper environment compute settings.")
         subparser.add_argument(
+                "--resources",
+                help="Specification of individual computing resource settings; "
+                     "separate setting name/key from value with equals sign, "
+                     "and separate key-value pairs from eah other by comma; "
+                     "e.g., --resources k1=v1,k2=v2")
+        subparser.add_argument(
                 "--limit", dest="limit", default=None,
                 type=html_range(min_val=1, max_val="num_samples", value="num_samples"),
                 help="Limit to n samples.")
@@ -257,13 +261,14 @@ def build_parser():
         # null by default so that the logic that parses their values may
         # distinguish between explicit 0 and lack of specification.
         subparser.add_argument(
-                "--lump", type=html_range(min_val=0, max_val=100, step=0.1, value=100), default=None,
+                "--lump", default=None,
+                type=html_range(min_val=0, max_val=100, step=0.1, value=100),
                 help="Maximum total input file size for a lump/batch of commands "
                      "in a single job (in GB)")
         subparser.add_argument(
-                "--lumpn", type=html_range(min_val=1, max_val="num_samples", value="num_samples"), default=None,
+                "--lumpn", default=None,
+                type=html_range(min_val=1, max_val="num_samples", value="num_samples"),
                 help="Number of individual scripts grouped into single submission")
-
 
     # Other commands
     summarize_subparser = add_subparser("summarize")

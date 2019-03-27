@@ -104,16 +104,30 @@ class PipelineInterface(PathExAttMap):
                 msg += " in interface {}".format(self.pipe_iface_file)
             _LOGGER.debug(msg)
 
+        pl = self.select_pipeline(pipeline_name)
+
+        compute_key = "compute"
         universal_compute = {}
         try:
-            universal_compute = self.select_pipeline(pipeline_name)["compute"]
+            universal_compute = pl[compute_key]
         except KeyError:
             notify("No compute settings")
+
+        res_key = "resources"
         try:
-            resources = self.select_pipeline(pipeline_name)["resources"]
+            resources = universal_compute[res_key]
         except KeyError:
-            notify("No resources")
-            return {}
+            try:
+                resources = pl[res_key]
+            except KeyError:
+                notify("No resources")
+                return {}
+        else:
+            if res_key in pl:
+                _LOGGER.warning(
+                    "{rk} section found in both {c} section and top-level "
+                    "pipelines section of pipeline interface; {c} section "
+                    "version will be used".format(rk=res_key, c=compute_key))
 
         # Require default resource package specification.
         try:
