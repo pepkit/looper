@@ -135,7 +135,9 @@ def fetch_sample_flags(prj, sample, pl_names=None):
         given sample for the given project
     """
     sfolder = sample_folder(prj=prj, sample=sample)
-    assert os.path.isdir(sfolder), "Missing sample folder: {}".format(sfolder)
+    if not os.path.isdir(sample_folder):
+        _LOGGER.debug("Folder doesn't exist for sample {}: {}".format(sample.name, sfolder))
+        return []
     if not pl_names:
         pl_match = lambda _: True
     else:
