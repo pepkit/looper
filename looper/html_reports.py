@@ -7,7 +7,7 @@ import logging
 import jinja2
 import re
 
-from _version import __version__ as v
+from ._version import __version__ as v
 from collections import OrderedDict
 
 TEMPLATES_DIRNAME = "jinja_templates"
@@ -26,7 +26,7 @@ class HTMLReportBuilder(object):
         super(HTMLReportBuilder, self).__init__()
         self.prj = prj
         self.j_env = get_jinja_env()
-        self.reports_dir = self.get_reports_dir()
+        self.reports_dir = get_reports_dir(self.prj)
         self.index_html_path = get_index_html_path(self.prj)
         _LOGGER.debug("Reports dir: {}".format(self.reports_dir))
 
@@ -60,7 +60,7 @@ class HTMLReportBuilder(object):
                     pages.append(page_relpath)
                     labels.append(key)
 
-            template_vars = dict(navbar=create_navbar(create_navbar_links(objs, stats, wd, self.reports_dir, self.index_html_path)), labels=labels, pages=pages, header="Objects",
+            template_vars = dict(navbar=create_navbar(create_navbar_links(objs, stats, wd, self.reports_dir)), labels=labels, pages=pages, header="Objects",
                                  version=v)
             return render_jinja_template("navbar_list_parent.html", self.j_env, template_vars)
 
@@ -95,12 +95,12 @@ class HTMLReportBuilder(object):
                     pages.append(page_relpath)
                     labels.append(sample_name)
 
-            template_vars = dict(navbar=create_navbar(create_navbar_links(objs, stats, wd, self.reports_dir, self.index_html_path)), labels=labels, pages=pages, header="Samples",
+            template_vars = dict(navbar=create_navbar(create_navbar_links(objs, stats, wd, self.reports_dir)), labels=labels, pages=pages, header="Samples",
                                  version=v)
             return render_jinja_template("navbar_list_parent.html", self.j_env, template_vars)
 
         def create_navbar(navbar_links):
-            template_vars = dict(navbar_links=navbar_links)
+            template_vars = dict(navbar_links=navbar_links, index_html=self.index_html_path)
             return render_jinja_template("navbar.html", self.j_env, template_vars)
 
         def create_object_html(single_object, objs, stats, wd):
@@ -191,7 +191,7 @@ class HTMLReportBuilder(object):
                                 filename.replace(' ', '_').lower() + " references nonexistent object files")
                 _LOGGER.debug(filename.replace(' ', '_').lower() +
                               " nonexistent files: " + ','.join(str(x) for x in warnings))
-            template_vars = dict(navbar=create_navbar(create_navbar_links(objs, stats, wd, self.reports_dir, self.index_html_path)), name=current_name, figures=figures, links=links,
+            template_vars = dict(navbar=create_navbar(create_navbar_links(objs, stats, wd, self.reports_dir)), name=current_name, figures=figures, links=links,
                                  version=v)
             save_html(object_path, render_jinja_template("object.html", self.j_env, args=template_vars))
 
@@ -316,7 +316,7 @@ class HTMLReportBuilder(object):
                 _LOGGER.warning("{} is not present in {}".format(
                     sample_name, self.prj.metadata.results_subdir))
 
-            template_vars = dict(navbar=create_navbar(create_navbar_links(objs, stats, wd, self.reports_dir, self.index_html_path)), sample_name=sample_name,
+            template_vars = dict(navbar=create_navbar(create_navbar_links(objs, stats, wd, self.reports_dir)), sample_name=sample_name,
                                  stats_file_path=stats_file_path, profile_file_path=profile_file_path,
                                  commands_file_path=commands_file_path, log_file_path=log_file_path,
                                  button_class=button_class, sample_stats=sample_stats, flag=flag, links=links,
@@ -387,7 +387,7 @@ class HTMLReportBuilder(object):
                         else:
                             button_class = flag_dict["button_class"]
                             flag = flag_dict["flag"]
-
+                    row_classes.append(button_class)
                     # get first column data (sample name/link)
                     page_name = sample_name + ".html"
                     page_path = os.path.join(self.reports_dir, page_name.replace(' ', '_').lower())
@@ -420,16 +420,12 @@ class HTMLReportBuilder(object):
                     # get fifth column data (memory use)
                     mem = "NA"
                     if os.path.isfile(log_file):
-                        m = _pd.read_table(log_file, header=None, sep=':', names=['key', 'value'])
-                        m.drop_duplicates(subset=['value'], keep='last', inplace=True)
-                        m['key'] = m['key'].str.replace('*', '')
-                        m['key'] = m['key'].str.replace('^\s+', '')
-                        try:
-                            mem = str(m[m['key'] == 'Peak memory used'].iloc[0]['value']).replace(' ', '')
-                        except IndexError:
+                        mem = _get_from_log(log_file, r'(Peak memory used)')
+                        if mem is None:
                             status_warning = True
+                            mem = "NA"
+                    _LOGGER.debug("Peak mem read from log: {}".format(mem))
                     mems.append(mem)
-                    row_classes.append(button_class)
                 else:
                     # Sample was not run through the pipeline
                     sample_warning.append(sample_name)
@@ -450,7 +446,7 @@ class HTMLReportBuilder(object):
                         self.prj.metadata.results_subdir,
                         ' '.join(str(sample) for sample in sample_warning)))
 
-            template_vars = dict(navbar=create_navbar(create_navbar_links(objs, stats, wd, self.reports_dir, self.index_html_path)), sample_link_names=sample_link_names,
+            template_vars = dict(navbar=create_navbar(create_navbar_links(objs, stats, wd, self.reports_dir)), sample_link_names=sample_link_names,
                              sample_paths=sample_paths, log_link_names=log_link_names, log_paths=log_paths,
                              row_classes=row_classes, flags=flags, times=times, mems=mems, version=v)
             return render_jinja_template("status.html", self.j_env, template_vars)
@@ -590,7 +586,7 @@ class HTMLReportBuilder(object):
             project_objects = create_project_objects()
             # Complete and close HTML file
             template_vars = dict(project_name=self.prj.name, stats_json=_read_tsv_to_json(tsv_outfile_path),
-                                 navbar=create_navbar(create_navbar_links(objs, stats, self.prj.metadata.output_dir, self.reports_dir, self.index_html_path)),
+                                 navbar=create_navbar(create_navbar_links(objs, stats, self.prj.metadata.output_dir, self.reports_dir)),
                                  stats_file_path=stats_file_path, project_objects=project_objects, columns=col_names,
                                  table_row_data=table_row_data, version=v)
             save_html(index_html_path, render_jinja_template("index.html", self.j_env, template_vars))
@@ -599,17 +595,18 @@ class HTMLReportBuilder(object):
         index_html_path = create_index_html(objs, stats, columns)
         return index_html_path
 
-    def get_reports_dir(self):
-        """
-        Get the reports directory path depending on the subproject activation status
 
-        :return str: path to the reports directory
-        """
-        rep_dir_name = "reports" if self.prj.subproject is None else "reports_" + self.prj.subproject
-        return os.path.join(self.prj.metadata.output_dir, rep_dir_name)
+def get_reports_dir(prj):
+    """
+    Get the reports directory path depending on the subproject activation status
+
+    :return str: path to the reports directory
+    """
+    rep_dir_name = "reports" if prj.subproject is None else "reports_" + prj.subproject
+    return os.path.join(prj.metadata.output_dir, rep_dir_name)
 
 
-def create_navbar_links(objs, stats, wd, reports_dir, index_html_path):
+def create_navbar_links(objs, stats, wd, reports_dir, caravel=False):
     """
     Return a string containing the navbar prebuilt html.
     Generates links to each page relative to the directory
@@ -622,13 +619,18 @@ def create_navbar_links(objs, stats, wd, reports_dir, index_html_path):
         being generated, enables navbar links relative to page
     """
     _LOGGER.debug("Building navbar with paths relative to: {}".format(wd))
-    index_page_relpath = os.path.relpath(index_html_path, wd)
-    status_page = os.path.join(reports_dir, "status.html")
-    status_relpath = os.path.relpath(status_page, wd)
-    objects_page = os.path.join(reports_dir, "objects.html")
-    objects_relpath = os.path.relpath(objects_page, wd)
-    samples_page = os.path.join(reports_dir, "samples.html")
-    samples_relpath = os.path.relpath(samples_page, wd)
+    # status_page = os.path.join(reports_dir, "status.html")
+    # status_relpath = os.path.relpath(status_page, wd)
+    # status_relpath = make_relpath(status_page, wd, caravel)
+    status_relpath = make_relpath("reports/status.html", wd, reports_dir, caravel)
+    # objects_page = os.path.join(reports_dir, "objects.html")
+    objects_relpath = make_relpath("reports/objects.html", wd, reports_dir, caravel)
+    # objects_relpath = os.path.relpath(objects_page, wd)
+    # objects_relpath = make_relpath(objects_page, wd, caravel)
+    # samples_page = os.path.join(reports_dir, "samples.html")
+    # samples_relpath = os.path.relpath(samples_page, wd)
+    # samples_relpath = make_relpath(samples_page, wd, caravel)
+    samples_relpath = make_relpath("reports/samples.html", wd, reports_dir, caravel)
     dropdown_keys_objects = None
     dropdown_relpaths_objects = None
     dropdown_relpaths_samples = None
@@ -649,7 +651,7 @@ def create_navbar_links(objs, stats, wd, reports_dir, index_html_path):
         else:
             # Create a menu link to the samples parent page
             dropdown_relpaths_samples = samples_relpath
-    template_vars = dict(index_html=index_page_relpath, status_html_page=status_relpath,
+    template_vars = dict(status_html_page=status_relpath,
                          status_page_name="Status", dropdown_keys_objects=dropdown_keys_objects,
                          objects_page_name="Objects", samples_page_name="Samples",
                          objects_html_page=dropdown_relpaths_objects,
@@ -657,6 +659,22 @@ def create_navbar_links(objs, stats, wd, reports_dir, index_html_path):
                          menu_name_samples="Samples", sample_names=sample_names, all_samples=samples_relpath,
                          all_objects=objects_relpath)
     return render_jinja_template("navbar_links.html", get_jinja_env(), template_vars)
+
+
+def make_relpath(file_name, dir, reports_dir, caravel):
+    """
+
+    :param str path: the path to make relative
+    :param str dir: the dir the path should be relative to
+    :param bool caravel: whether the path will be used in caravel caravel
+    :return str: relative path
+    """
+    os.path.join(reports_dir, file_name)
+    if caravel:
+        relpath = os.path.join("summary", file_name)
+    else:
+        relpath = os.path.relpath(os.path.join(reports_dir, file_name), dir)
+    return relpath
 
 
 def get_index_html_path(prj):
@@ -796,6 +814,27 @@ def _get_navbar_dropdown_data_samples(stats, rep_dir, wd):
             else:
                 _LOGGER.warning("Could not determine sample name in stats.tsv")
     return relpaths, sample_names
+
+
+def _get_from_log(log_path, regex):
+    """
+    Get the value for the matched key from log file
+
+    :param str log_path: path to the log file
+    :param str regex: matching str. Should be formatted as follows: r'(phrase to match)'
+    :return str: matched and striped string
+    :raises IOError: when the file is not found in the provided path
+    """
+    if not os.path.exists(log_path):
+        raise IOError("Can't read the log file '{}'. Not found".format(log_path))
+    log = _pd.read_table(log_path, header=None, sep=':', names=['key', 'value'])
+    log_row = log.iloc[:, 0].str.extractall(regex)
+    if log_row.empty:
+        return None
+    if log_row.size > 1:
+        _LOGGER.warning("More than one values matched with: {}. Returning first.".format(regex))
+    val = log.iloc[log_row.index[0][0]].value.strip()
+    return val
 
 
 def _read_tsv_to_json(path):
