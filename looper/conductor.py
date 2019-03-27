@@ -168,8 +168,6 @@ class SubmissionConductor(object):
         use_this_sample = True
 
         if flag_files:
-            # DEBUG
-            print("FOUND FLAG FILES: {}".format(flag_files))
             if not self.ignore_flags:
                 use_this_sample = False
             # But rescue the sample in case rerun/failed passes
@@ -236,8 +234,6 @@ class SubmissionConductor(object):
                 pipeline_name=self.pl_key, sample=sample,
                 submission_folder_path=self.prj.metadata[SUBMISSION_SUBDIR_KEY])
         except AttributeError as e:
-            # DEBUG
-            print("Accepted att err: {}".format(e))
             argstring = None
             # TODO: inform about which missing attribute(s).
             fail_message = "Required attribute(s) missing " \
@@ -249,8 +245,6 @@ class SubmissionConductor(object):
         this_sample_size = float(sample.input_file_size)
 
         if use_this_sample and not skip_reasons:
-            # DEBUG
-            print("SKIP REASONS: {}".format(skip_reasons))
             assert argstring is not None, \
                 "Failed to create argstring for sample: {}".format(sample.name)
             self._pool.append((sample, argstring))
@@ -258,8 +252,6 @@ class SubmissionConductor(object):
             if self.automatic and self._is_full(self._pool, self._curr_size):
                 self.submit()
         elif argstring is not None:
-            # DEBUG
-            print("ARGSTRING: {}".format(argstring))
             self._curr_skip_size += this_sample_size
             self._curr_skip_pool.append((sample, argstring))
             if self._is_full(self._curr_skip_pool, self._curr_skip_size):
@@ -446,10 +438,7 @@ class SubmissionConductor(object):
         scripts = []
         for pool, size in self._skipped_sample_pools:
             settings, looptext, prjtext = self._get_settings_looptext_prjtext(size)
-            fp = self.write_script(pool, settings, prjtext, looptext)
-            # DEBUG
-            print("WROTE SCRIPT: {}".format(fp))
-            scripts.append(fp)
+            scripts.append(self.write_script(pool, settings, prjtext, looptext))
         return scripts
 
     def _reset_pool(self):

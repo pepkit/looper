@@ -115,7 +115,9 @@ def prj(request, tmpdir):
     p = Project(conf_path)
     mkdir(p.metadata[RESULTS_SUBDIR_KEY])
     mkdir(p.metadata[SUBMISSION_SUBDIR_KEY])
-    map(lambda s: mkdir(sample_folder(p, s)), p.samples)
+    for s in p.samples:
+        mkdir(sample_folder(p, s))
+    assert all(map(lambda s: os.path.isdir(sample_folder(p, s)), p.samples))
     return p
 
 
@@ -215,7 +217,8 @@ class ConductorBasicSettingsSubmissionScriptTests:
                 ", ".join([f for f in flag_files_made if not os.path.isfile(f)]))
 
         # Trigger the automatic submissions.
-        map(lambda s: conductors[pks[s.protocol]].add_sample(s), prj.samples)
+        for s in prj.samples:
+            conductors[pks[s.protocol]].add_sample(s)
 
         # Check the submission counts.
         num_unflagged = len(prj.samples) - len(flagged_sample_names)
@@ -235,7 +238,8 @@ class ConductorBasicSettingsSubmissionScriptTests:
             "but found {}".format(num_unflagged, len(all_subs))
 
         # Write the skipped scripts and check their presence.
-        map(lambda c: c.write_skipped_sample_scripts(), conductors.values())
+        for c in conductors.values():
+            c.write_skipped_sample_scripts()
         assert len(flagged_samples) == len(flagged_subs())
         assert len(prj.samples) == len(_find_subs(prj))
         # Writing skipped samples has no effect on submission count.
@@ -262,8 +266,7 @@ class ConductorBasicSettingsSubmissionScriptTests:
                 expn=len(flagged_sample_names),
                 exp=", ".join(flagged_sample_names), obsn=len(flagged_samples),
                 obs=", ".join(s.name for s in flagged_samples))
-        flag_files_made = list(map(
-            partial(_mkflag, prj=prj, flag=flag_name), flagged_samples))
+        flag_files_made = [_mkflag(s, prj, flag_name) for s in flagged_samples]
         assert all(os.path.isfile(f) for f in flag_files_made), \
             "Missing setup flag file(s): {}".format(
                 ", ".join([f for f in flag_files_made if not os.path.isfile(f)]))

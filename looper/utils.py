@@ -135,24 +135,15 @@ def fetch_sample_flags(prj, sample, pl_names=None):
         given sample for the given project
     """
     sfolder = sample_folder(prj=prj, sample=sample)
-    # DEBUG
-    print("Checking sample folder: {}".format(sfolder))
-    print("CONTENTS: {}".format(os.listdir(sfolder)))
+    assert os.path.isdir(sfolder), "Missing sample folder: {}".format(sfolder)
     if not pl_names:
-        # DEBUG
-        print("No pipeline names")
         pl_match = lambda _: True
     else:
-        # DEBUG
-        print("Pipeline names: {}".format(pl_names))
         if isinstance(pl_names, str):
             pl_names = [pl_names]
         pl_match = lambda n: any(n.startswith(pl) for pl in pl_names)
-    res = [os.path.join(sfolder, f) for f in os.listdir(sfolder)
+    return [os.path.join(sfolder, f) for f in os.listdir(sfolder)
             if os.path.splitext(f)[1] == ".flag" and pl_match(f)]
-    # DEBUG
-    print("RES: {}".format(res))
-    return res
 
 
 def grab_project_data(prj):
