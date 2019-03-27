@@ -10,6 +10,10 @@ import logging
 import os
 import subprocess
 import sys
+if sys.version_info < (3, 3):
+    from collections import Mapping
+else:
+    from collections.abc import Mapping
 import yaml
 
 # Need specific sequence of actions for colorama imports?
@@ -207,13 +211,15 @@ class Destroyer(Executor):
         return self(args, preview_flag=False)
 
 
-def process_protocols(prj, protocols, **kwargs):
+def process_protocols(prj, protocols, resource_setting_kwargs=None, **kwargs):
     """
     Create submission conductors and collect by protocol the mapped pipelines.
 
     :param looper.Project prj: project definition
     :param Iterable[str] protocols: names of protocols mapped to pipelines
         for which conductors are to be created
+    :param Mapping resource_setting_kwargs: key-value pairs collection storing
+        specific compute resource settings
     :return Mapping[str, looper.conductor.SubmissionConductor], Mapping[str, list[str]]:
         mapping from pipeline key to submission conductor, and mapping from
         protocol name to collection of keys for pipelines for that protocol
@@ -222,6 +228,17 @@ def process_protocols(prj, protocols, **kwargs):
     # individual commands (samples) may be lumped into a single job.
     submission_conductors = {}
     pipe_keys_by_protocol = defaultdict(list)
+
+    if resource_setting_kwargs:
+        if not isinstance(resource_setting_kwargs, Mapping):
+            raise TypeError(
+                "Resource settings argument must be mapping; got {} ({})".
+                    format(resource_setting_kwargs, type(resource_setting_kwargs)))
+    else:
+        resource_setting_kwargs = {}
+    comp_vars = prj.dcc.compute.to_map
+    comp_vars.update(resource_setting_kwargs or {})
+
     for proto in set(protocols) | {GENERIC_PROTOCOL_KEY}:
         _LOGGER.debug("Determining sample type, script, and flags for "
                       "pipeline(s) associated with protocol: %s", proto)
@@ -236,7 +253,7 @@ def process_protocols(prj, protocols, **kwargs):
             conductor = SubmissionConductor(
                 pl_key, pl_iface, script_with_flags, prj,
                 sample_subtype=sample_subtype,
-                compute_variables=prj.dcc.compute, **kwargs)
+                compute_variables=comp_vars, **kwargs)
             submission_conductors[pl_key] = conductor
             pipe_keys_by_protocol[proto].append(pl_key)
     return submission_conductors, pipe_keys_by_protocol
@@ -245,7 +262,7 @@ def process_protocols(prj, protocols, **kwargs):
 class Runner(Executor):
     """ The true submitter of pipelines """
 
-    def __call__(self, args, remaining_args, rerun=False):
+    def __call__(self, args, remaining_args, rerun=False, **compute_kwargs):
         """
         Do the Sample submission.
 
@@ -282,8 +299,9 @@ class Runner(Executor):
                      format(", ".join(self.prj.protocols)))
 
         submission_conductors, pipe_keys_by_protocol = process_protocols(
-            self.prj, protocols, dry_run=args.dry_run, delay=args.time_delay,
-            extra_args=remaining_args, ignore_flags=args.ignore_flags,
+            self.prj, protocols, compute_kwargs, dry_run=args.dry_run,
+            delay=args.time_delay, extra_args=remaining_args,
+            ignore_flags=args.ignore_flags,
             max_cmds=args.lumpn, max_size=args.lump)
         mapped_protos = set(pipe_keys_by_protocol.keys())
 
@@ -670,6 +688,34 @@ def _submission_status_text(curr, total, sample_name, sample_protocol, color):
            Style.RESET_ALL
 
 
+def _proc_resources_spec(spec):
+    """
+    Process CLI-specified itemized compute resource setting specification.
+
+    :param str | NoneType spec: itemized resource specification from CLI
+    :return Mapping[str, str]: binding between resource setting name and value
+    :raise ValueError: if interpretation of the given specification as encoding
+        of key-value pairs fails
+    """
+    if not spec:
+        return {}
+    kvs = spec.strip().split(",")
+    pairs = [(kv, kv.split("=")) for kv in kvs]
+    bads, data = [], {}
+    for orig, pair in pairs:
+        try:
+            k, v = pair
+        except ValueError:
+            bads.append(orig)
+        else:
+            data[k] = v
+    if bads:
+        raise ValueError("Could not completely parse itemized resource "
+                         "specification; these failed as key-value pairs; "
+                         "please check usage: {}".format(", ".join(bads)))
+    return data
+
+
 def main():
     """ Primary workflow """
 
@@ -732,7 +778,9 @@ def main():
         if args.command in ["run", "rerun"]:
             run = Runner(prj)
             try:
-                run(args, remaining_args, rerun=args.command == "rerun")
+                compute_kwargs = _proc_resources_spec(getattr(args, "resources", ""))
+                run(args, remaining_args,
+                    rerun=(args.command == "rerun"), **compute_kwargs)
             except IOError:
                 _LOGGER.error("{} pipeline_interfaces: '{}'".format(
                         prj.__class__.__name__, prj.metadata.pipeline_interfaces))
