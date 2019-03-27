@@ -119,6 +119,31 @@ def prj(request, tmpdir):
     return p
 
 
+def validate_submission_count(project, conductors):
+    """
+
+    :param looper.Project project:
+    :param Iterable[looper.conductor.SubmissionConductor] conductors: collection
+        of submission conductors used
+    """
+    num_exp = len(project.samples)
+    num_obs = _count_submissions(conductors)
+    assert num_exp == num_obs, \
+        "Expected {} submissions but tallied {}".format(num_exp, num_obs)
+
+
+
+def validate_submission_scripts(project, _):
+    """
+    Check bijection between a project's samples and its submission scripts.
+
+    :param looper.Project project:
+    """
+    scripts_by_sample = {s.name: _find_subs(project, s) for s in project.samples}
+    assert len(project.samples) == len(scripts_by_sample)
+    assert all(1 == len(scripts) for scripts in scripts_by_sample.values())
+
+
 class ConductorBasicSettingsSubmissionScriptTests:
     """ Tests for writing of submission scripts when submission conductor has default settings """
 
@@ -220,7 +245,8 @@ class ConductorBasicSettingsSubmissionScriptTests:
         [combo for k in range(1, len(SAMPLE_METADATA_RECORDS)) for combo in
          map(list, itertools.combinations([n for n, _ in SAMPLE_METADATA_RECORDS], k))])
     @pytest.mark.parametrize("flag_name", [random.choice(FLAGS)])
-    def test_ignoring_flags(prj, flag_name, flagged_sample_names):
+    @pytest.mark.parametrize("validate", [validate_submission_count, validate_submission_scripts])
+    def test_ignoring_flags(prj, flag_name, flagged_sample_names, validate):
         """ Script creation is automatic, and submission is counted. """
         preexisting = _collect_flags(prj)
         assert {} == preexisting, "Preexisting flag(s): {}".format(preexisting)
@@ -249,11 +275,8 @@ class ConductorBasicSettingsSubmissionScriptTests:
                 "Need exactly one pipeline key but got {} for protocol {}: {}".\
                 format(len(pks), s.protocol, pks)
             conductors[pks[0]].add_sample(s)
-        assert len(prj.samples) == _count_submissions(conductors.values())
-        scripts_by_sample = {s.name: _find_subs(prj, s) for s in prj.samples}
-        assert len(prj.samples) == len(scripts_by_sample)
-        assert all(1 == len(scripts) for scripts in scripts_by_sample.values())
-
+        validate(prj, conductors.values())
+    
     @staticmethod
     @pytest.mark.skip("Not implemented")
     @pytest.mark.parametrize("ignore", [False, True])
@@ -262,12 +285,6 @@ class ConductorBasicSettingsSubmissionScriptTests:
     def test_flagged_samples_are_submitted_iff_ignoring_flags(
             ignore, tmpdir, prj, flagged_sample):
         """ When flag exists, submission of a pipe/sample is conditional. """
-        pass
-
-    @staticmethod
-    @pytest.mark.skip("Not implemented")
-    def test_troubled_samples_get_no_script(tmpdir):
-        """ Sample for which argstring creation fails gets no sript. """
         pass
 
 
