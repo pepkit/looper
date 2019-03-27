@@ -22,6 +22,7 @@ from . import \
     setup_looper_logger, FLAGS, GENERIC_PROTOCOL_KEY, \
     LOGGING_LEVEL, __version__, build_parser, _LEVEL_BY_VERBOSITY
 from .conductor import SubmissionConductor
+from .const import *
 from .exceptions import JobSubmissionException
 from .project import Project
 from .utils import fetch_flag_files, sample_folder
@@ -91,7 +92,7 @@ class Checker(Executor):
         if all_folders:
             _LOGGER.info("Checking project folders for flags: %s", flag_text)
             files_by_flag = fetch_flag_files(
-                results_folder=self.prj.metadata.results_subdir, flags=flags)
+                results_folder=self.prj.metadata[RESULTS_SUBDIR_KEY], flags=flags)
         else:
             _LOGGER.info("Checking project samples for flags: %s", flag_text)
             files_by_flag = fetch_flag_files(prj=self.prj, flags=flags)
@@ -207,6 +208,41 @@ class Destroyer(Executor):
         return self(args, preview_flag=False)
 
 
+def process_protocols(prj, protocols, **kwargs):
+    """
+    Create submission conductors and collect by protocol the mapped pipelines.
+
+    :param looper.Project prj: project definition
+    :param Iterable[str] protocols: names of protocols mapped to pipelines
+        for which conductors are to be created
+    :return Mapping[str, looper.conductor.SubmissionConductor], Mapping[str, list[str]]:
+        mapping from pipeline key to submission conductor, and mapping from
+        protocol name to collection of keys for pipelines for that protocol
+    """
+    # Job submissions are managed on a per-pipeline basis so that
+    # individual commands (samples) may be lumped into a single job.
+    submission_conductors = {}
+    pipe_keys_by_protocol = defaultdict(list)
+    for proto in set(protocols) | {GENERIC_PROTOCOL_KEY}:
+        _LOGGER.debug("Determining sample type, script, and flags for "
+                      "pipeline(s) associated with protocol: %s", proto)
+        submission_bundles = prj.build_submission_bundles(proto)
+        if not submission_bundles:
+            if proto != GENERIC_PROTOCOL_KEY:
+                _LOGGER.warning("No mapping for protocol: '%s'", proto)
+            continue
+        for pl_iface, sample_subtype, pl_key, script_with_flags in \
+                submission_bundles:
+            _LOGGER.debug("%s: %s", pl_key, sample_subtype.__name__)
+            conductor = SubmissionConductor(
+                pl_key, pl_iface, script_with_flags, prj,
+                sample_subtype=sample_subtype,
+                compute_variables=prj.dcc.compute, **kwargs)
+            submission_conductors[pl_key] = conductor
+            pipe_keys_by_protocol[proto].append(pl_key)
+    return submission_conductors, pipe_keys_by_protocol
+
+
 class Runner(Executor):
     """ The true submitter of pipelines """
 
@@ -246,31 +282,11 @@ class Runner(Executor):
         _LOGGER.info("Finding pipelines for protocol(s): {}".
                      format(", ".join(self.prj.protocols)))
 
-        # Job submissions are managed on a per-pipeline basis so that
-        # individual commands (samples) may be lumped into a single job.
-        submission_conductors = {}
-        pipe_keys_by_protocol = defaultdict(list)
-        mapped_protos = set()
-        for proto in protocols | {GENERIC_PROTOCOL_KEY}:
-            _LOGGER.debug("Determining sample type, script, and flags for "
-                          "pipeline(s) associated with protocol: %s", proto)
-            submission_bundles = self.prj.build_submission_bundles(proto)
-            if not submission_bundles:
-                if proto != GENERIC_PROTOCOL_KEY:
-                    _LOGGER.warning("No mapping for protocol: '%s'", proto)
-                continue
-            mapped_protos.add(proto)
-            for pl_iface, sample_subtype, pl_key, script_with_flags in \
-                    submission_bundles:
-                _LOGGER.debug("%s: %s", pl_key, sample_subtype.__name__)
-                conductor = SubmissionConductor(
-                        pl_key, pl_iface, script_with_flags, self.prj,
-                        args.dry_run, args.time_delay, sample_subtype,
-                        remaining_args, args.ignore_flags,
-                        self.prj.dcc.compute,
-                        max_cmds=args.lumpn, max_size=args.lump)
-                submission_conductors[pl_key] = conductor
-                pipe_keys_by_protocol[proto].append(pl_key)
+        submission_conductors, pipe_keys_by_protocol = process_protocols(
+            self.prj, protocols, dry_run=args.dry_run, delay=args.time_delay,
+            extra_args=remaining_args, ignore_flags=args.ignore_flags,
+            max_cmds=args.lumpn, max_size=args.lump)
+        mapped_protos = set(pipe_keys_by_protocol.keys())
 
         # Determine number of samples eligible for processing.
         num_samples = len(self.prj.samples)
@@ -335,7 +351,7 @@ class Runner(Executor):
             # for reuse in case of many jobs (pipelines) using base Sample.
             # Do a single overwrite here, then any subsequent Sample can be sure
             # that the file is fresh, with respect to this run of looper.
-            sample.to_yaml(subs_folder_path=self.prj.metadata.submission_subdir)
+            sample.to_yaml(subs_folder_path=self.prj.metadata[SUBMISSION_SUBDIR_KEY])
 
             pipe_keys = pipe_keys_by_protocol.get(sample.protocol) \
                 or pipe_keys_by_protocol.get(GENERIC_PROTOCOL_KEY)
@@ -415,15 +431,6 @@ class Runner(Executor):
                               for reason, samples in samples_by_reason.items()]
             _LOGGER.info("\nSummary of failures:\n{}".
                          format("\n".join(full_fail_msgs)))
-
-        """
-        if failed_submission_scripts:
-            _LOGGER.info(
-                    Fore.LIGHTRED_EX +
-                    "\n{} scripts with failed submission: ".
-                    format(len(failed_submission_scripts)) + Style.RESET_ALL +
-                    ", ".join(failed_submission_scripts))
-        """
 
 
 class Summarizer(Executor):
@@ -735,7 +742,7 @@ def main():
         if args.compute != "default":
             prj.dcc.activate_package(args.compute)
 
-    _LOGGER.info("Results subdir: " + prj.metadata.results_subdir)
+    _LOGGER.info("Results subdir: " + prj.metadata[RESULTS_SUBDIR_KEY])
 
     with ProjectContext(prj, selector_attribute=args.selector_attribute, selector_include=args.selector_include,
             selector_exclude=args.selector_exclude) as prj:

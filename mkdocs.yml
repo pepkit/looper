@@ -1,0 +1,31 @@
+site_name: Looper
+site_logo: img/logo_looper.svg
+site_url: http://code.databio.org/looper/
+repo_url: http://github.com/pepkit/looper
+
+nav:
+  - Getting Started: 
+    - Introduction: README.md
+    - Features at-a-glance: features.md
+    - Installing and hello world: hello-world.md
+  - How-to guides:    
+    - Defining a project: define-your-project.md
+    - Linking a project to a pipeline: linking-a-pipeline.md
+    - Linking to multiple pipelines: linking-multiple-pipelines.md
+    - Writing a pipeline interface: pipeline-interface.md
+    - Running on a cluster: cluster-computing.md
+    - Running jobs in containers: containers.md
+    - Handling multiple input files: how-to-merge-inputs.md
+  - Reference:
+    - Usage: usage.md
+    - Configuration files: config-files.md
+    - FAQ: faq.md
+    - Support: support.md
+    - Contributing: contributing.md
+    - Changelog: changelog.md
+
+theme: databio
+
+plugins:
+  - databio
+  - search

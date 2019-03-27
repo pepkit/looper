@@ -1,15 +1,15 @@
 """ Pipeline job submission orchestration """
 
-import glob
 import logging
 import os
 import re
 import subprocess
 import time
 
+from .const import *
 from .exceptions import JobSubmissionException
 from .utils import \
-    create_looper_args_text, grab_project_data, sample_folder
+    create_looper_args_text, grab_project_data, fetch_sample_flags
 
 from peppy import Sample, VALID_READ_TYPES
 from divvy.utils import write_submit_script
@@ -20,7 +20,6 @@ __email__ = "vreuter@virginia.edu"
 
 
 _LOGGER = logging.getLogger(__name__)
-
 
 
 class SubmissionConductor(object):
@@ -163,13 +162,12 @@ class SubmissionConductor(object):
         if not issubclass(sample_subtype, Sample):
             raise TypeError("If provided, sample_subtype must extend {}".
                             format(Sample.__name__))
-        
-        sfolder = sample_folder(prj=self.prj, sample=sample)
-        flag_files = glob.glob(os.path.join(sfolder, self.pl_name + "*.flag"))
-        
+
+        flag_files = fetch_sample_flags(self.prj, sample, self.pl_name)
+
         use_this_sample = True
 
-        if len(flag_files) > 0:
+        if flag_files:
             if not self.ignore_flags:
                 use_this_sample = False
             # But rescue the sample in case rerun/failed passes
@@ -182,7 +180,8 @@ class SubmissionConductor(object):
                 _LOGGER.info("> Skipping sample '%s' for pipeline '%s', "
                              "%s found: %s", sample.name, self.pl_name,
                              "flags" if len(flag_files) > 1 else "flag",
-                             ", ".join(['{}'.format(os.path.basename(fp)) for fp in flag_files]))
+                             ", ".join(['{}'.format(
+                                 os.path.basename(fp)) for fp in flag_files]))
                 _LOGGER.debug("NO SUBMISSION")
 
         sample = sample_subtype(sample)
@@ -233,14 +232,15 @@ class SubmissionConductor(object):
         try:
             argstring = self.pl_iface.get_arg_string(
                 pipeline_name=self.pl_key, sample=sample,
-                submission_folder_path=self.prj.metadata.submission_subdir)
-        except AttributeError:
+                submission_folder_path=self.prj.metadata[SUBMISSION_SUBDIR_KEY])
+        except AttributeError as e:
             argstring = None
             # TODO: inform about which missing attribute(s).
             fail_message = "Required attribute(s) missing " \
                            "for pipeline arguments string"
             _LOGGER.warning("> Not submitted: %s", fail_message)
             use_this_sample and skip_reasons.append(fail_message)
+            use_this_sample = False
 
         this_sample_size = float(sample.input_file_size)
 
@@ -251,7 +251,7 @@ class SubmissionConductor(object):
             self._curr_size += this_sample_size
             if self.automatic and self._is_full(self._pool, self._curr_size):
                 self.submit()
-        elif argstring:
+        elif argstring is not None:
             self._curr_skip_size += this_sample_size
             self._curr_skip_pool.append((sample, argstring))
             if self._is_full(self._curr_skip_pool, self._curr_skip_size):
@@ -307,7 +307,7 @@ class SubmissionConductor(object):
                 if type(s) is Sample:
                     exp_fname = "{}.yaml".format(s.name)
                     exp_fpath = os.path.join(
-                            self.prj.metadata.submission_subdir, exp_fname)
+                            self.prj.metadata[SUBMISSION_SUBDIR_KEY], exp_fname)
                     if not os.path.isfile(exp_fpath):
                         _LOGGER.warning("Missing %s file will be created: '%s'",
                                      Sample.__name__, exp_fpath)
@@ -315,7 +315,7 @@ class SubmissionConductor(object):
                     subtype_name = s.__class__.__name__
                     _LOGGER.debug("Writing %s representation to disk: '%s'",
                                   subtype_name, s.name)
-                    s.to_yaml(subs_folder_path=self.prj.metadata.submission_subdir)
+                    s.to_yaml(subs_folder_path=self.prj.metadata[SUBMISSION_SUBDIR_KEY])
 
             script = self.write_script(self._pool, settings,
                 prj_argtext=prj_argtext, looper_argtext=looper_argtext)
@@ -423,7 +423,7 @@ class SubmissionConductor(object):
 
         jobname = self._jobname(pool)
         submission_base = os.path.join(
-                self.prj.metadata.submission_subdir, jobname)
+                self.prj.metadata[SUBMISSION_SUBDIR_KEY], jobname)
         logfile = submission_base + ".log"
         template_values["JOBNAME"] = jobname
         template_values["CODE"] = "\n".join(commands)
@@ -434,6 +434,7 @@ class SubmissionConductor(object):
         return write_submit_script(submission_script, self._template, template_values)
 
     def write_skipped_sample_scripts(self):
+        """ For any sample skipped during initial processing, write submission script. """
         scripts = []
         for pool, size in self._skipped_sample_pools:
             settings, looptext, prjtext = self._get_settings_looptext_prjtext(size)

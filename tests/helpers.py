@@ -10,7 +10,6 @@ __author__ = "Vince Reuter"
 __email__ = "vreuter@virginia.edu"
 
 
-
 def assert_entirely_equal(observed, expected):
     """ Accommodate equality assertion for varied data, including NaN. """
     try:
@@ -19,7 +18,6 @@ def assert_entirely_equal(observed, expected):
         assert np.isnan(observed) and np.isnan(expected)
     except ValueError:
         assert (observed == expected).all()
-
 
 
 def named_param(argnames, argvalues):
@@ -35,7 +33,6 @@ def named_param(argnames, argvalues):
     """
     return partial(pytest.mark.parametrize(argnames, argvalues,
                    ids=lambda arg: "{}={}".format(argnames, arg)))
-
 
 
 def powerset(items, min_items=0, include_full_pop=True):
@@ -59,5 +56,18 @@ def powerset(items, min_items=0, include_full_pop=True):
             for k in range(min_items, max_items)))
 
 
-
 nonempty_powerset = partial(powerset, min_items=1)
+
+
+"""
+class PlifaceCommandContext(object):
+    def __init__(self, prj, cmd):
+        self._prj = prj
+        self._originals = self._prj.interfaces_by_protocol
+    
+    def __enter__(self):
+        return self
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self._prj.interfaces_by_protocol = self._originals
+"""
