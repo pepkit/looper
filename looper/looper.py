@@ -223,6 +223,8 @@ def process_protocols(prj, protocols, resource_setting_kwargs=None, **kwargs):
     :return Mapping[str, looper.conductor.SubmissionConductor], Mapping[str, list[str]]:
         mapping from pipeline key to submission conductor, and mapping from
         protocol name to collection of keys for pipelines for that protocol
+    :raise TypeError: if the project's computing configuration instance isn't
+        a mapping
     """
     # Job submissions are managed on a per-pipeline basis so that
     # individual commands (samples) may be lumped into a single job.
@@ -236,7 +238,15 @@ def process_protocols(prj, protocols, resource_setting_kwargs=None, **kwargs):
                     format(resource_setting_kwargs, type(resource_setting_kwargs)))
     else:
         resource_setting_kwargs = {}
-    comp_vars = prj.dcc.compute.to_map
+
+    try:
+        comp_vars = prj.dcc.compute.to_map()
+    except AttributeError:
+        if not isinstance(prj.dcc.compute, Mapping):
+            raise TypeError("Project's computing config isn't a mapping: {} ({})".
+                            format(prj.dcc.compute, type(prj.dcc.compute)))
+        from copy import deepcopy
+        comp_vars = deepcopy(prj.dcc.compute)
     comp_vars.update(resource_setting_kwargs or {})
 
     for proto in set(protocols) | {GENERIC_PROTOCOL_KEY}:
