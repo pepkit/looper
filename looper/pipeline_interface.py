@@ -82,9 +82,7 @@ class PipelineInterface(PathExAttMap):
         Select resource bundle for given input file size to given pipeline.
 
         :param str pipeline_name: Name of pipeline.
-        :type pipeline_name: str
         :param float file_size: Size of input data (in gigabytes).
-        :type file_size: float
         :return MutableMapping: resource bundle appropriate for given pipeline,
             for given input file size
         :raises ValueError: if indicated file size is negative, or if the
@@ -343,12 +341,10 @@ class PipelineInterface(PathExAttMap):
         """
         Translate a pipeline name (e.g., stripping file extension).
 
-        :param pipeline: Pipeline name or script (top-level key in
+        :param str pipeline: Pipeline name or script (top-level key in
             pipeline interface mapping).
-        :type pipeline: str
-        :return: translated pipeline name, as specified in config or by
+        :return str: translated pipeline name, as specified in config or by
             stripping the pipeline's file extension
-        :rtype: str: translated name for pipeline
         """
         config = self.select_pipeline(pipeline)
         try:
@@ -501,10 +497,8 @@ class PipelineInterface(PathExAttMap):
         """
         Check to make sure that pipeline has an entry and if so, return it.
 
-        :param pipeline_name: Name of pipeline.
-        :type pipeline_name: str
-        :return: configuration data for pipeline indicated
-        :rtype: Mapping
+        :param str pipeline_name: Name of pipeline.
+        :return Mapping: configuration data for pipeline indicated
         :raises MissingPipelineConfigurationException: if there's no
             configuration data for the indicated pipeline
         """
@@ -523,11 +517,9 @@ class PipelineInterface(PathExAttMap):
         """
         Determine whether indicated pipeline accepts looper arguments.
 
-        :param pipeline_name: Name of pipeline to check for looper
+        :param str pipeline_name: Name of pipeline to check for looper
             argument acceptance.
-        :type pipeline_name: str
-        :return: Whether indicated pipeline accepts looper arguments.
-        :rtype: bool
+        :return bool: Whether indicated pipeline accepts looper arguments.
         """
         config = self.select_pipeline(pipeline_name)
         return "looper_args" in config and config["looper_args"]

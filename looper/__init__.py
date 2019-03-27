@@ -12,7 +12,9 @@ import logging
 import os
 from sys import stdout
 
+from .conductor import SubmissionConductor
 from .pipeline_interface import PipelineInterface
+from .project import Project
 from ._version import __version__
 from .parser_types import *
 
@@ -25,6 +27,7 @@ from peppy import \
     SAMPLE_NAME_COLNAME
 
 __classes__ = ["PipelineInterface"]
+__all__ = ["Project", "PipelineInterface", "SubmissionConductor"]
 
 
 GENERIC_PROTOCOL_KEY = "*"
