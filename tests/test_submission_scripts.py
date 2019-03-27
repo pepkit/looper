@@ -215,11 +215,10 @@ class ConductorBasicSettingsSubmissionScriptTests:
         assert len(prj.samples) == len(_find_subs(prj))
 
     @staticmethod
-    @pytest.mark.skip("Not implemented")
-    @pytest.mark.parametrize("flagged_sample_names",
-        list(itertools.chain(*[
-            list(itertools.combinations(SAMPLE_METADATA_RECORDS, k))
-            for k in range(1, len(SAMPLE_METADATA_RECORDS))])))
+    @pytest.mark.parametrize(
+        "flagged_sample_names",
+        [combo for k in range(1, len(SAMPLE_METADATA_RECORDS)) for combo in
+         map(list, itertools.combinations([n for n, _ in SAMPLE_METADATA_RECORDS], k))])
     @pytest.mark.parametrize("flag_name", [random.choice(FLAGS)])
     def test_ignoring_flags(prj, flag_name, flagged_sample_names):
         """ Script creation is automatic, and submission is counted. """
@@ -228,7 +227,8 @@ class ConductorBasicSettingsSubmissionScriptTests:
         flagged_samples = list(filter(
             lambda s: s.name in flagged_sample_names, prj.samples))
         assert len(flagged_sample_names) == len(flagged_samples), \
-            "Expected 2 flagged samples ({exp}) but found {obsn} ({obs})".format(
+            "Expected {expn} flagged samples ({exp}) but found {obsn} ({obs})".format(
+                expn=len(flagged_sample_names),
                 exp=", ".join(flagged_sample_names), obsn=len(flagged_samples),
                 obs=", ".join(s.name for s in flagged_samples))
         flag_files_made = list(map(
@@ -237,10 +237,10 @@ class ConductorBasicSettingsSubmissionScriptTests:
             "Missing setup flag file(s): {}".format(
                 ", ".join([f for f in flag_files_made if not os.path.isfile(f)]))
         preexisting = _collect_flags(prj)
-        assert len(prj.samples) == len(preexisting)
+        assert len(flagged_sample_names) == len(preexisting)
         assert set(flag_files_made) == set(itertools.chain(*preexisting.values()))
         conductors, pipe_keys = process_protocols(
-            prj, set(PLIFACE_DATA), ignore_flags=True)
+            prj, set(PLIFACE_DATA["protocol_mapping"].keys()), ignore_flags=True)
         assert all(map(lambda c: c.ignore_flags, conductors.values())), \
             "Failed to establish precondition, that flags are to be ignored"
         for s in prj.samples:
