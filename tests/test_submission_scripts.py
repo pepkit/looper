@@ -54,6 +54,8 @@ def sample_writer(request):
 
     :return function: how to write sample/subsample records
     """
+
+    # DEtermine delimiter and extension
     try:
         sep = request.getfixturevalue("cfg_sep")
     except Exception:
@@ -88,6 +90,8 @@ def sample_writer(request):
 @pytest.fixture(scope="function")
 def prj(request, tmpdir):
     """ Provide requesting test case with a project instance. """
+
+    # Setup
     outdir = tmpdir.strpath
     anns, subanns = sample_writer(request)(outdir, SAMPLE_METADATA_RECORDS)
     conf_path = os.path.join(outdir, "prj.yaml")
@@ -102,15 +106,16 @@ def prj(request, tmpdir):
     prjdat = {"metadata": metadata}
     with open(conf_path, 'w') as f:
         yaml.dump(prjdat, f)
-    p = Project(conf_path)
+
     def mkdir(d):
         if not os.path.exists(d):
             os.makedirs(d)
+
+    # Create project and ensure folder structure.
+    p = Project(conf_path)
     mkdir(p.metadata[RESULTS_SUBDIR_KEY])
     mkdir(p.metadata[SUBMISSION_SUBDIR_KEY])
-    for s in p.samples:
-        d = sample_folder(p, s)
-        mkdir(d)
+    map(lambda s: mkdir(sample_folder(p, s)), p.samples)
     return p
 
 
@@ -119,8 +124,7 @@ class ConductorBasicSettingsSubmissionScriptTests:
 
     @staticmethod
     @pytest.mark.parametrize(["automatic", "max_cmds"], [(True, 1)])
-    def test_single_sample_auto_conductor_new_sample_scripts(
-            tmpdir, prj, automatic, max_cmds):
+    def test_single_sample_auto_conductor_new_sample_scripts(prj, automatic, max_cmds):
         """ Validate base/ideal case of submission conduction w.r.t. scripts. """
         samples = prj.samples
         conductors, pipe_keys = \
@@ -131,11 +135,7 @@ class ConductorBasicSettingsSubmissionScriptTests:
             pks = pipe_keys[s.protocol]
             assert 1 == len(pks), \
                 "Multiple pipelines for sample {}: {}".format(s.name, pks)
-            c = conductors[pks[0]]
-            # DEBUG
-            print("CONTENTS: {}".format(", ".join(os.listdir(tmpdir.strpath))))
-            print("RESULTS: {}".format(", ".join(os.listdir(os.path.join(tmpdir.strpath, "results_pipeline")))))
-            c.add_sample(s)
+            conductors[pks[0]].add_sample(s)
             sub_fn_suffix = s.name + ".sub"
             contents = os.listdir(subdir)
             assert 1 == len([f for f in contents if sub_fn_suffix in f]), \
@@ -150,6 +150,8 @@ class ConductorBasicSettingsSubmissionScriptTests:
     @pytest.mark.parametrize("flag_name", FLAGS)
     def test_not_ignoring_flags(prj, flag_name, flagged_sample_names):
         """ Script creation is via separate call, and there's no submission. """
+
+        # Setup and sanity check that we have 1 sample per sample name to flag.
         preexisting = _collect_flags(prj)
         assert {} == preexisting, "Preexisting flag(s): {}".format(preexisting)
         flagged_samples = list(filter(
@@ -159,12 +161,10 @@ class ConductorBasicSettingsSubmissionScriptTests:
                 nexp=len(flagged_sample_names), exp=flagged_sample_names,
                 obsn=len(flagged_samples),
                 obs=", ".join(s.name for s in flagged_samples))
-        pks, pns = {}, {}
         conductors, pipe_keys = _process_base_pliface(prj)
-        original_arg_string_methods = {}
-        for k, c in conductors.items():
-            original_arg_string_methods[k] = c.pl_iface.get_arg_string
-            #conductors[k].pl_iface.get_arg_string = lambda *args, **kwargs: "testing"
+
+        # Collect pipeline keys and names, ensuring just one pipeline per protocol.
+        pks, pns = {}, {}
         for s in prj.samples:
             prot = s.protocol
             ks = pipe_keys[prot]
@@ -172,7 +172,6 @@ class ConductorBasicSettingsSubmissionScriptTests:
                 "Need exactly one pipeline key but got {} for protocol {}: {}". \
                     format(len(pks), s.protocol, pks)
             key = ks[0]
-
             if prot in pks and pks[prot] != key:
                 raise Exception("Protocol {} already mapped to {}".format(prot, pks[prot]))
             pks[prot] = key
@@ -180,33 +179,38 @@ class ConductorBasicSettingsSubmissionScriptTests:
             if prot in pns and pns[prot] != name:
                 raise Exception("Protocol {} already mapped to {}".format(prot, pns[prot]))
             pns[prot] = name
+
+        # Place the flags.
         flag_files_made = []
         for s in flagged_samples:
-            flag = "{}_{}".format(pns[s.protocol], s.name)
+            flag = "{}_{}_{}".format(pns[s.protocol], s.name, flag_name)
             flag_files_made.append(_mkflag(sample=s, prj=prj, flag=flag))
         assert all(os.path.isfile(f) for f in flag_files_made), \
             "Missing setup flag file(s): {}".format(
                 ", ".join([f for f in flag_files_made if not os.path.isfile(f)]))
+
+        # Trigger the automatic submissions.
+        map(lambda s: conductors[pks[s.protocol]].add_sample(s), prj.samples)
+
+        # Check the submission counts.
         num_unflagged = len(prj.samples) - len(flagged_sample_names)
-        for s in prj.samples:
-            c = conductors[pks[s.protocol]]
-            #c.pl_iface.get_arg_string = lambda *args, **kwargs: "testing"
-            c.add_sample(s)
         num_subs_obs = _count_submissions(conductors.values())
         assert num_unflagged == num_subs_obs, \
             "{} unflagged sample(s) but {} command submission(s); these should " \
             "match".format(num_unflagged, num_subs_obs)
+
         def flagged_subs():
             return [f for s in flagged_samples for f in _find_subs(prj, s)]
+
+        # Pretest for presence of unflagged submissions and absence of flagged submissions.
         assert [] == flagged_subs(), "Submission script(s) for flagged " \
             "sample(s): {}".format(", ".join(flagged_subs()))
         all_subs = _find_subs(prj)
         assert len(all_subs) == num_unflagged, "Expected {} submission scripts " \
             "but found {}".format(num_unflagged, len(all_subs))
-        print("CONDUCTORS: {}".format(conductors))
-        for k, c in conductors.items():
-            print("Writing skipped sample scripts: {}".format(k))
-            c.write_skipped_sample_scripts()
+
+        # Write the skipped scripts and check their presence.
+        map(lambda c: c.write_skipped_sample_scripts(), conductors.values())
         assert len(flagged_samples) == len(flagged_subs())
         assert len(prj.samples) == len(_find_subs(prj))
 
@@ -334,6 +338,7 @@ def _count_files(p, *preds):
 
 
 def _count_submissions(conductors):
+    """ From array of conductors, accumulate submission count. """
     return sum(c.num_cmd_submissions for c in conductors)
 
 
@@ -348,11 +353,7 @@ def _find_subs(project, sample=None):
         and specific sample if provided
     """
     name_patt = "{}*.sub".format("*" + sample.name if sample else "")
-    # DEBUG
-    query = os.path.join(
-        project.metadata[SUBMISSION_SUBDIR_KEY], name_patt)
-    print("SEEKING: {}".format(query))
-    return glob.glob(query)
+    return glob.glob(os.path.join(project.metadata[SUBMISSION_SUBDIR_KEY], name_patt))
 
 
 def _process_base_pliface(prj, **kwargs):
@@ -370,6 +371,7 @@ def _process_base_pliface(prj, **kwargs):
 
 
 def _mkflag(sample, prj, flag):
+    """ Create a flag file. """
     fp = os.path.join(sample_folder(prj, sample), flag + ".flag")
     return _mkfile(fp, "Making flag for {}".format(sample.name))
 
@@ -391,6 +393,7 @@ def _touch_pipe_files(folder, pliface):
 
 
 def process_protocols(prj, protocols, **kwargs):
+    """ Ensure dry_run is active for each conductor created """
     kwds = copy.deepcopy(kwargs)
     kwds["dry_run"] = True
     return looper.looper.process_protocols(prj, protocols, **kwds)
