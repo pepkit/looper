@@ -19,6 +19,7 @@ nav:
   - Reference:
     - Usage: usage.md
     - Configuration files: config-files.md
+    - API: autodoc_build/api.md
     - FAQ: faq.md
     - Support: support.md
     - Contributing: contributing.md
@@ -27,5 +28,10 @@ nav:
 theme: databio
 
 plugins:
-  - databio
+  - databio:
+      autodoc_build: "docs/autodoc_build"
+      autodoc_package: "looper"
+      autodoc_outfile: "api.md"
+      no_top_level: true
   - search
+

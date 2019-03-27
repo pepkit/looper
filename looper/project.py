@@ -23,11 +23,9 @@ class Project(peppy.Project):
     """
     Looper-specific NGS Project.
 
-    :param config_file: path to configuration file with data from
+    :param str config_file: path to configuration file with data from
         which Project is to be built
-    :type config_file: str
-    :param subproject: name indicating subproject to use, optional
-    :type subproject: str
+    :param str subproject: name indicating subproject to use, optional
     """
     def __init__(self, config_file, subproject=None, **kwargs):
         super(Project, self).__init__(
