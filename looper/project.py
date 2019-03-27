@@ -212,7 +212,7 @@ def process_pipeline_interfaces(pipeline_interface_locations):
         which should be either a directory path or a filepath, that specifies
         pipeline interface and protocol mappings information. Each such file
         should have a pipelines section and a protocol mappings section.
-    :return Mapping[str, Iterable[PipelineInterfaec]]: mapping from protocol
+    :return Mapping[str, Iterable[PipelineInterface]]: mapping from protocol
         name to interface(s) for which that protocol is mapped
     """
     interface_by_protocol = defaultdict(list)
