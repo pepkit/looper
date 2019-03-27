@@ -622,15 +622,15 @@ def create_navbar_links(objs, stats, wd, reports_dir, caravel=False):
     # status_page = os.path.join(reports_dir, "status.html")
     # status_relpath = os.path.relpath(status_page, wd)
     # status_relpath = make_relpath(status_page, wd, caravel)
-    status_relpath = make_relpath("reports/status.html", wd, reports_dir, caravel)
+    status_relpath = make_relpath("reports/status.html", wd, caravel)
     # objects_page = os.path.join(reports_dir, "objects.html")
-    objects_relpath = make_relpath("reports/objects.html", wd, reports_dir, caravel)
+    objects_relpath = make_relpath("reports/objects.html", wd, caravel)
     # objects_relpath = os.path.relpath(objects_page, wd)
     # objects_relpath = make_relpath(objects_page, wd, caravel)
     # samples_page = os.path.join(reports_dir, "samples.html")
     # samples_relpath = os.path.relpath(samples_page, wd)
     # samples_relpath = make_relpath(samples_page, wd, caravel)
-    samples_relpath = make_relpath("reports/samples.html", wd, reports_dir, caravel)
+    samples_relpath = make_relpath("reports/samples.html", wd, caravel)
     dropdown_keys_objects = None
     dropdown_relpaths_objects = None
     dropdown_relpaths_samples = None
@@ -638,14 +638,14 @@ def create_navbar_links(objs, stats, wd, reports_dir, caravel=False):
     if not objs.dropna().empty:
         # If the number of objects is 20 or less, use a drop-down menu
         if len(objs['key'].drop_duplicates()) <= 20:
-            navbar_dropdown_data_objects = _get_navbar_dropdown_data_objects(objs, reports_dir, wd)
+            navbar_dropdown_data_objects = _get_navbar_dropdown_data_objects(objs, reports_dir, wd, caravel)
             dropdown_relpaths_objects = navbar_dropdown_data_objects[0]
             dropdown_keys_objects = navbar_dropdown_data_objects[1]
         else:
             dropdown_relpaths_objects = objects_relpath
     if stats:
         if len(stats) <= 20:
-            navbar_dropdown_data_samples = _get_navbar_dropdown_data_samples(stats, reports_dir, wd)
+            navbar_dropdown_data_samples = _get_navbar_dropdown_data_samples(stats, reports_dir, wd, caravel)
             dropdown_relpaths_samples = navbar_dropdown_data_samples[0]
             sample_names = navbar_dropdown_data_samples[1]
         else:
@@ -661,7 +661,7 @@ def create_navbar_links(objs, stats, wd, reports_dir, caravel=False):
     return render_jinja_template("navbar_links.html", get_jinja_env(), template_vars)
 
 
-def make_relpath(file_name, dir, reports_dir, caravel):
+def make_relpath(file_name, dir, caravel):
     """
 
     :param str path: the path to make relative
@@ -669,11 +669,10 @@ def make_relpath(file_name, dir, reports_dir, caravel):
     :param bool caravel: whether the path will be used in caravel caravel
     :return str: relative path
     """
-    os.path.join(reports_dir, file_name)
     if caravel:
         relpath = os.path.join("summary", file_name)
     else:
-        relpath = os.path.relpath(os.path.join(reports_dir, file_name), dir)
+        relpath = os.path.relpath(file_name, dir)
     return relpath
 
 
@@ -788,26 +787,30 @@ def _get_relpath_to_file(file_name, sample_name, location, relative_to):
     return rel_file_path
 
 
-def _get_navbar_dropdown_data_objects(objs, rep_dir, wd):
+def _get_navbar_dropdown_data_objects(objs, rep_dir, wd, caravel):
     relpaths = []
     df_keys = objs['key'].drop_duplicates().sort_values()
     for key in df_keys:
-        page_name = key + ".html"
-        page_path = os.path.join(rep_dir, page_name.replace(' ', '_').lower())
+        page_name = (key + ".html").replace(' ', '_').lower()
+        page_path = os.path.join(rep_dir, page_name)
+        if caravel:
+            relpaths.append(os.path.join("summary", "reports", page_name))
         relpaths.append(os.path.relpath(page_path, wd))
     return relpaths, df_keys
 
 
-def _get_navbar_dropdown_data_samples(stats, rep_dir, wd):
+def _get_navbar_dropdown_data_samples(stats, rep_dir, wd, caravel):
     relpaths = []
     sample_names = []
     for sample in stats:
         for entry, val in sample.items():
             if entry == "sample_name":
                 sample_name = str(val)
-                page_name = sample_name + ".html"
-                page_path = os.path.join(rep_dir, page_name.replace(' ', '_').lower())
+                page_name = (sample_name + ".html").replace(' ', '_').lower()
+                page_path = os.path.join(rep_dir, page_name)
                 relpath = os.path.relpath(page_path, wd)
+                if caravel:
+                    relpaths.append(os.path.join("summary", "reports", page_name))
                 relpaths.append(relpath)
                 sample_names.append(sample_name)
                 break
