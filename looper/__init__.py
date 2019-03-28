@@ -251,7 +251,7 @@ def build_parser():
                 "--resources",
                 help="Specification of individual computing resource settings; "
                      "separate setting name/key from value with equals sign, "
-                     "and separate key-value pairs from eah other by comma; "
+                     "and separate key-value pairs from each other by comma; "
                      "e.g., --resources k1=v1,k2=v2")
         subparser.add_argument(
                 "--limit", dest="limit", default=None,
