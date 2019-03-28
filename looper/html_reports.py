@@ -112,7 +112,7 @@ class HTMLReportBuilder(object):
     def create_footer(self):
         return render_jinja_template("footer.html", self.j_env)
 
-    def create_navbar_links(self, objs, stats, wd, reports_dir, caravel=False):
+    def create_navbar_links(self, objs, stats, wd, reports_dir, caravel=False, summary_context=False):
         """
         Return a string containing the navbar prebuilt html.
         Generates links to each page relative to the directory
@@ -135,14 +135,14 @@ class HTMLReportBuilder(object):
         if not objs.dropna().empty:
             # If the number of objects is 20 or less, use a drop-down menu
             if len(objs['key'].drop_duplicates()) <= 20:
-                navbar_dropdown_data_objects = _get_navbar_dropdown_data_objects(objs, reports_dir, wd, caravel)
+                navbar_dropdown_data_objects = _get_navbar_dropdown_data_objects(objs, reports_dir, wd, caravel, summary_context)
                 dropdown_relpaths_objects = navbar_dropdown_data_objects[0]
                 dropdown_keys_objects = navbar_dropdown_data_objects[1]
             else:
                 dropdown_relpaths_objects = objects_relpath
         if stats:
             if len(stats) <= 20:
-                navbar_dropdown_data_samples = _get_navbar_dropdown_data_samples(stats, reports_dir, wd, caravel)
+                navbar_dropdown_data_samples = _get_navbar_dropdown_data_samples(stats, reports_dir, wd, caravel, summary_context)
                 dropdown_relpaths_samples = navbar_dropdown_data_samples[0]
                 sample_names = navbar_dropdown_data_samples[1]
             else:
@@ -671,7 +671,7 @@ def make_relpath(file_name, dir, caravel):
     :return str: relative path
     """
     if caravel:
-        relpath = os.path.join("summary", file_name)
+        relpath = file_name
     else:
         relpath = os.path.relpath(file_name, dir)
     return relpath
@@ -785,19 +785,24 @@ def _get_relpath_to_file(file_name, sample_name, location, relative_to):
     return rel_file_path
 
 
-def _get_navbar_dropdown_data_objects(objs, rep_dir, wd, caravel):
+def _get_navbar_dropdown_data_objects(objs, rep_dir, wd, caravel, summary_context):
+    if not caravel and summary_context:
+        raise ValueError("summary_context flag can be True only within caravel context")
     relpaths = []
     df_keys = objs['key'].drop_duplicates().sort_values()
     for key in df_keys:
         page_name = (key + ".html").replace(' ', '_').lower()
         page_path = os.path.join(rep_dir, page_name)
-        if caravel:
-            relpaths.append(os.path.join("summary", "reports", page_name))
-        relpaths.append(os.path.relpath(page_path, wd))
+        caravel_mount_point = ["reports", page_name] if summary_context else ["summary", "reports", page_name]
+        relpath = os.path.join(*caravel_mount_point) if caravel else os.path.relpath(page_path, wd)
+        _LOGGER.debug("Adding relpath in objects: '{}'".format(relpath))
+        relpaths.append(relpath)
     return relpaths, df_keys
 
 
-def _get_navbar_dropdown_data_samples(stats, rep_dir, wd, caravel):
+def _get_navbar_dropdown_data_samples(stats, rep_dir, wd, caravel, summary_context):
+    if not caravel and summary_context:
+        raise ValueError("summary_context flag can be True only within caravel context")
     relpaths = []
     sample_names = []
     for sample in stats:
@@ -806,9 +811,9 @@ def _get_navbar_dropdown_data_samples(stats, rep_dir, wd, caravel):
                 sample_name = str(val)
                 page_name = (sample_name + ".html").replace(' ', '_').lower()
                 page_path = os.path.join(rep_dir, page_name)
-                relpath = os.path.relpath(page_path, wd)
-                if caravel:
-                    relpaths.append(os.path.join("summary", "reports", page_name))
+                caravel_mount_point = ["reports", page_name] if summary_context else ["summary", "reports", page_name]
+                relpath = os.path.join(*caravel_mount_point) if caravel else os.path.relpath(page_path, wd)
+                _LOGGER.debug("Adding relpath in samples: '{}'".format(relpath))
                 relpaths.append(relpath)
                 sample_names.append(sample_name)
                 break
