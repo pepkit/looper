@@ -281,7 +281,7 @@ def build_parser():
             help="Check status for all project's output folders, not just "
                  "those for samples specified in the config file used. Default=False")
     check_subparser.add_argument(
-            "-F", "--flags", nargs='*', default=FLAGS, type=html_select(options=FLAGS),
+            "-F", "--flags", nargs='*', default=FLAGS, type=html_select(choices=FLAGS),
             help="Check on only these flags/status values.")
 
     destroy_subparser.add_argument(
