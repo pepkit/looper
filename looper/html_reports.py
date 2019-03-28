@@ -8,9 +8,9 @@ import jinja2
 import re
 
 from ._version import __version__ as v
+from .const import TEMPLATES_DIRNAME
 from collections import OrderedDict
 
-TEMPLATES_DIRNAME = "jinja_templates"
 _LOGGER = logging.getLogger('HTMLReportBuilder')
 
 
@@ -34,7 +34,9 @@ class HTMLReportBuilder(object):
         """ Do the work of the subcommand/program. """
 
         # Generate HTML report
-        index_html_path = self.create_index_html(objs, stats, columns, self.create_navbar(self.create_navbar_links(objs, stats, self.prj.metadata.output_dir, self.reports_dir)))
+        index_html_path = self.create_index_html(
+            objs, stats, columns, self.create_navbar(
+                self.create_navbar_links(objs, stats, self.prj.metadata.output_dir, self.reports_dir)))
         return index_html_path
 
     def create_object_parent_html(self, objs, stats, wd):
@@ -717,15 +719,12 @@ def save_html(path, template):
         f.write(template)
 
 
-def get_templates_dir():
-    file_dir = os.path.dirname(__file__)
-    jinja_templ_dir = os.path.join(file_dir, TEMPLATES_DIRNAME)
-    _LOGGER.info("using templates dir: " + jinja_templ_dir)
-    return jinja_templ_dir
-
-
-def get_jinja_env():
-    return jinja2.Environment(loader=jinja2.FileSystemLoader(get_templates_dir()))
+def get_jinja_env(templates_dirname=None):
+    if templates_dirname is None:
+        file_dir = os.path.dirname(os.path.realpath(__file__))
+        templates_dirname = os.path.join(file_dir, TEMPLATES_DIRNAME)
+    _LOGGER.info("using templates dir: " + templates_dirname)
+    return jinja2.Environment(loader=jinja2.FileSystemLoader(templates_dirname))
 
 
 def _get_flags(sample_dir):
