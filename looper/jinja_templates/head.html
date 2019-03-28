@@ -27,13 +27,16 @@
         padding-bottom: 10px;
         padding-top: 10px;
     }
+
     html, body {
         height: 100%;
     }
+
     th {
         background-color: white;
     }
-    .footer {
+
+    #footer {
         position: relative;
         margin-top: -40px;
         /* negative value of footer height */
@@ -41,6 +44,7 @@
         padding-top: 10px;
         padding-left: 10px;
     }
+
     .container {
         overflow: auto;
         padding-bottom: 40px;
@@ -48,7 +52,66 @@
         min-height: 100%;
         /* must be same height as the footer */
     }
+
     .container-fluid {
         padding-top: 5px;
     }
+
+    tr.footer {
+      padding: 3px;
+    }
+
+    th.footer {
+      font-size:12px;
+      padding: 3px;
+      font-weight: bold;
+      text-align: center;
+      background-color: #464c56;
+      color: white
+    }
+
+    td.footer {
+      font-size:12px;
+      padding: 3px;
+      text-align: center;
+      color: #464c56;
+      font-weight: bold;
+      font-family: Courier New
+    }
+
+    code.footer {
+      color:#464c56
+    }
+
+    .left_footer {
+      width: 30%;
+      text-align: left;
+      float: left;
+      display: inline-block;
+    }
+
+    .right_footer {
+      width: 30%;
+      padding-top: 10px;
+      float: right;
+      text-align:right;
+      display: inline-block;
+    }
+
+    .center_footer {
+      width: 40%;
+      padding-top: 10px;
+      overflow: hidden;
+      display: inline-block;
+      text-align: center;
+    }
+
+    .wrapper {
+      padding-left: 10px;
+      padding-right: 10px;
+      clear: both;
+      position: relative;
+      overflow: hidden;
+    }
+
 </style>

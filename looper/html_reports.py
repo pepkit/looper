@@ -34,9 +34,7 @@ class HTMLReportBuilder(object):
         """ Do the work of the subcommand/program. """
 
         # Generate HTML report
-        index_html_path = self.create_index_html(
-            objs, stats, columns, self.create_navbar(
-                self.create_navbar_links(objs, stats, self.prj.metadata.output_dir, self.reports_dir)))
+        index_html_path = self.create_index_html(objs, stats, columns, navbar=self.create_navbar(self.create_navbar_links(objs, stats, self.prj.metadata.output_dir, self.reports_dir)), footer=self.create_footer())
         return index_html_path
 
     def create_object_parent_html(self, objs, stats, wd):
@@ -110,6 +108,9 @@ class HTMLReportBuilder(object):
     def create_navbar(self, navbar_links):
         template_vars = dict(navbar_links=navbar_links, index_html=self.index_html_path)
         return render_jinja_template("navbar.html", self.j_env, template_vars)
+
+    def create_footer(self):
+        return render_jinja_template("footer.html", self.j_env)
 
     def create_navbar_links(self, objs, stats, wd, reports_dir, caravel=False):
         """
@@ -558,7 +559,7 @@ class HTMLReportBuilder(object):
         template_vars = dict(figures=figures, links=links)
         return render_jinja_template("project_object.html", self.j_env, template_vars)
 
-    def create_index_html(self, objs, stats, col_names, navbar):
+    def create_index_html(self, objs, stats, col_names, navbar, footer):
         """
         Generate an index.html style project home page w/ sample summary
         statistics
@@ -569,6 +570,8 @@ class HTMLReportBuilder(object):
             analyzed sample
         :param list stats: a summary file of pipeline statistics for each
             analyzed sample
+        :param str navbar: HTML to be included as the navbar
+        :param str footer: HTML to be included as the footer
         """
         _LOGGER.debug("Building index page...")
 
@@ -642,7 +645,7 @@ class HTMLReportBuilder(object):
         project_objects = self.create_project_objects()
         # Complete and close HTML file
         template_vars = dict(project_name=self.prj.name, stats_json=_read_tsv_to_json(tsv_outfile_path),
-                             navbar=navbar,
+                             navbar=navbar, footer=footer,
                              stats_file_path=stats_file_path, project_objects=project_objects, columns=col_names,
                              table_row_data=table_row_data, version=v)
         save_html(index_html_path, render_jinja_template("index.html", self.j_env, template_vars))
