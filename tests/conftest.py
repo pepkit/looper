@@ -23,7 +23,7 @@ from looper import setup_looper_logger
 from looper.pipeline_interface import PipelineInterface
 from looper.project import Project
 from peppy import setup_peppy_logger, SAMPLE_NAME_COLNAME, \
-    SAMPLE_ANNOTATIONS_KEY
+    SAMPLE_ANNOTATIONS_KEY, SAMPLE_SUBANNOTATIONS_KEY
 
 
 _LOGGER = logging.getLogger("peppy")
@@ -33,17 +33,17 @@ P_CONFIG_FILENAME = "project_config.yaml"
 
 # {basedir} lines are formatted during file write; other braced entries remain.
 PROJECT_CONFIG_LINES = """metadata:
-  sample_annotation: samples.csv
+  {tab_key}: samples.csv
   output_dir: test
   pipeline_interfaces: pipelines
-  merge_table: merge.csv
+  {subtab_key}: merge.csv
 
-derived_attributes: [{derived_column_names}]
+derived_attributes: [{{derived_column_names}}]
 
 data_sources:
-  src1: "{basedir}/data/{sample_name}{col_modifier}.txt"
-  src3: "{basedir}/data/{sample_name}.txt"
-  src2: "{basedir}/data/{sample_name}-bamfile.bam"
+  src1: "{{basedir}}/data/{{sample_name}}{{col_modifier}}.txt"
+  src3: "{{basedir}}/data/{{sample_name}}.txt"
+  src2: "{{basedir}}/data/{{sample_name}}-bamfile.bam"
 
 implied_attributes:
   sample_name:
@@ -52,7 +52,8 @@ implied_attributes:
       phenome: hg72
     b:
       genome: hg38
-""".splitlines(True)
+""".format(subtab_key=SAMPLE_SUBANNOTATIONS_KEY,
+           tab_key=SAMPLE_ANNOTATIONS_KEY).splitlines(True)
 # Will populate the corresponding string format entry in project config lines.
 DERIVED_COLNAMES = ["file", "file2", "dcol1", "dcol2",
                     "nonmerged_col", "nonmerged_col", "data_source"]
@@ -432,16 +433,12 @@ def write_project_files(request):
     :return str: path to the temporary file with configuration data
     """
     dirpath = tempfile.mkdtemp()
-    path_conf_file = _write_temp(PROJECT_CONFIG_LINES,
-                                 dirpath=dirpath, fname=P_CONFIG_FILENAME)
+    path_conf_file = _write_temp(
+        PROJECT_CONFIG_LINES, dirpath=dirpath, fname=P_CONFIG_FILENAME)
     path_merge_table_file = _write_temp(
-            MERGE_TABLE_LINES,
-            dirpath=dirpath, fname=MERGE_TABLE_FILENAME
-    )
+        MERGE_TABLE_LINES, dirpath=dirpath, fname=MERGE_TABLE_FILENAME)
     path_sample_annotation_file = _write_temp(
-            SAMPLE_ANNOTATION_LINES,
-            dirpath=dirpath, fname=ANNOTATIONS_FILENAME
-    )
+        SAMPLE_ANNOTATION_LINES, dirpath=dirpath, fname=ANNOTATIONS_FILENAME)
     request.cls.project_config_file = path_conf_file
     request.cls.merge_table_file = path_merge_table_file
     request.cls.sample_annotation_file = path_sample_annotation_file
