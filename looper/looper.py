@@ -250,6 +250,9 @@ def process_protocols(prj, protocols, resource_setting_kwargs=None, **kwargs):
         comp_vars = deepcopy(prj.dcc.compute)
     comp_vars.update(resource_setting_kwargs or {})
 
+    _LOGGER.info("Known protocols: {}".format(
+        ", ".join(prj.interfaces_by_protocol.keys())))
+
     for proto in set(protocols) | {GENERIC_PROTOCOL_KEY}:
         _LOGGER.debug("Determining sample type, script, and flags for "
                       "pipeline(s) associated with protocol: %s", proto)
