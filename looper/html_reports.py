@@ -153,7 +153,7 @@ class HTMLReportBuilder(object):
                              all_objects=objects_relpath)
         return render_jinja_template("navbar_links.html", self.j_env, template_vars)
 
-    def create_object_html(self, single_object, objs, stats, wd):
+    def create_object_html(self, single_object, navbar, footer):
         """
         Generates a page for an individual object type with all of its
         plots from each sample
@@ -241,12 +241,10 @@ class HTMLReportBuilder(object):
                             filename.replace(' ', '_').lower() + " references nonexistent object files")
             _LOGGER.debug(filename.replace(' ', '_').lower() +
                           " nonexistent files: " + ','.join(str(x) for x in warnings))
-        template_vars = dict(navbar=self.create_navbar(self.create_navbar_links(objs, stats, wd, self.reports_dir)),
-                             name=current_name, figures=figures, links=links,
-                             version=v)
+        template_vars = dict(navbar=navbar, footer=footer, name=current_name, figures=figures, links=links, version=v)
         save_html(object_path, render_jinja_template("object.html", self.j_env, args=template_vars))
 
-    def create_sample_html(self, objs, stats, sample_name, sample_stats, wd):
+    def create_sample_html(self, objs, sample_name, sample_stats, navbar, footer):
         """
         Produce an HTML page containing all of a sample's objects
         and the sample summary statistics
@@ -367,12 +365,10 @@ class HTMLReportBuilder(object):
             _LOGGER.warning("{} is not present in {}".format(
                 sample_name, self.prj.metadata.results_subdir))
 
-        template_vars = dict(navbar=self.create_navbar(self.create_navbar_links(objs, stats, wd, self.reports_dir)),
-                             sample_name=sample_name,
-                             stats_file_path=stats_file_path, profile_file_path=profile_file_path,
-                             commands_file_path=commands_file_path, log_file_path=log_file_path,
-                             button_class=button_class, sample_stats=sample_stats, flag=flag, links=links,
-                             figures=figures, version=v)
+        template_vars = dict(navbar=navbar, footer=footer, sample_name=sample_name, stats_file_path=stats_file_path,
+                             profile_file_path=profile_file_path, commands_file_path=commands_file_path,
+                             log_file_path=log_file_path, button_class=button_class, sample_stats=sample_stats,
+                             flag=flag, links=links, figures=figures, version=v)
         save_html(html_page, render_jinja_template("sample.html", self.j_env, template_vars))
         return sample_page_relpath
 
@@ -608,7 +604,7 @@ class HTMLReportBuilder(object):
                 for value in table_row:
                     if value == sample_name:
                         # Generate individual sample page and return link
-                        sample_page = self.create_sample_html(objs, stats, sample_name, sample_stats, self.reports_dir)
+                        sample_page = self.create_sample_html(objs, sample_name, sample_stats, navbar, footer)
                         # Treat sample_name as a link to sample page
                         data = [sample_page, sample_name]
                     # If not the sample name, add as an unlinked cell value
@@ -627,7 +623,7 @@ class HTMLReportBuilder(object):
         if not objs.dropna().empty:
             for key in objs['key'].drop_duplicates().sort_values():
                 single_object = objs[objs['key'] == key]
-                self.create_object_html(single_object, objs, stats, self.reports_dir)
+                self.create_object_html(single_object, navbar, footer)
 
         # Create parent objects page with links to each object type
         save_html(os.path.join(self.reports_dir, "objects.html"),
