@@ -627,22 +627,10 @@ class PipelinePathResolutionTests:
         assert exp_path == obs_path
 
 
-
-@pytest.mark.usefixtures("write_project_files", "pipe_iface_config_file")
-class BasicPipelineInterfaceTests:
-    """ Test cases specific to PipelineInterface """
-
-    def test_missing_input_files(self, proj):
-        """ We're interested here in lack of exception, not return value. """
-        proj.samples[0].get_attr_values("all_input_files")
-
-
-
 @pytest.mark.skip("Not implemented")
 class PipelineInterfaceArgstringTests:
     """  """
     pass
-
 
 
 @pytest.mark.skip("Not implemented")
@@ -651,14 +639,11 @@ class PipelineInterfaceLooperArgsTests:
     pass
 
 
-
 @pytest.mark.skip("Not implemented")
 class GenericProtocolMatchTests:
     """ Pipeline interface may support 'all-other' protocols notion. """
 
-
     NAME_ANNS_FILE = "annotations.csv"
-
 
     @pytest.fixture
     def prj_data(self):
@@ -666,7 +651,6 @@ class GenericProtocolMatchTests:
         return {"metadata": {"output_dir": "output",
                              "results_subdir": "results_pipeline",
                              "submission_subdir": "submission"}}
-
 
     @pytest.fixture
     def sheet_lines(self):

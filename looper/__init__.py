@@ -227,7 +227,7 @@ def build_parser():
     for subparser in [run_subparser, rerun_subparser]:
         subparser.add_argument(
                 "--ignore-flags", dest="ignore_flags", default=False,
-                action=_StoreBoolActionType, type=html_checkbox(checked=False),
+                action=_StoreBoolActionType, type=html_checkbox(),
                 help="Ignore run status flags? Default: False. "
                      "By default, pipelines will not be submitted if a pypiper "
                      "flag file exists marking the run (e.g. as "
@@ -239,7 +239,7 @@ def build_parser():
                 help="Time delay in seconds between job submissions.")
         subparser.add_argument(
                 "--allow-duplicate-names", default=False,
-                action=_StoreBoolActionType, type=html_checkbox(checked=False),
+                action=_StoreBoolActionType, type=html_checkbox(),
                 help="Allow duplicate names? Default: False. "
                      "By default, pipelines will not be submitted if a sample name"
                      " is duplicated, since samples names should be unique.  "
@@ -277,7 +277,7 @@ def build_parser():
     clean_subparser = add_subparser("clean")
 
     check_subparser.add_argument(
-            "-A", "--all-folders", action=_StoreBoolActionType, default=False, type=html_checkbox(checked=False),
+            "-A", "--all-folders", action=_StoreBoolActionType, default=False, type=html_checkbox(),
             help="Check status for all project's output folders, not just "
                  "those for samples specified in the config file used. Default=False")
     check_subparser.add_argument(
@@ -285,12 +285,12 @@ def build_parser():
             help="Check on only these flags/status values.")
 
     destroy_subparser.add_argument(
-            "--force-yes", action=_StoreBoolActionType, default=False, type=html_checkbox(checked=False),
+            "--force-yes", action=_StoreBoolActionType, default=False, type=html_checkbox(),
             help="Provide upfront confirmation of destruction intent, "
                  "to skip console query.  Default=False")
 
     clean_subparser.add_argument(
-            "--force-yes", action=_StoreBoolActionType, default=False, type=html_checkbox(checked=False),
+            "--force-yes", action=_StoreBoolActionType, default=False, type=html_checkbox(),
             help="Provide upfront confirmation of cleaning intent, "
                  "to skip console query.  Default=False")
 
@@ -302,11 +302,11 @@ def build_parser():
                 help="Project configuration file (YAML).")
         subparser.add_argument(
                 "--file-checks", dest="file_checks",
-                action=_StoreBoolActionType, default=True, type=html_checkbox(checked=True),
+                action=_StoreBoolActionType, default=True, type=html_checkbox(),
                 help="Perform input file checks. Default=True.")
         subparser.add_argument(
                 "-d", "--dry-run", dest="dry_run",
-                action=_StoreBoolActionType, default=False, type=html_checkbox(checked=False),
+                action=_StoreBoolActionType, default=False, type=html_checkbox(),
                 help="Don't actually submit the project/subproject.  Default=False")
 
         fetch_samples_group = \

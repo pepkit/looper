@@ -17,23 +17,17 @@ def html_range(caravel=False, min_val=0, max_val=10, step=1, value=0):
     return fun
 
 
-def html_checkbox(caravel=False, checked=False):
+def html_checkbox(caravel=False):
     """
     Create argument for type parameter on argparse.ArgumentParser.add_argument.
 
     :param bool caravel: whether this is being used in the caravel context
-    :param bool checked: whether to add a particular key-value entry to a
-        collection used by caravel
     :return callable: argument to the type parameter of an
         argparse.ArgumentParser's add_argument method.
     :raise Exception: if attempting to add the checked flag who;e not indicating
         that the call is being made from a caravel context
     """
     caravel_data = PathExAttMap({"element_type": "checkbox", "element_args": {}})
-    if checked:
-        if not caravel:
-            raise Exception("Checked flag is only valid in caravel context")
-        caravel_data.add_entries({"element_args": {"checked": True}})
     def fun(x=None, caravel_data=caravel_data, caravel=caravel):
         return caravel_data if caravel else eval(x)
     return fun
