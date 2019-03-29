@@ -26,13 +26,9 @@ def html_checkbox(caravel=False, checked=False):
         collection used by caravel
     :return callable: argument to the type parameter of an
         argparse.ArgumentParser's add_argument method.
-    :raise Exception: if attempting to add the checked flag who;e not indicating
-        that the call is being made from a caravel context
     """
     caravel_data = PathExAttMap({"element_type": "checkbox", "element_args": {}})
     if checked:
-        if not caravel:
-            raise Exception("Checked flag is only valid in caravel context")
         caravel_data.add_entries({"element_args": {"checked": True}})
     def fun(x=None, caravel_data=caravel_data, caravel=caravel):
         return caravel_data if caravel else eval(x)
