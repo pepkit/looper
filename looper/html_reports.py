@@ -37,7 +37,7 @@ class HTMLReportBuilder(object):
         index_html_path = self.create_index_html(objs, stats, columns, navbar=self.create_navbar(self.create_navbar_links(objs, stats, self.prj.metadata.output_dir, self.reports_dir)), footer=self.create_footer())
         return index_html_path
 
-    def create_object_parent_html(self, objs, stats, wd):
+    def create_object_parent_html(self, objs, navbar, footer):
         """
         Generates a page listing all the project objects with links
         to individual object pages
@@ -64,12 +64,10 @@ class HTMLReportBuilder(object):
                 pages.append(page_relpath)
                 labels.append(key)
 
-        template_vars = dict(navbar=self.create_navbar(self.create_navbar_links(objs, stats, wd, self.reports_dir)),
-                             labels=labels, pages=pages, header="Objects",
-                             version=v)
+        template_vars = dict(navbar=navbar, footer=footer, labels=labels, pages=pages, header="Objects", version=v)
         return render_jinja_template("navbar_list_parent.html", self.j_env, template_vars)
 
-    def create_sample_parent_html(self, objs, stats, wd):
+    def create_sample_parent_html(self, navbar, footer):
         """
         Generates a page listing all the project samples with links
         to individual sample pages
@@ -100,9 +98,7 @@ class HTMLReportBuilder(object):
                 pages.append(page_relpath)
                 labels.append(sample_name)
 
-        template_vars = dict(navbar=self.create_navbar(self.create_navbar_links(objs, stats, wd, self.reports_dir)),
-                             labels=labels, pages=pages, header="Samples",
-                             version=v)
+        template_vars = dict(navbar=navbar, footer=footer, labels=labels, pages=pages, header="Samples", version=v)
         return render_jinja_template("navbar_list_parent.html", self.j_env, template_vars)
 
     def create_navbar(self, navbar_links):
@@ -625,8 +621,7 @@ class HTMLReportBuilder(object):
             _LOGGER.warning("No stats file '%s'", tsv_outfile_path)
 
         # Create parent samples page with links to each sample
-        save_html(os.path.join(self.reports_dir, "samples.html"),
-                  self.create_sample_parent_html(objs, stats, self.reports_dir))
+        save_html(os.path.join(self.reports_dir, "samples.html"), self.create_sample_parent_html(navbar, footer))
 
         # Create objects pages
         if not objs.dropna().empty:
@@ -636,7 +631,7 @@ class HTMLReportBuilder(object):
 
         # Create parent objects page with links to each object type
         save_html(os.path.join(self.reports_dir, "objects.html"),
-                  self.create_object_parent_html(objs, stats, self.reports_dir))
+                  self.create_object_parent_html(objs, navbar, footer))
         # Create status page with each sample's status listed
         save_html(os.path.join(self.reports_dir, "status.html"),
                   self.create_status_html(objs, stats, self.reports_dir, navbar, footer))
