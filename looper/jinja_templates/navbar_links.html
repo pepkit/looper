@@ -1,23 +1,23 @@
-              <li class="nav-item">
+              <li class="nav-item active">
                 <a class="nav-link" href="{{status_html_page}}">{{status_page_name}}</a>
               </li>
               {% if dropdown_keys_objects is none %}
               <!-- there is more than 20 objects or 0 -->
                 {% if objects_html_page is none %}
                 <!-- no objects at all -->
-                  <li class="nav-item">
+                  <li class="nav-item active">
                     <!-- intentionally no href attribute, inactive link -->
                     <a class="nav-link">{{objects_page_name}}</a>
                   </li> 
                 {% else %}
-                  <li class="nav-item">
+                  <li class="nav-item active">
                     <a class="nav-link" href="{{objects_html_page}}">{{objects_page_name}}</a>
                   </li>  
                 {% endif %}
               {% else %}
                <!-- there is less than 20 objects -->
-                <li class="nav-item dropdown">
-                  <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <li class="nav-item dropdown active">
+                  <a class="nav-link dropdown-toggle active" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                     {{ menu_name_objects }}
                   </a>
                   <div class="dropdown-menu" aria-labelledby="navbarDropdown">
@@ -32,16 +32,16 @@
               {% endif %}
               {% if sample_names is none %}
                 {% if samples_html_page is none %}
-                  <li class="nav-item">
+                  <li class="nav-item active">
                     <a class="nav-link">{{samples_page_name}}</a>
                   </li>
                 {% else %}
-                  <li class="nav-item">
+                  <li class="nav-item active">
                     <a class="nav-link" href="{{samples_html_page}}">{{samples_page_name}}</a>
                   </li>
                 {% endif %}  
               {% else %}
-                <li class="nav-item dropdown">
+                <li class="nav-item dropdown active">
                   <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                   {{menu_name_samples}}
                   </a>
