@@ -550,7 +550,7 @@ class HTMLReportBuilder(object):
         template_vars = dict(figures=figures, links=links)
         return render_jinja_template("project_object.html", self.j_env, template_vars)
 
-    def create_index_html(self, objs, stats, col_names, navbar, footer):
+    def create_index_html(self, objs, stats, col_names, navbar, footer, navbar_reports=None):
         """
         Generate an index.html style project home page w/ sample summary
         statistics
@@ -561,11 +561,13 @@ class HTMLReportBuilder(object):
             analyzed sample
         :param list stats: a summary file of pipeline statistics for each
             analyzed sample
-        :param str navbar: HTML to be included as the navbar
+        :param str navbar: HTML to be included as the navbar in the main summary page
         :param str footer: HTML to be included as the footer
+        :param str navbar_reports: HTML to be included as the navbar for pages in the reports dirctory
         """
         _LOGGER.debug("Building index page...")
-
+        if navbar_reports is None:
+            navbar_reports = navbar
         if not objs.dropna().empty:
             objs.drop_duplicates(keep='last', inplace=True)
         # Generate parent index.html page path
@@ -604,7 +606,7 @@ class HTMLReportBuilder(object):
                 for value in table_row:
                     if value == sample_name:
                         # Generate individual sample page and return link
-                        sample_page = self.create_sample_html(objs, sample_name, sample_stats, navbar, footer)
+                        sample_page = self.create_sample_html(objs, sample_name, sample_stats, navbar_reports, footer)
                         # Treat sample_name as a link to sample page
                         data = [sample_page, sample_name]
                     # If not the sample name, add as an unlinked cell value
@@ -617,20 +619,20 @@ class HTMLReportBuilder(object):
             _LOGGER.warning("No stats file '%s'", tsv_outfile_path)
 
         # Create parent samples page with links to each sample
-        save_html(os.path.join(self.reports_dir, "samples.html"), self.create_sample_parent_html(navbar, footer))
+        save_html(os.path.join(self.reports_dir, "samples.html"), self.create_sample_parent_html(navbar_reports, footer))
 
         # Create objects pages
         if not objs.dropna().empty:
             for key in objs['key'].drop_duplicates().sort_values():
                 single_object = objs[objs['key'] == key]
-                self.create_object_html(single_object, navbar, footer)
+                self.create_object_html(single_object, navbar_reports, footer)
 
         # Create parent objects page with links to each object type
         save_html(os.path.join(self.reports_dir, "objects.html"),
-                  self.create_object_parent_html(objs, navbar, footer))
+                  self.create_object_parent_html(objs, navbar_reports, footer))
         # Create status page with each sample's status listed
         save_html(os.path.join(self.reports_dir, "status.html"),
-                  self.create_status_html(objs, stats, self.reports_dir, navbar, footer))
+                  self.create_status_html(objs, stats, self.reports_dir, navbar_reports, footer))
         # Add project level objects
         project_objects = self.create_project_objects()
         # Complete and close HTML file
