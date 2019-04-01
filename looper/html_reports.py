@@ -34,7 +34,11 @@ class HTMLReportBuilder(object):
         """ Do the work of the subcommand/program. """
 
         # Generate HTML report
-        index_html_path = self.create_index_html(objs, stats, columns, navbar=self.create_navbar(self.create_navbar_links(objs, stats, self.prj.metadata.output_dir, self.reports_dir)), footer=self.create_footer())
+        index_html_path = self.create_index_html(objs, stats, columns,
+                                                 navbar=self.create_navbar(self.create_navbar_links(
+                                                     prj=self.prj, objs=objs, stats=stats,
+                                                     wd=self.prj.metadata.output_dir)),
+                                                 footer=self.create_footer())
         return index_html_path
 
     def create_object_parent_html(self, objs, navbar, footer):
@@ -102,28 +106,45 @@ class HTMLReportBuilder(object):
         return render_jinja_template("navbar_list_parent.html", self.j_env, template_vars)
 
     def create_navbar(self, navbar_links):
+        """
+        Creates the navbar using the privided links
+
+        :param str navbar_links: HTML list of links to be inserted into a navbar
+        :return str: navbar HTML
+        """
         template_vars = dict(navbar_links=navbar_links, index_html=self.index_html_path)
         return render_jinja_template("navbar.html", self.j_env, template_vars)
 
     def create_footer(self):
+        """
+        Renders the footer from the templates directory
+
+        :return str: footer HTML
+        """
         return render_jinja_template("footer.html", self.j_env)
 
-    def create_navbar_links(self, objs, stats, wd, reports_dir, caravel=False, context=None):
+    def create_navbar_links(self, prj, objs, stats, wd=None, context=None):
         """
         Return a string containing the navbar prebuilt html.
-        Generates links to each page relative to the directory
-        of interest.
+
+        Generates links to each page relative to the directory of interest (wd arg) or uses the provided context to
+        create the paths (context arg)
+
+        :param looper.Project prj: a project the navbar links should be created for
         :param pandas.DataFrame objs: project results dataframe containing
             object data
         :param list stats: a summary file of pipeline statistics for each
             analyzed sample
         :param path wd: the working directory of the current HTML page
             being generated, enables navbar links relative to page
+        :param list[str] context: the context the links will be used in
         """
-        _LOGGER.debug("Building navbar with paths relative to: {}".format(wd))
-        status_relpath = _make_relpath("status.html", wd, caravel, context)
-        objects_relpath = _make_relpath("objects.html", wd, caravel, context)
-        samples_relpath = _make_relpath("samples.html", wd, caravel, context)
+        if wd is None and context is None:
+            raise ValueError("Either 'wd' (path the links should be relative to) or 'context'"
+                             " (the context for the links) has to be provided.")
+        status_relpath = _make_relpath(prj=prj, file_name="status.html", dir=wd, context=context)
+        objects_relpath = _make_relpath(prj=prj, file_name="objects.html", dir=wd, context=context)
+        samples_relpath = _make_relpath(prj=prj, file_name="samples.html", dir=wd, context=context)
         dropdown_keys_objects = None
         dropdown_relpaths_objects = None
         dropdown_relpaths_samples = None
@@ -131,16 +152,14 @@ class HTMLReportBuilder(object):
         if not objs.dropna().empty:
             # If the number of objects is 20 or less, use a drop-down menu
             if len(objs['key'].drop_duplicates()) <= 20:
-                navbar_dropdown_data_objects = _get_navbar_dropdown_data_objects(objs, reports_dir, wd, caravel, context)
-                dropdown_relpaths_objects = navbar_dropdown_data_objects[0]
-                dropdown_keys_objects = navbar_dropdown_data_objects[1]
+                dropdown_relpaths_objects, dropdown_keys_objects = \
+                    _get_navbar_dropdown_data_objects(prj=prj, objs=objs, wd=wd, context=context)
             else:
                 dropdown_relpaths_objects = objects_relpath
         if stats:
             if len(stats) <= 20:
-                navbar_dropdown_data_samples = _get_navbar_dropdown_data_samples(stats, reports_dir, wd, caravel, context)
-                dropdown_relpaths_samples = navbar_dropdown_data_samples[0]
-                sample_names = navbar_dropdown_data_samples[1]
+                dropdown_relpaths_samples, sample_names = \
+                    _get_navbar_dropdown_data_samples(prj=prj, stats=stats, wd=wd, context=context)
             else:
                 # Create a menu link to the samples parent page
                 dropdown_relpaths_samples = samples_relpath
@@ -762,19 +781,17 @@ def _get_relpath_to_file(file_name, sample_name, location, relative_to):
     return rel_file_path
 
 
-def _make_relpath(file_name, dir, caravel, context):
+def _make_relpath(prj, file_name, dir, context):
     """
 
     :param str path: the path to make relative
     :param str dir: the dir the path should be relative to
-    :param bool caravel: whether the path will be used in caravel caravel
     :param list[str] context: names of the directories that create the context for the path
     :return str: relative path
     """
-    if not caravel and context is not None:
-        raise ValueError("context argument can be used only within caravel context")
-    if caravel:
-        full_context = ["summary", "reports"]
+    rep_dir = os.path.basename(get_reports_dir(prj))
+    if context is not None:
+        full_context = ["summary", rep_dir]
         caravel_mount_point = [item for item in full_context if item not in context]
         caravel_mount_point.append(file_name)
         relpath = os.path.join(*caravel_mount_point)
@@ -784,16 +801,16 @@ def _make_relpath(file_name, dir, caravel, context):
     return relpath
 
 
-def _get_navbar_dropdown_data_objects(objs, rep_dir, wd, caravel, context):
-    if not caravel and context is not None:
-        raise ValueError("context argument can be used only within caravel context")
+def _get_navbar_dropdown_data_objects(prj, objs, wd, context):
+    rep_dir_path = get_reports_dir(prj)
+    rep_dir = os.path.basename(rep_dir_path)
     relpaths = []
     df_keys = objs['key'].drop_duplicates().sort_values()
     for key in df_keys:
         page_name = (key + ".html").replace(' ', '_').lower()
-        page_path = os.path.join(rep_dir, page_name)
-        if caravel:
-            full_context = ["summary", "reports"]
+        page_path = os.path.join(rep_dir_path, page_name)
+        if context is not None:
+            full_context = ["summary", rep_dir]
             caravel_mount_point = [item for item in full_context if item not in context]
             caravel_mount_point.append(page_name)
             relpath = os.path.join(*caravel_mount_point)
@@ -804,9 +821,9 @@ def _get_navbar_dropdown_data_objects(objs, rep_dir, wd, caravel, context):
     return relpaths, df_keys
 
 
-def _get_navbar_dropdown_data_samples(stats, rep_dir, wd, caravel, context):
-    if not caravel and context is not None:
-        raise ValueError("context argument can be used only within caravel context")
+def _get_navbar_dropdown_data_samples(prj, stats, wd, context):
+    rep_dir_path = get_reports_dir(prj)
+    rep_dir = os.path.basename(rep_dir_path)
     relpaths = []
     sample_names = []
     for sample in stats:
@@ -814,9 +831,9 @@ def _get_navbar_dropdown_data_samples(stats, rep_dir, wd, caravel, context):
             if entry == "sample_name":
                 sample_name = str(val)
                 page_name = (sample_name + ".html").replace(' ', '_').lower()
-                page_path = os.path.join(rep_dir, page_name)
-                if caravel:
-                    full_context = ["summary", "reports"]
+                page_path = os.path.join(rep_dir_path, page_name)
+                if context is not None:
+                    full_context = ["summary", rep_dir]
                     caravel_mount_point = [item for item in full_context if item not in context]
                     caravel_mount_point.append(page_name)
                     relpath = os.path.join(*caravel_mount_point)
