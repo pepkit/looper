@@ -68,11 +68,11 @@
             		<hr>
             		{% for figure in figures %}
     		            <figure class="figure">
-    		                <a href='{{ figure[1] }}'>
+    		                <a href='{{ figure[0] }}'>
     		                	<img style="width: 200px; height: 200px" src='{{ figure[2] }}' class="figure-img img-fluid rounded" alt="">
     		                </a>
-    		                <a href='{{ figure[1] }} '>
-    		                	<figcaption class="figure-caption text-left">'{{ figure[0] }}'</figcaption>
+    		                <a href='{{ figure[0] }}'>
+    		                	<figcaption class="figure-caption text-left">'{{ figure[1] }}'</figcaption>
     		                </a>
     		            </figure>
             		{% endfor %}
