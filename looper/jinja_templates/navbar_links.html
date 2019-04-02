@@ -5,9 +5,9 @@
               <!-- there is more than 20 objects or 0 -->
                 {% if objects_html_page is none %}
                 <!-- no objects at all -->
-                  <li class="nav-item active">
+                  <li class="nav-item">
                     <!-- intentionally no href attribute, inactive link -->
-                    <a class="nav-link">{{objects_page_name}}</a>
+                    <a class="nav-link disabled">{{objects_page_name}}</a>
                   </li> 
                 {% else %}
                   <li class="nav-item active">
@@ -32,8 +32,9 @@
               {% endif %}
               {% if sample_names is none %}
                 {% if samples_html_page is none %}
-                  <li class="nav-item active">
-                    <a class="nav-link">{{samples_page_name}}</a>
+                  <li class="nav-item">
+                    <!-- intentionally no href attribute, inactive link -->
+                    <a class="nav-link disabled">{{samples_page_name}}</a>
                   </li>
                 {% else %}
                   <li class="nav-item active">
