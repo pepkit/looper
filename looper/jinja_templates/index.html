@@ -7,10 +7,10 @@
     {{ navbar }} 
     <body>
     	<div class="container">
-  			<div class="row" style="margin-top: 20px; margin-bottom: 20px;">
-  				<h2 class="col-10">Looper stats summary</h2>
-  				<button type='button' href='{{ stats_file_path }}' class='btn btn-outline-primary'>Stats Summary File</button>
-        </div>
+  			<div class="row" style="margin-top: 20px; margin-bottom: 25px;">
+  				<h3 class="col-10" style="margin-bottom: 0px;">Looper <code>{{ project_name }}</code> summary</h3>
+  				<a class="btn btn-outline-dark" href='{{ stats_file_path }}' role="button">Stats summary file</a>
+        	</div>
         <div>
           <table class="display compact" id="data-table">
             <thead>
@@ -46,7 +46,7 @@
 
 		<div class="row">
 			<div id="chartableColumns" class="col-3" style="margin: 20px;">
-				<h4 style="margin: 20px;">Plot Column</h4>
+				<h3 style="margin: 20px;">Plot a column</h3>
 				<ul id="plot-cols">
 				</ul>
 			</div>

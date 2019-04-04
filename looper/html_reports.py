@@ -582,7 +582,7 @@ class HTMLReportBuilder(object):
             analyzed sample
         :param str navbar: HTML to be included as the navbar in the main summary page
         :param str footer: HTML to be included as the footer
-        :param str navbar_reports: HTML to be included as the navbar for pages in the reports dirctory
+        :param str navbar_reports: HTML to be included as the navbar for pages in the reports directory
         """
         _LOGGER.debug("Building index page...")
         if navbar_reports is None:
@@ -593,14 +593,14 @@ class HTMLReportBuilder(object):
         index_html_path = get_index_html_path(self.prj)
 
         # Add stats_summary.tsv button link
-        tsv_outfile_path = os.path.join(self.prj.metadata.output_dir, self.prj.name)
+        stats_file_name = os.path.join(self.prj.metadata.output_dir, self.prj.name)
         if hasattr(self.prj, "subproject") and self.prj.subproject:
-            tsv_outfile_path += '_' + self.prj.subproject
-        tsv_outfile_path += '_stats_summary.tsv'
-        stats_file_path = os.path.relpath(tsv_outfile_path, self.prj.metadata.output_dir)
+            stats_file_name += '_' + self.prj.subproject
+        stats_file_name += '_stats_summary.tsv'
+        stats_file_path = os.path.relpath(stats_file_name, self.prj.metadata.output_dir)
         # Add stats summary table to index page and produce individual
         # sample pages
-        if os.path.isfile(tsv_outfile_path):
+        if os.path.isfile(stats_file_name):
             # Produce table rows
             sample_pos = 0
             col_pos = 0
@@ -635,7 +635,7 @@ class HTMLReportBuilder(object):
                 sample_pos += 1
                 table_row_data.append(table_cell_data)
         else:
-            _LOGGER.warning("No stats file '%s'", tsv_outfile_path)
+            _LOGGER.warning("No stats file '%s'", stats_file_name)
 
         # Create parent samples page with links to each sample
         save_html(os.path.join(self.reports_dir, "samples.html"), self.create_sample_parent_html(navbar_reports, footer))
@@ -655,7 +655,7 @@ class HTMLReportBuilder(object):
         # Add project level objects
         project_objects = self.create_project_objects()
         # Complete and close HTML file
-        template_vars = dict(project_name=self.prj.name, stats_json=_read_tsv_to_json(tsv_outfile_path),
+        template_vars = dict(project_name=self.prj.name, stats_json=_read_tsv_to_json(stats_file_name),
                              navbar=navbar, footer=footer,
                              stats_file_path=stats_file_path, project_objects=project_objects, columns=col_names,
                              table_row_data=table_row_data, version=v)
