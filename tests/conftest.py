@@ -26,7 +26,7 @@ from peppy import SAMPLE_NAME_COLNAME, \
     SAMPLE_ANNOTATIONS_KEY, SAMPLE_SUBANNOTATIONS_KEY
 
 
-_LOGNAME = "peppy"
+_LOGNAME = "looper"
 _LOGGER = logging.getLogger(_LOGNAME)
 
 
