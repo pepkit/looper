@@ -412,7 +412,7 @@ class SubmissionConductor(object):
 
         def get_base_cmd(argstr):
             b = self.cmd_base
-            return (argstr and "{} {}".format(b, argstring.strip(" "))) or b
+            return (argstr and "{} {}".format(b, argstr.strip(" "))) or b
 
         # Create the individual commands to lump into this job.
         commands = [get_final_cmd(get_base_cmd(argstring)) for _, argstring in pool]
