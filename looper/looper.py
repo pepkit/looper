@@ -41,7 +41,8 @@ SUBMISSION_FAILURE_MESSAGE = "Cluster resource failure"
 
 _FAIL_DISPLAY_PROPORTION_THRESHOLD = 0.5
 _MAX_FAIL_SAMPLE_DISPLAY = 20
-_LOGGER = logging.getLogger()
+_PKGNAME = "looper"
+_LOGGER = logging.getLogger(_PKGNAME)
 
 
 class Executor(object):
@@ -762,10 +763,9 @@ def main():
         level = LOGGING_LEVEL
 
     # Establish the project-root logger and attach one for this module.
-    setup_logger(name="looper", level=level,
-                 logfile=args.logfile, devmode=args.dbg)
     global _LOGGER
-    _LOGGER = logging.getLogger(__name__)
+    _LOGGER = setup_logger(
+        name=_PKGNAME, level=level, logfile=args.logfile, devmode=args.dbg)
 
     if len(remaining_args) > 0:
         _LOGGER.debug("Remaining arguments passed to pipelines: {}".
