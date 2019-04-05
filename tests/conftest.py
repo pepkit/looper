@@ -27,7 +27,7 @@ from peppy import SAMPLE_NAME_COLNAME, \
 
 
 _LOGNAME = "peppy"
-_LOGGER = logging.getLogger(LOGNAME)
+_LOGGER = logging.getLogger(_LOGNAME)
 
 
 P_CONFIG_FILENAME = "project_config.yaml"
