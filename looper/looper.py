@@ -763,9 +763,10 @@ def main():
         level = LOGGING_LEVEL
 
     # Establish the project-root logger and attach one for this module.
+    logger_kwargs = {"level": level, "logfile": args.logfile, "devmode": args.dbg}
+    setup_logger(name="peppy", **logger_kwargs)
     global _LOGGER
-    _LOGGER = setup_logger(
-        name=_PKGNAME, level=level, logfile=args.logfile, devmode=args.dbg)
+    _LOGGER = setup_logger(name=_PKGNAME, **logger_kwargs)
 
     if len(remaining_args) > 0:
         _LOGGER.debug("Remaining arguments passed to pipelines: {}".
