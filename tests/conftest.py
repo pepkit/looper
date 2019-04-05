@@ -26,7 +26,8 @@ from peppy import SAMPLE_NAME_COLNAME, \
     SAMPLE_ANNOTATIONS_KEY, SAMPLE_SUBANNOTATIONS_KEY
 
 
-_LOGGER = logging.getLogger("peppy")
+_LOGNAME = "peppy"
+_LOGGER = logging.getLogger(LOGNAME)
 
 
 P_CONFIG_FILENAME = "project_config.yaml"
@@ -223,8 +224,8 @@ def pytest_generate_tests(metafunc):
 def conf_logs(request):
     """ Configure logging for the testing session. """
     level = request.config.getoption("--logging-level")
-    setup_logger(name="peppy", level=level, devmode=True)
-    logging.getLogger("peppy").info(
+    setup_logger(name=_LOGNAME, level=level, devmode=True)
+    logging.getLogger(_LOGNAME).info(
         "Configured looper logger at level %s; attaching tests' logger %s",
         str(level), __name__)
     global _LOGGER
