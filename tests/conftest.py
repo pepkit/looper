@@ -19,10 +19,10 @@ from pandas.io.parsers import EmptyDataError
 import pytest
 import yaml
 
-from looper import setup_looper_logger
 from looper.pipeline_interface import PipelineInterface
 from looper.project import Project
-from peppy import setup_peppy_logger, SAMPLE_NAME_COLNAME, \
+from logmuse import setup_logger
+from peppy import SAMPLE_NAME_COLNAME, \
     SAMPLE_ANNOTATIONS_KEY, SAMPLE_SUBANNOTATIONS_KEY
 
 
@@ -223,7 +223,7 @@ def pytest_generate_tests(metafunc):
 def conf_logs(request):
     """ Configure logging for the testing session. """
     level = request.config.getoption("--logging-level")
-    setup_peppy_logger(level=level, devmode=True)
+    setup_logger(name="peppy", level=level, devmode=True)
     logging.getLogger("peppy").info(
         "Configured looper logger at level %s; attaching tests' logger %s",
         str(level), __name__)
@@ -294,9 +294,9 @@ def interactive(
     """
 
     # Establish logging for interactive session.
-    looper_logger_kwargs = {"level": "DEBUG"}
+    looper_logger_kwargs = {"level": "DEBUG", "name": "looper"}
     looper_logger_kwargs.update(logger_kwargs or {})
-    setup_looper_logger(**looper_logger_kwargs)
+    setup_logger(**looper_logger_kwargs)
 
     # TODO: don't work with tempfiles once ctors tolerate Iterable.
     dirpath = tempfile.mkdtemp()

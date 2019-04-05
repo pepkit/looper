@@ -4,6 +4,7 @@ Looper: a pipeline submission engine. https://github.com/pepkit/looper
 """
 
 import abc
+import csv
 from collections import defaultdict
 import glob
 import logging
@@ -22,19 +23,17 @@ init()
 from colorama import Fore, Style
 import pandas as _pd
 
-from . import \
-    setup_looper_logger, FLAGS, GENERIC_PROTOCOL_KEY, \
-    LOGGING_LEVEL, __version__, build_parser, _LEVEL_BY_VERBOSITY
+from . import FLAGS, GENERIC_PROTOCOL_KEY, LOGGING_LEVEL, __version__, \
+    build_parser, _LEVEL_BY_VERBOSITY
 from .conductor import SubmissionConductor
 from .const import *
 from .exceptions import JobSubmissionException
+from .html_reports import HTMLReportBuilder
 from .project import Project
 from .utils import fetch_flag_files, sample_folder
 
-from .html_reports import HTMLReportBuilder
-
+from logmuse import setup_logger
 from peppy import ProjectContext, SAMPLE_EXECUTION_TOGGLE
-import csv
 
 
 SUBMISSION_FAILURE_MESSAGE = "Cluster resource failure"
@@ -763,9 +762,8 @@ def main():
         level = LOGGING_LEVEL
 
     # Establish the project-root logger and attach one for this module.
-    setup_looper_logger(level=level,
-                        additional_locations=(args.logfile, ),
-                        devmode=args.dbg)
+    setup_logger(name="looper", level=level,
+                 logfile=args.logfile, devmode=args.dbg)
     global _LOGGER
     _LOGGER = logging.getLogger(__name__)
 
