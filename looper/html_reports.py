@@ -673,6 +673,7 @@ def get_index_html_path(prj):
 
 def render_jinja_template(name, jinja_env, args=dict()):
     """
+    Render template in the specified jinja environment using the provided args
 
     :param str name: name of the template
     :param dict args: arguments to pass to the template
@@ -705,6 +706,12 @@ def save_html(path, template):
 
 
 def get_jinja_env(templates_dirname=None):
+    """
+    Create jinja environment with the provided path to the templates directory
+
+    :param str templates_dirname: path to the templates directory
+    :return jinja2.Environment: jinja environment
+    """
     if templates_dirname is None:
         file_dir = os.path.dirname(os.path.realpath(__file__))
         templates_dirname = os.path.join(file_dir, TEMPLATES_DIRNAME)
