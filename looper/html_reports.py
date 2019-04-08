@@ -11,7 +11,7 @@ from ._version import __version__ as v
 from .const import TEMPLATES_DIRNAME, APPEARANCE_BY_FLAG
 from collections import OrderedDict
 
-_LOGGER = logging.getLogger('HTMLReportBuilder')
+_LOGGER = logging.getLogger("looper")
 
 
 class HTMLReportBuilder(object):
