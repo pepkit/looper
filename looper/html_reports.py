@@ -8,7 +8,7 @@ import jinja2
 import re
 
 from ._version import __version__ as v
-from .const import TEMPLATES_DIRNAME
+from .const import TEMPLATES_DIRNAME, APPEARANCE_BY_FLAG
 from collections import OrderedDict
 
 _LOGGER = logging.getLogger('HTMLReportBuilder')
@@ -415,20 +415,6 @@ class HTMLReportBuilder(object):
         row_classes = []
         times = []
         mems = []
-        table_appearance_by_flag = {
-            "completed": {
-                "button_class": "table-success",
-                "flag": "Completed"
-            },
-            "running": {
-                "button_class": "table-warning",
-                "flag": "Running"
-            },
-            "failed": {
-                "button_class": "table-danger",
-                "flag": "Failed"
-            }
-        }
         for sample in self.prj.samples:
             sample_name = str(sample.sample_name)
             sample_dir = os.path.join(
@@ -439,15 +425,15 @@ class HTMLReportBuilder(object):
                 # Grab the status flag for the current sample
                 flag = _get_flags(sample_dir)
                 if not flag:
-                    button_class = "table-danger"
+                    button_class = "table-secondary"
                     flag = "Missing"
                 elif len(flag) > 1:
-                    button_class = "table-warning"
+                    button_class = "table-secondary"
                     flag = "Multiple"
                 else:
                     flag = flag[0]
                     try:
-                        flag_dict = table_appearance_by_flag[flag]
+                        flag_dict = APPEARANCE_BY_FLAG[flag]
                     except KeyError:
                         button_class = "table-secondary"
                         flag = "Unknown"
