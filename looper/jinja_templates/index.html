@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        {% include "head.html" %}
+        <title>Looper: {{ project_name }} summary</title>
+    </head>
+    {{ navbar }} 
+    <body>
+    	<div class="container">
+  			<div class="row" style="margin-top: 20px; margin-bottom: 25px;">
+  				<h3 class="col-10" style="margin-bottom: 0px;">Looper <code>{{ project_name }}</code> summary</h3>
+  				<a class="btn btn-outline-dark" href='{{ stats_file_path }}' role="button">Stats summary file</a>
+        	</div>
+        <div>
+          <table class="display compact" id="data-table">
+            <thead>
+				<tr>
+					{% for column in columns %}
+						<th>{{ column }}</th>
+					{% endfor %}
+				</tr>
+            </thead>
+				<tbody>
+				    {% for table_cell_data in table_row_data %}
+						<tr>
+							{% for values in table_cell_data %}
+								{% if values is not string %}
+									<td style="cursor:pointer" onclick="location.href='{{ values[0] }}'">
+										<a class="LN1 LN2 LN3 LN4 LN5" href="{{ values[0] }}">{{ values[1] }}</a>
+									</td>
+								{% else %}
+									<td class="text">
+										{{ values }}
+									</td>
+								{% endif %}
+							{% endfor %}
+						</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+
+        <div class="test-table">
+
+        </div>
+
+		<div class="row">
+			<div id="chartableColumns" class="col-3" style="margin: 20px;">
+				<h3 style="margin: 20px;">Plot a column</h3>
+				<ul id="plot-cols">
+				</ul>
+			</div>
+			<div class="col">
+				<div id="charts">
+
+				</div>
+			</div>
+		</div>
+    	{{ project_objects }}
+    </div>
+    </body>
+    <hr class="featurette-divider">
+	<footer class="text-muted">
+        {{ footer }}
+        {% include "footer_index.html" %}
+    </footer>
+</html>

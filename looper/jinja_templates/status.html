@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+    <head>
+      {% include "head.html" %}
+      <title>Looper: status</title>
+    </head>
+    {{ navbar }} 
+    <body>
+    	<div class="container">
+	        <div class="container-fluid">
+	        	<h3>Status by sample</h3>
+	        </div>
+	        <div class="container-fluid">
+		        <div class="d-flex justify-content-between">
+					<div class="table-responsive-sm">
+			            <table class="table table-sm table-hover table-bordered">
+						<thead>
+							<tr>
+								<th>Sample name</th>
+								<th>Status</th>
+								<th>Log file</th>
+								<th>Runtime</th>
+								<th>Peak memory use</th>
+							</tr>
+						</thead>
+			            	<tbody>
+			            		{% for element in sample_paths %}
+			            			{% set i = loop.index - 1 %}
+			            			<tr>
+	                  					<td style="cursor:pointer" onclick="location.href='{{ sample_paths[i] }}'">
+	                  						<a href="{{ sample_paths[i] }}" target="_top">{{ sample_link_names[i] }}</a>
+	                  					</td>
+	                  					<td class='{{ row_classes[i] }}'>
+	                  						{{ flags[i] }}
+	                  					</td>
+	                  					{% if log_paths[i] is none %}
+	                  					<td>
+	                  						NA
+	                  					</td>
+	                  					{% else %}
+	                  					<td style="cursor:pointer" onclick="location.href='{{ log_paths[i] }}'">
+	                  						<a href="{{ log_paths[i] }}" target="_top">{{ log_link_names[i] }}</a>
+	                  					</td>
+	                  					{% endif %}
+	                  					<td>
+	                  						{{ times[i] }}
+	                  					</td>
+	                  					<td>
+	                  						{{ mems[i] }}
+	                  					</td>
+                  					</tr>
+			 					{% endfor %}
+		 						</tr>
+							</tbody>
+		            	</table>
+					</div>  
+        		</div>
+        	</div>
+    	</div>
+    </body>
+    <hr class="featurette-divider">
+	<footer class="text-muted">
+        {{ footer }}
+    </footer>
+</html>

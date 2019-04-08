@@ -1,0 +1,143 @@
+
+<!-- jQuery first, then Popper.js, then Bootstrap JS -->
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
+
+<!-- D3.js -->
+<script src="https://d3js.org/d3.v5.min.js"></script>
+<!-- Plotly -->
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+
+<!-- DataTables JQuery extension -->
+<script src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/fixedcolumns/3.2.6/js/dataTables.fixedColumns.min.js"></script>
+<script src="https://cdn.datatables.net/responsive/2.2.3/js/dataTables.responsive.min.js"></script>
+
+<script type="text/javascript">
+
+    $.fn.dataTable.render.ellipsis = function ( cutoff, wordbreak, escapeHtml ) {
+        var esc = function ( t ) {
+            return t
+                .replace( /&/g, '&amp;' )
+                .replace( /</g, '&lt;' )
+                .replace( />/g, '&gt;' )
+                .replace( /"/g, '&quot;' );
+        };
+        function numberWithCommas(x) {
+            var parts = x.toString().split(".");
+            parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+            return parts.join(".");
+
+        }
+        return function ( d, type, row ) {
+            // Order, search and type get the original data
+            if ( type !== 'display' ) {
+                return d;
+            }
+            if ( typeof d !== 'number' && typeof d !== 'string' ) {
+                return d;
+            }
+            d = d.toString(); // cast numbers
+            if(!isNaN(d)){
+                return numberWithCommas(d);
+            }
+            if ( d.length < cutoff ) {
+                return d;
+            }
+            var shortened = d.substr(0, cutoff-1);
+            // Find the last white space character in the string
+            if ( wordbreak ) {
+                shortened = shortened.replace(/\s([^\s]*)$/, '');
+            }
+            // Protect against uncontrolled HTML input
+            if ( escapeHtml ) {
+                shortened = esc( shortened );
+            }
+            return shortened;
+        };
+    };
+
+    $(document).ready(function() {
+        $('#data-table').DataTable({
+            scrollX: true,
+            fixedColumns: {
+              leftColumns: 1
+            },
+            columnDefs: [
+              {
+                targets: 0,
+                render: $.fn.dataTable.render.ellipsis(1000, true, false)
+              },
+              {
+                targets: '_all',
+                render: $.fn.dataTable.render.ellipsis(17, true, true)
+              }
+            ],
+        });
+    } );
+
+    //var table = document.getElementById("data-table");
+
+
+    var plotDict = {}; // variable containing column values (col_name:string -> col_values:list)
+    var statsTable = {{ stats_json }}; // Jinja template variable
+    
+    // make a list of the first column values, which are the names of the samples
+    var sample_names = [];
+    var j = 1;
+    while(typeof(statsTable[0][j]) !== "undefined"){
+        sample_names.push(statsTable[0][j]);
+        j++;
+    }
+
+    // populate the values of each column
+    var col_names = [];
+    var i = 1; // denotes the column number
+    while(typeof(statsTable[i]) !== "undefined"){
+        var currCol = statsTable[i];
+
+        if(isNaN(parseFloat(currCol[1]))){ // change so that if the first column is missing values, it will look in the other rows
+            i++;
+            continue;
+        }
+
+        var colName = currCol[0];
+        col_names.push(colName);
+
+        var colValues = [];
+        var j = 1;
+        while(typeof(currCol[j]) !== "undefined"){
+            colValues.push(parseFloat(currCol[j]));
+            j++;
+        }
+        plotDict[colName] = colValues;
+        i++;
+    }
+
+
+
+    function graphCol(colname){
+      /* Creates a graph using Plotly.js */
+
+      var data = [{
+        x: sample_names,
+        y: plotDict[colname],
+        type: 'bar',
+      }];
+
+      var layout = {
+        title: colname
+      };
+      chart = document.getElementById('charts');
+      Plotly.newPlot(chart, data, layout);
+    }
+
+    function displayPlottableColumns(){
+        for(var i = 0; i < col_names.length; i++){
+            $("#plot-cols").append("<li><a href='#' title='Click to visualize this column' onclick='graphCol(\"" + col_names[i] + 
+                "\");return false;'>" + col_names[i] + "</a></li>");
+        }
+    }
+
+    displayPlottableColumns();
+</script>
