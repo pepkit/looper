@@ -715,7 +715,7 @@ def get_jinja_env(templates_dirname=None):
     if templates_dirname is None:
         file_dir = os.path.dirname(os.path.realpath(__file__))
         templates_dirname = os.path.join(file_dir, TEMPLATES_DIRNAME)
-    _LOGGER.info("using templates dir: " + templates_dirname)
+    _LOGGER.info("Using templates dir: " + templates_dirname)
     return jinja2.Environment(loader=jinja2.FileSystemLoader(templates_dirname))
 
 
