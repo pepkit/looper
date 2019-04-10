@@ -557,7 +557,7 @@ def _create_stats_summary(project, counter):
     tsv_outfile.close()
     _LOGGER.info("Summary (n=" + str(len(stats)) + "): " + tsv_outfile_path)
     counter.reset()
-    return stats, columns
+    return stats, uniqify(columns)
 
 
 def _create_obj_summary(project, counter):
