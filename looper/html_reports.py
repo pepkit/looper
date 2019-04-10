@@ -715,7 +715,7 @@ def get_jinja_env(templates_dirname=None):
     if templates_dirname is None:
         file_dir = os.path.dirname(os.path.realpath(__file__))
         templates_dirname = os.path.join(file_dir, TEMPLATES_DIRNAME)
-    _LOGGER.info("using templates dir: " + templates_dirname)
+    _LOGGER.info("Using templates dir: " + templates_dirname)
     return jinja2.Environment(loader=jinja2.FileSystemLoader(templates_dirname))
 
 
@@ -767,8 +767,6 @@ def _get_relpath_to_file(file_name, sample_name, location, relative_to):
     """
     abs_file_path = os.path.join(location, sample_name, file_name)
     rel_file_path = os.path.relpath(abs_file_path, relative_to)
-    _LOGGER.debug("Checking for file: '{fp}'. Exists? {exists}.".
-                  format(fp=abs_file_path, exists=os.path.exists(abs_file_path)))
     if file_name is None or not os.path.exists(abs_file_path):
         return None
     return rel_file_path
