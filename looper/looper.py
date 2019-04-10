@@ -783,7 +783,7 @@ def main():
         _LOGGER.debug("compute_env_file: DIVCFG or PEPENV")
     else:
         _LOGGER.debug("compute_env_file: " + str(getattr(args, 'env', None)))
-    _LOGGER.info("Building Project")
+    _LOGGER.debug("Building Project")
     try:
         prj = Project(
             args.config_file, subproject=args.subproject,
