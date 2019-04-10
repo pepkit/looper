@@ -93,12 +93,11 @@ class Checker(Executor):
         flag_text = ", ".join(flags)
 
         # Collect the files by flag and sort by flag name.
+        _LOGGER.debug("Checking project folders for flags: %s", flag_text)
         if all_folders:
-            _LOGGER.info("Checking project folders for flags: %s", flag_text)
             files_by_flag = fetch_flag_files(
                 results_folder=self.prj.metadata[RESULTS_SUBDIR_KEY], flags=flags)
         else:
-            _LOGGER.info("Checking project samples for flags: %s", flag_text)
             files_by_flag = fetch_flag_files(prj=self.prj, flags=flags)
 
         # For each flag, output occurrence count.
@@ -798,7 +797,7 @@ def main():
         if args.compute != "default":
             prj.dcc.activate_package(args.compute)
 
-    _LOGGER.info("Results subdir: " + prj.metadata[RESULTS_SUBDIR_KEY])
+    _LOGGER.debug("Results subdir: " + prj.metadata[RESULTS_SUBDIR_KEY])
 
     with ProjectContext(prj, selector_attribute=args.selector_attribute, selector_include=args.selector_include,
             selector_exclude=args.selector_exclude) as prj:
