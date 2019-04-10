@@ -10,7 +10,9 @@
     	<div class="container">
     		<div class='container-fluid'>
 	        	{% if links[0] is defined or figures[0] is defined %}
-                <h3>{{ name }}</h3>
+                	<h3>{{ name }}</h3>
+				{% else %}
+					<p>No objects to display for: <code>{{ name }}</code><p>
 	        	{% endif %}
 	        	<!-- Expects a 2 lists of lists: figures and links -->
 	        	{% if links[0] is defined %}
@@ -22,8 +24,13 @@
 	        		</div> 
 	        	{% endif %}
 	        	{% if figures[0] is defined %}
+					<h5>Figures</h5>
+					<div class='row justify-content-start'>
 	        		{% for figure in figures %}
-                        <h5>Figures</h5>
+						{% if loop.index % 3 == 0 %}
+	        				</div>
+	        				<div class='row justify-content-start'>
+	        			{% endif %}
     		            <figure class="figure">
     		                <a href='{{ figure[2] }}'>
     		                	<img style="width: 200px; height: 200px" src='{{ figure[2] }}' class="figure-img img-fluid rounded" alt="">
@@ -33,6 +40,7 @@
     		                </a>
     		            </figure>
             		{% endfor %}
+					</div>
 	        	{% endif %}
 	    	</div>
     	</div>
