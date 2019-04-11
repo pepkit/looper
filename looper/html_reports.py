@@ -565,6 +565,7 @@ class HTMLReportBuilder(object):
             analyzed sample
         :param list stats: a summary file of pipeline statistics for each
             analyzed sample
+        :param list col_names: all unique column names used in the stats file
         :param str navbar: HTML to be included as the navbar in the main summary page
         :param str footer: HTML to be included as the footer
         :param str navbar_reports: HTML to be included as the navbar for pages in the reports directory
@@ -572,8 +573,9 @@ class HTMLReportBuilder(object):
         reload(sys)
         sys.setdefaultencoding('utf-8')
         _LOGGER.debug("Building index page...")
+        # copy the columns names and remove the sample_name one, since it will be processed differently
         cols = cp(col_names)
-        _LOGGER.debug(cols)
+        cols.remove("sample_name")
         if navbar_reports is None:
             navbar_reports = navbar
         if not objs.dropna().empty:
@@ -600,6 +602,7 @@ class HTMLReportBuilder(object):
                 sample_page = self.create_sample_html(objs, sample_name, row, navbar_reports, footer)
                 # treat sample_name column differently - provide a link to the sample page
                 table_cell_data.append([sample_page, sample_name])
+                # for each column read the data from the stats
                 for c in cols:
                     try:
                         table_cell_data.append(str(row[c]).decode('utf-8'))
