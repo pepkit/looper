@@ -1,19 +1,12 @@
 # Cluster computing
 
-By default, `looper` will build a shell script for each sample and then run each sample serially on the local computer. 
-Where `looper` really excels, though, is in large projects that require submitting these jobs to a cluster resource manager 
-(like SLURM, SGE, LFS, etc.). Looper handles the interface to the resource manager so that projects and pipelines can easily travel among environments. 
+By default, `looper` will build a shell script for each sample and then run each sample serially on the local computer. This is convenient for simple cases, because it doesn't require any extra configuration. When it comes time to scale up, no problem! This is where `looper` really excels, in large projects that require submitting these jobs to a cluster resource manager (like SLURM, SGE, LFS, etc.). Starting with version `0.11` (released in 2019), `looper` uses [divvy](http://code.databio.org/divvy) to manage computing resource configuration so that projects and pipelines can easily travel among environments.
 
-To configure `looper` to use cluster computing, all you have to do is tell provide a few things about your cluster setup. 
-You create a configuration file (`compute_config.yaml`) and point an environment variable (`PEPENV`) to this file, and that's it!
+`Divvy` uses a template system to build scripts for each job. To start, `divvy` includes a few built-in templates so you can run basic jobs without messing with anything, but the template system provides ultimate flexibility to customize your job scripts however you wish. This template system is how we can use looper to run jobs on any cluster resource manager, by simply setting up a template that fits our particular cluster manager.
 
-Following is a brief overview to familiarize you with how this will work. 
-When you're ready to hook looper up to your compute cluster, you should follow the complete, step-by-step instructions 
-and examples in the [pepenv repository](https://github.com/pepkit/pepenv). 
+In a nutshell, to configure `looper` to use cluster computing, all you have to do is provide some information about your cluster setup. You create a `divvy` computing configuration file (`compute_config.yaml`) and point an environment variable (`DIVCFG`) to this file, and that's it! You then have access to any configured computing packages by using `looper --compute package`, where `package` can be any computing system you configure.
 
-
-## `PEPENV` overview
-Here is an example ``compute_config.yaml`` file that works with a SLURM environment:
+For example, here's a `compute_config.yaml` file that works with a SLURM environment:
 ```yaml
 compute:
   default:
@@ -29,25 +22,37 @@ compute:
 ```
 
 Each section within `compute` defines a "compute package" that can be activated. 
-By default, the package named `default` will be used, which in this example is identical to the `loc` package. 
-You can make your default whatever you like. 
-You may then choose a different compute package on the fly by specifying the `--compute` option: ``looper run --compute PACKAGE``. 
-In this case, `PACKAGE` could be either `loc` (which would do the same thing as the default, so doesn't change anything) or `slurm`, 
-which would run the jobs on SLURM, from queue `queue_name`. 
-You can make as many compute packages as you wish (for example, to submit to different SLURM partitions).
+By default, the package named `default` will be used, You may then choose a different compute package on the fly by specifying the `--compute` option: ``looper run --compute PACKAGE``. In this case, `PACKAGE` could be either `loc` (which would do the same thing as the default, so doesn't change anything) or `slurm`, which would run the jobs on SLURM, from queue `queue_name`. You can make as many compute packages as you wish (for example, to submit to different SLURM partitions).
 
-There are a few sub-parameters for a compute package:
-- `submission_template` is a path to the template submission script. 
-A template file contains variables that are populated with values for each job you submit. 
-More details can be found at the [`pepenv` repository](https://github.com/pepkit/pepenv). 
-- `submission_command` is the command-line command that `looper` will prepend to the path of the 
-submission script produced to actually run it (`sbatch` for SLURM, `qsub` for SGE, `sh` for localhost, etc).
-- `partition` (optional) specifies a queue name.
+This is just an overview; when you're ready to configure your computing environment, head over to the [divvy docs](http://code.databio.org/divvy) to get the whole story.
 
 
-## Resources
-You may notice that the compute config file does not specify resources to request (like memory, CPUs, or time). Yet, these are required as well in order to submit a job to a cluster. In the looper system, **resources are not handled by the pepenv file** because they not relative to a particular computing environment; instead they are are variable and specific to a pipeline and a sample. As such, these items are defined in the ``pipeline_interface.yaml`` file (``pipelines`` section) that connects looper to a pipeline. The reason for this is that the pipeline developer is the most likely to know what sort of resources her pipeline requires, so she is in the best position to define the resources requested.
+## Using divvy with looper
 
-For more information on how to adjust resources, see the `pipelines` section of the [pipeline interface page](pipeline-interface.md). 
-If all the different configuration files seem confusing, 
-now is a good time to review [who's who in configuration files](config-files.md).
+What is the source of values used to populate the variables? Well, they are pooled together from several sources. Divvy uses a hierarchical system to collect data values from global and local sources, which enables you to re-use settings across projects and environments. To start, there are a few built-ins:
+
+Built-in variables:
+
+- `{CODE}` is a reserved variable that refers to the actual command string that will run the pipeline. `Looper` will piece together this command individually for each sample
+- `{JOBNAME}` -- automatically produced by `looper` using the `sample_name` and the pipeline name.
+- `{LOGFILE}` -- automatically produced by `looper` using the `sample_name` and the pipeline name.
+
+
+Other variables are not automatically created by `looper` and are specified in a few different places:
+
+*DIVCFG config file*. Variables that describes settings of a **compute environment** should go in the `DIVCFG` file. Any attributes in the activated compute package will be available to populate template variables. For example, the `partition` attribute is specified in many of our default `DIVCFG` files; that attribute is used to populate a template `{PARTITION}` variable. This is what enables pipelines to work in any compute environment, since we have no control over what your partitions are named. You can also use this to change SLURM queues on-the-fly.
+
+*pipeline_interface.yaml*. Variables that are **specific to a pipeline** can be defined in the `pipeline interface` file. Variables in two different sections are available to templates: the `compute` and `resources` sections. The difference between the two is that the `compute` section is common to all samples, while the `resources` section varies based on sample input size. As an example of a variable pulled from the `compute` section, we defined in our `pipeline_interface.yaml` a variable pointing to the singularity or docker image that can be used to run the pipeline, like this:
+
+```
+compute:
+  singularity_image: /absolute/path/to/images/image
+```
+
+Now, this variable will be available for use in a template as `{SINGULARITY_IMAGE}`. This makes sense to put in the `compute` section because it doesn't change for different sizes of input files. This path should probably be absolute, because a relative path will be interpreted as relative to the working directory where your job is executed (*not* relative to the pipeline interface).
+
+The other pipeline interface section that is available to templates is `resources`. This section uses a list of *resource packages* that vary based on sample input size. We use these in existing templates to adjust the amount of resources we need to request from a resource manager like SLURM. For example: `{MEM}`, `{CORES}`, and `{TIME}` are all defined in this section, and they vary for different input file sizes.
+
+[Read more about pipeline_interface.yaml here](http://looper.readthedocs.io/en/latest/pipeline-interface.html).
+
+*project_config.yaml*. Finally, project-level variables can also be populated from the `compute` section of a project config file. We don't recommend using this and it is not yet well documented, but it would enable you to make project-specific compute changes (such as billing a particular project to a particular SLURM resource account).

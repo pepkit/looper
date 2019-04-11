@@ -1,42 +1,8 @@
-# How to link a pipeline to your project
+# How to write a pipeline interface
 
-Looper runs samples through pipelines by according to a file called a ***pipeline interface***. 
-How you use this depends on if you're using an existing pipeline or building a new pipeline. 
+If you're using *existing* `looper`-compatible pipelines, you don't need to create a new interface; point your project at the one that comes with the pipeline. This is described in  [Linking a project to a pipeline](linking-a-pipeline.md).
 
-- **When using *existing* `looper`-compatible pipelines**, you don't need to create a new interface; point your project at the one that comes with the pipeline. 
-For more information refer to ["Linking a compatible pipeline"](#existing-compatible-pipelines).
-- **When creating *new* `looper`-compatible pipelines**, you'll need to create a new pipeline interface file. 
-For more information refer to ["New pipelines"](#new-pipelines)
-
-
-## Existing compatible pipelines
-
-Many projects will require only existing pipelines that are already `looper`-compatible. 
-We maintain a (growing) list of [publicly available compatible pipelines](https://github.com/pepkit/hello_looper/blob/master/looper_pipelines.md) to start. 
-The list includes pipelines for experiments covering transcription (RNA-seq), 
-chromatin accessibility (ATAC-seq), DNA methylation (RRBS and WGBS), and chromatin interaction and binding (HiChIP).
-
-To use one of these pipelines, first clone the desired code repository. 
-Then, using the `pipeline_interfaces` key in the `metadata` section of a project config file, 
-point your project to that pipeline's `pipeline_interface` file:
-
-```yaml
-  metadata:
-    pipeline_interfaces: /path/to/pipeline_interface.yaml
-```
-
-The value for the `pipeline_interfaces` key should be the *absolute* path to the pipeline interface file.
-After that, you just need to make sure your project definition provides all the necessary sample metadata required by the pipeline you want to use. 
-For example, you will need to make sure your sample annotation sheet specifies the correct value under `protocol` that your linked pipeline understands. 
-Such details are specific to each pipeline and should be defined somewhere in the pipeline's documentation, e.g. in a `README` file.
-
-
-## New pipelines
-
-***HINT***: If you're strictly *using* a pipeline, you don't need to worry about this section. 
-This is relevant only if you want to make a new or existing pipeline compatible with `looper`.
-
-As long as a pipeline runs on the command line, `looper` can run samples through it. 
+When creating *new* `looper`-compatible pipelines, you'll need to create a new pipeline interface file. As long as a pipeline runs on the command line, `looper` can run samples through it. 
 A pipeline may consist of script(s) in languages like Perl, Python, or bash, or it may be built with a particular framework. 
 Typically, we use Python pipelines built using the [`pypiper` package](http://pypiper.readthedocs.io), 
 which provides some additional power to `looper`, but that's optional.
@@ -66,7 +32,7 @@ The first section specifies that samples of protocol `RRBS` will be mapped to th
 The second section describes where the pipeline with key `rrbs_pipeline` is located and what command-line arguments it requires. 
 Pretty simple. Let's go through these 2 sections in more detail:
 
-### Protocol mapping
+### Protocol mapping section
 
 The `protocol_mapping` section explains how looper should map from a sample protocol 
 (like `RNA-seq`, which is a column in your annotation sheet) to a particular pipeline (like `rnaseq.py`), or group of pipelines. 
@@ -133,7 +99,7 @@ protocol_mapping:
       (nnm.py, pdr.py)
 ```
 
-### Pipeline configuration
+### Pipelines section
 The `pipelines` section defines important information about each pipeline, including its name, location on disk/web, and optional or required command-line arguments. 
 In addition, if you're using a cluster resource manager, it also specifies which compute resources to request. 
 For each pipeline, you specify values for a few specific keys. 

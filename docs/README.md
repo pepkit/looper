@@ -1,42 +1,53 @@
+# <img src="img/looper_logo.svg" class="img-header">
+
+[![PEP compatible](http://pepkit.github.io/img/PEP-compatible-green.svg)](http://pepkit.github.io)
 
 # Introduction
 
-Looper is a pipeline submitting engine. Once you've built a command-line pipeline, Looper helps you deploy that pipeline across lots of samples. Looper standardizes the way the user (you) communicates with pipelines. While most pipelines specify a unique interface, looper lets you to use the same interface for every pipeline and every project. As you have more projects, this will save you time.
+Looper is a pipeline submitting engine. Looper deploys any *command-line* pipeline across lots of samples that are organized in [standard PEP format](https://pepkit.github.io/docs/home/).
 
-Looper is scalable: For simple jobs, it can run pipelines sequentially on the local computer. For larger needs, a simple change switches to creating and submitting jobs to any cluster resource manager (like SLURM, SGE, or LFS). It's totally configurable. We provide sensible defaults for ease-of-use, but you can configure just about anything.
+`Looper`'s key strength is that it **decouples sample handling from pipeline processing**. In a typical pipeline, sample handling (*e.g* submitting different samples to a cluster) is delicately intertwined with pipeline commands (running the actual code on a single sample). The `looper` approach is modular, following the [the unix principle](https://en.wikipedia.org/wiki/Unix_philosophy) by focusing only on handling samples. This approach alleviates several challenges with the traditional system:
 
-Looper reads projects that follow the [standardized Portable Encapsulated Project format](https://pepkit.github.io/docs/home/). This simple format uses a `yaml` configuration file plus a `csv`  sample annotation file. Looper reads this metadata and submits pipeline runs for each sample.
+1. running a pipeline on just one or two samples is simpler, and does not require a full-blown distributed compute environment.
+2. pipelines do not need to independently re-implement sample handling code, which instead can be shared across many pipelines.
+3. every project can use the same structure (e.g. the expected folder structure, file naming scheme, and sample annotation format), because the code that reads the project metadata is universal, so datasets can more easily be moved from one pipeline to another.
 
-Looper makes it easy to:
+By dividing sample processing from pipelining, the sample processing code needs only be written once (and can thus be written well) -- that's what `looper` is. **The user interface can be made simple and intuitive, and a user must then learn only a single interface, which will work with any pipeline.**
 
-* only submit jobs that haven't already been submitted
-* run multiple pipelines on each sample
-* interface with any kind of pipeline
-* collate inputs from different locations on disk
-* request different resources for different input file sizes
-* monitor which jobs are running or failed
-* run different pipelines on different types of data
-* use sample objects for downstream (post-pipeline) data analysis
+## Installing
+
+Releases are posted as [GitHub releases](https://github.com/pepkit/looper/releases), or you can install using `pip`:
 
 
+```
+pip install --user https://github.com/pepkit/looper/zipball/master
+```
 
-## How does it work?
+Update with:
 
-We provide a format specification (the `project config file`), which you use to describe your project. You create this single configuration file (in [yaml format](http://www.yaml.org/)), pass this file as input to `looper`, which parses it, reads your sample list, maps each sample to the appropriate pipeline, and creates and runs (or submits) job scripts.
+```
+pip install --user --upgrade https://github.com/pepkit/looper/zipball/master
+```
 
-## What looper does NOT do
+If the `looper` executable in not automatically in your `$PATH`, add the following line to your `.bashrc` or `.profile`:
 
-Looper **is not a pipeline workflow engine**, which is used to build pipelines. Looper assumes you already have pipelines built; if you're looking to build a new pipeline, we recommend [pypiper](http://pypiper.readthedocs.io/), but you can use looper with **any pipeline that accepts command-line arguments**. Looper will then map samples to pipelines for you.
+```
+export PATH=~/.local/bin:$PATH
+```
+
+## Quick start
+
+Now, to test `looper`, follow the [Hello Looper example repository](https://github.com/databio/hello_looper) by running this code and you're running your first looper project!
 
 
-## Why should I use looper?
+```
+# download and unzip the hello_looper repository
+wget https://github.com/databio/hello_looper/archive/master.zip
+unzip master.zip
 
-The philosophical rationale for looper is that it **decouples sample handling from pipeline processing**. This creates a modular system that subscribes to [the unix philosophy](https://en.wikipedia.org/wiki/Unix_philosophy), which provides many benefits. In many published bioinformatics pipelines, sample handling (submitting different samples to a cluster) is delicately intertwined with pipeline commands (running the actual code on a single sample). Often, it is impossible to divide sample handling from the pipeline itself. This approach leads to several challenges that can be reduced by separating the two:
+# Run looper:
+cd hello_looper-master
+looper run project/project_config.yaml
+```
 
-* running a pipeline on just a few samples or just a single test case for debugging may require a full-blown distributed compute environment if the system is not set up to work locally.
-
-* pipelines that handle multiple samples must necessary implement sample handling code, which in theory could be shared across many pipelines. Instead, most pipelines re-implement this, leading to a unique (and often sub-par) sample handling system for each published pipeline.
-
-* if each pipeline has its own sample processing code, then each also necessarily must define a unique interface: the expected folder structure, file naming scheme, and sample annotation format. This makes it nontrivial to move a dataset from one pipeline to another.
-
-The modular approach taken by looper addresses these issues. By dividing sample processing from pipelining, the sample processing code needs only be written once (and can thus be written well) -- that's what looper is. The user interface can be made simple and intuitive, and a user must then learn only a single interface, which will work with any pipeline.
+Detailed explanation of results is in the [Hello Looper example repository](https://github.com/databio/hello_looper).

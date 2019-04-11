@@ -1,12 +1,5 @@
 # How to define a project
 
-`Looper` subscribes to standard Portable Encapsulated Project (PEP) format. So, to use `looper`, you first define your project using PEP structure. PEP is a standardized way to represent metadata about your project and each of its samples. If you follow this format, then your project can be read not only by `looper`, but also by other software, like the [pepr R package](http://github.com/pepkit/pepr), or the [peppy python package](http://github.com/pepkit/peppy). This will let you use the same metadata description for downstream data analysis.
+Most pipelines require a unique way to organize samples, but `looper` subscribes to [standard Portable Encapsulated Project (PEP) format](http://pepkit.github.io). PEP is a standardized way to represent metadata about your project and each of its samples. If you follow this format, then your project can be read not only by `looper`, but also by other software, like the [pepr R package](http://github.com/pepkit/pepr), or the [peppy python package](http://github.com/pepkit/peppy). 
 
-The PEP format is simple and modular and uses 2 key files:
-
-1. **Project config file** - a `yaml` file describing file paths and project settings
-2. **Sample annotation sheet** - a `csv` file with 1 row per sample
-
-You can find details of both files in the [documentation for Portable Encapsulated Projects](https://pepkit.github.io/docs/home/).
-
-Once you've specified a PEP, it's time to link it to the looper pipelines you want to use with the project. You'll do this by adding one more line to your project config file to indicate the **pipeline_interfaces** you need. This is described in the next section on how to `link a project to a pipeline`).
+Once you've specified a PEP, it's time to link it to the looper pipelines you want to use with the project. This is described in the next section on how to link a project to a pipeline).

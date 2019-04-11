@@ -1,5 +1,5 @@
 site_name: Looper
-site_logo: img/logo_looper.svg
+site_logo: img/looper_logo_dark.svg
 site_url: http://code.databio.org/looper/
 repo_url: http://github.com/pepkit/looper
 
@@ -7,7 +7,7 @@ nav:
   - Getting Started: 
     - Introduction: README.md
     - Features at-a-glance: features.md
-    - Installing and hello world: hello-world.md
+    - Hello world: hello-world.md
   - How-to guides:    
     - Defining a project: define-your-project.md
     - Linking a project to a pipeline: linking-a-pipeline.md
@@ -19,7 +19,6 @@ nav:
   - Reference:
     - Usage: usage.md
     - Configuration files: config-files.md
-    - API: autodoc_build/api.md
     - FAQ: faq.md
     - Support: support.md
     - Contributing: contributing.md
@@ -29,9 +28,8 @@ theme: databio
 
 plugins:
   - databio:
-      autodoc_build: "docs/autodoc_build"
-      autodoc_package: "looper"
-      autodoc_outfile: "api.md"
-      no_top_level: true
+      jupyter_source: "docs_jupyter"
+      juptyer_build: "docs_jupyter/build"
   - search
+
 

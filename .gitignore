@@ -76,3 +76,6 @@ build/
 dist/
 looper.egg-info/
 
+
+*ipynb_checkpoints*
+hello_looper-master*

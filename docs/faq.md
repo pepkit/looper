@@ -15,13 +15,8 @@
 
 - What's the difference between `looper` and `pypiper`?
 	
-	They complement one another, constituting a comprehensive pipeline management system. 
-	
-	[`pypiper`](http://pypiper.readthedocs.io) builds pipelines to process individual samples. 
-	[`looper`](http://looper.readthedocs.io) operates groups of samples (as in a project), 
-	submitting the appropriate pipeline(s) to a cluster or server (or running them locally). 
-	
-	The two projects are independent and can be used separately, but they are most powerful when combined.
+	They complement one another, constituting a comprehensive pipeline management system. [`pypiper`](http://pypiper.readthedocs.io) builds pipelines to process individual samples. [`looper`](http://looper.readthedocs.io) operates groups of samples (as in a project), 
+	submitting the appropriate pipeline(s) to a cluster or server (or running them locally). The two projects are independent and can be used separately, but they are most powerful when combined.
 
 - Why isn't a sample being processed by a pipeline (`Not submitting, flag found: ['*_<status>.flag']`)?
 	
@@ -41,3 +36,9 @@
 	you can do so by passing `--ignore-flags` to `looper` at startup. That will **resubmit *all* samples**, though. 
 	If you only want to re-run or restart just a few samples, it's best to manually delete the "flag" files for the samples 
 	you want to restart, then use `looper run` as normal.
+
+- Why are computing resources defined in the pipeline interface file instead of in the `divvy` computing configuration file?
+	
+	You may notice that the compute config file does not specify resources to request (like memory, CPUs, or time). Yet, these are required in order to submit a job to a cluster. **Resources are not handled by the divcfg file** because they not relative to a particular computing environment; instead they vary by pipeline and sample. As such, these items should be defined at other stages. 
+
+	Resources defined in the `pipeline_interface.yaml` file (`pipelines` section) that connects looper to a pipeline. The reason for this is that the pipeline developer is the most likely to know what sort of resources her pipeline requires, so she is in the best position to define the resources requested. For more information on how to adjust resources, see the `pipelines` section of the [pipeline interface page](pipeline-interface.md).  If all the different configuration files seem confusing, now is a good time to review [who's who in configuration files](config-files.md).
