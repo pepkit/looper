@@ -163,10 +163,9 @@ class HTMLReportBuilder(object):
             else:
                 # Create a menu link to the samples parent page
                 dropdown_relpaths_samples = samples_relpath
-        template_vars = dict(status_html_page=status_relpath,
-                             status_page_name="Status", dropdown_keys_objects=dropdown_keys_objects,
-                             objects_page_name="Objects", samples_page_name="Samples",
-                             objects_html_page=dropdown_relpaths_objects,
+        template_vars = dict(status_html_page=status_relpath, status_page_name="Status",
+                             dropdown_keys_objects=dropdown_keys_objects, objects_page_name="Objects",
+                             samples_page_name="Samples", objects_html_page=dropdown_relpaths_objects,
                              samples_html_page=dropdown_relpaths_samples, menu_name_objects="Objects",
                              menu_name_samples="Samples", sample_names=sample_names, all_samples=samples_relpath,
                              all_objects=objects_relpath)
@@ -391,7 +390,7 @@ class HTMLReportBuilder(object):
         save_html(html_page, render_jinja_template("sample.html", self.j_env, template_vars))
         return sample_page_relpath
 
-    def create_status_html(self, objs, stats, wd, navbar, footer):
+    def create_status_html(self, objs, navbar, footer):
         """
         Generates a page listing all the samples, their run status, their
         log file, and the total runtime if completed.
@@ -628,7 +627,7 @@ class HTMLReportBuilder(object):
                   self.create_object_parent_html(objs, navbar_reports, footer))
         # Create status page with each sample's status listed
         save_html(os.path.join(self.reports_dir, "status.html"),
-                  self.create_status_html(objs, stats, self.reports_dir, navbar_reports, footer))
+                  self.create_status_html(objs, navbar_reports, footer))
         # Add project level objects
         project_objects = self.create_project_objects()
         # Complete and close HTML file

@@ -1,12 +1,6 @@
-              {% if sample_names is none %}
-              <li class="nav-item disabled">
-                <a class="nav-link disabled">{{status_page_name}}</a>
-              </li>
-              {% else %}
               <li class="nav-item active">
                 <a class="nav-link" href="{{status_html_page}}">{{status_page_name}}</a>
               </li>
-              {% endif %}
               {% if dropdown_keys_objects is none %}
               <!-- there is more than 20 objects or 0 -->
                 {% if objects_html_page is none %}
