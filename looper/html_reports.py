@@ -6,11 +6,11 @@ import pandas as _pd
 import logging
 import jinja2
 import re
+import sys
 
 from ._version import __version__ as v
 from .const import TEMPLATES_DIRNAME, APPEARANCE_BY_FLAG
-from collections import OrderedDict
-
+from copy import copy as cp
 _LOGGER = logging.getLogger("looper")
 
 
@@ -149,7 +149,7 @@ class HTMLReportBuilder(object):
         dropdown_relpaths_objects = None
         dropdown_relpaths_samples = None
         sample_names = None
-        if not objs.dropna().empty:
+        if objs is not None and not objs.dropna().empty:
             # If the number of objects is 20 or less, use a drop-down menu
             if len(objs['key'].drop_duplicates()) <= 20:
                 dropdown_relpaths_objects, dropdown_keys_objects = \
@@ -477,7 +477,6 @@ class HTMLReportBuilder(object):
                     if mem is None:
                         status_warning = True
                         mem = "NA"
-                _LOGGER.debug("Peak mem read from log: {}".format(mem))
                 mems.append(mem)
             else:
                 # Sample was not run through the pipeline
@@ -562,15 +561,21 @@ class HTMLReportBuilder(object):
 
         :param panda.DataFrame objs: project level dataframe containing
             any reported objects for all samples
-        :param list stats: a summary file of pipeline statistics for each
+        :param list[dict] stats: a summary file of pipeline statistics for each
             analyzed sample
         :param list stats: a summary file of pipeline statistics for each
             analyzed sample
+        :param list col_names: all unique column names used in the stats file
         :param str navbar: HTML to be included as the navbar in the main summary page
         :param str footer: HTML to be included as the footer
         :param str navbar_reports: HTML to be included as the navbar for pages in the reports directory
         """
+        reload(sys)
+        sys.setdefaultencoding('utf-8')
         _LOGGER.debug("Building index page...")
+        # copy the columns names and remove the sample_name one, since it will be processed differently
+        cols = cp(col_names)
+        cols.remove("sample_name")
         if navbar_reports is None:
             navbar_reports = navbar
         if not objs.dropna().empty:
@@ -588,44 +593,30 @@ class HTMLReportBuilder(object):
         # sample pages
         if os.path.isfile(stats_file_name):
             # Produce table rows
-            sample_pos = 0
-            col_pos = 0
-            num_columns = len(col_names)
             table_row_data = []
+            samples_cols_missing = []
+            _LOGGER.debug(" * Creating sample pages...")
             for row in stats:
-                # Match row value to column
-                # Row is disordered and does not handle empty cells
-                table_row = []
-                while col_pos < num_columns:
-                    value = row.get(col_names[col_pos])
-                    if value is None:
-                        value = ''
-                    table_row.append(value)
-                    col_pos += 1
-                # Reset column position counter
-                col_pos = 0
-                sample_name = str(stats[sample_pos]['sample_name'])
-                # Order table_row by col_names
-                sample_stats = OrderedDict(zip(col_names, table_row))
                 table_cell_data = []
-                for value in table_row:
-                    if value == sample_name:
-                        # Generate individual sample page and return link
-                        sample_page = self.create_sample_html(objs, sample_name, sample_stats, navbar_reports, footer)
-                        # Treat sample_name as a link to sample page
-                        data = [sample_page, sample_name]
-                    # If not the sample name, add as an unlinked cell value
-                    else:
-                        data = str(value)
-                    table_cell_data.append(data)
-                sample_pos += 1
+                sample_name = row["sample_name"]
+                sample_page = self.create_sample_html(objs, sample_name, row, navbar_reports, footer)
+                # treat sample_name column differently - provide a link to the sample page
+                table_cell_data.append([sample_page, sample_name])
+                # for each column read the data from the stats
+                for c in cols:
+                    try:
+                        table_cell_data.append(str(row[c]).decode('utf-8'))
+                    except KeyError:
+                        table_cell_data.append("NA".decode('utf-8'))
+                        samples_cols_missing.append(sample_name)
                 table_row_data.append(table_cell_data)
+            _LOGGER.debug("Samples with missing columns: {}".format(set(samples_cols_missing)))
         else:
             _LOGGER.warning("No stats file '%s'", stats_file_name)
 
         # Create parent samples page with links to each sample
         save_html(os.path.join(self.reports_dir, "samples.html"), self.create_sample_parent_html(navbar_reports, footer))
-
+        _LOGGER.debug(" * Creating object pages...")
         # Create objects pages
         if not objs.dropna().empty:
             for key in objs['key'].drop_duplicates().sort_values():
@@ -642,9 +633,9 @@ class HTMLReportBuilder(object):
         project_objects = self.create_project_objects()
         # Complete and close HTML file
         template_vars = dict(project_name=self.prj.name, stats_json=_read_tsv_to_json(stats_file_name),
-                             navbar=navbar, footer=footer,
-                             stats_file_path=stats_file_path, project_objects=project_objects, columns=col_names,
-                             table_row_data=table_row_data, version=v)
+                             navbar=navbar, footer=footer, stats_file_path=stats_file_path,
+                             project_objects=project_objects, columns=col_names, table_row_data=table_row_data,
+                             version=v)
         save_html(index_html_path, render_jinja_template("index.html", self.j_env, template_vars))
         return index_html_path
 
@@ -793,6 +784,8 @@ def _make_relpath(prj, file_name, dir, context):
 
 
 def _get_navbar_dropdown_data_objects(prj, objs, wd, context):
+    if objs is None:
+        return None, None
     rep_dir_path = get_reports_dir(prj)
     rep_dir = os.path.basename(rep_dir_path)
     relpaths = []
@@ -813,6 +806,8 @@ def _get_navbar_dropdown_data_objects(prj, objs, wd, context):
 
 
 def _get_navbar_dropdown_data_samples(prj, stats, wd, context):
+    if stats is None:
+        return None, None
     rep_dir_path = get_reports_dir(prj)
     rep_dir = os.path.basename(rep_dir_path)
     relpaths = []
