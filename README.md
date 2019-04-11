@@ -1,4 +1,4 @@
-# <img src="docs/img/looper_logo.svg" alt="looper logo" height="70" align="left"/>
+# <img src="docs/img/looper_logo.svg" alt="looper logo" height="70">
  
 [![Documentation Status](http://readthedocs.org/projects/looper/badge/?version=latest)](http://looper.readthedocs.io/en/latest/?badge=latest)
 [![Build Status](https://travis-ci.org/pepkit/looper.svg?branch=master)](https://travis-ci.org/pepkit/looper)
