@@ -521,22 +521,20 @@ def _create_stats_summary(project, counter):
     columns = []
     stats = []
     project_samples = project.samples
+    missing_files = 0
+    _LOGGER.debug("Creating stats summary...")
     for sample in project_samples:
         _LOGGER.info(counter.show(sample.sample_name, sample.protocol))
         sample_output_folder = sample_folder(project, sample)
-
         # Grab the basic info from the annotation sheet for this sample.
         # This will correspond to a row in the output.
         sample_stats = sample.get_sheet_dict()
         columns.extend(sample_stats.keys())
         # Version 0.3 standardized all stats into a single file
         stats_file = os.path.join(sample_output_folder, "stats.tsv")
-        if os.path.isfile(stats_file):
-            _LOGGER.info("Using stats file: '%s'", stats_file)
-        else:
-            _LOGGER.warning("No stats file '%s'", stats_file)
+        if not os.path.isfile(stats_file):
+            missing_files += 1
             continue
-
         t = _pd.read_csv(stats_file, sep="\t", header=None, names=['key', 'value', 'pl'])
         t.drop_duplicates(subset=['key', 'pl'], keep='last', inplace=True)
         t.loc[:, 'plkey'] = t['pl'] + ":" + t['key']
@@ -546,6 +544,8 @@ def _create_stats_summary(project, counter):
         stats.append(sample_stats)
         columns.extend(t.key.tolist())
     tsv_outfile_path = os.path.join(project.metadata.output_dir, project.name)
+    if missing_files > 0:
+        _LOGGER.warning("Stats files missing for {} samples".format(missing_files))
     if hasattr(project, "subproject") and project.subproject:
         tsv_outfile_path += '_' + project.subproject
     tsv_outfile_path += '_stats_summary.tsv'
@@ -568,22 +568,24 @@ def _create_obj_summary(project, counter):
     :param looper.LooperCounter counter: a counter object
     :return pandas.DataFrame: objects spreadsheet
     """
+    _LOGGER.debug("Creating objects summary...")
     objs = _pd.DataFrame()
     # Create objects summary file
+    missing_files = 0
     for sample in project.samples:
         # Process any reported objects
         _LOGGER.info(counter.show(sample.sample_name, sample.protocol))
         sample_output_folder = sample_folder(project, sample)
         objs_file = os.path.join(sample_output_folder, "objects.tsv")
-        if os.path.isfile(objs_file):
-            _LOGGER.info("Using objects file: '%s'", objs_file)
-        else:
-            _LOGGER.warning("No objects file '%s'", objs_file)
+        if not os.path.isfile(objs_file):
+            missing_files += 1
             continue
         t = _pd.read_csv(objs_file, sep="\t", header=None,
                          names=['key', 'filename', 'anchor_text', 'anchor_image', 'annotation'])
         t['sample_name'] = sample.name
         objs = objs.append(t, ignore_index=True)
+    if missing_files > 0:
+        _LOGGER.warning("Object files missing for {} samples".format(missing_files))
     return objs
 
 
