@@ -10,6 +10,7 @@ nav:
     - Hello world: hello-world.md
   - How-to guides:    
     - Defining a project: define-your-project.md
+    - Defining looper config sections: project-config-looper.md
     - Linking a project to a pipeline: linking-a-pipeline.md
     - Linking to multiple pipelines: linking-multiple-pipelines.md
     - Writing a pipeline interface: pipeline-interface.md
@@ -29,7 +30,7 @@ theme: databio
 plugins:
   - databio:
       jupyter_source: "docs_jupyter"
-      juptyer_build: "docs_jupyter/build"
+      jupyter_build: "docs_jupyter/build"
   - search
 
 

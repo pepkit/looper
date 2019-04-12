@@ -50,4 +50,4 @@ cd hello_looper-master
 looper run project/project_config.yaml
 ```
 
-Detailed explanation of results is in the [Hello Looper example repository](https://github.com/databio/hello_looper).
+Detailed explanation of results is in the [Hello world tutorial](hello-world.md).

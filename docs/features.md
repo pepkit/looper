@@ -26,7 +26,7 @@ Looper's sample-level parallelization applies to all pipelines, so individual pi
 
 ![flexible_pipelines][flexible_pipelines] **Flexible pipelines** 
 
-Use looper with any pipeline, any library, in any domain. We designed it to work with [pypiper](http://pypiper.readthedocs.io/), but **looper has an infinitely flexible command-line argument system that will let you configure it to work with  any script (pipeline) that accepts command-line arguments**. You can also configure looper to submit multiple pipelines per sample.
+Use looper with any pipeline, any library, in any domain. We designed it to work with [pypiper](http://code.databio.org/pypiper), but **looper has an infinitely flexible command-line argument system that will let you configure it to work with  any script (pipeline) that accepts command-line arguments**. You can also configure looper to submit multiple pipelines per sample.
 
 ![subprojects][subprojects] **Subprojects**
 
