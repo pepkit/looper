@@ -780,7 +780,6 @@ def _make_relpath(prj, file_name, dir, context):
         relpath = os.path.join(*caravel_mount_point)
     else:
         relpath = os.path.relpath(file_name, dir)
-    _LOGGER.debug("Created relpath: {}".format(relpath))
     return relpath
 
 
@@ -801,7 +800,6 @@ def _get_navbar_dropdown_data_objects(prj, objs, wd, context):
             relpath = os.path.join(*caravel_mount_point)
         else:
             relpath = os.path.relpath(page_path, wd)
-        _LOGGER.debug("Adding relpath in objects: '{}'".format(relpath))
         relpaths.append(relpath)
     return relpaths, df_keys
 
@@ -826,7 +824,6 @@ def _get_navbar_dropdown_data_samples(prj, stats, wd, context):
                     relpath = os.path.join(*caravel_mount_point)
                 else:
                     relpath = os.path.relpath(page_path, wd)
-                _LOGGER.debug("Adding relpath in samples: '{}'".format(relpath))
                 relpaths.append(relpath)
                 sample_names.append(sample_name)
                 break
