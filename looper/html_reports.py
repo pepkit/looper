@@ -684,17 +684,13 @@ def save_html(path, template):
     :param str path: the desired location for the file to be produced
     :param str template: the template or just string
     """
-
     if not os.path.exists(os.path.dirname(path)):
         os.makedirs(os.path.dirname(path))
-
     try:
-        f = open(path, 'w')
+        with open(path, 'w') as f:
+            f.write(template)
     except IOError:
         _LOGGER.error("Could not write the HTML file: {}".format(path))
-
-    with f:
-        f.write(template)
 
 
 def get_jinja_env(templates_dirname=None):
