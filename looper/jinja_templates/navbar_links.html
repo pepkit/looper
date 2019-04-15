@@ -31,7 +31,9 @@
                 </li>
               {% endif %}
               {% if sample_names is none %}
+                <!-- there is more than 20 samples or 0 -->
                 {% if samples_html_page is none %}
+                  <!-- no objects at all -->
                   <li class="nav-item">
                     <!-- intentionally no href attribute, inactive link -->
                     <a class="nav-link disabled">{{samples_page_name}}</a>
@@ -42,6 +44,7 @@
                   </li>
                 {% endif %}  
               {% else %}
+                <!-- there is less than 20 samples -->
                 <li class="nav-item dropdown active">
                   <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                   {{menu_name_samples}}
