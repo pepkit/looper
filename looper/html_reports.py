@@ -248,9 +248,6 @@ class HTMLReportBuilder(object):
                     links.append([str(row['sample_name']), page_relpath])
                 else:
                     warnings.append(str(row['filename']))
-            # If no thumbnail image is present, add as a link
-            elif os.path.isfile(page_path):
-                links.append([str(row['sample_name']), page_relpath])
             else:
                 warnings.append(str(row['filename']))
 
@@ -351,7 +348,7 @@ class HTMLReportBuilder(object):
                             self.prj.metadata.results_subdir,
                             sample_name, row['anchor_image'])
                         image_relpath = os.path.relpath(image_path, self.reports_dir)
-                    except AttributeError:
+                    except (AttributeError, TypeError):
                         image_path = ""
                         image_relpath = ""
 
@@ -500,7 +497,6 @@ class HTMLReportBuilder(object):
                              sample_paths=sample_paths, log_link_names=log_link_names, log_paths=log_paths,
                              row_classes=row_classes, flags=flags, times=times, mems=mems, version=v)
         return render_jinja_template("status.html", self.j_env, template_vars)
-
 
     def create_project_objects(self):
         """ Render available project level summaries as additional figures/links """
@@ -864,7 +860,7 @@ def _get_from_log(log_path, regex):
     if log_row.empty:
         return None
     if log_row.size > 1:
-        _LOGGER.warning("More than one values matched with: {}. Returning first.".format(regex))
+        _LOGGER.warning("When parsing '{lp}', more than one values matched with: {r}. Returning first.".format(lp=log_path, r=regex))
     val = log.iloc[log_row.index[0][0]].value.strip()
     return val
 
