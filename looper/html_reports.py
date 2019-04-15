@@ -9,7 +9,7 @@ import re
 import sys
 
 from ._version import __version__ as v
-from .const import TEMPLATES_DIRNAME, APPEARANCE_BY_FLAG
+from .const import TEMPLATES_DIRNAME, APPEARANCE_BY_FLAG, NO_DATA_PLACEHOLDER
 from copy import copy as cp
 _LOGGER = logging.getLogger("looper")
 
@@ -458,9 +458,9 @@ class HTMLReportBuilder(object):
                 log_link_names.append(log_name)
                 log_paths.append(file_link)
                 # get fourth column data (runtime)
-                time = "Unknown"
+                time = NO_DATA_PLACEHOLDER
                 if os.path.isfile(log_file):
-                    t = _pd.read_table(log_file, header=None, names=['key', 'value'])
+                    t = _read_table_encodings(log_file, header=None, names=['key', 'value'])
                     t.drop_duplicates(subset=['value'], keep='last', inplace=True)
                     t['key'] = t['key'].str.replace('> `', '')
                     t['key'] = t['key'].str.replace('`', '')
@@ -470,12 +470,11 @@ class HTMLReportBuilder(object):
                         status_warning = True
                 times.append(time)
                 # get fifth column data (memory use)
-                mem = "NA"
                 if os.path.isfile(log_file):
                     mem = _get_from_log(log_file, r'(Peak memory used)')
                     if mem is None:
                         status_warning = True
-                        mem = "NA"
+                        mem = NO_DATA_PLACEHOLDER
                 mems.append(mem)
             else:
                 # Sample was not run through the pipeline
@@ -501,6 +500,7 @@ class HTMLReportBuilder(object):
                              sample_paths=sample_paths, log_link_names=log_link_names, log_paths=log_paths,
                              row_classes=row_classes, flags=flags, times=times, mems=mems, version=v)
         return render_jinja_template("status.html", self.j_env, template_vars)
+
 
     def create_project_objects(self):
         """ Render available project level summaries as additional figures/links """
@@ -569,8 +569,10 @@ class HTMLReportBuilder(object):
         :param str footer: HTML to be included as the footer
         :param str navbar_reports: HTML to be included as the navbar for pages in the reports directory
         """
-        reload(sys)
-        sys.setdefaultencoding('utf-8')
+        # set default encoding when running in python2
+        if sys.version[0] == '2':
+            reload(sys)
+            sys.setdefaultencoding("utf-8")
         _LOGGER.debug("Building index page...")
         # copy the columns names and remove the sample_name one, since it will be processed differently
         cols = cp(col_names)
@@ -604,9 +606,9 @@ class HTMLReportBuilder(object):
                 # for each column read the data from the stats
                 for c in cols:
                     try:
-                        table_cell_data.append(str(row[c]).decode('utf-8'))
+                        table_cell_data.append(str(row[c]))
                     except KeyError:
-                        table_cell_data.append("NA".decode('utf-8'))
+                        table_cell_data.append("NA")
                         samples_cols_missing.append(sample_name)
                 table_row_data.append(table_cell_data)
             _LOGGER.debug("Samples with missing columns: {}".format(set(samples_cols_missing)))
@@ -778,7 +780,6 @@ def _make_relpath(prj, file_name, dir, context):
         relpath = os.path.join(*caravel_mount_point)
     else:
         relpath = os.path.relpath(file_name, dir)
-    _LOGGER.debug("Created relpath: {}".format(relpath))
     return relpath
 
 
@@ -799,7 +800,6 @@ def _get_navbar_dropdown_data_objects(prj, objs, wd, context):
             relpath = os.path.join(*caravel_mount_point)
         else:
             relpath = os.path.relpath(page_path, wd)
-        _LOGGER.debug("Adding relpath in objects: '{}'".format(relpath))
         relpaths.append(relpath)
     return relpaths, df_keys
 
@@ -824,13 +824,32 @@ def _get_navbar_dropdown_data_samples(prj, stats, wd, context):
                     relpath = os.path.join(*caravel_mount_point)
                 else:
                     relpath = os.path.relpath(page_path, wd)
-                _LOGGER.debug("Adding relpath in samples: '{}'".format(relpath))
                 relpaths.append(relpath)
                 sample_names.append(sample_name)
                 break
             else:
                 _LOGGER.warning("Could not determine sample name in stats.tsv")
     return relpaths, sample_names
+
+
+def _read_table_encodings(path, encodings=["utf-8", "ascii"], **kwargs):
+    """
+    Try to read file with the provided encodings
+
+    :param str path: path to file
+    :param list encodings: list of encodings to try
+    :param kwargs: other args
+    """
+    idx = 0
+    while idx < len(encodings):
+        e = encodings[idx]
+        try:
+            t = _pd.read_table(path, encoding=e, **kwargs)
+            return t
+        except UnicodeDecodeError:
+            pass
+        idx = idx + 1
+    _LOGGER.error("Could not read the log file '{p}' with encodings '{enc}'".format(p=path, enc=encodings))
 
 
 def _get_from_log(log_path, regex):
@@ -844,7 +863,7 @@ def _get_from_log(log_path, regex):
     """
     if not os.path.exists(log_path):
         raise IOError("Can't read the log file '{}'. Not found".format(log_path))
-    log = _pd.read_table(log_path, header=None, sep=':', names=['key', 'value'])
+    log = _read_table_encodings(log_path, header=None, sep=':', names=['key', 'value'])
     log_row = log.iloc[:, 0].str.extractall(regex)
     if log_row.empty:
         return None

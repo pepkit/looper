@@ -4,12 +4,14 @@ __author__ = "Vince Reuter"
 __email__ = "vreuter@virginia.edu"
 
 
-__all__ = ["RESULTS_SUBDIR_KEY", "SUBMISSION_SUBDIR_KEY", "TEMPLATES_DIRNAME", "APPEARANCE_BY_FLAG"]
+__all__ = ["RESULTS_SUBDIR_KEY", "SUBMISSION_SUBDIR_KEY", "TEMPLATES_DIRNAME", "APPEARANCE_BY_FLAG",
+           "NO_DATA_PLACEHOLDER"]
 
 
 RESULTS_SUBDIR_KEY = "results_subdir"
 SUBMISSION_SUBDIR_KEY = "submission_subdir"
 TEMPLATES_DIRNAME = "jinja_templates"
+NO_DATA_PLACEHOLDER = "NA"
 APPEARANCE_BY_FLAG = {
     "completed": {
         "button_class": "table-success",
