@@ -4,6 +4,8 @@ By default, `looper` will build a shell script for each sample and then run each
 
 `Divvy` uses a template system to build scripts for each job. To start, `divvy` includes a few built-in templates so you can run basic jobs without messing with anything, but the template system provides ultimate flexibility to customize your job scripts however you wish. This template system is how we can use looper to run jobs on any cluster resource manager, by simply setting up a template that fits our particular cluster manager.
 
+## Overview and basic example of cluster computing
+
 In a nutshell, to configure `looper` to use cluster computing, all you have to do is provide some information about your cluster setup. You create a `divvy` computing configuration file (`compute_config.yaml`) and point an environment variable (`DIVCFG`) to this file, and that's it! You then have access to any configured computing packages by using `looper --compute package`, where `package` can be any computing system you configure.
 
 For example, here's a `compute_config.yaml` file that works with a SLURM environment:

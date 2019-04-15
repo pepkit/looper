@@ -12,33 +12,28 @@
 [modular]: ../img/modular.svg
 
 
-![modular][modular] **Modular approach to sample handling** 
+![modular][modular] **Modular approach to job handling** 
 
-Looper **completely divides sample handling from pipeline processing**. This modular approach simplifies the pipeline-building process because pipelines no longer need to worry about sample metadata parsing. 
+Looper **completely divides job handling from pipeline processing**. This modular approach simplifies the pipeline-building process because pipelines no longer need to worry about sample metadata parsing. 
 
-![file_yaml][file_yaml] **Standardized project format**
+![file_yaml][file_yaml] **The power of standard PEP format**
 
-Looper subscribes to a single, standardized project metadata format called [standard PEP format](http://pepkit.github.io). This means **you only need to learn 1 way to format your project metadata, and it will work with any pipeline**. You can also use the [pepr](https://github.com/pepkit/pepr) R package or the [peppy](https://github.com/pepkit/peppy) python package to import all your sample metadata (and pipeline results) in an R or python analysis environment.
+`Looper` inherits a bunch of advantages from [standard PEP format](http://pepkit.github.io): For example, **you only need to learn 1 way to format your project metadata, and it will work with any pipeline**. PEP format allows **subprojects**, which make it easy to define two very similar projects without duplicating project metadata. It also makes your project immediate compatible with other tools in pepkit; for example, you can import all your sample metadata (and pipeline results) in an R or python analysis environment with the [pepr](https://github.com/pepkit/pepr) R package or the [peppy](https://github.com/pepkit/peppy) python package. Using PEP's *derived attributes* makes projects portable. You can use it to collate samples with input files on different file systems or from different projects, with different naming conventions. This makes it easy to share projects across compute environments or individuals without having to change sample annotations to point at different places.
+
 
 ![computing][computing] **Universal parallelization implementation**
 
-Looper's sample-level parallelization applies to all pipelines, so individual pipelines do not need reinvent the wheel. This allows looper to provide a convenient interface for submitting pipelines either to local compute or to any cluster resource manager, so individual pipeline authors do not need to worry about cluster job submission at all.If you don't change any settings, looper will simply run your jobs serially. But Looper includes a template system that will let you process your pipelines on any cluster resource manager (SLURM, SGE, etc.). We include default templates for SLURM and SGE, but it's easy to add your own as well. Looper also gives you a way to determine which compute queue/partition to submit on-the-fly, by passing the ``--compute`` parameter to your call to ``looper run``, making it simple to use by default, but very flexible if you have complex resource needs.
+Looper's sample-level parallelization applies to all pipelines, so individual pipelines do not need reinvent the wheel. This allows looper to provide a convenient interface for submitting pipelines either to local compute or to any cluster resource manager, so individual pipeline authors do not need to worry about cluster job submission at all. If you don't change any settings, looper will simply run your jobs serially. But Looper employs [divvy](http://code.databio.org/divvy) to let you process your pipelines on any cluster resource manager (SLURM, SGE, etc.). Looper also allows you to specify compute queue/partition on-the-fly, by passing the ``--compute`` parameter to your call to ``looper run``, making flexible if you have complex resource needs.
 
 ![flexible_pipelines][flexible_pipelines] **Flexible pipelines** 
 
-Use looper with any pipeline, any library, in any domain. We designed it to work with [pypiper](http://code.databio.org/pypiper), but **looper has an infinitely flexible command-line argument system that will let you configure it to work with  any script (pipeline) that accepts command-line arguments**. You can also configure looper to submit multiple pipelines per sample.
+Use looper with any pipeline, any library, in any domain. We designed it to work with [pypiper](http://code.databio.org/pypiper), but **looper has an infinitely flexible command-line argument system that will let you configure it to work with any script (pipeline) that accepts command-line arguments**. You can also configure looper to submit multiple pipelines per sample.
 
-![subprojects][subprojects] **Subprojects**
-
-Subprojects make it easy to define two very similar projects without duplicating project metadata.
 
 ![job_monitoring][job_monitoring] **Job completion monitoring**  
 
 Looper is job-aware and will not submit new jobs for samples that are already running or finished, making it easy to add new samples to existing projects, or re-run failed samples.
 
-![collate][collate] **Flexible input files** 
-
-Looper's *derived column* feature makes projects portable. You can use it to collate samples with input files on different file systems or from different projects, with different naming conventions. How it works: you specify a variable filepath like ``/path/to/{sample_name}.txt``, and looper populates these file paths on the fly using metadata from your sample sheet. This makes it easy to share projects across compute environments or individuals without having to change sample annotations to point at different places.
 
 ![resources][resources] **Flexible resources**  
 

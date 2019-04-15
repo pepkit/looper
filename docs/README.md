@@ -6,13 +6,13 @@
 
 Looper is a pipeline submitting engine. Looper deploys any *command-line* pipeline across lots of samples that are organized in [standard PEP format](https://pepkit.github.io/docs/home/).
 
-`Looper`'s key strength is that it **decouples sample handling from pipeline processing**. In a typical pipeline, sample handling (*e.g* submitting different samples to a cluster) is delicately intertwined with pipeline commands (running the actual code on a single sample). The `looper` approach is modular, following the [the unix principle](https://en.wikipedia.org/wiki/Unix_philosophy) by focusing only on handling samples. This approach alleviates several challenges with the traditional system:
+`Looper`'s key strength is that it **decouples job handling from the pipeline process**. In a typical pipeline, job handling (*e.g* managing how individual jobs are submitted to a cluster) is delicately intertwined with actual pipeline commands (running the actual code for a single compute job). The `looper` approach is modular, following the [the unix principle](https://en.wikipedia.org/wiki/Unix_philosophy): `looper` *only* manages job submission. This approach alleviates several challenges with the traditional integrated approach:
 
-1. running a pipeline on just one or two samples is simpler, and does not require a full-blown distributed compute environment.
-2. pipelines do not need to independently re-implement sample handling code, which instead can be shared across many pipelines.
+1. running a pipeline on just one or two samples/jobs is simpler, and does not require a full-blown distributed compute environment.
+2. pipelines do not need to independently re-implement job handling code, which instead can be shared across many pipelines.
 3. every project can use the same structure (e.g. the expected folder structure, file naming scheme, and sample annotation format), because the code that reads the project metadata is universal, so datasets can more easily be moved from one pipeline to another.
 
-By dividing sample processing from pipelining, the sample processing code needs only be written once (and can thus be written well) -- that's what `looper` is. **The user interface can be made simple and intuitive, and a user must then learn only a single interface, which will work with any pipeline.**
+By dividing job handling from pipelining, the job processing code needs only be written once (and can thus be written well) -- that's what `looper` is. **The user interface can be made simple and intuitive, and a user must then learn only a single interface, which will work with any pipeline.**
 
 ## Installing
 

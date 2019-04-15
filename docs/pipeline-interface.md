@@ -1,6 +1,6 @@
 # How to write a pipeline interface
 
-If you're using *existing* `looper`-compatible pipelines, you don't need to create a new interface; point your project at the one that comes with the pipeline. This is described in  [Linking a project to a pipeline](linking-a-pipeline.md).
+If you're using *existing* `looper`-compatible pipelines, you don't need to create a new interface; just [point your project at the one that comes with the pipeline](linking-a-pipeline.md).
 
 When creating *new* `looper`-compatible pipelines, you'll need to create a new pipeline interface file. As long as a pipeline runs on the command line, `looper` can run samples through it. 
 A pipeline may consist of script(s) in languages like Perl, Python, or bash, or it may be built with a particular framework. 
@@ -65,7 +65,7 @@ Example:
 
 ```yaml
 protocol_mapping
-    Drop-seq: quality_control.py, dropseq.py
+  Drop-seq: quality_control.py, dropseq.py
 ```
 
 You can map multiple pipelines to a single protocol if you want samples of a type to kick off more than one pipeline run.
@@ -79,10 +79,11 @@ protocol_mapping:
       rnaTopHat.py -f
 ```
 
+
 Example B:
 ```yaml
 protocol_mapping:
-    PROTOCOL: [pipeline1, pipeline2, ...]
+  PROTOCOL: [pipeline1, pipeline2, ...]
 ```
 
 **Case 3:** a protocol runs one pipeline which depends on another.
