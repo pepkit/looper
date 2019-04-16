@@ -443,7 +443,7 @@ class HTMLReportBuilder(object):
                 # get fourth column data (runtime)
                 time = NO_DATA_PLACEHOLDER
                 if os.path.isfile(log_file):
-                    t = _read_table_encodings(log_file, header=None, names=['key', 'value'])
+                    t = _read_csv_encodings(log_file, header=None, names=['key', 'value'], sep="\t")
                     t.drop_duplicates(subset=['value'], keep='last', inplace=True)
                     t['key'] = t['key'].str.replace('> `', '')
                     t['key'] = t['key'].str.replace('`', '')
@@ -812,7 +812,7 @@ def _get_navbar_dropdown_data_samples(prj, stats, wd, context):
     return relpaths, sample_names
 
 
-def _read_table_encodings(path, encodings=["utf-8", "ascii"], **kwargs):
+def _read_csv_encodings(path, encodings=["utf-8", "ascii"], **kwargs):
     """
     Try to read file with the provided encodings
 
@@ -823,7 +823,7 @@ def _read_table_encodings(path, encodings=["utf-8", "ascii"], **kwargs):
     while idx < len(encodings):
         e = encodings[idx]
         try:
-            t = _pd.read_table(path, encoding=e, **kwargs)
+            t = _pd.read_csv(path, encoding=e, **kwargs)
             return t
         except UnicodeDecodeError:
             pass
@@ -842,7 +842,7 @@ def _get_from_log(log_path, regex):
     """
     if not os.path.exists(log_path):
         raise IOError("Can't read the log file '{}'. Not found".format(log_path))
-    log = _read_table_encodings(log_path, header=None, sep=':', names=['key', 'value'])
+    log = _read_csv_encodings(log_path, header=None, sep=':', names=['key', 'value'])
     log_row = log.iloc[:, 0].str.extractall(regex)
     if log_row.empty:
         return None
@@ -861,7 +861,7 @@ def _read_tsv_to_json(path):
     """
     assert os.path.exists(path), "The file '{}' does not exist".format(path)
     _LOGGER.debug("Reading TSV from '{}'".format(path))
-    df = _pd.read_table(path, sep="\t", index_col=False, header=None)
+    df = _pd.read_csv(path, sep="\t", index_col=False, header=None)
     return df.to_json()
 
 
