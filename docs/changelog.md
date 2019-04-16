@@ -10,6 +10,8 @@
 
     - Listen for itemized compute resource specification on command-line with `--resources`
 
+    - Support pointing to `Project` config file with folder path rather than full filepath
+
   - Changed
 
     - Using `attmap` for "attribute-style key-vale store" implementation
