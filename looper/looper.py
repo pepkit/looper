@@ -522,7 +522,7 @@ def _create_stats_summary(project, counter):
     stats = []
     project_samples = project.samples
     missing_files = 0
-    _LOGGER.debug("Creating stats summary...")
+    _LOGGER.info("Creating stats summary...")
     for sample in project_samples:
         _LOGGER.info(counter.show(sample.sample_name, sample.protocol))
         sample_output_folder = sample_folder(project, sample)
@@ -543,12 +543,9 @@ def _create_stats_summary(project, counter):
         sample_stats.update(t.set_index('key')['value'].to_dict())
         stats.append(sample_stats)
         columns.extend(t.key.tolist())
-    tsv_outfile_path = os.path.join(project.metadata.output_dir, project.name)
+    tsv_outfile_path = get_file_for_project(project, 'stats_summary.tsv')
     if missing_files > 0:
         _LOGGER.warning("Stats files missing for {} samples".format(missing_files))
-    if hasattr(project, "subproject") and project.subproject:
-        tsv_outfile_path += '_' + project.subproject
-    tsv_outfile_path += '_stats_summary.tsv'
     tsv_outfile = open(tsv_outfile_path, 'w')
     tsv_writer = csv.DictWriter(tsv_outfile, fieldnames=uniqify(columns), delimiter='\t', extrasaction='ignore')
     tsv_writer.writeheader()
@@ -568,7 +565,7 @@ def _create_obj_summary(project, counter):
     :param looper.LooperCounter counter: a counter object
     :return pandas.DataFrame: objects spreadsheet
     """
-    _LOGGER.debug("Creating objects summary...")
+    _LOGGER.info("Creating objects summary...")
     objs = _pd.DataFrame()
     # Create objects summary file
     missing_files = 0
@@ -586,7 +583,23 @@ def _create_obj_summary(project, counter):
         objs = objs.append(t, ignore_index=True)
     if missing_files > 0:
         _LOGGER.warning("Object files missing for {} samples".format(missing_files))
+    # create the path to save the objects file in
+    objs.to_csv(get_file_for_project(project, 'objs_summary.tsv'), sep="\t")
     return objs
+
+
+def get_file_for_project(prj, appendix):
+    """
+    Create a path to the file for the current project. Takes the possibility of subproject being activated at the time
+    :param looper.Project prj: project object
+    :param str appendix: the appendix of the file to create the path for, like 'objs_summary.tsv' for objects summary file
+    :return str: path to the file
+    """
+    fp = os.path.join(prj.metadata.output_dir, prj.name)
+    if hasattr(prj, "subproject") and prj.subproject:
+        fp += '_' + prj.subproject
+    fp += '_' + appendix
+    return fp
 
 
 def aggregate_exec_skip_reasons(skip_reasons_sample_pairs):

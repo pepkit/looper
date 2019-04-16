@@ -46,12 +46,9 @@ class HTMLReportBuilder(object):
         Generates a page listing all the project objects with links
         to individual object pages
 
-        :param panda.DataFrame objs: project level dataframe containing
-            any reported objects for all samples
-        :param list stats: a summary file of pipeline statistics for each
-            analyzed sample
-        :param str wd: the working directory of the current HTML page
-            being generated, enables navbar links relative to page
+        :param pandas.DataFrame objs: project level dataframe containing any reported objects for all samples
+        :param str navbar: HTML to be included as the navbar in the main summary page
+        :param str footer: HTML to be included as the footer
         :return str: Rendered parent objects HTML file
         """
         object_parent_path = os.path.join(self.reports_dir, "objects.html")
@@ -75,12 +72,8 @@ class HTMLReportBuilder(object):
         """
         Generates a page listing all the project samples with links
         to individual sample pages
-        :param panda.DataFrame objs: project level dataframe containing
-            any reported objects for all samples
-        :param list stats: a summary file of pipeline statistics for each
-            analyzed sample
-        :param str wd: the working directory of the current HTML page
-            being generated, enables navbar links relative to page
+        :param str navbar: HTML to be included as the navbar in the main summary page
+        :param str footer: HTML to be included as the footer
         :return str: Rendered parent samples HTML file
         """
         sample_parent_path = os.path.join(self.reports_dir, "samples.html")
@@ -133,7 +126,7 @@ class HTMLReportBuilder(object):
         :param looper.Project prj: a project the navbar links should be created for
         :param pandas.DataFrame objs: project results dataframe containing
             object data
-        :param list stats: a summary file of pipeline statistics for each
+        :param list stats[dict] stats: a summary file of pipeline statistics for each
             analyzed sample
         :param path wd: the working directory of the current HTML page
             being generated, enables navbar links relative to page
@@ -176,14 +169,12 @@ class HTMLReportBuilder(object):
         Generates a page for an individual object type with all of its
         plots from each sample
 
-        :param panda.DataFrame single_object: contains reference
+        :param pandas.DataFrame single_object: contains reference
             information for an individual object type for all samples
-        :param panda.DataFrame objs: project level dataframe
+        :param pandas.DataFrame objs: project level dataframe
             containing any reported objects for all samples
-        :param list stats: a summary file of pipeline statistics for each
-            analyzed sample
-        :param str wd: the working directory of the current HTML page
-            being generated, enables navbar links relative to page
+        :param str navbar: HTML to be included as the navbar in the main summary page
+        :param str footer: HTML to be included as the footer
         """
 
         # Generate object filename
@@ -264,14 +255,12 @@ class HTMLReportBuilder(object):
         Produce an HTML page containing all of a sample's objects
         and the sample summary statistics
 
-        :param panda.DataFrame objs: project level dataframe containing
+        :param pandas.DataFrame objs: project level dataframe containing
             any reported objects for all samples
-        :param list stats: a summary file of pipeline statistics for each
-            analyzed sample
         :param str sample_name: the name of the current sample
-        :param list stats: pipeline run statistics for the current sample
-        :param str wd: the working directory of the current HTML page
-            being generated, enables navbar links relative to page
+        :param dict sample_stats: pipeline run statistics for the current sample
+        :param str navbar: HTML to be included as the navbar in the main summary page
+        :param str footer: HTML to be included as the footer
         :return str: path to the produced HTML page
         """
         html_filename = sample_name + ".html"
@@ -392,12 +381,9 @@ class HTMLReportBuilder(object):
         Generates a page listing all the samples, their run status, their
         log file, and the total runtime if completed.
 
-        :param panda.DataFrame objs: project level dataframe containing
-            any reported objects for all samples
-        :param list stats: a summary file of pipeline statistics for each
-            analyzed sample
-        :param str wd: the working directory of the current HTML page
-            being generated, enables navbar links relative to page
+        :param pandas.DataFrame objs: project level dataframe containing any reported objects for all samples
+        :param str navbar: HTML to be included as the navbar in the main summary page
+        :param str footer: HTML to be included as the footer
         :return str: rendered status HTML file
         """
         _LOGGER.debug("Building status page...")
@@ -554,11 +540,9 @@ class HTMLReportBuilder(object):
         Generate an index.html style project home page w/ sample summary
         statistics
 
-        :param panda.DataFrame objs: project level dataframe containing
+        :param pandas.DataFrame objs: project level dataframe containing
             any reported objects for all samples
-        :param list[dict] stats: a summary file of pipeline statistics for each
-            analyzed sample
-        :param list stats: a summary file of pipeline statistics for each
+        :param list stats[dict]: a summary file of pipeline statistics for each
             analyzed sample
         :param list col_names: all unique column names used in the stats file
         :param str navbar: HTML to be included as the navbar in the main summary page
@@ -641,6 +625,7 @@ def get_reports_dir(prj):
     """
     Get the reports directory path depending on the subproject activation status
 
+    :param looper.Project prj: the project to determine the reports directory for
     :return str: path to the reports directory
     """
     rep_dir_name = "reports" if prj.subproject is None else "reports_" + prj.subproject
@@ -651,6 +636,7 @@ def get_index_html_path(prj):
     """
     Get the index HTML path depending on the subproject activation status
 
+    :param looper.Project prj: the project to determine the index HTML path for
     :return str: path to the index HTML
     """
     index_html_root = os.path.join(prj.metadata.output_dir, prj.name)
@@ -665,7 +651,7 @@ def render_jinja_template(name, jinja_env, args=dict()):
 
     :param str name: name of the template
     :param dict args: arguments to pass to the template
-    :param jinja_env:
+    :param jinja2.Environment jinja_env: the initialized environment to use in this the looper HTML reports context
     :return str: rendered template
     """
     assert isinstance(args, dict), "args has to be a dict"
@@ -758,6 +744,8 @@ def _get_relpath_to_file(file_name, sample_name, location, relative_to):
 
 def _make_relpath(prj, file_name, dir, context):
     """
+    Create a path relative to the context. This function introduces the flexibility to the navbar links creation,
+    which the can be used outside of the native looper summary pages.
 
     :param str path: the path to make relative
     :param str dir: the dir the path should be relative to
@@ -830,7 +818,6 @@ def _read_table_encodings(path, encodings=["utf-8", "ascii"], **kwargs):
 
     :param str path: path to file
     :param list encodings: list of encodings to try
-    :param kwargs: other args
     """
     idx = 0
     while idx < len(encodings):
