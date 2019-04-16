@@ -30,7 +30,7 @@ from .const import *
 from .exceptions import JobSubmissionException
 from .html_reports import HTMLReportBuilder
 from .project import Project
-from .utils import fetch_flag_files, sample_folder
+from .utils import determine_config_path, fetch_flag_files, sample_folder
 
 from logmuse import setup_logger
 from peppy import ProjectContext, SAMPLE_EXECUTION_TOGGLE
@@ -787,9 +787,8 @@ def main():
     _LOGGER.debug("Building Project")
     try:
         prj = Project(
-            args.config_file, subproject=args.subproject,
-            file_checks=args.file_checks,
-            compute_env_file=getattr(args, 'env', None))
+            determine_config_path(args.config_file), subproject=args.subproject,
+            file_checks=args.file_checks, compute_env_file=getattr(args, 'env', None))
     except yaml.parser.ParserError as e:
         print("Project config parse failed -- {}".format(e))
         sys.exit(1)

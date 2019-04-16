@@ -75,6 +75,47 @@ def create_looper_args_text(pl_key, submission_settings, prj):
     return looper_argtext
 
 
+def determine_config_path(root, folders=("metadata", ), patterns=("*_config.yaml", )):
+    """
+    Determine path to Project config file, allowing folder-based specification.
+
+    :param str root: path to file or main (e.g., project, folder)
+    :param Iterable[str] folders: collection of names of subfolders to consider
+    :param Iterable[str] patterns: collection of filename patterns to consider
+    :return str: unique path to extant Project config file
+    :raise ValueError: if the given root path doesn't exist
+    """
+
+    # Base cases
+    if not os.path.exists(root):
+        raise ValueError("Path doesn't exist: {}".format(root))
+    if os.path.isfile(root):
+        return root
+
+    # Deal with single-string argument.
+    if isinstance(folders, str):
+        folders = (folders, )
+    if isinstance(patterns, str):
+        patterns = (patterns, )
+
+    # Search particular folder for any pattern
+    def search(path):
+        return [m for p in patterns for m in glob.glob(os.path.join(path, p))]
+
+    # Search results
+    top_res = search(root)
+    sub_res = [m for sub in folders for m in search(os.path.join(root, sub))]
+    all_res = top_res + sub_res
+
+    # Deal with the 3 match count cases.
+    if len(all_res) == 0:
+        return None
+    if len(all_res) > 1:
+        _LOGGER.warning("Multiple ({}) config paths: {}".format(
+            len(all_res), ", ".join(map(str, all_res))))
+    return all_res[0]
+
+
 def fetch_flag_files(prj=None, results_folder="", flags=FLAGS):
     """
     Find all flag file paths for the given project.
