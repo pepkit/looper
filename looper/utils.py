@@ -11,7 +11,17 @@ from peppy import \
 from .const import *
 
 
+DEFAULT_METADATA_FOLDER = "metadata"
+DEFAULT_CONFIG_SUFFIX = "*_config.yaml"
+
+
 def get_logger(name):
+    """
+    Returm a logger with given name, equipped with custom method.
+
+    :param str name: name for the logger to get/create.
+    :return logging.Logger: named, custom logger instance.
+    """
     l = logging.getLogger(name)
     l.whisper = lambda msg, *args, **kwargs: l.log(5, msg, *args, **kwargs)
     return l
@@ -75,7 +85,9 @@ def create_looper_args_text(pl_key, submission_settings, prj):
     return looper_argtext
 
 
-def determine_config_path(root, folders=("metadata", ), patterns=("*_config.yaml", )):
+def determine_config_path(
+        root, folders=(DEFAULT_METADATA_FOLDER, ),
+        patterns=(DEFAULT_CONFIG_SUFFIX, )):
     """
     Determine path to Project config file, allowing folder-based specification.
 
