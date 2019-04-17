@@ -385,7 +385,8 @@ class Runner(Executor):
 
             pipe_keys = pipe_keys_by_protocol.get(sample.protocol) \
                 or pipe_keys_by_protocol.get(GENERIC_PROTOCOL_KEY)
-            _LOGGER.debug("Considering %d pipeline(s)", len(pipe_keys))
+            _LOGGER.debug("Considering {} pipeline(s): {}".
+                          format(len(pipe_keys), ", ".join(pipe_keys)))
 
             pl_fails = []
             for pl_key in pipe_keys:
