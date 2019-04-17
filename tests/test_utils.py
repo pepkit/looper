@@ -66,6 +66,18 @@ class ConfigPathDeterminationTests:
             determine_config_path(root)
 
     @staticmethod
-    @pytest.mark.skip("not implemented")
-    def test_default_args_single_matching_file(tmpdir):
-        pass
+    @pytest.mark.parametrize("use_sub", [False, True])
+    @pytest.mark.parametrize("filename",
+        [randstr(LETTERS_AND_DIGITS, 15) + DEFAULT_CONFIG_SUFFIX])
+    def test_default_args_single_matching_file_main_folder(tmpdir, filename, use_sub):
+        """ Config in proper subfolder is correctly found. """
+        root = tmpdir.strpath
+        if use_sub:
+            folder = os.path.join(root, DEFAULT_METADATA_FOLDER)
+            os.makedirs(folder)
+        else:
+            folder = root
+        fp = os.path.join(folder, filename)
+        with open(fp, 'w'):
+            assert os.path.isfile(fp)
+        assert fp == determine_config_path(root)

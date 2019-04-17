@@ -12,7 +12,7 @@ from .const import *
 
 
 DEFAULT_METADATA_FOLDER = "metadata"
-DEFAULT_CONFIG_SUFFIX = "*_config.yaml"
+DEFAULT_CONFIG_SUFFIX = "_config.yaml"
 
 
 def get_logger(name):
@@ -87,7 +87,7 @@ def create_looper_args_text(pl_key, submission_settings, prj):
 
 def determine_config_path(
         root, folders=(DEFAULT_METADATA_FOLDER, ),
-        patterns=(DEFAULT_CONFIG_SUFFIX, )):
+        patterns=("*" + DEFAULT_CONFIG_SUFFIX, )):
     """
     Determine path to Project config file, allowing folder-based specification.
 
