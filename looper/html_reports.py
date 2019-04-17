@@ -440,24 +440,22 @@ class HTMLReportBuilder(object):
                     log_name, sample_name, self.prj.metadata.results_subdir, self.reports_dir)
                 log_link_names.append(log_name)
                 log_paths.append(file_link)
-                # get fourth column data (runtime)
+                # get fourth column data (runtime) and fifth column data (memory)
                 time = NO_DATA_PLACEHOLDER
+                warn_msg = "There was a problem reading a log file ('{log}')." \
+                           " {what} was not collected for sample: '{sname}'"
                 if os.path.isfile(log_file):
-                    t = _read_csv_encodings(log_file, header=None, names=['key', 'value'], sep="\t")
-                    t.drop_duplicates(subset=['value'], keep='last', inplace=True)
-                    t['key'] = t['key'].str.replace('> `', '')
-                    t['key'] = t['key'].str.replace('`', '')
-                    try:
-                        time = str(t[t['key'] == 'Time'].iloc[0]['value'])
-                    except IndexError:
-                        status_warning = True
-                times.append(time)
-                # get fifth column data (memory use)
-                if os.path.isfile(log_file):
+                    time = _get_from_log(log_file, r'(Total elapsed time)')
                     mem = _get_from_log(log_file, r'(Peak memory used)')
+                    if time is None:
+                        status_warning = True
+                        time = NO_DATA_PLACEHOLDER
+                        _LOGGER.warning(warn_msg.format(what="Runtime", log=log_file, sname=sample.sample_name))
                     if mem is None:
                         status_warning = True
                         mem = NO_DATA_PLACEHOLDER
+                        _LOGGER.warning(warn_msg.format(what="Peak memory", log=log_file, sname=sample.sample_name))
+                times.append(time)
                 mems.append(mem)
             else:
                 # Sample was not run through the pipeline
@@ -828,7 +826,7 @@ def _read_csv_encodings(path, encodings=["utf-8", "ascii"], **kwargs):
         except UnicodeDecodeError:
             pass
         idx = idx + 1
-    _LOGGER.error("Could not read the log file '{p}' with encodings '{enc}'".format(p=path, enc=encodings))
+    _LOGGER.warning("Could not read the log file '{p}' with encodings '{enc}'".format(p=path, enc=encodings))
 
 
 def _get_from_log(log_path, regex):
@@ -842,13 +840,20 @@ def _get_from_log(log_path, regex):
     """
     if not os.path.exists(log_path):
         raise IOError("Can't read the log file '{}'. Not found".format(log_path))
-    log = _read_csv_encodings(log_path, header=None, sep=':', names=['key', 'value'])
+    log = _read_csv_encodings(log_path, header=None, names=['data'])
+    if log is None:
+        _LOGGER.warning("'{r}' was not read from log".format(r=regex))
+        return None
+    # match regex, get row(s) that matched the regex
     log_row = log.iloc[:, 0].str.extractall(regex)
+    # not matches? return None
     if log_row.empty:
         return None
     if log_row.size > 1:
         _LOGGER.warning("When parsing '{lp}', more than one values matched with: {r}. Returning first.".format(lp=log_path, r=regex))
-    val = log.iloc[log_row.index[0][0]].value.strip()
+    # split the matched line by first colon return stripped data.
+    # This way both mem values (e.g 1.1GB) and time values (e.g 1:10:10) will work.
+    val = log.iloc[log_row.index[0][0]].str.split(":", 1, expand=True)[1][0].strip()
     return val
 
 
