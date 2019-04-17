@@ -95,7 +95,8 @@ def determine_config_path(
     :param Iterable[str] folders: collection of names of subfolders to consider
     :param Iterable[str] patterns: collection of filename patterns to consider
     :return str: unique path to extant Project config file
-    :raise ValueError: if the given root path doesn't exist
+    :raise ValueError: if the given root path doesn't exist, or if multiple
+        matching files are found
     """
 
     # Base cases
@@ -120,12 +121,13 @@ def determine_config_path(
     all_res = top_res + sub_res
 
     # Deal with the 3 match count cases.
-    if len(all_res) == 0:
-        return None
     if len(all_res) > 1:
-        _LOGGER.warning("Multiple ({}) config paths: {}".format(
+        raise ValueError("Multiple ({}) config paths: {}".format(
             len(all_res), ", ".join(map(str, all_res))))
-    return all_res[0]
+    try:
+        return all_res[0]
+    except IndexError:
+        return None
 
 
 def fetch_flag_files(prj=None, results_folder="", flags=FLAGS):
