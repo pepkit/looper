@@ -57,17 +57,3 @@ def powerset(items, min_items=0, include_full_pop=True):
 
 
 nonempty_powerset = partial(powerset, min_items=1)
-
-
-"""
-class PlifaceCommandContext(object):
-    def __init__(self, prj, cmd):
-        self._prj = prj
-        self._originals = self._prj.interfaces_by_protocol
-    
-    def __enter__(self):
-        return self
-    
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self._prj.interfaces_by_protocol = self._originals
-"""
