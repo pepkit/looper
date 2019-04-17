@@ -13,7 +13,8 @@ import pandas as pd
 import pytest
 import yaml
 
-from peppy import DEFAULT_COMPUTE_RESOURCES_NAME, SAMPLE_NAME_COLNAME
+from peppy import DEFAULT_COMPUTE_RESOURCES_NAME, METADATA_KEY, \
+    NAME_TABLE_ATTR, SAMPLE_NAME_COLNAME
 
 
 __author__ = "Vince Reuter"
@@ -134,7 +135,7 @@ def atacseq_piface_data(atac_pipe_name):
 @pytest.fixture(scope="function")
 def basic_data_raw():
     return copy.deepcopy(
-        {"AttributeDict": {},
+        {"PathExAttMap": {},
          "Sample": {SAMPLE_NAME_COLNAME: "arbitrary-sample"}})
 
 
@@ -152,7 +153,7 @@ def basic_instance_data(request, instance_raw_data):
     """
     # Cleanup is free with _write_config, using request's temp folder.
     transformation_by_class = {
-            "AttributeDict": lambda data: data,
+            "PathExAttMap": lambda data: data,
             "PipelineInterface": lambda data:
                     _write_config(data, request, "pipeline_interface.yaml"),
             "Sample": lambda data: pd.Series(data)}
@@ -194,12 +195,10 @@ def instance_raw_data(request, basic_data_raw, atacseq_piface_data):
         return copy.deepcopy(basic_data_raw[which_class])
 
 
-
 @pytest.fixture(scope="function")
 def midsize_resources():
     """ Provide non-default resources spec. section for PipelineInterface. """
     return copy.deepcopy(MIDSIZE_RESOURCES)
-
 
 
 @pytest.fixture(scope="function")
@@ -211,11 +210,10 @@ def minimal_project_conf_path(tmpdir):
     with open(anns_file, 'w') as annotations:
         df.to_csv(annotations, sep=",", index=False)
     conf_file = tmpdir.join(CONFIG_FILENAME)
-    config_lines = \
-            "metadata:\n  sample_annotation: {}".format(anns_file)
+    config_lines = "{}:\n  {}: {}".format(
+        METADATA_KEY, NAME_TABLE_ATTR, anns_file)
     conf_file.write(config_lines)
     return conf_file.strpath
-
 
 
 @pytest.fixture(scope="function")

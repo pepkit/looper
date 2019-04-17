@@ -59,7 +59,7 @@ with open("looper/_version.py", 'r') as versionfile:
 try:
     import pypandoc
     long_description = pypandoc.convert_file('README.md', 'rst')
-except(IOError, ImportError):
+except(IOError, ImportError, OSError):
     long_description = open('README.md').read()
 
 setup(
@@ -72,10 +72,12 @@ setup(
         "Development Status :: 4 - Beta",
         "License :: OSI Approved :: BSD License",
         "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3.5",
+        "Programming Language :: Python :: 3.6",
         "Topic :: Scientific/Engineering :: Bio-Informatics"
     ],
     keywords="bioinformatics, sequencing, ngs",
-    url="https://github.com/epigen/looper",
+    url="https://github.com/pepkit/looper",
     author=u"Nathan Sheffield, Vince Reuter, Johanna Klughammer, Andre Rendeiro",
     license="BSD2",
     entry_points={

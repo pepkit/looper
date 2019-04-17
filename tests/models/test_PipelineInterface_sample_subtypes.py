@@ -157,8 +157,9 @@ class SampleSubtypeTests:
 
     @pytest.mark.parametrize(
         argnames="error_type",
-        argvalues=CUSTOM_EXCEPTIONS +
-                  BUILTIN_EXCEPTIONS_WITHOUT_REQUIRED_ARGUMENTS)
+        argvalues=[e for e in CUSTOM_EXCEPTIONS +
+                   BUILTIN_EXCEPTIONS_WITHOUT_REQUIRED_ARGUMENTS
+                   if e != StopIteration])
     def test_problematic_import_builtin_exception(
             self, tmpdir, error_type, atac_pipe_name, atacseq_piface_data):
         """ Base Sample is used if builtin exception on pipeline import. """

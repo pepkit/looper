@@ -3,37 +3,29 @@
 from collections import defaultdict, namedtuple
 from functools import partial
 import itertools
-import logging
 import os
 
 import peppy
-from peppy.utils import alpha_cased, is_command_callable
+from peppy.utils import is_command_callable
+from .const import *
 from .pipeline_interface import PipelineInterface
-from .utils import partition
+from .utils import get_logger, partition
 
 
 __author__ = "Vince Reuter"
 __email__ = "vreuter@virginia.edu"
 
 
-
-_LOGGER = logging.getLogger(__name__)
-
+_LOGGER = get_logger(__name__)
 
 
 class Project(peppy.Project):
     """
     Looper-specific NGS Project.
 
-    :param config_file: path to configuration file with data from
+    :param str config_file: path to configuration file with data from
         which Project is to be built
-    :type config_file: str
-    :param subproject: name indicating subproject to use, optional
-    :type subproject: str
-    :param default_compute: path to default compute environment
-        configuration data, optional
-    :type default_compute: str
-
+    :param str subproject: name indicating subproject to use, optional
     """
     def __init__(self, config_file, subproject=None, **kwargs):
         super(Project, self).__init__(
@@ -41,20 +33,17 @@ class Project(peppy.Project):
                 no_environment_exception=RuntimeError,
                 no_compute_exception=RuntimeError, **kwargs)
         self.interfaces_by_protocol = \
-            process_pipeline_interfaces(self.metadata.pipelines_dir)
-
+            process_pipeline_interfaces(self.metadata.pipeline_interfaces)
 
     @property
     def required_metadata(self):
         """ Which metadata attributes are required. """
         return ["output_dir"]
 
-
     @property
     def project_folders(self):
         """ Keys for paths to folders to ensure exist. """
-        return ["output_dir", "results_subdir", "submission_subdir"]
-
+        return ["output_dir", RESULTS_SUBDIR_KEY, SUBMISSION_SUBDIR_KEY]
 
     def build_submission_bundles(self, protocol, priority=True):
         """
@@ -76,8 +65,6 @@ class Project(peppy.Project):
             partition an interface's pipeline scripts into disjoint subsets of
             those already mapped and those not yet mapped
         """
-
-        protocol = alpha_cased(protocol)
 
         if not priority:
             raise NotImplementedError(
@@ -117,7 +104,7 @@ class Project(peppy.Project):
             this_protocol_pipelines = pipe_iface.fetch_pipelines(protocol)
             if not this_protocol_pipelines:
                 _LOGGER.debug("No pipelines; available: {}".format(
-                        ", ".join(pipe_iface.protomap.keys())))
+                        ", ".join(pipe_iface.protocol_mapping.keys())))
                 continue
 
             # TODO: update once dependency-encoding logic is in place.
@@ -174,14 +161,14 @@ class Project(peppy.Project):
                 # Skip and warn about nonexistent alleged pipeline path.
                 if not (os.path.exists(full_pipe_path) or
                             is_command_callable(full_pipe_path)):
-                    _LOGGER.warninging("Missing pipeline script: '%s'",
-                                 full_pipe_path)
+                    _LOGGER.warning(
+                        "Missing pipeline script: '%s'", full_pipe_path)
                     continue
 
                 # Determine which interface and Sample subtype to use.
                 sample_subtype = \
                     pipe_iface.fetch_sample_subtype(
-                        protocol, strict_pipe_key, full_pipe_path)
+                            protocol, strict_pipe_key, full_pipe_path)
 
                 # Package the pipeline's interface, subtype, command, and key.
                 submission_bundle = SubmissionBundle(
@@ -215,7 +202,6 @@ class Project(peppy.Project):
             return list(itertools.chain(*job_submission_bundles))
 
 
-
 def process_pipeline_interfaces(pipeline_interface_locations):
     """
     Create a PipelineInterface for each pipeline location given.
@@ -224,7 +210,7 @@ def process_pipeline_interfaces(pipeline_interface_locations):
         which should be either a directory path or a filepath, that specifies
         pipeline interface and protocol mappings information. Each such file
         should have a pipelines section and a protocol mappings section.
-    :return Mapping[str, Iterable[PipelineInterfaec]]: mapping from protocol
+    :return Mapping[str, Iterable[PipelineInterface]]: mapping from protocol
         name to interface(s) for which that protocol is mapped
     """
     interface_by_protocol = defaultdict(list)
@@ -234,11 +220,10 @@ def process_pipeline_interfaces(pipeline_interface_locations):
                          "location: '%s'", pipe_iface_location)
             continue
         pipe_iface = PipelineInterface(pipe_iface_location)
-        for proto_name in pipe_iface.protomap:
-            _LOGGER.log(5, "Adding protocol name: '%s'", proto_name)
-            interface_by_protocol[alpha_cased(proto_name)].append(pipe_iface)
+        for proto_name in pipe_iface.protocol_mapping:
+            _LOGGER.whisper("Adding protocol name: '%s'", proto_name)
+            interface_by_protocol[proto_name].append(pipe_iface)
     return interface_by_protocol
-
 
 
 # Collect PipelineInterface, Sample type, pipeline path, and script with flags.
@@ -246,7 +231,6 @@ SubmissionBundle = namedtuple(
     "SubmissionBundle",
     field_names=["interface", "subtype", "pipeline", "pipeline_with_flags"])
 SUBMISSION_BUNDLE_PIPELINE_KEY_INDEX = 2
-
 
 
 def _is_member(item, items):

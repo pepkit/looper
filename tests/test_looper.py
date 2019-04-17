@@ -13,6 +13,7 @@ import random
 import numpy.random as nprand
 import pytest
 
+from looper import build_parser
 from looper.looper import aggregate_exec_skip_reasons
 from tests.conftest import LOOPER_ARGS_BY_PIPELINE
 from tests.helpers import named_param
@@ -100,3 +101,36 @@ class RunErrorReportTests:
             observed_aggregation = aggregate_exec_skip_reasons(
                     original_skip_reasons)
             assert expected_aggregation == observed_aggregation
+
+
+
+class CliParserTests:
+    """ Tests for reading opts/args with the CLI parser """
+
+    @pytest.fixture
+    def parser(self):
+        """ Provide a test case with a CLI parser. """
+        return build_parser()
+
+    @pytest.mark.parametrize(
+        "cmd", ["check", "clean", "destroy", "run", "summarize"])
+    @pytest.mark.parametrize(
+        "optarg", [("dbg", None), ("env", "arb.yaml"), ("logfile", "tmp.log"),
+                   ("logging-level", "DEBUG"), ("verbosity", 1)])
+    def test_subcommand_independent_options(self, cmd, optarg, parser, tmpdir):
+        """ Parse of subcommand-independent option succeeds. """
+        opt, arg = optarg
+        if opt in ["env", "logfile"]:
+            arg = str(tmpdir.join(arg))
+        cfg = str(tmpdir.join("dummy_config.yaml"))
+        cmdl = "looper {} {} {}".format(self._render_optarg(opt, arg), cmd, cfg)
+        opts = parser.parse_args(cmdl.split(" ")[1:])
+        obs = vars(opts).get(opt.replace("-", "_"))
+        exp = arg or True
+        assert exp == obs
+
+    @staticmethod
+    def _render_optarg(opt, arg):
+        """ Helper for formatting flag vs. arg-accepting CLI option """
+        opt_text = "--" + opt
+        return opt_text if arg is None else "{} {}".format(opt_text, arg)

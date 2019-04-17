@@ -8,10 +8,26 @@ import os
 
 from peppy import \
     FLAGS, SAMPLE_INDEPENDENT_PROJECT_SECTIONS, SAMPLE_NAME_COLNAME
+from .const import *
 
 
-_LOGGER = logging.getLogger(__name__)
+DEFAULT_METADATA_FOLDER = "metadata"
+DEFAULT_CONFIG_SUFFIX = "_config.yaml"
 
+
+def get_logger(name):
+    """
+    Returm a logger with given name, equipped with custom method.
+
+    :param str name: name for the logger to get/create.
+    :return logging.Logger: named, custom logger instance.
+    """
+    l = logging.getLogger(name)
+    l.whisper = lambda msg, *args, **kwargs: l.log(5, msg, *args, **kwargs)
+    return l
+
+
+_LOGGER = get_logger(__name__)
 
 
 def create_looper_args_text(pl_key, submission_settings, prj):
@@ -29,7 +45,7 @@ def create_looper_args_text(pl_key, submission_settings, prj):
 
     # Start with copied settings and empty arguments text
     submission_settings = copy.deepcopy(submission_settings)
-    opt_arg_pairs = [("-O", prj.metadata.results_subdir)]
+    opt_arg_pairs = [("-O", prj.metadata[RESULTS_SUBDIR_KEY])]
 
     if hasattr(prj, "pipeline_config"):
         # Index with 'pl_key' instead of 'pipeline'
@@ -69,6 +85,50 @@ def create_looper_args_text(pl_key, submission_settings, prj):
     return looper_argtext
 
 
+def determine_config_path(
+        root, folders=(DEFAULT_METADATA_FOLDER, ),
+        patterns=("*" + DEFAULT_CONFIG_SUFFIX, )):
+    """
+    Determine path to Project config file, allowing folder-based specification.
+
+    :param str root: path to file or main (e.g., project, folder)
+    :param Iterable[str] folders: collection of names of subfolders to consider
+    :param Iterable[str] patterns: collection of filename patterns to consider
+    :return str: unique path to extant Project config file
+    :raise ValueError: if the given root path doesn't exist, or if multiple
+        matching files are found
+    """
+
+    # Base cases
+    if not os.path.exists(root):
+        raise ValueError("Path doesn't exist: {}".format(root))
+    if os.path.isfile(root):
+        return root
+
+    # Deal with single-string argument.
+    if isinstance(folders, str):
+        folders = (folders, )
+    if isinstance(patterns, str):
+        patterns = (patterns, )
+
+    # Search particular folder for any pattern
+    def search(path):
+        return [m for p in patterns for m in glob.glob(os.path.join(path, p))]
+
+    # Search results
+    top_res = search(root)
+    sub_res = [m for sub in folders for m in search(os.path.join(root, sub))]
+    all_res = top_res + sub_res
+
+    # Deal with the 3 match count cases.
+    if len(all_res) > 1:
+        raise ValueError("Multiple ({}) config paths: {}".format(
+            len(all_res), ", ".join(map(str, all_res))))
+    try:
+        return all_res[0]
+    except IndexError:
+        return None
+
 
 def fetch_flag_files(prj=None, results_folder="", flags=FLAGS):
     """
@@ -78,9 +138,9 @@ def fetch_flag_files(prj=None, results_folder="", flags=FLAGS):
         similar metadata and access/usage pattern
     :param str results_folder: path to results folder, corresponding to the
         1:1 sample:folder notion that a looper Project has. That is, this
-        function uses the assumption that if rootdir rather than project is
-        provided, the structure of the file tree rooted at rootdir is such
-        that any flag files to be found are not directly within rootdir but
+        function uses the assumption that if results_folder rather than project
+        is provided, the structure of the file tree rooted at results_folder is
+        such that any flag files to be found are not directly within rootdir but
         are directly within on of its first layer of subfolders.
     :param Iterable[str] | str flags: Collection of flag names or single flag
         name for which to fetch files
@@ -102,7 +162,7 @@ def fetch_flag_files(prj=None, results_folder="", flags=FLAGS):
 
     if prj is None:
         for flag, suffix in flag_suffix_pairs:
-            flag_expr= os.path.join(results_folder, "*", suffix)
+            flag_expr = os.path.join(results_folder, "*", suffix)
             flags_present = glob.glob(flag_expr)
             files_by_flag[flag] = flags_present
     else:
@@ -115,9 +175,32 @@ def fetch_flag_files(prj=None, results_folder="", flags=FLAGS):
                 flags_present = glob.glob(flag_expr)
                 files_by_flag[flag].extend(flags_present)
 
-
     return files_by_flag
 
+
+def fetch_sample_flags(prj, sample, pl_names=None):
+    """
+    Find any flag files present for a sample associated with a project
+
+    :param looper.Project prj: project of interest
+    :param peppy.Sample sample: sample of interest
+    :param str | Iterable[str] pl_names: name of the pipeline for which flag(s)
+        should be found
+    :return Iterable[str]: collection of flag file path(s) associated with the
+        given sample for the given project
+    """
+    sfolder = sample_folder(prj=prj, sample=sample)
+    if not os.path.isdir(sfolder):
+        _LOGGER.debug("Folder doesn't exist for sample {}: {}".format(sample.name, sfolder))
+        return []
+    if not pl_names:
+        pl_match = lambda _: True
+    else:
+        if isinstance(pl_names, str):
+            pl_names = [pl_names]
+        pl_match = lambda n: any(n.startswith(pl) for pl in pl_names)
+    return [os.path.join(sfolder, f) for f in os.listdir(sfolder)
+            if os.path.splitext(f)[1] == ".flag" and pl_match(f)]
 
 
 def grab_project_data(prj):
@@ -148,7 +231,6 @@ def grab_project_data(prj):
     return data
 
 
-
 def partition(items, test):
     """
     Partition items into a pair of disjoint multisets,
@@ -168,13 +250,12 @@ def partition(items, test):
     :return: list[object], list[object]: partitioned items sequences
     """
     passes, fails = [], []
-    _LOGGER.log(5, "Testing {} items: {}".format(len(items), items))
+    _LOGGER.whisper("Testing {} items: {}".format(len(items), items))
     for item in items:
-        _LOGGER.log(5, "Testing item {}".format(item))
+        _LOGGER.whisper("Testing item {}".format(item))
         group = passes if test(item) else fails
         group.append(item)
     return passes, fails
-
 
 
 def sample_folder(prj, sample):
@@ -186,5 +267,5 @@ def sample_folder(prj, sample):
         folder path.
     :return str: this Project's root folder for the given Sample
     """
-    return os.path.join(prj.metadata.results_subdir,
+    return os.path.join(prj.metadata[RESULTS_SUBDIR_KEY],
                         sample[SAMPLE_NAME_COLNAME])

@@ -19,39 +19,42 @@ from pandas.io.parsers import EmptyDataError
 import pytest
 import yaml
 
-from looper import setup_looper_logger
 from looper.pipeline_interface import PipelineInterface
 from looper.project import Project
-from peppy import setup_peppy_logger, SAMPLE_NAME_COLNAME
+from logmuse import setup_logger
+from peppy import SAMPLE_NAME_COLNAME, \
+    SAMPLE_ANNOTATIONS_KEY, SAMPLE_SUBANNOTATIONS_KEY
 
 
-_LOGGER = logging.getLogger("peppy")
+_LOGNAME = "looper"
+_LOGGER = logging.getLogger(_LOGNAME)
 
 
 P_CONFIG_FILENAME = "project_config.yaml"
 
 # {basedir} lines are formatted during file write; other braced entries remain.
 PROJECT_CONFIG_LINES = """metadata:
-  sample_annotation: samples.csv
+  {tab_key}: samples.csv
   output_dir: test
   pipeline_interfaces: pipelines
-  merge_table: merge.csv
+  {subtab_key}: merge.csv
 
-derived_columns: [{derived_column_names}]
+derived_attributes: [{{derived_column_names}}]
 
 data_sources:
-  src1: "{basedir}/data/{sample_name}{col_modifier}.txt"
-  src3: "{basedir}/data/{sample_name}.txt"
-  src2: "{basedir}/data/{sample_name}-bamfile.bam"
+  src1: "{{basedir}}/data/{{sample_name}}{{col_modifier}}.txt"
+  src3: "{{basedir}}/data/{{sample_name}}.txt"
+  src2: "{{basedir}}/data/{{sample_name}}-bamfile.bam"
 
-implied_columns:
+implied_attributes:
   sample_name:
     a:
       genome: hg38
       phenome: hg72
     b:
       genome: hg38
-""".splitlines(True)
+""".format(subtab_key=SAMPLE_SUBANNOTATIONS_KEY,
+           tab_key=SAMPLE_ANNOTATIONS_KEY).splitlines(True)
 # Will populate the corresponding string format entry in project config lines.
 DERIVED_COLNAMES = ["file", "file2", "dcol1", "dcol2",
                     "nonmerged_col", "nonmerged_col", "data_source"]
@@ -180,16 +183,16 @@ _SEASON_HIERARCHY = {
 COMPARISON_FUNCTIONS = ["__eq__", "__ne__", "__len__",
                         "keys", "values", "items"]
 COLUMNS = [SAMPLE_NAME_COLNAME, "val1", "val2", "library"]
-PROJECT_CONFIG_DATA = {"metadata": {"sample_annotation": "annotations.csv"}}
+PROJECT_CONFIG_DATA = {"metadata": {SAMPLE_ANNOTATIONS_KEY: "annotations.csv"}}
 
 
 
 def update_project_conf_data(extension):
     """ Updated Project configuration data mapping based on file extension """
     updated = copy.deepcopy(PROJECT_CONFIG_DATA)
-    filename = updated["metadata"]["sample_annotation"]
+    filename = updated["metadata"][SAMPLE_ANNOTATIONS_KEY]
     base, _ = os.path.splitext(filename)
-    updated["metadata"]["sample_annotation"] = "{}.{}".format(base, extension)
+    updated["metadata"][SAMPLE_ANNOTATIONS_KEY] = "{}.{}".format(base, extension)
     return updated
 
 
@@ -217,25 +220,22 @@ def pytest_generate_tests(metafunc):
                              argvalues=[str, dict])
 
 
-
 @pytest.fixture(scope="session", autouse=True)
 def conf_logs(request):
     """ Configure logging for the testing session. """
     level = request.config.getoption("--logging-level")
-    setup_peppy_logger(level=level, devmode=True)
-    logging.getLogger("peppy").info(
+    setup_logger(name=_LOGNAME, level=level, devmode=True)
+    logging.getLogger(_LOGNAME).info(
         "Configured looper logger at level %s; attaching tests' logger %s",
         str(level), __name__)
     global _LOGGER
     _LOGGER = logging.getLogger("looper.{}".format(__name__))
 
 
-
-
 @pytest.fixture(scope="function")
 def sample_annotation_lines():
+    """ Lines for sample (metadata) annotations sheet. """
     return SAMPLE_ANNOTATION_LINES
-
 
 
 @pytest.fixture(scope="function")
@@ -255,7 +255,7 @@ def path_empty_project(request, tmpdir):
 
     # Write the needed files.
     anns_path = os.path.join(
-            tmpdir.strpath, conf_data["metadata"]["sample_annotation"])
+            tmpdir.strpath, conf_data["metadata"][SAMPLE_ANNOTATIONS_KEY])
 
     with open(anns_path, 'w') as anns_file:
         anns_file.write(delimiter.join(COLUMNS))
@@ -264,7 +264,6 @@ def path_empty_project(request, tmpdir):
         yaml.dump(conf_data, conf_file)
 
     return conf_path
-
 
 
 def interactive(
@@ -296,9 +295,9 @@ def interactive(
     """
 
     # Establish logging for interactive session.
-    looper_logger_kwargs = {"level": "DEBUG"}
+    looper_logger_kwargs = {"level": "DEBUG", "name": "looper"}
     looper_logger_kwargs.update(logger_kwargs or {})
-    setup_looper_logger(**looper_logger_kwargs)
+    setup_logger(**looper_logger_kwargs)
 
     # TODO: don't work with tempfiles once ctors tolerate Iterable.
     dirpath = tempfile.mkdtemp()
@@ -325,7 +324,6 @@ def interactive(
     return prj, iface
 
 
-
 class _DataSourceFormatMapping(dict):
     """
     Partially format text with braces. This helps since bracing is the
@@ -334,7 +332,6 @@ class _DataSourceFormatMapping(dict):
     """
     def __missing__(self, derived_column):
         return "{" + derived_column + "}"
-
 
 
 def _write_temp(lines, dirpath, fname):
@@ -373,12 +370,10 @@ def _write_temp(lines, dirpath, fname):
     return filepath
 
 
-
 @pytest.fixture(scope="function")
 def project_config_lines():
     """ Provide safer iteration over the lines for Project config file. """
     return PROJECT_CONFIG_LINES
-
 
 
 @pytest.fixture(scope="function")
@@ -395,7 +390,6 @@ def path_project_conf(tmpdir, project_config_lines):
         project_config_lines, tmpdir.strpath, P_CONFIG_FILENAME)
 
 
-
 @pytest.fixture(scope="function")
 def proj_conf_data(path_project_conf):
     """
@@ -407,7 +401,6 @@ def proj_conf_data(path_project_conf):
     """
     with open(path_project_conf, 'r') as conf_file:
         return yaml.safe_load(conf_file)
-
 
 
 @pytest.fixture(scope="function")
@@ -425,11 +418,10 @@ def path_sample_anns(tmpdir, sample_annotation_lines):
     return filepath
 
 
-
 @pytest.fixture(scope="function")
 def p_conf_fname():
+    """ Fixed name for project config file """
     return P_CONFIG_FILENAME
-
 
 
 @pytest.fixture(scope="class")
@@ -442,23 +434,18 @@ def write_project_files(request):
     :return str: path to the temporary file with configuration data
     """
     dirpath = tempfile.mkdtemp()
-    path_conf_file = _write_temp(PROJECT_CONFIG_LINES,
-                                 dirpath=dirpath, fname=P_CONFIG_FILENAME)
+    path_conf_file = _write_temp(
+        PROJECT_CONFIG_LINES, dirpath=dirpath, fname=P_CONFIG_FILENAME)
     path_merge_table_file = _write_temp(
-            MERGE_TABLE_LINES,
-            dirpath=dirpath, fname=MERGE_TABLE_FILENAME
-    )
+        MERGE_TABLE_LINES, dirpath=dirpath, fname=MERGE_TABLE_FILENAME)
     path_sample_annotation_file = _write_temp(
-            SAMPLE_ANNOTATION_LINES,
-            dirpath=dirpath, fname=ANNOTATIONS_FILENAME
-    )
+        SAMPLE_ANNOTATION_LINES, dirpath=dirpath, fname=ANNOTATIONS_FILENAME)
     request.cls.project_config_file = path_conf_file
     request.cls.merge_table_file = path_merge_table_file
     request.cls.sample_annotation_file = path_sample_annotation_file
     _write_test_data_files(tempdir=dirpath)
     yield path_conf_file, path_merge_table_file, path_sample_annotation_file
     shutil.rmtree(dirpath)
-
 
 
 # Placed here (rather than near top of file) for data/use locality.
@@ -469,7 +456,6 @@ _TEST_DATA_FILE_BASENAMES = ["a", "b1", "b2", "b3", "c", "d"]
 _TEST_DATA = {"{}.txt".format(name):
               "This is the content of test file {}.".format(name)
               for name in _TEST_DATA_FILE_BASENAMES}
-
 
 
 def _write_test_data_files(tempdir):
@@ -488,7 +474,6 @@ def _write_test_data_files(tempdir):
         with open(filepath, 'w') as testfile:
             _LOGGER.debug("Writing test data file to '%s'", filepath)
             testfile.write(data)
-
 
 
 @pytest.fixture(scope="class")
@@ -513,11 +498,9 @@ def pipe_iface_config_file(request):
     shutil.rmtree(dirpath)
 
 
-
 def request_class_attribute(req, attr):
     """ Grab `attr` attribute from class of `req`. """
     return getattr(getattr(req, "cls"), attr)
-
 
 
 def _create(request, data_type, **kwargs):
@@ -540,7 +523,6 @@ def _create(request, data_type, **kwargs):
         raise
 
 
-
 @pytest.fixture(scope="function")
 def proj(request):
     """
@@ -560,7 +542,6 @@ def proj(request):
     return p
 
 
-
 @pytest.fixture(scope="function")
 def pipe_iface(request):
     """
@@ -578,15 +559,13 @@ def pipe_iface(request):
     return _create(request, PipelineInterface)
 
 
-
 def basic_entries():
-    """ AttributeDict data that lack nested strcuture. """
+    """ PathExAttMap data that lack nested strcuture. """
     for k, v in zip(_BASE_KEYS, _BASE_VALUES):
         yield k, v
 
 
-
 def nested_entries():
-    """ AttributeDict data with some nesting going on. """
+    """ PathExAttMap data with some nesting going on. """
     for k, v in _SEASON_HIERARCHY.items():
         yield k, v

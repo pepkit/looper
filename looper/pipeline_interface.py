@@ -11,15 +11,18 @@ else:
 import warnings
 
 import yaml
+from yaml import SafeLoader
 
 from .exceptions import InvalidResourceSpecificationException, \
     MissingPipelineConfigurationException, PipelineInterfaceConfigError
-from peppy import utils, AttributeDict, Sample
+from .utils import get_logger
+from attmap import PathExAttMap
+from peppy import utils, Sample
 from peppy.const import DEFAULT_COMPUTE_RESOURCES_NAME
 from peppy.utils import is_command_callable
 
 
-_LOGGER = logging.getLogger(__name__)
+_LOGGER = get_logger(__name__)
 
 
 PL_KEY = "pipelines"
@@ -28,7 +31,7 @@ SUBTYPE_MAPPING_SECTION = "sample_subtypes"
 
 
 @utils.copy
-class PipelineInterface(AttributeDict):
+class PipelineInterface(PathExAttMap):
     """
     This class parses, holds, and returns information for a yaml file that
     specifies how to interact with each individual pipeline. This
@@ -42,7 +45,7 @@ class PipelineInterface(AttributeDict):
     REQUIRED_SECTIONS = [PL_KEY, PROTOMAP_KEY]
 
     def __init__(self, config):
-        super(PipelineInterface, self).__init__(_attribute_identity=False)
+        super(PipelineInterface, self).__init__()
 
         if isinstance(config, Mapping):
             self.pipe_iface_file = None
@@ -52,7 +55,7 @@ class PipelineInterface(AttributeDict):
                           config, self.__class__.__name__)
             self.pipe_iface_file = config
             with open(config, 'r') as f:
-                config = yaml.load(f)
+                config = yaml.load(f, SafeLoader)
             self.source = config
 
         # Check presence of 2 main sections (protocol mapping and pipelines).
@@ -65,25 +68,6 @@ class PipelineInterface(AttributeDict):
         config = standardize_protocols(config)
         self.add_entries(config)
 
-
-    def __getitem__(self, item):
-        """ Mapping index-like syntax is interpreted as pipeline request. """
-        try:
-            return super(PipelineInterface, self).__getitem__(item)
-        except KeyError:
-            try:
-                pipe = self.select_pipeline(item)
-            except MissingPipelineConfigurationException:
-                raise KeyError(
-                    "{} is neither an interface key nor a known pipeline; known "
-                    "pipelines: {}".format(item, ", ".join(self.pipelines.keys())))
-            else:
-                msg = "Directly requesting pipeline on {} is deprecated; please " \
-                      "use select_pipeline".format(self.__class__.__name__)
-                warnings.warn(msg, DeprecationWarning)
-                return pipe
-
-
     def __repr__(self):
         """ String representation """
         source = self.pipe_iface_file or "Mapping"
@@ -93,15 +77,12 @@ class PipelineInterface(AttributeDict):
         return "{} from {}, with {} pipeline(s): {}".format(
                 self.__class__.__name__, source, num_pipelines, pipelines)
 
-
     def choose_resource_package(self, pipeline_name, file_size):
         """
         Select resource bundle for given input file size to given pipeline.
 
         :param str pipeline_name: Name of pipeline.
-        :type pipeline_name: str
         :param float file_size: Size of input data (in gigabytes).
-        :type file_size: float
         :return MutableMapping: resource bundle appropriate for given pipeline,
             for given input file size
         :raises ValueError: if indicated file size is negative, or if the
@@ -117,22 +98,36 @@ class PipelineInterface(AttributeDict):
             raise ValueError("Attempted selection of resource package for "
                              "negative file size: {}".format(file_size))
 
-        def warn(msg):
+        def notify(msg):
             msg += " for pipeline {}".format(pipeline_name)
             if self.pipe_iface_file is not None:
-                msg += " in file {}".format(self.pipe_iface_file)
-            _LOGGER.warning(msg)
+                msg += " in interface {}".format(self.pipe_iface_file)
+            _LOGGER.debug(msg)
 
+        pl = self.select_pipeline(pipeline_name)
+
+        compute_key = "compute"
         universal_compute = {}
         try:
-            universal_compute = self.select_pipeline(pipeline_name)["compute"]
+            universal_compute = pl[compute_key]
         except KeyError:
-            warn("No universal compute settings")
+            notify("No compute settings")
+
+        res_key = "resources"
         try:
-            resources = self.select_pipeline(pipeline_name)["resources"]
+            resources = universal_compute[res_key]
         except KeyError:
-            warn("No resources")
-            return {}
+            try:
+                resources = pl[res_key]
+            except KeyError:
+                notify("No resources")
+                return {}
+        else:
+            if res_key in pl:
+                _LOGGER.warning(
+                    "{rk} section found in both {c} section and top-level "
+                    "pipelines section of pipeline interface; {c} section "
+                    "version will be used".format(rk=res_key, c=compute_key))
 
         # Require default resource package specification.
         try:
@@ -186,7 +181,6 @@ class PipelineInterface(AttributeDict):
                 rp_data.update(universal_compute)
                 return rp_data
 
-
     def finalize_pipeline_key_and_paths(self, pipeline_key):
         """
         Determine pipeline's full path, arguments, and strict key.
@@ -229,18 +223,17 @@ class PipelineInterface(AttributeDict):
         # TODO: determine how to deal with pipelines_path (i.e., could be null)
         if not os.path.isabs(script_path_only) and not \
                 is_command_callable(script_path_only):
-            _LOGGER.log(5, "Expanding non-absolute script path: '%s'",
-                        script_path_only)
+            _LOGGER.whisper("Expanding non-absolute script path: '%s'",
+                            script_path_only)
             script_path_only = os.path.join(
                     self.pipelines_path, script_path_only)
-            _LOGGER.log(5, "Absolute script path: '%s'", script_path_only)
+            _LOGGER.whisper("Absolute script path: '%s'", script_path_only)
             script_path_with_flags = os.path.join(
                     self.pipelines_path, script_path_with_flags)
-            _LOGGER.log(5, "Absolute script path with flags: '%s'",
-                        script_path_with_flags)
+            _LOGGER.whisper("Absolute script path with flags: '%s'",
+                            script_path_with_flags)
 
         return strict_pipeline_key, script_path_only, script_path_with_flags
-
 
     def get_arg_string(self, pipeline_name, sample,
                        submission_folder_path="", **null_replacements):
@@ -265,7 +258,6 @@ class PipelineInterface(AttributeDict):
             _LOGGER.debug("Adding argument for pipeline option '{}': {}".
                           format(option, argument))
             return "{} {} {}".format(argtext, option, argument)
-
 
         default_filepath = os.path.join(
                 submission_folder_path, sample.generate_filename())
@@ -363,12 +355,10 @@ class PipelineInterface(AttributeDict):
         """
         Translate a pipeline name (e.g., stripping file extension).
 
-        :param pipeline: Pipeline name or script (top-level key in
+        :param str pipeline: Pipeline name or script (top-level key in
             pipeline interface mapping).
-        :type pipeline: str
-        :return: translated pipeline name, as specified in config or by
+        :return str: translated pipeline name, as specified in config or by
             stripping the pipeline's file extension
-        :rtype: str: translated name for pipeline
         """
         config = self.select_pipeline(pipeline)
         try:
@@ -387,8 +377,7 @@ class PipelineInterface(AttributeDict):
         :return str | Iterable[str] | NoneType: pipeline(s) to which the given
             protocol is mapped, otherwise null
         """
-        protocol_key = utils.alpha_cased(protocol)
-        return self.protocol_mapping.get(protocol_key)
+        return self.protocol_mapping.get(protocol)
 
 
     def fetch_sample_subtype(
@@ -438,10 +427,8 @@ class PipelineInterface(AttributeDict):
                               "in interface from '%s': '%s'", subtype_name,
                               strict_pipe_key, self.source)
             else:
-                temp_subtypes = {
-                        utils.alpha_cased(p): st for p, st in subtypes.items()}
                 try:
-                    subtype_name = temp_subtypes[utils.alpha_cased(protocol)]
+                    subtype_name = subtypes[protocol]
                 except KeyError:
                     # Designate lack of need for import attempt and provide
                     # class with name to format message below.
@@ -450,7 +437,7 @@ class PipelineInterface(AttributeDict):
                                   "'%s': '%s', '%s'; known: %s",
                                   subtype.__name__, self.source,
                                   strict_pipe_key, protocol,
-                                  ", ".join(temp_subtypes.keys()))
+                                  ", ".join(subtypes.keys()))
 
         # subtype_name is defined if and only if subtype remained null.
         # The import helper function can return null if the import attempt
@@ -497,7 +484,6 @@ class PipelineInterface(AttributeDict):
         except (AttributeError, TypeError):
             return None
 
-
     @property
     def pipe_iface(self):
         """
@@ -510,7 +496,6 @@ class PipelineInterface(AttributeDict):
                       format(self.__class__.__name__), DeprecationWarning)
         return self.pipelines
 
-
     @property
     def protomap(self):
         """
@@ -522,15 +507,12 @@ class PipelineInterface(AttributeDict):
                       .format(PROTOMAP_KEY), DeprecationWarning)
         return self.protocol_mapping
 
-
     def select_pipeline(self, pipeline_name):
         """
         Check to make sure that pipeline has an entry and if so, return it.
 
-        :param pipeline_name: Name of pipeline.
-        :type pipeline_name: str
-        :return: configuration data for pipeline indicated
-        :rtype: Mapping
+        :param str pipeline_name: Name of pipeline.
+        :return Mapping: configuration data for pipeline indicated
         :raises MissingPipelineConfigurationException: if there's no
             configuration data for the indicated pipeline
         """
@@ -545,20 +527,16 @@ class PipelineInterface(AttributeDict):
             # TODO: use defaults or force user to define this?
             raise MissingPipelineConfigurationException(pipeline_name)
 
-
     def uses_looper_args(self, pipeline_name):
         """
         Determine whether indicated pipeline accepts looper arguments.
 
-        :param pipeline_name: Name of pipeline to check for looper
+        :param str pipeline_name: Name of pipeline to check for looper
             argument acceptance.
-        :type pipeline_name: str
-        :return: Whether indicated pipeline accepts looper arguments.
-        :rtype: bool
+        :return bool: Whether indicated pipeline accepts looper arguments.
         """
         config = self.select_pipeline(pipeline_name)
         return "looper_args" in config and config["looper_args"]
-
 
 
 def expand_pl_paths(piface):
@@ -575,9 +553,9 @@ def expand_pl_paths(piface):
     for pipe_data in piface[PL_KEY].values():
         if "path" in pipe_data:
             pipe_path = pipe_data["path"]
-            _LOGGER.log(5, "Expanding path: '%s'", pipe_path)
+            _LOGGER.whisper("Expanding path: '%s'", pipe_path)
             pipe_path = utils.expandpath(pipe_path)
-            _LOGGER.log(5, "Expanded: '%s'", pipe_path)
+            _LOGGER.whisper("Expanded: '%s'", pipe_path)
             pipe_data["path"] = pipe_path
     return piface
 
@@ -587,14 +565,14 @@ def standardize_protocols(piface):
     """
     Handle casing and punctuation of protocol keys in pipeline interface.
 
-    :param Mapping piface: Pipeline interface data to standardize.
-    :return Mapping: Same as the input, but with protocol keys case and
+    :param MutableMapping piface: Pipeline interface data to standardize.
+    :return MutableMapping: Same as the input, but with protocol keys case and
         punctuation handled in a more uniform way for matching later.
     """
+    from copy import copy as cp
     assert PROTOMAP_KEY in piface, "For protocol mapping standardization, " \
         "pipeline interface data must contain key '{}'".format(PROTOMAP_KEY)
-    piface[PROTOMAP_KEY] = {utils.alpha_cased(proto): pipekey for
-                            proto, pipekey in piface[PROTOMAP_KEY].items()}
+    piface[PROTOMAP_KEY] = cp(piface[PROTOMAP_KEY])
     return piface
 
 
@@ -643,9 +621,8 @@ def _import_sample_subtype(pipeline_filepath, subtype_name=None):
         return base_type
 
     except (BaseException, Exception) as e:
-        _LOGGER.warning("Using base %s because of inability to "
-                     "import a subtype from '%s': %r",
-                     base_type.__name__, pipeline_filepath, e)
+        _LOGGER.debug("Can't import subtype from '%s', using base %s: %r",
+                     pipeline_filepath, base_type.__name__,  e)
         return base_type
 
     else:
