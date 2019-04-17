@@ -1,6 +1,6 @@
 # Changelog
 
-- **v0.11 (*unreleased*)**
+- **v0.11 (*2019-04-17*)**
 
   - Added
 
@@ -14,6 +14,10 @@
 
   - Changed
 
+    - Switched to a Jinja-style templating system for summary output
+
+    - Made various UI changes to adapt to `caravel` use.
+
     - Using `attmap` for "attribute-style key-vale store" implementation
 
     - Removed Python 3.4 support.
@@ -22,7 +26,7 @@
     
   - New:
 
-    - Add `selector-attribute` paramenter for more generic sample selection.
+    - Add `selector-attribute` parameter for more generic sample selection.
       
 
 
