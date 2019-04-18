@@ -1,10 +1,5 @@
 """ Exceptions for specific looper issues. """
 
-
-__author__ = "Vince Reuter"
-__email__ = "vreuter@virginia.edu"
-
-
 from abc import ABCMeta
 import sys
 if sys.version_info < (3, 3):
@@ -12,6 +7,8 @@ if sys.version_info < (3, 3):
 else:
     from collections.abc import Iterable
 
+__author__ = "Vince Reuter"
+__email__ = "vreuter@virginia.edu"
 
 _all__ = ["DuplicatePipelineKeyException",
           "InvalidResourceSpecificationException",
