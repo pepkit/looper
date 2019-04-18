@@ -13,8 +13,10 @@ else:
     from collections.abc import Iterable
 
 
-_all__ = ["InvalidResourceSpecificationException", "JobSubmissionException",
-          "LooperError", "MissingPipelineConfigurationException",
+_all__ = ["DuplicatePipelineKeyException",
+          "InvalidResourceSpecificationException",
+          "JobSubmissionException", "LooperError",
+          "MissingPipelineConfigurationException",
           "PipelineInterfaceConfigError"]
 
 

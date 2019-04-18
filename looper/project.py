@@ -227,12 +227,13 @@ class Project(peppy.Project):
             sample names
         """
         prots_data_pairs = \
-            _gather_ifaces(*itertools.chain(*self.interfaces_by_protocol.values()))
+            _gather_ifaces(itertools.chain(*self.interfaces_by_protocol.values()))
         m = {}
         for name, (prots, data) in prots_data_pairs.items():
             snames = [s.name for s in self.samples if s.protocol in prots]
             if not snames:
-                _LOGGER.debug("No samples with protocol: {}".format(p))
+                _LOGGER.debug("No samples matching protocol(s): {}".
+                              format(", ".join(prots)))
                 continue
             try:
                 outs = data[OUTKEY]
@@ -245,7 +246,17 @@ class Project(peppy.Project):
         return m
 
 
-def _gather_ifaces(*ifaces):
+def _gather_ifaces(ifaces):
+    """
+    For each pipeline map identifier to protocols and interface data.
+
+    :param Iterable[looper.PipelineInterface] ifaces:
+    :return Mapping[str, (set[str], attmap.AttMap)]: collection of bindings
+        between pipeline identifier and pair in which first component is
+        collection of associated protocol names, and second component is a
+        collection of interface data for pipeline identified by the key
+    :raise looper.
+    """
     specs = {}
     for pi in ifaces:
         protos_by_name = {}
@@ -256,12 +267,13 @@ def _gather_ifaces(*ifaces):
                 protos_by_name.setdefault(n, set()).add(p)
         for k, dat in pi.iterpipes():
             name = dat.get("name") or k
-            if name in specs:
-                old_dat, old_prots = specs[name]
+            try:
+                old_prots, old_dat = specs[name]
+            except KeyError:
+                old_prots = set()
+            else:
                 if dat != old_dat:
                     raise DuplicatePipelineKeyException(name)
-            else:
-                old_prots = set()
             new_prots = protos_by_name.get(name, set()) | \
                         protos_by_name.get(k, set())
             specs[name] = (old_prots | new_prots, dat)
