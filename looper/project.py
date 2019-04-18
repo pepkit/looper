@@ -36,14 +36,14 @@ class Project(peppy.Project):
             process_pipeline_interfaces(self.metadata.pipeline_interfaces)
 
     @property
-    def required_metadata(self):
-        """ Which metadata attributes are required. """
-        return ["output_dir"]
-
-    @property
     def project_folders(self):
         """ Keys for paths to folders to ensure exist. """
         return ["output_dir", RESULTS_SUBDIR_KEY, SUBMISSION_SUBDIR_KEY]
+
+    @property
+    def required_metadata(self):
+        """ Which metadata attributes are required. """
+        return ["output_dir"]
 
     def build_submission_bundles(self, protocol, priority=True):
         """

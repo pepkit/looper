@@ -335,39 +335,6 @@ class PipelineInterface(PathExAttMap):
 
         return argstring
 
-
-    def get_attribute(self, pipeline_name, attribute_key, path_as_list=True):
-        """
-        Return the value of the named attribute for the pipeline indicated.
-
-        :param str pipeline_name: name of the pipeline of interest
-        :param str attribute_key: name of the pipeline attribute of interest
-        :param bool path_as_list: whether to ensure that a string attribute
-            is returned as a list; this is useful for safe iteration over
-            the returned value.
-        """
-        config = self.select_pipeline(pipeline_name)
-        value = config.get(attribute_key)
-        return [value] if isinstance(value, str) and path_as_list else value
-
-
-    def get_pipeline_name(self, pipeline):
-        """
-        Translate a pipeline name (e.g., stripping file extension).
-
-        :param str pipeline: Pipeline name or script (top-level key in
-            pipeline interface mapping).
-        :return str: translated pipeline name, as specified in config or by
-            stripping the pipeline's file extension
-        """
-        config = self.select_pipeline(pipeline)
-        try:
-            return config["name"]
-        except KeyError:
-            _LOGGER.debug("No 'name' for pipeline '{}'".format(pipeline))
-            return os.path.splitext(pipeline)[0]
-
-
     def fetch_pipelines(self, protocol):
         """
         Fetch the mapping for a particular protocol, null if unmapped.
@@ -378,7 +345,6 @@ class PipelineInterface(PathExAttMap):
             protocol is mapped, otherwise null
         """
         return self.protocol_mapping.get(protocol)
-
 
     def fetch_sample_subtype(
             self, protocol, strict_pipe_key, full_pipe_path):
@@ -448,6 +414,35 @@ class PipelineInterface(PathExAttMap):
         _LOGGER.debug("Using Sample subtype: %s", subtype.__name__)
         return subtype
 
+    def get_attribute(self, pipeline_name, attribute_key, path_as_list=True):
+        """
+        Return the value of the named attribute for the pipeline indicated.
+
+        :param str pipeline_name: name of the pipeline of interest
+        :param str attribute_key: name of the pipeline attribute of interest
+        :param bool path_as_list: whether to ensure that a string attribute
+            is returned as a list; this is useful for safe iteration over
+            the returned value.
+        """
+        config = self.select_pipeline(pipeline_name)
+        value = config.get(attribute_key)
+        return [value] if isinstance(value, str) and path_as_list else value
+
+    def get_pipeline_name(self, pipeline):
+        """
+        Translate a pipeline name (e.g., stripping file extension).
+
+        :param str pipeline: Pipeline name or script (top-level key in
+            pipeline interface mapping).
+        :return str: translated pipeline name, as specified in config or by
+            stripping the pipeline's file extension
+        """
+        config = self.select_pipeline(pipeline)
+        try:
+            return config["name"]
+        except KeyError:
+            _LOGGER.debug("No 'name' for pipeline '{}'".format(pipeline))
+            return os.path.splitext(pipeline)[0]
 
     def iterpipes(self):
         """
@@ -457,7 +452,6 @@ class PipelineInterface(PathExAttMap):
             key and interface data
         """
         return iter(self.pipelines.items())
-
 
     @property
     def pipeline_names(self):
@@ -469,7 +463,6 @@ class PipelineInterface(PathExAttMap):
         """
         # TODO: could consider keying on name.
         return list(self.pipelines.keys())
-
 
     @property
     def pipelines_path(self):
