@@ -4,14 +4,9 @@ __author__ = "Vince Reuter"
 __email__ = "vreuter@virginia.edu"
 
 
-__all__ = ["RESULTS_SUBDIR_KEY", "SUBMISSION_SUBDIR_KEY", "TEMPLATES_DIRNAME", "APPEARANCE_BY_FLAG",
-           "NO_DATA_PLACEHOLDER"]
+__all__ = ["APPEARANCE_BY_FLAG", "NO_DATA_PLACEHOLDER", "OUTKEY",
+           "RESULTS_SUBDIR_KEY", "SUBMISSION_SUBDIR_KEY", "TEMPLATES_DIRNAME"]
 
-
-RESULTS_SUBDIR_KEY = "results_subdir"
-SUBMISSION_SUBDIR_KEY = "submission_subdir"
-TEMPLATES_DIRNAME = "jinja_templates"
-NO_DATA_PLACEHOLDER = "NA"
 APPEARANCE_BY_FLAG = {
     "completed": {
         "button_class": "table-success",
@@ -34,3 +29,8 @@ APPEARANCE_BY_FLAG = {
         "flag": "Waiting"
     }
 }
+NO_DATA_PLACEHOLDER = "NA"
+OUTKEY = "outputs"
+RESULTS_SUBDIR_KEY = "results_subdir"
+SUBMISSION_SUBDIR_KEY = "submission_subdir"
+TEMPLATES_DIRNAME = "jinja_templates"

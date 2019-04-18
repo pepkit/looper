@@ -804,7 +804,7 @@ def main():
             determine_config_path(args.config_file), subproject=args.subproject,
             file_checks=args.file_checks, compute_env_file=getattr(args, 'env', None))
     except yaml.parser.ParserError as e:
-        print("Project config parse failed -- {}".format(e))
+        _LOGGER.error("Project config parse failed -- {}".format(e))
         sys.exit(1)
 
     if hasattr(args, "compute"):

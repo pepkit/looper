@@ -8,12 +8,15 @@ import os
 import peppy
 from peppy.utils import is_command_callable
 from .const import *
-from .pipeline_interface import PipelineInterface
+from .exceptions import DuplicatePipelineKeyException
+from .pipeline_interface import PipelineInterface, PROTOMAP_KEY
 from .utils import get_logger, partition
 
 
 __author__ = "Vince Reuter"
 __email__ = "vreuter@virginia.edu"
+
+__all__ = ["Project", "process_pipeline_interfaces"]
 
 
 _LOGGER = get_logger(__name__)
@@ -201,6 +204,69 @@ class Project(peppy.Project):
         else:
             return list(itertools.chain(*job_submission_bundles))
 
+    def get_outputs(self):
+        """
+        Map pipeline identifier to collection of output specifications.
+
+        This method leverages knowledge of two collections of different kinds
+        of entities that meet in the manifestation of a Project. The first
+        is a collection of samples, which is known even in peppy.Project. The
+        second is a mapping from protocol/assay/library strategy to a collection
+        of pipeline interfaces, in which kinds of output may be declared.
+
+        Knowledge of these two items is here harnessed to map the identifier
+        for each pipeline about which this Project is aware to a collection of
+        pairs of identifier for a kind of output and the collection of
+        this Project's samples for which it's applicable (i.e., those samples
+        with protocol that maps to the corresponding pipeline).
+
+        :return Mapping[str, Mapping[str, namedtuple]]: collection of bindings
+            between identifier for pipeline and collection of bindings between
+            name for a kind of output and pair in which first component is a
+            path template and the second component is a collection of
+            sample names
+        """
+        prots_data_pairs = \
+            _gather_ifaces(*itertools.chain(*self.interfaces_by_protocol.values()))
+        m = {}
+        for name, (prots, data) in prots_data_pairs.items():
+            snames = [s.name for s in self.samples if s.protocol in prots]
+            if not snames:
+                _LOGGER.debug("No samples with protocol: {}".format(p))
+                continue
+            try:
+                outs = data[OUTKEY]
+            except KeyError:
+                _LOGGER.debug("No {} declared for pipeline: {}".
+                              format(OUTKEY, name))
+            else:
+                m[name] = {path_key: (path_val, snames)
+                           for path_key, path_val in outs.items()}
+        return m
+
+
+def _gather_ifaces(*ifaces):
+    specs = {}
+    for pi in ifaces:
+        protos_by_name = {}
+        for p, names in pi[PROTOMAP_KEY].items():
+            if isinstance(names, str):
+                names = [names]
+            for n in names:
+                protos_by_name.setdefault(n, set()).add(p)
+        for k, dat in pi.iterpipes():
+            name = dat.get("name") or k
+            if name in specs:
+                old_dat, old_prots = specs[name]
+                if dat != old_dat:
+                    raise DuplicatePipelineKeyException(name)
+            else:
+                old_prots = set()
+            new_prots = protos_by_name.get(name, set()) | \
+                        protos_by_name.get(k, set())
+            specs[name] = (old_prots | new_prots, dat)
+    return specs
+
 
 def process_pipeline_interfaces(pipeline_interface_locations):
     """
@@ -216,14 +282,18 @@ def process_pipeline_interfaces(pipeline_interface_locations):
     interface_by_protocol = defaultdict(list)
     for pipe_iface_location in pipeline_interface_locations:
         if not os.path.exists(pipe_iface_location):
-            _LOGGER.warning("Ignoring nonexistent pipeline interface "
-                         "location: '%s'", pipe_iface_location)
+            _LOGGER.warning(
+                "Ignoring nonexistent pipeline interface location: '%s'",
+                pipe_iface_location)
             continue
         pipe_iface = PipelineInterface(pipe_iface_location)
         for proto_name in pipe_iface.protocol_mapping:
             _LOGGER.whisper("Adding protocol name: '%s'", proto_name)
             interface_by_protocol[proto_name].append(pipe_iface)
     return interface_by_protocol
+
+
+OutputGroup = namedtuple("OutputGroup", field_names=["path", "samples"])
 
 
 # Collect PipelineInterface, Sample type, pipeline path, and script with flags.

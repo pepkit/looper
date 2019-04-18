@@ -23,6 +23,12 @@ class LooperError(Exception):
     __metaclass__ = ABCMeta
 
 
+class DuplicatePipelineKeyException(LooperError):
+    """ Duplication of pipeline identifier precludes unique pipeline ref. """
+    def __init__(self, key):
+        super(DuplicatePipelineKeyException, self).__init__(key)
+
+
 class InvalidResourceSpecificationException(LooperError):
     """ Pipeline interface resources--if present--needs default. """
     def __init__(self, reason):
