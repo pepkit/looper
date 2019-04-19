@@ -1,6 +1,7 @@
 """ Looper version of NGS project model. """
 
 from collections import namedtuple
+import copy
 from functools import partial
 import itertools
 import os
@@ -37,8 +38,18 @@ class Project(peppy.Project):
                 config_file, subproject=subproject, 
                 no_environment_exception=RuntimeError,
                 no_compute_exception=RuntimeError, **kwargs)
-        self.interfaces = process_pipeline_interfaces(
+        self._interfaces = process_pipeline_interfaces(
             self[METADATA_KEY][PIPELINE_INTERFACES_KEY])
+
+    @property
+    def interfaces(self):
+        """
+        Get this Project's collection of pipeline interfaces
+
+        :return Iterable[looper.PipelineInterface]: collection of pipeline
+            interfaces known by this Project
+        """
+        return copy.deepcopy(self._interfaces)
 
     @property
     def project_folders(self):
@@ -257,17 +268,29 @@ class Project(peppy.Project):
                            for path_key, path_val in outs.items()}
         return m
 
+    def _omit_from_repr(self, k, cls):
+        """
+        Exclude the interfaces from representation.
+
+        :param str k: key of item to consider for omission
+        :param type cls: placeholder to comply with superclass signature
+        """
+        return super(Project, self)._omit_from_repr(k, cls) or k == "interfaces"
+
 
 def _gather_ifaces(ifaces):
     """
     For each pipeline map identifier to protocols and interface data.
 
-    :param Iterable[looper.PipelineInterface] ifaces:
+    :param Iterable[looper.PipelineInterface] ifaces: collection of pipeline
+        interface objects
     :return Mapping[str, (set[str], attmap.AttMap)]: collection of bindings
         between pipeline identifier and pair in which first component is
         collection of associated protocol names, and second component is a
         collection of interface data for pipeline identified by the key
-    :raise looper.
+    :raise looper.DuplicatePipelineKeyException: if the same identifier (key or
+        name) points to collections of pipeline interface data (for a
+        particular pipeline) that are not equivalent
     """
     specs = {}
     for pi in ifaces:
