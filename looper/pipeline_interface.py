@@ -553,7 +553,6 @@ def expand_pl_paths(piface):
     return piface
 
 
-
 def standardize_protocols(piface):
     """
     Handle casing and punctuation of protocol keys in pipeline interface.

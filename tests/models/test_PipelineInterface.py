@@ -14,7 +14,6 @@ import yaml
 
 from attmap import PathExAttMap
 from looper.const import *
-from looper.looper import PIPELINE_INTERFACES_KEY
 from looper.pipeline_interface import PipelineInterface, PL_KEY, PROTOMAP_KEY, \
     RESOURCES_KEY
 from looper.project import Project

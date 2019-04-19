@@ -37,7 +37,6 @@ from logmuse import setup_logger
 from peppy import ProjectContext, METADATA_KEY, SAMPLE_EXECUTION_TOGGLE
 
 
-PIPELINE_INTERFACES_KEY = "pipeline_interfaces"
 SUBMISSION_FAILURE_MESSAGE = "Cluster resource failure"
 
 
@@ -252,7 +251,7 @@ def process_protocols(prj, protocols, resource_setting_kwargs=None, **kwargs):
     comp_vars.update(resource_setting_kwargs or {})
 
     _LOGGER.info("Known protocols: {}".format(
-        ", ".join(prj.interfaces_by_protocol.keys())))
+        ", ".join(prj.interfaces.protocols)))
 
     for proto in set(protocols) | {GENERIC_PROTOCOL_KEY}:
         _LOGGER.debug("Determining sample type, script, and flags for "
@@ -289,7 +288,7 @@ class Runner(Executor):
             run for the first time
         """
 
-        if not self.prj.interfaces_by_protocol:
+        if not self.prj.interfaces:
             pipe_locs = getattr(self.prj[METADATA_KEY], PIPELINE_INTERFACES_KEY, [])
             # TODO: should these cases be handled as equally exceptional?
             # That is, should they either both raise errors, or both log errors?
@@ -496,7 +495,7 @@ def _run_custom_summarizers(project):
 
     for protocol in set(all_protocols):
         try:
-            ifaces = project.interfaces_by_protocol[protocol]
+            ifaces = project.get_interfaces(protocol)
         except KeyError:
             _LOGGER.warning("No interface for protocol '{}', skipping summary".format(protocol))
             continue

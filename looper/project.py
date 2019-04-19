@@ -1,16 +1,17 @@
 """ Looper version of NGS project model. """
 
-from collections import defaultdict, namedtuple
+from collections import namedtuple
 from functools import partial
 import itertools
 import os
 
 import peppy
-from peppy import OUTDIR_KEY
+from peppy import METADATA_KEY, OUTDIR_KEY
 from peppy.utils import is_command_callable
 from .const import *
 from .exceptions import DuplicatePipelineKeyException
-from .pipeline_interface import PipelineInterface, PROTOMAP_KEY
+from .pipeline_interface import PROTOMAP_KEY
+from .project_piface_group import ProjectPifaceGroup
 from .utils import get_logger, partition
 
 
@@ -36,8 +37,8 @@ class Project(peppy.Project):
                 config_file, subproject=subproject, 
                 no_environment_exception=RuntimeError,
                 no_compute_exception=RuntimeError, **kwargs)
-        self.interfaces_by_protocol = \
-            process_pipeline_interfaces(self.metadata.pipeline_interfaces)
+        self.interfaces = process_pipeline_interfaces(
+            self[METADATA_KEY][PIPELINE_INTERFACES_KEY])
 
     @property
     def project_folders(self):
@@ -81,8 +82,7 @@ class Project(peppy.Project):
         # sort of pool of information about possible ways in which to submit
         # pipeline(s) for sample(s) of the indicated protocol.
         try:
-            pipeline_interfaces = \
-                self.interfaces_by_protocol[protocol]
+            pipeline_interfaces = self.get_interfaces(protocol)
         except KeyError:
             # Messaging can be done by the caller.
             _LOGGER.debug("No interface for protocol: %s", protocol)
@@ -205,6 +205,18 @@ class Project(peppy.Project):
         else:
             return list(itertools.chain(*job_submission_bundles))
 
+    def get_interfaces(self, protocol):
+        """
+        Get the pipeline interfaces associated with the given protocol.
+
+        :param str protocol: name of the protocol for which to get interfaces
+        :return Iterable[looper.PipelineInterface]: collection of pipeline
+            interfaces associated with the given protocol
+        :raise KeyError: if the given protocol is not (perhaps yet) mapped
+            to any pipeline interface
+        """
+        return self.interfaces[protocol]
+
     def get_outputs(self):
         """
         Map pipeline identifier to collection of output specifications.
@@ -227,8 +239,7 @@ class Project(peppy.Project):
             path template and the second component is a collection of
             sample names
         """
-        prots_data_pairs = \
-            _gather_ifaces(itertools.chain(*self.interfaces_by_protocol.values()))
+        prots_data_pairs = _gather_ifaces(self.interfaces)
         m = {}
         for name, (prots, data) in prots_data_pairs.items():
             snames = [s.name for s in self.samples if s.protocol in prots]
@@ -292,17 +303,19 @@ def process_pipeline_interfaces(pipeline_interface_locations):
     :return Mapping[str, Iterable[PipelineInterface]]: mapping from protocol
         name to interface(s) for which that protocol is mapped
     """
-    interface_by_protocol = defaultdict(list)
-    for pipe_iface_location in pipeline_interface_locations:
-        if not os.path.exists(pipe_iface_location):
+    iface_group = ProjectPifaceGroup()
+    for loc in pipeline_interface_locations:
+        if not os.path.exists(loc):
             _LOGGER.warning("Ignoring nonexistent pipeline interface location: "
-                            "{}".format(pipe_iface_location))
+                            "{}".format(loc))
             continue
-        pipe_iface = PipelineInterface(pipe_iface_location)
-        for proto_name in pipe_iface.protocol_mapping:
-            _LOGGER.whisper("Adding protocol name: {}".format(proto_name))
-            interface_by_protocol[proto_name].append(pipe_iface)
-    return interface_by_protocol
+        fs = [loc] if os.path.isfile(loc) else \
+            [os.path.join(loc, f) for f in os.listdir(loc)
+             if os.path.splitext(f)[1] in [".yaml", ".yml"]]
+        for f in fs:
+            _LOGGER.debug("Processing interface definition: {}".format(f))
+            iface_group.update(f)
+    return iface_group
 
 
 OutputGroup = namedtuple("OutputGroup", field_names=["path", "samples"])

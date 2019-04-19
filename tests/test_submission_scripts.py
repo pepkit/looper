@@ -12,7 +12,7 @@ import yaml
 from peppy import FLAGS, METADATA_KEY, OUTDIR_KEY
 import looper
 from looper.const import *
-from looper.looper import Project, PIPELINE_INTERFACES_KEY
+from looper.looper import Project
 from looper.pipeline_interface import PROTOMAP_KEY, RESOURCES_KEY
 from looper.utils import fetch_sample_flags, sample_folder
 from peppy import ASSAY_KEY, SAMPLE_ANNOTATIONS_KEY, SAMPLE_NAME_COLNAME, \
