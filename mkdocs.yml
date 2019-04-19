@@ -20,6 +20,7 @@ nav:
   - Reference:
     - Usage: usage.md
     - Configuration files: config-files.md
+    - API: autodoc_build/looper.md
     - FAQ: faq.md
     - Support: support.md
     - Contributing: contributing.md
@@ -29,8 +30,9 @@ theme: databio
 
 plugins:
   - databio:
+      autodoc_build: "docs/autodoc_build"
       jupyter_source: "docs_jupyter"
       jupyter_build: "docs_jupyter/build"
+      autodoc_package: "looper"
+      no_top_level: true
   - search
-
-
