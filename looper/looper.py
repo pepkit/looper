@@ -29,13 +29,15 @@ from .conductor import SubmissionConductor
 from .const import *
 from .exceptions import JobSubmissionException
 from .html_reports import HTMLReportBuilder
+from .pipeline_interface import RESOURCES_KEY
 from .project import Project
 from .utils import determine_config_path, fetch_flag_files, sample_folder
 
 from logmuse import setup_logger
-from peppy import ProjectContext, SAMPLE_EXECUTION_TOGGLE
+from peppy import ProjectContext, METADATA_KEY, SAMPLE_EXECUTION_TOGGLE
 
 
+PIPELINE_INTERFACES_KEY = "pipeline_interfaces"
 SUBMISSION_FAILURE_MESSAGE = "Cluster resource failure"
 
 
@@ -288,7 +290,7 @@ class Runner(Executor):
         """
 
         if not self.prj.interfaces_by_protocol:
-            pipe_locs = getattr(self.prj.metadata, "pipeline_interfaces", [])
+            pipe_locs = getattr(self.prj[METADATA_KEY], PIPELINE_INTERFACES_KEY, [])
             # TODO: should these cases be handled as equally exceptional?
             # That is, should they either both raise errors, or both log errors?
             if len(pipe_locs) == 0:
@@ -820,7 +822,8 @@ def main():
         if args.command in ["run", "rerun"]:
             run = Runner(prj)
             try:
-                compute_kwargs = _proc_resources_spec(getattr(args, "resources", ""))
+                compute_kwargs = _proc_resources_spec(
+                    getattr(args, RESOURCES_KEY, ""))
                 run(args, remaining_args,
                     rerun=(args.command == "rerun"), **compute_kwargs)
             except IOError:

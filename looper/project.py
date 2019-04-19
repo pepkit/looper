@@ -316,5 +316,5 @@ SUBMISSION_BUNDLE_PIPELINE_KEY_INDEX = 2
 
 
 def _is_member(item, items):
-    """ Determine whether an iterm is a member of a collection. """
+    """ Determine whether an item is a member of a collection. """
     return item in items

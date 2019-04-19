@@ -14,7 +14,8 @@ from peppy import FLAGS
 import looper
 from looper.const import *
 from looper.looper import Project
-from looper.utils import  fetch_sample_flags, sample_folder
+from looper.pipeline_interface import RESOURCES_KEY
+from looper.utils import fetch_sample_flags, sample_folder
 from peppy import ASSAY_KEY, SAMPLE_ANNOTATIONS_KEY, SAMPLE_NAME_COLNAME, \
     SAMPLE_SUBANNOTATIONS_KEY
 
@@ -26,7 +27,6 @@ WGBS_PIPE = "wgbs.py"
 ATAC_PIPE = "pepatac.py"
 PIPE_NAME_KEY = "name"
 PIPE_PATH_KEY = "path"
-PIPE_RESOURCES_KEY = "resources"
 SAMPLE_METADATA_HEADER = [SAMPLE_NAME_COLNAME, ASSAY_KEY]
 ASSAYS = ["WGBS", "WGBS",  "ATAC", "ATAC"]
 SAMPLE_METADATA_RECORDS = [("sample" + str(i), p) for i, p in enumerate(ASSAYS)]
@@ -35,11 +35,11 @@ DEFAULT_RESOURCES = {
 DEFAULT_RESOURCES_KEY = "default"
 ATAC_SPEC = {
     PIPE_NAME_KEY: "PEPATAC", PIPE_PATH_KEY: ATAC_PIPE,
-    PIPE_RESOURCES_KEY: {DEFAULT_RESOURCES_KEY: DEFAULT_RESOURCES}
+    RESOURCES_KEY: {DEFAULT_RESOURCES_KEY: DEFAULT_RESOURCES}
 }
 WGBS_SPEC = {
     PIPE_NAME_KEY: "WGBS", PIPE_PATH_KEY: WGBS_PIPE,
-    PIPE_RESOURCES_KEY: {DEFAULT_RESOURCES_KEY: DEFAULT_RESOURCES}
+    RESOURCES_KEY: {DEFAULT_RESOURCES_KEY: DEFAULT_RESOURCES}
 }
 PIPE_SPECS = {"pepatac.py": ATAC_SPEC, "wgbs.py": WGBS_SPEC}
 PLIFACE_DATA = {

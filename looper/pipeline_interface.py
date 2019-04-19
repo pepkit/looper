@@ -27,6 +27,7 @@ _LOGGER = get_logger(__name__)
 
 PL_KEY = "pipelines"
 PROTOMAP_KEY = "protocol_mapping"
+RESOURCES_KEY = "resources"
 SUBTYPE_MAPPING_SECTION = "sample_subtypes"
 
 
@@ -113,21 +114,20 @@ class PipelineInterface(PathExAttMap):
         except KeyError:
             notify("No compute settings")
 
-        res_key = "resources"
         try:
-            resources = universal_compute[res_key]
+            resources = universal_compute[RESOURCES_KEY]
         except KeyError:
             try:
-                resources = pl[res_key]
+                resources = pl[RESOURCES_KEY]
             except KeyError:
                 notify("No resources")
                 return {}
         else:
-            if res_key in pl:
+            if RESOURCES_KEY in pl:
                 _LOGGER.warning(
                     "{rk} section found in both {c} section and top-level "
                     "pipelines section of pipeline interface; {c} section "
-                    "version will be used".format(rk=res_key, c=compute_key))
+                    "version will be used".format(rk=RESOURCES_KEY, c=compute_key))
 
         # Require default resource package specification.
         try:

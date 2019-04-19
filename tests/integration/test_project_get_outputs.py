@@ -46,6 +46,7 @@ def test_no_pifaces(prj, main_meta):
 
 @pytest.mark.skip("not implemented")
 def test_no_outputs():
+    """  """
     pass
 
 
