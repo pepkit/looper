@@ -8,12 +8,10 @@ if sys.version_info < (3, 3):
     from collections import Iterable, Mapping
 else:
     from collections.abc import Iterable, Mapping
-
 import pandas as pd
 import pytest
 import yaml
-
-from looper.pipeline_interface import RESOURCES_KEY
+from looper.pipeline_interface import PROTOMAP_KEY, RESOURCES_KEY
 from peppy import DEFAULT_COMPUTE_RESOURCES_NAME, METADATA_KEY, \
     NAME_TABLE_ATTR, SAMPLE_NAME_COLNAME
 
@@ -70,7 +68,6 @@ def pytest_generate_tests(metafunc):
                     argnames="config_bundles",
                     argvalues=[(copy.deepcopy(ATACSEQ_IFACE_WITHOUT_RESOURCES),
                                 {"name": "sans-path"})])
-
 
 
 ATACSEQ_IFACE_WITHOUT_RESOURCES = {
@@ -148,8 +145,8 @@ def basic_instance_data(request, instance_raw_data):
     # Cleanup is free with _write_config, using request's temp folder.
     transformation_by_class = {
             "PathExAttMap": lambda data: data,
-            "PipelineInterface": lambda data:
-                    _write_config(data, request, "pipeline_interface.yaml"),
+            "PipelineInterface": lambda data: _write_config(
+                data, request, "pipeline_interface.yaml"),
             "Sample": lambda data: pd.Series(data)}
     which_class = request.getfixturevalue("class_name")
     return transformation_by_class[which_class](instance_raw_data)
@@ -284,11 +281,11 @@ def piface_config_bundles(request, resources):
     elif isinstance(iface_config_datas, Iterable):
         data_bundles = iface_config_datas
     else:
-        raise TypeError("Expected mapping or list collection of "
-                        "PipelineInterface data: {} ({})".format(
-                iface_config_datas, type(iface_config_datas)))
+        raise TypeError(
+            "Expected mapping or list collection of PipelineInterface data: {} "
+            "({})".format(iface_config_datas, type(iface_config_datas)))
     resource_specification = request.getfixturevalue(RESOURCES_KEY) \
-            if RESOURCES_KEY in request.fixturenames else resources
+        if RESOURCES_KEY in request.fixturenames else resources
     for config_bundle in data_bundles:
         config_bundle.update(resource_specification)
     return iface_config_datas
@@ -312,7 +309,7 @@ def write_config_data(protomap, conf_data, dirpath):
         file to write
     :return str: path to the (temp)file written
     """
-    full_conf_data = {"protocol_mapping": protomap, "pipelines": conf_data}
+    full_conf_data = {PROTOMAP_KEY: protomap, "pipelines": conf_data}
     filepath = os.path.join(dirpath, "pipeline_interface.yaml")
     with open(filepath, 'w') as conf_file:
         yaml.safe_dump(full_conf_data, conf_file)

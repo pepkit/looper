@@ -2,7 +2,6 @@
 
 from collections import OrderedDict
 import copy
-from functools import partial
 import glob
 import itertools
 import os
@@ -10,11 +9,11 @@ import random
 
 import pytest
 import yaml
-from peppy import FLAGS
+from peppy import FLAGS, METADATA_KEY, OUTDIR_KEY
 import looper
 from looper.const import *
-from looper.looper import Project
-from looper.pipeline_interface import RESOURCES_KEY
+from looper.looper import Project, PIPELINE_INTERFACES_KEY
+from looper.pipeline_interface import PROTOMAP_KEY, RESOURCES_KEY
 from looper.utils import fetch_sample_flags, sample_folder
 from peppy import ASSAY_KEY, SAMPLE_ANNOTATIONS_KEY, SAMPLE_NAME_COLNAME, \
     SAMPLE_SUBANNOTATIONS_KEY
@@ -43,7 +42,7 @@ WGBS_SPEC = {
 }
 PIPE_SPECS = {"pepatac.py": ATAC_SPEC, "wgbs.py": WGBS_SPEC}
 PLIFACE_DATA = {
-    "protocol_mapping": {"ATAC": ATAC_PIPE, "WGBS": WGBS_PIPE},
+    PROTOMAP_KEY: {"ATAC": ATAC_PIPE, "WGBS": WGBS_PIPE},
     "pipelines": PIPE_SPECS
 }
 
@@ -100,10 +99,10 @@ def prj(request, tmpdir):
         yaml.dump(PLIFACE_DATA, f)
     _touch_pipe_files(outdir, PLIFACE_DATA)
     metadata = {SAMPLE_ANNOTATIONS_KEY: anns,
-                "output_dir": outdir, "pipeline_interfaces": pipe_iface_path}
+                OUTDIR_KEY: outdir, PIPELINE_INTERFACES_KEY: pipe_iface_path}
     if subanns:
         metadata[SAMPLE_SUBANNOTATIONS_KEY] = subanns
-    prjdat = {"metadata": metadata}
+    prjdat = {METADATA_KEY: metadata}
     with open(conf_path, 'w') as f:
         yaml.dump(prjdat, f)
 
@@ -132,7 +131,6 @@ def validate_submission_count(project, conductors):
     num_obs = _count_submissions(conductors)
     assert num_exp == num_obs, \
         "Expected {} submissions but tallied {}".format(num_exp, num_obs)
-
 
 
 def validate_submission_scripts(project, _):
@@ -274,7 +272,7 @@ class ConductorBasicSettingsSubmissionScriptTests:
         assert len(flagged_sample_names) == len(preexisting)
         assert set(flag_files_made) == set(itertools.chain(*preexisting.values()))
         conductors, pipe_keys = process_protocols(
-            prj, set(PLIFACE_DATA["protocol_mapping"].keys()), ignore_flags=True)
+            prj, set(PLIFACE_DATA[PROTOMAP_KEY].keys()), ignore_flags=True)
         assert all(map(lambda c: c.ignore_flags, conductors.values())), \
             "Failed to establish precondition, that flags are to be ignored"
         for s in prj.samples:
@@ -302,18 +300,18 @@ def test_convergent_protocol_mapping_keys(tmpdir):
     with open(anns_path, 'w') as f:
         f.write(os.linesep.join(sep.join(r) for r in records))
 
-    pliface_data = {"protocol_mapping": dict(protomap), "pipelines": PIPE_SPECS}
+    pliface_data = {PROTOMAP_KEY: dict(protomap), "pipelines": PIPE_SPECS}
     pliface_filepath = os.path.join(outdir, "pipes.yaml")
 
     with open(pliface_filepath, 'w') as f:
         yaml.dump(pliface_data, f)
 
-    metadata = {"output_dir": outdir, SAMPLE_ANNOTATIONS_KEY: anns_path,
+    metadata = {OUTDIR_KEY: outdir, SAMPLE_ANNOTATIONS_KEY: anns_path,
                 "pipeline_interfaces": pliface_filepath}
 
     _touch_pipe_files(tmpdir.strpath, pliface_data)
 
-    prjdat = {"metadata": metadata}
+    prjdat = {METADATA_KEY: metadata}
     pcfg = tmpdir.join("prj.yaml").strpath
     with open(pcfg, 'w') as f:
         yaml.dump(prjdat, f)
@@ -382,7 +380,7 @@ def _process_base_pliface(prj, **kwargs):
         protocol name to collection of keys for pipelines for that protocol
     """
     return process_protocols(
-        prj, set(PLIFACE_DATA["protocol_mapping"].keys()), **kwargs)
+        prj, set(PLIFACE_DATA[PROTOMAP_KEY].keys()), **kwargs)
 
 
 def _mkflag(sample, prj, flag):

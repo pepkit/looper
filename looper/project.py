@@ -6,6 +6,7 @@ import itertools
 import os
 
 import peppy
+from peppy import OUTDIR_KEY
 from peppy.utils import is_command_callable
 from .const import *
 from .exceptions import DuplicatePipelineKeyException
@@ -41,12 +42,12 @@ class Project(peppy.Project):
     @property
     def project_folders(self):
         """ Keys for paths to folders to ensure exist. """
-        return ["output_dir", RESULTS_SUBDIR_KEY, SUBMISSION_SUBDIR_KEY]
+        return [OUTDIR_KEY, RESULTS_SUBDIR_KEY, SUBMISSION_SUBDIR_KEY]
 
     @property
     def required_metadata(self):
         """ Which metadata attributes are required. """
-        return ["output_dir"]
+        return [OUTDIR_KEY]
 
     def build_submission_bundles(self, protocol, priority=True):
         """
@@ -294,13 +295,12 @@ def process_pipeline_interfaces(pipeline_interface_locations):
     interface_by_protocol = defaultdict(list)
     for pipe_iface_location in pipeline_interface_locations:
         if not os.path.exists(pipe_iface_location):
-            _LOGGER.warning(
-                "Ignoring nonexistent pipeline interface location: '%s'",
-                pipe_iface_location)
+            _LOGGER.warning("Ignoring nonexistent pipeline interface location: "
+                            "{}".format(pipe_iface_location))
             continue
         pipe_iface = PipelineInterface(pipe_iface_location)
         for proto_name in pipe_iface.protocol_mapping:
-            _LOGGER.whisper("Adding protocol name: '%s'", proto_name)
+            _LOGGER.whisper("Adding protocol name: {}".format(proto_name))
             interface_by_protocol[proto_name].append(pipe_iface)
     return interface_by_protocol
 

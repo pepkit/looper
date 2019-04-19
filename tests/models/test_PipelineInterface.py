@@ -13,6 +13,7 @@ import pytest
 import yaml
 
 from attmap import PathExAttMap
+from looper.const import *
 from looper.looper import PIPELINE_INTERFACES_KEY
 from looper.pipeline_interface import PipelineInterface, PL_KEY, PROTOMAP_KEY, \
     RESOURCES_KEY
@@ -627,9 +628,13 @@ class GenericProtocolMatchTests:
     @pytest.fixture
     def prj_data(self):
         """ Provide basic Project data. """
-        return {METADATA_KEY: {"output_dir": "output",
-                             "results_subdir": "results_pipeline",
-                             "submission_subdir": "submission"}}
+        return {
+            METADATA_KEY: {
+                OUTDIR_KEY: "output",
+                RESULTS_SUBDIR_KEY: "results_pipeline",
+                SUBMISSION_SUBDIR_KEY: "submission"
+            }
+        }
 
     @pytest.fixture
     def sheet_lines(self):
