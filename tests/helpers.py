@@ -2,12 +2,17 @@
 
 from functools import partial
 import itertools
+import random
+import string
 import numpy as np
 import pytest
 
 
 __author__ = "Vince Reuter"
 __email__ = "vreuter@virginia.edu"
+
+
+LETTERS_AND_DIGITS = string.ascii_letters + string.digits
 
 
 def assert_entirely_equal(observed, expected):
@@ -54,6 +59,22 @@ def powerset(items, min_items=0, include_full_pop=True):
     return list(itertools.chain.from_iterable(
             itertools.combinations(items, k)
             for k in range(min_items, max_items)))
+
+
+def randstr(pool, size):
+    """
+    Generate random string of given size/length.
+
+    :param Iterable[str] pool: collection of characters from which to sample
+        (with replacement)
+    :param int size: nunber of characters
+    :return str: string built by concatenating randomly sampled characters
+    :raise ValueError: if size is not a positive integer
+    """
+    if size < 1:
+        raise ValueError("Must build string of positive integral length; got "
+                         "{}".format(size))
+    return "".join(random.choice(pool) for _ in range(size))
 
 
 nonempty_powerset = partial(powerset, min_items=1)
