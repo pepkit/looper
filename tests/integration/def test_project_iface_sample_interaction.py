@@ -14,11 +14,9 @@ __author__ = "Vince Reuter"
 __email__ = "vreuter@virginia.edu"
 
 
-
 @pytest.mark.usefixtures("write_project_files", "pipe_iface_config_file")
 class SampleWrtProjectCtorTests:
     """ Tests for `Sample` related to `Project` construction """
-
 
     @named_param(argnames="sample_index",
                  argvalues=(set(range(NUM_SAMPLES)) - NGS_SAMPLE_INDICES))
@@ -37,7 +35,6 @@ class SampleWrtProjectCtorTests:
         assert error_type is None
         assert not error_general
         assert not error_specific
-
 
     @named_param(argnames="sample_index", argvalues=NGS_SAMPLE_INDICES)
     def test_ngs_pipe_ngs_sample(self, proj, pipe_iface, sample_index):
@@ -58,7 +55,6 @@ class SampleWrtProjectCtorTests:
         assert 1 == len(sample.required_inputs)
         assert expected_required_input_basename == \
                observed_required_input_basename
-
 
     @named_param(argnames="sample_index",
                  argvalues=set(range(NUM_SAMPLES)) - NGS_SAMPLE_INDICES)
@@ -110,4 +106,3 @@ class SampleWrtProjectCtorTests:
             # Remove the temporary handler and assert that we've reset state.
             del looper._LOGGER.handlers[-1]
             assert pre_test_handlers == looper._LOGGER.handlers
-
