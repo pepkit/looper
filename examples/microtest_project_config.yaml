@@ -3,8 +3,8 @@ metadata:
   results_subdir: results_pipeline
   submission_subdir: submission
   pipelines_dir: ${CODE}/pipelines
-  sample_annotation: microtest_sample_annotation.csv
-  merge_table: microtest_merge_table.csv
+  sample_annotation: microtest_annotation.csv
+  merge_table: microtest_subannotation.csv
 
 derived_columns: [data_source]
 
@@ -18,7 +18,7 @@ subprojects:
     pipeline_config:
       wgbs.py: wgbs_ds.yaml
 
-implied_columns:
+implied_attributes:
   organism:
     human:
       genomes: hg19
