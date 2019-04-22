@@ -217,7 +217,7 @@ class Project(peppy.Project):
         """
         return self.interfaces[protocol]
 
-    def get_outputs(self):
+    def get_outputs(self, skip_sample_less=True):
         """
         Map pipeline identifier to collection of output specifications.
 
@@ -233,17 +233,25 @@ class Project(peppy.Project):
         this Project's samples for which it's applicable (i.e., those samples
         with protocol that maps to the corresponding pipeline).
 
+        :param bool skip_sample_less: whether to omit pipelines that are for
+            protocols of which the Project has no Sample instances
         :return Mapping[str, Mapping[str, namedtuple]]: collection of bindings
             between identifier for pipeline and collection of bindings between
             name for a kind of output and pair in which first component is a
             path template and the second component is a collection of
             sample names
+        :raise TypeError: if argument to sample-less pipeline skipping parameter
+            is not a Boolean
         """
+        if not isinstance(skip_sample_less, bool):
+            raise TypeError(
+                "Non-Boolean argument to sample-less skip flag: {} ({})".
+                format(skip_sample_less, type(skip_sample_less)))
         prots_data_pairs = _gather_ifaces(self.interfaces)
         m = {}
         for name, (prots, data) in prots_data_pairs.items():
             snames = [s.name for s in self.samples if s.protocol in prots]
-            if not snames:
+            if not snames and skip_sample_less:
                 _LOGGER.debug("No samples matching protocol(s): {}".
                               format(", ".join(prots)))
                 continue
