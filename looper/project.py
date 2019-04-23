@@ -259,14 +259,10 @@ class Project(peppy.Project):
                 "Non-Boolean argument to sample-less skip flag: {} ({})".
                 format(skip_sample_less, type(skip_sample_less)))
         prots_data_pairs = _gather_ifaces(self.interfaces)
-        # DEBUG
-        print("prots_data_pairs: {}".format(prots_data_pairs))
         m = {}
         for name, (prots, data) in prots_data_pairs.items():
             try:
                 outs = data[OUTKEY]
-                # DEBUG
-                print("OUTS: {}".format(outs))
             except KeyError:
                 _LOGGER.debug("No {} declared for pipeline: {}".
                               format(OUTKEY, name))

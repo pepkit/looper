@@ -418,17 +418,12 @@ def _write_iface_file(
     dat_by_key = {
         k: read_iface_data(tf, lines_group) for tf, (k, lines_group)
         in zip(temps, lines_group_by_pipe_key.items())}
-    # DEBUG
-    print("DAT BY K: {}".format(dat_by_key))
     for k, outs in outputs_by_pipe_key.items():
         if k not in dat_by_key:
             continue
         dat_by_key[k][OUTKEY] = outs
 
     data = {PROTOMAP_KEY: pm or PROTOMAP, PL_KEY: dat_by_key}
-    # DEBUG
-    print("DATA: {}".format(data))
-
     with open(path_iface_file, 'w') as f:
         yaml.dump(data, f)
 
