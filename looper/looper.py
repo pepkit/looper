@@ -809,10 +809,9 @@ def main():
         _LOGGER.error("Project config parse failed -- {}".format(e))
         sys.exit(1)
 
-    if hasattr(args, "compute"):
-        # Default is already loaded
-        if args.compute != DEFAULT_COMPUTE_RESOURCES_NAME:
-            prj.dcc.activate_package(args.compute)
+    compute_cli_spec = getattr(args, COMPUTE_KEY, None)
+    if compute_cli_spec and compute_cli_spec != DEFAULT_COMPUTE_RESOURCES_NAME:
+        prj.dcc.activate_package(compute_cli_spec)
 
     _LOGGER.debug("Results subdir: " + prj.metadata[RESULTS_SUBDIR_KEY])
 
