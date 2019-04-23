@@ -264,11 +264,9 @@ def test_only_subproject_has_outputs(tmpdir, ifaces, declared_outputs):
     exp = {pipe_name: {k: (v, []) for k, v in outs.items()}
            for pipe_name, outs in declared_outputs.items()
            if pipe_name in {PROTO_NAMES[k] for k in used_iface_keys}}
-    print("EXP: {}".format(exp))
     assert exp == prj.get_outputs(False)
 
 
-@pytest.mark.skip("not implemented")
 @pytest.mark.parametrize("ifaces", [
     [{WGBS_KEY: WGBS_IFACE_LINES}], [{RRBS_KEY: RRBS_IFACE_LINES}],
     [{WGBS_KEY: WGBS_IFACE_LINES}, {RRBS_KEY: RRBS_IFACE_LINES}]])
@@ -297,29 +295,37 @@ def test_only_main_project_has_outputs(tmpdir, ifaces, declared_outputs):
         "Nonempty main/subs iface path intersection: {}". \
             format(", ".join(iface_path_intersect))
 
-    sp_name = "testing_subproj"
-    md[SUBPROJECTS_SECTION] = {sp_name: {
-        METADATA_KEY: {PIPELINE_INTERFACES_KEY: sp_ifaces_paths}}}
-
     # DEBUG
     print("Metadata: {}".format(md))
 
-    keyed_outputs = {
-        pk: declared_outputs[pk] for pk in
-        set(itertools.chain(*[pi.keys() for pi in ifaces]))}
+    used_iface_keys = set(itertools.chain(*[pi.keys() for pi in ifaces]))
+    keyed_outputs = {pk: declared_outputs[PROTO_NAMES[pk]]
+                     for pk in used_iface_keys}
     for path, data in zip(iface_paths, ifaces):
         _write_iface_file(path, data, outputs_by_pipe_key=keyed_outputs)
     for path, data in zip(sp_ifaces_paths, ifaces):
         _write_iface_file(path, data)
 
-    prj = _write_and_build_prj(cfg, {METADATA_KEY: md})
+    sp_name = "testing_subproj"
+    prj = _write_and_build_prj(cfg, {
+        METADATA_KEY: md,
+        SUBPROJECTS_SECTION: {
+            sp_name: {
+                METADATA_KEY: {
+                    PIPELINE_INTERFACES_KEY: sp_ifaces_paths
+                }
+            }
+        }
+    })
 
     # DEBUG
     print("TABLE below:\n{}".format(prj.sample_table))
 
     assert len(prj.get_outputs(False)) > 0
-    assert {PROTO_NAMES[k]: outs for k, outs in declared_outputs.items()} == \
-           prj.get_outputs(False)
+    exp = {pipe_name: {k: (v, []) for k, v in outs.items()}
+           for pipe_name, outs in declared_outputs.items()
+           if pipe_name in {PROTO_NAMES[k] for k in used_iface_keys}}
+    assert exp == prj.get_outputs(False)
     prj.activate_subproject(sp_name)
     assert len(prj.get_outputs(False)) == 0
     assert {} == prj.get_outputs(False)
