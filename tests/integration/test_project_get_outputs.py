@@ -10,6 +10,7 @@ import pytest
 import yaml
 from looper import Project as LP
 from looper.const import *
+from looper.exceptions import DuplicatePipelineKeyException
 from looper.pipeline_interface import PL_KEY, PROTOMAP_KEY
 from attmap import AttMap
 from peppy.const import *
@@ -33,8 +34,7 @@ RRBS_KEY = "rrbs"
 
 PROTO_NAMES = {WGBS_KEY: WGBS_NAME, RRBS_KEY: RRBS_NAME}
 
-WGBS_IFACE_LINES = """
-name: {n}
+WGBS_IFACE_LINES = """name: {n}
 path: src/wgbs.py
 required_input_files: [data_source]
 ngs_input_files: [data_source]
@@ -51,8 +51,7 @@ resources:
     time: "0-02:00:00"
 """.format(n=WGBS_NAME).splitlines(True)
 
-RRBS_IFACE_LINES = """
-name: {n}
+RRBS_IFACE_LINES = """name: {n}
 path: src/rrbs.py
 required_input_files: [data_source]
 all_input_files: [data_source, read1, read2]
@@ -373,8 +372,6 @@ def test_multiple_project_units_have_declare_interfaces_with_outputs(tmpdir):
         return p.get_outputs(False)
 
     def extract_just_path_template(out_res):
-        # DEBUG
-        print("out_res: {}".format(out_res))
         return {pipe_name: {k: v for k, (v, _) in outs.items()}
                 for pipe_name, outs in out_res.items()}
 
@@ -454,10 +451,53 @@ def test_pipeline_identifier_collision_same_data(tmpdir, protomap, include_outpu
     assert exp == prj.get_outputs(skip_sample_less=False)
 
 
-@pytest.mark.skip("not implemented")
-def test_pipeline_identifier_collision_different_data():
+@pytest.mark.parametrize("protomap", [None, PROTOMAP])
+@pytest.mark.parametrize("include_outputs", [False, True])
+@pytest.mark.parametrize("rep_key", [WGBS_KEY, RRBS_KEY])
+def test_pipeline_identifier_collision_different_data(
+        tmpdir, include_outputs, protomap, skip_sample_less, rep_key):
     """ Interface data that differs from another with same identifier is exceptional. """
-    pass
+    temproot = tmpdir.strpath
+
+    def write_iface(f, lines_group):
+        out_by_key = {k: DECLARED_OUTPUTS for k in lines_group} \
+            if include_outputs else None
+        _write_iface_file(f, lines_group, out_by_key, pm=protomap)
+
+    iface_file_1 = os.path.join(temproot, "piface1.yaml")
+    write_iface(iface_file_1, {rep_key: WGBS_IFACE_LINES})
+    iface_file_2 = os.path.join(temproot, "piface2.yaml")
+    write_iface(iface_file_2, {rep_key: RRBS_IFACE_LINES})
+
+    def observe():
+        prj_cfg = os.path.join(temproot, "pc.yaml")
+        prj_dat = {
+            METADATA_KEY: {
+                OUTDIR_KEY: tmpdir.strpath,
+                PIPELINE_INTERFACES_KEY: [iface_file_1, iface_file_2]
+            }
+        }
+        return _write_and_build_prj(prj_cfg, prj_dat).get_outputs(skip_sample_less)
+
+    try:
+        observe()
+    except Exception as e:
+        pytest.fail("Unexpected exception: {}".format(e))
+
+    write_iface(iface_file_1, {rep_key: WGBS_IFACE_LINES[1:]})
+    write_iface(iface_file_2, {rep_key: RRBS_IFACE_LINES[1:]})
+
+    # DEBUG
+    def print_iface(fp):
+        with open(fp, 'r') as f:
+            return yaml.load(f, yaml.SafeLoader)
+
+    # DEBUG
+    print("First interface contents (below):\n{}\n".format(print_iface(iface_file_1)))
+    print("Second interface contents (below):\n{}".format(print_iface(iface_file_2)))
+
+    with pytest.raises(DuplicatePipelineKeyException):
+        observe()
 
 
 @pytest.mark.skip("not implemented")
