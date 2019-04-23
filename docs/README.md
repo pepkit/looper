@@ -1,18 +1,22 @@
-# <img src="img/looper_logo.svg" class="img-header">
+# <img src="img/looper_logo.svg" class="img-header"> a pipeline submitting engine
 
 [![PEP compatible](http://pepkit.github.io/img/PEP-compatible-green.svg)](http://pepkit.github.io)
 
-# Introduction
+## What is looper?
 
-Looper is a pipeline submitting engine. Looper deploys any *command-line* pipeline across lots of samples that are organized in [standard PEP format](https://pepkit.github.io/docs/home/).
+`Looper` is a pipeline submitting engine. `Looper` deploys any command-line pipeline across samples organized in [standard PEP format](https://pepkit.github.io/docs/home/). You can think of `looper` as providing a single user interface to running, summarizing, monitoring, and otherwise managing *all* of your sample-intensive research projects.
 
-`Looper`'s key strength is that it **decouples job handling from the pipeline process**. In a typical pipeline, job handling (*e.g* managing how individual jobs are submitted to a cluster) is delicately intertwined with actual pipeline commands (running the actual code for a single compute job). The `looper` approach is modular, following the [the unix principle](https://en.wikipedia.org/wiki/Unix_philosophy): `looper` *only* manages job submission. This approach alleviates several challenges with the traditional integrated approach:
+## What makes looper better?
+
+`Looper`'s key strength is that it **decouples job handling from the pipeline process**. In a typical pipeline, job handling (managing how individual jobs are submitted to a cluster) is delicately intertwined with actual pipeline commands (running the actual code for a single compute job). The `looper` approach is modular, following the [the unix principle](https://en.wikipedia.org/wiki/Unix_philosophy): `looper` *only* manages job submission. This approach leads to several advantages compared with the traditional integrated approach:
 
 1. running a pipeline on just one or two samples/jobs is simpler, and does not require a full-blown distributed compute environment.
-2. pipelines do not need to independently re-implement job handling code, which instead can be shared across many pipelines.
-3. every project can use the same structure (e.g. the expected folder structure, file naming scheme, and sample annotation format), because the code that reads the project metadata is universal, so datasets can more easily be moved from one pipeline to another.
+2. pipelines do not need to independently re-implement job handling code, which is shared.
+3. every project uses a universal structure (expected folders, file names, and sample annotation format), so datasets can more easily move from one pipeline to another.
+4. users must learn only a single interface that works with any of their projects for any pipeline.
 
-By dividing job handling from pipelining, the job processing code needs only be written once (and can thus be written well) -- that's what `looper` is. **The user interface can be made simple and intuitive, and a user must then learn only a single interface, which will work with any pipeline.**
+
+ 
 
 ## Installing
 
@@ -37,7 +41,7 @@ export PATH=~/.local/bin:$PATH
 
 ## Quick start
 
-Now, to test `looper`, follow the [Hello Looper example repository](https://github.com/databio/hello_looper) by running this code and you're running your first looper project!
+To test `looper`, follow the [Hello Looper example repository](https://github.com/databio/hello_looper) to run your first looper project:
 
 
 ```

@@ -22,15 +22,17 @@ Here you can see the command-line usage instructions for the main looper command
 
 .. code-block:: none
 
-	version: 0.9.1
+	version: 0.11.0
 	usage: looper [-h] [-V] [--logfile LOGFILE] [--verbosity {0,1,2,3,4}] [--dbg]
-	              {run,summarize,destroy,check,clean} ...
+	              [--env ENV]
+	              {run,rerun,summarize,destroy,check,clean} ...
 	
 	looper - Loop through samples and submit pipelines.
 	
 	positional arguments:
-	  {run,summarize,destroy,check,clean}
+	  {run,rerun,summarize,destroy,check,clean}
 	    run                 Main Looper function: Submit jobs for samples.
+	    rerun               Resubmit jobs with failed flags.
 	    summarize           Summarize statistics of project samples.
 	    destroy             Remove all files of the project.
 	    check               Checks flag status of current runs.
@@ -44,6 +46,8 @@ Here you can see the command-line usage instructions for the main looper command
 	  --verbosity {0,1,2,3,4}
 	                        Choose level of verbosity (default: None)
 	  --dbg                 Turn on debug mode (default: False)
+	  --env ENV             Environment variable that points to the DIVCFG file.
+	                        (default: DIVCFG)
 	
 	For subcommand-specific options, type: 'looper <subcommand> -h'
 	https://github.com/pepkit/looper
@@ -53,15 +57,15 @@ Here you can see the command-line usage instructions for the main looper command
 
 .. code-block:: none
 
-	version: 0.9.1
-	usage: looper run [-h] [-t TIME_DELAY] [--ignore-flags]
-	                  [--allow-duplicate-names] [--compute COMPUTE] [--env ENV]
-	                  [--limit LIMIT] [--lump LUMP] [--lumpn LUMPN]
-	                  [--file-checks] [-d]
-	                  [--exclude-protocols [EXCLUDE_PROTOCOLS [EXCLUDE_PROTOCOLS ...]]
-	                  | --include-protocols
-	                  [INCLUDE_PROTOCOLS [INCLUDE_PROTOCOLS ...]]]
-	                  [--sp SUBPROJECT]
+	version: 0.11.0
+	usage: looper run [-h] [--ignore-flags] [-t TIME_DELAY]
+	                  [--allow-duplicate-names] [--compute COMPUTE]
+	                  [--resources RESOURCES] [--limit LIMIT] [--lump LUMP]
+	                  [--lumpn LUMPN] [--file-checks] [-d]
+	                  [--selector-attribute SELECTOR_ATTRIBUTE]
+	                  [--selector-exclude [SELECTOR_EXCLUDE [SELECTOR_EXCLUDE ...]]
+	                  | --selector-include
+	                  [SELECTOR_INCLUDE [SELECTOR_INCLUDE ...]]] [--sp SUBPROJECT]
 	                  config_file
 	
 	Main Looper function: Submit jobs for samples.
@@ -71,20 +75,24 @@ Here you can see the command-line usage instructions for the main looper command
 	
 	optional arguments:
 	  -h, --help            show this help message and exit
-	  -t TIME_DELAY, --time-delay TIME_DELAY
-	                        Time delay in seconds between job submissions.
 	  --ignore-flags        Ignore run status flags? Default: False. By default,
 	                        pipelines will not be submitted if a pypiper flag file
 	                        exists marking the run (e.g. as 'running' or
 	                        'failed'). Set this option to ignore flags and submit
-	                        the runs anyway.
+	                        the runs anyway. Default=False
+	  -t TIME_DELAY, --time-delay TIME_DELAY
+	                        Time delay in seconds between job submissions.
 	  --allow-duplicate-names
 	                        Allow duplicate names? Default: False. By default,
 	                        pipelines will not be submitted if a sample name is
 	                        duplicated, since samples names should be unique. Set
-	                        this option to override this setting.
+	                        this option to override this setting. Default=False
 	  --compute COMPUTE     YAML file with looper environment compute settings.
-	  --env ENV             Employ looper environment compute settings.
+	  --resources RESOURCES
+	                        Specification of individual computing resource
+	                        settings; separate setting name/key from value with
+	                        equals sign, and separate key-value pairs from each
+	                        other by comma; e.g., --resources k1=v1,k2=v2
 	  --limit LIMIT         Limit to n samples.
 	  --lump LUMP           Maximum total input file size for a lump/batch of
 	                        commands in a single job (in GB)
@@ -92,25 +100,37 @@ Here you can see the command-line usage instructions for the main looper command
 	                        submission
 	  --file-checks         Perform input file checks. Default=True.
 	  -d, --dry-run         Don't actually submit the project/subproject.
-	  --exclude-protocols [EXCLUDE_PROTOCOLS [EXCLUDE_PROTOCOLS ...]]
-	                        Operate only on samples that either lack a protocol or
-	                        for which protocol is not in this collection.
-	  --include-protocols [INCLUDE_PROTOCOLS [INCLUDE_PROTOCOLS ...]]
-	                        Operate only on samples associated with these
-	                        protocols; if not provided, all samples are used.
+	                        Default=False
 	  --sp SUBPROJECT       Name of subproject to use, as designated in the
 	                        project's configuration file
+	
+	select samples:
+	  This group of arguments lets you specify samples to use by exclusion OR
+	  inclusion of the samples attribute values.
+	
+	  --selector-attribute SELECTOR_ATTRIBUTE
+	                        Specify the attribute for samples exclusion OR
+	                        inclusion
+	  --selector-exclude [SELECTOR_EXCLUDE [SELECTOR_EXCLUDE ...]]
+	                        Operate only on samples that either lack this
+	                        attribute value or for which this value is not in this
+	                        collection.
+	  --selector-include [SELECTOR_INCLUDE [SELECTOR_INCLUDE ...]]
+	                        Operate only on samples associated with these
+	                        attribute values; if not provided, all samples are
+	                        used.
 
 ``looper summarize --help``
 ----------------------------------
 
 .. code-block:: none
 
-	version: 0.9.1
+	version: 0.11.0
 	usage: looper summarize [-h] [--file-checks] [-d]
-	                        [--exclude-protocols [EXCLUDE_PROTOCOLS [EXCLUDE_PROTOCOLS ...]]
-	                        | --include-protocols
-	                        [INCLUDE_PROTOCOLS [INCLUDE_PROTOCOLS ...]]]
+	                        [--selector-attribute SELECTOR_ATTRIBUTE]
+	                        [--selector-exclude [SELECTOR_EXCLUDE [SELECTOR_EXCLUDE ...]]
+	                        | --selector-include
+	                        [SELECTOR_INCLUDE [SELECTOR_INCLUDE ...]]]
 	                        [--sp SUBPROJECT]
 	                        config_file
 	
@@ -123,25 +143,37 @@ Here you can see the command-line usage instructions for the main looper command
 	  -h, --help            show this help message and exit
 	  --file-checks         Perform input file checks. Default=True.
 	  -d, --dry-run         Don't actually submit the project/subproject.
-	  --exclude-protocols [EXCLUDE_PROTOCOLS [EXCLUDE_PROTOCOLS ...]]
-	                        Operate only on samples that either lack a protocol or
-	                        for which protocol is not in this collection.
-	  --include-protocols [INCLUDE_PROTOCOLS [INCLUDE_PROTOCOLS ...]]
-	                        Operate only on samples associated with these
-	                        protocols; if not provided, all samples are used.
+	                        Default=False
 	  --sp SUBPROJECT       Name of subproject to use, as designated in the
 	                        project's configuration file
+	
+	select samples:
+	  This group of arguments lets you specify samples to use by exclusion OR
+	  inclusion of the samples attribute values.
+	
+	  --selector-attribute SELECTOR_ATTRIBUTE
+	                        Specify the attribute for samples exclusion OR
+	                        inclusion
+	  --selector-exclude [SELECTOR_EXCLUDE [SELECTOR_EXCLUDE ...]]
+	                        Operate only on samples that either lack this
+	                        attribute value or for which this value is not in this
+	                        collection.
+	  --selector-include [SELECTOR_INCLUDE [SELECTOR_INCLUDE ...]]
+	                        Operate only on samples associated with these
+	                        attribute values; if not provided, all samples are
+	                        used.
 
 ``looper destroy --help``
 ----------------------------------
 
 .. code-block:: none
 
-	version: 0.9.1
-	usage: looper destroy [-h] [--file-checks] [-d]
-	                      [--exclude-protocols [EXCLUDE_PROTOCOLS [EXCLUDE_PROTOCOLS ...]]
-	                      | --include-protocols
-	                      [INCLUDE_PROTOCOLS [INCLUDE_PROTOCOLS ...]]]
+	version: 0.11.0
+	usage: looper destroy [-h] [--force-yes] [--file-checks] [-d]
+	                      [--selector-attribute SELECTOR_ATTRIBUTE]
+	                      [--selector-exclude [SELECTOR_EXCLUDE [SELECTOR_EXCLUDE ...]]
+	                      | --selector-include
+	                      [SELECTOR_INCLUDE [SELECTOR_INCLUDE ...]]]
 	                      [--sp SUBPROJECT]
 	                      config_file
 	
@@ -152,27 +184,41 @@ Here you can see the command-line usage instructions for the main looper command
 	
 	optional arguments:
 	  -h, --help            show this help message and exit
+	  --force-yes           Provide upfront confirmation of destruction intent, to
+	                        skip console query. Default=False
 	  --file-checks         Perform input file checks. Default=True.
 	  -d, --dry-run         Don't actually submit the project/subproject.
-	  --exclude-protocols [EXCLUDE_PROTOCOLS [EXCLUDE_PROTOCOLS ...]]
-	                        Operate only on samples that either lack a protocol or
-	                        for which protocol is not in this collection.
-	  --include-protocols [INCLUDE_PROTOCOLS [INCLUDE_PROTOCOLS ...]]
-	                        Operate only on samples associated with these
-	                        protocols; if not provided, all samples are used.
+	                        Default=False
 	  --sp SUBPROJECT       Name of subproject to use, as designated in the
 	                        project's configuration file
+	
+	select samples:
+	  This group of arguments lets you specify samples to use by exclusion OR
+	  inclusion of the samples attribute values.
+	
+	  --selector-attribute SELECTOR_ATTRIBUTE
+	                        Specify the attribute for samples exclusion OR
+	                        inclusion
+	  --selector-exclude [SELECTOR_EXCLUDE [SELECTOR_EXCLUDE ...]]
+	                        Operate only on samples that either lack this
+	                        attribute value or for which this value is not in this
+	                        collection.
+	  --selector-include [SELECTOR_INCLUDE [SELECTOR_INCLUDE ...]]
+	                        Operate only on samples associated with these
+	                        attribute values; if not provided, all samples are
+	                        used.
 
 ``looper check --help``
 ----------------------------------
 
 .. code-block:: none
 
-	version: 0.9.1
+	version: 0.11.0
 	usage: looper check [-h] [-A] [-F [FLAGS [FLAGS ...]]] [--file-checks] [-d]
-	                    [--exclude-protocols [EXCLUDE_PROTOCOLS [EXCLUDE_PROTOCOLS ...]]
-	                    | --include-protocols
-	                    [INCLUDE_PROTOCOLS [INCLUDE_PROTOCOLS ...]]]
+	                    [--selector-attribute SELECTOR_ATTRIBUTE]
+	                    [--selector-exclude [SELECTOR_EXCLUDE [SELECTOR_EXCLUDE ...]]
+	                    | --selector-include
+	                    [SELECTOR_INCLUDE [SELECTOR_INCLUDE ...]]]
 	                    [--sp SUBPROJECT]
 	                    config_file
 	
@@ -185,30 +231,42 @@ Here you can see the command-line usage instructions for the main looper command
 	  -h, --help            show this help message and exit
 	  -A, --all-folders     Check status for all project's output folders, not
 	                        just those for samples specified in the config file
-	                        used
+	                        used. Default=False
 	  -F [FLAGS [FLAGS ...]], --flags [FLAGS [FLAGS ...]]
 	                        Check on only these flags/status values.
 	  --file-checks         Perform input file checks. Default=True.
 	  -d, --dry-run         Don't actually submit the project/subproject.
-	  --exclude-protocols [EXCLUDE_PROTOCOLS [EXCLUDE_PROTOCOLS ...]]
-	                        Operate only on samples that either lack a protocol or
-	                        for which protocol is not in this collection.
-	  --include-protocols [INCLUDE_PROTOCOLS [INCLUDE_PROTOCOLS ...]]
-	                        Operate only on samples associated with these
-	                        protocols; if not provided, all samples are used.
+	                        Default=False
 	  --sp SUBPROJECT       Name of subproject to use, as designated in the
 	                        project's configuration file
+	
+	select samples:
+	  This group of arguments lets you specify samples to use by exclusion OR
+	  inclusion of the samples attribute values.
+	
+	  --selector-attribute SELECTOR_ATTRIBUTE
+	                        Specify the attribute for samples exclusion OR
+	                        inclusion
+	  --selector-exclude [SELECTOR_EXCLUDE [SELECTOR_EXCLUDE ...]]
+	                        Operate only on samples that either lack this
+	                        attribute value or for which this value is not in this
+	                        collection.
+	  --selector-include [SELECTOR_INCLUDE [SELECTOR_INCLUDE ...]]
+	                        Operate only on samples associated with these
+	                        attribute values; if not provided, all samples are
+	                        used.
 
 ``looper clean --help``
 ----------------------------------
 
 .. code-block:: none
 
-	version: 0.9.1
-	usage: looper clean [-h] [--file-checks] [-d]
-	                    [--exclude-protocols [EXCLUDE_PROTOCOLS [EXCLUDE_PROTOCOLS ...]]
-	                    | --include-protocols
-	                    [INCLUDE_PROTOCOLS [INCLUDE_PROTOCOLS ...]]]
+	version: 0.11.0
+	usage: looper clean [-h] [--force-yes] [--file-checks] [-d]
+	                    [--selector-attribute SELECTOR_ATTRIBUTE]
+	                    [--selector-exclude [SELECTOR_EXCLUDE [SELECTOR_EXCLUDE ...]]
+	                    | --selector-include
+	                    [SELECTOR_INCLUDE [SELECTOR_INCLUDE ...]]]
 	                    [--sp SUBPROJECT]
 	                    config_file
 	
@@ -219,13 +277,95 @@ Here you can see the command-line usage instructions for the main looper command
 	
 	optional arguments:
 	  -h, --help            show this help message and exit
+	  --force-yes           Provide upfront confirmation of cleaning intent, to
+	                        skip console query. Default=False
 	  --file-checks         Perform input file checks. Default=True.
 	  -d, --dry-run         Don't actually submit the project/subproject.
-	  --exclude-protocols [EXCLUDE_PROTOCOLS [EXCLUDE_PROTOCOLS ...]]
-	                        Operate only on samples that either lack a protocol or
-	                        for which protocol is not in this collection.
-	  --include-protocols [INCLUDE_PROTOCOLS [INCLUDE_PROTOCOLS ...]]
-	                        Operate only on samples associated with these
-	                        protocols; if not provided, all samples are used.
+	                        Default=False
 	  --sp SUBPROJECT       Name of subproject to use, as designated in the
 	                        project's configuration file
+	
+	select samples:
+	  This group of arguments lets you specify samples to use by exclusion OR
+	  inclusion of the samples attribute values.
+	
+	  --selector-attribute SELECTOR_ATTRIBUTE
+	                        Specify the attribute for samples exclusion OR
+	                        inclusion
+	  --selector-exclude [SELECTOR_EXCLUDE [SELECTOR_EXCLUDE ...]]
+	                        Operate only on samples that either lack this
+	                        attribute value or for which this value is not in this
+	                        collection.
+	  --selector-include [SELECTOR_INCLUDE [SELECTOR_INCLUDE ...]]
+	                        Operate only on samples associated with these
+	                        attribute values; if not provided, all samples are
+	                        used.
+
+``looper rerun --help``
+----------------------------------
+
+.. code-block:: none
+
+	version: 0.11.0
+	usage: looper rerun [-h] [--ignore-flags] [-t TIME_DELAY]
+	                    [--allow-duplicate-names] [--compute COMPUTE]
+	                    [--resources RESOURCES] [--limit LIMIT] [--lump LUMP]
+	                    [--lumpn LUMPN] [--file-checks] [-d]
+	                    [--selector-attribute SELECTOR_ATTRIBUTE]
+	                    [--selector-exclude [SELECTOR_EXCLUDE [SELECTOR_EXCLUDE ...]]
+	                    | --selector-include
+	                    [SELECTOR_INCLUDE [SELECTOR_INCLUDE ...]]]
+	                    [--sp SUBPROJECT]
+	                    config_file
+	
+	Resubmit jobs with failed flags.
+	
+	positional arguments:
+	  config_file           Project configuration file (YAML).
+	
+	optional arguments:
+	  -h, --help            show this help message and exit
+	  --ignore-flags        Ignore run status flags? Default: False. By default,
+	                        pipelines will not be submitted if a pypiper flag file
+	                        exists marking the run (e.g. as 'running' or
+	                        'failed'). Set this option to ignore flags and submit
+	                        the runs anyway. Default=False
+	  -t TIME_DELAY, --time-delay TIME_DELAY
+	                        Time delay in seconds between job submissions.
+	  --allow-duplicate-names
+	                        Allow duplicate names? Default: False. By default,
+	                        pipelines will not be submitted if a sample name is
+	                        duplicated, since samples names should be unique. Set
+	                        this option to override this setting. Default=False
+	  --compute COMPUTE     YAML file with looper environment compute settings.
+	  --resources RESOURCES
+	                        Specification of individual computing resource
+	                        settings; separate setting name/key from value with
+	                        equals sign, and separate key-value pairs from each
+	                        other by comma; e.g., --resources k1=v1,k2=v2
+	  --limit LIMIT         Limit to n samples.
+	  --lump LUMP           Maximum total input file size for a lump/batch of
+	                        commands in a single job (in GB)
+	  --lumpn LUMPN         Number of individual scripts grouped into single
+	                        submission
+	  --file-checks         Perform input file checks. Default=True.
+	  -d, --dry-run         Don't actually submit the project/subproject.
+	                        Default=False
+	  --sp SUBPROJECT       Name of subproject to use, as designated in the
+	                        project's configuration file
+	
+	select samples:
+	  This group of arguments lets you specify samples to use by exclusion OR
+	  inclusion of the samples attribute values.
+	
+	  --selector-attribute SELECTOR_ATTRIBUTE
+	                        Specify the attribute for samples exclusion OR
+	                        inclusion
+	  --selector-exclude [SELECTOR_EXCLUDE [SELECTOR_EXCLUDE ...]]
+	                        Operate only on samples that either lack this
+	                        attribute value or for which this value is not in this
+	                        collection.
+	  --selector-include [SELECTOR_INCLUDE [SELECTOR_INCLUDE ...]]
+	                        Operate only on samples associated with these
+	                        attribute values; if not provided, all samples are
+	                        used.
