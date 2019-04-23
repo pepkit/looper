@@ -331,34 +331,91 @@ def test_only_main_project_has_outputs(tmpdir, ifaces, declared_outputs):
     assert {} == prj.get_outputs(False)
 
 
-@pytest.mark.skip("not implemented")
-def test_main_project_and_subproject_have_outputs():
+def test_multiple_project_units_have_declare_interfaces_with_outputs(tmpdir):
     """ Activation state affects status of Project's outputs. """
-    pass
+
+    # Generate config filepaths.
+    iface_paths = set()
+    while len(iface_paths) < 3:
+        iface_paths.add(tmpdir.join(randconf()).strpath)
+    iface_paths = list(iface_paths)
+
+    # Collect the Project config data.
+    main_iface_file, sp_iface_files = iface_paths[0], iface_paths[1:]
+    sp_files = dict(zip(["sp1", "sp2"], sp_iface_files))
+    prj_dat = {
+        METADATA_KEY: {
+            OUTDIR_KEY: tmpdir.strpath,
+            PIPELINE_INTERFACES_KEY: main_iface_file
+        },
+        SUBPROJECTS_SECTION: {n: {METADATA_KEY: {PIPELINE_INTERFACES_KEY: f}}
+                              for n, f in sp_files.items()}
+    }
+
+    # Generate Project config filepath and create Project.
+    while True:
+        conf_file = tmpdir.join(randconf()).strpath
+        if conf_file not in iface_paths:
+            break
+    for f, (lines_spec, outs_spec) in zip(
+            iface_paths,
+            [({WGBS_KEY: WGBS_IFACE_LINES}, {WGBS_KEY: DECLARED_OUTPUTS}),
+             ({RRBS_KEY: RRBS_IFACE_LINES}, {RRBS_KEY: DECLARED_OUTPUTS}),
+             ({WGBS_KEY: WGBS_IFACE_LINES, RRBS_KEY: RRBS_IFACE_LINES},
+              {WGBS_KEY: DECLARED_OUTPUTS, RRBS_KEY: DECLARED_OUTPUTS})]):
+        _write_iface_file(f, lines_group_by_pipe_key=lines_spec,
+                          outputs_by_pipe_key=outs_spec)
+
+    prj = _write_and_build_prj(conf_file, prj_dat)
+
+    # DEBUG
+    print("TMPDIR contents:\n{}".format("\n".join(
+        os.path.join(tmpdir.strpath, f) for f in os.listdir(tmpdir.strpath))))
+
+    def observe(p):
+        return p.get_outputs(False)
+
+    def extract_just_path_template(out_res):
+        # DEBUG
+        print("out_res: {}".format(out_res))
+        return {pipe_name: {k: v for k, (v, _) in outs.items()}
+                for pipe_name, outs in out_res.items()}
+
+    assert {WGBS_NAME: DECLARED_OUTPUTS} == extract_just_path_template(observe(prj))
+    prj.activate_subproject("sp1")
+    assert {RRBS_NAME: DECLARED_OUTPUTS} == extract_just_path_template(observe(prj))
+    prj.activate_subproject("sp2")
+    assert {pn: DECLARED_OUTPUTS for pn in [WGBS_NAME, RRBS_NAME]} == \
+           extract_just_path_template(observe(prj))
 
 
 @pytest.mark.skip("not implemented")
 def test_no_samples_match_protocols_with_outputs(skip_sample_less):
+    """ get_outputs behavior is sensitive to protocol match and skip flag. """
     pass
 
 
 @pytest.mark.skip("not implemented")
 def test_pipeline_identifier_collision_same_data():
+    """ Interface data that differs from another with same identifier is unexceptional. """
     pass
 
 
 @pytest.mark.skip("not implemented")
 def test_pipeline_identifier_collision_different_data():
+    """ Interface data that differs from another with same identifier is exceptional. """
     pass
 
 
 @pytest.mark.skip("not implemented")
 def test_sample_collection_accuracy():
+    """ Names of samples collected for each pipeline are as expected. """
     pass
 
 
 @pytest.mark.skip("not implemented")
 def test_protocol_collection_accuracy():
+    """ Names of protocols collected for each pipeline are as expected. """
     pass
 
 
