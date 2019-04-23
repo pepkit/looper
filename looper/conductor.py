@@ -67,7 +67,7 @@ class SubmissionConductor(object):
             the sample folder for each sample considered for submission
         :param str compute_variables: A dict with variables that will be made
             available to the compute package. For example, this should include
-            the name of the cluster partition to which job(s) will be submitted
+            the name of the cluster partition to which job or jobs will be submitted
         :param int | NoneType max_cmds: Upper bound on number of commands to
             include in a single job script.
         :param int | float | NoneType max_size: Upper bound on total file
@@ -192,8 +192,8 @@ class SubmissionConductor(object):
             sample.set_pipeline_attributes(
                     self.pl_iface, pipeline_name=self.pl_key)
         except AttributeError:
-            # TODO: inform about WHICH missing attribute(s)?
-            fail_message = "Pipeline required attribute(s) missing"
+            # TODO: inform about WHICH missing attributes?
+            fail_message = "Pipeline required attribute missing"
             _LOGGER.warning("> Not submitted: %s", fail_message)
             use_this_sample and skip_reasons.append(fail_message)
             
@@ -230,8 +230,8 @@ class SubmissionConductor(object):
                 submission_folder_path=self.prj.metadata[SUBMISSION_SUBDIR_KEY])
         except AttributeError as e:
             argstring = None
-            # TODO: inform about which missing attribute(s).
-            fail_message = "Required attribute(s) missing " \
+            # TODO: inform about which missing attribute.
+            fail_message = "Required attribute missing " \
                            "for pipeline arguments string"
             _LOGGER.warning("> Not submitted: %s", fail_message)
             use_this_sample and skip_reasons.append(fail_message)
@@ -269,7 +269,7 @@ class SubmissionConductor(object):
 
     def submit(self, force=False):
         """
-        Submit command(s) as a job.
+        Submit one or more commands as a job.
         
         This call will submit the commands corresponding to the current pool 
         of samples if and only if the argument to 'force' evaluates to a 
@@ -286,7 +286,7 @@ class SubmissionConductor(object):
             submitted = False
 
         elif force or self._is_full(self._pool, self._curr_size):
-            _LOGGER.debug("Determining submission settings for %d sample(s) "
+            _LOGGER.debug("Determining submission settings for %d sample "
                          "(%.2f Gb)", len(self._pool), self._curr_size)
             settings, looper_argtext, prj_argtext = \
                 self._get_settings_looptext_prjtext(self._curr_size)
