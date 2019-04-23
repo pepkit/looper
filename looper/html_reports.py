@@ -65,7 +65,7 @@ class HTMLReportBuilder(object):
                 pages.append(page_relpath)
                 labels.append(key)
 
-        template_vars = dict(navbar=navbar, footer=footer, labels=labels, pages=pages, header="Objects", version=v)
+        template_vars = dict(navbar=navbar, footer=footer, labels=labels, pages=pages, header="Objects")
         return render_jinja_template("navbar_list_parent.html", self.j_env, template_vars)
 
     def create_sample_parent_html(self, navbar, footer):
@@ -95,7 +95,7 @@ class HTMLReportBuilder(object):
                 pages.append(page_relpath)
                 labels.append(sample_name)
 
-        template_vars = dict(navbar=navbar, footer=footer, labels=labels, pages=pages, header="Samples", version=v)
+        template_vars = dict(navbar=navbar, footer=footer, labels=labels, pages=pages, header="Samples")
         return render_jinja_template("navbar_list_parent.html", self.j_env, template_vars)
 
     def create_navbar(self, navbar_links):
@@ -114,7 +114,7 @@ class HTMLReportBuilder(object):
 
         :return str: footer HTML
         """
-        return render_jinja_template("footer.html", self.j_env)
+        return render_jinja_template("footer.html", self.j_env, dict(version=v))
 
     def create_navbar_links(self, prj, objs, stats, wd=None, context=None):
         """
@@ -247,7 +247,7 @@ class HTMLReportBuilder(object):
                             filename.replace(' ', '_').lower() + " references nonexistent object files")
             _LOGGER.debug(filename.replace(' ', '_').lower() +
                           " nonexistent files: " + ','.join(str(x) for x in warnings))
-        template_vars = dict(navbar=navbar, footer=footer, name=current_name, figures=figures, links=links, version=v)
+        template_vars = dict(navbar=navbar, footer=footer, name=current_name, figures=figures, links=links)
         save_html(object_path, render_jinja_template("object.html", self.j_env, args=template_vars))
 
     def create_sample_html(self, objs, sample_name, sample_stats, navbar, footer):
@@ -372,7 +372,7 @@ class HTMLReportBuilder(object):
         template_vars = dict(navbar=navbar, footer=footer, sample_name=sample_name, stats_file_path=stats_file_path,
                              profile_file_path=profile_file_path, commands_file_path=commands_file_path,
                              log_file_path=log_file_path, button_class=button_class, sample_stats=sample_stats,
-                             flag=flag, links=links, figures=figures, version=v)
+                             flag=flag, links=links, figures=figures)
         save_html(html_page, render_jinja_template("sample.html", self.j_env, template_vars))
         return sample_page_relpath
 
@@ -479,7 +479,7 @@ class HTMLReportBuilder(object):
 
         template_vars = dict(navbar=navbar, sample_link_names=sample_link_names, footer=footer,
                              sample_paths=sample_paths, log_link_names=log_link_names, log_paths=log_paths,
-                             row_classes=row_classes, flags=flags, times=times, mems=mems, version=v)
+                             row_classes=row_classes, flags=flags, times=times, mems=mems)
         return render_jinja_template("status.html", self.j_env, template_vars)
 
     def create_project_objects(self):
@@ -613,8 +613,7 @@ class HTMLReportBuilder(object):
         # Complete and close HTML file
         template_vars = dict(project_name=self.prj.name, stats_json=_read_tsv_to_json(stats_file_name),
                              navbar=navbar, footer=footer, stats_file_path=stats_file_path,
-                             project_objects=project_objects, columns=col_names, table_row_data=table_row_data,
-                             version=v)
+                             project_objects=project_objects, columns=col_names, table_row_data=table_row_data)
         save_html(index_html_path, render_jinja_template("index.html", self.j_env, template_vars))
         return index_html_path
 
