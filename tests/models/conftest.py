@@ -11,9 +11,9 @@ else:
 import pandas as pd
 import pytest
 import yaml
+from divvy import DEFAULT_COMPUTE_RESOURCES_NAME
 from looper.pipeline_interface import PROTOMAP_KEY, RESOURCES_KEY
-from peppy import DEFAULT_COMPUTE_RESOURCES_NAME, METADATA_KEY, \
-    NAME_TABLE_ATTR, SAMPLE_NAME_COLNAME
+from peppy import METADATA_KEY, NAME_TABLE_ATTR, SAMPLE_NAME_COLNAME
 
 
 __author__ = "Vince Reuter"

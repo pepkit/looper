@@ -17,8 +17,8 @@ from .exceptions import InvalidResourceSpecificationException, \
     MissingPipelineConfigurationException, PipelineInterfaceConfigError
 from .utils import get_logger
 from attmap import PathExAttMap
+from divvy import DEFAULT_COMPUTE_RESOURCES_NAME, NEW_COMPUTE_KEY as COMPUTE_KEY
 from peppy import utils, Sample
-from peppy.const import DEFAULT_COMPUTE_RESOURCES_NAME
 from peppy.utils import is_command_callable
 
 
@@ -107,10 +107,9 @@ class PipelineInterface(PathExAttMap):
 
         pl = self.select_pipeline(pipeline_name)
 
-        compute_key = "compute"
         universal_compute = {}
         try:
-            universal_compute = pl[compute_key]
+            universal_compute = pl[COMPUTE_KEY]
         except KeyError:
             notify("No compute settings")
 
@@ -127,7 +126,7 @@ class PipelineInterface(PathExAttMap):
                 _LOGGER.warning(
                     "{rk} section found in both {c} section and top-level "
                     "pipelines section of pipeline interface; {c} section "
-                    "version will be used".format(rk=RESOURCES_KEY, c=compute_key))
+                    "version will be used".format(rk=RESOURCES_KEY, c=COMPUTE_KEY))
 
         # Require default resource package specification.
         try:

@@ -13,6 +13,7 @@ import pytest
 import yaml
 
 from attmap import PathExAttMap
+from divvy import DEFAULT_COMPUTE_RESOURCES_NAME
 from looper.const import *
 from looper.pipeline_interface import PipelineInterface, PL_KEY, PROTOMAP_KEY, \
     RESOURCES_KEY

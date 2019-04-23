@@ -9,6 +9,7 @@ import random
 
 import pytest
 import yaml
+from divvy import DEFAULT_COMPUTE_RESOURCES_NAME as DEFAULT_RESOURCES_KEY
 from peppy import FLAGS, METADATA_KEY, OUTDIR_KEY
 import looper
 from looper.const import *
@@ -31,7 +32,6 @@ ASSAYS = ["WGBS", "WGBS",  "ATAC", "ATAC"]
 SAMPLE_METADATA_RECORDS = [("sample" + str(i), p) for i, p in enumerate(ASSAYS)]
 DEFAULT_RESOURCES = {
     "file_size": "0", "cores": "1", "mem": "4000", "time": "00-01:00:00"}
-DEFAULT_RESOURCES_KEY = "default"
 ATAC_SPEC = {
     PIPE_NAME_KEY: "PEPATAC", PIPE_PATH_KEY: ATAC_PIPE,
     RESOURCES_KEY: {DEFAULT_RESOURCES_KEY: DEFAULT_RESOURCES}

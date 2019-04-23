@@ -33,6 +33,7 @@ from .pipeline_interface import RESOURCES_KEY
 from .project import Project
 from .utils import determine_config_path, fetch_flag_files, sample_folder
 
+from divvy import DEFAULT_COMPUTE_RESOURCES_NAME, NEW_COMPUTE_KEY as COMPUTE_KEY
 from logmuse import setup_logger
 from peppy import ProjectContext, METADATA_KEY, SAMPLE_EXECUTION_TOGGLE
 
@@ -241,13 +242,13 @@ def process_protocols(prj, protocols, resource_setting_kwargs=None, **kwargs):
         resource_setting_kwargs = {}
 
     try:
-        comp_vars = prj.dcc.compute.to_map()
+        comp_vars = prj.dcc[COMPUTE_KEY].to_map()
     except AttributeError:
-        if not isinstance(prj.dcc.compute, Mapping):
+        if not isinstance(prj.dcc[COMPUTE_KEY], Mapping):
             raise TypeError("Project's computing config isn't a mapping: {} ({})".
-                            format(prj.dcc.compute, type(prj.dcc.compute)))
+                            format(prj.dcc[COMPUTE_KEY], type(prj.dcc[COMPUTE_KEY])))
         from copy import deepcopy
-        comp_vars = deepcopy(prj.dcc.compute)
+        comp_vars = deepcopy(prj.dcc[COMPUTE_KEY])
     comp_vars.update(resource_setting_kwargs or {})
 
     _LOGGER.info("Known protocols: {}".format(
@@ -810,7 +811,7 @@ def main():
 
     if hasattr(args, "compute"):
         # Default is already loaded
-        if args.compute != "default":
+        if args.compute != DEFAULT_COMPUTE_RESOURCES_NAME:
             prj.dcc.activate_package(args.compute)
 
     _LOGGER.debug("Results subdir: " + prj.metadata[RESULTS_SUBDIR_KEY])

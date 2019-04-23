@@ -15,6 +15,7 @@ from .project import Project
 from ._version import __version__
 from .parser_types import *
 
+from divvy import DEFAULT_COMPUTE_RESOURCES_NAME, NEW_COMPUTE_KEY as COMPUTE_KEY
 # Not used here, but make this the main import interface between peppy and
 # looper, so that other modules within this package need not worry about
 # the locations of some of the peppy declarations. Effectively, concentrate
@@ -144,9 +145,17 @@ def build_parser():
                      "By default, pipelines will not be submitted if a sample name"
                      " is duplicated, since samples names should be unique.  "
                      " Set this option to override this setting. Default=False")
-        subparser.add_argument(
-                "--compute", dest="compute", default="default",
+
+        comp_spec = subparser.add_mutually_exclusive_group()
+        comp_spec.add_argument(
+                "--compute", dest=COMPUTE_KEY,
+                default=DEFAULT_COMPUTE_RESOURCES_NAME,
                 help="YAML file with looper environment compute settings.")
+        comp_spec.add_argument(
+                "--compute-packages", dest=COMPUTE_KEY,
+                default=DEFAULT_COMPUTE_RESOURCES_NAME,
+                help="YAML file with looper environment compute settings.")
+
         subparser.add_argument(
                 "--resources",
                 help="Specification of individual computing resource settings; "
