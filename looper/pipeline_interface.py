@@ -18,7 +18,7 @@ from .exceptions import InvalidResourceSpecificationException, \
 from .utils import get_logger
 from attmap import PathExAttMap
 from peppy import utils, Sample
-from peppy.const import DEFAULT_COMPUTE_RESOURCES_NAME
+from divvy import DEFAULT_COMPUTE_RESOURCES_NAME
 from peppy.utils import is_command_callable
 
 
