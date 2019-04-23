@@ -6,7 +6,7 @@
 `Looper` can run samples through *any pipeline that runs on the command line*. The flexible [pipeline interface](../pipeline-interface) file allows `looper` to execute arbitrary shell commands. A pipeline may consist of scripts in languages like Perl, Python, or bash, or it may be built with a particular framework. Typically, we use Python pipelines built using the [`pypiper` package](http://pypiper.readthedocs.io), which provides some additional power to `looper`, but that's optional.
 
 
-## Why isn't the `looper` executable available (on `PATH`)?
+## Why isn't the `looper` executable available on `PATH`?
 	
 By default, Python packages are installed to `~/.local/bin`. 
 You can add that location to your path by appending it (`export PATH=$PATH:~/.local/bin`).
@@ -30,7 +30,7 @@ You may be interested in the [usage docs](../usage) for the `looper rerun` comma
 
 ## How can I resubmit a subset of jobs that failed?
 	
-By default, `looper` **will *not* submit a job that has already run**. If you want to re-rerun a sample (maybe you've updated the pipeline, or you want to restart a failed attempt), you can do so by passing `--ignore-flags` to `looper` at startup. That will **resubmit *all* samples**, though. If you only want to re-run or restart just a few samples, it's best to manually delete the "flag" files for the samples you want to restart, then use `looper run` as normal.
+As of version `0.11`, you can use `looper rerun` to submit only jobs with a `failed` flag. By default, `looper` will *not* submit a job that has already run. If you want to restart a sample (maybe you've updated the pipeline, or you want to restart a failed attempt), you can either use `looper rerun` to restart only failed jobs, or you pass `--ignore-flags`, which will **resubmit *all* samples**. If you want more specificity, you can just manually delete the "flag" files for the samples you want to restart, then use `looper run` as normal.
 
 ## Why are computing resources defined in the pipeline interface file instead of in the `divvy` computing configuration file?
 	
