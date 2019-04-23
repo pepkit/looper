@@ -18,7 +18,7 @@ Looper uses the external package [divvy](http://code.databio.org/divvy) for clus
 
 ## What's the difference between `looper` and `pypiper`?
 	
-They complement one another, constituting a comprehensive pipeline management system. [`pypiper`](http://pypiper.readthedocs.io) builds pipelines to process individual samples. [`looper`](http://looper.readthedocs.io) operates groups of samples (as in a project), submitting the appropriate pipeline(s) to a cluster or server (or running them locally). The two projects are independent and can be used separately, but they are most powerful when combined.
+[`pypiper`](http://pypiper.readthedocs.io) is a more traditional workflow-building framework; it helps you build pipelines to process individual samples. [`looper`](http://looper.readthedocs.io) is completely pipeline-agnostic, and has nothing to do with individual processing steps; it operates groups of samples (as in a project), submitting the appropriate pipeline(s) to a cluster or server (or running them locally). The two projects are independent and can be used separately, but they are most powerful when combined. They complement one another, together constituting a comprehensive pipeline management system. 
 
 ## Why isn't a sample being processed by a pipeline (`Not submitting, flag found: ['*_<status>.flag']`)?
 	
@@ -28,7 +28,7 @@ If you do in fact want to re-rerun a sample (maybe you've updated the pipeline, 
 
 You may be interested in the [usage docs](../usage) for the `looper rerun` command, which runs any failed samples.
 
-## How can I **resubmit a *subset* of jobs** that failed?
+## How can I resubmit a subset of jobs that failed?
 	
 By default, `looper` **will *not* submit a job that has already run**. If you want to re-rerun a sample (maybe you've updated the pipeline, or you want to restart a failed attempt), you can do so by passing `--ignore-flags` to `looper` at startup. That will **resubmit *all* samples**, though. If you only want to re-run or restart just a few samples, it's best to manually delete the "flag" files for the samples you want to restart, then use `looper run` as normal.
 
