@@ -2,6 +2,7 @@
 
 from collections import Counter
 from copy import deepcopy
+import itertools
 import os
 import random
 import string
@@ -202,18 +203,15 @@ def test_malformed_outputs(
         print("Outputs: {}".format(prj.get_outputs(skip_sample_less)))
 
 
-@pytest.mark.skip("not implemented")
 @pytest.mark.parametrize("ifaces", [
     [{WGBS_KEY: WGBS_IFACE_LINES}], [{RRBS_KEY: RRBS_IFACE_LINES}],
     [{WGBS_KEY: WGBS_IFACE_LINES}, {RRBS_KEY: RRBS_IFACE_LINES}]])
 @pytest.mark.parametrize("declared_outputs",
     [{n: DECLARED_OUTPUTS for n in [RRBS_NAME, WGBS_NAME]}])
-@pytest.mark.parametrize("activate", [False, True])
-def test_only_subproject_has_outputs(
-        tmpdir, name_cfg_file, ifaces, declared_outputs, activate):
+def test_only_subproject_has_outputs(tmpdir, ifaces, declared_outputs):
     """ Activation state affects status of Project's outputs. """
 
-    cfg = tmpdir.join(name_cfg_file).strpath
+    cfg = tmpdir.join(randconf()).strpath
 
     iface_paths = [tmpdir.join(randconf()).strpath for _ in ifaces]
     assert [] == _find_reps(iface_paths), \
@@ -233,6 +231,72 @@ def test_only_subproject_has_outputs(
         "Nonempty main/subs iface path intersection: {}".\
         format(", ".join(iface_path_intersect))
 
+    # DEBUG
+    print("Metadata: {}".format(md))
+
+    used_iface_keys = set(itertools.chain(*[pi.keys() for pi in ifaces]))
+    keyed_outputs = {pk: declared_outputs[PROTO_NAMES[pk]]
+                     for pk in used_iface_keys}
+    for path, data in zip(iface_paths, ifaces):
+        _write_iface_file(path, data)
+    for path, data in zip(sp_ifaces_paths, ifaces):
+        _write_iface_file(path, data, outputs_by_pipe_key=keyed_outputs)
+
+    sp_name = "testing_subproj"
+    prj = _write_and_build_prj(cfg, {
+        METADATA_KEY: md,
+        SUBPROJECTS_SECTION: {
+            sp_name: {
+                METADATA_KEY: {
+                    PIPELINE_INTERFACES_KEY: sp_ifaces_paths
+                }
+            }
+        }
+    })
+
+    # DEBUG
+    print("TABLE below:\n{}".format(prj.sample_table))
+
+    assert len(prj.get_outputs(False)) == 0
+    assert {} == prj.get_outputs(False)
+    prj.activate_subproject(sp_name)
+    assert len(prj.get_outputs(False)) > 0
+    exp = {pipe_name: {k: (v, []) for k, v in outs.items()}
+           for pipe_name, outs in declared_outputs.items()
+           if pipe_name in {PROTO_NAMES[k] for k in used_iface_keys}}
+    print("EXP: {}".format(exp))
+    assert exp == prj.get_outputs(False)
+
+
+@pytest.mark.skip("not implemented")
+@pytest.mark.parametrize("ifaces", [
+    [{WGBS_KEY: WGBS_IFACE_LINES}], [{RRBS_KEY: RRBS_IFACE_LINES}],
+    [{WGBS_KEY: WGBS_IFACE_LINES}, {RRBS_KEY: RRBS_IFACE_LINES}]])
+@pytest.mark.parametrize("declared_outputs",
+    [{n: DECLARED_OUTPUTS for n in [RRBS_NAME, WGBS_NAME]}])
+def test_only_main_project_has_outputs(tmpdir, ifaces, declared_outputs):
+    """ Activation state affects status of Project's outputs. """
+
+    cfg = tmpdir.join(randconf()).strpath
+
+    iface_paths = [tmpdir.join(randconf()).strpath for _ in ifaces]
+    assert [] == _find_reps(iface_paths), \
+        "Repeated temp filepath(s): {}".format(_find_reps(iface_paths))
+
+    for data, path in zip(ifaces, iface_paths):
+        with open(path, 'w') as f:
+            yaml.dump(data, f)
+    md = deepcopy(BASE_META)
+    md[PIPELINE_INTERFACES_KEY] = iface_paths
+
+    sp_ifaces_paths = [tmpdir.join(randconf()).strpath for _ in ifaces]
+    assert [] == _find_reps(sp_ifaces_paths), \
+        "Repeated temp filepath(s): {}".format(_find_reps(sp_ifaces_paths))
+    iface_path_intersect = set(sp_ifaces_paths) & set(iface_paths)
+    assert set() == iface_path_intersect, \
+        "Nonempty main/subs iface path intersection: {}". \
+            format(", ".join(iface_path_intersect))
+
     sp_name = "testing_subproj"
     md[SUBPROJECTS_SECTION] = {sp_name: {
         METADATA_KEY: {PIPELINE_INTERFACES_KEY: sp_ifaces_paths}}}
@@ -240,31 +304,25 @@ def test_only_subproject_has_outputs(
     # DEBUG
     print("Metadata: {}".format(md))
 
-    keyed_outputs = {pk: declared_outputs for pk in
-                     [k for pi in ifaces for k in pi.keys()]}
+    keyed_outputs = {
+        pk: declared_outputs[pk] for pk in
+        set(itertools.chain(*[pi.keys() for pi in ifaces]))}
     for path, data in zip(iface_paths, ifaces):
-        _write_iface_file(path, data)
-    for path, data in zip(sp_ifaces_paths, ifaces):
         _write_iface_file(path, data, outputs_by_pipe_key=keyed_outputs)
+    for path, data in zip(sp_ifaces_paths, ifaces):
+        _write_iface_file(path, data)
 
     prj = _write_and_build_prj(cfg, {METADATA_KEY: md})
+
+    # DEBUG
     print("TABLE below:\n{}".format(prj.sample_table))
 
-    if activate:
-        prj.activate_subproject(sp_name)
-        obs_out = prj.get_outputs(False)
-        assert len(obs_out) > 0
-        exp = {PROTO_NAMES[k]: outs for k, outs in declared_outputs.items()}
-        assert exp == prj.get_outputs(False)
-    else:
-        assert {} == prj.get_outputs(False)
-
-
-@pytest.mark.skip("not implemented")
-@pytest.mark.parametrize("activate", [False, True])
-def test_only_main_project_has_outputs(activate):
-    """ Activation state affects status of Project's outputs. """
-    pass
+    assert len(prj.get_outputs(False)) > 0
+    assert {PROTO_NAMES[k]: outs for k, outs in declared_outputs.items()} == \
+           prj.get_outputs(False)
+    prj.activate_subproject(sp_name)
+    assert len(prj.get_outputs(False)) == 0
+    assert {} == prj.get_outputs(False)
 
 
 @pytest.mark.skip("not implemented")

@@ -259,21 +259,25 @@ class Project(peppy.Project):
                 "Non-Boolean argument to sample-less skip flag: {} ({})".
                 format(skip_sample_less, type(skip_sample_less)))
         prots_data_pairs = _gather_ifaces(self.interfaces)
+        # DEBUG
+        print("prots_data_pairs: {}".format(prots_data_pairs))
         m = {}
         for name, (prots, data) in prots_data_pairs.items():
+            try:
+                outs = data[OUTKEY]
+                # DEBUG
+                print("OUTS: {}".format(outs))
+            except KeyError:
+                _LOGGER.debug("No {} declared for pipeline: {}".
+                              format(OUTKEY, name))
+                continue
             snames = [s.name for s in self.samples if s.protocol in prots]
             if not snames and skip_sample_less:
                 _LOGGER.debug("No samples matching protocol(s): {}".
                               format(", ".join(prots)))
                 continue
-            try:
-                outs = data[OUTKEY]
-            except KeyError:
-                _LOGGER.debug("No {} declared for pipeline: {}".
-                              format(OUTKEY, name))
-            else:
-                m[name] = {path_key: (path_val, snames)
-                           for path_key, path_val in outs.items()}
+            m[name] = {path_key: (path_val, snames)
+                       for path_key, path_val in outs.items()}
         return m
 
     def _omit_from_repr(self, k, cls):
