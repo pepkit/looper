@@ -353,10 +353,7 @@ def test_multiple_project_units_have_declare_interfaces_with_outputs(tmpdir):
     }
 
     # Generate Project config filepath and create Project.
-    while True:
-        conf_file = tmpdir.join(randconf()).strpath
-        if conf_file not in iface_paths:
-            break
+    conf_file = make_temp_file_path(folder=tmpdir.strpath, known=iface_paths)
     for f, (lines_spec, outs_spec) in zip(
             iface_paths,
             [({WGBS_KEY: WGBS_IFACE_LINES}, {WGBS_KEY: DECLARED_OUTPUTS}),
@@ -389,16 +386,72 @@ def test_multiple_project_units_have_declare_interfaces_with_outputs(tmpdir):
            extract_just_path_template(observe(prj))
 
 
-@pytest.mark.skip("not implemented")
-def test_no_samples_match_protocols_with_outputs(skip_sample_less):
+@pytest.mark.parametrize("noskip", [False, True])
+@pytest.mark.parametrize("protocols", 
+    [[], [random.choice(["INVALID", "NULL"]) for _ in range(10)]])
+@pytest.mark.parametrize("declared_outputs",
+    [{n: DECLARED_OUTPUTS for n in [RRBS_NAME, WGBS_NAME]}])
+def test_no_samples_match_protocols_with_outputs(
+        tmpdir, noskip, protocols, declared_outputs):
     """ get_outputs behavior is sensitive to protocol match and skip flag. """
-    pass
+    temproot = tmpdir.strpath
+    path_iface_file = tmpdir.join(randconf()).strpath
+    prj_cfg = make_temp_file_path(folder=temproot, known=[path_iface_file])
+    prj_dat = {
+        METADATA_KEY: {
+            OUTDIR_KEY: temproot,
+            PIPELINE_INTERFACES_KEY: path_iface_file
+        }
+    }
+    if protocols:
+        anns_file = make_temp_file_path(
+            folder=temproot, known=[path_iface_file, prj_cfg])
+        anns_data = [("sample{}".format(i), p) for i, p in enumerate(protocols)] 
+        with open(anns_file, 'w') as f:
+            for n, p in [(SAMPLE_NAME_COLNAME, ASSAY_KEY)] + anns_data:
+                f.write("{},{}\n".format(n, p))
+        prj_dat[METADATA_KEY][SAMPLE_ANNOTATIONS_KEY] = anns_file
+    _write_iface_file(
+        path_iface_file, {WGBS_KEY: WGBS_IFACE_LINES, RRBS_KEY: RRBS_IFACE_LINES},
+        outputs_by_pipe_key={PROTOMAP[n]: DECLARED_OUTPUTS for n in declared_outputs.keys()})
+    prj = _write_and_build_prj(prj_cfg, prj_dat)
+    exp = {
+        pipe_name: {
+            path_key: (path_temp, [])
+            for path_key, path_temp in decl_outs.items()}
+        for pipe_name, decl_outs in declared_outputs.items()
+    } if noskip else {}
+    assert exp == prj.get_outputs(not noskip)
 
 
-@pytest.mark.skip("not implemented")
-def test_pipeline_identifier_collision_same_data():
+@pytest.mark.parametrize("protomap", [None, PROTOMAP])
+@pytest.mark.parametrize("include_outputs", [False, True])
+def test_pipeline_identifier_collision_same_data(tmpdir, protomap, include_outputs):
     """ Interface data that differs from another with same identifier is unexceptional. """
-    pass
+
+    temproot = tmpdir.strpath
+    lines_groups = {WGBS_KEY: WGBS_IFACE_LINES, RRBS_KEY: RRBS_IFACE_LINES}
+    outputs = {k: DECLARED_OUTPUTS for k in lines_groups.keys()} \
+        if include_outputs else None
+
+    def write_iface(f, pm):
+        _write_iface_file(f, lines_groups, outputs, pm)
+
+    iface_file_1 = os.path.join(temproot, "piface1.yaml")
+    write_iface(iface_file_1, protomap)
+    iface_file_2 = os.path.join(temproot, "piface2.yaml")
+    write_iface(iface_file_2, protomap)
+
+    prj_dat = {
+        METADATA_KEY: {
+            OUTDIR_KEY: tmpdir.strpath,
+            PIPELINE_INTERFACES_KEY: [iface_file_1, iface_file_2]
+        }
+    }
+    prj = _write_and_build_prj(os.path.join(temproot, "pc.yaml"), prj_dat)
+    exp = {n: {k: (v, []) for k, v in DECLARED_OUTPUTS.items()}
+           for n in [WGBS_NAME, RRBS_NAME]} if include_outputs else {}
+    assert exp == prj.get_outputs(skip_sample_less=False)
 
 
 @pytest.mark.skip("not implemented")
@@ -491,3 +544,20 @@ def _write_iface_file(
         yaml.dump(data, f)
 
     return path_iface_file
+
+
+def make_temp_file_path(folder, known, generate=randconf):
+    """
+    Generate a new tempfile path.
+    
+    :param str folder: path to folder that represents parent of path to 
+        generate, i.e. the path to the folder to which a randomized filename 
+        is to be joined
+    :param Iterable[str] known: collection of current filePATHs
+    :param function() -> str generate: how to generate fileNAME
+    :return str: randomly generated filepath that doesn't match a known value
+    """
+    while True:
+        fp = os.path.join(folder, generate())
+        if fp not in known:
+            return fp
