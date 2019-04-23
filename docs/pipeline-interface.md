@@ -1,14 +1,7 @@
 # How to write a pipeline interface
 
-If you're using *existing* `looper`-compatible pipelines, you don't need to create a new interface; just [point your project at the one that comes with the pipeline](linking-a-pipeline.md).
-
-When creating *new* `looper`-compatible pipelines, you'll need to create a new pipeline interface file. As long as a pipeline runs on the command line, `looper` can run samples through it. 
-A pipeline may consist of script(s) in languages like Perl, Python, or bash, or it may be built with a particular framework. 
-Typically, we use Python pipelines built using the [`pypiper` package](http://pypiper.readthedocs.io), 
-which provides some additional power to `looper`, but that's optional.
-
-Regardless of what pipelines you use, you will need to tell looper how to communicate with your pipeline. 
-That communication protocol is defined in a **pipeline interface**, which is a `yaml` file with two sections:
+If you're using *existing* `looper`-compatible pipelines, you don't need to create a new interface; just [point your project at the one that comes with the pipeline](linking-a-pipeline.md). When creating *new* `looper`-compatible pipelines, you'll need to create a new pipeline interface file. Regardless of what pipelines you use, you will need to tell looper how to communicate with your pipeline. 
+That communication is defined in a **pipeline interface**, which is a `yaml` file with two sections:
 
 1. `protocol_mapping` - maps sample `protocol` (the assay type, sometimes called "library" or "library strategy") to one or more pipeline program
 2. `pipelines` -  describes the arguments and resources required by each pipeline
