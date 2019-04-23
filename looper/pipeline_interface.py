@@ -289,7 +289,7 @@ class PipelineInterface(PathExAttMap):
             except AttributeError:
                 _LOGGER.error(
                         "Error (missing attribute): '%s' requires sample "
-                        "attribute '%s' for option/argument '%s'",
+                        "attribute '%s' for option '%s'",
                         pipeline_name, sample_attr, pipe_opt)
                 raise
 
