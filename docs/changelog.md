@@ -27,21 +27,21 @@
 ## [0.10.0] - 2018-12-20
 
 ### Changed
-- ``PipelineInterface`` now derives from ``peppy.AttributeDict``.
-- On ``PipelineInterface``, iteration over pipelines now is with ``iterpipes``.
-- Rename ``parse_arguments`` to ``build_parser``, which returns ``argparse.ArgumentParser`` object
+- `PipelineInterface` now derives from `peppy.AttributeDict`.
+- On `PipelineInterface`, iteration over pipelines now is with `iterpipes`.
+- Rename `parse_arguments` to `build_parser`, which returns `argparse.ArgumentParser` object
 - Integers in HTML reports are made more human-readable by including commas.
 - Column headers in HTML reports are now stricly for sorting; there's a separate list for plottable columns.
 - More informative error messages
 - HTML samples list is fully populated.
-- Existence of an object lacking an anchor image is no longer problematic for ``summarize``.
-- Basic package test in Python 3 now succeeds: ``python3 setup.py test``.
+- Existence of an object lacking an anchor image is no longer problematic for `summarize`.
+- Basic package test in Python 3 now succeeds: `python3 setup.py test`.
 
 ## [v0.9.2] - 2018-11-12
 
 ### Changed
-- Fixed bugs with ``looper summarize`` when no summarizers were present
-- Added CLI flag to force ``looper destroy`` for programmatic access
+- Fixed bugs with `looper summarize` when no summarizers were present
+- Added CLI flag to force `looper destroy` for programmatic access
 - Fixed a bug for samples with duplicate names
 - Added new display features (graphs, table display) for HTML summary output.
 
@@ -49,15 +49,15 @@
 ## [0.9.1] - 2018-06-30
 
 ### Changed
-- Fixed several bugs with ``looper summarize`` that caused failure on edge cases.
+- Fixed several bugs with `looper summarize` that caused failure on edge cases.
 
 
 ## [0.9.0] - 2018-06-25
 
 ### Added
 - Support for custom summarizers
-- Add ``allow-duplicate-names`` command-line options
-- Allow any variables in environment config files or other ``compute`` sections to be used in submission templates. This allows looper to be used with containers.
+- Add `allow-duplicate-names` command-line options
+- Allow any variables in environment config files or other `compute` sections to be used in submission templates. This allows looper to be used with containers.
 - Add nice universal project-level HTML reporting
 
 ## [0.8.1] - 2018-04-02
@@ -65,14 +65,14 @@
 ### Changed
 - Minor documentation and packaging updates for first Pypi release.
 - Fix a bug that incorrectly mapped protocols due to case sensitive issues
-- Fix a bug with ``report_figure`` that made it output pandas code
+- Fix a bug with `report_figure` that made it output pandas code
 
 
 ## [0.8.0] - 2018-01-19
 
 ### Changed
-- Use independent `peppy` package, replacing ``models`` module for core data types.
-- Integrate ``ProtocolInterface`` functionality into ``PipelineInterface``.
+- Use independent `peppy` package, replacing `models` module for core data types.
+- Integrate `ProtocolInterface` functionality into `PipelineInterface`.
 
 ## [0.7.2] - 2017-11-16
 ### Changed
@@ -82,11 +82,11 @@
 
 ### Changed
 - No longer falsely display that there's a submission failure.
-- Allow non-string values to be unquoted in the ``pipeline_args`` section.
+- Allow non-string values to be unquoted in the `pipeline_args` section.
 
 ## [0.7] - 2017-11-15
 ### Added
-- Add ``--lump`` and ``--lumpn`` options
+- Add `--lump` and `--lumpn` options
 - Catch submission errors from cluster resource managers
 - Implied columns can now be derived
 - Now protocols can be specified on the command-line `--include-protocols`
@@ -104,7 +104,7 @@
 ### Added
   - Add support for implied_column section of the project config file
   - Add support for Python 3
-  - Merges pipeline interface and protocol mappings. This means we now allow direct pointers to ``pipeline_interface.yaml`` files, increasing flexibility, so this relaxes the specified folder structure that was previously used for ``pipelines_dir`` (with ``config`` subfolder).
+  - Merges pipeline interface and protocol mappings. This means we now allow direct pointers to `pipeline_interface.yaml` files, increasing flexibility, so this relaxes the specified folder structure that was previously used for `pipelines_dir` (with `config` subfolder).
   - Allow URLs as paths to sample sheets.
   - Allow tsv format for sample sheets.
   - Checks that the path to a pipeline actually exists before writing the submission script. 
@@ -116,7 +116,7 @@
 - Relaxes many constraints (like resources sections, pipelines_dir columns), making project configuration files useful outside looper. This moves us closer to dividing models from looper, and improves flexibility.
 - Various small bug fixes and dev improvements.
 - Require `setuptools` for installation, and `pandas 0.20.2`. If `numexpr` is installed, version `2.6.2` is required.
-- Allows tilde in ``pipeline_interfaces``
+- Allows tilde in `pipeline_interfaces`
 
 ## [0.5] - 2017-03-01
 ### Added
@@ -136,13 +136,13 @@
 ## [0.4] - 2017-01-12
 ###  Added
 - New command-line interface (CLI) based on sub-commands
-- New subcommand (``looper summarize``) replacing the ``summarizePipelineStats.R`` script
-- New subcommand (``looper check``) replacing the ``flagCheck.sh`` script
-- New command (``looper destroy``) to remove all output of a project
-- New command (``looper clean``) to remove intermediate files of a project flagged for deletion
+- New subcommand (`looper summarize`) replacing the `summarizePipelineStats.R` script
+- New subcommand (`looper check`) replacing the `flagCheck.sh` script
+- New command (`looper destroy`) to remove all output of a project
+- New command (`looper clean`) to remove intermediate files of a project flagged for deletion
 - Support for portable and pipeline-independent allocation of computing resources with Looperenv.
 
 ### Changed
-- Removed requirement to have ``pipelines`` repository installed in order to extend base Sample objects
+- Removed requirement to have `pipelines` repository installed in order to extend base Sample objects
 - Maintenance of sample attributes as provided by user by means of reading them in as strings (to be improved further)
 - Improved serialization of Sample objects
