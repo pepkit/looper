@@ -55,8 +55,15 @@ class PipelineInterface(PathExAttMap):
             _LOGGER.debug("Parsing '%s' for %s config data",
                           config, self.__class__.__name__)
             self.pipe_iface_file = config
-            with open(config, 'r') as f:
-                config = yaml.load(f, SafeLoader)
+            try:
+                with open(config, 'r') as f:
+                    config = yaml.load(f, SafeLoader)
+            except yaml.parser.ParserError:
+                with open(config, 'r') as f:
+                    _LOGGER.error(
+                        "Failed to parse YAML from {}:\n{}".
+                        format(config, "".join(f.readlines())))
+                raise
             self.source = config
 
         # Check presence of 2 main sections (protocol mapping and pipelines).
@@ -668,7 +675,6 @@ def _import_sample_subtype(pipeline_filepath, subtype_name=None):
                                      class_names(proper_subtypes)))
 
 
-
 def _fetch_classes(mod):
     """ Return the classes defined in a module. """
     try:
@@ -677,7 +683,6 @@ def _fetch_classes(mod):
     except ValueError:
         return []
     return list(classes)
-
 
 
 def _proper_subtypes(types, supertype):

@@ -74,6 +74,10 @@ PROTOMAP = {RRBS_NAME: RRBS_KEY, WGBS_NAME: WGBS_KEY, "EG": WGBS_KEY}
 IFACE_LINES = {WGBS_KEY: WGBS_IFACE_LINES, RRBS_KEY: RRBS_IFACE_LINES}
 
 
+KALLISTO_ABUNDANCES_KEY = "abundances"
+KALLISTO_ABUNDANCES_TEMPLATE = "\"{sample.name}_isoforms.txt\""
+
+
 def pytest_generate_tests(metafunc):
     """ Test case generation and parameterization for this module. """
     skip_empty_flag = "skip_sample_less"
@@ -500,17 +504,48 @@ def test_pipeline_identifier_collision_different_data(
         observe()
 
 
-@pytest.mark.skip("not implemented")
-def test_sample_collection_accuracy(tmpdir, skip_sample_less):
+def test_sample_collection_accuracy(tmpdir, skip_sample_less, rna_pi_lines):
     """ Names of samples collected for each pipeline are as expected. """
+    temproot = tmpdir.strpath
     scrna_proto = "scRNA"
     samples = [("sampleA", WGBS_NAME), ("sample2", "HiChIP"),
-               ("sampleC", scrna_proto), ("sample4", "ATAC")]
-    exp_base = {WGBS_NAME: DECLARED_OUTPUTS, scrna_proto: }
-    if skip_sample_less:
-        pass
-    else:
-        pass
+               ("sampleC", scrna_proto), ("sample4", "ATAC"),
+               ("sampleE", WGBS_NAME), ("sample6", "HiChIP"),
+               ("sampleG", scrna_proto), ("sample8", "ATAC")]
+    iface_files = list(get_temp_paths(2, temproot))
+    anns_file = make_temp_file_path(
+        temproot, iface_files,
+        generate=lambda: "".join(randstr(LETTERS_AND_DIGITS, 20)) + ".csv")
+    with open(anns_file, 'w') as f:
+        f.write("\n".join("{},{}".format(*pair) for pair in
+                          [(SAMPLE_NAME_COLNAME, ASSAY_KEY)] + samples))
+    _write_iface_file(
+        iface_files[0],
+        lines_group_by_pipe_key={WGBS_KEY: WGBS_IFACE_LINES},
+        outputs_by_pipe_key={WGBS_KEY: DECLARED_OUTPUTS}, pm=PROTOMAP)
+    with open(iface_files[1], 'w') as f:
+        for l in rna_pi_lines:
+            f.write(l)
+    prj_dat = {
+        METADATA_KEY: {
+            OUTDIR_KEY: tmpdir.strpath,
+            PIPELINE_INTERFACES_KEY: iface_files,
+            SAMPLE_ANNOTATIONS_KEY: anns_file
+        }
+    }
+    prj_cfg = make_temp_file_path(temproot, iface_files + [anns_file])
+    prj = _write_and_build_prj(prj_cfg, prj_dat)
+    kallisto_outputs = {KALLISTO_ABUNDANCES_KEY: KALLISTO_ABUNDANCES_TEMPLATE}
+    exp_base = {
+        WGBS_NAME: DECLARED_OUTPUTS,
+        scrna_proto: {RNA_PIPES["kallisto"].name: kallisto_outputs}
+    }
+    exp = {
+        pipe_name: {
+            out_key: (out_val, [sn for sn, pn in samples if pn == pipe_name])
+            for out_key, out_val in outs.items()}
+        for pipe_name, outs in exp_base.items()
+    }
     assert exp == prj.get_outputs(skip_sample_less)
 
 
@@ -518,6 +553,28 @@ def test_sample_collection_accuracy(tmpdir, skip_sample_less):
 def test_protocol_collection_accuracy(tmpdir):
     """ Names of protocols collected for each pipeline are as expected. """
     pass
+
+
+def get_temp_paths(n, folder, known=None, generate=randconf):
+    """
+    Generate unique tempfile paths pointing to within a particular folder.
+
+    :param str folder: path to folder into which randomly generated filepaths
+        should point
+    :param Iterable[str] known: collection of filepaths to prohibit a
+        match to for a newly generated path
+    :param function() -> str generate: how to randomly generate a filename
+    :return Iterable[str]: collection of unique tempfile paths pointing to
+        within a particular folder.
+    """
+    paths = set()
+    known = set(known or [])
+    gen = lambda pool: make_temp_file_path(folder, pool, generate)
+    while len(paths) < n:
+        p = gen(known)
+        known.add(p)
+        paths.add(p)
+    return paths
 
 
 def make_temp_file_path(folder, known, generate=randconf):
@@ -610,18 +667,33 @@ def _write_iface_file(
 
     return path_iface_file
 
-RNA_LINES = """protocol_mapping:
-  RNA-seq: >
-    rnaBitSeq.py -f;
-    rnaKallisto.py;
-    rnaTopHat.py -f
-  SMART:  >
-    rnaBitSeq.py -f;
-    rnaTopHat.py -f
+
+class PipeSpec(object):
+    def __init__(self, key, name=None):
+        assert "" != os.path.splitext(key)[1]
+        self.key = key
+        self.name = name or key.rstrip(".py")
+
+
+RNA_PIPES = {"kallisto": PipeSpec("rnaKallisto.py"),
+             "tophat": PipeSpec("rnaTopHat.py"),
+             "bitseq": PipeSpec("rnaBitSeq.py")}
+
+
+@pytest.fixture(scope="function")
+def rna_outputs_declaration():
+    pass
+
+
+@pytest.fixture(scope="function")
+def rna_pi_lines():
+    return """protocol_mapping:
+  RNA-seq: [{bs_name}, {kall_name}, {th_name}]
+  SMART: [{bs_name}, {th_name}]
 
 pipelines:
-  rnaBitSeq.py:
-    name: rnaBitSeq
+  {bs_key}:
+    name: {bs_name}
     path: src/rnaBitSeq.py
     arguments:
       "--sample-name": sample_name
@@ -642,8 +714,8 @@ pipelines:
         mem: "44000"
         time: "2-00:00:00"
 
-  rnaTopHat.py:
-    name: rnaTopHat
+  {th_key}:
+    name: {th_name}
     path: src/rnaTopHat.py
     required_input_files: [data_source]
     ngs_input_files: [data_source]    
@@ -659,8 +731,8 @@ pipelines:
         mem: "60000"
         time: "7-00:00:00"
 
-  rnaKallisto.py:
-    name: rnaKallisto
+  {kall_key}:
+    name: {kall_name}
     path: src/rnaKallisto.py
     required_input_files: [data_source]
     ngs_input_files: [data_source]
@@ -673,6 +745,8 @@ pipelines:
       "--input2": read2
       "--fragment-length": fragment_length
       "--fragment-length-sdev": fragment_length_sdev
+    outputs:
+      {abundances_key}: {abundances_val}
     resources:
       default:
         cores: "2"
@@ -683,31 +757,9 @@ pipelines:
         cores: "2"
         mem: "8000"
         time: "0-12:00:00"
-""".splitlines(True)
-
-
-class PipeSpec(object):
-    def __init__(self, key, name=None):
-        assert "" != os.path.splitext(key)[1]
-        self.key = key
-        self.name = name or key.rstrip(".py")
-
-RNA_PIPES = {"kallisto": PipeSpec("rnaKallisto.py"),
-             "tophat": PipeSpec("rnaTopHat.py"),
-             "bitseq": PipeSpec("rnaBitSeq.py")}
-
-
-@pytest.fixture(scope="function")
-def kallisto_lines():
-    pass
-
-
-@pytest.fixture(scope="function")
-def bitseq_lines():
-    pass
-
-
-@pytest.fixture(scope="function")
-def tophat_lines():
-    pass
-
+""".format(
+    bs_key=RNA_PIPES["bitseq"].key, bs_name=RNA_PIPES["bitseq"].name,
+    th_key=RNA_PIPES["tophat"].key, th_name=RNA_PIPES["tophat"].name,
+    kall_key=RNA_PIPES["kallisto"].key, kall_name=RNA_PIPES["kallisto"].name,
+    abundances_key=KALLISTO_ABUNDANCES_KEY,
+    abundances_val=KALLISTO_ABUNDANCES_TEMPLATE).splitlines(True)
