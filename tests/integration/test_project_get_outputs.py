@@ -1,6 +1,6 @@
 """ Tests for interaction between Project and PipelineInterface """
 
-from collections import Counter
+from collections import Counter, namedtuple
 from copy import deepcopy
 import itertools
 import os
@@ -503,8 +503,10 @@ def test_pipeline_identifier_collision_different_data(
 @pytest.mark.skip("not implemented")
 def test_sample_collection_accuracy(tmpdir, skip_sample_less):
     """ Names of samples collected for each pipeline are as expected. """
-    samples = [("sampleA", "WGBS"), ("sample2", "HiChIP"), ("sampleC", "scRNA"), ("sample4", "ATAC")]
-    exp_base = {WGBS_NAME: {: (, )}}
+    scrna_proto = "scRNA"
+    samples = [("sampleA", WGBS_NAME), ("sample2", "HiChIP"),
+               ("sampleC", scrna_proto), ("sample4", "ATAC")]
+    exp_base = {WGBS_NAME: DECLARED_OUTPUTS, scrna_proto: }
     if skip_sample_less:
         pass
     else:
@@ -682,6 +684,17 @@ pipelines:
         mem: "8000"
         time: "0-12:00:00"
 """.splitlines(True)
+
+
+class PipeSpec(object):
+    def __init__(self, key, name=None):
+        assert "" != os.path.splitext(key)[1]
+        self.key = key
+        self.name = name or key.rstrip(".py")
+
+RNA_PIPES = {"kallisto": PipeSpec("rnaKallisto.py"),
+             "tophat": PipeSpec("rnaTopHat.py"),
+             "bitseq": PipeSpec("rnaBitSeq.py")}
 
 
 @pytest.fixture(scope="function")
