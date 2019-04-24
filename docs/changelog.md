@@ -1,6 +1,8 @@
 # Changelog
 
-## [0.12] - Unreleased 
+This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format. 
+
+## [Unreleased]
 
 ## [0.11.1] - 2019-04-17
 
@@ -50,7 +52,6 @@
 
 ### Changed
 - Fixed several bugs with `looper summarize` that caused failure on edge cases.
-
 
 ## [0.9.0] - 2018-06-25
 

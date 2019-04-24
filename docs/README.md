@@ -4,7 +4,7 @@
 
 ## What is looper?
 
-`Looper` is a pipeline submitting engine. `Looper` deploys any command-line pipeline across samples organized in [standard PEP format](https://pepkit.github.io/docs/home/). You can think of `looper` as providing a single user interface to running, summarizing, monitoring, and otherwise managing *all* of your sample-intensive research projects.
+`Looper` is a pipeline submitting engine. `Looper` deploys any command-line pipeline for each sample in a project organized in [standard PEP format](https://pepkit.github.io/docs/home/). You can think of `looper` as providing a single user interface to running, summarizing, monitoring, and otherwise managing all of your sample-intensive research projects the same way, regardless of data type or pipeline used.
 
 ## What makes looper better?
 
