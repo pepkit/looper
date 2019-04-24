@@ -19,7 +19,7 @@ or a **pipeline *developer*** (building your own pipeline).
 
 Users (non-developers) of pipelines only need to be aware of one or two config files:
 
-- The [project config](project-config.md): This file is specific to each project and 
+- The [project config](define-your-project): This file is specific to each project and 
 contains information about the project's metadata, where the processed files should be saved, 
 and other variables that allow to configure the pipelines specifically for this project. 
 It follows the standard `looper` format (now referred to as `PEP`, or "*portable encapsulated project*" format).
@@ -48,4 +48,4 @@ it uses a pipeline-specific configuration file, which is detailed in the [`pypip
 Essentially, each pipeline may provide a configuration file describing where software is, 
 and parameters to use for tasks within the pipeline. This configuration file is by default named like pipeline name, 
 with a `.yaml` extension instead of `.py`. For example, by default `rna_seq.py` looks for an accompanying `rna_seq.yaml` file. 
-These files can be changed on a per-project level using the `pipeline_config` section of a [project configuration file](project-config.md).
+These files can be changed on a per-project level using the `pipeline_config` section of a [project configuration file](define-your-project).
