@@ -501,15 +501,38 @@ def test_pipeline_identifier_collision_different_data(
 
 
 @pytest.mark.skip("not implemented")
-def test_sample_collection_accuracy():
+def test_sample_collection_accuracy(tmpdir, skip_sample_less):
     """ Names of samples collected for each pipeline are as expected. """
-    pass
+    samples = [("sampleA", "WGBS"), ("sample2", "HiChIP"), ("sampleC", "scRNA"), ("sample4", "ATAC")]
+    exp_base = {WGBS_NAME: {: (, )}}
+    if skip_sample_less:
+        pass
+    else:
+        pass
+    assert exp == prj.get_outputs(skip_sample_less)
 
 
 @pytest.mark.skip("not implemented")
-def test_protocol_collection_accuracy():
+def test_protocol_collection_accuracy(tmpdir):
     """ Names of protocols collected for each pipeline are as expected. """
     pass
+
+
+def make_temp_file_path(folder, known, generate=randconf):
+    """
+    Generate a new tempfile path.
+
+    :param str folder: path to folder that represents parent of path to
+        generate, i.e. the path to the folder to which a randomized filename
+        is to be joined
+    :param Iterable[str] known: collection of current filePATHs
+    :param function() -> str generate: how to generate fileNAME
+    :return str: randomly generated filepath that doesn't match a known value
+    """
+    while True:
+        fp = os.path.join(folder, generate())
+        if fp not in known:
+            return fp
 
 
 def _find_reps(objs):
@@ -585,19 +608,93 @@ def _write_iface_file(
 
     return path_iface_file
 
+RNA_LINES = """protocol_mapping:
+  RNA-seq: >
+    rnaBitSeq.py -f;
+    rnaKallisto.py;
+    rnaTopHat.py -f
+  SMART:  >
+    rnaBitSeq.py -f;
+    rnaTopHat.py -f
 
-def make_temp_file_path(folder, known, generate=randconf):
-    """
-    Generate a new tempfile path.
-    
-    :param str folder: path to folder that represents parent of path to 
-        generate, i.e. the path to the folder to which a randomized filename 
-        is to be joined
-    :param Iterable[str] known: collection of current filePATHs
-    :param function() -> str generate: how to generate fileNAME
-    :return str: randomly generated filepath that doesn't match a known value
-    """
-    while True:
-        fp = os.path.join(folder, generate())
-        if fp not in known:
-            return fp
+pipelines:
+  rnaBitSeq.py:
+    name: rnaBitSeq
+    path: src/rnaBitSeq.py
+    arguments:
+      "--sample-name": sample_name
+      "--genome": transcriptome
+      "--input": data_source
+      "--single-or-paired": read_type
+    required_input_files: [data_source]
+    ngs_input_files: [data_source]    
+    resources:
+      default:
+        file_size: "0"
+        cores: "6"
+        mem: "36000"
+        time: "2-00:00:00"
+      large:
+        file_size: "4"
+        cores: "6"
+        mem: "44000"
+        time: "2-00:00:00"
+
+  rnaTopHat.py:
+    name: rnaTopHat
+    path: src/rnaTopHat.py
+    required_input_files: [data_source]
+    ngs_input_files: [data_source]    
+    arguments:
+      "--sample-name": sample_name
+      "--genome": genome
+      "--input": data_source
+      "--single-or-paired": read_type
+    resources:
+      default:
+        file_size: "0"
+        cores: "2"
+        mem: "60000"
+        time: "7-00:00:00"
+
+  rnaKallisto.py:
+    name: rnaKallisto
+    path: src/rnaKallisto.py
+    required_input_files: [data_source]
+    ngs_input_files: [data_source]
+    arguments:
+      "--sample-yaml": yaml_file
+      "--sample-name": sample_name
+      "--input": data_source
+      "--single-or-paired": read_type
+    optional_arguments:
+      "--input2": read2
+      "--fragment-length": fragment_length
+      "--fragment-length-sdev": fragment_length_sdev
+    resources:
+      default:
+        cores: "2"
+        mem: "4000"
+        time: "0-6:00:00"
+      normal:
+        min_file_size: "3"    
+        cores: "2"
+        mem: "8000"
+        time: "0-12:00:00"
+""".splitlines(True)
+
+
+@pytest.fixture(scope="function")
+def kallisto_lines():
+    pass
+
+
+@pytest.fixture(scope="function")
+def bitseq_lines():
+    pass
+
+
+@pytest.fixture(scope="function")
+def tophat_lines():
+    pass
+
