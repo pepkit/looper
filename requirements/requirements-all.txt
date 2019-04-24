@@ -3,4 +3,6 @@ colorama>=0.3.9
 logmuse>=0.0.2
 pandas>=0.20.2
 pyyaml>=3.12
+divvy>=0.3.1
 peppy>=0.20
+
