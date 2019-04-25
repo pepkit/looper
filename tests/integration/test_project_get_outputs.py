@@ -73,9 +73,9 @@ resources:
 PROTOMAP = {RRBS_NAME: RRBS_KEY, WGBS_NAME: WGBS_KEY, "EG": WGBS_KEY}
 IFACE_LINES = {WGBS_KEY: WGBS_IFACE_LINES, RRBS_KEY: RRBS_IFACE_LINES}
 
-
+RNASEQ = "RNA-seq"
 KALLISTO_ABUNDANCES_KEY = "abundances"
-KALLISTO_ABUNDANCES_TEMPLATE = "\"{sample.name}_isoforms.txt\""
+KALLISTO_ABUNDANCES_TEMPLATE = "{sample.name}_isoforms.txt"
 
 
 def pytest_generate_tests(metafunc):
@@ -507,11 +507,10 @@ def test_pipeline_identifier_collision_different_data(
 def test_sample_collection_accuracy(tmpdir, skip_sample_less, rna_pi_lines):
     """ Names of samples collected for each pipeline are as expected. """
     temproot = tmpdir.strpath
-    scrna_proto = "scRNA"
     samples = [("sampleA", WGBS_NAME), ("sample2", "HiChIP"),
-               ("sampleC", scrna_proto), ("sample4", "ATAC"),
+               ("sampleC", RNASEQ), ("sample4", "ATAC"),
                ("sampleE", WGBS_NAME), ("sample6", "HiChIP"),
-               ("sampleG", scrna_proto), ("sample8", "ATAC")]
+               ("sampleG", RNASEQ), ("sample8", "ATAC")]
     iface_files = list(get_temp_paths(2, temproot))
     anns_file = make_temp_file_path(
         temproot, iface_files,
@@ -528,23 +527,22 @@ def test_sample_collection_accuracy(tmpdir, skip_sample_less, rna_pi_lines):
             f.write(l)
     prj_dat = {
         METADATA_KEY: {
+            SAMPLE_ANNOTATIONS_KEY: anns_file,
             OUTDIR_KEY: tmpdir.strpath,
-            PIPELINE_INTERFACES_KEY: iface_files,
-            SAMPLE_ANNOTATIONS_KEY: anns_file
+            PIPELINE_INTERFACES_KEY: iface_files
         }
     }
     prj_cfg = make_temp_file_path(temproot, iface_files + [anns_file])
     prj = _write_and_build_prj(prj_cfg, prj_dat)
     kallisto_outputs = {KALLISTO_ABUNDANCES_KEY: KALLISTO_ABUNDANCES_TEMPLATE}
-    exp_base = {
-        WGBS_NAME: DECLARED_OUTPUTS,
-        scrna_proto: {RNA_PIPES["kallisto"].name: kallisto_outputs}
-    }
     exp = {
-        pipe_name: {
-            out_key: (out_val, [sn for sn, pn in samples if pn == pipe_name])
-            for out_key, out_val in outs.items()}
-        for pipe_name, outs in exp_base.items()
+        WGBS_NAME: {k: (v, [sn for sn, pn in samples if pn == WGBS_NAME]) for k, v in DECLARED_OUTPUTS.items()},
+        RNA_PIPES["kallisto"].name: {
+            KALLISTO_ABUNDANCES_KEY: (
+                KALLISTO_ABUNDANCES_TEMPLATE,
+                [sn for sn, prot in samples if prot == RNASEQ]
+            ) for k, v in kallisto_outputs.items()
+        }
     }
     assert exp == prj.get_outputs(skip_sample_less)
 
@@ -559,6 +557,7 @@ def get_temp_paths(n, folder, known=None, generate=randconf):
     """
     Generate unique tempfile paths pointing to within a particular folder.
 
+    :param int n: number of paths to generate
     :param str folder: path to folder into which randomly generated filepaths
         should point
     :param Iterable[str] known: collection of filepaths to prohibit a
@@ -669,6 +668,7 @@ def _write_iface_file(
 
 
 class PipeSpec(object):
+    """ Pipeline key and name """
     def __init__(self, key, name=None):
         assert "" != os.path.splitext(key)[1]
         self.key = key
@@ -681,14 +681,9 @@ RNA_PIPES = {"kallisto": PipeSpec("rnaKallisto.py"),
 
 
 @pytest.fixture(scope="function")
-def rna_outputs_declaration():
-    pass
-
-
-@pytest.fixture(scope="function")
 def rna_pi_lines():
     return """protocol_mapping:
-  RNA-seq: [{bs_name}, {kall_name}, {th_name}]
+  {rnaseq_proto_name}: [{bs_name}, {kall_name}, {th_name}]
   SMART: [{bs_name}, {th_name}]
 
 pipelines:
@@ -746,7 +741,7 @@ pipelines:
       "--fragment-length": fragment_length
       "--fragment-length-sdev": fragment_length_sdev
     outputs:
-      {abundances_key}: {abundances_val}
+      {abundances_key}: \"{abundances_val}\"
     resources:
       default:
         cores: "2"
@@ -758,6 +753,7 @@ pipelines:
         mem: "8000"
         time: "0-12:00:00"
 """.format(
+    rnaseq_proto_name=RNASEQ,
     bs_key=RNA_PIPES["bitseq"].key, bs_name=RNA_PIPES["bitseq"].name,
     th_key=RNA_PIPES["tophat"].key, th_name=RNA_PIPES["tophat"].name,
     kall_key=RNA_PIPES["kallisto"].key, kall_name=RNA_PIPES["kallisto"].name,
