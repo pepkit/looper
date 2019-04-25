@@ -1,19 +1,25 @@
 """ Looper version of NGS project model. """
 
-from collections import defaultdict, namedtuple
+from collections import namedtuple
+import copy
 from functools import partial
 import itertools
 import os
 
 import peppy
+from peppy import METADATA_KEY, OUTDIR_KEY
 from peppy.utils import is_command_callable
 from .const import *
-from .pipeline_interface import PipelineInterface
+from .exceptions import DuplicatePipelineKeyException
+from .pipeline_interface import PROTOMAP_KEY
+from .project_piface_group import ProjectPifaceGroup
 from .utils import get_logger, partition
 
 
 __author__ = "Vince Reuter"
 __email__ = "vreuter@virginia.edu"
+
+__all__ = ["Project", "process_pipeline_interfaces"]
 
 
 _LOGGER = get_logger(__name__)
@@ -32,18 +38,28 @@ class Project(peppy.Project):
                 config_file, subproject=subproject, 
                 no_environment_exception=RuntimeError,
                 no_compute_exception=RuntimeError, **kwargs)
-        self.interfaces_by_protocol = \
-            process_pipeline_interfaces(self.metadata.pipeline_interfaces)
+        self._interfaces = process_pipeline_interfaces(
+            self[METADATA_KEY][PIPELINE_INTERFACES_KEY])
+
+    @property
+    def interfaces(self):
+        """
+        Get this Project's collection of pipeline interfaces
+
+        :return Iterable[looper.PipelineInterface]: collection of pipeline
+            interfaces known by this Project
+        """
+        return copy.deepcopy(self._interfaces)
 
     @property
     def project_folders(self):
         """ Keys for paths to folders to ensure exist. """
-        return ["output_dir", RESULTS_SUBDIR_KEY, SUBMISSION_SUBDIR_KEY]
+        return [OUTDIR_KEY, RESULTS_SUBDIR_KEY, SUBMISSION_SUBDIR_KEY]
 
     @property
     def required_metadata(self):
         """ Which metadata attributes are required. """
-        return ["output_dir"]
+        return [OUTDIR_KEY]
 
     def build_submission_bundles(self, protocol, priority=True):
         """
@@ -77,8 +93,7 @@ class Project(peppy.Project):
         # sort of pool of information about possible ways in which to submit
         # pipeline(s) for sample(s) of the indicated protocol.
         try:
-            pipeline_interfaces = \
-                self.interfaces_by_protocol[protocol]
+            pipeline_interfaces = self.get_interfaces(protocol)
         except KeyError:
             # Messaging can be done by the caller.
             _LOGGER.debug("No interface for protocol: %s", protocol)
@@ -201,6 +216,112 @@ class Project(peppy.Project):
         else:
             return list(itertools.chain(*job_submission_bundles))
 
+    def get_interfaces(self, protocol):
+        """
+        Get the pipeline interfaces associated with the given protocol.
+
+        :param str protocol: name of the protocol for which to get interfaces
+        :return Iterable[looper.PipelineInterface]: collection of pipeline
+            interfaces associated with the given protocol
+        :raise KeyError: if the given protocol is not (perhaps yet) mapped
+            to any pipeline interface
+        """
+        return self.interfaces[protocol]
+
+    def get_outputs(self, skip_sample_less=True):
+        """
+        Map pipeline identifier to collection of output specifications.
+
+        This method leverages knowledge of two collections of different kinds
+        of entities that meet in the manifestation of a Project. The first
+        is a collection of samples, which is known even in peppy.Project. The
+        second is a mapping from protocol/assay/library strategy to a collection
+        of pipeline interfaces, in which kinds of output may be declared.
+
+        Knowledge of these two items is here harnessed to map the identifier
+        for each pipeline about which this Project is aware to a collection of
+        pairs of identifier for a kind of output and the collection of
+        this Project's samples for which it's applicable (i.e., those samples
+        with protocol that maps to the corresponding pipeline).
+
+        :param bool skip_sample_less: whether to omit pipelines that are for
+            protocols of which the Project has no Sample instances
+        :return Mapping[str, Mapping[str, namedtuple]]: collection of bindings
+            between identifier for pipeline and collection of bindings between
+            name for a kind of output and pair in which first component is a
+            path template and the second component is a collection of
+            sample names
+        :raise TypeError: if argument to sample-less pipeline skipping parameter
+            is not a Boolean
+        """
+        if not isinstance(skip_sample_less, bool):
+            raise TypeError(
+                "Non-Boolean argument to sample-less skip flag: {} ({})".
+                format(skip_sample_less, type(skip_sample_less)))
+        prots_data_pairs = _gather_ifaces(self.interfaces)
+        m = {}
+        for name, (prots, data) in prots_data_pairs.items():
+            try:
+                outs = data[OUTKEY]
+            except KeyError:
+                _LOGGER.debug("No {} declared for pipeline: {}".
+                              format(OUTKEY, name))
+                continue
+            snames = [s.name for s in self.samples if s.protocol in prots]
+            if not snames and skip_sample_less:
+                _LOGGER.debug("No samples matching protocol(s): {}".
+                              format(", ".join(prots)))
+                continue
+            m[name] = {path_key: (path_val, snames)
+                       for path_key, path_val in outs.items()}
+        return m
+
+    def _omit_from_repr(self, k, cls):
+        """
+        Exclude the interfaces from representation.
+
+        :param str k: key of item to consider for omission
+        :param type cls: placeholder to comply with superclass signature
+        """
+        return super(Project, self)._omit_from_repr(k, cls) or k == "interfaces"
+
+
+def _gather_ifaces(ifaces):
+    """
+    For each pipeline map identifier to protocols and interface data.
+
+    :param Iterable[looper.PipelineInterface] ifaces: collection of pipeline
+        interface objects
+    :return Mapping[str, (set[str], attmap.AttMap)]: collection of bindings
+        between pipeline identifier and pair in which first component is
+        collection of associated protocol names, and second component is a
+        collection of interface data for pipeline identified by the key
+    :raise looper.DuplicatePipelineKeyException: if the same identifier (key or
+        name) points to collections of pipeline interface data (for a
+        particular pipeline) that are not equivalent
+    """
+    specs = {}
+    for pi in ifaces:
+        protos_by_name = {}
+        for p, names in pi[PROTOMAP_KEY].items():
+            if isinstance(names, str):
+                names = [names]
+            for n in names:
+                protos_by_name.setdefault(n, set()).add(p)
+        for k, dat in pi.iterpipes():
+            name = dat.get("name") or k
+            try:
+                old_prots, old_dat = specs[name]
+            except KeyError:
+                old_prots = set()
+            else:
+                if dat != old_dat:
+                    raise DuplicatePipelineKeyException(name)
+            new_prots = protos_by_name.get(name, set()) | \
+                        protos_by_name.get(k, set())
+            specs[name] = (old_prots | new_prots, dat)
+    return specs
+
 
 def process_pipeline_interfaces(pipeline_interface_locations):
     """
@@ -213,17 +334,22 @@ def process_pipeline_interfaces(pipeline_interface_locations):
     :return Mapping[str, Iterable[PipelineInterface]]: mapping from protocol
         name to interface(s) for which that protocol is mapped
     """
-    interface_by_protocol = defaultdict(list)
-    for pipe_iface_location in pipeline_interface_locations:
-        if not os.path.exists(pipe_iface_location):
-            _LOGGER.warning("Ignoring nonexistent pipeline interface "
-                         "location: '%s'", pipe_iface_location)
+    iface_group = ProjectPifaceGroup()
+    for loc in pipeline_interface_locations:
+        if not os.path.exists(loc):
+            _LOGGER.warning("Ignoring nonexistent pipeline interface location: "
+                            "{}".format(loc))
             continue
-        pipe_iface = PipelineInterface(pipe_iface_location)
-        for proto_name in pipe_iface.protocol_mapping:
-            _LOGGER.whisper("Adding protocol name: '%s'", proto_name)
-            interface_by_protocol[proto_name].append(pipe_iface)
-    return interface_by_protocol
+        fs = [loc] if os.path.isfile(loc) else \
+            [os.path.join(loc, f) for f in os.listdir(loc)
+             if os.path.splitext(f)[1] in [".yaml", ".yml"]]
+        for f in fs:
+            _LOGGER.debug("Processing interface definition: {}".format(f))
+            iface_group.update(f)
+    return iface_group
+
+
+OutputGroup = namedtuple("OutputGroup", field_names=["path", "samples"])
 
 
 # Collect PipelineInterface, Sample type, pipeline path, and script with flags.
@@ -234,5 +360,5 @@ SUBMISSION_BUNDLE_PIPELINE_KEY_INDEX = 2
 
 
 def _is_member(item, items):
-    """ Determine whether an iterm is a member of a collection. """
+    """ Determine whether an item is a member of a collection. """
     return item in items

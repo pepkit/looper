@@ -1,4 +1,4 @@
-sample_name,library,organism,ip,data_source
+sample_name,protocol,organism,ip,data_source
 atac-seq_PE,ATAC-seq,human,,microtest
 atac-seq_SE,ATAC-seq,human,,microtest
 chip-seq_PE,CHIP-seq,human,H3K27ac,microtest

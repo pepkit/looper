@@ -29,11 +29,13 @@ from .conductor import SubmissionConductor
 from .const import *
 from .exceptions import JobSubmissionException
 from .html_reports import HTMLReportBuilder
+from .pipeline_interface import RESOURCES_KEY
 from .project import Project
 from .utils import determine_config_path, fetch_flag_files, sample_folder
 
+from divvy import DEFAULT_COMPUTE_RESOURCES_NAME, NEW_COMPUTE_KEY as COMPUTE_KEY
 from logmuse import setup_logger
-from peppy import ProjectContext, SAMPLE_EXECUTION_TOGGLE
+from peppy import ProjectContext, METADATA_KEY, SAMPLE_EXECUTION_TOGGLE
 
 
 SUBMISSION_FAILURE_MESSAGE = "Cluster resource failure"
@@ -240,17 +242,17 @@ def process_protocols(prj, protocols, resource_setting_kwargs=None, **kwargs):
         resource_setting_kwargs = {}
 
     try:
-        comp_vars = prj.dcc.compute.to_map()
+        comp_vars = prj.dcc[COMPUTE_KEY].to_map()
     except AttributeError:
-        if not isinstance(prj.dcc.compute, Mapping):
+        if not isinstance(prj.dcc[COMPUTE_KEY], Mapping):
             raise TypeError("Project's computing config isn't a mapping: {} ({})".
-                            format(prj.dcc.compute, type(prj.dcc.compute)))
+                            format(prj.dcc[COMPUTE_KEY], type(prj.dcc[COMPUTE_KEY])))
         from copy import deepcopy
-        comp_vars = deepcopy(prj.dcc.compute)
+        comp_vars = deepcopy(prj.dcc[COMPUTE_KEY])
     comp_vars.update(resource_setting_kwargs or {})
 
     _LOGGER.info("Known protocols: {}".format(
-        ", ".join(prj.interfaces_by_protocol.keys())))
+        ", ".join(prj.interfaces.protocols)))
 
     for proto in set(protocols) | {GENERIC_PROTOCOL_KEY}:
         _LOGGER.debug("Determining sample type, script, and flags for "
@@ -287,8 +289,8 @@ class Runner(Executor):
             run for the first time
         """
 
-        if not self.prj.interfaces_by_protocol:
-            pipe_locs = getattr(self.prj.metadata, "pipeline_interfaces", [])
+        if not self.prj.interfaces:
+            pipe_locs = getattr(self.prj[METADATA_KEY], PIPELINE_INTERFACES_KEY, [])
             # TODO: should these cases be handled as equally exceptional?
             # That is, should they either both raise errors, or both log errors?
             if len(pipe_locs) == 0:
@@ -494,7 +496,7 @@ def _run_custom_summarizers(project):
 
     for protocol in set(all_protocols):
         try:
-            ifaces = project.interfaces_by_protocol[protocol]
+            ifaces = project.get_interfaces(protocol)
         except KeyError:
             _LOGGER.warning("No interface for protocol '{}', skipping summary".format(protocol))
             continue
@@ -804,13 +806,12 @@ def main():
             determine_config_path(args.config_file), subproject=args.subproject,
             file_checks=args.file_checks, compute_env_file=getattr(args, 'env', None))
     except yaml.parser.ParserError as e:
-        print("Project config parse failed -- {}".format(e))
+        _LOGGER.error("Project config parse failed -- {}".format(e))
         sys.exit(1)
 
-    if hasattr(args, "compute"):
-        # Default is already loaded
-        if args.compute != "default":
-            prj.dcc.activate_package(args.compute)
+    compute_cli_spec = getattr(args, COMPUTE_KEY, None)
+    if compute_cli_spec and compute_cli_spec != DEFAULT_COMPUTE_RESOURCES_NAME:
+        prj.dcc.activate_package(compute_cli_spec)
 
     _LOGGER.debug("Results subdir: " + prj.metadata[RESULTS_SUBDIR_KEY])
 
@@ -820,7 +821,8 @@ def main():
         if args.command in ["run", "rerun"]:
             run = Runner(prj)
             try:
-                compute_kwargs = _proc_resources_spec(getattr(args, "resources", ""))
+                compute_kwargs = _proc_resources_spec(
+                    getattr(args, RESOURCES_KEY, ""))
                 run(args, remaining_args,
                     rerun=(args.command == "rerun"), **compute_kwargs)
             except IOError:

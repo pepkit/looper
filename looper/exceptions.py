@@ -1,10 +1,5 @@
 """ Exceptions for specific looper issues. """
 
-
-__author__ = "Vince Reuter"
-__email__ = "vreuter@virginia.edu"
-
-
 from abc import ABCMeta
 import sys
 if sys.version_info < (3, 3):
@@ -12,15 +7,25 @@ if sys.version_info < (3, 3):
 else:
     from collections.abc import Iterable
 
+__author__ = "Vince Reuter"
+__email__ = "vreuter@virginia.edu"
 
-_all__ = ["InvalidResourceSpecificationException", "JobSubmissionException",
-          "LooperError", "MissingPipelineConfigurationException",
+_all__ = ["DuplicatePipelineKeyException",
+          "InvalidResourceSpecificationException",
+          "JobSubmissionException", "LooperError",
+          "MissingPipelineConfigurationException",
           "PipelineInterfaceConfigError"]
 
 
 class LooperError(Exception):
     """ Base type for custom package errors. """
     __metaclass__ = ABCMeta
+
+
+class DuplicatePipelineKeyException(LooperError):
+    """ Duplication of pipeline identifier precludes unique pipeline ref. """
+    def __init__(self, key):
+        super(DuplicatePipelineKeyException, self).__init__(key)
 
 
 class InvalidResourceSpecificationException(LooperError):

@@ -6,17 +6,11 @@ import string
 import pytest
 from looper.utils import determine_config_path, DEFAULT_CONFIG_SUFFIX, \
     DEFAULT_METADATA_FOLDER
+from tests.helpers import randstr, LETTERS_AND_DIGITS
+
 
 __author__ = "Vince Reuter"
 __email__ = "vreuter@virginia.edu"
-
-
-LETTERS_AND_DIGITS = string.ascii_letters + string.digits
-
-
-def randstr(pool, size):
-    """ Generate random string of given size/length. """
-    return "".join(random.choice(pool) for _ in range(size))
 
 
 class ConfigPathDeterminationTests:

@@ -205,10 +205,9 @@ class SubmissionConductor(object):
             missing_reqs_msg = "{}: {}".format(
                 missing_reqs_general, missing_reqs_specific)
             if self.prj.permissive:
-                _LOGGER.warning(missing_reqs_msg)
+                _LOGGER.warning("> Not submitted: %s", missing_reqs_msg)
             else:
                 raise error_type(missing_reqs_msg)
-            _LOGGER.warning("> Not submitted: %s", missing_reqs_msg)
             use_this_sample and skip_reasons.append(missing_reqs_general)
 
         # Check if single_or_paired value is recognized.

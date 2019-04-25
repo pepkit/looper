@@ -492,7 +492,7 @@ class HTMLReportBuilder(object):
             figures = []
             links = []
             warnings = []
-            ifaces = self.prj.interfaces_by_protocol[protocol]
+            ifaces = self.prj.get_interfaces(protocol)
 
             # Check the interface files for summarizers
             for iface in ifaces:
