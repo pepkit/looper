@@ -534,14 +534,16 @@ def test_sample_collection_accuracy(tmpdir, skip_sample_less, rna_pi_lines):
     }
     prj_cfg = make_temp_file_path(temproot, iface_files + [anns_file])
     prj = _write_and_build_prj(prj_cfg, prj_dat)
-    kallisto_outputs = {KALLISTO_ABUNDANCES_KEY: KALLISTO_ABUNDANCES_TEMPLATE}
     exp = {
-        WGBS_NAME: {k: (v, [sn for sn, pn in samples if pn == WGBS_NAME]) for k, v in DECLARED_OUTPUTS.items()},
+        WGBS_NAME: {
+            k: (v, [sn for sn, pn in samples if pn == WGBS_NAME])
+            for k, v in DECLARED_OUTPUTS.items()
+        },
         RNA_PIPES["kallisto"].name: {
             KALLISTO_ABUNDANCES_KEY: (
                 KALLISTO_ABUNDANCES_TEMPLATE,
                 [sn for sn, prot in samples if prot == RNASEQ]
-            ) for k, v in kallisto_outputs.items()
+            )
         }
     }
     assert exp == prj.get_outputs(skip_sample_less)
