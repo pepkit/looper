@@ -549,12 +549,6 @@ def test_sample_collection_accuracy(tmpdir, skip_sample_less, rna_pi_lines):
     assert exp == prj.get_outputs(skip_sample_less)
 
 
-@pytest.mark.skip("not implemented")
-def test_protocol_collection_accuracy(tmpdir):
-    """ Names of protocols collected for each pipeline are as expected. """
-    pass
-
-
 def get_temp_paths(n, folder, known=None, generate=randconf):
     """
     Generate unique tempfile paths pointing to within a particular folder.
