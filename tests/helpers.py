@@ -1,5 +1,6 @@
 """ Test utilities. """
 
+from collections import Counter
 from functools import partial
 import itertools
 import random
@@ -23,6 +24,18 @@ def assert_entirely_equal(observed, expected):
         assert np.isnan(observed) and np.isnan(expected)
     except ValueError:
         assert (observed == expected).all()
+
+
+def count_repeats(objs):
+    """
+    Find (and count) repeated objects
+
+    :param Iterable[object] objs: collection of objects in which to seek
+        repeated elements
+    :return list[(object, int)]: collection of pairs in which first component
+        of each is a repeated object, and the second is duplication count
+    """
+    return [(o, n) for o, n in Counter(objs).items() if n > 1]
 
 
 def named_param(argnames, argvalues):
@@ -75,6 +88,16 @@ def randstr(pool, size):
         raise ValueError("Must build string of positive integral length; got "
                          "{}".format(size))
     return "".join(random.choice(pool) for _ in range(size))
+
+
+def randconf(ext=".yaml"):
+    """
+    Randomly generate config filename.
+
+    :param str ext: filename extension
+    :return str: randomly generated string to function as filename
+    """
+    return randstr(LETTERS_AND_DIGITS, 15) + ext
 
 
 nonempty_powerset = partial(powerset, min_items=1)

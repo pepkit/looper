@@ -1,6 +1,5 @@
 """ Tests for interaction between Project and PipelineInterface """
 
-from collections import Counter, namedtuple
 from copy import deepcopy
 import itertools
 import os
@@ -11,10 +10,11 @@ import yaml
 from looper import Project as LP
 from looper.const import *
 from looper.exceptions import DuplicatePipelineKeyException
-from looper.pipeline_interface import PL_KEY, PROTOMAP_KEY
+from looper.pipeline_interface import PL_KEY, PROTOMAP_KEY, RESOURCES_KEY
 from attmap import AttMap
+from divvy import DEFAULT_COMPUTE_RESOURCES_NAME as DEF_RES
 from peppy.const import *
-from tests.helpers import randstr, LETTERS_AND_DIGITS
+from tests.helpers import count_repeats, LETTERS_AND_DIGITS, randstr, randconf
 
 __author__ = "Vince Reuter"
 __email__ = "vreuter@virginia.edu"
@@ -43,13 +43,13 @@ arguments:
   "--genome": genome
   "--input": data_source
   "--single-or-paired": read_type
-resources:
-  default:
+{r}:
+  {d}:
     file_size: "0"
     cores: "4"
     mem: "4000"
     time: "0-02:00:00"
-""".format(n=WGBS_NAME).splitlines(True)
+""".format(n=WGBS_NAME, r=RESOURCES_KEY, d=DEF_RES).splitlines(True)
 
 RRBS_IFACE_LINES = """name: {n}
 path: src/rrbs.py
@@ -61,13 +61,13 @@ arguments:
   "--genome": genome
   "--input": data_source
   "--single-or-paired": read_type
-resources:
-  default:
+{r}:
+  {d}:
     file_size: "0"
     cores: "4"
     mem: "4000"
     time: "0-02:00:00"      
-""".format(n=RRBS_NAME).splitlines(True)
+""".format(n=RRBS_NAME, r=RESOURCES_KEY, d=DEF_RES).splitlines(True)
 
 
 PROTOMAP = {RRBS_NAME: RRBS_KEY, WGBS_NAME: WGBS_KEY, "EG": WGBS_KEY}
@@ -107,16 +107,6 @@ def get_conf_data(req):
     return m
 
 
-def randconf(ext=".yaml"):
-    """
-    Randomly generate config filename.
-
-    :param str ext: filename extension
-    :return str: randomly generated string to function as filename
-    """
-    return randstr(LETTERS_AND_DIGITS, 15) + ext
-
-
 @pytest.fixture(scope="function")
 def prj(request, tmpdir):
     """ Provide a test case with a Project instance. """
@@ -138,7 +128,7 @@ def test_no_outputs(tmpdir, name_cfg_file, ifaces, skip_sample_less):
     """ Pipeline interfaces without outputs --> no Project outputs """
     cfg = tmpdir.join(name_cfg_file).strpath
     iface_paths = [tmpdir.join(randconf()).strpath for _ in ifaces]
-    rep_paths = _find_reps(iface_paths)
+    rep_paths = count_repeats(iface_paths)
     assert [] == rep_paths, "Repeated temp filepath(s): {}".format(rep_paths)
     for data, path in zip(ifaces, iface_paths):
         with open(path, 'w') as f:
@@ -170,7 +160,7 @@ def test_malformed_outputs(
     cfg = tmpdir.join(name_cfg_file).strpath
 
     iface_paths = [tmpdir.join(randconf()).strpath for _ in ifaces]
-    rep_paths = _find_reps(iface_paths)
+    rep_paths = count_repeats(iface_paths)
     assert [] == rep_paths, "Repeated temp filepath(s): {}".format(rep_paths)
 
     for data, path in zip(ifaces, iface_paths):
@@ -183,7 +173,7 @@ def test_malformed_outputs(
     assert not os.path.exists(anns_file)
     sample_protos = [random.choice(prot_pool) for _ in range(10)]
     sample_names = [randstr(string.ascii_letters, 20) for _ in sample_protos]
-    repeated_sample_names = _find_reps(sample_names)
+    repeated_sample_names = count_repeats(sample_names)
     assert [] == repeated_sample_names, \
         "Repeated sample names: {}".format(repeated_sample_names)
     anns_data = [(SAMPLE_NAME_COLNAME, ASSAY_KEY)] + \
@@ -217,8 +207,8 @@ def test_only_subproject_has_outputs(tmpdir, ifaces, declared_outputs):
     cfg = tmpdir.join(randconf()).strpath
 
     iface_paths = [tmpdir.join(randconf()).strpath for _ in ifaces]
-    assert [] == _find_reps(iface_paths), \
-        "Repeated temp filepath(s): {}".format(_find_reps(iface_paths))
+    assert [] == count_repeats(iface_paths), \
+        "Repeated temp filepath(s): {}".format(count_repeats(iface_paths))
 
     for data, path in zip(ifaces, iface_paths):
         with open(path, 'w') as f:
@@ -227,8 +217,8 @@ def test_only_subproject_has_outputs(tmpdir, ifaces, declared_outputs):
     md[PIPELINE_INTERFACES_KEY] = iface_paths
 
     sp_ifaces_paths = [tmpdir.join(randconf()).strpath for _ in ifaces]
-    assert [] == _find_reps(sp_ifaces_paths), \
-        "Repeated temp filepath(s): {}".format(_find_reps(sp_ifaces_paths))
+    assert [] == count_repeats(sp_ifaces_paths), \
+        "Repeated temp filepath(s): {}".format(count_repeats(sp_ifaces_paths))
     iface_path_intersect = set(sp_ifaces_paths) & set(iface_paths)
     assert set() == iface_path_intersect, \
         "Nonempty main/subs iface path intersection: {}".\
@@ -281,8 +271,8 @@ def test_only_main_project_has_outputs(tmpdir, ifaces, declared_outputs):
     cfg = tmpdir.join(randconf()).strpath
 
     iface_paths = [tmpdir.join(randconf()).strpath for _ in ifaces]
-    assert [] == _find_reps(iface_paths), \
-        "Repeated temp filepath(s): {}".format(_find_reps(iface_paths))
+    assert [] == count_repeats(iface_paths), \
+        "Repeated temp filepath(s): {}".format(count_repeats(iface_paths))
 
     for data, path in zip(ifaces, iface_paths):
         with open(path, 'w') as f:
@@ -291,8 +281,8 @@ def test_only_main_project_has_outputs(tmpdir, ifaces, declared_outputs):
     md[PIPELINE_INTERFACES_KEY] = iface_paths
 
     sp_ifaces_paths = [tmpdir.join(randconf()).strpath for _ in ifaces]
-    assert [] == _find_reps(sp_ifaces_paths), \
-        "Repeated temp filepath(s): {}".format(_find_reps(sp_ifaces_paths))
+    assert [] == count_repeats(sp_ifaces_paths), \
+        "Repeated temp filepath(s): {}".format(count_repeats(sp_ifaces_paths))
     iface_path_intersect = set(sp_ifaces_paths) & set(iface_paths)
     assert set() == iface_path_intersect, \
         "Nonempty main/subs iface path intersection: {}". \
@@ -589,18 +579,6 @@ def make_temp_file_path(folder, known, generate=randconf):
             return fp
 
 
-def _find_reps(objs):
-    """
-    Find (and count) repeated objects
-
-    :param Iterable[object] objs: collection of objects in which to seek
-        repeated elements
-    :return list[(object, int)]: collection of pairs in which first component
-        of each is a repeated object, and the second is duplication count
-    """
-    return [(o, n) for o, n in Counter(objs).items() if n > 1]
-
-
 def _write_and_build_prj(conf_file, conf_data):
     """
     Write Project config data and create the instance.
@@ -693,8 +671,8 @@ pipelines:
       "--single-or-paired": read_type
     required_input_files: [data_source]
     ngs_input_files: [data_source]    
-    resources:
-      default:
+    {res}:
+      {dr}:
         file_size: "0"
         cores: "6"
         mem: "36000"
@@ -715,8 +693,8 @@ pipelines:
       "--genome": genome
       "--input": data_source
       "--single-or-paired": read_type
-    resources:
-      default:
+    {res}:
+      {dr}:
         file_size: "0"
         cores: "2"
         mem: "60000"
@@ -738,8 +716,8 @@ pipelines:
       "--fragment-length-sdev": fragment_length_sdev
     outputs:
       {abundances_key}: \"{abundances_val}\"
-    resources:
-      default:
+    {res}:
+      {dr}:
         cores: "2"
         mem: "4000"
         time: "0-6:00:00"
@@ -749,7 +727,7 @@ pipelines:
         mem: "8000"
         time: "0-12:00:00"
 """.format(
-    rnaseq_proto_name=RNASEQ,
+    res=RESOURCES_KEY, dr=DEF_RES, rnaseq_proto_name=RNASEQ,
     bs_key=RNA_PIPES["bitseq"].key, bs_name=RNA_PIPES["bitseq"].name,
     th_key=RNA_PIPES["tophat"].key, th_name=RNA_PIPES["tophat"].name,
     kall_key=RNA_PIPES["kallisto"].key, kall_name=RNA_PIPES["kallisto"].name,
