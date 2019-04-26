@@ -9,7 +9,8 @@ from divvy import DEFAULT_COMPUTE_RESOURCES_NAME as DEF_RES
 from looper import PipelineInterface, Project, SubmissionConductor
 from looper.pipeline_interface import PL_KEY, PROTOMAP_KEY
 from peppy.const import *
-from tests.helpers import count_repeats, powerset, randconf
+from peppy.utils import count_repeats
+from tests.helpers import powerset, randconf
 
 __author__ = "Vince Reuter"
 __email__ = "vreuter@virginia.edu"
