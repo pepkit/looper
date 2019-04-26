@@ -144,10 +144,11 @@ These are considered optional, and so the pipeline will still be submitted if th
   - `-C`: config_file (the pipeline config file specified in the project config file; or the default config file, if it exists)
   - `-P`: cores (the number of processing cores specified by the chosen resource package)
   - `-M`: mem (memory limit)
-- `resources` (recommended) A section outlining how much memory, CPU, and clock time to request, modulated by input file size
+- `resources` (recommended): A section outlining how much memory, CPU, and clock time to request, modulated by input file size
 If the `resources` section is missing, looper will only be able to run the pipeline locally (not submit it to a cluster resource manager). 
 If you provide a `resources` section, you must define at least 1 option named 'default' with `file_size: "0"`. 
 Then, you define as many more resource "packages" or "bundles" as you want. 
+- `outputs`: key-value pairs in which each key is a name for a kind of output file (or group of them) that a pipeline may produce, and the value is a template template for a path that will be populated by sample variables
 
 **More on `resources`**
 
@@ -214,4 +215,7 @@ pipelines:
         cores: "4"
         mem: "8000"
         time: "08:00:00"
+    outputs:
+      smoothed_bw: "aligned_{sample.genome}/{sample.name}_smoothed.bw"
+      pre_smoothed_bw: "aligned_{project.prealignments}/{sample.name}_smoothed.bw"
 ```
