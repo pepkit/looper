@@ -3,28 +3,16 @@
 from collections import defaultdict, Iterable
 import copy
 import glob
-import logging
 import os
 
 from peppy import \
     FLAGS, SAMPLE_INDEPENDENT_PROJECT_SECTIONS, SAMPLE_NAME_COLNAME
+from peppy.utils import get_logger
 from .const import *
 
 
 DEFAULT_METADATA_FOLDER = "metadata"
 DEFAULT_CONFIG_SUFFIX = "_config.yaml"
-
-
-def get_logger(name):
-    """
-    Returm a logger with given name, equipped with custom method.
-
-    :param str name: name for the logger to get/create.
-    :return logging.Logger: named, custom logger instance.
-    """
-    l = logging.getLogger(name)
-    l.whisper = lambda msg, *args, **kwargs: l.log(5, msg, *args, **kwargs)
-    return l
 
 
 _LOGGER = get_logger(__name__)
