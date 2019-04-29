@@ -65,63 +65,6 @@ def derived_columns(self)
 
 
 
-### get\_interfaces
-Get the pipeline interfaces associated with the given protocol.
-```python
-def get_interfaces(self, protocol)
-```
-
-**Parameters:**
-
-- `protocol` -- `str`:  name of the protocol for which to get interfaces
-
-
-**Returns:**
-
-`Iterable[looper.PipelineInterface]`:  collection of pipelineinterfaces associated with the given protocol
-
-
-**Raises:**
-
-- `KeyError`:  if the given protocol is not (perhaps yet) mappedto any pipeline interface
-
-
-
-
-### get\_outputs
-Map pipeline identifier to collection of output specifications.
-
-This method leverages knowledge of two collections of different kinds
-of entities that meet in the manifestation of a Project. The first
-is a collection of samples, which is known even in peppy.Project. The
-second is a mapping from protocol/assay/library strategy to a collection
-of pipeline interfaces, in which kinds of output may be declared.
-Knowledge of these two items is here harnessed to map the identifier
-for each pipeline about which this Project is aware to a collection of
-pairs of identifier for a kind of output and the collection of
-this Project's samples for which it's applicable (i.e., those samples
-with protocol that maps to the corresponding pipeline).
-```python
-def get_outputs(self, skip_sample_less=True)
-```
-
-**Parameters:**
-
-- `skip_sample_less` -- `bool`:  whether to omit pipelines that are forprotocols of which the Project has no Sample instances
-
-
-**Returns:**
-
-`Mapping[str, Mapping[str, namedtuple]]`:  collection of bindingsbetween identifier for pipeline and collection of bindings between name for a kind of output and pair in which first component is a path template and the second component is a collection of sample names
-
-
-**Raises:**
-
-- `TypeError`:  if argument to sample-less pipeline skipping parameteris not a Boolean
-
-
-
-
 ### implied\_columns
 Collection of sample attributes for which value of each is implied by other(s)
 ```python
@@ -131,19 +74,6 @@ def implied_columns(self)
 **Returns:**
 
 `list[str]`:  sample attribute names for which value is implied by other(s)
-
-
-
-
-### interfaces
-Get this Project's collection of pipeline interfaces
-```python
-def interfaces(self)
-```
-
-**Returns:**
-
-`Iterable[looper.PipelineInterface]`:  collection of pipelineinterfaces known by this Project
 
 
 
@@ -330,6 +260,125 @@ Project needs certain metadata.
 
 ### Class MissingSampleSheetError
 Represent case in which sample sheet is specified but nonexistent.
+
+
+## Class SubmissionConductor
+Collects and then submits pipeline jobs.
+
+This class holds a 'pool' of commands to submit as a single cluster job.
+Eager to submit a job, each instance's collection of commands expands until
+it reaches the 'pool' has been filled, and it's therefore time to submit the
+job. The pool fills as soon as a fill criteria has been reached, which can
+be either total input file size or the number of individual commands.
+
+
+### add\_sample
+Add a sample for submission to this conductor.
+```python
+def add_sample(self, sample, sample_subtype=<class 'peppy.sample.Sample'>, rerun=False)
+```
+
+**Parameters:**
+
+- `sample` -- `Sample`:  sample to be included with this conductor'scurrently growing collection of command submissions
+- `sample_subtype` -- `type`:  specific subtype associatedwith this new sample; this is used to tailor-make the sample instance as required by its protocol/pipeline and supported by the pipeline interface.
+- `rerun` -- `bool`:  whether the given sample is being rerun rather thanrun for the first time
+
+
+**Returns:**
+
+`bool`:  Indication of whether the given sample was added tothe current 'pool.'
+
+
+**Raises:**
+
+- `TypeError`:  If sample subtype is provided but does not extendthe base Sample class, raise a TypeError.
+
+
+
+
+### failed\_samples
+```python
+def failed_samples(self)
+```
+
+
+
+### num\_cmd\_submissions
+Return the number of commands that this conductor has submitted.
+```python
+def num_cmd_submissions(self)
+```
+
+**Returns:**
+
+`int`:  Number of commands submitted so far.
+
+
+
+
+### num\_job\_submissions
+Return the number of jobs that this conductor has submitted.
+```python
+def num_job_submissions(self)
+```
+
+**Returns:**
+
+`int`:  Number of jobs submitted so far.
+
+
+
+
+### submit
+Submit command(s) as a job.
+
+This call will submit the commands corresponding to the current pool 
+of samples if and only if the argument to 'force' evaluates to a 
+true value, or the pool of samples is full.
+```python
+def submit(self, force=False)
+```
+
+**Parameters:**
+
+- `force` -- `bool`:  Whether submission should be done/simulated evenif this conductor's pool isn't full.
+
+
+**Returns:**
+
+`bool`:  Whether a job was submitted (or would've been ifnot for dry run)
+
+
+
+
+### write\_script
+Create the script for job submission.
+```python
+def write_script(self, pool, template_values, prj_argtext, looper_argtext)
+```
+
+**Parameters:**
+
+- `template_values` -- `Mapping`:  Collection of template placeholderkeys and the values with which to replace them.
+- `prj_argtext` -- `str`:  Command text related to Project data.
+- `looper_argtext` -- `str`:  Command text related to looper arguments.
+
+
+**Returns:**
+
+`str`:  Path to the job submission script created.
+
+
+
+
+### write\_skipped\_sample\_scripts
+For any sample skipped during initial processing, write submission script.
+```python
+def write_skipped_sample_scripts(self)
+```
+
+
 
 
 ## Class PipelineInterface
@@ -601,123 +650,5 @@ def uses_looper_args(self, pipeline_name)
 
 
 
-## Class SubmissionConductor
-Collects and then submits pipeline jobs.
 
-This class holds a 'pool' of commands to submit as a single cluster job.
-Eager to submit a job, each instance's collection of commands expands until
-it reaches the 'pool' has been filled, and it's therefore time to submit the
-job. The pool fills as soon as a fill criteria has been reached, which can
-be either total input file size or the number of individual commands.
-
-
-### add\_sample
-Add a sample for submission to this conductor.
-```python
-def add_sample(self, sample, sample_subtype=<class 'peppy.sample.Sample'>, rerun=False)
-```
-
-**Parameters:**
-
-- `sample` -- `Sample`:  sample to be included with this conductor'scurrently growing collection of command submissions
-- `sample_subtype` -- `type`:  specific subtype associatedwith this new sample; this is used to tailor-make the sample instance as required by its protocol/pipeline and supported by the pipeline interface.
-- `rerun` -- `bool`:  whether the given sample is being rerun rather thanrun for the first time
-
-
-**Returns:**
-
-`bool`:  Indication of whether the given sample was added tothe current 'pool.'
-
-
-**Raises:**
-
-- `TypeError`:  If sample subtype is provided but does not extendthe base Sample class, raise a TypeError.
-
-
-
-
-### failed\_samples
-```python
-def failed_samples(self)
-```
-
-
-
-### num\_cmd\_submissions
-Return the number of commands that this conductor has submitted.
-```python
-def num_cmd_submissions(self)
-```
-
-**Returns:**
-
-`int`:  Number of commands submitted so far.
-
-
-
-
-### num\_job\_submissions
-Return the number of jobs that this conductor has submitted.
-```python
-def num_job_submissions(self)
-```
-
-**Returns:**
-
-`int`:  Number of jobs submitted so far.
-
-
-
-
-### submit
-Submit one or more commands as a job.
-
-This call will submit the commands corresponding to the current pool 
-of samples if and only if the argument to 'force' evaluates to a 
-true value, or the pool of samples is full.
-```python
-def submit(self, force=False)
-```
-
-**Parameters:**
-
-- `force` -- `bool`:  Whether submission should be done/simulated evenif this conductor's pool isn't full.
-
-
-**Returns:**
-
-`bool`:  Whether a job was submitted (or would've been ifnot for dry run)
-
-
-
-
-### write\_script
-Create the script for job submission.
-```python
-def write_script(self, pool, size)
-```
-
-**Parameters:**
-
-- `pool` -- `Iterable[(peppy.Sample, str)]`:  collection of pairs in whichfirst component is a sample instance and second is command/argstring
-- `size` -- `float`:  cumulative size of the given pool
-
-
-**Returns:**
-
-`str`:  Path to the job submission script created.
-
-
-
-
-### write\_skipped\_sample\_scripts
-For any sample skipped during initial processing, write submission script.
-```python
-def write_skipped_sample_scripts(self)
-```
-
-
-
-
-
-**Version Information**: `looper` v0.12dev, generated by `lucidoc` v0.3.1
+**Version Information**: `looper` v0.11.0, generated by `lucidoc` v0.3
