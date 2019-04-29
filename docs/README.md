@@ -24,13 +24,13 @@ Releases are posted as [GitHub releases](https://github.com/pepkit/looper/releas
 
 
 ```
-pip install --user https://github.com/pepkit/looper/zipball/master
+pip install --user loopercli
 ```
 
 Update with:
 
 ```
-pip install --user --upgrade https://github.com/pepkit/looper/zipball/master
+pip install --user --upgrade loopercli
 ```
 
 If the `looper` executable in not automatically in your `$PATH`, add the following line to your `.bashrc` or `.profile`:
