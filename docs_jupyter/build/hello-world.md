@@ -1,3 +1,4 @@
+jupyter:True
 
 # Hello World! example for looper
 
