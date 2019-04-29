@@ -70,6 +70,7 @@ open_pipelines/
 
 dist/
 looper.egg-info/
+loopercli.egg-info/
 
 
 *ipynb_checkpoints*

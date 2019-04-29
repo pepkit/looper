@@ -63,7 +63,7 @@ except(IOError, ImportError, OSError):
     long_description = open('README.md').read()
 
 setup(
-    name="looper",
+    name="loopercli",
     packages=["looper"],
     version=version,
     description="A pipeline submission engine that parses sample inputs and submits pipelines for each sample.",
