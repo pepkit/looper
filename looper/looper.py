@@ -477,7 +477,7 @@ class Summarizer(Executor):
 
     def __call__(self):
         """ Do the summarization. """
-        _run_custom_summarizers(self.prj)
+        run_custom_summarizers(self.prj)
         # initialize the report builder
         report_builder = HTMLReportBuilder(self.prj)
         # run the report builder. a set of HTML pages is produced
@@ -485,7 +485,7 @@ class Summarizer(Executor):
         _LOGGER.info("HTML Report (n=" + str(len(self.stats)) + "): " + report_path)
 
 
-def _run_custom_summarizers(project):
+def run_custom_summarizers(project):
     """
     Run custom summarizers if any are defined
 
