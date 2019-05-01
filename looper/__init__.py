@@ -171,12 +171,12 @@ def build_parser():
         # distinguish between explicit 0 and lack of specification.
         subparser.add_argument(
                 "--lump", default=None,
-                type=html_range(min_val=0, max_val=100, step=0.1, value=100),
+                type=html_range(min_val=0, max_val=100, step=0.1, value=0),
                 help="Maximum total input file size for a lump/batch of commands "
                      "in a single job (in GB)")
         subparser.add_argument(
                 "--lumpn", default=None,
-                type=html_range(min_val=1, max_val="num_samples", value="num_samples"),
+                type=html_range(min_val=1, max_val="num_samples", value=1),
                 help="Number of individual scripts grouped into single submission")
 
     # Other commands
