@@ -40,6 +40,7 @@ def data_conf_file(data_root):
 
 @pytest.fixture(scope="function")
 def temp_chdir_home(tmpdir):
+    """ Temporarily (for a test case) change home and working directories. """
     key = "HOME"
     prev_home = os.environ[key]
     prev_work = os.environ["PWD"]
@@ -60,7 +61,7 @@ def temp_chdir_home(tmpdir):
     [build_cli_extra(**kvs) for kvs in
      [{SAMPLE_SELECTOR_OPTION: "protocol", INCLUSION_OPTION: "ATAC-seq"}]])
 def test_cli_microtest_smoke(cli_extra, data_conf_file):
-    """  """
+    """ Using microtest as project, test CLI for failure on specific cases. """
     cmd = "looper run -d {} {}".format(data_conf_file, cli_extra)
     try:
         subprocess.check_call(cmd, shell=True)
