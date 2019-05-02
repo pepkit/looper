@@ -1,6 +1,6 @@
 site_name: Looper
 site_logo: img/looper_logo_dark.svg
-site_url: http://code.databio.org/looper/
+site_url: http://looper.databio.org
 repo_url: http://github.com/pepkit/looper
 pypi_name: loopercli
 
