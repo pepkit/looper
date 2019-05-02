@@ -1,7 +1,6 @@
 """ Test utilities. """
 
 from functools import partial
-import itertools
 import random
 import string
 import numpy as np
@@ -40,27 +39,6 @@ def named_param(argnames, argvalues):
                    ids=lambda arg: "{}={}".format(argnames, arg)))
 
 
-def powerset(items, min_items=0, include_full_pop=True):
-    """
-    Build the powerset of a collection of items.
-
-    :param Iterable[object] items: "Pool" of all items, the population for
-        which to build the power set.
-    :param int min_items: Minimum number of individuals from the population
-        to allow in any given subset.
-    :param bool include_full_pop: Whether to include the full population in
-        the powerset (default True to accord with genuine definition)
-    :return list[object]: Sequence of subsets of the population, in
-        nondecreasing size order
-    """
-    items = list(items)    # Account for iterable burn possibility.
-    max_items = len(items) + 1 if include_full_pop else len(items)
-    min_items = min_items or 0
-    return list(itertools.chain.from_iterable(
-            itertools.combinations(items, k)
-            for k in range(min_items, max_items)))
-
-
 def randstr(pool, size):
     """
     Generate random string of given size/length.
@@ -85,6 +63,3 @@ def randconf(ext=".yaml"):
     :return str: randomly generated string to function as filename
     """
     return randstr(LETTERS_AND_DIGITS, 15) + ext
-
-
-nonempty_powerset = partial(powerset, min_items=1)

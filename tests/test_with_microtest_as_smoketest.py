@@ -58,7 +58,7 @@ def temp_chdir_home(tmpdir):
 @pytest.mark.remote_data
 @pytest.mark.usefixtures("temp_chdir_home")
 @pytest.mark.parametrize("cli_extra",
-    [build_cli_extra(**kvs) for kvs in
+    [build_cli_extra(kvs) for kvs in
      [{SAMPLE_SELECTOR_OPTION: "protocol", INCLUSION_OPTION: "ATAC-seq"}]])
 def test_cli_microtest_smoke(cli_extra, data_conf_file):
     """ Using microtest as project, test CLI for failure on specific cases. """

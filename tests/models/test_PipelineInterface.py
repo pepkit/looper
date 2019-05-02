@@ -23,7 +23,7 @@ from looper.exceptions import InvalidResourceSpecificationException, \
 from peppy import Project, Sample
 from peppy.const import *
 from .conftest import ATAC_PROTOCOL_NAME, write_config_data
-from tests.helpers import powerset
+from ubiquerg import powerset
 
 
 __author__ = "Vince Reuter"
