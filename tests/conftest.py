@@ -186,7 +186,6 @@ COLUMNS = [SAMPLE_NAME_COLNAME, "val1", "val2", "protocol"]
 PROJECT_CONFIG_DATA = {"metadata": {SAMPLE_ANNOTATIONS_KEY: "annotations.csv"}}
 
 
-
 def update_project_conf_data(extension):
     """ Updated Project configuration data mapping based on file extension """
     updated = copy.deepcopy(PROJECT_CONFIG_DATA)
@@ -196,13 +195,11 @@ def update_project_conf_data(extension):
     return updated
 
 
-
 def pytest_addoption(parser):
     """ Facilitate command-line test behavior adjustment. """
     parser.addoption("--logging-level",
                      default="WARN",
                      help="Project root logger level to use for tests")
-
 
 
 def pytest_generate_tests(metafunc):
