@@ -815,7 +815,9 @@ def main():
 
     _LOGGER.debug("Results subdir: " + prj.metadata[RESULTS_SUBDIR_KEY])
 
-    with ProjectContext(prj, selector_attribute=args.selector_attribute, selector_include=args.selector_include,
+    with ProjectContext(prj,
+            selector_attribute=args.selector_attribute,
+            selector_include=args.selector_include,
             selector_exclude=args.selector_exclude) as prj:
 
         if args.command in ["run", "rerun"]:

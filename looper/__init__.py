@@ -222,7 +222,7 @@ def build_parser():
             subparser.add_argument_group("select samples",
                                          "This group of arguments lets you specify samples to use by "
                                          "exclusion OR inclusion of the samples attribute values.")
-        fetch_samples_group.add_argument("--selector-attribute", nargs=1, dest="selector_attribute",
+        fetch_samples_group.add_argument("--selector-attribute", dest="selector_attribute",
                                          help="Specify the attribute for samples exclusion OR inclusion",
                                          default="protocol")
         protocols = fetch_samples_group.add_mutually_exclusive_group()
