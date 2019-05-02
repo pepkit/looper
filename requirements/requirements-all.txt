@@ -5,3 +5,4 @@ pandas>=0.20.2
 pyyaml>=3.12
 divvy>=0.3.1
 peppy>=0.21dev
+ubiquerg>=0.0.3
