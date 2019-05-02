@@ -5,6 +5,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ## [Unreleased]
 ### Fixed
 - Prevent duplication of CLI flags: [Issue 168](https://github.com/pepkit/looper/issues/168)
+- Safer usage of CLI specification of sample subset selection: [`peppy` issue 298](https://github.com/pepkit/peppy/issues/298)
 
 ## [0.11.1] - 2019-04-17
 
