@@ -136,7 +136,7 @@ PIPELINE_TO_REQD_INFILES_BY_SAMPLE = {
     "testngs.sh": FILE_BY_SAMPLE
 }
 
-SAMPLE_ANNOTATION_LINES = """sample_name,library,file,file2,organism,nonmerged_col,data_source,dcol2
+SAMPLE_ANNOTATION_LINES = """sample_name,protocol,file,file2,organism,nonmerged_col,data_source,dcol2
 a,testlib,src3,src3,,src3,src3,
 b,testlib,,,,src3,src3,src1
 c,testlib,src3,src3,,src3,src3,
@@ -182,9 +182,8 @@ _SEASON_HIERARCHY = {
 }
 COMPARISON_FUNCTIONS = ["__eq__", "__ne__", "__len__",
                         "keys", "values", "items"]
-COLUMNS = [SAMPLE_NAME_COLNAME, "val1", "val2", "library"]
+COLUMNS = [SAMPLE_NAME_COLNAME, "val1", "val2", "protocol"]
 PROJECT_CONFIG_DATA = {"metadata": {SAMPLE_ANNOTATIONS_KEY: "annotations.csv"}}
-
 
 
 def update_project_conf_data(extension):
@@ -196,13 +195,11 @@ def update_project_conf_data(extension):
     return updated
 
 
-
 def pytest_addoption(parser):
     """ Facilitate command-line test behavior adjustment. """
     parser.addoption("--logging-level",
                      default="WARN",
                      help="Project root logger level to use for tests")
-
 
 
 def pytest_generate_tests(metafunc):

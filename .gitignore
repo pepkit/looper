@@ -68,6 +68,8 @@ open_pipelines/
 # Reserved files for comparison
 *RESERVE*
 
+doc/
+build/
 dist/
 looper.egg-info/
 loopercli.egg-info/

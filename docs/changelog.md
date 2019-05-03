@@ -2,7 +2,18 @@
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format. 
 
-## [Unreleased]
+## [0.12.0] -- 2019-05-02
+
+### Added
+- First implementation of pipeline interface 'outputs', so pipeline authors can specify items of interest produced by the pipeline.
+- Functions and attributes on `Project` to support "outputs" (`interfaces`, `get_interfaces`, `get_outputs`)
+
+### Changed
+- Start "compute" --> "compute_packges" transition 
+- `get_logger` moved to `peppy`
+
+### Fixed
+- Prevent CLI option duplication in pipeline commands generated
 
 ## [0.11.1] - 2019-04-17
 

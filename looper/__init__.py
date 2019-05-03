@@ -15,6 +15,7 @@ from .project import Project
 from ._version import __version__
 from .parser_types import *
 
+from divvy import DEFAULT_COMPUTE_RESOURCES_NAME, NEW_COMPUTE_KEY as COMPUTE_KEY
 # Not used here, but make this the main import interface between peppy and
 # looper, so that other modules within this package need not worry about
 # the locations of some of the peppy declarations. Effectively, concentrate
@@ -144,9 +145,17 @@ def build_parser():
                      "By default, pipelines will not be submitted if a sample name"
                      " is duplicated, since samples names should be unique.  "
                      " Set this option to override this setting. Default=False")
-        subparser.add_argument(
-                "--compute", dest="compute", default="default",
+
+        comp_spec = subparser.add_mutually_exclusive_group()
+        comp_spec.add_argument(
+                "--compute", dest=COMPUTE_KEY,
+                default=DEFAULT_COMPUTE_RESOURCES_NAME,
                 help="YAML file with looper environment compute settings.")
+        comp_spec.add_argument(
+                "--compute-packages", dest=COMPUTE_KEY,
+                default=DEFAULT_COMPUTE_RESOURCES_NAME,
+                help="YAML file with looper environment compute settings.")
+
         subparser.add_argument(
                 "--resources",
                 help="Specification of individual computing resource settings; "
@@ -162,12 +171,12 @@ def build_parser():
         # distinguish between explicit 0 and lack of specification.
         subparser.add_argument(
                 "--lump", default=None,
-                type=html_range(min_val=0, max_val=100, step=0.1, value=100),
+                type=html_range(min_val=0, max_val=100, step=0.1, value=0),
                 help="Maximum total input file size for a lump/batch of commands "
                      "in a single job (in GB)")
         subparser.add_argument(
                 "--lumpn", default=None,
-                type=html_range(min_val=1, max_val="num_samples", value="num_samples"),
+                type=html_range(min_val=1, max_val="num_samples", value=1),
                 help="Number of individual scripts grouped into single submission")
 
     # Other commands
@@ -213,7 +222,7 @@ def build_parser():
             subparser.add_argument_group("select samples",
                                          "This group of arguments lets you specify samples to use by "
                                          "exclusion OR inclusion of the samples attribute values.")
-        fetch_samples_group.add_argument("--selector-attribute", nargs=1, dest="selector_attribute",
+        fetch_samples_group.add_argument("--selector-attribute", dest="selector_attribute",
                                          help="Specify the attribute for samples exclusion OR inclusion",
                                          default="protocol")
         protocols = fetch_samples_group.add_mutually_exclusive_group()

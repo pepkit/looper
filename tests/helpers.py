@@ -1,13 +1,17 @@
 """ Test utilities. """
 
 from functools import partial
-import itertools
+import random
+import string
 import numpy as np
 import pytest
 
 
 __author__ = "Vince Reuter"
 __email__ = "vreuter@virginia.edu"
+
+
+LETTERS_AND_DIGITS = string.ascii_letters + string.digits
 
 
 def assert_entirely_equal(observed, expected):
@@ -35,25 +39,27 @@ def named_param(argnames, argvalues):
                    ids=lambda arg: "{}={}".format(argnames, arg)))
 
 
-def powerset(items, min_items=0, include_full_pop=True):
+def randstr(pool, size):
     """
-    Build the powerset of a collection of items.
+    Generate random string of given size/length.
 
-    :param Iterable[object] items: "Pool" of all items, the population for
-        which to build the power set.
-    :param int min_items: Minimum number of individuals from the population
-        to allow in any given subset.
-    :param bool include_full_pop: Whether to include the full population in
-        the powerset (default True to accord with genuine definition)
-    :return list[object]: Sequence of subsets of the population, in
-        nondecreasing size order
+    :param Iterable[str] pool: collection of characters from which to sample
+        (with replacement)
+    :param int size: nunber of characters
+    :return str: string built by concatenating randomly sampled characters
+    :raise ValueError: if size is not a positive integer
     """
-    items = list(items)    # Account for iterable burn possibility.
-    max_items = len(items) + 1 if include_full_pop else len(items)
-    min_items = min_items or 0
-    return list(itertools.chain.from_iterable(
-            itertools.combinations(items, k)
-            for k in range(min_items, max_items)))
+    if size < 1:
+        raise ValueError("Must build string of positive integral length; got "
+                         "{}".format(size))
+    return "".join(random.choice(pool) for _ in range(size))
 
 
-nonempty_powerset = partial(powerset, min_items=1)
+def randconf(ext=".yaml"):
+    """
+    Randomly generate config filename.
+
+    :param str ext: filename extension
+    :return str: randomly generated string to function as filename
+    """
+    return randstr(LETTERS_AND_DIGITS, 15) + ext

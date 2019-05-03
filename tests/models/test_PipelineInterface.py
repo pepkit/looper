@@ -13,14 +13,17 @@ import pytest
 import yaml
 
 from attmap import PathExAttMap
-from looper.pipeline_interface import PipelineInterface, PL_KEY, PROTOMAP_KEY
+from divvy import DEFAULT_COMPUTE_RESOURCES_NAME
+from looper.const import *
+from looper.pipeline_interface import PipelineInterface, PL_KEY, PROTOMAP_KEY, \
+    RESOURCES_KEY
 from looper.project import Project
 from looper.exceptions import InvalidResourceSpecificationException, \
     MissingPipelineConfigurationException, PipelineInterfaceConfigError
-from peppy import Project, Sample, \
-    DEFAULT_COMPUTE_RESOURCES_NAME, SAMPLE_ANNOTATIONS_KEY, SAMPLE_NAME_COLNAME
+from peppy import Project, Sample
+from peppy.const import *
 from .conftest import ATAC_PROTOCOL_NAME, write_config_data
-from tests.helpers import powerset
+from ubiquerg import powerset
 
 
 __author__ = "Vince Reuter"
@@ -77,7 +80,7 @@ def pi_with_resources(request, bundled_piface, resources):
                 rp_data[file_size_name] = size
     pipe_iface_config = PipelineInterface(bundled_piface)
     for pipe_data in pipe_iface_config.pipelines.values():
-        pipe_data["resources"] = resources
+        pipe_data[RESOURCES_KEY] = resources
     return pipe_iface_config
 
 
@@ -182,7 +185,7 @@ def test_unconfigured_pipeline_exception(
     if not use_resources:
         for pipeline in pi.pipelines.values():
             try:
-                del pipeline["resources"][DEFAULT_COMPUTE_RESOURCES_NAME]
+                del pipeline[RESOURCES_KEY][DEFAULT_COMPUTE_RESOURCES_NAME]
             except KeyError:
                 # Already no default resource package.
                 pass
@@ -256,11 +259,11 @@ class PipelineInterfaceResourcePackageTests:
         pi = pi_with_resources
         for name, pipeline in pi.iterpipes():
             try:
-                del pipeline["resources"][DEFAULT_COMPUTE_RESOURCES_NAME]
+                del pipeline[RESOURCES_KEY][DEFAULT_COMPUTE_RESOURCES_NAME]
             except KeyError:
                 # Already no default resource package.
                 pass
-            assert "default" not in pipeline["resources"]
+            assert "default" not in pipeline[RESOURCES_KEY]
             with pytest.raises(InvalidResourceSpecificationException):
                 pi.choose_resource_package(
                         name, file_size=huge_resources["file_size"] + 1)
@@ -281,7 +284,7 @@ class PipelineInterfaceResourcePackageTests:
         """ Compute resource specification is optional. """
         pi = pi_with_resources
         for pipe_data in pi.pipelines.values():
-            del pipe_data["resources"]
+            del pipe_data[RESOURCES_KEY]
         for pipe_name in pi.pipeline_names:
             assert {} == pi.choose_resource_package(pipe_name, int(file_size))
             assert {} == pi.choose_resource_package(pipe_name, float(file_size))
@@ -295,13 +298,13 @@ class PipelineInterfaceResourcePackageTests:
             file_size, expected_package_name, midsize_resources):
         """ Minimal resource package sufficient for pipeline and file size. """
         for pipe_data in pi_with_resources.pipelines.values():
-            pipe_data["resources"].update(
+            pipe_data[RESOURCES_KEY].update(
                     {"midsize": copy.deepcopy(midsize_resources)})
         for pipe_name, pipe_data in pi_with_resources.iterpipes():
             observed_package = pi_with_resources.choose_resource_package(
                 pipe_name, file_size)
             expected_package = copy.deepcopy(
-                    pipe_data["resources"][expected_package_name])
+                    pipe_data[RESOURCES_KEY][expected_package_name])
             assert expected_package == observed_package
 
     def test_negative_file_size_prohibited(
@@ -309,7 +312,7 @@ class PipelineInterfaceResourcePackageTests:
         """ Negative min file size in resource package spec is prohibited. """
         file_size_attr = "min_file_size" if use_new_file_size else "file_size"
         for pipe_data in pi_with_resources.pipelines.values():
-            for package_data in pipe_data["resources"].values():
+            for package_data in pipe_data[RESOURCES_KEY].values():
                 package_data[file_size_attr] = -5 * random.random()
         for pipe_name in pi_with_resources.pipeline_names:
             file_size_request = random.randrange(1, 11)
@@ -342,13 +345,13 @@ class PipelineInterfaceResourcePackageTests:
         # Add resource package spec data and create PipelineInterface.
         pipe_iface_data = copy.deepcopy(bundled_piface)
         for pipe_data in pipe_iface_data[PL_KEY].values():
-            pipe_data["resources"] = resources_data
+            pipe_data[RESOURCES_KEY] = resources_data
         pi = PipelineInterface(pipe_iface_data)
 
         # We should always get default resource package for mini file.
         for pipe_name, pipe_data in pi.iterpipes():
             default_resource_package = \
-                    pipe_data["resources"][DEFAULT_COMPUTE_RESOURCES_NAME]
+                    pipe_data[RESOURCES_KEY][DEFAULT_COMPUTE_RESOURCES_NAME]
             clear_file_size(default_resource_package)
             assert default_resource_package == \
                    pi.choose_resource_package(pipe_name, 0.001)
@@ -361,7 +364,7 @@ class PipelineInterfaceResourcePackageTests:
 
         for pipe_name, pipe_data in pi_with_resources.iterpipes():
             # Establish faulty default package setting for file size.
-            default_resource_package = pipe_data["resources"]["default"]
+            default_resource_package = pipe_data[RESOURCES_KEY]["default"]
             if use_new_file_size:
                 if "file_size" in default_resource_package:
                     del default_resource_package["file_size"]
@@ -403,7 +406,7 @@ class PipelineInterfaceResourcePackageTests:
 
         # Create the PipelineInterface.
         for pipe_data in bundled_piface[PL_KEY].values():
-            pipe_data["resources"] = resource_package_data
+            pipe_data[RESOURCES_KEY] = resource_package_data
         pi = PipelineInterface(bundled_piface)
 
         # Attempt to select resource package should fail for each pipeline,
@@ -625,9 +628,13 @@ class GenericProtocolMatchTests:
     @pytest.fixture
     def prj_data(self):
         """ Provide basic Project data. """
-        return {"metadata": {"output_dir": "output",
-                             "results_subdir": "results_pipeline",
-                             "submission_subdir": "submission"}}
+        return {
+            METADATA_KEY: {
+                OUTDIR_KEY: "output",
+                RESULTS_SUBDIR_KEY: "results_pipeline",
+                SUBMISSION_SUBDIR_KEY: "submission"
+            }
+        }
 
     @pytest.fixture
     def sheet_lines(self):
@@ -649,8 +656,8 @@ class GenericProtocolMatchTests:
     @pytest.fixture
     def prj(self, tmpdir, prj_data, anns_file, iface_paths):
         """ Provide basic Project. """
-        prj_data["pipeline_interfaces"] = iface_paths
-        prj_data["metadata"][SAMPLE_ANNOTATIONS_KEY] = anns_file
+        prj_data[PIPELINE_INTERFACES_KEY] = iface_paths
+        prj_data[METADATA_KEY][SAMPLE_ANNOTATIONS_KEY] = anns_file
         prj_file = tmpdir.join("pconf.yaml").strpath
         with open(prj_file, 'w') as f:
             yaml.dump(prj_data, f)

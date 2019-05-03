@@ -17,8 +17,8 @@ from .exceptions import InvalidResourceSpecificationException, \
     MissingPipelineConfigurationException, PipelineInterfaceConfigError
 from .utils import get_logger
 from attmap import PathExAttMap
+from divvy import DEFAULT_COMPUTE_RESOURCES_NAME, NEW_COMPUTE_KEY as COMPUTE_KEY
 from peppy import utils, Sample
-from divvy import DEFAULT_COMPUTE_RESOURCES_NAME
 from peppy.utils import is_command_callable
 
 
@@ -27,6 +27,7 @@ _LOGGER = get_logger(__name__)
 
 PL_KEY = "pipelines"
 PROTOMAP_KEY = "protocol_mapping"
+RESOURCES_KEY = "resources"
 SUBTYPE_MAPPING_SECTION = "sample_subtypes"
 
 
@@ -54,8 +55,15 @@ class PipelineInterface(PathExAttMap):
             _LOGGER.debug("Parsing '%s' for %s config data",
                           config, self.__class__.__name__)
             self.pipe_iface_file = config
-            with open(config, 'r') as f:
-                config = yaml.load(f, SafeLoader)
+            try:
+                with open(config, 'r') as f:
+                    config = yaml.load(f, SafeLoader)
+            except yaml.parser.ParserError:
+                with open(config, 'r') as f:
+                    _LOGGER.error(
+                        "Failed to parse YAML from {}:\n{}".
+                        format(config, "".join(f.readlines())))
+                raise
             self.source = config
 
         # Check presence of 2 main sections (protocol mapping and pipelines).
@@ -106,28 +114,26 @@ class PipelineInterface(PathExAttMap):
 
         pl = self.select_pipeline(pipeline_name)
 
-        compute_key = "compute"
         universal_compute = {}
         try:
-            universal_compute = pl[compute_key]
+            universal_compute = pl[COMPUTE_KEY]
         except KeyError:
             notify("No compute settings")
 
-        res_key = "resources"
         try:
-            resources = universal_compute[res_key]
+            resources = universal_compute[RESOURCES_KEY]
         except KeyError:
             try:
-                resources = pl[res_key]
+                resources = pl[RESOURCES_KEY]
             except KeyError:
                 notify("No resources")
                 return {}
         else:
-            if res_key in pl:
+            if RESOURCES_KEY in pl:
                 _LOGGER.warning(
                     "{rk} section found in both {c} section and top-level "
                     "pipelines section of pipeline interface; {c} section "
-                    "version will be used".format(rk=res_key, c=compute_key))
+                    "version will be used".format(rk=RESOURCES_KEY, c=COMPUTE_KEY))
 
         # Require default resource package specification.
         try:
@@ -553,7 +559,6 @@ def expand_pl_paths(piface):
     return piface
 
 
-
 def standardize_protocols(piface):
     """
     Handle casing and punctuation of protocol keys in pipeline interface.
@@ -670,7 +675,6 @@ def _import_sample_subtype(pipeline_filepath, subtype_name=None):
                                      class_names(proper_subtypes)))
 
 
-
 def _fetch_classes(mod):
     """ Return the classes defined in a module. """
     try:
@@ -679,7 +683,6 @@ def _fetch_classes(mod):
     except ValueError:
         return []
     return list(classes)
-
 
 
 def _proper_subtypes(types, supertype):

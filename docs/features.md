@@ -1,15 +1,15 @@
 # Features and benefits
 
-[cli]: ../img/cli.svg
-[computing]: ../img/computing.svg
-[flexible_pipelines]: ../img/flexible_pipelines.svg
-[job_monitoring]: ../img/job_monitoring.svg
-[resources]: ../img/resources.svg
-[subprojects]: ../img/subprojects.svg
-[collate]: ../img/collate.svg
-[file_yaml]: ../img/file_yaml.svg
-[html]: ../img/HTML.svg
-[modular]: ../img/modular.svg
+[cli]: img/cli.svg
+[computing]: img/computing.svg
+[flexible_pipelines]: img/flexible_pipelines.svg
+[job_monitoring]: img/job_monitoring.svg
+[resources]: img/resources.svg
+[subprojects]: img/subprojects.svg
+[collate]: img/collate.svg
+[file_yaml]: img/file_yaml.svg
+[html]: img/HTML.svg
+[modular]: img/modular.svg
 
 
 ![modular][modular] **Modular approach to job handling** 

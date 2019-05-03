@@ -1,7 +1,8 @@
 site_name: Looper
 site_logo: img/looper_logo_dark.svg
-site_url: http://code.databio.org/looper/
+site_url: http://looper.databio.org
 repo_url: http://github.com/pepkit/looper
+pypi_name: loopercli
 
 nav:
   - Getting Started: 
@@ -21,6 +22,7 @@ nav:
   - Reference:
     - Usage: usage.md
     - Configuration files: config-files.md
+    - API: autodoc_build/looper.md
     - FAQ: faq.md
     - Support: support.md
     - Contributing: contributing.md
@@ -29,7 +31,10 @@ nav:
 theme: databio
 
 plugins:
-  - databio
+  - databio:
+      autodoc_build: "docs/autodoc_build"
+      jupyter_source: "docs_jupyter"
+      jupyter_build: "docs_jupyter/build"
+      autodoc_package: "looper"
+      no_top_level: true
   - search
-
-

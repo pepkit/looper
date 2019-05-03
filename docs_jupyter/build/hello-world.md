@@ -1,4 +1,3 @@
-jupyter:True
 
 # Hello World! example for looper
 
@@ -88,7 +87,7 @@ Traceback (most recent call last):
   File "/home/nsheff/.local/lib/python3.5/site-packages/looper/utils.py", line 104, in determine_config_path
     raise ValueError("Path doesn't exist: {}".format(root))
 ValueError: Path doesn't exist: project/project_config.yaml
-
+[0m
 ```
 
 Voila! You've run your very first pipeline across multiple samples using `looper`!

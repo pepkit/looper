@@ -1,7 +1,7 @@
 		<div class='container'>
 			{% if links[0] is defined or figures[0] is defined %}
 				<hr>
-				<h5>Looper project objects</h5>
+				<h3>Looper project objects</h3>
 			{% endif %}
 			{% if figures[0] is defined %}
         		<h5>Figures</h5>
@@ -9,11 +9,11 @@
 					<div class='row justify-content-start'>
 	        		{% for figure in figures %}
 			            <figure class="figure">
-			                <a href='{{ figure[1] }}'>
+			                <a href='{{ figure[0] }}'>
 			                	<img id="fig" src='{{ figure[2] }}' class="figure-img img-fluid rounded" alt="">
 			                </a>
-			                <a href='{{ figure[1] }} '>
-			                	<figcaption class="figure-caption text-center">'{{ figure[0] }}'</figcaption>
+			                <a href='{{ figure[0] }}'>
+			                	<figcaption class="figure-caption text-center">'{{ figure[1] }}'</figcaption>
 			                </a>
 			            </figure>
 	        		{% endfor %}

@@ -88,7 +88,8 @@ class SubmissionConductor(object):
 
         self.sample_subtype = sample_subtype or Sample
         self.compute_variables = compute_variables
-        self.extra_args_text = (extra_args and " ".join(extra_args)) or ""
+        self.extra_pipe_args = extra_args or []
+        #self.extra_args_text = (extra_args and " ".join(extra_args)) or ""
         self.uses_looper_args = \
                 pipeline_interface.uses_looper_args(pipeline_key)
         self.ignore_flags = ignore_flags
@@ -205,10 +206,9 @@ class SubmissionConductor(object):
             missing_reqs_msg = "{}: {}".format(
                 missing_reqs_general, missing_reqs_specific)
             if self.prj.permissive:
-                _LOGGER.warning(missing_reqs_msg)
+                _LOGGER.warning("> Not submitted: %s", missing_reqs_msg)
             else:
                 raise error_type(missing_reqs_msg)
-            _LOGGER.warning("> Not submitted: %s", missing_reqs_msg)
             use_this_sample and skip_reasons.append(missing_reqs_general)
 
         # Check if single_or_paired value is recognized.
@@ -229,7 +229,7 @@ class SubmissionConductor(object):
             argstring = self.pl_iface.get_arg_string(
                 pipeline_name=self.pl_key, sample=sample,
                 submission_folder_path=self.prj.metadata[SUBMISSION_SUBDIR_KEY])
-        except AttributeError as e:
+        except AttributeError:
             argstring = None
             # TODO: inform about which missing attribute.
             fail_message = "Required attribute missing " \
@@ -258,14 +258,24 @@ class SubmissionConductor(object):
         return skip_reasons
 
     def _get_settings_looptext_prjtext(self, size):
+        """
+        Determine settings, looper argstring, and project argstring.
+
+        :param int | float size: size of submission, used to select the proper
+            resource package from the pipeline interface
+        :return dict, str, str: collection of settings, looper argstring, and
+            project argstring
+        """
         settings = self.pl_iface.choose_resource_package(self.pl_key, size)
         settings.update(self.compute_variables or {})
         if self.uses_looper_args:
             settings.setdefault("cores", 1)
-            looper_argtext = create_looper_args_text(self.pl_key, settings, self.prj)
+            looper_argtext = \
+                create_looper_args_text(self.pl_key, settings, self.prj)
         else:
             looper_argtext = ""
-        prj_argtext = self.prj.get_arg_string(self.pl_key)
+        prj_argtext = self.prj.get_arg_string(
+            self.pl_key, {x for x in self.extra_pipe_args if x.startswith("-")})
         return settings, looper_argtext, prj_argtext
 
     def submit(self, force=False):
@@ -287,14 +297,6 @@ class SubmissionConductor(object):
             submitted = False
 
         elif force or self._is_full(self._pool, self._curr_size):
-            _LOGGER.debug("Determining submission settings for %d sample "
-                         "(%.2f Gb)", len(self._pool), self._curr_size)
-            settings, looper_argtext, prj_argtext = \
-                self._get_settings_looptext_prjtext(self._curr_size)
-            assert all(map(lambda cmd_part: isinstance(cmd_part, str),
-                           [self.cmd_base, prj_argtext, looper_argtext])), \
-                "Each command component must be a string."
-
             # Ensure that each sample is individually represented on disk,
             # specific to subtype as applicable (should just be a single
             # subtype for each submission conductor, but some may just be
@@ -313,8 +315,7 @@ class SubmissionConductor(object):
                                   subtype_name, s.name)
                     s.to_yaml(subs_folder_path=self.prj.metadata[SUBMISSION_SUBDIR_KEY])
 
-            script = self.write_script(self._pool, settings,
-                prj_argtext=prj_argtext, looper_argtext=looper_argtext)
+            script = self.write_script(self._pool, self._curr_size)
 
             self._num_total_job_submissions += 1
 
@@ -392,20 +393,23 @@ class SubmissionConductor(object):
             name = "lump{}".format(self._num_total_job_submissions + 1)
         return "{}_{}".format(self.pl_key, name)
 
-    def write_script(self, pool, template_values, prj_argtext, looper_argtext):
+    def _cmd_text_extra(self, size):
+        _LOGGER.debug("Determining submission settings for pool of size %.2f Gb", size)
+        settings, ltext, ptext = self._get_settings_looptext_prjtext(size)
+        from_cli = " ".join(self.extra_pipe_args) if self.extra_pipe_args else ""
+        return settings, " ".join([t for t in [ptext, ltext, from_cli] if t])
+
+    def write_script(self, pool, size):
         """
         Create the script for job submission.
 
-        :param Mapping template_values: Collection of template placeholder
-            keys and the values with which to replace them.
-        :param str prj_argtext: Command text related to Project data.
-        :param str looper_argtext: Command text related to looper arguments.
+        :param Iterable[(peppy.Sample, str)] pool: collection of pairs in which
+            first component is a sample instance and second is command/argstring
+        :param float size: cumulative size of the given pool
         :return str: Path to the job submission script created.
         """
 
-        # Determine the command text for the project, looper, and extra args.
-        texts = [prj_argtext, looper_argtext, self.extra_args_text]
-        extra_parts_text = " ".join([t for t in texts if t])
+        template_values, extra_parts_text = self._cmd_text_extra(size)
 
         def get_final_cmd(c):
             return "{} {}".format(c, extra_parts_text) if extra_parts_text else c
@@ -431,11 +435,7 @@ class SubmissionConductor(object):
 
     def write_skipped_sample_scripts(self):
         """ For any sample skipped during initial processing, write submission script. """
-        scripts = []
-        for pool, size in self._skipped_sample_pools:
-            settings, looptext, prjtext = self._get_settings_looptext_prjtext(size)
-            scripts.append(self.write_script(pool, settings, prjtext, looptext))
-        return scripts
+        return [self.write_script(pool, size) for pool, size in self._skipped_sample_pools]
 
     def _reset_pool(self):
         """ Reset the state of the pool of samples """
