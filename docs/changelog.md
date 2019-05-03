@@ -14,6 +14,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 - Prevent CLI option duplication in pipeline commands generated
+- Make functional CLI spec of particular attribute on which to base selection of a subset of a project's samples ([`peppy` 298](https://github.com/pepkit/peppy/issues/298))
 
 ## [0.11.1] - 2019-04-17
 
