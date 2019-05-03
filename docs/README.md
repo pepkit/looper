@@ -23,19 +23,19 @@
 Releases are posted as [GitHub releases](https://github.com/pepkit/looper/releases), or you can install using `pip`:
 
 
-```
+```console
 pip install --user loopercli
 ```
 
 Update with:
 
-```
+```console
 pip install --user --upgrade loopercli
 ```
 
 If the `looper` executable in not automatically in your `$PATH`, add the following line to your `.bashrc` or `.profile`:
 
-```
+```console
 export PATH=~/.local/bin:$PATH
 ```
 
@@ -44,7 +44,7 @@ export PATH=~/.local/bin:$PATH
 To test `looper`, follow the [Hello Looper example repository](https://github.com/databio/hello_looper) to run your first looper project:
 
 
-```
+```console
 # download and unzip the hello_looper repository
 wget https://github.com/databio/hello_looper/archive/master.zip
 unzip master.zip
