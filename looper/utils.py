@@ -177,9 +177,10 @@ def fetch_sample_flags(prj, sample, pl_names=None):
     :return Iterable[str]: collection of flag file path(s) associated with the
         given sample for the given project
     """
-    sfolder = os.path.join(prj.metadata[RESULTS_SUBDIR_KEY], sample) if isinstance(sample, str) else sample_folder(prj=prj, sample=sample)
+    sfolder = os.path.join(prj.metadata[RESULTS_SUBDIR_KEY], sample) if isinstance(sample, str) \
+        else sample_folder(prj=prj, sample=sample)
     if not os.path.isdir(sfolder):
-        _LOGGER.debug("Folder doesn't exist for sample {}: {}".format(sample, sfolder))
+        _LOGGER.debug("Folder doesn't exist for sample {}: {}".format(str(sample), sfolder))
         return []
     if not pl_names:
         pl_match = lambda _: True
