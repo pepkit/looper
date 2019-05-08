@@ -2,6 +2,16 @@
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format. 
 
+## [0.12.1] -- unreleased
+
+### Added
+
+### Changed
+- Status table creation is possible outside of `looper`
+
+### Fixed
+- In HTML reporting module, do not ignore objects which are neither HTMLs nor images in the summary, e.g. CSVs
+
 ## [0.12.0] -- 2019-05-03
 
 ### Added

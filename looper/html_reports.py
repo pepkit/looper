@@ -9,7 +9,7 @@ import re
 import sys
 from warnings import warn
 from ._version import __version__ as v
-from .const import TEMPLATES_DIRNAME, APPEARANCE_BY_FLAG, NO_DATA_PLACEHOLDER
+from .const import TEMPLATES_DIRNAME, APPEARANCE_BY_FLAG, NO_DATA_PLACEHOLDER, IMAGE_EXTS
 from copy import copy as cp
 _LOGGER = logging.getLogger("looper")
 
@@ -209,7 +209,7 @@ class HTMLReportBuilder(object):
 
             # Set the PATH to the image/file. Catch any errors.
             # Check if the object is an HTML document
-            if str(row['filename']).lower().endswith(".html"):
+            if not str(row['filename']).lower().endswith(IMAGE_EXTS):
                 image_path = page_path
             else:
                 try:
@@ -229,16 +229,11 @@ class HTMLReportBuilder(object):
             if os.path.isfile(image_path) and os.path.isfile(page_path):
                 image_relpath = os.path.relpath(image_path, self.reports_dir)
                 # If the object has a valid image, use it!
-                if str(image_path).lower().endswith(('.png', '.jpg', '.jpeg', '.svg', '.gif')):
+                if str(image_path).lower().endswith(IMAGE_EXTS):
                     figures.append([page_relpath, str(row['sample_name']), image_relpath])
-                # Or if that "image" is an HTML document
-                elif str(image_path).lower().endswith('.html'):
+                # Or if that "image" is not an image, treat it as a link
+                elif not str(image_path).lower().endswith(IMAGE_EXTS):
                     links.append([str(row['sample_name']), image_relpath])
-                # Otherwise treat as a link
-                elif os.path.isfile(page_path):
-                    links.append([str(row['sample_name']), page_relpath])
-                else:
-                    warnings.append(str(row['filename']))
             else:
                 warnings.append(str(row['filename']))
 
@@ -784,6 +779,7 @@ def uniqify(seq):
     seen = set()
     seen_add = seen.add
     return [x for x in seq if not (x in seen or seen_add(x))]
+
 
 def create_status_table(prj, objs=_pd.DataFrame(), basic=False):
     """
