@@ -20,6 +20,7 @@ from attmap import PathExAttMap
 from divvy import DEFAULT_COMPUTE_RESOURCES_NAME, NEW_COMPUTE_KEY as COMPUTE_KEY
 from peppy import utils, Sample
 from peppy.utils import is_command_callable
+from ubiquerg import expandpath
 
 
 _LOGGER = get_logger(__name__)
@@ -553,7 +554,7 @@ def expand_pl_paths(piface):
         if "path" in pipe_data:
             pipe_path = pipe_data["path"]
             _LOGGER.whisper("Expanding path: '%s'", pipe_path)
-            pipe_path = utils.expandpath(pipe_path)
+            pipe_path = expandpath(pipe_path)
             _LOGGER.whisper("Expanded: '%s'", pipe_path)
             pipe_data["path"] = pipe_path
     return piface
