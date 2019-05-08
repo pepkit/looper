@@ -11,7 +11,8 @@ from .exceptions import JobSubmissionException
 from .utils import \
     create_looper_args_text, grab_project_data, fetch_sample_flags
 
-from peppy import Sample, VALID_READ_TYPES
+from .sample import Sample
+from peppy import VALID_READ_TYPES
 
 
 __author__ = "Vince Reuter"

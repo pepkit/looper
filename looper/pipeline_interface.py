@@ -15,11 +15,12 @@ from yaml import SafeLoader
 
 from .exceptions import InvalidResourceSpecificationException, \
     MissingPipelineConfigurationException, PipelineInterfaceConfigError
+from .sample import Sample
 from .utils import get_logger
 from attmap import PathExAttMap
 from divvy import DEFAULT_COMPUTE_RESOURCES_NAME, NEW_COMPUTE_KEY as COMPUTE_KEY
-from peppy import utils, Sample
-from peppy.utils import is_command_callable
+from peppy import utils as peputil
+from ubiquerg import expandpath
 
 
 _LOGGER = get_logger(__name__)
@@ -31,7 +32,7 @@ RESOURCES_KEY = "resources"
 SUBTYPE_MAPPING_SECTION = "sample_subtypes"
 
 
-@utils.copy
+@peputil.copy
 class PipelineInterface(PathExAttMap):
     """
     This class parses, holds, and returns information for a yaml file that
@@ -228,7 +229,7 @@ class PipelineInterface(PathExAttMap):
 
         # TODO: determine how to deal with pipelines_path (i.e., could be null)
         if not os.path.isabs(script_path_only) and not \
-                is_command_callable(script_path_only):
+                peputil.is_command_callable(script_path_only):
             _LOGGER.whisper("Expanding non-absolute script path: '%s'",
                             script_path_only)
             script_path_only = os.path.join(
@@ -553,7 +554,7 @@ def expand_pl_paths(piface):
         if "path" in pipe_data:
             pipe_path = pipe_data["path"]
             _LOGGER.whisper("Expanding path: '%s'", pipe_path)
-            pipe_path = utils.expandpath(pipe_path)
+            pipe_path = expandpath(pipe_path)
             _LOGGER.whisper("Expanded: '%s'", pipe_path)
             pipe_data["path"] = pipe_path
     return piface
@@ -603,10 +604,10 @@ def _import_sample_subtype(pipeline_filepath, subtype_name=None):
         # error messaging in the shell that may distract or confuse a user.
         if _LOGGER.getEffectiveLevel() > logging.DEBUG:
             with open(os.devnull, 'w') as temp_standard_streams:
-                with utils.standard_stream_redirector(temp_standard_streams):
-                    pipeline_module = utils.import_from_source(pipeline_filepath)
+                with peputil.standard_stream_redirector(temp_standard_streams):
+                    pipeline_module = peputil.import_from_source(pipeline_filepath)
         else:
-            pipeline_module = utils.import_from_source(pipeline_filepath)
+            pipeline_module = peputil.import_from_source(pipeline_filepath)
 
     except SystemExit:
         # SystemExit would be caught as BaseException, but SystemExit is

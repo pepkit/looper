@@ -360,7 +360,7 @@ def _find_subs(project, sample=None):
     Find submission script paths associated with a project.
 
     :param looper.Project project: project of interest
-    :param peppy.Sample sample: specific sample of interest, optional
+    :param looper.Sample sample: specific sample of interest, optional
     :return list[str]: collection of filepaths, each of which is a path to
         (ostensibly) a submission script associated with the given project,
         and specific sample if provided

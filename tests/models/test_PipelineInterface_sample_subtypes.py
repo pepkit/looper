@@ -14,7 +14,7 @@ import pytest
 
 from looper.pipeline_interface import \
     PipelineInterface, SUBTYPE_MAPPING_SECTION as SUBTYPES_KEY
-from peppy import Sample
+from looper import Sample
 from .conftest import write_config_data, ATAC_PROTOCOL_NAME
 
 
@@ -22,16 +22,18 @@ __author__ = "Vince Reuter"
 __email__ = "vreuter@virginia.edu"
 
 
-SAMPLE_IMPORT = "from peppy import Sample"
+SAMPLE_IMPORT = "from looper import Sample"
 
 
 class CustomExceptionA(Exception):
     def __init__(self, *args):
         super(CustomExceptionA, self).__init__(*args)
 
+
 class CustomExceptionB(Exception):
     def __init__(self, *args):
         super(CustomExceptionB, self).__init__(*args)
+
 
 CUSTOM_EXCEPTIONS = [CustomExceptionA, CustomExceptionB]
 
@@ -42,8 +44,6 @@ _, BUILTIN_EXCEPTIONS_WITHOUT_REQUIRED_ARGUMENTS = \
                 builtins, lambda o: inspect.isclass(o) and
                                        issubclass(o, BaseException) and
                                        not issubclass(o, UnicodeError)))))
-
-
 
 
 class SampleSubtypeTests:
@@ -270,7 +270,7 @@ class SampleSubtypeTests:
         pipe_path = os.path.join(tmpdir.strpath, atac_pipe_name)
 
         # Define the subtype in the pipeline module.
-        lines = ["from peppy import Sample\n",
+        lines = ["from looper import Sample\n",
                  "class {}({}):\n".format(subtype_name, subtype_name),
                  "\tdef __init__(self, *args, **kwargs):\n",
                  "\t\tsuper({}, self).__init__(*args, **kwargs)\n".
