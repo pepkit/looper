@@ -4,6 +4,7 @@ from operator import itemgetter
 import os
 from peppy import Sample as PeppySample
 from peppy import *
+from peppy.const import *
 from peppy.utils import get_logger
 from ngstk import get_file_size, parse_ftype, \
     peek_read_lengths_and_paired_counts_from_bam
