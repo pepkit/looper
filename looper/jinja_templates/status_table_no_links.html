@@ -6,32 +6,20 @@
                     <tr>
                         <th>Sample name</th>
                         <th>Status</th>
-                    {% if not basic %}
-                        <th>Log file</th>
                         <th>Runtime</th>
                         <th>Peak memory use</th>
-                    {% endif %}
                     </tr>
                 </thead>
                     <tbody>
-                        {% for element in sample_paths %}
+                        {% for element in sample_link_names %}
                             {% set i = loop.index - 1 %}
                             <tr>
-                                <td style="cursor:pointer" onclick="location.href='{{ sample_paths[i] }}'">
-                                    <a href="{{ sample_paths[i] }}" target="_top">{{ sample_link_names[i] }}</a>
+                                <td>
+                                    {{ sample_link_names[i] }}
                                 </td>
                                 <td class='{{ row_classes[i] }}'>
                                     {{ flags[i] }}
                                 </td>
-                                {% if log_paths[i] is none %}
-                                    <td>
-                                        NA
-                                    </td>
-                                {% else %}
-                                    <td style="cursor:pointer" onclick="location.href='{{ log_paths[i] }}'">
-                                        <a href="{{ log_paths[i] }}" target="_top">{{ log_link_names[i] }}</a>
-                                    </td>
-                                {% endif %}
                                 <td>
                                     {{ times[i] }}
                                 </td>

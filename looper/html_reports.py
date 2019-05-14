@@ -8,8 +8,9 @@ import jinja2
 import re
 import sys
 from warnings import warn
+from datetime import timedelta
 from ._version import __version__ as v
-from .const import TEMPLATES_DIRNAME, APPEARANCE_BY_FLAG, NO_DATA_PLACEHOLDER, IMAGE_EXTS
+from .const import TEMPLATES_DIRNAME, APPEARANCE_BY_FLAG, NO_DATA_PLACEHOLDER, IMAGE_EXTS, PROFILE_COLNAMES
 from copy import copy as cp
 _LOGGER = logging.getLogger("looper")
 
@@ -511,7 +512,7 @@ class HTMLReportBuilder(object):
                   self.create_object_parent_html(objs, navbar_reports, footer))
         # Create status page with each sample's status listed
         save_html(os.path.join(self.reports_dir, "status.html"),
-                  self.create_status_html(create_status_table(self.prj, objs), navbar_reports, footer))
+                  self.create_status_html(create_status_table(self.prj), navbar_reports, footer))
         # Add project level objects
         project_objects = self.create_project_objects()
         # Complete and close HTML file
@@ -607,13 +608,14 @@ def _get_flags(sample_dir):
     return [re.search(r'\_([a-z]+)\.flag$', os.path.basename(f)).groups()[0] for f in flag_files]
 
 
-def _match_file_for_sample(sample_name, appendix, location):
+def _match_file_for_sample(sample_name, appendix, location, full_path=False):
     """
     Safely looks for files matching the appendix in the specified location for the sample
 
     :param str sample_name: name of the sample that the file name should be found for
     :param str appendix: the ending  specific for the file
     :param str location: where to look for the file
+    :param bool full_path: whether to return full path
     :return str: the name of the matched file
     """
     regex = "*" + appendix
@@ -623,7 +625,7 @@ def _match_file_for_sample(sample_name, appendix, location):
         return None
     elif len(matches) > 1:
         _LOGGER.warning("matched mutiple files for '{}'. Returning the first one".format(search_pattern))
-    return os.path.basename(matches[0])
+    return matches[0] if full_path else os.path.basename(matches[0])
 
 
 def _get_relpath_to_file(file_name, sample_name, location, relative_to):
@@ -781,14 +783,16 @@ def uniqify(seq):
     return [x for x in seq if not (x in seen or seen_add(x))]
 
 
-def create_status_table(prj, objs=_pd.DataFrame(), basic=False):
+def create_status_table(prj, final=True):
     """
     Creates status table, the core of the status page.
-    It is abstracted into a function so that it can be used in other software pacakges
+    It is abstracted into a function so that it can be used in other software packages.
+    It can produce a table of two types. With links to the samples/log files and without.
+    The one without can be used to render HTMLs for on-th-fly job status inspection
 
-    :param prj:
-    :param pandas.DataFrame objs: project level dataframe containing any reported objects for all samples
-    :param bool basic: if just the sample name and the status should be in the table
+    :param looper.Project prj: project to create the status table for
+    :param bool final: if the status table is created for a finalized looper run. In such a case,
+    links to samples and log files will be provided
     :return str: rendered status HTML file
     """
     status_warning = False
@@ -836,31 +840,23 @@ def create_status_table(prj, objs=_pd.DataFrame(), basic=False):
             # get second column data (status/flag)
             flags.append(flag)
             # get third column data (log file/link)
-            single_sample = _pd.DataFrame() if objs.empty else objs[objs['sample_name'] == sample_name]
-            log_name = _match_file_for_sample(sample_name, "log.md", prj.metadata.results_subdir) \
-                if single_sample.empty else str(single_sample.iloc[0]['annotation']) + "_log.md"
-            log_file = os.path.join(prj.metadata.results_subdir, sample_name, log_name)
-            file_link = _get_relpath_to_file(
-                log_name, sample_name, prj.metadata.results_subdir, get_reports_dir(prj))
+            log_name = _match_file_for_sample(sample_name, "log.md", prj.metadata.results_subdir)
+            log_file_link = _get_relpath_to_file(log_name, sample_name, prj.metadata.results_subdir,
+                                                 get_reports_dir(prj))
             log_link_names.append(log_name)
-            log_paths.append(file_link)
+            log_paths.append(log_file_link)
             # get fourth column data (runtime) and fifth column data (memory)
-            time = NO_DATA_PLACEHOLDER
-            warn_msg = "There was a problem reading a log file ('{log}')." \
-                       " {what} was not collected for sample: '{sname}'"
-            if os.path.isfile(log_file):
-                time = _get_from_log(log_file, r'(Total elapsed time)')
-                mem = _get_from_log(log_file, r'(Peak memory used)')
-                if time is None:
-                    status_warning = True
-                    time = NO_DATA_PLACEHOLDER
-                    warn(warn_msg.format(what="Runtime", log=log_file, sname=sample.sample_name))
-                if mem is None:
-                    status_warning = True
-                    mem = NO_DATA_PLACEHOLDER
-                    warn(warn_msg.format(what="Peak memory", log=log_file, sname=sample.sample_name))
-            times.append(time)
-            mems.append(mem)
+            profile_file_path = _match_file_for_sample(sample.sample_name, 'profile.tsv', prj.metadata.results_subdir,
+                                                       full_path=True)
+            if os.path.exists(profile_file_path):
+                df = _pd.read_csv(profile_file_path, sep="\t", comment="#", names=PROFILE_COLNAMES)
+                df['runtime'] = _pd.to_timedelta(df['runtime'])
+                times.append(_get_runtime(df))
+                mems.append(_get_maxmem(df))
+            else:
+                _LOGGER.warning("'{}' does not exist".format(profile_file_path))
+                times.append(NO_DATA_PLACEHOLDER)
+                mems.append(NO_DATA_PLACEHOLDER)
         else:
             # Sample was not run through the pipeline
             sample_warning.append(sample_name)
@@ -868,8 +864,7 @@ def create_status_table(prj, objs=_pd.DataFrame(), basic=False):
     # Alert the user to any warnings generated
     if status_warning:
         warn("The stats table is incomplete, likely because " +
-                "one or more jobs either failed or is still running.")
-
+             "one or more jobs either failed or is still running.")
     if sample_warning:
         if len(sample_warning) == 1:
             warn("{} is not present in {}".format(
@@ -880,8 +875,32 @@ def create_status_table(prj, objs=_pd.DataFrame(), basic=False):
             warn(warn_msg.format(
                 prj.metadata.results_subdir,
                 ' '.join(str(sample) for sample in sample_warning)))
+    template_vars = dict(sample_link_names=sample_link_names, row_classes=row_classes, flags=flags, times=times,
+                         mems=mems)
+    template_name = "status_table_no_links.html"
+    if final:
+        template_name = "status_table.html"
+        template_vars.update(dict(sample_paths=sample_paths, log_link_names=log_link_names, log_paths=log_paths))
+    return render_jinja_template(template_name, get_jinja_env(), template_vars)
 
-    template_vars = dict(sample_link_names=sample_link_names,
-                         sample_paths=sample_paths, log_link_names=log_link_names, log_paths=log_paths,
-                         row_classes=row_classes, flags=flags, times=times, mems=mems, basic=basic)
-    return render_jinja_template("status_table.html", get_jinja_env(), template_vars)
+
+def _get_maxmem(profile_df):
+    """
+    Get current peak memory
+
+    :param pandas.core.frame.DataFrame profile_df: a data frame representing the current profile.tsv for a sample
+    :return str: max memory
+    """
+    return "{} GB".format(str(max(profile_df['mem'])))
+
+
+def _get_runtime(profile_df):
+    """
+    Collect the unique and last duplicated runtimes, sum them and then return in str format
+
+    :param pandas.core.frame.DataFrame profile_df: a data frame representing the current profile.tsv for a sample
+    :return str: sum of runtimes
+    """
+    unique_df = profile_df[~profile_df.duplicated('cid', keep='last').values]
+    return str(timedelta(seconds=sum(unique_df['runtime'].apply(lambda x: x.total_seconds())))).split(".")[0]
+
