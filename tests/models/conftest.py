@@ -127,7 +127,7 @@ def atacseq_piface_data(atac_pipe_name):
 @pytest.fixture(scope="function")
 def basic_data_raw():
     return copy.deepcopy(
-        {"PathExAttMap": {},
+        {"OrdPathExAttMap": {},
          "Sample": {SAMPLE_NAME_COLNAME: "arbitrary-sample"}})
 
 
@@ -144,7 +144,7 @@ def basic_instance_data(request, instance_raw_data):
     """
     # Cleanup is free with _write_config, using request's temp folder.
     transformation_by_class = {
-            "PathExAttMap": lambda data: data,
+            "OrdPathExAttMap": lambda data: data,
             "PipelineInterface": lambda data: _write_config(
                 data, request, "pipeline_interface.yaml"),
             "Sample": lambda data: pd.Series(data)}

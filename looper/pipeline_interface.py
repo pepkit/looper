@@ -17,7 +17,7 @@ from .exceptions import InvalidResourceSpecificationException, \
     MissingPipelineConfigurationException, PipelineInterfaceConfigError
 from .sample import Sample
 from .utils import get_logger
-from attmap import PathExAttMap
+from attmap import OrdPathExAttMap
 from divvy import DEFAULT_COMPUTE_RESOURCES_NAME, NEW_COMPUTE_KEY as COMPUTE_KEY
 from peppy import utils as peputil
 from ubiquerg import expandpath
@@ -33,7 +33,7 @@ SUBTYPE_MAPPING_SECTION = "sample_subtypes"
 
 
 @peputil.copy
-class PipelineInterface(PathExAttMap):
+class PipelineInterface(OrdPathExAttMap):
     """
     This class parses, holds, and returns information for a yaml file that
     specifies how to interact with each individual pipeline. This
