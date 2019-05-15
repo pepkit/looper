@@ -77,11 +77,8 @@
     } );
 
     //var table = document.getElementById("data-table");
-
-
     var plotDict = {}; // variable containing column values (col_name:string -> col_values:list)
     var statsTable = {{ stats_json }}; // Jinja template variable
-    
     // make a list of the first column values, which are the names of the samples
     var sample_names = [];
     var j = 1;
@@ -89,55 +86,48 @@
         sample_names.push(statsTable[0][j]);
         j++;
     }
-
     // populate the values of each column
-    var col_names = [];
     var i = 1; // denotes the column number
+    var re = /:/g;
     while(typeof(statsTable[i]) !== "undefined"){
         var currCol = statsTable[i];
-
         if(isNaN(parseFloat(currCol[1]))){ // change so that if the first column is missing values, it will look in the other rows
             i++;
             continue;
         }
-
         var colName = currCol[0];
-        col_names.push(colName);
-
         var colValues = [];
         var j = 1;
-        while(typeof(currCol[j]) !== "undefined"){
+        while(typeof(currCol[j]) !== "undefined" && !Array.isArray(currCol[j].match(re))){
             colValues.push(parseFloat(currCol[j]));
             j++;
         }
-        plotDict[colName] = colValues;
+        console.log("colValues: " + colValues)
+        if(colValues.length > 0){
+            console.log("skipped")
+            plotDict[colName] = colValues;
+        }
         i++;
     }
 
-
-
     function graphCol(colname){
       /* Creates a graph using Plotly.js */
-
       var data = [{
         x: sample_names,
         y: plotDict[colname],
         type: 'bar',
       }];
-
       var layout = {
         title: colname
       };
       chart = document.getElementById('charts');
       Plotly.newPlot(chart, data, layout);
     }
-
     function displayPlottableColumns(){
-        for(var i = 0; i < col_names.length; i++){
-            $("#plot-cols").append("<li><a href='#' title='Click to visualize this column' onclick='graphCol(\"" + col_names[i] + 
-                "\");return false;'>" + col_names[i] + "</a></li>");
+        for(var col in plotDict){
+            $("#plot-cols").append("<li class='list-group-item'><a href='#' title='Click to visualize this column' onclick='graphCol(\"" + col + 
+                "\");return false;'>" + col+ "</a></li>");
         }
     }
-
     displayPlottableColumns();
 </script>
