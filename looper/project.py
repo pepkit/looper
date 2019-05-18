@@ -38,18 +38,8 @@ class Project(peppy.Project):
                 config_file, subproject=subproject, 
                 no_environment_exception=RuntimeError,
                 no_compute_exception=RuntimeError, **kwargs)
-        self._interfaces = process_pipeline_interfaces(
+        self.interfaces = process_pipeline_interfaces(
             self[METADATA_KEY][PIPELINE_INTERFACES_KEY])
-
-    @property
-    def interfaces(self):
-        """
-        Get this Project's collection of pipeline interfaces
-
-        :return Iterable[looper.PipelineInterface]: collection of pipeline
-            interfaces known by this Project
-        """
-        return copy.deepcopy(self._interfaces)
 
     @property
     def project_folders(self):
