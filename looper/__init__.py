@@ -152,7 +152,7 @@ def build_parser():
                 default=DEFAULT_COMPUTE_RESOURCES_NAME,
                 help="YAML file with looper environment compute settings.")
         comp_spec.add_argument(
-                "--compute-packages", dest=COMPUTE_KEY,
+                "--compute-package", dest=COMPUTE_KEY,
                 default=DEFAULT_COMPUTE_RESOURCES_NAME,
                 help="YAML file with looper environment compute settings.")
 
