@@ -174,7 +174,7 @@ class SubmissionConductor(object):
                 _LOGGER.info("> Re-running failed sample '%s' for pipeline '%s'.",
                      sample.name, self.pl_name)
                 use_this_sample = True
-            else:
+            if not use_this_sample:
                 _LOGGER.info("> Skipping sample '%s' for pipeline '%s', "
                              "%s found: %s", sample.name, self.pl_name,
                              "flags" if len(flag_files) > 1 else "flag",
