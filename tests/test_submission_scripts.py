@@ -54,7 +54,7 @@ def sample_writer(request):
     :return function: how to write sample/subsample records
     """
 
-    # DEtermine delimiter and extension
+    # Determine delimiter and extension.
     try:
         sep = request.getfixturevalue("cfg_sep")
     except Exception:
