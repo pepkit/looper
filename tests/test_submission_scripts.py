@@ -252,31 +252,42 @@ def test_not_ignoring_flags(prj, flag_name, flagged_sample_names):
 def test_ignoring_flags(prj, flag_name, flagged_sample_names, validate):
     """ Script creation is automatic, and submission is counted. """
     preexisting = _collect_flags(prj)
+    print("collected")
     assert {} == preexisting, "Preexisting flag(s): {}".format(preexisting)
     flagged_samples = list(filter(
         lambda s: s.name in flagged_sample_names, prj.samples))
+    print("flagged: {}".format(flagged_sample_names))
     assert len(flagged_sample_names) == len(flagged_samples), \
         "Expected {expn} flagged samples ({exp}) but found {obsn} ({obs})".format(
             expn=len(flagged_sample_names),
             exp=", ".join(flagged_sample_names), obsn=len(flagged_samples),
             obs=", ".join(s.name for s in flagged_samples))
     flag_files_made = [_mkflag(s, prj, flag_name) for s in flagged_samples]
+    print("flag_files_made: {}".format(flag_files_made))
     assert all(os.path.isfile(f) for f in flag_files_made), \
         "Missing setup flag file(s): {}".format(
             ", ".join([f for f in flag_files_made if not os.path.isfile(f)]))
     preexisting = _collect_flags(prj)
+    print("preexisting: {}".format(preexisting))
     assert len(flagged_sample_names) == len(preexisting)
     assert set(flag_files_made) == set(itertools.chain(*preexisting.values()))
     conductors, pipe_keys = process_protocols(
         prj, set(PLIFACE_DATA[PROTOMAP_KEY].keys()), ignore_flags=True)
+    print("processed")
     assert all(map(lambda c: c.ignore_flags, conductors.values())), \
         "Failed to establish precondition, that flags are to be ignored"
+    print("asserted")
     for s in prj.samples:
         pks = pipe_keys[s.protocol]
         assert 1 == len(pks), \
             "Need exactly one pipeline key but got {} for protocol {}: {}".\
             format(len(pks), s.protocol, pks)
-        conductors[pks[0]].add_sample(s)
+        print("adding: {}".format(s.name))
+        cond = conductors[pks[0]]
+        print("cond: {}".format(cond))
+        cond.add_sample(s)
+        print("added: {}".format(s.name))
+    print("Validating...")
     validate(prj, conductors.values())
 
 
