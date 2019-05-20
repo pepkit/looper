@@ -8,12 +8,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - `Sample` derived from `peppy.Sample` that specifies functionality less tied to a `Sample`'s essence, more related to a submission context, and hence more relevant to `looper` than to `peppy`.
 
 ### Changed
-- Status table creation is possible outside of `looper`
+- Status table creation is possible outside of `looper`.
 
 ### Fixed
 - In HTML reporting module, do not ignore objects which are neither HTMLs nor images in the summary, e.g. CSVs
 - Restore parsing and application of pipeline-level computing resource specification from a pipeline interface file; [Issue 184](https://github.com/pepkit/looper/issues/184)
-- Allow `ignore_flags` to properly modulate submission messaging; [Issue ](https://github.com/pepkit/looper/issues/179)
+- Allow `ignore_flags` to properly modulate submission messaging; [Issue 179](https://github.com/pepkit/looper/issues/179)
 
 ## [0.12.0] -- 2019-05-03
 
