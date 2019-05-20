@@ -9,11 +9,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Changed
 - Status table creation is possible outside of `looper`.
+- In the summary index page the plottable columns list is now scrollable
+- Status page relies on the `profile.tsv` file rather than `*.log`; [Issue 159](https://github.com/pepkit/looper/issues/159)
 
 ### Fixed
 - In HTML reporting module, do not ignore objects which are neither HTMLs nor images in the summary, e.g. CSVs
 - Restore parsing and application of pipeline-level computing resource specification from a pipeline interface file; [Issue 184](https://github.com/pepkit/looper/issues/184)
 - Allow `ignore_flags` to properly modulate submission messaging; [Issue 179](https://github.com/pepkit/looper/issues/179)
+- Do not display time-like summary columns as the plottable ones; [Issue 182](https://github.com/pepkit/looper/issues/182)
 
 ## [0.12.0] -- 2019-05-03
 
