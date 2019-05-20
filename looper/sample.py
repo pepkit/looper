@@ -19,6 +19,9 @@ _LOGGER = get_logger(__name__)
 
 class Sample(PeppySample):
 
+    def __init__(self, series, prj=None):
+        super(Sample, self).__init__(series, prj)
+
     def determine_missing_requirements(self):
         """
         Determine which of this Sample's required attributes/files are missing.
