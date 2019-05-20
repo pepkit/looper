@@ -32,13 +32,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Prevent CLI option duplication in pipeline commands generated
 - Make functional CLI spec of particular attribute on which to base selection of a subset of a project's samples ([`peppy` 298](https://github.com/pepkit/peppy/issues/298))
 
-## [0.11.1] - 2019-04-17
+## [0.11.1] -- 2019-04-17
 
 ### Changed
 - Improved documentation
 - Improved interaction with `peppy` and `divvy` dependencies
 
-## [0.11] - 2019-04-17
+## [0.11] -- 2019-04-17
 
 ### Added
 - Implemented `looper rerun` command.
@@ -54,7 +54,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Removed Python 3.4 support.
 - UI: change parameter names `in/exclude-samples` to `selector-in/exclude`.
   
-## [0.10.0] - 2018-12-20
+## [0.10.0] -- 2018-12-20
 
 ### Changed
 - `PipelineInterface` now derives from `peppy.AttributeDict`.
@@ -67,7 +67,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Existence of an object lacking an anchor image is no longer problematic for `summarize`.
 - Basic package test in Python 3 now succeeds: `python3 setup.py test`.
 
-## [v0.9.2] - 2018-11-12
+## [v0.9.2] -- 2018-11-12
 
 ### Changed
 - Fixed bugs with `looper summarize` when no summarizers were present
@@ -76,12 +76,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Added new display features (graphs, table display) for HTML summary output.
 
 
-## [0.9.1] - 2018-06-30
+## [0.9.1] -- 2018-06-30
 
 ### Changed
 - Fixed several bugs with `looper summarize` that caused failure on edge cases.
 
-## [0.9.0] - 2018-06-25
+## [0.9.0] -- 2018-06-25
 
 ### Added
 - Support for custom summarizers
@@ -89,7 +89,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Allow any variables in environment config files or other `compute` sections to be used in submission templates. This allows looper to be used with containers.
 - Add nice universal project-level HTML reporting
 
-## [0.8.1] - 2018-04-02
+## [0.8.1] -- 2018-04-02
 
 ### Changed
 - Minor documentation and packaging updates for first Pypi release.
@@ -97,23 +97,23 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Fix a bug with `report_figure` that made it output pandas code
 
 
-## [0.8.0] - 2018-01-19
+## [0.8.0] -- 2018-01-19
 
 ### Changed
 - Use independent `peppy` package, replacing `models` module for core data types.
 - Integrate `ProtocolInterface` functionality into `PipelineInterface`.
 
-## [0.7.2] - 2017-11-16
+## [0.7.2] -- 2017-11-16
 ### Changed
 - Correctly count successful command submissions when not using `--dry-run`.
 
-## [0.7.1] - 2017-11-15
+## [0.7.1] -- 2017-11-15
 
 ### Changed
 - No longer falsely display that there's a submission failure.
 - Allow non-string values to be unquoted in the `pipeline_args` section.
 
-## [0.7] - 2017-11-15
+## [0.7] -- 2017-11-15
 ### Added
 - Add `--lump` and `--lumpn` options
 - Catch submission errors from cluster resource managers
@@ -129,7 +129,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Sample child classes are now defined explicitly in the pipeline interface. Previously, they were guessed based on presence of a class extending Sample in a pipeline script.
 - Changed 'library' key sample attribute to 'protocol'
 
-## [0.6] - 2017-07-21
+## [0.6] -- 2017-07-21
 ### Added
   - Add support for implied_column section of the project config file
   - Add support for Python 3
@@ -147,7 +147,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Require `setuptools` for installation, and `pandas 0.20.2`. If `numexpr` is installed, version `2.6.2` is required.
 - Allows tilde in `pipeline_interfaces`
 
-## [0.5] - 2017-03-01
+## [0.5] -- 2017-03-01
 ### Added
 - Add new looper version tracking, with `--version` and `-V` options and printing version at runtime
 - Add support for asterisks in file paths
@@ -162,7 +162,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - More robust installation and more explicit requirement of Python 2.7
 
 
-## [0.4] - 2017-01-12
+## [0.4] -- 2017-01-12
 ###  Added
 - New command-line interface (CLI) based on sub-commands
 - New subcommand (`looper summarize`) replacing the `summarizePipelineStats.R` script
