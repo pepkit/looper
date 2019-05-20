@@ -171,15 +171,16 @@ def fetch_sample_flags(prj, sample, pl_names=None):
     Find any flag files present for a sample associated with a project
 
     :param looper.Project prj: project of interest
-    :param peppy.Sample sample: sample of interest
+    :param peppy.Sample | str sample: sample object or sample name of interest
     :param str | Iterable[str] pl_names: name of the pipeline for which flag(s)
         should be found
     :return Iterable[str]: collection of flag file path(s) associated with the
         given sample for the given project
     """
-    sfolder = sample_folder(prj=prj, sample=sample)
+    sfolder = os.path.join(prj.metadata[RESULTS_SUBDIR_KEY], sample) if isinstance(sample, str) \
+        else sample_folder(prj=prj, sample=sample)
     if not os.path.isdir(sfolder):
-        _LOGGER.debug("Folder doesn't exist for sample {}: {}".format(sample.name, sfolder))
+        _LOGGER.debug("Folder doesn't exist for sample {}: {}".format(str(sample), sfolder))
         return []
     if not pl_names:
         pl_match = lambda _: True

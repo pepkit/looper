@@ -12,6 +12,7 @@ import logging
 from .conductor import SubmissionConductor
 from .pipeline_interface import PipelineInterface
 from .project import Project
+from .sample import Sample
 from ._version import __version__
 from .parser_types import *
 
@@ -24,8 +25,7 @@ from peppy import \
     FLAGS, IMPLICATIONS_DECLARATION, SAMPLE_INDEPENDENT_PROJECT_SECTIONS, \
     SAMPLE_NAME_COLNAME
 
-__classes__ = ["PipelineInterface"]
-__all__ = ["Project", "PipelineInterface", "SubmissionConductor"]
+__all__ = ["Project", "PipelineInterface", "Sample", "SubmissionConductor"]
 
 
 GENERIC_PROTOCOL_KEY = "*"
@@ -152,7 +152,7 @@ def build_parser():
                 default=DEFAULT_COMPUTE_RESOURCES_NAME,
                 help="YAML file with looper environment compute settings.")
         comp_spec.add_argument(
-                "--compute-packages", dest=COMPUTE_KEY,
+                "--compute-package", dest=COMPUTE_KEY,
                 default=DEFAULT_COMPUTE_RESOURCES_NAME,
                 help="YAML file with looper environment compute settings.")
 

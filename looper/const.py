@@ -36,3 +36,5 @@ OUTKEY = "outputs"
 RESULTS_SUBDIR_KEY = "results_subdir"
 SUBMISSION_SUBDIR_KEY = "submission_subdir"
 TEMPLATES_DIRNAME = "jinja_templates"
+IMAGE_EXTS = ('.png', '.jpg', '.jpeg', '.svg', '.gif')
+PROFILE_COLNAMES = ['pid', 'hash', 'cid', 'runtime', 'mem', 'cmd', 'lock']  # this strongly depends on pypiper's profile.tsv format

@@ -104,9 +104,8 @@ class ProjectPifaceGroup(object):
         assert isinstance(piface, PipelineInterface)
         for curr in self._interfaces:
             if curr == piface:
-                _LOGGER.whisper(
-                    "Found match existing {} match: {}".format(
-                        PipelineInterface.__class__.__name__, piface))
+                _LOGGER.whisper("Found existing {} match: {}".format(
+                    PipelineInterface.__class__.__name__, piface))
                 break
         else:
             self._interfaces.append(piface)

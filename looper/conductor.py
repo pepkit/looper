@@ -11,7 +11,8 @@ from .exceptions import JobSubmissionException
 from .utils import \
     create_looper_args_text, grab_project_data, fetch_sample_flags
 
-from peppy import Sample, VALID_READ_TYPES
+from .sample import Sample
+from peppy import VALID_READ_TYPES
 
 
 __author__ = "Vince Reuter"
@@ -142,7 +143,7 @@ class SubmissionConductor(object):
         """
         Add a sample for submission to this conductor.
 
-        :param Sample sample: sample to be included with this conductor's
+        :param peppy.Sample sample: sample to be included with this conductor's
             currently growing collection of command submissions
         :param type sample_subtype: specific subtype associated
             with this new sample; this is used to tailor-make the sample
@@ -155,6 +156,8 @@ class SubmissionConductor(object):
         :raise TypeError: If sample subtype is provided but does not extend
             the base Sample class, raise a TypeError.
         """
+
+        _LOGGER.debug("Adding {} to conductor for {}".format(sample.name, self.pl_name))
         
         if not issubclass(sample_subtype, Sample):
             raise TypeError("If provided, sample_subtype must extend {}".
@@ -173,7 +176,7 @@ class SubmissionConductor(object):
                 _LOGGER.info("> Re-running failed sample '%s' for pipeline '%s'.",
                      sample.name, self.pl_name)
                 use_this_sample = True
-            else:
+            if not use_this_sample:
                 _LOGGER.info("> Skipping sample '%s' for pipeline '%s', "
                              "%s found: %s", sample.name, self.pl_name,
                              "flags" if len(flag_files) > 1 else "flag",
@@ -181,11 +184,17 @@ class SubmissionConductor(object):
                                  os.path.basename(fp)) for fp in flag_files]))
                 _LOGGER.debug("NO SUBMISSION")
 
-        sample = sample_subtype(sample)
+        if type(sample) != sample_subtype:
+            _LOGGER.debug(
+                "Building {} from {}".format(sample_subtype, type(sample)))
+            sample = sample_subtype(sample.to_dict())
+        else:
+            _LOGGER.debug(
+                "{} is already of type {}".format(sample.name, sample_subtype))
         _LOGGER.debug("Created %s instance: '%s'",
                       sample_subtype.__name__, sample.name)
         sample.prj = grab_project_data(self.prj)
-        
+
         skip_reasons = []
         
         try:
