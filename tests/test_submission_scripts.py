@@ -144,144 +144,140 @@ def validate_submission_scripts(project, _):
     assert all(1 == len(scripts) for scripts in scripts_by_sample.values())
 
 
-class ConductorBasicSettingsSubmissionScriptTests:
-    """ Tests for writing of submission scripts when submission conductor has default settings """
+@pytest.mark.parametrize(["automatic", "max_cmds"], [(True, 1)])
+def test_single_sample_auto_conductor_new_sample_scripts(prj, automatic, max_cmds):
+    """ Validate base/ideal case of submission conduction w.r.t. scripts. """
+    samples = prj.samples
+    conductors, pipe_keys = \
+        process_protocols(prj, {s.protocol for s in samples})
+    subdir = prj.metadata[SUBMISSION_SUBDIR_KEY]
+    assert 0 == _count_files(subdir)
+    for s in samples:
+        pks = pipe_keys[s.protocol]
+        assert 1 == len(pks), \
+            "Multiple pipelines for sample {}: {}".format(s.name, pks)
+        conductors[pks[0]].add_sample(s)
+        sub_fn_suffix = s.name + ".sub"
+        contents = os.listdir(subdir)
+        assert 1 == len([f for f in contents if sub_fn_suffix in f]), \
+            "No filename containing {} in {}; contents: {}".\
+            format(sub_fn_suffix, subdir, contents)
 
-    @staticmethod
-    @pytest.mark.parametrize(["automatic", "max_cmds"], [(True, 1)])
-    def test_single_sample_auto_conductor_new_sample_scripts(prj, automatic, max_cmds):
-        """ Validate base/ideal case of submission conduction w.r.t. scripts. """
-        samples = prj.samples
-        conductors, pipe_keys = \
-            process_protocols(prj, {s.protocol for s in samples})
-        subdir = prj.metadata[SUBMISSION_SUBDIR_KEY]
-        assert 0 == _count_files(subdir)
-        for s in samples:
-            pks = pipe_keys[s.protocol]
-            assert 1 == len(pks), \
-                "Multiple pipelines for sample {}: {}".format(s.name, pks)
-            conductors[pks[0]].add_sample(s)
-            sub_fn_suffix = s.name + ".sub"
-            contents = os.listdir(subdir)
-            assert 1 == len([f for f in contents if sub_fn_suffix in f]), \
-                "No filename containing {} in {}; contents: {}".\
-                format(sub_fn_suffix, subdir, contents)
 
-    @staticmethod
-    @pytest.mark.parametrize(
-        "flagged_sample_names",
-        [combo for k in range(1, len(SAMPLE_METADATA_RECORDS)) for combo in
-         map(list, itertools.combinations([n for n, _ in SAMPLE_METADATA_RECORDS], k))])
-    @pytest.mark.parametrize("flag_name", FLAGS)
-    def test_not_ignoring_flags(prj, flag_name, flagged_sample_names):
-        """ Script creation is via separate call, and there's no submission. """
+@pytest.mark.parametrize(
+    "flagged_sample_names",
+    [combo for k in range(1, len(SAMPLE_METADATA_RECORDS)) for combo in
+     map(list, itertools.combinations([n for n, _ in SAMPLE_METADATA_RECORDS], k))])
+@pytest.mark.parametrize("flag_name", FLAGS)
+def test_not_ignoring_flags(prj, flag_name, flagged_sample_names):
+    """ Script creation is via separate call, and there's no submission. """
 
-        # Setup and sanity check that we have 1 sample per sample name to flag.
-        preexisting = _collect_flags(prj)
-        assert {} == preexisting, "Preexisting flag(s): {}".format(preexisting)
-        flagged_samples = list(filter(
-            lambda s: s.name in flagged_sample_names, prj.samples))
-        assert len(flagged_sample_names) == len(flagged_samples), \
-            "Expected {nexp} flagged samples ({exp}) but found {obsn} ({obs})".format(
-                nexp=len(flagged_sample_names), exp=flagged_sample_names,
-                obsn=len(flagged_samples),
-                obs=", ".join(s.name for s in flagged_samples))
-        conductors, pipe_keys = _process_base_pliface(prj)
+    # Setup and sanity check that we have 1 sample per sample name to flag.
+    preexisting = _collect_flags(prj)
+    assert {} == preexisting, "Preexisting flag(s): {}".format(preexisting)
+    flagged_samples = list(filter(
+        lambda s: s.name in flagged_sample_names, prj.samples))
+    assert len(flagged_sample_names) == len(flagged_samples), \
+        "Expected {nexp} flagged samples ({exp}) but found {obsn} ({obs})".format(
+            nexp=len(flagged_sample_names), exp=flagged_sample_names,
+            obsn=len(flagged_samples),
+            obs=", ".join(s.name for s in flagged_samples))
+    conductors, pipe_keys = _process_base_pliface(prj)
 
-        # Collect pipeline keys and names, ensuring just one pipeline per protocol.
-        pks, pns = {}, {}
-        for s in prj.samples:
-            prot = s.protocol
-            ks = pipe_keys[prot]
-            assert 1 == len(ks), \
-                "Need exactly one pipeline key but got {} for protocol {}: {}". \
-                    format(len(pks), s.protocol, pks)
-            key = ks[0]
-            if prot in pks and pks[prot] != key:
-                raise Exception("Protocol {} already mapped to {}".format(prot, pks[prot]))
-            pks[prot] = key
-            name = PLIFACE_DATA["pipelines"][key][PIPE_NAME_KEY]
-            if prot in pns and pns[prot] != name:
-                raise Exception("Protocol {} already mapped to {}".format(prot, pns[prot]))
-            pns[prot] = name
-
-        # Place the flags.
-        flag_files_made = []
-        for s in flagged_samples:
-            flag = "{}_{}_{}".format(pns[s.protocol], s.name, flag_name)
-            flag_files_made.append(_mkflag(sample=s, prj=prj, flag=flag))
-        assert all(os.path.isfile(f) for f in flag_files_made), \
-            "Missing setup flag file(s): {}".format(
-                ", ".join([f for f in flag_files_made if not os.path.isfile(f)]))
-
-        # Trigger the automatic submissions.
-        for s in prj.samples:
-            conductors[pks[s.protocol]].add_sample(s)
-
-        # Check the submission counts.
-        num_unflagged = len(prj.samples) - len(flagged_sample_names)
-        num_subs_obs = _count_submissions(conductors.values())
-        assert num_unflagged == num_subs_obs, \
-            "{} unflagged sample(s) but {} command submission(s); these should " \
-            "match".format(num_unflagged, num_subs_obs)
-
-        def flagged_subs():
-            return [f for s in flagged_samples for f in _find_subs(prj, s)]
-
-        # Pretest for presence of unflagged submissions and absence of flagged submissions.
-        assert [] == flagged_subs(), "Submission script(s) for flagged " \
-            "sample(s): {}".format(", ".join(flagged_subs()))
-        all_subs = _find_subs(prj)
-        assert len(all_subs) == num_unflagged, "Expected {} submission scripts " \
-            "but found {}".format(num_unflagged, len(all_subs))
-
-        # Write the skipped scripts and check their presence.
-        for c in conductors.values():
-            c.write_skipped_sample_scripts()
-        assert len(flagged_samples) == len(flagged_subs())
-        assert len(prj.samples) == len(_find_subs(prj))
-        # Writing skipped samples has no effect on submission count.
-        num_subs_obs = _count_submissions(conductors.values())
-        assert num_unflagged == num_subs_obs, \
-            "{} unflagged sample(s) but {} command submission(s); these should " \
-            "match".format(num_unflagged, num_subs_obs)
-
-    @staticmethod
-    @pytest.mark.parametrize(
-        "flagged_sample_names",
-        [combo for k in range(1, len(SAMPLE_METADATA_RECORDS)) for combo in
-         map(list, itertools.combinations([n for n, _ in SAMPLE_METADATA_RECORDS], k))])
-    @pytest.mark.parametrize("flag_name", [random.choice(FLAGS)])
-    @pytest.mark.parametrize("validate", [validate_submission_count, validate_submission_scripts])
-    def test_ignoring_flags(prj, flag_name, flagged_sample_names, validate):
-        """ Script creation is automatic, and submission is counted. """
-        preexisting = _collect_flags(prj)
-        assert {} == preexisting, "Preexisting flag(s): {}".format(preexisting)
-        flagged_samples = list(filter(
-            lambda s: s.name in flagged_sample_names, prj.samples))
-        assert len(flagged_sample_names) == len(flagged_samples), \
-            "Expected {expn} flagged samples ({exp}) but found {obsn} ({obs})".format(
-                expn=len(flagged_sample_names),
-                exp=", ".join(flagged_sample_names), obsn=len(flagged_samples),
-                obs=", ".join(s.name for s in flagged_samples))
-        flag_files_made = [_mkflag(s, prj, flag_name) for s in flagged_samples]
-        assert all(os.path.isfile(f) for f in flag_files_made), \
-            "Missing setup flag file(s): {}".format(
-                ", ".join([f for f in flag_files_made if not os.path.isfile(f)]))
-        preexisting = _collect_flags(prj)
-        assert len(flagged_sample_names) == len(preexisting)
-        assert set(flag_files_made) == set(itertools.chain(*preexisting.values()))
-        conductors, pipe_keys = process_protocols(
-            prj, set(PLIFACE_DATA[PROTOMAP_KEY].keys()), ignore_flags=True)
-        assert all(map(lambda c: c.ignore_flags, conductors.values())), \
-            "Failed to establish precondition, that flags are to be ignored"
-        for s in prj.samples:
-            pks = pipe_keys[s.protocol]
-            assert 1 == len(pks), \
-                "Need exactly one pipeline key but got {} for protocol {}: {}".\
+    # Collect pipeline keys and names, ensuring just one pipeline per protocol.
+    pks, pns = {}, {}
+    for s in prj.samples:
+        prot = s.protocol
+        ks = pipe_keys[prot]
+        assert 1 == len(ks), \
+            "Need exactly one pipeline key but got {} for protocol {}: {}". \
                 format(len(pks), s.protocol, pks)
-            conductors[pks[0]].add_sample(s)
-        validate(prj, conductors.values())
+        key = ks[0]
+        if prot in pks and pks[prot] != key:
+            raise Exception("Protocol {} already mapped to {}".format(prot, pks[prot]))
+        pks[prot] = key
+        name = PLIFACE_DATA["pipelines"][key][PIPE_NAME_KEY]
+        if prot in pns and pns[prot] != name:
+            raise Exception("Protocol {} already mapped to {}".format(prot, pns[prot]))
+        pns[prot] = name
+
+    # Place the flags.
+    flag_files_made = []
+    for s in flagged_samples:
+        flag = "{}_{}_{}".format(pns[s.protocol], s.name, flag_name)
+        flag_files_made.append(_mkflag(sample=s, prj=prj, flag=flag))
+    assert all(os.path.isfile(f) for f in flag_files_made), \
+        "Missing setup flag file(s): {}".format(
+            ", ".join([f for f in flag_files_made if not os.path.isfile(f)]))
+
+    # Trigger the automatic submissions.
+    for s in prj.samples:
+        conductors[pks[s.protocol]].add_sample(s)
+
+    # Check the submission counts.
+    num_unflagged = len(prj.samples) - len(flagged_sample_names)
+    num_subs_obs = _count_submissions(conductors.values())
+    assert num_unflagged == num_subs_obs, \
+        "{} unflagged sample(s) but {} command submission(s); these should " \
+        "match".format(num_unflagged, num_subs_obs)
+
+    def flagged_subs():
+        return [f for s in flagged_samples for f in _find_subs(prj, s)]
+
+    # Pretest for presence of unflagged submissions and absence of flagged submissions.
+    assert [] == flagged_subs(), "Submission script(s) for flagged " \
+        "sample(s): {}".format(", ".join(flagged_subs()))
+    all_subs = _find_subs(prj)
+    assert len(all_subs) == num_unflagged, "Expected {} submission scripts " \
+        "but found {}".format(num_unflagged, len(all_subs))
+
+    # Write the skipped scripts and check their presence.
+    for c in conductors.values():
+        c.write_skipped_sample_scripts()
+    assert len(flagged_samples) == len(flagged_subs())
+    assert len(prj.samples) == len(_find_subs(prj))
+    # Writing skipped samples has no effect on submission count.
+    num_subs_obs = _count_submissions(conductors.values())
+    assert num_unflagged == num_subs_obs, \
+        "{} unflagged sample(s) but {} command submission(s); these should " \
+        "match".format(num_unflagged, num_subs_obs)
+
+
+@pytest.mark.parametrize(
+    "flagged_sample_names",
+    [combo for k in range(1, len(SAMPLE_METADATA_RECORDS)) for combo in
+     map(list, itertools.combinations([n for n, _ in SAMPLE_METADATA_RECORDS], k))])
+@pytest.mark.parametrize("flag_name", [random.choice(FLAGS)])
+@pytest.mark.parametrize("validate", [validate_submission_count, validate_submission_scripts])
+def test_ignoring_flags(prj, flag_name, flagged_sample_names, validate):
+    """ Script creation is automatic, and submission is counted. """
+    preexisting = _collect_flags(prj)
+    assert {} == preexisting, "Preexisting flag(s): {}".format(preexisting)
+    flagged_samples = list(filter(
+        lambda s: s.name in flagged_sample_names, prj.samples))
+    assert len(flagged_sample_names) == len(flagged_samples), \
+        "Expected {expn} flagged samples ({exp}) but found {obsn} ({obs})".format(
+            expn=len(flagged_sample_names),
+            exp=", ".join(flagged_sample_names), obsn=len(flagged_samples),
+            obs=", ".join(s.name for s in flagged_samples))
+    flag_files_made = [_mkflag(s, prj, flag_name) for s in flagged_samples]
+    assert all(os.path.isfile(f) for f in flag_files_made), \
+        "Missing setup flag file(s): {}".format(
+            ", ".join([f for f in flag_files_made if not os.path.isfile(f)]))
+    preexisting = _collect_flags(prj)
+    assert len(flagged_sample_names) == len(preexisting)
+    assert set(flag_files_made) == set(itertools.chain(*preexisting.values()))
+    conductors, pipe_keys = process_protocols(
+        prj, set(PLIFACE_DATA[PROTOMAP_KEY].keys()), ignore_flags=True)
+    assert all(map(lambda c: c.ignore_flags, conductors.values())), \
+        "Failed to establish precondition, that flags are to be ignored"
+    for s in prj.samples:
+        pks = pipe_keys[s.protocol]
+        assert 1 == len(pks), \
+            "Need exactly one pipeline key but got {} for protocol {}: {}".\
+            format(len(pks), s.protocol, pks)
+        conductors[pks[0]].add_sample(s)
+    validate(prj, conductors.values())
 
 
 def test_convergent_protocol_mapping_keys(tmpdir):
