@@ -19,6 +19,7 @@ from .sample import Sample
 from .utils import get_logger
 from attmap import PathExAttMap
 from divvy import DEFAULT_COMPUTE_RESOURCES_NAME, NEW_COMPUTE_KEY as COMPUTE_KEY
+from divvy.const import OLD_COMPUTE_KEY
 from peppy import utils as peputil
 from ubiquerg import expandpath
 
@@ -86,6 +87,18 @@ class PipelineInterface(PathExAttMap):
         return "{} from {}, with {} pipeline(s): {}".format(
                 self.__class__.__name__, source, num_pipelines, pipelines)
 
+    @property
+    def compute(self):
+        """
+        Backcompat for compute section declaration in pipeline interface
+
+        :return attmap.PathExAttMap: nested key-value mapping that specifies
+            computing resource options
+        """
+        warnings.warn(peputil.get_name_depr_msg(
+            OLD_COMPUTE_KEY, COMPUTE_KEY, self.__class__))
+        return self.get(COMPUTE_KEY, PathExAttMap())
+
     def choose_resource_package(self, pipeline_name, file_size):
         """
         Select resource bundle for given input file size to given pipeline.
@@ -115,11 +128,16 @@ class PipelineInterface(PathExAttMap):
 
         pl = self.select_pipeline(pipeline_name)
 
-        universal_compute = {}
         try:
             universal_compute = pl[COMPUTE_KEY]
         except KeyError:
-            notify("No compute settings")
+            notify("No compute settings (by {})".format(COMPUTE_KEY))
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", category=DeprecationWarning)
+                universal_compute = self.compute
+            if universal_compute:
+                warnings.warn(peputil.get_name_depr_msg(
+                    OLD_COMPUTE_KEY, COMPUTE_KEY, self.__class__))
 
         try:
             resources = universal_compute[RESOURCES_KEY]
