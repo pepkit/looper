@@ -87,18 +87,6 @@ class PipelineInterface(PathExAttMap):
         return "{} from {}, with {} pipeline(s): {}".format(
                 self.__class__.__name__, source, num_pipelines, pipelines)
 
-    @property
-    def compute(self):
-        """
-        Backcompat for compute section declaration in pipeline interface
-
-        :return attmap.PathExAttMap: nested key-value mapping that specifies
-            computing resource options
-        """
-        warnings.warn(peputil.get_name_depr_msg(
-            OLD_COMPUTE_KEY, COMPUTE_KEY, self.__class__))
-        return self.get(COMPUTE_KEY, PathExAttMap())
-
     def choose_resource_package(self, pipeline_name, file_size):
         """
         Select resource bundle for given input file size to given pipeline.
@@ -134,12 +122,17 @@ class PipelineInterface(PathExAttMap):
             notify("No compute settings (by {})".format(COMPUTE_KEY))
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore", category=DeprecationWarning)
-                universal_compute = self.compute
-            if universal_compute:
-                warnings.warn(peputil.get_name_depr_msg(
-                    OLD_COMPUTE_KEY, COMPUTE_KEY, self.__class__))
-        _LOGGER.debug("Universal compute (in {}): {}".
-                      format(self.__class__.__name__, universal_compute))
+                try:
+                    universal_compute = pl[OLD_COMPUTE_KEY]
+                except KeyError:
+                    universal_compute = PathExAttMap()
+                else:
+                    warnings.warn(
+                        "To declare pipeline compute section, use {} rather "
+                        "than {}".format(COMPUTE_KEY, OLD_COMPUTE_KEY),
+                        DeprecationWarning)
+        _LOGGER.debug("Universal compute (for {}): {}".
+                      format(pipeline_name, universal_compute))
 
         try:
             resources = universal_compute[RESOURCES_KEY]
