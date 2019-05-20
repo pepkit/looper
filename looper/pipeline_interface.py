@@ -138,6 +138,8 @@ class PipelineInterface(PathExAttMap):
             if universal_compute:
                 warnings.warn(peputil.get_name_depr_msg(
                     OLD_COMPUTE_KEY, COMPUTE_KEY, self.__class__))
+        _LOGGER.debug("Universal compute (in {}): {}".
+                      format(self.__class__.__name__, universal_compute))
 
         try:
             resources = universal_compute[RESOURCES_KEY]
