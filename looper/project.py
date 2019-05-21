@@ -43,8 +43,9 @@ class Project(peppy.Project):
 
     @property
     def project_folders(self):
-        """ Keys for paths to folders to ensure exist. """
-        return [OUTDIR_KEY, RESULTS_SUBDIR_KEY, SUBMISSION_SUBDIR_KEY]
+        """ Critical project folder keys """
+        return {OUTDIR_KEY: OUTDIR_KEY, RESULTS_SUBDIR_KEY: "results_pipeline",
+                SUBMISSION_SUBDIR_KEY: "submission"}
 
     @property
     def required_metadata(self):
