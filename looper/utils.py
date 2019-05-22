@@ -33,7 +33,7 @@ def create_looper_args_text(pl_key, submission_settings, prj):
 
     # Start with copied settings and empty arguments text
     submission_settings = copy.deepcopy(submission_settings)
-    opt_arg_pairs = [("-O", prj.metadata[RESULTS_SUBDIR_KEY])]
+    opt_arg_pairs = [("-O", prj.results_folder)]
 
     if hasattr(prj, "pipeline_config"):
         # Index with 'pl_key' instead of 'pipeline'
@@ -177,7 +177,7 @@ def fetch_sample_flags(prj, sample, pl_names=None):
     :return Iterable[str]: collection of flag file path(s) associated with the
         given sample for the given project
     """
-    sfolder = os.path.join(prj.metadata[RESULTS_SUBDIR_KEY], sample) if isinstance(sample, str) \
+    sfolder = os.path.join(prj.results_folder, sample) if isinstance(sample, str) \
         else sample_folder(prj=prj, sample=sample)
     if not os.path.isdir(sfolder):
         _LOGGER.debug("Folder doesn't exist for sample {}: {}".format(str(sample), sfolder))
@@ -256,5 +256,5 @@ def sample_folder(prj, sample):
         folder path.
     :return str: this Project's root folder for the given Sample
     """
-    return os.path.join(prj.metadata[RESULTS_SUBDIR_KEY],
+    return os.path.join(prj.results_folder,
                         sample[SAMPLE_NAME_COLNAME])

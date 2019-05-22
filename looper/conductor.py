@@ -237,7 +237,7 @@ class SubmissionConductor(object):
         try:
             argstring = self.pl_iface.get_arg_string(
                 pipeline_name=self.pl_key, sample=sample,
-                submission_folder_path=self.prj.metadata[SUBMISSION_SUBDIR_KEY])
+                submission_folder_path=self.prj.submission_folder)
         except AttributeError:
             argstring = None
             # TODO: inform about which missing attribute.
@@ -314,7 +314,7 @@ class SubmissionConductor(object):
                 if type(s) is Sample:
                     exp_fname = "{}.yaml".format(s.name)
                     exp_fpath = os.path.join(
-                            self.prj.metadata[SUBMISSION_SUBDIR_KEY], exp_fname)
+                            self.prj.submission_folder, exp_fname)
                     if not os.path.isfile(exp_fpath):
                         _LOGGER.warning("Missing %s file will be created: '%s'",
                                      Sample.__name__, exp_fpath)
@@ -322,7 +322,7 @@ class SubmissionConductor(object):
                     subtype_name = s.__class__.__name__
                     _LOGGER.debug("Writing %s representation to disk: '%s'",
                                   subtype_name, s.name)
-                    s.to_yaml(subs_folder_path=self.prj.metadata[SUBMISSION_SUBDIR_KEY])
+                    s.to_yaml(subs_folder_path=self.prj.submission_folder)
 
             script = self.write_script(self._pool, self._curr_size)
 
@@ -432,7 +432,7 @@ class SubmissionConductor(object):
 
         jobname = self._jobname(pool)
         submission_base = os.path.join(
-                self.prj.metadata[SUBMISSION_SUBDIR_KEY], jobname)
+                self.prj.submission_folder, jobname)
         logfile = submission_base + ".log"
         template_values["JOBNAME"] = jobname
         template_values["CODE"] = "\n".join(commands)
