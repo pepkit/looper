@@ -98,7 +98,7 @@ class Checker(Executor):
         _LOGGER.debug("Checking project folders for flags: %s", flag_text)
         if all_folders:
             files_by_flag = fetch_flag_files(
-                results_folder=self.prj.metadata[RESULTS_SUBDIR_KEY], flags=flags)
+                results_folder=self.prj.results_folder, flags=flags)
         else:
             files_by_flag = fetch_flag_files(prj=self.prj, flags=flags)
 
@@ -383,7 +383,7 @@ class Runner(Executor):
             # for reuse in case of many jobs (pipelines) using base Sample.
             # Do a single overwrite here, then any subsequent Sample can be sure
             # that the file is fresh, with respect to this run of looper.
-            sample.to_yaml(subs_folder_path=self.prj.metadata[SUBMISSION_SUBDIR_KEY])
+            sample.to_yaml(subs_folder_path=self.prj.submission_folder)
 
             pipe_keys = pipe_keys_by_protocol.get(sample.protocol) \
                 or pipe_keys_by_protocol.get(GENERIC_PROTOCOL_KEY)
@@ -813,7 +813,7 @@ def main():
     if compute_cli_spec and compute_cli_spec != DEFAULT_COMPUTE_RESOURCES_NAME:
         prj.dcc.activate_package(compute_cli_spec)
 
-    _LOGGER.debug("Results subdir: " + prj.metadata[RESULTS_SUBDIR_KEY])
+    _LOGGER.debug("Results subdir: " + prj.results_folder)
 
     with ProjectContext(prj,
             selector_attribute=args.selector_attribute,

@@ -112,8 +112,8 @@ def prj(request, tmpdir):
 
     # Create project and ensure folder structure.
     p = Project(conf_path)
-    mkdir(p.metadata[RESULTS_SUBDIR_KEY])
-    mkdir(p.metadata[SUBMISSION_SUBDIR_KEY])
+    mkdir(p.results_folder)
+    mkdir(p.submission_folder)
     for s in p.samples:
         mkdir(sample_folder(p, s))
     assert all(map(lambda s: os.path.isdir(sample_folder(p, s)), p.samples))
@@ -150,7 +150,7 @@ def test_single_sample_auto_conductor_new_sample_scripts(prj, automatic, max_cmd
     samples = prj.samples
     conductors, pipe_keys = \
         process_protocols(prj, {s.protocol for s in samples})
-    subdir = prj.metadata[SUBMISSION_SUBDIR_KEY]
+    subdir = prj.submission_folder
     assert 0 == _count_files(subdir)
     for s in samples:
         pks = pipe_keys[s.protocol]
@@ -373,7 +373,7 @@ def _find_subs(project, sample=None):
         and specific sample if provided
     """
     name_patt = "{}*.sub".format("*" + sample.name if sample else "")
-    return glob.glob(os.path.join(project.metadata[SUBMISSION_SUBDIR_KEY], name_patt))
+    return glob.glob(os.path.join(project.submission_folder, name_patt))
 
 
 def _process_base_pliface(prj, **kwargs):
