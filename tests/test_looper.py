@@ -137,8 +137,8 @@ class CliParserTests:
 
 
 def test_no_args(capfd):
-    import sys
-    import subprocess
+    """ Test CLI behavior when no opts/args are provided. """
+    import subprocess, sys
     with pytest.raises(subprocess.CalledProcessError):
         subprocess.check_output("looper")
     out, err = capfd.readouterr()
