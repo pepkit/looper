@@ -768,6 +768,11 @@ def main():
     parser = build_parser()
     args, remaining_args = parser.parse_known_args()
 
+    try:
+        conf_file = args.config_file
+    except AttributeError:
+        sys.exit("A project config file is required.")
+
     # Set the logging level.
     if args.dbg:
         # Debug mode takes precedence and will listen for all messages.
@@ -803,7 +808,7 @@ def main():
     _LOGGER.debug("Building Project")
     try:
         prj = Project(
-            determine_config_path(args.config_file), subproject=args.subproject,
+            determine_config_path(conf_file), subproject=args.subproject,
             file_checks=args.file_checks, compute_env_file=getattr(args, 'env', None))
     except yaml.parser.ParserError as e:
         _LOGGER.error("Project config parse failed -- {}".format(e))
