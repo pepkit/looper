@@ -134,3 +134,17 @@ class CliParserTests:
         """ Helper for formatting flag vs. arg-accepting CLI option """
         opt_text = "--" + opt
         return opt_text if arg is None else "{} {}".format(opt_text, arg)
+
+
+def test_no_args(capfd):
+    import sys
+    import subprocess
+    with pytest.raises(subprocess.CalledProcessError):
+        subprocess.check_output("looper")
+    out, err = capfd.readouterr()
+    print("OUT: {}".format(out))
+    print("ERR: {}".format(err))
+    if sys.version_info.major < 3:
+        assert "usage" in err and "too few arguments" in err
+    else:
+        assert "A project config file is required.\n" == err
