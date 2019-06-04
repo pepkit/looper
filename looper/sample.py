@@ -1,7 +1,7 @@
 """ Extension of peppy.Sample to support looper-specific operations. """
 
-from operator import itemgetter
 import os
+from operator import itemgetter
 from peppy import Sample as PeppySample
 from peppy import *
 from peppy.const import *
