@@ -21,7 +21,7 @@ import yaml
 
 from looper.pipeline_interface import PipelineInterface
 from looper.project import Project
-from logmuse import setup_logger
+from logmuse import init_logger
 from peppy import SAMPLE_NAME_COLNAME, \
     SAMPLE_ANNOTATIONS_KEY, SAMPLE_SUBANNOTATIONS_KEY
 
@@ -221,7 +221,7 @@ def pytest_generate_tests(metafunc):
 def conf_logs(request):
     """ Configure logging for the testing session. """
     level = request.config.getoption("--logging-level")
-    setup_logger(name=_LOGNAME, level=level, devmode=True)
+    init_logger(name=_LOGNAME, level=level, devmode=True)
     logging.getLogger(_LOGNAME).info(
         "Configured looper logger at level %s; attaching tests' logger %s",
         str(level), __name__)
@@ -294,7 +294,7 @@ def interactive(
     # Establish logging for interactive session.
     looper_logger_kwargs = {"level": "DEBUG", "name": "looper"}
     looper_logger_kwargs.update(logger_kwargs or {})
-    setup_logger(**looper_logger_kwargs)
+    init_logger(**looper_logger_kwargs)
 
     # TODO: don't work with tempfiles once ctors tolerate Iterable.
     dirpath = tempfile.mkdtemp()

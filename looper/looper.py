@@ -34,7 +34,7 @@ from .project import Project
 from .utils import determine_config_path, fetch_flag_files, sample_folder
 
 from divvy import DEFAULT_COMPUTE_RESOURCES_NAME, NEW_COMPUTE_KEY as COMPUTE_KEY
-from logmuse import setup_logger
+from logmuse import init_logger
 from peppy import ProjectContext, METADATA_KEY, SAMPLE_EXECUTION_TOGGLE
 
 from ubiquerg import query_yes_no
@@ -751,9 +751,9 @@ def main():
 
     # Establish the project-root logger and attach one for this module.
     logger_kwargs = {"level": level, "logfile": args.logfile, "devmode": args.dbg}
-    setup_logger(name="peppy", **logger_kwargs)
+    init_logger(name="peppy", **logger_kwargs)
     global _LOGGER
-    _LOGGER = setup_logger(name=_PKGNAME, **logger_kwargs)
+    _LOGGER = init_logger(name=_PKGNAME, **logger_kwargs)
 
     if len(remaining_args) > 0:
         _LOGGER.debug("Remaining arguments passed to pipelines: {}".
