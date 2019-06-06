@@ -736,7 +736,8 @@ def main():
     try:
         conf_file = args.config_file
     except AttributeError:
-        sys.exit("A project config file is required.")
+        parser.print_help(sys.stderr)
+        sys.exit(1)
 
     # Set the logging level.
     if args.dbg:

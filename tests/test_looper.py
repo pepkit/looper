@@ -142,9 +142,12 @@ def test_no_args(capfd):
     with pytest.raises(subprocess.CalledProcessError):
         subprocess.check_output("looper")
     out, err = capfd.readouterr()
-    print("OUT: {}".format(out))
-    print("ERR: {}".format(err))
+    print("OUT (below):\n{}".format(out))
+    print("ERR (below):\n{}".format(err))
+    lines = err.split("\n")
     if sys.version_info.major < 3:
-        assert "usage" in err and "too few arguments" in err
+        assert lines[0].startswith("usage: looper")
+        assert [l for l in lines if l.strip()][-1].startswith("looper: error: too few arguments")
     else:
-        assert "A project config file is required.\n" == err
+        assert lines[0].startswith("version")
+        assert lines[1].startswith("usage")
