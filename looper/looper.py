@@ -34,9 +34,10 @@ from .project import Project
 from .utils import determine_config_path, fetch_flag_files, sample_folder
 
 from divvy import DEFAULT_COMPUTE_RESOURCES_NAME, NEW_COMPUTE_KEY as COMPUTE_KEY
-from logmuse import setup_logger
+from logmuse import init_logger
 from peppy import ProjectContext, METADATA_KEY, SAMPLE_EXECUTION_TOGGLE
 
+from ubiquerg import query_yes_no
 
 SUBMISSION_FAILURE_MESSAGE = "Cluster resource failure"
 
@@ -98,7 +99,7 @@ class Checker(Executor):
         _LOGGER.debug("Checking project folders for flags: %s", flag_text)
         if all_folders:
             files_by_flag = fetch_flag_files(
-                results_folder=self.prj.metadata[RESULTS_SUBDIR_KEY], flags=flags)
+                results_folder=self.prj.results_folder, flags=flags)
         else:
             files_by_flag = fetch_flag_files(prj=self.prj, flags=flags)
 
@@ -383,7 +384,7 @@ class Runner(Executor):
             # for reuse in case of many jobs (pipelines) using base Sample.
             # Do a single overwrite here, then any subsequent Sample can be sure
             # that the file is fresh, with respect to this run of looper.
-            sample.to_yaml(subs_folder_path=self.prj.metadata[SUBMISSION_SUBDIR_KEY])
+            sample.to_yaml(subs_folder_path=self.prj.submission_folder)
 
             pipe_keys = pipe_keys_by_protocol.get(sample.protocol) \
                 or pipe_keys_by_protocol.get(GENERIC_PROTOCOL_KEY)
@@ -630,42 +631,6 @@ def create_failure_message(reason, samples):
     return "{}: {}".format(reason_text, samples_text)
 
 
-def query_yes_no(question, default="no"):
-    """
-    Ask a yes/no question via raw_input() and return their answer.
-
-    "question" is a string that is presented to the user.
-    "default" is the presumed answer if the user just hits <Enter>.
-        It must be "yes" (the default), "no" or None (meaning
-        an answer is required of the user).
-
-    The "answer" return value is True for "yes" or False for "no".
-    """
-    valid = {
-        "yes": True, "y": True, "ye": True,
-        "no": False, "n": False}
-    if default is None:
-        prompt = " [y/n] "
-    elif default == "yes":
-        prompt = " [Y/n] "
-    elif default == "no":
-        prompt = " [y/N] "
-    else:
-        raise ValueError("invalid default answer: '%s'" % default)
-
-    while True:
-        sys.stdout.write(question + prompt)
-        choice = raw_input().lower()
-        if default is not None and choice == '':
-            return valid[default]
-        elif choice in valid:
-            return valid[choice]
-        else:
-            sys.stdout.write(
-                "Please respond with 'yes' or 'no' "
-                "(or 'y' or 'n').\n")
-
-
 def destroy_sample_results(result_outfolder, args):
     """
     This function will delete all results for this sample
@@ -768,6 +733,12 @@ def main():
     parser = build_parser()
     args, remaining_args = parser.parse_known_args()
 
+    try:
+        conf_file = args.config_file
+    except AttributeError:
+        parser.print_help(sys.stderr)
+        sys.exit(1)
+
     # Set the logging level.
     if args.dbg:
         # Debug mode takes precedence and will listen for all messages.
@@ -781,9 +752,9 @@ def main():
 
     # Establish the project-root logger and attach one for this module.
     logger_kwargs = {"level": level, "logfile": args.logfile, "devmode": args.dbg}
-    setup_logger(name="peppy", **logger_kwargs)
+    init_logger(name="peppy", **logger_kwargs)
     global _LOGGER
-    _LOGGER = setup_logger(name=_PKGNAME, **logger_kwargs)
+    _LOGGER = init_logger(name=_PKGNAME, **logger_kwargs)
 
     if len(remaining_args) > 0:
         _LOGGER.debug("Remaining arguments passed to pipelines: {}".
@@ -803,7 +774,7 @@ def main():
     _LOGGER.debug("Building Project")
     try:
         prj = Project(
-            determine_config_path(args.config_file), subproject=args.subproject,
+            determine_config_path(conf_file), subproject=args.subproject,
             file_checks=args.file_checks, compute_env_file=getattr(args, 'env', None))
     except yaml.parser.ParserError as e:
         _LOGGER.error("Project config parse failed -- {}".format(e))
@@ -813,7 +784,7 @@ def main():
     if compute_cli_spec and compute_cli_spec != DEFAULT_COMPUTE_RESOURCES_NAME:
         prj.dcc.activate_package(compute_cli_spec)
 
-    _LOGGER.debug("Results subdir: " + prj.metadata[RESULTS_SUBDIR_KEY])
+    _LOGGER.debug("Results subdir: " + prj.results_folder)
 
     with ProjectContext(prj,
             selector_attribute=args.selector_attribute,

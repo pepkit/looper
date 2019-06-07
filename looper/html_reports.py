@@ -86,7 +86,7 @@ class HTMLReportBuilder(object):
         for sample in self.prj.samples:
             sample_name = str(sample.sample_name)
             sample_dir = os.path.join(
-                self.prj.metadata.results_subdir, sample_name)
+                self.prj.results_folder, sample_name)
 
             # Confirm sample directory exists, then build page
             if os.path.exists(sample_dir):
@@ -194,7 +194,7 @@ class HTMLReportBuilder(object):
         for i, row in single_object.iterrows():
             # Set the PATH to a page for the sample. Catch any errors.
             try:
-                page_path = os.path.join(self.prj.metadata.results_subdir, row['sample_name'], row['filename'])
+                page_path = os.path.join(self.prj.results_folder, row['sample_name'], row['filename'])
             except AttributeError:
                 err_msg = ("Sample: {} | " + "Missing valid page path for: {}")
                 # Report the sample that fails, if that information exists
@@ -214,7 +214,7 @@ class HTMLReportBuilder(object):
                 image_path = page_path
             else:
                 try:
-                    image_path = os.path.join(self.prj.metadata.results_subdir,
+                    image_path = os.path.join(self.prj.results_folder,
                                               row['sample_name'], row['anchor_image'])
                 except AttributeError:
                     _LOGGER.warn(str(row))
@@ -265,7 +265,7 @@ class HTMLReportBuilder(object):
         single_sample = _pd.DataFrame() if objs.empty else objs[objs['sample_name'] == sample_name]
         if not os.path.exists(os.path.dirname(html_page)):
             os.makedirs(os.path.dirname(html_page))
-        sample_dir = os.path.join(self.prj.metadata.results_subdir, sample_name)
+        sample_dir = os.path.join(self.prj.results_folder, sample_name)
         button_appearance_by_flag = {
             "completed": {
                 "button_class": "btn btn-success",
@@ -284,9 +284,9 @@ class HTMLReportBuilder(object):
             if single_sample.empty:
                 # When there is no objects.tsv file, search for the
                 # presence of log, profile, and command files
-                log_name = _match_file_for_sample(sample_name, 'log.md', self.prj.metadata.results_subdir)
-                profile_name = _match_file_for_sample(sample_name, 'profile.tsv', self.prj.metadata.results_subdir)
-                command_name = _match_file_for_sample(sample_name, 'commands.sh', self.prj.metadata.results_subdir)
+                log_name = _match_file_for_sample(sample_name, 'log.md', self.prj.results_folder)
+                profile_name = _match_file_for_sample(sample_name, 'profile.tsv', self.prj.results_folder)
+                command_name = _match_file_for_sample(sample_name, 'commands.sh', self.prj.results_folder)
             else:
                 log_name = str(single_sample.iloc[0]['annotation']) + "_log.md"
                 profile_name = str(single_sample.iloc[0]['annotation']) + "_profile.tsv"
@@ -295,13 +295,13 @@ class HTMLReportBuilder(object):
             flag = _get_flags(sample_dir)
             # get links to the files
             stats_file_path = _get_relpath_to_file(
-                stats_name, sample_name, self.prj.metadata.results_subdir, self.reports_dir)
+                stats_name, sample_name, self.prj.results_folder, self.reports_dir)
             profile_file_path = _get_relpath_to_file(
-                profile_name, sample_name, self.prj.metadata.results_subdir, self.reports_dir)
+                profile_name, sample_name, self.prj.results_folder, self.reports_dir)
             commands_file_path = _get_relpath_to_file(
-                command_name, sample_name, self.prj.metadata.results_subdir, self.reports_dir)
+                command_name, sample_name, self.prj.results_folder, self.reports_dir)
             log_file_path = _get_relpath_to_file(
-                log_name, sample_name, self.prj.metadata.results_subdir, self.reports_dir)
+                log_name, sample_name, self.prj.results_folder, self.reports_dir)
             if not flag:
                 button_class = "btn btn-danger"
                 flag = "Missing"
@@ -330,7 +330,7 @@ class HTMLReportBuilder(object):
                         # This references to "image" should really
                         # be "thumbnail"
                         image_path = os.path.join(
-                            self.prj.metadata.results_subdir,
+                            self.prj.results_folder,
                             sample_name, row['anchor_image'])
                         image_relpath = os.path.relpath(image_path, self.reports_dir)
                     except (AttributeError, TypeError):
@@ -340,7 +340,7 @@ class HTMLReportBuilder(object):
                     # These references to "page" should really be
                     # "object", because they can be anything.
                     page_path = os.path.join(
-                        self.prj.metadata.results_subdir,
+                        self.prj.results_folder,
                         sample_name, row['filename'])
                     page_relpath = os.path.relpath(page_path, self.reports_dir)
                     # If the object has a thumbnail image, add as a figure
@@ -363,7 +363,7 @@ class HTMLReportBuilder(object):
         else:
             # Sample was not run through the pipeline
             _LOGGER.warning("{} is not present in {}".format(
-                sample_name, self.prj.metadata.results_subdir))
+                sample_name, self.prj.results_folder))
 
         template_vars = dict(navbar=navbar, footer=footer, sample_name=sample_name, stats_file_path=stats_file_path,
                              profile_file_path=profile_file_path, commands_file_path=commands_file_path,
@@ -808,7 +808,7 @@ def create_status_table(prj, final=True):
     for sample in prj.samples:
         sample_name = str(sample.sample_name)
         sample_dir = os.path.join(
-            prj.metadata.results_subdir, sample_name)
+            prj.results_folder, sample_name)
 
         # Confirm sample directory exists, then build page
         if os.path.exists(sample_dir):
@@ -840,13 +840,13 @@ def create_status_table(prj, final=True):
             # get second column data (status/flag)
             flags.append(flag)
             # get third column data (log file/link)
-            log_name = _match_file_for_sample(sample_name, "log.md", prj.metadata.results_subdir)
-            log_file_link = _get_relpath_to_file(log_name, sample_name, prj.metadata.results_subdir,
+            log_name = _match_file_for_sample(sample_name, "log.md", prj.results_folder)
+            log_file_link = _get_relpath_to_file(log_name, sample_name, prj.results_folder,
                                                  get_reports_dir(prj))
             log_link_names.append(log_name)
             log_paths.append(log_file_link)
             # get fourth column data (runtime) and fifth column data (memory)
-            profile_file_path = _match_file_for_sample(sample.sample_name, 'profile.tsv', prj.metadata.results_subdir,
+            profile_file_path = _match_file_for_sample(sample.sample_name, 'profile.tsv', prj.results_folder,
                                                        full_path=True)
             if os.path.exists(profile_file_path):
                 df = _pd.read_csv(profile_file_path, sep="\t", comment="#", names=PROFILE_COLNAMES)
@@ -869,11 +869,11 @@ def create_status_table(prj, final=True):
         if len(sample_warning) == 1:
             warn("{} is not present in {}".format(
                 ''.join(str(sample) for sample in sample_warning),
-                prj.metadata.results_subdir))
+                prj.results_folder))
         else:
             warn_msg = "The following samples are not present in {}: {}"
             warn(warn_msg.format(
-                prj.metadata.results_subdir,
+                prj.results_folder,
                 ' '.join(str(sample) for sample in sample_warning)))
     template_vars = dict(sample_link_names=sample_link_names, row_classes=row_classes, flags=flags, times=times,
                          mems=mems)

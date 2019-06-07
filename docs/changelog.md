@@ -2,10 +2,17 @@
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format. 
 
+## [0.12.2] -- 2019-06-06
+
+### Fixed
+- Fixed various bugs related to populating derived attributes, including using attributes like `sample_name` as keys.
+- Fixed a bug related to singularity attributes not being passed from a pipeline interface file.
+- Fixed several bugs with incorrect version requirements.
+
 ## [0.12.1] -- 2019-05-20
 
 ### Added
-- `Sample` derived from `peppy.Sample` that specifies functionality less tied to a `Sample`'s essence, more related to a submission context, and hence more relevant to `looper` than to `peppy`.
+- Made `looper.Sample` include more specific functionality from `peppy`
 
 ### Changed
 - Status table creation is possible outside of `looper`.
@@ -25,7 +32,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Functions and attributes on `Project` to support "outputs" (`interfaces`, `get_interfaces`, `get_outputs`)
 
 ### Changed
-- Start "compute" --> "compute_packges" transition 
+- Start "compute" --> "compute_packages" transition 
 - `get_logger` moved to `peppy`
 
 ### Fixed

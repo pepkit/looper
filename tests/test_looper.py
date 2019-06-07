@@ -134,3 +134,20 @@ class CliParserTests:
         """ Helper for formatting flag vs. arg-accepting CLI option """
         opt_text = "--" + opt
         return opt_text if arg is None else "{} {}".format(opt_text, arg)
+
+
+def test_no_args(capfd):
+    """ Test CLI behavior when no opts/args are provided. """
+    import subprocess, sys
+    with pytest.raises(subprocess.CalledProcessError):
+        subprocess.check_output("looper")
+    out, err = capfd.readouterr()
+    print("OUT (below):\n{}".format(out))
+    print("ERR (below):\n{}".format(err))
+    lines = err.split("\n")
+    if sys.version_info.major < 3:
+        assert lines[0].startswith("usage: looper")
+        assert [l for l in lines if l.strip()][-1].startswith("looper: error: too few arguments")
+    else:
+        assert lines[0].startswith("version")
+        assert lines[1].startswith("usage")

@@ -1,7 +1,7 @@
 """ Utility functions for internal, developmental use """
 
 import copy
-from logmuse import setup_logger
+from logmuse import init_logger
 
 __author__ = "Vince Reuter"
 __email__ = "vreuter@virginia.edu"
@@ -21,5 +21,5 @@ def est_log(**kwargs):
         print("Ignoring {} and setting fixed values for logging names".
               format(kwds["name"]))
         del kwds["name"]
-    setup_logger(name="peppy", **kwds)
-    return setup_logger(name="looper", **kwds)
+    init_logger(name="peppy", **kwds)
+    return init_logger(name="looper", **kwds)
