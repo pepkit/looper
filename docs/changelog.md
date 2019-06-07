@@ -2,7 +2,7 @@
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format. 
 
-## [0.12.2] -- Unreleased
+## [0.12.2] -- 2019-06-06
 
 ### Fixed
 - Fixed various bugs related to populating derived attributes, including using attributes like `sample_name` as keys.
