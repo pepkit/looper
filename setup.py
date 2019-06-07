@@ -68,6 +68,7 @@ setup(
     version=version,
     description="A pipeline submission engine that parses sample inputs and submits pipelines for each sample.",
     long_description=long_description,
+    long_description_content_type='text/markdown', 
     classifiers=[
         "Development Status :: 4 - Beta",
         "License :: OSI Approved :: BSD License",
