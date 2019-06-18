@@ -1,7 +1,6 @@
 """ Looper version of NGS project model. """
 
 from collections import namedtuple
-import copy
 from functools import partial
 import itertools
 import os
