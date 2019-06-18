@@ -6,7 +6,6 @@ import re
 import subprocess
 import time
 
-from .const import *
 from .exceptions import JobSubmissionException
 from .utils import \
     create_looper_args_text, grab_project_data, fetch_sample_flags
