@@ -4,6 +4,7 @@ import os
 from operator import itemgetter
 from peppy import Sample as PeppySample
 from peppy.const import *
+from peppy.sample import SAMPLE_YAML_EXT
 from peppy.utils import get_logger
 from ngstk import get_file_size, parse_ftype, \
     peek_read_lengths_and_paired_counts_from_bam
@@ -105,7 +106,7 @@ class Sample(PeppySample):
         """
         base = self.name if type(self) is Sample else \
             "{}{}{}".format(self.name, delimiter, type(self).__name__)
-        return "{}.yaml".format(base)
+        return "{}{}".format(base, SAMPLE_YAML_EXT)
 
     def set_pipeline_attributes(
             self, pipeline_interface, pipeline_name, permissive=True):

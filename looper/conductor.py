@@ -12,6 +12,7 @@ from .utils import \
 
 from .sample import Sample
 from peppy import VALID_READ_TYPES
+from peppy.sample import SAMPLE_YAML_EXT
 
 
 __author__ = "Vince Reuter"
@@ -305,7 +306,7 @@ class SubmissionConductor(object):
             # the base Sample while others are the single valid subtype.)
             for s, _ in self._pool:
                 if _is_base_sample(s):
-                    exp_fname = "{}.yaml".format(s.name)
+                    exp_fname = "{}{}".format(s.name, SAMPLE_YAML_EXT)
                     exp_fpath = os.path.join(
                             self.prj.submission_folder, exp_fname)
                     if not os.path.isfile(exp_fpath):
