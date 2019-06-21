@@ -6,13 +6,13 @@ import re
 import subprocess
 import time
 
-from .const import *
 from .exceptions import JobSubmissionException
 from .utils import \
     create_looper_args_text, grab_project_data, fetch_sample_flags
 
 from .sample import Sample
 from peppy import VALID_READ_TYPES
+from peppy.sample import SAMPLE_YAML_EXT
 
 
 __author__ = "Vince Reuter"
@@ -88,6 +88,10 @@ class SubmissionConductor(object):
         self.delay = float(delay)
 
         self.sample_subtype = sample_subtype or Sample
+        if not issubclass(self.sample_subtype, Sample):
+            raise TypeError("Sample type must extend {}; got {}".format(
+                Sample.__name__, type(self.sample_subtype).__name__))
+
         self.compute_variables = compute_variables
         self.extra_pipe_args = extra_args or []
         #self.extra_args_text = (extra_args and " ".join(extra_args)) or ""
@@ -139,16 +143,12 @@ class SubmissionConductor(object):
         """
         return self._num_good_job_submissions
 
-    def add_sample(self, sample, sample_subtype=Sample, rerun=False):
+    def add_sample(self, sample, rerun=False):
         """
         Add a sample for submission to this conductor.
 
         :param peppy.Sample sample: sample to be included with this conductor's
             currently growing collection of command submissions
-        :param type sample_subtype: specific subtype associated
-            with this new sample; this is used to tailor-make the sample
-            instance as required by its protocol/pipeline and supported
-            by the pipeline interface.
         :param bool rerun: whether the given sample is being rerun rather than
             run for the first time
         :return bool: Indication of whether the given sample was added to
@@ -158,13 +158,7 @@ class SubmissionConductor(object):
         """
 
         _LOGGER.debug("Adding {} to conductor for {}".format(sample.name, self.pl_name))
-        
-        if not issubclass(sample_subtype, Sample):
-            raise TypeError("If provided, sample_subtype must extend {}".
-                            format(Sample.__name__))
-
         flag_files = fetch_sample_flags(self.prj, sample, self.pl_name)
-
         use_this_sample = True
 
         if flag_files:
@@ -184,15 +178,15 @@ class SubmissionConductor(object):
                                  os.path.basename(fp)) for fp in flag_files]))
                 _LOGGER.debug("NO SUBMISSION")
 
-        if type(sample) != sample_subtype:
+        if type(sample) != self.sample_subtype:
             _LOGGER.debug(
-                "Building {} from {}".format(sample_subtype, type(sample)))
-            sample = sample_subtype(sample.to_dict())
+                "Building {} from {}".format(self.sample_subtype, type(sample)))
+            sample = self.sample_subtype(sample.to_dict())
         else:
             _LOGGER.debug(
-                "{} is already of type {}".format(sample.name, sample_subtype))
+                "{} is already of type {}".format(sample.name, self.sample_subtype))
         _LOGGER.debug("Created %s instance: '%s'",
-                      sample_subtype.__name__, sample.name)
+                      self.sample_subtype.__name__, sample.name)
         sample.prj = grab_project_data(self.prj)
 
         skip_reasons = []
@@ -311,13 +305,14 @@ class SubmissionConductor(object):
             # subtype for each submission conductor, but some may just be
             # the base Sample while others are the single valid subtype.)
             for s, _ in self._pool:
-                if type(s) is Sample:
-                    exp_fname = "{}.yaml".format(s.name)
+                if _is_base_sample(s):
+                    exp_fname = "{}{}".format(s.name, SAMPLE_YAML_EXT)
                     exp_fpath = os.path.join(
                             self.prj.submission_folder, exp_fname)
                     if not os.path.isfile(exp_fpath):
-                        _LOGGER.warning("Missing %s file will be created: '%s'",
-                                     Sample.__name__, exp_fpath)
+                        _LOGGER.warning(
+                            "Missing %s file will be created: '%s'",
+                            Sample.__name__, exp_fpath)
                 else:
                     subtype_name = s.__class__.__name__
                     _LOGGER.debug("Writing %s representation to disk: '%s'",
@@ -454,3 +449,7 @@ class SubmissionConductor(object):
     def _reset_curr_skips(self):
         self._curr_skip_pool = []
         self._curr_skip_size = 0
+
+
+def _is_base_sample(s):
+    return type(s) is Sample

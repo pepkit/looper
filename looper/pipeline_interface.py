@@ -21,6 +21,7 @@ from attmap import PathExAttMap
 from divvy import DEFAULT_COMPUTE_RESOURCES_NAME, NEW_COMPUTE_KEY as COMPUTE_KEY
 from divvy.const import OLD_COMPUTE_KEY
 from peppy import utils as peputil
+from peppy.sample import SAMPLE_YAML_FILE_KEY
 from ubiquerg import expandpath
 
 
@@ -282,7 +283,7 @@ class PipelineInterface(PathExAttMap):
         default_filepath = os.path.join(
                 submission_folder_path, sample.generate_filename())
         _LOGGER.debug("Default sample filepath: '%s'", default_filepath)
-        proxies = {"yaml_file": default_filepath}
+        proxies = {SAMPLE_YAML_FILE_KEY: default_filepath}
         proxies.update(null_replacements)
 
         _LOGGER.debug("Building arguments string")

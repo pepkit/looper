@@ -3,8 +3,8 @@
 import os
 from operator import itemgetter
 from peppy import Sample as PeppySample
-from peppy import *
 from peppy.const import *
+from peppy.sample import SAMPLE_YAML_EXT
 from peppy.utils import get_logger
 from ngstk import get_file_size, parse_ftype, \
     peek_read_lengths_and_paired_counts_from_bam
@@ -90,6 +90,23 @@ class Sample(PeppySample):
             reason_key = "Missing file(s)"
             reason_detail = ", ".join(missing_files)
             return IOError, reason_key, reason_detail
+
+    def generate_filename(self, delimiter="_"):
+        """
+        Create a name for file in which to represent this Sample.
+
+        This uses knowledge of the instance's subtype, sandwiching a delimiter
+        between the name of this Sample and the name of the subtype before the
+        extension. If the instance is a base Sample type, then the filename
+        is simply the sample name with an extension.
+
+        :param str delimiter: what to place between sample name and name of
+            subtype; this is only relevant if the instance is of a subclass
+        :return str: name for file with which to represent this Sample on disk
+        """
+        base = self.name if type(self) is Sample else \
+            "{}{}{}".format(self.name, delimiter, type(self).__name__)
+        return "{}{}".format(base, SAMPLE_YAML_EXT)
 
     def set_pipeline_attributes(
             self, pipeline_interface, pipeline_name, permissive=True):
