@@ -19,7 +19,7 @@ from pandas.io.parsers import EmptyDataError
 import pytest
 import yaml
 
-from looper.pipeline_interface import PipelineInterface
+from looper.pipeline_interface import PipelineInterface, PROTOMAP_KEY
 from looper.project import Project
 from logmuse import init_logger
 from peppy import SAMPLE_NAME_COLNAME, \
@@ -67,7 +67,7 @@ SRC2_TEMPLATE = "data/{sample_name}-bamfile.bam"
 SRC3_TEMPLATE = "data/{sample_name}.txt"
 
 
-PIPELINE_INTERFACE_CONFIG_LINES = """protocol_mapping:
+PIPELINE_INTERFACE_CONFIG_LINES = """{pm_key}:
   standard: testpipeline.sh
   ngs: testngs.sh
 pipelines:
@@ -107,7 +107,7 @@ pipelines:
         mem: "32000"
         time: "2-00:00:00"
         partition: "longq"
-""".splitlines(True)
+""".format(pm_key=PROTOMAP_KEY).splitlines(True)
 
 # Determined by "looper_args" in pipeline interface lines.
 LOOPER_ARGS_BY_PIPELINE = {

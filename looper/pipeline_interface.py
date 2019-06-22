@@ -87,7 +87,8 @@ class PipelineInterface(PathExAttMap):
             reqdat, errors = {}, {}
             for req, reqtype in universal_requirements.items():
                 try:
-                    reqdat[req] = create_pipeline_requirement(req, typename=reqtype)
+                    reqdat[req] = create_pipeline_requirement(
+                        req, typename=reqtype)
                 except ValueError:
                     errors[req] = reqtype
             if errors:
@@ -497,6 +498,13 @@ class PipelineInterface(PathExAttMap):
         return iter(self.pipelines.items())
 
     def missing_requirements(self, pipeline):
+        """
+        Determine which requirements--if any--declared by a pipeline are unmet.
+
+        :param str pipeline: key for pipeline for which to determine unmet reqs
+        :return Mapping[str, str]: binding between requirement path/name and
+            requirement instance
+        """
         pipe_data = self.select_pipeline(pipeline)
         return {k: v.req for k, v in pipe_data[PIPELINE_REQUIREMENTS_KEY].items()
                 if not v.satisfied}
@@ -581,10 +589,10 @@ class PipelineInterface(PathExAttMap):
 
     def validate(self, pipeline):
         """
-
+        Determine whether any declared requirements are unmet.
 
         :param str pipeline: key for the pipeline to validate
-        :return Mapping[str, str]: binding between
+        :return bool: whether any declared requirements are unmet
         :raise MissingPipelineConfigurationException: if the requested pipeline
             is not defined in this interface
         """

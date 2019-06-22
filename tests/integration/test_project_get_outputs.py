@@ -657,7 +657,7 @@ RNA_PIPES = {"kallisto": PipeSpec("rnaKallisto.py"),
 
 @pytest.fixture(scope="function")
 def rna_pi_lines():
-    return """protocol_mapping:
+    return """{pm_key}:
   {rnaseq_proto_name}: [{bs_name}, {kall_name}, {th_name}]
   SMART: [{bs_name}, {th_name}]
 
@@ -728,7 +728,7 @@ pipelines:
         mem: "8000"
         time: "0-12:00:00"
 """.format(
-    res=RESOURCES_KEY, dr=DEF_RES, rnaseq_proto_name=RNASEQ,
+    pm_key=PROTOMAP_KEY, res=RESOURCES_KEY, dr=DEF_RES, rnaseq_proto_name=RNASEQ,
     bs_key=RNA_PIPES["bitseq"].key, bs_name=RNA_PIPES["bitseq"].name,
     th_key=RNA_PIPES["tophat"].key, th_name=RNA_PIPES["tophat"].name,
     kall_key=RNA_PIPES["kallisto"].key, kall_name=RNA_PIPES["kallisto"].name,

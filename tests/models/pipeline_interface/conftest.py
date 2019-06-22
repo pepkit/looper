@@ -21,7 +21,7 @@ __email__ = "vreuter@virginia.edu"
 
 
 ATAC_PROTOCOL_NAME = "ATAC"
-
+ATAC_PIPE_NAME = "ATACseq"
 CONFIG_FILENAME = "test-proj-conf.yaml"
 ANNOTATIONS_FILENAME = "anns.csv"
 SAMPLE_NAME_1 = "test-sample-1"
@@ -71,7 +71,7 @@ def pytest_generate_tests(metafunc):
 
 
 ATACSEQ_IFACE_WITHOUT_RESOURCES = {
-    "name": "ATACseq",
+    "name": ATAC_PIPE_NAME,
     "looper_args": True,
     "required_input_files": ["read1", "read2"],
     "all_input_files": ["read1", "read2"],
