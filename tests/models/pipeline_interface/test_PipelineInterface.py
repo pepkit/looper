@@ -22,8 +22,10 @@ from looper.exceptions import InvalidResourceSpecificationException, \
     MissingPipelineConfigurationException, PipelineInterfaceConfigError
 from peppy import Project, Sample
 from peppy.const import *
-from .conftest import ATAC_PROTOCOL_NAME, write_config_data
 from ubiquerg import powerset
+
+from .conftest import ATAC_PROTOCOL_NAME, write_config_data
+from tests.helpers import remove_piface_requirements
 
 
 __author__ = "Vince Reuter"
@@ -109,7 +111,7 @@ def test_basic_construction(tmpdir, from_file, bundled_piface):
         assert pi.pipelines_path is None
 
     # Validate protocol mapping and interfaces contents.
-    assert PathExAttMap(bundled_piface[PL_KEY]) == pi[PL_KEY]
+    assert bundled_piface[PL_KEY] == remove_piface_requirements(pi[PL_KEY])
     assert PathExAttMap(bundled_piface[PROTOMAP_KEY]) == pi[PROTOMAP_KEY]
 
     # Certain access modes should agree with one another.

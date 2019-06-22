@@ -63,3 +63,21 @@ def randconf(ext=".yaml"):
     :return str: randomly generated string to function as filename
     """
     return randstr(LETTERS_AND_DIGITS, 15) + ext
+
+
+def remove_piface_requirements(data):
+    """
+    Remove the requirements declaration section from all mappings.
+
+    :param Mapping data: (likely nested) mappings
+    :return Mapping: same as input, but with requirements keys removed
+    """
+    from collections import Mapping
+    from looper.pipeline_interface import PIPELINE_REQUIREMENTS_KEY as REQS_KEY
+    def go(m, acc):
+        for k, v in m.items():
+            if k == REQS_KEY:
+                continue
+            acc[k] = go(v, {}) if isinstance(v, Mapping) else v
+        return acc
+    return go(data, {})
