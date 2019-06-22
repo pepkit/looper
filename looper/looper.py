@@ -261,7 +261,8 @@ def process_protocols(prj, protocols, resource_setting_kwargs=None, **kwargs):
         submission_bundles = prj.build_submission_bundles(proto)
         if not submission_bundles:
             if proto != GENERIC_PROTOCOL_KEY:
-                _LOGGER.warning("No mapping for protocol: '%s'", proto)
+                _LOGGER.warning(
+                    "No valid pipelines for protocol '{}'".format(proto))
             continue
         for pl_iface, sample_subtype, pl_key, script_with_flags in \
                 submission_bundles:

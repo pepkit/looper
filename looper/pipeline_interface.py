@@ -1,20 +1,18 @@
 """ Model the connection between a pipeline and a project or executor. """
 
+from collections import Iterable, Mapping
 import inspect
 import logging
 import os
-import sys
-if sys.version_info < (3, 3):
-    from collections import Mapping
-else:
-    from collections.abc import Mapping
 import warnings
 
 import yaml
 from yaml import SafeLoader
 
 from .exceptions import InvalidResourceSpecificationException, \
-    MissingPipelineConfigurationException, PipelineInterfaceConfigError
+    MissingPipelineConfigurationException, PipelineInterfaceConfigError, \
+    PipelineInterfaceRequirementsError
+from .pipereqs import *
 from .sample import Sample
 from .utils import get_logger
 from attmap import PathExAttMap
@@ -30,6 +28,7 @@ _LOGGER = get_logger(__name__)
 
 PL_KEY = "pipelines"
 PROTOMAP_KEY = "protocol_mapping"
+PIPELINE_REQUIREMENTS_KEY = "required_executables"
 RESOURCES_KEY = "resources"
 SUBTYPE_MAPPING_SECTION = "sample_subtypes"
 
@@ -78,6 +77,29 @@ class PipelineInterface(PathExAttMap):
         config = expand_pl_paths(config)
         config = standardize_protocols(config)
         self.add_entries(config)
+
+        # Establish requirements for across this interface's pipelines, and
+        # propagate those to individual pipelines.
+        universal_requirements = self.setdefault(PIPELINE_REQUIREMENTS_KEY, {})
+        if isinstance(universal_requirements, str):
+            universal_requirements = [universal_requirements]
+        if isinstance(universal_requirements, Mapping):
+            reqdat, errors = {}, {}
+            for req, reqtype in universal_requirements.items():
+                try:
+                    reqdat[req] = create_pipeline_requirement(req, typename=reqtype)
+                except ValueError:
+                    errors[req] = reqtype
+            if errors:
+                raise PipelineInterfaceRequirementsError(errors)
+        elif isinstance(universal_requirements, Iterable):
+            reqdat = {r: RequiredExecutable(r) for r in universal_requirements}
+        else:
+            raise TypeError(
+                "Interface-wide pipeline requirements are non-iterable ({})".
+                format(type(universal_requirements).__name__))
+        for p, pipe_data in self[PL_KEY].items():
+            pipe_data.setdefault(PIPELINE_REQUIREMENTS_KEY, {}).update(reqdat)
 
     def __repr__(self):
         """ String representation """
@@ -474,6 +496,11 @@ class PipelineInterface(PathExAttMap):
         """
         return iter(self.pipelines.items())
 
+    def missing_requirements(self, pipeline):
+        pipe_data = self.select_pipeline(pipeline)
+        return {k: v.req for k, v in pipe_data[PIPELINE_REQUIREMENTS_KEY].items()
+                if not v.satisfied}
+
     @property
     def pipeline_names(self):
         """
@@ -551,6 +578,17 @@ class PipelineInterface(PathExAttMap):
         """
         config = self.select_pipeline(pipeline_name)
         return "looper_args" in config and config["looper_args"]
+
+    def validate(self, pipeline):
+        """
+
+
+        :param str pipeline: key for the pipeline to validate
+        :return Mapping[str, str]: binding between
+        :raise MissingPipelineConfigurationException: if the requested pipeline
+            is not defined in this interface
+        """
+        return not self.missing_requirements(pipeline)
 
 
 def expand_pl_paths(piface):
