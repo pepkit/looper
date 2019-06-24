@@ -103,16 +103,11 @@ class PipelineInterface(PXAM):
             super(PipelineInterface, self).__setitem__(
                 key, read_pipe_reqs(value), finalize=False)
         elif key == PL_KEY:
-            # DEBUG
-            print("PIPELINES!")
-            print("VALUE: {}".format(value))
             assert isinstance(value, Mapping) or not value, \
                 "If non-null, value for key '{}' in interface specification " \
                 "must be a mapping; got {}".format(key, type(value).__name__)
             m = PXAM()
             for k, v in value.items():
-                print("SUB KEY: {}".format(k))
-                print("SUBVAL: {}".format(v))
                 assert isinstance(v, Mapping), \
                     "Value for pipeline {} is {}, not mapping".\
                     format(k, type(v).__name__)
@@ -123,7 +118,6 @@ class PipelineInterface(PXAM):
                     else:
                         m_sub.__setitem__(k_sub, v_sub, finalize=True)
                 m.__setitem__(k, m_sub, finalize=False)
-                print("NEW M: {}".format(m))
             super(PipelineInterface, self).__setitem__(key, m)
         else:
             super(PipelineInterface, self).__setitem__(key, value)
