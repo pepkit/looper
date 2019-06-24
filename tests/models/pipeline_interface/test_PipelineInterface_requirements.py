@@ -1,15 +1,23 @@
 """ Tests for declaration of requirements in pipeline interface """
 
 from attmap import PathExAttMap
+from looper import PipelineInterface
+from looper.exceptions import PipelineInterfaceRequirementsError
 from looper.pipeline_interface import \
     PL_KEY, PROTOMAP_KEY, PIPELINE_REQUIREMENTS_KEY
-from looper import PipelineInterface
 import pytest
+import yaml
 from tests.models.pipeline_interface.conftest import \
     ATAC_PIPE_NAME, ATAC_PROTOCOL_NAME
+from veracitools import ExpectContext
 
 __author__ = "Vince Reuter"
 __email__ = "vreuter@virginia.edu"
+
+
+def randn():
+    import random, sys
+    return random.randint(-sys.maxsize, sys.maxsize)
 
 
 @pytest.mark.parametrize(["observe", "expected"], [
@@ -33,9 +41,58 @@ def test_no_requirements_successfully_validates(
     assert expected == observe(pi, atac_pipe_name)
 
 
-@pytest.mark.skip("not implemented")
-def test_illegal_requirements_specification():
-    pass
+class IllegalPipelineRequirementsSpecificationTests:
+
+    @pytest.mark.parametrize(["reqs_data", "expected"], [
+        (randn(), TypeError),
+        ({"ls": "not-a-valid-check-type"}, PipelineInterfaceRequirementsError)])
+    @pytest.mark.parametrize("from_file", [False, True])
+    def test_bad_reqs_top_level(self, reqs_data, expected, atac_pipe_name,
+                                atacseq_piface_data, from_file, tmpdir):
+        assert PIPELINE_REQUIREMENTS_KEY not in atacseq_piface_data[atac_pipe_name]
+        pi_data = {PROTOMAP_KEY: {ATAC_PROTOCOL_NAME: atac_pipe_name},
+                   PL_KEY: atacseq_piface_data,
+                   PIPELINE_REQUIREMENTS_KEY: reqs_data}
+        if from_file:
+            src = tmpdir.join("pi.yaml").strpath
+            with open(src, 'w') as f:
+                yaml.dump(pi_data, f)
+        else:
+            src = pi_data
+        with ExpectContext(expected, PipelineInterface) as build_iface:
+            build_iface(src)
+
+    @pytest.mark.parametrize(["reqs_data", "expected"], [
+        (randn(), TypeError),
+        ({"ls": "not-a-valid-check-type"}, PipelineInterfaceRequirementsError)])
+    @pytest.mark.parametrize("from_file", [False, True])
+    def test_bad_reqs_specific_pipeline(self, reqs_data, expected, atac_pipe_name,
+                                atacseq_piface_data, from_file, tmpdir):
+        assert PIPELINE_REQUIREMENTS_KEY not in atacseq_piface_data[atac_pipe_name]
+        atacseq_piface_data[atac_pipe_name][PIPELINE_REQUIREMENTS_KEY] = reqs_data
+        assert atacseq_piface_data[atac_pipe_name][PIPELINE_REQUIREMENTS_KEY] == reqs_data
+        pi_data = {PROTOMAP_KEY: {ATAC_PROTOCOL_NAME: atac_pipe_name},
+                   PL_KEY: atacseq_piface_data}
+        print("DATA: {}".format(pi_data))
+        if from_file:
+            src = tmpdir.join("pi.yaml").strpath
+            with open(src, 'w') as f:
+                yaml.dump(pi_data, f)
+        else:
+            src = pi_data
+        # DEBUG
+        #pi = PipelineInterface(src)
+        #print("PI: {}".format(pi[PL_KEY]))
+        with ExpectContext(expected, PipelineInterface) as build_iface:
+            print(build_iface(src))
+
+    @pytest.mark.skip("not implemented")
+    def test_bad_reqs_post_construction(self):
+        pass
+
+    @pytest.mark.skip("not implemented")
+    def test_bad_reqs_specific_pipeline_post_construction(self):
+        pass
 
 
 @pytest.mark.skip("not implemented")

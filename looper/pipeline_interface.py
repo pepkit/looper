@@ -1,6 +1,6 @@
 """ Model the connection between a pipeline and a project or executor. """
 
-from collections import Iterable, Mapping
+from collections import Iterable, Mapping, OrderedDict
 import inspect
 import logging
 import os
@@ -9,18 +9,19 @@ import warnings
 import yaml
 from yaml import SafeLoader
 
+from .const import PIPELINE_REQUIREMENTS_KEY
 from .exceptions import InvalidResourceSpecificationException, \
     MissingPipelineConfigurationException, PipelineInterfaceConfigError, \
     PipelineInterfaceRequirementsError
-from .pipereqs import *
+from .pipereqs import create_pipeline_requirement, RequiredExecutable
 from .sample import Sample
 from .utils import get_logger
-from attmap import PathExAttMap
+from attmap import PathExAttMap as PXAM
 from divvy import DEFAULT_COMPUTE_RESOURCES_NAME, NEW_COMPUTE_KEY as COMPUTE_KEY
 from divvy.const import OLD_COMPUTE_KEY
 from peppy import utils as peputil
 from peppy.sample import SAMPLE_YAML_FILE_KEY
-from ubiquerg import expandpath
+from ubiquerg import expandpath, is_command_callable
 
 
 _LOGGER = get_logger(__name__)
@@ -28,13 +29,12 @@ _LOGGER = get_logger(__name__)
 
 PL_KEY = "pipelines"
 PROTOMAP_KEY = "protocol_mapping"
-PIPELINE_REQUIREMENTS_KEY = "required_executables"
 RESOURCES_KEY = "resources"
 SUBTYPE_MAPPING_SECTION = "sample_subtypes"
 
 
 @peputil.copy
-class PipelineInterface(PathExAttMap):
+class PipelineInterface(PXAM):
     """
     This class parses, holds, and returns information for a yaml file that
     specifies how to interact with each individual pipeline. This
@@ -57,6 +57,7 @@ class PipelineInterface(PathExAttMap):
             _LOGGER.debug("Parsing '%s' for %s config data",
                           config, self.__class__.__name__)
             self.pipe_iface_file = config
+            self.source = config
             try:
                 with open(config, 'r') as f:
                     config = yaml.load(f, SafeLoader)
@@ -66,7 +67,6 @@ class PipelineInterface(PathExAttMap):
                         "Failed to parse YAML from {}:\n{}".
                         format(config, "".join(f.readlines())))
                 raise
-            self.source = config
 
         # Check presence of 2 main sections (protocol mapping and pipelines).
         missing = [s for s in self.REQUIRED_SECTIONS if s not in config]
@@ -75,32 +75,19 @@ class PipelineInterface(PathExAttMap):
 
         # Format and add the protocol mappings and individual interfaces.
         config = expand_pl_paths(config)
-        config = standardize_protocols(config)
-        self.add_entries(config)
+        assert PROTOMAP_KEY in config, \
+            "For protocol mapping standardization, pipeline interface data " \
+            "must contain key '{}'".format(PROTOMAP_KEY)
+
+        for k, v in config.items():
+            assert k not in self, "Interface key already mapped: {}".format(k)
+            self[k] = v
 
         # Establish requirements for across this interface's pipelines, and
         # propagate those to individual pipelines.
-        universal_requirements = self.setdefault(PIPELINE_REQUIREMENTS_KEY, {})
-        if isinstance(universal_requirements, str):
-            universal_requirements = [universal_requirements]
-        if isinstance(universal_requirements, Mapping):
-            reqdat, errors = {}, {}
-            for req, reqtype in universal_requirements.items():
-                try:
-                    reqdat[req] = create_pipeline_requirement(
-                        req, typename=reqtype)
-                except ValueError:
-                    errors[req] = reqtype
-            if errors:
-                raise PipelineInterfaceRequirementsError(errors)
-        elif isinstance(universal_requirements, Iterable):
-            reqdat = {r: RequiredExecutable(r) for r in universal_requirements}
-        else:
-            raise TypeError(
-                "Interface-wide pipeline requirements are non-iterable ({})".
-                format(type(universal_requirements).__name__))
+        reqdat = self.setdefault(PIPELINE_REQUIREMENTS_KEY, PXAM())
         for p, pipe_data in self[PL_KEY].items():
-            pipe_data.setdefault(PIPELINE_REQUIREMENTS_KEY, {}).update(reqdat)
+            pipe_data.setdefault(PIPELINE_REQUIREMENTS_KEY, PXAM()).update(reqdat)
 
     def __repr__(self):
         """ String representation """
@@ -110,6 +97,36 @@ class PipelineInterface(PathExAttMap):
         pipelines = ", ".join(self.pipelines.keys())
         return "{} from {}, with {} pipeline(s): {}".format(
                 self.__class__.__name__, source, num_pipelines, pipelines)
+
+    def __setitem__(self, key, value):
+        if key == PIPELINE_REQUIREMENTS_KEY:
+            super(PipelineInterface, self).__setitem__(
+                key, read_pipe_reqs(value), finalize=False)
+        elif key == PL_KEY:
+            # DEBUG
+            print("PIPELINES!")
+            print("VALUE: {}".format(value))
+            assert isinstance(value, Mapping) or not value, \
+                "If non-null, value for key '{}' in interface specification " \
+                "must be a mapping; got {}".format(key, type(value).__name__)
+            m = PXAM()
+            for k, v in value.items():
+                print("SUB KEY: {}".format(k))
+                print("SUBVAL: {}".format(v))
+                assert isinstance(v, Mapping), \
+                    "Value for pipeline {} is {}, not mapping".\
+                    format(k, type(v).__name__)
+                m_sub = PXAM()
+                for k_sub, v_sub in v.items():
+                    if k_sub == PIPELINE_REQUIREMENTS_KEY:
+                        m_sub.__setitem__(k_sub, read_pipe_reqs(v_sub), finalize=False)
+                    else:
+                        m_sub.__setitem__(k_sub, v_sub, finalize=True)
+                m.__setitem__(k, m_sub, finalize=False)
+                print("NEW M: {}".format(m))
+            super(PipelineInterface, self).__setitem__(key, m)
+        else:
+            super(PipelineInterface, self).__setitem__(key, value)
 
     def choose_resource_package(self, pipeline_name, file_size):
         """
@@ -149,7 +166,7 @@ class PipelineInterface(PathExAttMap):
                 try:
                     universal_compute = pl[OLD_COMPUTE_KEY]
                 except KeyError:
-                    universal_compute = PathExAttMap()
+                    universal_compute = PXAM()
                 else:
                     warnings.warn(
                         "To declare pipeline compute section, use {} rather "
@@ -266,7 +283,7 @@ class PipelineInterface(PathExAttMap):
 
         # TODO: determine how to deal with pipelines_path (i.e., could be null)
         if not os.path.isabs(script_path_only) and not \
-                peputil.is_command_callable(script_path_only):
+                is_command_callable(script_path_only):
             _LOGGER.whisper("Expanding non-absolute script path: '%s'",
                             script_path_only)
             script_path_only = os.path.join(
@@ -620,19 +637,38 @@ def expand_pl_paths(piface):
     return piface
 
 
-def standardize_protocols(piface):
+def read_pipe_reqs(reqs_data):
     """
-    Handle casing and punctuation of protocol keys in pipeline interface.
+    Read/parse a requirements section or subsection of a pipeline interface config.
 
-    :param MutableMapping piface: Pipeline interface data to standardize.
-    :return MutableMapping: Same as the input, but with protocol keys case and
-        punctuation handled in a more uniform way for matching later.
+    :param Mapping reqs_data: the data to parse; this should be a collection
+        of strings (names/paths of executables), or a mapping of requirements
+        declarations, keyed on name/path with each key mapping to a string
+        that indicates the kind of requirement (file, folder, executable).
+        If nothing's specified (list rather than dict) of requirements, or if
+        the value for a requirement is empty/null, the requirement is assumed
+        to be the declaration of an executable.
+    :return attmap.PathExAttMap[str, looper.pipereqs.PipelineRequirement]: a
+        binding between requirement name/path and validation instance
     """
-    from copy import copy as cp
-    assert PROTOMAP_KEY in piface, "For protocol mapping standardization, " \
-        "pipeline interface data must contain key '{}'".format(PROTOMAP_KEY)
-    piface[PROTOMAP_KEY] = cp(piface[PROTOMAP_KEY])
-    return piface
+    if isinstance(reqs_data, str):
+        reqs_data = [reqs_data]
+    if isinstance(reqs_data, Mapping):
+        newval, errors = OrderedDict(), {}
+        for r, t in reqs_data.items():
+            try:
+                newval[r] = create_pipeline_requirement(r, typename=r)
+            except ValueError:
+                errors[r] = t
+        if errors:
+            raise PipelineInterfaceRequirementsError(errors)
+    elif isinstance(reqs_data, Iterable):
+        newval = OrderedDict([(r, RequiredExecutable(r)) for r in reqs_data])
+    else:
+        raise TypeError(
+            "Non-iterable pipeline requirements (key '{}'): {}".
+                format(PIPELINE_REQUIREMENTS_KEY, type(reqs_data).__name__))
+    return PXAM(newval)
 
 
 def _import_sample_subtype(pipeline_filepath, subtype_name=None):

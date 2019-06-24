@@ -7,7 +7,7 @@ import os
 
 import peppy
 from peppy import METADATA_KEY, OUTDIR_KEY
-from peppy.utils import is_command_callable
+from ubiquerg import is_command_callable
 from .const import *
 from .exceptions import DuplicatePipelineKeyException, \
     PipelineInterfaceRequirementsError
