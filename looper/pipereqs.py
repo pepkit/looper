@@ -1,7 +1,7 @@
 """ Pipeline requirements declaration """
 
 import os
-from ubiquerg import is_command_callable
+from ubiquerg import expandpath, is_command_callable
 
 __author__ = "Vince Reuter"
 __email__ = "vreuter@virginia.edu"
@@ -32,9 +32,12 @@ class PipelineRequirement(object):
     def __repr__(self):
         return "{}: {}".format(type(self).__name__, self.req)
 
+    def _finalize_for_check(self):
+        return expandpath(self.req)
+
     @property
     def satisfied(self):
-        return self.check(self.req)
+        return self.check(self._finalize_for_check())
 
 
 class RequiredPath(PipelineRequirement):

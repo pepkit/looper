@@ -645,8 +645,6 @@ def read_pipe_reqs(reqs_data):
     if isinstance(reqs_data, Mapping):
         newval, errors = OrderedDict(), {}
         for r, t in reqs_data.items():
-            # DEBUG
-            print("TYPE: {}".format(t))
             try:
                 newval[r] = create_pipeline_requirement(r, typename=t)
             except ValueError:
