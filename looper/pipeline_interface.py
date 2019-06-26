@@ -83,12 +83,6 @@ class PipelineInterface(PXAM):
             assert k not in self, "Interface key already mapped: {}".format(k)
             self[k] = v
 
-        # Establish requirements for across this interface's pipelines, and
-        # propagate those to individual pipelines.
-        reqdat = self.setdefault(PIPELINE_REQUIREMENTS_KEY, PXAM())
-        for p, pipe_data in self[PL_KEY].items():
-            pipe_data.setdefault(PIPELINE_REQUIREMENTS_KEY, PXAM()).update(reqdat)
-
     def __repr__(self):
         """ String representation """
         source = self.pipe_iface_file or "Mapping"
@@ -513,12 +507,12 @@ class PipelineInterface(PXAM):
         Determine which requirements--if any--declared by a pipeline are unmet.
 
         :param str pipeline: key for pipeline for which to determine unmet reqs
-        :return Mapping[str, str]: binding between requirement path/name and
-            requirement instance
+        :return Iterable[looper.PipelineRequirement]: unmet requirements
         """
-        pipe_data = self.select_pipeline(pipeline)
-        return {k: v.req for k, v in pipe_data[PIPELINE_REQUIREMENTS_KEY].items()
-                if not v.satisfied}
+        reqs_data = {name: req for name, req in
+                     self.get(PIPELINE_REQUIREMENTS_KEY, {}).items()}
+        reqs_data.update(self.select_pipeline(pipeline).get(PIPELINE_REQUIREMENTS_KEY, {}))
+        return [v.req for v in reqs_data.values() if not v.satisfied]
 
     @property
     def pipeline_names(self):
@@ -645,13 +639,16 @@ def read_pipe_reqs(reqs_data):
     :return attmap.PathExAttMap[str, looper.pipereqs.PipelineRequirement]: a
         binding between requirement name/path and validation instance
     """
+    reqs_data = reqs_data or {}
     if isinstance(reqs_data, str):
         reqs_data = [reqs_data]
     if isinstance(reqs_data, Mapping):
         newval, errors = OrderedDict(), {}
         for r, t in reqs_data.items():
+            # DEBUG
+            print("TYPE: {}".format(t))
             try:
-                newval[r] = create_pipeline_requirement(r, typename=r)
+                newval[r] = create_pipeline_requirement(r, typename=t)
             except ValueError:
                 errors[r] = t
         if errors:
