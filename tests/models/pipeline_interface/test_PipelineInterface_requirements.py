@@ -52,7 +52,7 @@ def _make_from_data(from_file, folder, data):
 
 @pytest.mark.parametrize(["observe", "expected"], [
     (lambda pi, pk: pi.validate(pk), True),
-    (lambda pi, pk: pi.missing_requirements(pk), {})
+    (lambda pi, pk: pi.missing_requirements(pk), [])
 ])
 def test_no_requirements_successfully_validates(
         observe, expected, from_file, atac_pipe_name, atacseq_piface_data, tmpdir):
@@ -74,7 +74,7 @@ def test_no_requirements_successfully_validates(
 
 @pytest.mark.parametrize(["observe", "expected"], [
     (lambda pi, pk: pi.validate(pk), True),
-    (lambda pi, pk: pi.missing_requirements(pk), {})
+    (lambda pi, pk: pi.missing_requirements(pk), [])
 ])
 @pytest.mark.parametrize("reqs_data", [None, {}])
 @pytest.mark.parametrize("placement", ["top-level", "pipeline"])
@@ -206,7 +206,7 @@ def test_top_level_requirements_do_not_literally_propagate(
         PIPELINE_REQUIREMENTS_KEY: reqs
     }
     pi = _make_from_data(from_file, tmpdir.strpath, data)
-    assert reqs == pi[PIPELINE_REQUIREMENTS_KEY]
+    assert_reqs_eq(reqs, pi[PIPELINE_REQUIREMENTS_KEY])
     assert all(map(lambda d: PIPELINE_REQUIREMENTS_KEY not in d, pi[PL_KEY].values()))
 
 
@@ -222,13 +222,68 @@ def test_top_level_requirements_functionally_propagate(
         PIPELINE_REQUIREMENTS_KEY: reqs
     }
     pi = _make_from_data(from_file, tmpdir.strpath, data)
-    assert set(reqs.keys()) == set(pi[PIPELINE_REQUIREMENTS_KEY].keys())
+    print(pi[PIPELINE_REQUIREMENTS_KEY])
+    assert_reqs_eq(reqs, pi[PIPELINE_REQUIREMENTS_KEY])
     assert PIPELINE_REQUIREMENTS_KEY not in pi[PL_KEY][atac_pipe_name]
     assert expected == pi.missing_requirements(atac_pipe_name)
     assert not pi.validate(atac_pipe_name)
 
 
-@pytest.mark.skip("not implemented")
-def test_pipeline_specific_requirements_remain_local():
+@pytest.mark.parametrize(
+    ["atac_reqs", "other_reqs", "check_atac", "check_other"],
+    [(["ls"], ["badexec"], 
+      lambda pi, pk: pi.validate(pk), lambda pi, pk: not pi.validate(pk)), 
+     (["ls"], ["badexec"], 
+      lambda pi, pk: [] == pi.missing_requirements(pk), 
+      lambda pi, pk: ["badexec"] == pi.missing_requirements(pk)), 
+     ({"ls": "folder"}, {"ls": "executable"}, 
+      lambda pi, pk: not pi.validate(pk), lambda pi, pk: pi.validate(pk)), 
+     ({"ls": "folder"}, {"ls": "executable"}, 
+      lambda pi, pk: ["ls"] == pi.missing_requirements(pk), 
+      lambda pi, pk: [] == pi.missing_requirements(pk)), 
+     (None, {"ls": "file"}, 
+      lambda pi, pk: pi.validate(pk), 
+      lambda pi, pk: ["ls"] == pi.missing_requirements(pk))]
+)
+def test_pipeline_specific_requirements_remain_local(
+        atac_pipe_name, atacseq_piface_data, tmpdir, from_file,
+        atac_reqs, other_reqs, check_atac, check_other):
     """ A single pipeline's requirements don't pollute others'. """
-    pass
+    other_name = "testpipe.sh"
+    data = {
+        PROTOMAP_KEY: {ATAC_PROTOCOL_NAME: atac_pipe_name},
+        PL_KEY: {
+            atac_pipe_name: atacseq_piface_data,
+            other_name: {
+                k: "testpipe" if k == "name" else v
+                for k, v in atacseq_piface_data.items()
+            }
+        }
+    }
+    if atac_reqs is not None:
+        data[PL_KEY][atac_pipe_name][PIPELINE_REQUIREMENTS_KEY] = atac_reqs
+    if other_reqs is not None:
+        data[PL_KEY][other_name][PIPELINE_REQUIREMENTS_KEY] = other_reqs
+        def assert_reqs_other(iface):
+            assert PIPELINE_REQUIREMENTS_KEY in iface[PL_KEY][other_name]
+    else:
+        def assert_reqs_other(iface):
+            assert PIPELINE_REQUIREMENTS_KEY not in iface[PL_KEY][other_name]
+    pi = _make_from_data(from_file, tmpdir.strpath, data)
+    assert PIPELINE_REQUIREMENTS_KEY not in pi
+    assert_reqs_other(pi)
+    check_atac(pi, atac_pipe_name)
+    check_other(pi, other_name)
+
+
+def assert_reqs_eq(exp, obs):
+    from collections import Iterable, Sized
+    if isinstance(obs, PathExAttMap):
+        obs = set(obs)
+    if isinstance(exp, str):
+        exp = {exp}
+    if isinstance(exp, Iterable) and isinstance(exp, Sized):
+        assert len(exp) == len(obs) and set(exp) == set(obs)
+    else:
+        raise TypeError("Need sized iterables to compare; got {} and {}".
+                        format(type(exp).__name__, type(obs).__name__))
