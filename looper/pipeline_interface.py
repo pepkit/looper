@@ -80,7 +80,10 @@ class PipelineInterface(PXAM):
             "must contain key '{}'".format(PROTOMAP_KEY)
 
         for k, v in config.items():
-            assert k not in self, "Interface key already mapped: {}".format(k)
+            if k in ["pipe_iface_file", "source"]:
+                continue
+            assert k not in self, \
+                "Interface key already mapped: {} ({})".format(k, self[k])
             self[k] = v
 
     def __repr__(self):
@@ -254,6 +257,7 @@ class PipelineInterface(PXAM):
 
         full_pipe_path = \
                 self.get_attribute(strict_pipeline_key, "path")
+
         if full_pipe_path:
             script_path_only = os.path.expanduser(
                 os.path.expandvars(full_pipe_path[0].strip()))

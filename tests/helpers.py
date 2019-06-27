@@ -24,6 +24,26 @@ def assert_entirely_equal(observed, expected):
         assert (observed == expected).all()
 
 
+def build_pipeline_iface(from_file, folder, data):
+    """
+    Homogenize PipelineInterface build over both in-memory and on-disk data.
+
+    :param bool from_file: whether to route the construction through disk
+    :param str folder: folder in which to create config file if via disk
+    :param Mapping data: raw PI config data
+    :return looper.PipelineInterface: the new PipelineInterface instance
+    """
+    import os, yaml
+    from looper import PipelineInterface
+    assert type(from_file) is bool
+    if from_file:
+        fp = os.path.join(folder, "pipeline_interface.yaml")
+        with open(fp, 'w') as f:
+            yaml.dump(data, f)
+        data = fp
+    return PipelineInterface(data)
+
+
 def named_param(argnames, argvalues):
     """
     Parameterize a test case and automatically name/label by value
@@ -81,3 +101,29 @@ def remove_piface_requirements(data):
             acc[k] = go(v, {}) if isinstance(v, Mapping) else v
         return acc
     return go(data, {})
+
+
+class ReqsSpec(object):
+    """ Basically a namedtuple but with type validation. """
+
+    def __init__(self, reqs, exp_valid, exp_unmet):
+        """
+        This is used for PipelineInterface requirements specification testing.
+
+        :param str | Iterable[str] | Mapping[str, str] reqs: pipeline
+            requirements specification, either for entire interface or for
+            a specific pipeline
+        :param Iterable[str] exp_valid: expected satisfied requirements
+        :param Iterable[str] exp_unmet: expected unmet requirements
+        """
+        def proc_exp(exp_val):
+            types = (tuple, list, set)
+            if not isinstance(exp_val, types):
+                raise TypeError(
+                    "Illegal type of expected value ({}); must be one of: {}".
+                    format(type(exp_val).__name__,
+                           ", ".join(map(lambda t: t.__name__, types))))
+            return set(exp_val)
+        self.exp_valid = proc_exp(exp_valid or [])
+        self.exp_valid = proc_exp(exp_unmet or [])
+        self.reqs = reqs

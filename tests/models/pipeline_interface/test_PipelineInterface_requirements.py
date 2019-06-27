@@ -1,13 +1,14 @@
 """ Tests for declaration of requirements in pipeline interface """
 
-import os
 from attmap import PathExAttMap
 from looper import PipelineInterface
 from looper.exceptions import PipelineInterfaceRequirementsError
 from looper.pipeline_interface import \
     PL_KEY, PROTOMAP_KEY, PIPELINE_REQUIREMENTS_KEY
+from looper.pipereqs import KEY_EXEC_REQ, KEY_FILE_REQ, KEY_FOLDER_REQ
 import pytest
 import yaml
+from tests.helpers import build_pipeline_iface
 from tests.models.pipeline_interface.conftest import \
     ATAC_PIPE_NAME, ATAC_PROTOCOL_NAME
 from veracitools import ExpectContext
@@ -32,24 +33,6 @@ def randn():
     return random.randint(-sys.maxsize, sys.maxsize)
 
 
-def _make_from_data(from_file, folder, data):
-    """
-    Homogenize PipelineInterface build over both in-memory and on-disk data.
-
-    :param bool from_file: whether to route the construction through disk
-    :param str folder: folder in which to create config file if via disk
-    :param Mapping data: raw PI config data
-    :return looper.PipelineInterface: the new PipelineInterface instance
-    """
-    assert type(from_file) is bool
-    if from_file:
-        fp = os.path.join(folder, "pipeline_interface.yaml")
-        with open(fp, 'w') as f:
-            yaml.dump(data, f)
-        data = fp
-    return PipelineInterface(data)
-
-
 @pytest.mark.parametrize(["observe", "expected"], [
     (lambda pi, pk: pi.validate(pk), True),
     (lambda pi, pk: pi.missing_requirements(pk), [])
@@ -62,7 +45,7 @@ def test_no_requirements_successfully_validates(
     assert [atac_pipe_name] == list(atacseq_piface_data.keys())
     assert ATAC_PIPE_NAME == atacseq_piface_data[atac_pipe_name]["name"]
 
-    pi = _make_from_data(from_file, tmpdir.strpath, {
+    pi = build_pipeline_iface(from_file, tmpdir.strpath, {
         PROTOMAP_KEY: {ATAC_PROTOCOL_NAME: atac_pipe_name},
         PL_KEY: {atac_pipe_name: atacseq_piface_data}
     })
@@ -99,7 +82,7 @@ def test_empty_requirements_successfully_validates(
     else:
         raise ValueError("Unexpected reqs placement spec: {}".format(placement))
 
-    pi = _make_from_data(from_file, tmpdir.strpath, data)
+    pi = build_pipeline_iface(from_file, tmpdir.strpath, data)
     assert expected == observe(pi, atac_pipe_name)
 
 
@@ -182,7 +165,7 @@ class IllegalPipelineRequirementsSpecificationTests:
         else:
             raise ValueError("Unexpected reqs placement spec: {}".format(init_place))
 
-        pi = _make_from_data(from_file, tmpdir.strpath, data)
+        pi = build_pipeline_iface(from_file, tmpdir.strpath, data)
         pretest(pi, atac_pipe_name, init_reqs_data)
 
         if post_place_loc == "top-level":
@@ -196,7 +179,7 @@ class IllegalPipelineRequirementsSpecificationTests:
 
 
 @pytest.mark.parametrize(
-    "reqs", [{}, ["ls", "date"], {"ls": "executable", "date": "executable"}])
+    "reqs", [{}, ["ls", "date"], {"ls": KEY_EXEC_REQ, "date": KEY_EXEC_REQ}])
 def test_top_level_requirements_do_not_literally_propagate(
         reqs, from_file, tmpdir, atac_pipe_name, atacseq_piface_data):
     """ Don't literally store universal requirements in each pipeline. """
@@ -205,14 +188,14 @@ def test_top_level_requirements_do_not_literally_propagate(
         PL_KEY: {atac_pipe_name: atacseq_piface_data},
         PIPELINE_REQUIREMENTS_KEY: reqs
     }
-    pi = _make_from_data(from_file, tmpdir.strpath, data)
+    pi = build_pipeline_iface(from_file, tmpdir.strpath, data)
     assert_reqs_eq(reqs, pi[PIPELINE_REQUIREMENTS_KEY])
     assert all(map(lambda d: PIPELINE_REQUIREMENTS_KEY not in d, pi[PL_KEY].values()))
 
 
 @pytest.mark.parametrize(["reqs", "expected"], [
     ("nonexec", ["nonexec"]), (["not-on-path", "ls"], ["not-on-path"]),
-    ({"nonexec": "executable", "$HOME": "folder"}, ["nonexec"])])
+    ({"nonexec": KEY_EXEC_REQ, "$HOME": KEY_FOLDER_REQ}, ["nonexec"])])
 def test_top_level_requirements_functionally_propagate(
         reqs, from_file, tmpdir, atac_pipe_name, atacseq_piface_data, expected):
     """ The universal requirements do functionally apply to each pipeline. """
@@ -221,7 +204,7 @@ def test_top_level_requirements_functionally_propagate(
         PL_KEY: {atac_pipe_name: atacseq_piface_data},
         PIPELINE_REQUIREMENTS_KEY: reqs
     }
-    pi = _make_from_data(from_file, tmpdir.strpath, data)
+    pi = build_pipeline_iface(from_file, tmpdir.strpath, data)
     print(pi[PIPELINE_REQUIREMENTS_KEY])
     assert_reqs_eq(reqs, pi[PIPELINE_REQUIREMENTS_KEY])
     assert PIPELINE_REQUIREMENTS_KEY not in pi[PL_KEY][atac_pipe_name]
@@ -236,12 +219,12 @@ def test_top_level_requirements_functionally_propagate(
      (["ls"], ["badexec"], 
       lambda pi, pk: [] == pi.missing_requirements(pk), 
       lambda pi, pk: ["badexec"] == pi.missing_requirements(pk)), 
-     ({"ls": "folder"}, {"ls": "executable"}, 
+     ({"ls": KEY_FOLDER_REQ}, {"ls": KEY_EXEC_REQ},
       lambda pi, pk: not pi.validate(pk), lambda pi, pk: pi.validate(pk)), 
-     ({"ls": "folder"}, {"ls": "executable"}, 
+     ({"ls": KEY_FOLDER_REQ}, {"ls": KEY_EXEC_REQ},
       lambda pi, pk: ["ls"] == pi.missing_requirements(pk), 
       lambda pi, pk: [] == pi.missing_requirements(pk)), 
-     (None, {"ls": "file"}, 
+     (None, {"ls": KEY_FILE_REQ},
       lambda pi, pk: pi.validate(pk), 
       lambda pi, pk: ["ls"] == pi.missing_requirements(pk))]
 )
@@ -269,7 +252,7 @@ def test_pipeline_specific_requirements_remain_local(
     else:
         def assert_reqs_other(iface):
             assert PIPELINE_REQUIREMENTS_KEY not in iface[PL_KEY][other_name]
-    pi = _make_from_data(from_file, tmpdir.strpath, data)
+    pi = build_pipeline_iface(from_file, tmpdir.strpath, data)
     assert PIPELINE_REQUIREMENTS_KEY not in pi
     assert_reqs_other(pi)
     check_atac(pi, atac_pipe_name)
