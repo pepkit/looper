@@ -2,7 +2,6 @@
 
 from copy import deepcopy
 import itertools
-import mock
 import os
 import pytest
 import yaml
@@ -103,9 +102,6 @@ def test_submission_bundle_construction(
     pi = build_pipeline_iface(from_file=True, folder=tmpdir.strpath, data=data)
     iface_group.update(pi)
     project.interfaces = iface_group
-    #with mock.patch.object(project, "interfaces", return_value=iface_group):
-    #    obs_good = project.build_submission_bundles(good_proto)
-    #    obs_bad = project.build_submission_bundles(bad_proto)
     obs_good = project.build_submission_bundles(good_proto)
     obs_bad = project.build_submission_bundles(bad_proto)
     print("GOOD PIPE REQS: {}".format(data[PL_KEY][good_pipe][PIPELINE_REQUIREMENTS_KEY]))
@@ -115,7 +111,38 @@ def test_submission_bundle_construction(
     assert [] == obs_bad
 
 
-@pytest.mark.skip("not implemented")
-@pytest.mark.parametrize(["top_reqs", "check"], [])
-def test_submission_bundle_construction_top_level_reqs(top_reqs, check):
-    pass
+@pytest.mark.parametrize(
+    ["reqs", "check"],
+    [(rs, lambda bundles: all(bool(b) for _, b in bundles))
+     for rs in GOOD_REQS_MAPS + GOOD_REQS_LISTS] +
+    [(rs, lambda bundles: not any(bool(b) for _, b in bundles))
+     for rs in BAD_REQS_MAPS + BAD_REQS_LISTS])
+def test_submission_bundle_construction_top_level_reqs(
+        tmpdir, project, methyl_config, reqs, check):
+    """ Bundle can be built for each protocol iff top-level requirments are met. """
+
+    # Add the requirements.
+    data = deepcopy(methyl_config)
+    data[PIPELINE_REQUIREMENTS_KEY] = reqs
+
+    # Build the interface.
+    iface_group = ProjectPifaceGroup()
+    pi = build_pipeline_iface(from_file=True, folder=tmpdir.strpath, data=data)
+    assert PIPELINE_REQUIREMENTS_KEY in pi
+
+    # Ensure test is meaningful.
+    proto_count = len(pi.protocol_mapping)
+    assert proto_count > 0
+
+    # Include the interface with the project.
+    iface_group.update(pi)
+    project.interfaces = iface_group
+
+    # Build the bundles.
+    bundles = [(p, project.build_submission_bundles(p)) for p in pi.protocol_mapping]
+
+    assert proto_count == len(bundles)                         # protocol/bundle bijection
+    assert {p for p, _ in bundles} == set(pi[PROTOMAP_KEY])    # accurate bundle labeling
+
+    # Requirements-specific validation of the resulting bundles
+    assert check(bundles)
