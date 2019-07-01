@@ -108,6 +108,8 @@ def test_submission_bundle_construction(
     #    obs_bad = project.build_submission_bundles(bad_proto)
     obs_good = project.build_submission_bundles(good_proto)
     obs_bad = project.build_submission_bundles(bad_proto)
+    print("GOOD PIPE REQS: {}".format(data[PL_KEY][good_pipe][PIPELINE_REQUIREMENTS_KEY]))
+    print("BAD PIPE REQS: {}".format(data[PL_KEY][bad_pipe][PIPELINE_REQUIREMENTS_KEY]))
     assert 1 == len(obs_good)
     assert pi == obs_good[0][0]
     assert [] == obs_bad
