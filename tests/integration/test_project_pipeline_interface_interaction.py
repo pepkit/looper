@@ -69,6 +69,7 @@ def methyl_config():
 
 @pytest.fixture
 def project(tmpdir):
+    """ Provide test case with a project instance. """
     srcdir = os.path.join(tmpdir.strpath, "src")
     os.makedirs(srcdir)
     with open(os.path.join(srcdir, "wgbs.py"), 'w'), \
@@ -91,6 +92,7 @@ def project(tmpdir):
 def test_submission_bundle_construction(
         tmpdir, project, methyl_config,
         good_reqs, bad_reqs, good_proto, bad_proto):
+    """ Verify behavior of pipeline-specific requirements. """
     print("TMPDIR CONTENTS: {}".format(os.listdir(tmpdir.strpath)))
     good_pipe = methyl_config[PROTOMAP_KEY][good_proto]
     bad_pipe = methyl_config[PROTOMAP_KEY][bad_proto]
