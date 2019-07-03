@@ -34,10 +34,8 @@ class HTMLReportBuilder(object):
     def __call__(self, objs, stats, columns):
         """ Do the work of the subcommand/program. """
         # Generate HTML report
-        navbar = self.create_navbar(
-            self.create_navbar_links(objs=objs, stats=stats, wd=self.prj.metadata.output_dir, context=["reports"]))
-        navbar_reports = self.create_navbar(
-            self.create_navbar_links(objs=objs, stats=stats, wd=self.reports_dir, context=["reports"]))
+        navbar = self.create_navbar(self.create_navbar_links(objs=objs, stats=stats, wd=self.prj.metadata.output_dir))
+        navbar_reports = self.create_navbar(self.create_navbar_links(objs=objs, stats=stats, wd=self.reports_dir))
         index_html_path = self.create_index_html(objs, stats, columns, navbar=navbar, navbar_reports=navbar_reports,
                                                  footer=self.create_footer())
         return index_html_path
@@ -138,9 +136,9 @@ class HTMLReportBuilder(object):
         if wd is None and context is None:
             raise ValueError("Either 'wd' (path the links should be relative to) or 'context'"
                              " (the context for the links) has to be provided.")
-        status_relpath = _make_relpath(file_name="status.html", wd=wd, context=context)
-        objects_relpath = _make_relpath(file_name="objects.html", wd=wd, context=context)
-        samples_relpath = _make_relpath(file_name="samples.html", wd=wd, context=context)
+        status_relpath = _make_relpath(file_name=os.path.join(self.reports_dir, "status.html"), wd=wd, context=context)
+        objects_relpath = _make_relpath(file_name=os.path.join(self.reports_dir, "objects.html"), wd=wd, context=context)
+        samples_relpath = _make_relpath(file_name=os.path.join(self.reports_dir, "samples.html"), wd=wd, context=context)
         dropdown_keys_objects = None
         dropdown_relpaths_objects = None
         dropdown_relpaths_samples = None
@@ -149,13 +147,13 @@ class HTMLReportBuilder(object):
             # If the number of objects is 20 or less, use a drop-down menu
             if len(objs['key'].drop_duplicates()) <= 20:
                 dropdown_relpaths_objects, dropdown_keys_objects = \
-                    _get_navbar_dropdown_data_objects(objs=objs, wd=wd, context=context)
+                    _get_navbar_dropdown_data_objects(objs=objs, wd=wd, context=context, reports_dir=self.reports_dir)
             else:
                 dropdown_relpaths_objects = objects_relpath
         if stats:
             if len(stats) <= 20:
                 dropdown_relpaths_samples, sample_names = \
-                    _get_navbar_dropdown_data_samples(stats=stats, wd=wd, context=context)
+                    _get_navbar_dropdown_data_samples(stats=stats, wd=wd, context=context, reports_dir=self.reports_dir)
             else:
                 # Create a menu link to the samples parent page
                 dropdown_relpaths_samples = samples_relpath
@@ -658,25 +656,22 @@ def _make_relpath(file_name, wd, context=None):
             The sequence of directories to be prepended to the HTML file in the resulting navbar
     :return str: relative path
     """
-    if context is not None:
-        mount_point = context + [file_name]
-        file_name = os.path.join(*mount_point)
     relpath = os.path.relpath(file_name, wd)
-    return relpath
+    return relpath if not context else os.path.join(os.path.join(*context), relpath)
 
 
-def _get_navbar_dropdown_data_objects(objs, wd, context):
+def _get_navbar_dropdown_data_objects(objs, wd, context, reports_dir):
     if objs is None:
         return None, None
     relpaths = []
     df_keys = objs['key'].drop_duplicates().sort_values()
     for key in df_keys:
-        page_name = (key + ".html").replace(' ', '_').lower()
+        page_name = os.path.join(reports_dir, (key + ".html").replace(' ', '_').lower())
         relpaths.append(_make_relpath(page_name, wd, context))
     return relpaths, df_keys
 
 
-def _get_navbar_dropdown_data_samples(stats, wd, context):
+def _get_navbar_dropdown_data_samples(stats, wd, context, reports_dir):
     if stats is None:
         return None, None
     relpaths = []
@@ -685,7 +680,7 @@ def _get_navbar_dropdown_data_samples(stats, wd, context):
         for entry, val in sample.items():
             if entry == "sample_name":
                 sample_name = str(val)
-                page_name = (sample_name + ".html").replace(' ', '_').lower()
+                page_name = os.path.join(reports_dir, (sample_name + ".html").replace(' ', '_').lower())
                 relpaths.append(_make_relpath(page_name, wd, context))
                 sample_names.append(sample_name)
                 break
