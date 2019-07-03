@@ -117,7 +117,7 @@ class HTMLReportBuilder(object):
         """
         return render_jinja_template("footer.html", self.j_env, dict(version=v))
 
-    def create_navbar_links(self, objs, stats, wd=None, context=None):
+    def create_navbar_links(self, objs, stats, wd=None, context=None, include_status=True):
         """
         Return a string containing the navbar prebuilt html.
 
@@ -132,6 +132,8 @@ class HTMLReportBuilder(object):
             relative to page
         :param list[str] context: the context the links will be used in.
             The sequence of directories to be prepended to the HTML file in the resulting navbar
+        :param bool include_status: whether the status link should be included in the links set
+        :return str: navbar links as HTML-formatted string
         """
         if wd is None and context is None:
             raise ValueError("Either 'wd' (path the links should be relative to) or 'context'"
@@ -157,7 +159,8 @@ class HTMLReportBuilder(object):
             else:
                 # Create a menu link to the samples parent page
                 dropdown_relpaths_samples = samples_relpath
-        template_vars = dict(status_html_page=status_relpath, status_page_name="Status",
+        status_page_name = "Status" if include_status else None
+        template_vars = dict(status_html_page=status_relpath, status_page_name=status_page_name,
                              dropdown_keys_objects=dropdown_keys_objects, objects_page_name="Objects",
                              samples_page_name="Samples", objects_html_page=dropdown_relpaths_objects,
                              samples_html_page=dropdown_relpaths_samples, menu_name_objects="Objects",
