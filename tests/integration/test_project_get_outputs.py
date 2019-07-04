@@ -253,12 +253,12 @@ def test_only_subproject_has_outputs(tmpdir, ifaces, declared_outputs):
 
     assert len(prj.get_outputs(False)) == 0
     assert {} == prj.get_outputs(False)
-    prj.activate_subproject(sp_name)
-    assert len(prj.get_outputs(False)) > 0
+    p = prj.activate_subproject(sp_name)
+    assert len(p.get_outputs(False)) > 0
     exp = {pipe_name: {k: (v, []) for k, v in outs.items()}
            for pipe_name, outs in declared_outputs.items()
            if pipe_name in {PROTO_NAMES[k] for k in used_iface_keys}}
-    assert exp == prj.get_outputs(False)
+    assert exp == p.get_outputs(False)
 
 
 @pytest.mark.parametrize("ifaces", [
@@ -320,9 +320,9 @@ def test_only_main_project_has_outputs(tmpdir, ifaces, declared_outputs):
            for pipe_name, outs in declared_outputs.items()
            if pipe_name in {PROTO_NAMES[k] for k in used_iface_keys}}
     assert exp == prj.get_outputs(False)
-    prj.activate_subproject(sp_name)
-    assert len(prj.get_outputs(False)) == 0
-    assert {} == prj.get_outputs(False)
+    p = prj.activate_subproject(sp_name)
+    assert len(p.get_outputs(False)) == 0
+    assert {} == p.get_outputs(False)
 
 
 def test_multiple_project_units_have_declare_interfaces_with_outputs(tmpdir):
@@ -371,11 +371,11 @@ def test_multiple_project_units_have_declare_interfaces_with_outputs(tmpdir):
                 for pipe_name, outs in out_res.items()}
 
     assert {WGBS_NAME: DECLARED_OUTPUTS} == extract_just_path_template(observe(prj))
-    prj.activate_subproject("sp1")
-    assert {RRBS_NAME: DECLARED_OUTPUTS} == extract_just_path_template(observe(prj))
-    prj.activate_subproject("sp2")
+    p1 = prj.activate_subproject("sp1")
+    assert {RRBS_NAME: DECLARED_OUTPUTS} == extract_just_path_template(observe(p1))
+    p2 = p1.activate_subproject("sp2")
     assert {pn: DECLARED_OUTPUTS for pn in [WGBS_NAME, RRBS_NAME]} == \
-           extract_just_path_template(observe(prj))
+           extract_just_path_template(observe(p2))
 
 
 @pytest.mark.parametrize("noskip", [False, True])
