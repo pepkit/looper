@@ -6,7 +6,9 @@ import re
 import subprocess
 import time
 
+from .const import OUTKEY
 from .exceptions import JobSubmissionException
+from .pipeline_interface import PL_KEY
 from .utils import \
     create_looper_args_text, grab_project_data, fetch_sample_flags
 
@@ -243,9 +245,8 @@ class SubmissionConductor(object):
 
         this_sample_size = float(sample.input_file_size)
 
-        if use_this_sample and not skip_reasons:
-            assert argstring is not None, \
-                "Failed to create argstring for sample: {}".format(sample.name)
+        if _use_sample(use_this_sample, skip_reasons):
+            _check_argstring(argstring, sample.name)
             self._pool.append((sample, argstring))
             self._curr_size += this_sample_size
             if self.automatic and self._is_full(self._pool, self._curr_size):
@@ -304,20 +305,23 @@ class SubmissionConductor(object):
             # specific to subtype as applicable (should just be a single
             # subtype for each submission conductor, but some may just be
             # the base Sample while others are the single valid subtype.)
+            pipe_data = self.pl_iface[PL_KEY][self.pl_key]
+            try:
+                outputs = pipe_data[OUTKEY]
+            except KeyError:
+                _LOGGER.debug("No outputs for pipeline '{}'".format(self.pl_key))
+                add_outputs = lambda _: None
+            else:
+                def add_outputs(s):
+                    s[OUTKEY] = outputs
             for s, _ in self._pool:
-                if _is_base_sample(s):
-                    exp_fname = "{}{}".format(s.name, SAMPLE_YAML_EXT)
-                    exp_fpath = os.path.join(
-                            self.prj.submission_folder, exp_fname)
-                    if not os.path.isfile(exp_fpath):
-                        _LOGGER.warning(
-                            "Missing %s file will be created: '%s'",
-                            Sample.__name__, exp_fpath)
-                else:
+                if not _is_base_sample(s):
                     subtype_name = s.__class__.__name__
                     _LOGGER.debug("Writing %s representation to disk: '%s'",
                                   subtype_name, s.name)
-                    s.to_yaml(subs_folder_path=self.prj.submission_folder)
+                add_outputs(s)
+                yaml_path = s.to_yaml(subs_folder_path=self.prj.submission_folder)
+                _LOGGER.debug("Wrote sample YAML: {}".format(yaml_path))
 
             script = self.write_script(self._pool, self._curr_size)
 
@@ -451,5 +455,14 @@ class SubmissionConductor(object):
         self._curr_skip_size = 0
 
 
+def _check_argstring(argstring, sample_name):
+    assert argstring is not None, \
+        "Failed to create argstring for sample: {}".format(sample_name)
+
+
 def _is_base_sample(s):
     return type(s) is Sample
+
+
+def _use_sample(flag, skips):
+    return flag and not skips

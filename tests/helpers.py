@@ -59,6 +59,15 @@ def named_param(argnames, argvalues):
                    ids=lambda arg: "{}={}".format(argnames, arg)))
 
 
+def process_protocols(prj, protocols, **kwargs):
+    """ Ensure dry_run is active for each conductor created """
+    import copy
+    from looper import looper
+    kwds = copy.deepcopy(kwargs)
+    kwds["dry_run"] = True
+    return looper.process_protocols(prj, protocols, **kwds)
+
+
 def randstr(pool, size):
     """
     Generate random string of given size/length.
