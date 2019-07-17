@@ -407,11 +407,11 @@ class HTMLReportBuilder(object):
                 # Build the HTML for each summary result
                 if summary_results is not None:
                     for result in summary_results:
+                        result.setdefault('caption', "No caption")
                         caption = str(result['caption'])
                         result_file = str(result['path']).replace('{name}', str(self.prj.name))
                         result_img = str(result['thumbnail_path']).replace('{name}', str(self.prj.name))
                         search = os.path.join(self.prj.metadata.output_dir, '{}'.format(result_file))
-
                         # Confirm the file itself was produced
                         if glob.glob(search):
                             file_path = str(glob.glob(search)[0])
@@ -422,14 +422,13 @@ class HTMLReportBuilder(object):
                             if glob.glob(search):
                                 img_path = str(glob.glob(search)[0])
                                 img_relpath = os.path.relpath(img_path, self.prj.metadata.output_dir)
-                                figures.append([file_relpath, '{}: Click to see full-size figure'.format(caption),
-                                                img_relpath])
+                                figures.append([file_relpath, caption, img_relpath])
                             # add as a link otherwise
                             else:
-                                links.append(['{}: Click to see full-size figure'.format(caption), file_relpath])
+                                links.append([caption, file_relpath])
 
                         else:
-                            warnings.append(caption)
+                            warnings.append("{} ({})".format(caption, result_file))
                 else:
                     _LOGGER.debug("No custom summarizers were found for this pipeline. Proceeded with default only.")
             if warnings:
