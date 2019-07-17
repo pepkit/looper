@@ -21,6 +21,7 @@ import yaml
 from colorama import init
 init()
 from colorama import Fore, Style
+from shutil import rmtree
 import pandas as _pd
 
 from . import FLAGS, GENERIC_PROTOCOL_KEY, LOGGING_LEVEL, __version__, \
@@ -28,7 +29,7 @@ from . import FLAGS, GENERIC_PROTOCOL_KEY, LOGGING_LEVEL, __version__, \
 from .conductor import SubmissionConductor
 from .const import *
 from .exceptions import JobSubmissionException
-from .html_reports import HTMLReportBuilder
+from .html_reports import HTMLReportBuilder, get_index_html_path, get_reports_dir
 from .pipeline_interface import RESOURCES_KEY
 from .project import Project
 from .utils import determine_config_path, fetch_flag_files, sample_folder
@@ -182,17 +183,18 @@ class Destroyer(Executor):
         :param bool preview_flag: whether to halt before actually removing files
         """
 
-        _LOGGER.info("Results to destroy:")
-
+        _LOGGER.info("Removing results:")
         for sample in self.prj.samples:
-            _LOGGER.info(
-                self.counter.show(sample.sample_name, sample.protocol))
+            _LOGGER.info(self.counter.show(sample.sample_name, sample.protocol))
             sample_output_folder = sample_folder(self.prj, sample)
             if preview_flag:
                 # Preview: Don't actually delete, just show files.
                 _LOGGER.info(str(sample_output_folder))
             else:
-                destroy_sample_results(sample_output_folder, args)
+                _remove_or_dry_run(sample_output_folder, args.dry_run)
+
+        _LOGGER.info("Removing summary:")
+        destroy_summary(self.prj, args.dry_run)
 
         if not preview_flag:
             _LOGGER.info("Destroy complete.")
@@ -202,9 +204,8 @@ class Destroyer(Executor):
             _LOGGER.info("Dry run. No files destroyed.")
             return 0
 
-        if not args.force_yes and not query_yes_no(
-            "Are you sure you want to permanently delete all pipeline results "
-            "for this project?"):
+        if not args.force_yes and not query_yes_no("Are you sure you want to permanently delete all pipeline "
+                                                   "results for this project?"):
             _LOGGER.info("Destroy action aborted by user.")
             return 1
 
@@ -632,20 +633,34 @@ def create_failure_message(reason, samples):
     return "{}: {}".format(reason_text, samples_text)
 
 
-def destroy_sample_results(result_outfolder, args):
+def _remove_or_dry_run(paths, dry_run=False):
     """
-    This function will delete all results for this sample
-    """
-    import shutil
+    Remove file or directory or just inform what would be removed in case of dry run
 
-    if os.path.exists(result_outfolder):
-        if args.dry_run:
-            _LOGGER.info("DRY RUN. I would have removed: " + result_outfolder)
+    :param list|str paths: list of paths to files/dirs to be removed
+    :param bool dry_run: logical indicating whether the files should remain untouched and massage printed
+    """
+    paths = paths if isinstance(paths, list) else [paths]
+    for path in paths:
+        if os.path.exists(path):
+            if dry_run:
+                _LOGGER.info("DRY RUN. I would have removed: " + path)
+            else:
+                _LOGGER.info("Removing: " + path)
+                if os.path.isfile(path):
+                    os.remove(path)
+                else:
+                    rmtree(path)
         else:
-            _LOGGER.info("Removing: " + result_outfolder)
-            shutil.rmtree(result_outfolder)
-    else:
-        _LOGGER.info(result_outfolder + " does not exist.")
+            _LOGGER.info(path + " does not exist.")
+
+
+def destroy_summary(prj, dry_run=False):
+    """
+    Delete the summary files if not in dry run mode
+    """
+    _remove_or_dry_run([get_index_html_path(prj), get_file_for_project(prj, 'stats_summary.tsv'),
+                        get_file_for_project(prj, 'objs_summary.tsv'), get_reports_dir(prj)], dry_run)
 
 
 def uniqify(seq):
