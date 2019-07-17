@@ -865,7 +865,7 @@ def _get_maxmem(profile_df):
     :param pandas.core.frame.DataFrame profile_df: a data frame representing the current profile.tsv for a sample
     :return str: max memory
     """
-    return "{} GB".format(str(max(profile_df['mem'])))
+    return "{} GB".format(str(max(profile_df['mem']) if not profile_df['mem'].empty else 0))
 
 
 def _get_runtime(profile_df):
