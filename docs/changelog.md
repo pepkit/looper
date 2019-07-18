@@ -2,9 +2,16 @@
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format. 
 
-## [Unreleased]
+## [0.12.4] -- 2019-07-1X
 ### Added
 - Ability to declare `required_executables` in a `PipelineInterface`, to trigger a naive "runnability" check for a sample submission
+- A possibility to opt out of status page inclusion in the navbar 
+
+### Changed
+- The status tables now use DataTables jQuery plugin to make them interactive 
+
+### Fixed
+- Navbar links creation
 
 ## [0.12.3] -- 2019-06-20
 ### Fixed
