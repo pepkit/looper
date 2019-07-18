@@ -1,4 +1,4 @@
-# <img src="img/looper_logo.svg" class="img-header"> a pipeline submitting engine
+# <img src="img/looper_logo.svg" class="img-header"> pipeline submitting engine
 
 [![PEP compatible](http://pepkit.github.io/img/PEP-compatible-green.svg)](http://pepkit.github.io)
 

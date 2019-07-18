@@ -33,12 +33,10 @@ class HTMLReportBuilder(object):
 
     def __call__(self, objs, stats, columns):
         """ Do the work of the subcommand/program. """
-
         # Generate HTML report
-        index_html_path = self.create_index_html(objs, stats, columns,
-                                                 navbar=self.create_navbar(self.create_navbar_links(
-                                                     prj=self.prj, objs=objs, stats=stats,
-                                                     wd=self.prj.metadata.output_dir)),
+        navbar = self.create_navbar(self.create_navbar_links(objs=objs, stats=stats, wd=self.prj.metadata.output_dir))
+        navbar_reports = self.create_navbar(self.create_navbar_links(objs=objs, stats=stats, wd=self.reports_dir))
+        index_html_path = self.create_index_html(objs, stats, columns, navbar=navbar, navbar_reports=navbar_reports,
                                                  footer=self.create_footer())
         return index_html_path
 
@@ -117,28 +115,30 @@ class HTMLReportBuilder(object):
         """
         return render_jinja_template("footer.html", self.j_env, dict(version=v))
 
-    def create_navbar_links(self, prj, objs, stats, wd=None, context=None):
+    def create_navbar_links(self, objs, stats, wd=None, context=None, include_status=True):
         """
         Return a string containing the navbar prebuilt html.
 
         Generates links to each page relative to the directory of interest (wd arg) or uses the provided context to
         create the paths (context arg)
 
-        :param looper.Project prj: a project the navbar links should be created for
         :param pandas.DataFrame objs: project results dataframe containing
             object data
         :param list stats[dict] stats: a summary file of pipeline statistics for each
             analyzed sample
-        :param path wd: the working directory of the current HTML page
-            being generated, enables navbar links relative to page
-        :param list[str] context: the context the links will be used in
+        :param path wd: the working directory of the current HTML page being generated, enables navbar links
+            relative to page
+        :param list[str] context: the context the links will be used in.
+            The sequence of directories to be prepended to the HTML file in the resulting navbar
+        :param bool include_status: whether the status link should be included in the links set
+        :return str: navbar links as HTML-formatted string
         """
         if wd is None and context is None:
             raise ValueError("Either 'wd' (path the links should be relative to) or 'context'"
                              " (the context for the links) has to be provided.")
-        status_relpath = _make_relpath(prj=prj, file_name="status.html", dir=wd, context=context)
-        objects_relpath = _make_relpath(prj=prj, file_name="objects.html", dir=wd, context=context)
-        samples_relpath = _make_relpath(prj=prj, file_name="samples.html", dir=wd, context=context)
+        status_relpath = _make_relpath(file_name=os.path.join(self.reports_dir, "status.html"), wd=wd, context=context)
+        objects_relpath = _make_relpath(file_name=os.path.join(self.reports_dir, "objects.html"), wd=wd, context=context)
+        samples_relpath = _make_relpath(file_name=os.path.join(self.reports_dir, "samples.html"), wd=wd, context=context)
         dropdown_keys_objects = None
         dropdown_relpaths_objects = None
         dropdown_relpaths_samples = None
@@ -147,17 +147,18 @@ class HTMLReportBuilder(object):
             # If the number of objects is 20 or less, use a drop-down menu
             if len(objs['key'].drop_duplicates()) <= 20:
                 dropdown_relpaths_objects, dropdown_keys_objects = \
-                    _get_navbar_dropdown_data_objects(prj=prj, objs=objs, wd=wd, context=context)
+                    _get_navbar_dropdown_data_objects(objs=objs, wd=wd, context=context, reports_dir=self.reports_dir)
             else:
                 dropdown_relpaths_objects = objects_relpath
         if stats:
             if len(stats) <= 20:
                 dropdown_relpaths_samples, sample_names = \
-                    _get_navbar_dropdown_data_samples(prj=prj, stats=stats, wd=wd, context=context)
+                    _get_navbar_dropdown_data_samples(stats=stats, wd=wd, context=context, reports_dir=self.reports_dir)
             else:
                 # Create a menu link to the samples parent page
                 dropdown_relpaths_samples = samples_relpath
-        template_vars = dict(status_html_page=status_relpath, status_page_name="Status",
+        status_page_name = "Status" if include_status else None
+        template_vars = dict(status_html_page=status_relpath, status_page_name=status_page_name,
                              dropdown_keys_objects=dropdown_keys_objects, objects_page_name="Objects",
                              samples_page_name="Samples", objects_html_page=dropdown_relpaths_objects,
                              samples_html_page=dropdown_relpaths_samples, menu_name_objects="Objects",
@@ -372,7 +373,6 @@ class HTMLReportBuilder(object):
         save_html(html_page, render_jinja_template("sample.html", self.j_env, template_vars))
         return sample_page_relpath
 
-
     def create_status_html(self, status_table, navbar, footer):
         """
         Generates a page listing all the samples, their run status, their
@@ -407,11 +407,11 @@ class HTMLReportBuilder(object):
                 # Build the HTML for each summary result
                 if summary_results is not None:
                     for result in summary_results:
+                        result.setdefault('caption', "No caption")
                         caption = str(result['caption'])
                         result_file = str(result['path']).replace('{name}', str(self.prj.name))
                         result_img = str(result['thumbnail_path']).replace('{name}', str(self.prj.name))
                         search = os.path.join(self.prj.metadata.output_dir, '{}'.format(result_file))
-
                         # Confirm the file itself was produced
                         if glob.glob(search):
                             file_path = str(glob.glob(search)[0])
@@ -422,14 +422,13 @@ class HTMLReportBuilder(object):
                             if glob.glob(search):
                                 img_path = str(glob.glob(search)[0])
                                 img_relpath = os.path.relpath(img_path, self.prj.metadata.output_dir)
-                                figures.append([file_relpath, '{}: Click to see full-size figure'.format(caption),
-                                                img_relpath])
+                                figures.append([file_relpath, caption, img_relpath])
                             # add as a link otherwise
                             else:
-                                links.append(['{}: Click to see full-size figure'.format(caption), file_relpath])
+                                links.append([caption, file_relpath])
 
                         else:
-                            warnings.append(caption)
+                            warnings.append("{} ({})".format(caption, result_file))
                 else:
                     _LOGGER.debug("No custom summarizers were found for this pipeline. Proceeded with default only.")
             if warnings:
@@ -645,69 +644,43 @@ def _get_relpath_to_file(file_name, sample_name, location, relative_to):
     return rel_file_path
 
 
-def _make_relpath(prj, file_name, dir, context):
+def _make_relpath(file_name, wd, context=None):
     """
     Create a path relative to the context. This function introduces the flexibility to the navbar links creation,
     which the can be used outside of the native looper summary pages.
 
-    :param str path: the path to make relative
-    :param str dir: the dir the path should be relative to
-    :param list[str] context: names of the directories that create the context for the path
+    :param str file_name: the path to make relative
+    :param str wd: the dir the path should be relative to
+    :param list[str] context: the context the links will be used in.
+            The sequence of directories to be prepended to the HTML file in the resulting navbar
     :return str: relative path
     """
-    rep_dir = os.path.basename(get_reports_dir(prj))
-    if context is not None:
-        full_context = ["summary", rep_dir]
-        caravel_mount_point = [item for item in full_context if item not in context]
-        caravel_mount_point.append(file_name)
-        relpath = os.path.join(*caravel_mount_point)
-    else:
-        relpath = os.path.relpath(file_name, dir)
-    return relpath
+    relpath = os.path.relpath(file_name, wd)
+    return relpath if not context else os.path.join(os.path.join(*context), relpath)
 
 
-def _get_navbar_dropdown_data_objects(prj, objs, wd, context):
+def _get_navbar_dropdown_data_objects(objs, wd, context, reports_dir):
     if objs is None:
         return None, None
-    rep_dir_path = get_reports_dir(prj)
-    rep_dir = os.path.basename(rep_dir_path)
     relpaths = []
     df_keys = objs['key'].drop_duplicates().sort_values()
     for key in df_keys:
-        page_name = (key + ".html").replace(' ', '_').lower()
-        page_path = os.path.join(rep_dir_path, page_name)
-        if context is not None:
-            full_context = ["summary", rep_dir]
-            caravel_mount_point = [item for item in full_context if item not in context]
-            caravel_mount_point.append(page_name)
-            relpath = os.path.join(*caravel_mount_point)
-        else:
-            relpath = os.path.relpath(page_path, wd)
-        relpaths.append(relpath)
+        page_name = os.path.join(reports_dir, (key + ".html").replace(' ', '_').lower())
+        relpaths.append(_make_relpath(page_name, wd, context))
     return relpaths, df_keys
 
 
-def _get_navbar_dropdown_data_samples(prj, stats, wd, context):
+def _get_navbar_dropdown_data_samples(stats, wd, context, reports_dir):
     if stats is None:
         return None, None
-    rep_dir_path = get_reports_dir(prj)
-    rep_dir = os.path.basename(rep_dir_path)
     relpaths = []
     sample_names = []
     for sample in stats:
         for entry, val in sample.items():
             if entry == "sample_name":
                 sample_name = str(val)
-                page_name = (sample_name + ".html").replace(' ', '_').lower()
-                page_path = os.path.join(rep_dir_path, page_name)
-                if context is not None:
-                    full_context = ["summary", rep_dir]
-                    caravel_mount_point = [item for item in full_context if item not in context]
-                    caravel_mount_point.append(page_name)
-                    relpath = os.path.join(*caravel_mount_point)
-                else:
-                    relpath = os.path.relpath(page_path, wd)
-                relpaths.append(relpath)
+                page_name = os.path.join(reports_dir, (sample_name + ".html").replace(' ', '_').lower())
+                relpaths.append(_make_relpath(page_name, wd, context))
                 sample_names.append(sample_name)
                 break
             else:
@@ -891,7 +864,7 @@ def _get_maxmem(profile_df):
     :param pandas.core.frame.DataFrame profile_df: a data frame representing the current profile.tsv for a sample
     :return str: max memory
     """
-    return "{} GB".format(str(max(profile_df['mem'])))
+    return "{} GB".format(str(max(profile_df['mem']) if not profile_df['mem'].empty else 0))
 
 
 def _get_runtime(profile_df):

@@ -1,7 +1,6 @@
 """ Tests for submission script creation, content, etc. """
 
 from collections import OrderedDict
-import copy
 import glob
 import itertools
 import os
@@ -11,13 +10,14 @@ import pytest
 import yaml
 from divvy import DEFAULT_COMPUTE_RESOURCES_NAME as DEFAULT_RESOURCES_KEY
 from peppy import FLAGS, METADATA_KEY, OUTDIR_KEY
+from peppy import ASSAY_KEY, SAMPLE_ANNOTATIONS_KEY, SAMPLE_NAME_COLNAME, \
+    SAMPLE_SUBANNOTATIONS_KEY
 import looper
 from looper.const import *
 from looper.looper import Project
 from looper.pipeline_interface import PROTOMAP_KEY, RESOURCES_KEY
 from looper.utils import fetch_sample_flags, sample_folder
-from peppy import ASSAY_KEY, SAMPLE_ANNOTATIONS_KEY, SAMPLE_NAME_COLNAME, \
-    SAMPLE_SUBANNOTATIONS_KEY
+from tests.helpers import process_protocols
 
 __author__ = "Vince Reuter"
 __email__ = "vreuter@virginia.edu"
@@ -410,10 +410,3 @@ def _touch_pipe_files(folder, pliface):
     for pipe in pliface["pipelines"].values():
         path = os.path.join(folder, pipe["path"])
         _mkfile(path, message="Writing pipe")
-
-
-def process_protocols(prj, protocols, **kwargs):
-    """ Ensure dry_run is active for each conductor created """
-    kwds = copy.deepcopy(kwargs)
-    kwds["dry_run"] = True
-    return looper.looper.process_protocols(prj, protocols, **kwds)

@@ -1,6 +1,9 @@
-              <li class="nav-item active">
-                <a class="nav-link" href="{{status_html_page}}">{{status_page_name}}</a>
-              </li>
+              {% if status_page_name is not none %}
+              <!-- if the status_page_name is not defined, the status page link is omitted -->
+                  <li class="nav-item active">
+                    <a class="nav-link" href="{{status_html_page}}">{{status_page_name}}</a>
+                  </li>
+              {% endif %}
               {% if dropdown_keys_objects is none %}
               <!-- there is more than 20 objects or 0 -->
                 {% if objects_html_page is none %}

@@ -94,7 +94,9 @@ class ProjectPifaceGroup(object):
             PipelineInterface from the argument if the argument itself is not
             already a PipelineInterface.
         """
-        if isinstance(piface, (str, Mapping)):
+        if isinstance(piface, PipelineInterface):
+            _LOGGER.debug("Interface group argument is already an interface.")
+        elif isinstance(piface, (str, Mapping)):
             piface = PipelineInterface(piface)
         elif not isinstance(piface, PipelineInterface):
             raise TypeError(

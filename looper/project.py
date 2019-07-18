@@ -7,9 +7,10 @@ import os
 
 import peppy
 from peppy import METADATA_KEY, OUTDIR_KEY
-from peppy.utils import is_command_callable
+from ubiquerg import is_command_callable
 from .const import *
-from .exceptions import DuplicatePipelineKeyException
+from .exceptions import DuplicatePipelineKeyException, \
+    PipelineInterfaceRequirementsError
 from .pipeline_interface import PROTOMAP_KEY
 from .project_piface_group import ProjectPifaceGroup
 from .utils import get_logger, partition
@@ -160,14 +161,22 @@ class Project(peppy.Project):
             for pipeline_key in new_scripts:
                 # Determine how to reference the pipeline and where it is.
                 strict_pipe_key, full_pipe_path, full_pipe_path_with_flags = \
-                    pipe_iface.finalize_pipeline_key_and_paths(
-                        pipeline_key)
+                    pipe_iface.finalize_pipeline_key_and_paths(pipeline_key)
 
                 # Skip and warn about nonexistent alleged pipeline path.
                 if not (os.path.exists(full_pipe_path) or
                             is_command_callable(full_pipe_path)):
                     _LOGGER.warning(
                         "Missing pipeline script: '%s'", full_pipe_path)
+                    continue
+
+                if not pipe_iface.validate(pipeline_key):
+                    unmet = pipe_iface.missing_requirements(pipeline_key)
+                    _LOGGER.warning(
+                        "{n} requirements unsatisfied for pipeline '{p}' "
+                        "(interface from {s}): {data}".format(
+                            n=len(unmet), p=pipeline_key, s=pipe_iface.source,
+                            data=unmet))
                     continue
 
                 # Determine which interface and Sample subtype to use.
@@ -335,7 +344,11 @@ def process_pipeline_interfaces(pipeline_interface_locations):
              if os.path.splitext(f)[1] in [".yaml", ".yml"]]
         for f in fs:
             _LOGGER.debug("Processing interface definition: {}".format(f))
-            iface_group.update(f)
+            try:
+                iface_group.update(f)
+            except PipelineInterfaceRequirementsError as e:
+                _LOGGER.warning("Cannot build pipeline interface from {} ({})".
+                                format(f, str(e)))
     return iface_group
 
 

@@ -19,10 +19,12 @@ from pandas.io.parsers import EmptyDataError
 import pytest
 import yaml
 
-from looper.pipeline_interface import PipelineInterface
+from looper.const import PIPELINE_INTERFACES_KEY
+from looper.pipeline_interface import PipelineInterface, PROTOMAP_KEY
 from looper.project import Project
 from logmuse import init_logger
-from peppy import SAMPLE_NAME_COLNAME, \
+from peppy import DATA_SOURCES_SECTION, DERIVATIONS_DECLARATION, \
+    IMPLICATIONS_DECLARATION, OUTDIR_KEY, SAMPLE_NAME_COLNAME, \
     SAMPLE_ANNOTATIONS_KEY, SAMPLE_SUBANNOTATIONS_KEY
 
 
@@ -32,46 +34,55 @@ _LOGGER = logging.getLogger(_LOGNAME)
 
 P_CONFIG_FILENAME = "project_config.yaml"
 
+ANNOTATIONS_FILENAME = "samples.csv"
+MERGE_TABLE_FILENAME = "merge.csv"
+
 # {basedir} lines are formatted during file write; other braced entries remain.
 PROJECT_CONFIG_LINES = """metadata:
-  {tab_key}: samples.csv
-  output_dir: test
-  pipeline_interfaces: pipelines
-  {subtab_key}: merge.csv
+  {tab_key}: {anns_file}
+  {outdir_key}: test
+  {ifs_key}: pipelines
+  {subtab_key}: {subanns}
 
-derived_attributes: [{{derived_column_names}}]
+{derive_key}: [{{derived_column_names}}]
 
-data_sources:
+{src_key}:
   src1: "{{basedir}}/data/{{sample_name}}{{col_modifier}}.txt"
   src3: "{{basedir}}/data/{{sample_name}}.txt"
   src2: "{{basedir}}/data/{{sample_name}}-bamfile.bam"
 
-implied_attributes:
-  sample_name:
+{imp_key}:
+  {sample_name_key}:
     a:
       genome: hg38
       phenome: hg72
     b:
       genome: hg38
-""".format(subtab_key=SAMPLE_SUBANNOTATIONS_KEY,
-           tab_key=SAMPLE_ANNOTATIONS_KEY).splitlines(True)
+""".format(ifs_key=PIPELINE_INTERFACES_KEY, outdir_key=OUTDIR_KEY,
+           subtab_key=SAMPLE_SUBANNOTATIONS_KEY, subanns=MERGE_TABLE_FILENAME,
+           derive_key=DERIVATIONS_DECLARATION, src_key=DATA_SOURCES_SECTION,
+           tab_key=SAMPLE_ANNOTATIONS_KEY, anns_file=ANNOTATIONS_FILENAME,
+           imp_key=IMPLICATIONS_DECLARATION,
+           sample_name_key=SAMPLE_NAME_COLNAME).splitlines(True)
 # Will populate the corresponding string format entry in project config lines.
 DERIVED_COLNAMES = ["file", "file2", "dcol1", "dcol2",
                     "nonmerged_col", "nonmerged_col", "data_source"]
 
 # Connected with project config lines & should match; separate for clarity.
-ANNOTATIONS_FILENAME = "samples.csv"
-MERGE_TABLE_FILENAME = "merge.csv"
 SRC1_TEMPLATE = "data/{sample_name}{col_modifier}.txt"
 SRC2_TEMPLATE = "data/{sample_name}-bamfile.bam"
 SRC3_TEMPLATE = "data/{sample_name}.txt"
 
 
-PIPELINE_INTERFACE_CONFIG_LINES = """protocol_mapping:
-  standard: testpipeline.sh
-  ngs: testngs.sh
+STANDARD_PIPELINE_KEY = "testpipeline.sh"
+NGS_PIPELINE_KEY = "testngs.sh"
+
+
+PIPELINE_INTERFACE_CONFIG_LINES = """{pm_key}:
+  standard: {std_key}
+  ngs: {ngs_key}
 pipelines:
-  testpipeline.sh:
+  {std_key}:
     name: test_pipeline  # Name used by pypiper so looper can find the logs
     looper_args: False
     arguments:
@@ -87,7 +98,7 @@ pipelines:
         mem: "32000"
         time: "2-00:00:00"
         partition: "longq"
-  testngs.sh:
+  {ngs_key}:
     name: test_ngs_pipeline  # Name used by pypiper so looper can find the logs
     looper_args: True
     arguments:
@@ -107,12 +118,14 @@ pipelines:
         mem: "32000"
         time: "2-00:00:00"
         partition: "longq"
-""".splitlines(True)
+""".format(pm_key=PROTOMAP_KEY,
+           std_key=STANDARD_PIPELINE_KEY,
+           ngs_key=NGS_PIPELINE_KEY).splitlines(True)
 
 # Determined by "looper_args" in pipeline interface lines.
 LOOPER_ARGS_BY_PIPELINE = {
-    "testpipeline.sh": False,
-    "testngs.sh": True
+    STANDARD_PIPELINE_KEY: False,
+    NGS_PIPELINE_KEY: True
 }
 
 # These per-sample file lists pertain to the expected required inputs.
@@ -298,17 +311,17 @@ def interactive(
 
     # TODO: don't work with tempfiles once ctors tolerate Iterable.
     dirpath = tempfile.mkdtemp()
-    path_conf_file = _write_temp(
+    path_conf_file = write_temp(
         prj_lines,
         dirpath=dirpath, fname=P_CONFIG_FILENAME)
-    path_iface_file = _write_temp(
+    path_iface_file = write_temp(
         iface_lines,
         dirpath=dirpath, fname="pipeline_interface.yaml")
-    path_merge_table_file = _write_temp(
+    path_merge_table_file = write_temp(
         merge_table_lines,
         dirpath=dirpath, fname=MERGE_TABLE_FILENAME
     )
-    path_sample_annotation_file = _write_temp(
+    path_sample_annotation_file = write_temp(
         annotation_lines,
         dirpath=dirpath, fname=ANNOTATIONS_FILENAME
     )
@@ -331,7 +344,13 @@ class _DataSourceFormatMapping(dict):
         return "{" + derived_column + "}"
 
 
-def _write_temp(lines, dirpath, fname):
+def get_prj_cfg_derivations_replacement():
+    """ Populate value in template for project config derived attributes. """
+    return _DataSourceFormatMapping(
+        **{"derived_column_names": ", ".join(DERIVED_COLNAMES)})
+
+
+def write_temp(lines, dirpath, fname):
     """
     Note that delete flag is a required argument since it's potentially
     dangerous. When writing to a directory path generated by pytest tmpdir
@@ -347,9 +366,7 @@ def _write_temp(lines, dirpath, fname):
     :return str: full path to written file
     """
     basedir_replacement = _DataSourceFormatMapping(basedir=dirpath)
-    derived_columns_replacement = _DataSourceFormatMapping(
-            **{"derived_column_names": ", ".join(DERIVED_COLNAMES)}
-    )
+    derived_columns_replacement = get_prj_cfg_derivations_replacement()
     filepath = os.path.join(dirpath, fname)
     data_source_formatter = string.Formatter()
     num_lines = 0
@@ -383,7 +400,7 @@ def path_project_conf(tmpdir, project_config_lines):
         Project configuration file
     :return str: path to file with Project configuration data
     """
-    return _write_temp(
+    return write_temp(
         project_config_lines, tmpdir.strpath, P_CONFIG_FILENAME)
 
 
@@ -410,7 +427,7 @@ def path_sample_anns(tmpdir, sample_annotation_lines):
         the sample annotations files
     :return str: path to the sample annotations file that was written
     """
-    filepath = _write_temp(
+    filepath = write_temp(
             sample_annotation_lines, tmpdir.strpath, ANNOTATIONS_FILENAME)
     return filepath
 
@@ -431,11 +448,11 @@ def write_project_files(request):
     :return str: path to the temporary file with configuration data
     """
     dirpath = tempfile.mkdtemp()
-    path_conf_file = _write_temp(
+    path_conf_file = write_temp(
         PROJECT_CONFIG_LINES, dirpath=dirpath, fname=P_CONFIG_FILENAME)
-    path_merge_table_file = _write_temp(
+    path_merge_table_file = write_temp(
         MERGE_TABLE_LINES, dirpath=dirpath, fname=MERGE_TABLE_FILENAME)
-    path_sample_annotation_file = _write_temp(
+    path_sample_annotation_file = write_temp(
         SAMPLE_ANNOTATION_LINES, dirpath=dirpath, fname=ANNOTATIONS_FILENAME)
     request.cls.project_config_file = path_conf_file
     request.cls.merge_table_file = path_merge_table_file
@@ -485,7 +502,7 @@ def pipe_iface_config_file(request):
 
     # Write the config file and attach path as attribute on request's class.
     dirpath = tempfile.mkdtemp()
-    path_conf_file = _write_temp(
+    path_conf_file = write_temp(
             PIPELINE_INTERFACE_CONFIG_LINES,
             dirpath=dirpath, fname="pipeline_interface.yaml")
     request.cls.pipe_iface_config_file = path_conf_file

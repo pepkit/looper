@@ -145,17 +145,10 @@ def build_parser():
                      "By default, pipelines will not be submitted if a sample name"
                      " is duplicated, since samples names should be unique.  "
                      " Set this option to override this setting. Default=False")
-
-        comp_spec = subparser.add_mutually_exclusive_group()
-        comp_spec.add_argument(
-                "--compute", dest=COMPUTE_KEY,
-                default=DEFAULT_COMPUTE_RESOURCES_NAME,
-                help="YAML file with looper environment compute settings.")
-        comp_spec.add_argument(
+        subparser.add_argument(
                 "--compute-package", dest=COMPUTE_KEY,
                 default=DEFAULT_COMPUTE_RESOURCES_NAME,
-                help="YAML file with looper environment compute settings.")
-
+                help="Name of computing resource package to use")
         subparser.add_argument(
                 "--resources",
                 help="Specification of individual computing resource settings; "

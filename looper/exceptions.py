@@ -1,20 +1,18 @@
 """ Exceptions for specific looper issues. """
 
 from abc import ABCMeta
-import sys
-if sys.version_info < (3, 3):
-    from collections import Iterable
-else:
-    from collections.abc import Iterable
+from collections import Iterable
 
 __author__ = "Vince Reuter"
 __email__ = "vreuter@virginia.edu"
 
 _all__ = ["DuplicatePipelineKeyException",
           "InvalidResourceSpecificationException",
-          "JobSubmissionException", "LooperError",
+          "JobSubmissionException",
+          "LooperError",
           "MissingPipelineConfigurationException",
-          "PipelineInterfaceConfigError"]
+          "PipelineInterfaceConfigError",
+          "PipelineInterfaceRequirementsError"]
 
 
 class LooperError(Exception):
@@ -40,7 +38,7 @@ class JobSubmissionException(LooperError):
     def __init__(self, sub_cmd, script):
         self.script = script
         reason = "Error for command {} and script '{}'".\
-                format(sub_cmd, self.script)
+            format(sub_cmd, self.script)
         super(JobSubmissionException, self).__init__(reason)
 
 
@@ -61,3 +59,12 @@ class PipelineInterfaceConfigError(LooperError):
         if not isinstance(context, str) and isinstance(context, Iterable):
             context = "Missing section(s): {}".format(", ".join(context))
         super(PipelineInterfaceConfigError, self).__init__(context)
+
+
+class PipelineInterfaceRequirementsError(LooperError):
+    """ Invalid specification of pipeline requirements in interface config. """
+    def __init__(self, typename_by_requirement):
+        super(PipelineInterfaceRequirementsError, self).__init__(
+            "{} invalid requirements: {}".format(
+                len(typename_by_requirement), typename_by_requirement))
+        self.error_specs = typename_by_requirement

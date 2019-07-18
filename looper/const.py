@@ -5,8 +5,8 @@ __email__ = "vreuter@virginia.edu"
 
 
 __all__ = ["APPEARANCE_BY_FLAG", "NO_DATA_PLACEHOLDER", "OUTKEY",
-           "PIPELINE_INTERFACES_KEY", "RESULTS_SUBDIR_KEY",
-           "SUBMISSION_SUBDIR_KEY", "TEMPLATES_DIRNAME"]
+           "PIPELINE_INTERFACES_KEY", "PIPELINE_REQUIREMENTS_KEY",
+           "RESULTS_SUBDIR_KEY", "SUBMISSION_SUBDIR_KEY", "TEMPLATES_DIRNAME"]
 
 APPEARANCE_BY_FLAG = {
     "completed": {
@@ -32,6 +32,7 @@ APPEARANCE_BY_FLAG = {
 }
 NO_DATA_PLACEHOLDER = "NA"
 PIPELINE_INTERFACES_KEY = "pipeline_interfaces"
+PIPELINE_REQUIREMENTS_KEY = "required_executables"
 OUTKEY = "outputs"
 RESULTS_SUBDIR_KEY = "results_subdir"
 SUBMISSION_SUBDIR_KEY = "submission_subdir"
