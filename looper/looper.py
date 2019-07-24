@@ -417,7 +417,7 @@ class Runner(Executor):
             cmd_sub_total += conductor.num_cmd_submissions
             skipped_sample_scripts = conductor.write_skipped_sample_scripts()
             if skipped_sample_scripts:
-                _LOGGER.info(
+                _LOGGER.debug(
                     "{} script(s) for skipped samples:\n{}".
                     format(len(skipped_sample_scripts),
                            "\n".join(skipped_sample_scripts)))
