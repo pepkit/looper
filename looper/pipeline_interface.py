@@ -403,27 +403,26 @@ class PipelineInterface(PXAM):
                 argstring = update_argtext(
                         argstring, option=pipe_opt, argument=arg)
 
+            if len(missing_optional_args) > 0:
+                warning_msg = {}
+                for pipeline_name, sample_attr, pipe_opt in missing_optional_args:
+                    msg = "{arg}: '{attr}';".format(attr=sample_attr,
+                        arg=pipe_opt)
+                    if not pipeline_name in warning_msg.keys():
+                        warning_msg[pipeline_name] = [msg]
+                    else:
+                        warning_msg[pipeline_name].append(msg)
 
-        if len(missing_optional_args) > 0:
-            warning_msg = {}
-            for pipeline_name, sample_attr, pipe_opt in missing_optional_args:
-                msg = "{arg}: '{attr}';".format(attr=sample_attr,
-                    arg=pipe_opt)
-                if not pipeline_name in warning_msg.keys():
-                    warning_msg[pipeline_name] = [msg]
-                else:
-                    warning_msg[pipeline_name].append(msg)
-
-            for pipeline_name, msg in warning_msg.items():
-                n_missing = len(msg)
-                if n_missing > 5:
-                    _LOGGER.info(
-                    "> NOTE: {} missing optional attributes for pipeline '{}'.".format(n_missing,
-                        pipeline_name))
-                else:
-                    _LOGGER.info(
-                    "> NOTE: {} missing optional attributes for pipeline '{}': {}".format(n_missing,
-                        pipeline_name, " ".join(msg)))
+                for pipeline_name, msg in warning_msg.items():
+                    n_missing = len(msg)
+                    if n_missing > 5:
+                        _LOGGER.info(
+                        "> NOTE: {} missing optional attributes for pipeline '{}'.".format(n_missing,
+                            pipeline_name))
+                    else:
+                        _LOGGER.info(
+                        "> NOTE: {} missing optional attributes for pipeline '{}': {}".format(n_missing,
+                            pipeline_name, " ".join(msg)))
 
         _LOGGER.debug("Script args: '%s'", argstring)
 
