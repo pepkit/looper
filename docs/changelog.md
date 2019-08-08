@@ -8,6 +8,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - `Project.get_inputs` method for listing input paths that exist  
 
 ### Changed
+- reduce verbosity of missing options; [Issue 174](https://github.com/pepkit/looper/issues/174)
 
 ### Fixed
 
