@@ -4,6 +4,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [0.12.5] -- unreleased
 ### Added
+- `PipelineInterface.get_sample_inputs` method for listing the paths to the declared inputs for a sample
+- `Project.get_inputs` method for listing input paths that exist  
 
 ### Changed
 
