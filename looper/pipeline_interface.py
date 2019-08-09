@@ -288,27 +288,6 @@ class PipelineInterface(PXAM):
 
         return strict_pipeline_key, script_path_only, script_path_with_flags
 
-    def get_sample_inputs(self, sample):
-        """
-        Get a list of possible input files for a sample.
-        This method returns all the files that exist and are listed in the arguments section of the pipeline interface
-        for the pipeline associated with the sample in question
-
-        :param peppy.Sample sample: a sample object
-        :return list[str]: possible input files for the sample
-        """
-        inputs = []
-        pipeline_name = self.fetch_pipelines(sample.protocol)
-        config = self.select_pipeline(pipeline_name)
-        if "arguments" not in config:
-            _LOGGER.info("No arguments found for '{}' in '{}'".format(pipeline_name, self.pipe_iface_file))
-        args = config["arguments"]
-        for _, sample_attr in args.iteritems():
-            input = getattr(sample, sample_attr, False)
-            if os.path.isfile(input):
-                inputs.append(input)
-        return inputs
-
     def get_arg_string(self, pipeline_name, sample,
                        submission_folder_path="", **null_replacements):
         """

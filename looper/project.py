@@ -227,18 +227,6 @@ class Project(peppy.Project):
         """
         return self.interfaces[protocol]
 
-    def get_inputs(self):
-        """
-        Get all the file paths that exist and are used to construct the commands for looper run in this project
-
-        :return list[str]: list of file paths
-        """
-        project_inputs = []
-        for pi in self.interfaces:
-            for s in self.samples:
-                project_inputs += pi.get_sample_inputs(s)
-        return project_inputs
-
     def get_outputs(self, skip_sample_less=True):
         """
         Map pipeline identifier to collection of output specifications.

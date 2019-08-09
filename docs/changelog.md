@@ -3,10 +3,6 @@
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format. 
 
 ## [0.12.5] -- unreleased
-### Added
-- `PipelineInterface.get_sample_inputs` method for listing the paths to the declared inputs for a sample
-- `Project.get_inputs` method for listing input paths that exist  
-
 ### Changed
 - reduce verbosity of missing options; [Issue 174](https://github.com/pepkit/looper/issues/174)
 
