@@ -37,11 +37,11 @@
 								<tr>
 									{% for values in table_cell_data %}
 										{% if values is not string %}
-											<td style="cursor:pointer" onclick="location.href='{{ values[0] }}'">
+											<td class="text-nowrap text-center" onclick="location.href='{{ values[0] }}'">
 												<a class="LN1 LN2 LN3 LN4 LN5" href="{{ values[0] }}">{{ values[1] }}</a>
 											</td>
 										{% else %}
-											<td class="text">
+											<td class="text-nowrap">
 												{{ values }}
 											</td>
 										{% endif %}
