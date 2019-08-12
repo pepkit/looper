@@ -1,36 +1,34 @@
-<div class="d-flex justify-content-between">
-    <div class="table-responsive-sm">
-        <table data-page-size="15" data-pagination="true" data-toggle="table" data-search="true" class="table-sm" style="font-size:13px; width:100%;">
-        <thead class="thead-light" style="font-size:13px">
-            <tr>
-                <th class="text-nowrap text-center">Sample name</th>
-                <th class="text-nowrap text-center">Status</th>
-                <th class="text-nowrap text-center">Runtime</th>
-                <th class="text-nowrap text-center">Peak memory use</th>
-            </tr>
-        </thead>
-            <tbody>
-                {% for element in sample_link_names %}
-                    {% set i = loop.index - 1 %}
-                    <tr>
-                        <td>
-                            <b>{{ sample_link_names[i] }}</b>
-                        </td>
-                        <td class='{{ row_classes[i] }}'>
-                            {{ flags[i] }}
-                        </td>
-                        <td>
-                            {{ times[i] }}
-                        </td>
-                        <td>
-                            {{ mems[i] }}
-                        </td>
-                    </tr>
-                {% endfor %}
+<div class="table-responsive-sm">
+    <table data-page-size="15" data-pagination="true" data-toggle="table" data-search="true" class="table-sm" style="font-size:13px; width:100%;">
+    <thead class="thead-light" style="font-size:13px">
+        <tr>
+            <th class="text-nowrap text-center">Sample name</th>
+            <th class="text-nowrap text-center">Status</th>
+            <th class="text-nowrap text-center">Runtime</th>
+            <th class="text-nowrap text-center">Peak memory use</th>
+        </tr>
+    </thead>
+        <tbody>
+            {% for element in sample_link_names %}
+                {% set i = loop.index - 1 %}
+                <tr>
+                    <td>
+                        <b>{{ sample_link_names[i] }}</b>
+                    </td>
+                    <td class='{{ row_classes[i] }}'>
+                        {{ flags[i] }}
+                    </td>
+                    <td>
+                        {{ times[i] }}
+                    </td>
+                    <td>
+                        {{ mems[i] }}
+                    </td>
                 </tr>
-            </tbody>
-        </table>
-    </div>
+            {% endfor %}
+            </tr>
+        </tbody>
+    </table>
 </div>
 <style>
     div.fixed-table-pagination {
