@@ -5,6 +5,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ## [0.12.5] -- unreleased
 ### Changed
 - reduce verbosity of missing options; [Issue 174](https://github.com/pepkit/looper/issues/174)
+- switch to [Bootstrap Table](https://bootstrap-table.com/) in the summary index page table and sampe status tables
 
 ### Fixed
 
