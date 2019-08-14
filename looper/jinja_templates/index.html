@@ -1,13 +1,18 @@
 <!doctype html>
 <html lang="en">
-    <head>
+    <k>
         {% include "head.html" %}
 		<link href="https://unpkg.com/bootstrap-table@1.15.4/dist/bootstrap-table.min.css" rel="stylesheet">
 		<link href="https://unpkg.com/bootstrap-table@1.15.4/dist/extensions/fixed-columns/bootstrap-table-fixed-columns.css" rel="stylesheet">
 		<script src="https://unpkg.com/bootstrap-table@1.15.4/dist/bootstrap-table.min.js"></script>
+		<link rel="stylesheet" src="https://unpkg.com/bootstrap-table@1.15.4/dist/extensions/fixed-columns/bootstrap-table-fixed-columns.css">
 		<script src="https://unpkg.com/bootstrap-table@1.15.4/dist/extensions/fixed-columns/bootstrap-table-fixed-columns.js"></script>
-		<script src="https://unpkg.com/bootstrap-table@1.15.4/dist/extensions/resizable/bootstrap-table-resizable.js"></script>
         <title>Looper: {{ project_name }} summary</title>
+		<style>
+			.table td, .table th {
+				padding: 0.3rem !important;
+			}
+		</style>
     </head>
     {{ navbar }} 
     <body>
