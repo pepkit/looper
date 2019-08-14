@@ -2,10 +2,10 @@
 <html lang="en">
     <head>
         {% include "head.html" %}
-		<link href="https://unpkg.com/bootstrap-table@1.15.4/dist/bootstrap-table.min.css" rel="stylesheet">
-		<script src="https://unpkg.com/bootstrap-table@1.15.4/dist/bootstrap-table.min.js"></script>
 <!--		<script src="https://unpkg.com/bootstrap-table@1.15.4/dist/extensions/fixed-columns/bootstrap-table-fixed-columns.js"></script>-->
 <!--		The JavaScript code below should be replaced with the remote one above when the fixed-columns extension is fixed. Monitor these two PRs: https://github.com/wenzhixin/bootstrap-table/pull/4511, https://github.com/wenzhixin/bootstrap-table-fixed-columns/pull/29-->
+		<link href="https://unpkg.com/bootstrap-table@1.15.4/dist/bootstrap-table.min.css" rel="stylesheet">
+		<script src="https://unpkg.com/bootstrap-table@1.15.4/dist/bootstrap-table.min.js"></script>
 		<script>
 		/**
 		* @author zhixin wen <wenzhixin2010@gmail.com>
@@ -196,11 +196,20 @@
 
 		})(jQuery);
 		</script>
+		<script>
+			$.noConflict();
+			jQuery( document ).ready(function( $ ) {
+			 $('[data-toggle="popover"]').popover()
+			});
+		</script>
 		<link href="https://unpkg.com/bootstrap-table@1.15.4/dist/extensions/fixed-columns/bootstrap-table-fixed-columns.css" rel="stylesheet">
         <title>Looper: {{ project_name }} summary</title>
 		<style>
 			.table td, .table th {
 				padding: 0.3rem !important;
+			}
+			.popover {
+				max-width: none;
 			}
 		</style>
     </head>
@@ -234,7 +243,11 @@
 												<a class="LN1 LN2 LN3 LN4 LN5" href="{{ values[0] }}">{{ values[1] }}</a>
 											</td>
 										{% else %}
-											<td>{{ values|truncate(60,True) }}</td>
+											{% if values|length > 60 %}
+												<td>{{ values|truncate(60,True) }} <a data-html="true" data-toggle="popover" data-placement="top" data-trigger="click" data-content="{{ values }}" href="javascript:void(0)"><i class="fa fa-caret-square-o-right" aria-hidden="true"></i></a></td>
+											{% else %}
+												<td>{{ values }}</td>
+											{% endif %}
 										{% endif %}
 									{% endfor %}
 								</tr>

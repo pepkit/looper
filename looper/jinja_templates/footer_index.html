@@ -1,18 +1,5 @@
-
-<!-- jQuery first, then Popper.js, then Bootstrap JS -->
 <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
-
-<!-- D3.js -->
-<script src="https://d3js.org/d3.v5.min.js"></script>
-<!-- Plotly -->
 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-
-<!-- DataTables JQuery extension -->
-<script src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/fixedcolumns/3.2.6/js/dataTables.fixedColumns.min.js"></script>
-<script src="https://cdn.datatables.net/responsive/2.2.3/js/dataTables.responsive.min.js"></script>
-
 <script type="text/javascript">
     var plotDict = {}; // variable containing column values (col_name:string -> col_values:list)
     var statsTable = {{ stats_json }}; // Jinja template variable
@@ -62,7 +49,7 @@
     }
     function displayPlottableColumns(){
         for(var col in plotDict){
-            $("#plot-cols").append("<li class='list-group-item'><a href='#' title='Click to visualize this column' onclick='graphCol(\"" + col + 
+            $("#plot-cols").append("<li class='list-group-item'><a href='#' title='Click to visualize this column' onclick='graphCol(\"" + col +
                 "\");return false;'>" + col+ "</a></li>");
         }
     }
