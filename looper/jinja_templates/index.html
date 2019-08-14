@@ -2,11 +2,24 @@
 <html lang="en">
     <head>
         {% include "head.html" %}
-		<link href="https://unpkg.com/bootstrap-table@1.15.3/dist/bootstrap-table.min.css" rel="stylesheet">
-		<link href="https://unpkg.com/bootstrap-table@1.15.3/dist/extensions/fixed-columns/bootstrap-table-fixed-columns.css" rel="stylesheet">
-		<script src="https://unpkg.com/bootstrap-table@1.15.3/dist/bootstrap-table.min.js"></script>
-		<script src="https://unpkg.com/bootstrap-table@1.15.3/dist/extensions/fixed-columns/bootstrap-table-fixed-columns.js"></script>
+		<link href="https://unpkg.com/bootstrap-table@1.15.4/dist/bootstrap-table.min.css" rel="stylesheet">
+		<link href="https://unpkg.com/bootstrap-table@1.15.4/dist/extensions/fixed-columns/bootstrap-table-fixed-columns.css" rel="stylesheet">
+		<script src="https://unpkg.com/bootstrap-table@1.15.4/dist/bootstrap-table.min.js"></script>
+		<script src="https://unpkg.com/bootstrap-table@1.15.4/dist/extensions/fixed-columns/bootstrap-table-fixed-columns.js"></script>
+		<script src="https://unpkg.com/bootstrap-table@1.15.4/dist/extensions/resizable/bootstrap-table-resizable.js"></script>
         <title>Looper: {{ project_name }} summary</title>
+		<style>
+		td.text {
+			max-width: 400px;
+		}
+        span {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: inline-block;
+            max-width: 100%;
+        }
+		</style>
     </head>
     {{ navbar }} 
     <body>
@@ -21,11 +34,11 @@
         	</div>
 			<div class="row">
 				<div class="col-12">
-					<table data-toggle="table" data-search="true" data-show-columns="true" data-fixed-columns="true" class="table-sm">
+					<table data-toggle="table" data-search="true" data-page-size="10" data-pagination="true" data-show-columns="true" data-fixed-columns="true" data-sort-stable="true">
 						<thead class="thead-light">
 							<tr>
 								{% for column in columns %}
-									<th class="text-nowrap text-center">{{ column }}</th>
+									<th class="text-center" data-sortable="true">{{ column }}</th>
 								{% endfor %}
 							</tr>
 						</thead>
@@ -38,8 +51,8 @@
 												<a class="LN1 LN2 LN3 LN4 LN5" href="{{ values[0] }}">{{ values[1] }}</a>
 											</td>
 										{% else %}
-											<td class="text-nowrap">
-												{{ values }}
+											<td class="text">
+												<span>{{ values }}</span>
 											</td>
 										{% endif %}
 									{% endfor %}
