@@ -8,18 +8,6 @@
 		<script src="https://unpkg.com/bootstrap-table@1.15.4/dist/extensions/fixed-columns/bootstrap-table-fixed-columns.js"></script>
 		<script src="https://unpkg.com/bootstrap-table@1.15.4/dist/extensions/resizable/bootstrap-table-resizable.js"></script>
         <title>Looper: {{ project_name }} summary</title>
-		<style>
-		td.text {
-			max-width: 400px;
-		}
-        span {
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            display: inline-block;
-            max-width: 100%;
-        }
-		</style>
     </head>
     {{ navbar }} 
     <body>
@@ -38,7 +26,7 @@
 						<thead class="thead-light">
 							<tr>
 								{% for column in columns %}
-									<th class="text-center" data-sortable="true">{{ column }}</th>
+									<th class="text-nowrap text-center" data-sortable="true">{{ column }}</th>
 								{% endfor %}
 							</tr>
 						</thead>
@@ -47,13 +35,11 @@
 								<tr>
 									{% for values in table_cell_data %}
 										{% if values is not string %}
-											<td class="text-nowrap text-center" onclick="location.href='{{ values[0] }}'">
+											<td onclick="location.href='{{ values[0] }}'">
 												<a class="LN1 LN2 LN3 LN4 LN5" href="{{ values[0] }}">{{ values[1] }}</a>
 											</td>
 										{% else %}
-											<td class="text">
-												<span>{{ values }}</span>
-											</td>
+											<td>{{ values|truncate(60,True) }}</td>
 										{% endif %}
 									{% endfor %}
 								</tr>
