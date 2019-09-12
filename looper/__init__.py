@@ -16,6 +16,8 @@ from .sample import Sample
 from ._version import __version__
 from .parser_types import *
 
+# TODO: uncomment after ubiquerg release: https://github.com/pepkit/ubiquerg/pull/19
+# from ubiquerg import VersionInHelpParser
 from divvy import DEFAULT_COMPUTE_RESOURCES_NAME, NEW_COMPUTE_KEY as COMPUTE_KEY
 # Not used here, but make this the main import interface between peppy and
 # looper, so that other modules within this package need not worry about
@@ -55,7 +57,7 @@ class _StoreBoolActionType(argparse.Action):
             option_strings=option_strings,
             dest=dest,
             nargs=0,
-            const=not(default),
+            const=not default,
             default=default,
             type=type,
             required=required,
@@ -74,13 +76,12 @@ def build_parser():
 
     # Main looper program help text messages
     banner = "%(prog)s - Loop through samples and submit pipelines."
-    additional_description = "For subcommand-specific options, type: " \
-                             "'%(prog)s <subcommand> -h'"
+    additional_description = "For subcommand-specific options, type: '%(prog)s <subcommand> -h'"
     additional_description += "\nhttps://github.com/pepkit/looper"
 
-    parser = _VersionInHelpParser(
-            description=banner,
-            epilog=additional_description)
+    # TODO: uncomment after ubiquerg release: https://github.com/pepkit/ubiquerg/pull/19 and remove add_argument below
+    # parser = VersionInHelpParser(description=banner, epilog=additional_description, version=__version__)
+    parser = _VersionInHelpParser(description=banner, epilog=additional_description)
 
     parser.add_argument(
             "-V", "--version",
