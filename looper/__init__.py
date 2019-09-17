@@ -16,8 +16,7 @@ from .sample import Sample
 from ._version import __version__
 from .parser_types import *
 
-# TODO: uncomment after ubiquerg release: https://github.com/pepkit/ubiquerg/pull/19
-# from ubiquerg import VersionInHelpParser
+from ubiquerg import VersionInHelpParser
 from divvy import DEFAULT_COMPUTE_RESOURCES_NAME, NEW_COMPUTE_KEY as COMPUTE_KEY
 # Not used here, but make this the main import interface between peppy and
 # looper, so that other modules within this package need not worry about
@@ -37,13 +36,6 @@ LOGGING_LEVEL = "INFO"
 # That is, greater verbosity setting corresponds to lower logging level.
 _LEVEL_BY_VERBOSITY = [logging.ERROR, logging.CRITICAL, logging.WARN,
                        logging.INFO, logging.DEBUG]
-
-
-class _VersionInHelpParser(argparse.ArgumentParser):
-    def format_help(self):
-        """ Add version information to help text. """
-        return "version: {}\n".format(__version__) + \
-               super(_VersionInHelpParser, self).format_help()
 
 
 class _StoreBoolActionType(argparse.Action):
@@ -79,14 +71,7 @@ def build_parser():
     additional_description = "For subcommand-specific options, type: '%(prog)s <subcommand> -h'"
     additional_description += "\nhttps://github.com/pepkit/looper"
 
-    # TODO: uncomment after ubiquerg release: https://github.com/pepkit/ubiquerg/pull/19 and remove add_argument below
-    # parser = VersionInHelpParser(description=banner, epilog=additional_description, version=__version__)
-    parser = _VersionInHelpParser(description=banner, epilog=additional_description)
-
-    parser.add_argument(
-            "-V", "--version",
-            action="version",
-            version="%(prog)s {v}".format(v=__version__))
+    parser = VersionInHelpParser(description=banner, epilog=additional_description, version=__version__)
 
     # Logging control
     parser.add_argument(
