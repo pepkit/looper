@@ -16,6 +16,7 @@ from .sample import Sample
 from ._version import __version__
 from .parser_types import *
 
+from ubiquerg import VersionInHelpParser
 from divvy import DEFAULT_COMPUTE_RESOURCES_NAME, NEW_COMPUTE_KEY as COMPUTE_KEY
 # Not used here, but make this the main import interface between peppy and
 # looper, so that other modules within this package need not worry about
@@ -37,13 +38,6 @@ _LEVEL_BY_VERBOSITY = [logging.ERROR, logging.CRITICAL, logging.WARN,
                        logging.INFO, logging.DEBUG]
 
 
-class _VersionInHelpParser(argparse.ArgumentParser):
-    def format_help(self):
-        """ Add version information to help text. """
-        return "version: {}\n".format(__version__) + \
-               super(_VersionInHelpParser, self).format_help()
-
-
 class _StoreBoolActionType(argparse.Action):
     """
     Enables the storage of a boolean const and custom type definition needed for systematic html interface generation.
@@ -55,7 +49,7 @@ class _StoreBoolActionType(argparse.Action):
             option_strings=option_strings,
             dest=dest,
             nargs=0,
-            const=not(default),
+            const=not default,
             default=default,
             type=type,
             required=required,
@@ -74,18 +68,10 @@ def build_parser():
 
     # Main looper program help text messages
     banner = "%(prog)s - Loop through samples and submit pipelines."
-    additional_description = "For subcommand-specific options, type: " \
-                             "'%(prog)s <subcommand> -h'"
+    additional_description = "For subcommand-specific options, type: '%(prog)s <subcommand> -h'"
     additional_description += "\nhttps://github.com/pepkit/looper"
 
-    parser = _VersionInHelpParser(
-            description=banner,
-            epilog=additional_description)
-
-    parser.add_argument(
-            "-V", "--version",
-            action="version",
-            version="%(prog)s {v}".format(v=__version__))
+    parser = VersionInHelpParser(description=banner, epilog=additional_description, version=__version__)
 
     # Logging control
     parser.add_argument(

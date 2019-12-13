@@ -211,7 +211,7 @@ class HTMLReportBuilder(object):
 
             # Set the PATH to the image/file. Catch any errors.
             # Check if the object is an HTML document
-            if not str(row['filename']).lower().endswith(IMAGE_EXTS):
+            if not str(row['anchor_image']).lower().endswith(IMAGE_EXTS):
                 image_path = page_path
             else:
                 try:
@@ -231,10 +231,12 @@ class HTMLReportBuilder(object):
             if os.path.isfile(image_path) and os.path.isfile(page_path):
                 image_relpath = os.path.relpath(image_path, self.reports_dir)
                 # If the object has a valid image, use it!
+                _LOGGER.debug("Checking image path: {}".format(image_path))
                 if str(image_path).lower().endswith(IMAGE_EXTS):
                     figures.append([page_relpath, str(row['sample_name']), image_relpath])
                 # Or if that "image" is not an image, treat it as a link
                 elif not str(image_path).lower().endswith(IMAGE_EXTS):
+                    _LOGGER.debug("Got link")
                     links.append([str(row['sample_name']), image_relpath])
             else:
                 warnings.append(str(row['filename']))
