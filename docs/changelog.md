@@ -2,12 +2,10 @@
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format. 
 
-## [0.12.5] -- unreleased
+## [0.12.5] -- 2019-12-13
 ### Changed
 - reduce verbosity of missing options; [Issue 174](https://github.com/pepkit/looper/issues/174)
 - switch to [Bootstrap Table](https://bootstrap-table.com/) in the summary index page table and sample status tables
-
-### Fixed
 
 ## [0.12.4] -- 2019-07-18
 ### Added
