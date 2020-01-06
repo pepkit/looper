@@ -2,6 +2,14 @@
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format. 
 
+## [0.12.6] -- 2020-01-06
+### Changed
+- in the summary page account for missing values when plotting; the value is disregarded in such a case and plot is still created
+- show 50 rows in the summary table
+
+### Fixed
+- inactive jQuery dependent components in the status page
+
 ## [0.12.5] -- 2019-12-13
 ### Changed
 - reduce verbosity of missing options; [Issue 174](https://github.com/pepkit/looper/issues/174)
