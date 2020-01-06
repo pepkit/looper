@@ -396,6 +396,7 @@ class HTMLReportBuilder(object):
 
         # For each protocol report the project summarizers' results
         for protocol in set(all_protocols):
+            _LOGGER.debug("Creating project objects for protocol:{}".format(protocol))
             figures = []
             links = []
             warnings = []
