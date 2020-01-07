@@ -1,8 +1,14 @@
 <!doctype html>
 <html lang="en">
     <head>
-      {% include "head.html" %}
-      <title>Looper: {{ sample_name }}</title>
+        {% include "head.html" %}
+        <script>
+            $.noConflict();
+            jQuery(function ($) {
+                $('[data-toggle="popover"]').popover();
+            });
+        </script>
+        <title>Looper: {{ sample_name }}</title>
     </head>
     {{ navbar }} 
     <body>
@@ -44,7 +50,11 @@
     						{% for row_name, row_value in sample_stats.items() %}
     							<tr>
     								<th>{{ row_name }}</th>
-    								<td class="text"><span>{{ row_value }}</span></td>
+                                    {% if row_value|length > 60 %}
+    								    <td class="text">{{ row_value|truncate(60,True) }} <a data-html="true" data-toggle="popover" data-placement="top" data-trigger="click" data-content="{{ row_value }}" href="javascript:void(0)"><i class="fa fa-caret-square-o-right" aria-hidden="true"></i></a></td>
+                                    {% else %}
+                                        <td class="text">{{ row_value }}</td>
+                                    {% endif %}
     							</tr>
     						{% endfor %}
     					</tbody>
