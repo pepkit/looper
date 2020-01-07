@@ -503,7 +503,7 @@ def run_custom_summarizers(project):
         except KeyError:
             _LOGGER.warning("No interface for protocol '{}', skipping summary".format(protocol))
             continue
-        for iface in ifaces:
+        for iface in set(ifaces):
             _LOGGER.debug(iface)
             pl = iface.fetch_pipelines(protocol)
             summarizers = iface.get_attribute(pl, "summarizers")
