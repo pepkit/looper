@@ -197,10 +197,16 @@
 		})(jQuery);
 		</script>
 		<script>
-			$.noConflict();
-			jQuery( document ).ready(function( $ ) {
-			 $('[data-toggle="popover"]').popover()
+		$.noConflict();
+<!--		jQuery( document ).ready(function( $ ) {-->
+<!--			$('[data-toggle="popover"]').popover();-->
+<!--		});-->
+		jQuery(function ($) {
+			$('[data-toggle="popover"]').popover();
+			$('#summary-table').on('all.bs.table', function (e, name, args) {
+				$('[data-toggle="popover"]').popover();
 			});
+		});
 		</script>
 		<link href="https://unpkg.com/bootstrap-table@1.15.4/dist/extensions/fixed-columns/bootstrap-table-fixed-columns.css" rel="stylesheet">
         <title>Looper: {{ project_name }} summary</title>
@@ -226,7 +232,7 @@
         	</div>
 			<div class="row">
 				<div class="col-12">
-					<table data-toggle="table" data-search="true" data-page-size="50" data-pagination="true" data-show-columns="true" data-fixed-columns="true" data-sort-stable="true">
+					<table id="summary-table" data-toggle="table" data-search="true" data-page-size="50" data-pagination="true" data-show-columns="true" data-fixed-columns="true" data-sort-stable="true">
 						<thead class="thead-light">
 							<tr>
 								{% for column in columns %}
