@@ -494,21 +494,23 @@ def run_custom_summarizers(project):
 
     :param looper.Project project: the project to be summarized
     """
-    # Next, looper can run custom summarizers, if they exist.
+    summarizers_to_run = set()
+    pipelines = []
     all_protocols = [sample.protocol for sample in project.samples]
-
     for protocol in set(all_protocols):
         try:
             ifaces = project.get_interfaces(protocol)
         except KeyError:
             _LOGGER.warning("No interface for protocol '{}', skipping summary".format(protocol))
             continue
-        for iface in set(ifaces):
-            _LOGGER.debug(iface)
+        for iface in ifaces:
             pl = iface.fetch_pipelines(protocol)
-            summarizers = iface.get_attribute(pl, "summarizers")
-            if summarizers is not None:
-                for summarizer in set(summarizers):
+            pipelines.append(pl)
+    if pipelines is not None:
+        for pl in set(pipelines):
+            pl_summarizers = iface.get_attribute(pl, "summarizers")
+            if pl_summarizers is not None:
+                for summarizer in pl_summarizers:
                     if not os.path.isabs(summarizer):
                         summarizer = os.path.join(os.path.dirname(iface.pipe_iface_file), summarizer)
                     try:
