@@ -187,10 +187,10 @@ class HTMLReportBuilder(object):
             # even though it's always one element, loop to extract the data
             current_name = str(key)
             filename = current_name + ".html"
-        object_path = os.path.join(self.reports_dir, filename.replace(' ', '_').lower())
+        html_page_path = os.path.join(self.reports_dir, filename.replace(' ', '_').lower())
 
-        if not os.path.exists(os.path.dirname(object_path)):
-            os.makedirs(os.path.dirname(object_path))
+        if not os.path.exists(os.path.dirname(html_page_path)):
+            os.makedirs(os.path.dirname(html_page_path))
 
         links = []
         figures = []
@@ -198,28 +198,24 @@ class HTMLReportBuilder(object):
         for i, row in single_object.iterrows():
             # Set the PATH to a page for the sample. Catch any errors.
             try:
-                page_path = os.path.join(self.prj.results_folder, row['sample_name'], row['filename'])
+                object_path = os.path.join(self.prj.results_folder, row['sample_name'], row['filename'])
+                object_relpath = os.path.relpath(object_path, self.reports_dir)
             except AttributeError:
-                err_msg = ("Sample: {} | " + "Missing valid page path for: {}")
+                err_msg = ("Sample: {} | " + "Missing valid object path for: {}")
                 # Report the sample that fails, if that information exists
                 if str(row['sample_name']) and str(row['filename']):
                     _LOGGER.warn(err_msg.format(row['sample_name'], row['filename']))
                 else:
                     _LOGGER.warn(err_msg.format("Unknown sample"))
-                page_path = ""
-            if not page_path.strip():
-                page_relpath = os.path.relpath(page_path, self.reports_dir)
-            else:
-                page_relpath = ""
+                object_relpath = ""
 
             # Set the PATH to the image/file. Catch any errors.
             # Check if the object is an HTML document
             if not str(row['anchor_image']).lower().endswith(IMAGE_EXTS):
-                image_path = page_path
+                image_path = object_path
             else:
                 try:
-                    image_path = os.path.join(self.prj.results_folder,
-                                              row['sample_name'], row['anchor_image'])
+                    image_path = os.path.join(self.prj.results_folder, row['sample_name'], row['anchor_image'])
                 except AttributeError:
                     _LOGGER.warn(str(row))
                     err_msg = ("Sample: {} | " + "Missing valid image path for: {}")
@@ -231,12 +227,12 @@ class HTMLReportBuilder(object):
                     image_path = ""
 
             # Check for the presence of both the file and thumbnail
-            if os.path.isfile(image_path) and os.path.isfile(page_path):
+            if os.path.isfile(image_path) and os.path.isfile(object_path):
                 image_relpath = os.path.relpath(image_path, self.reports_dir)
                 # If the object has a valid image, use it!
                 _LOGGER.debug("Checking image path: {}".format(image_path))
                 if str(image_path).lower().endswith(IMAGE_EXTS):
-                    figures.append([page_relpath, str(row['sample_name']), image_relpath])
+                    figures.append([object_relpath, str(row['sample_name']), image_relpath])
                 # Or if that "image" is not an image, treat it as a link
                 elif not str(image_path).lower().endswith(IMAGE_EXTS):
                     _LOGGER.debug("Got link")
@@ -250,7 +246,7 @@ class HTMLReportBuilder(object):
             _LOGGER.debug(filename.replace(' ', '_').lower() +
                           " nonexistent files: " + ','.join(str(x) for x in warnings))
         template_vars = dict(navbar=navbar, footer=footer, name=current_name, figures=figures, links=links)
-        save_html(object_path, render_jinja_template("object.html", self.j_env, args=template_vars))
+        save_html(html_page_path, render_jinja_template("object.html", self.j_env, args=template_vars))
 
     def create_sample_html(self, objs, sample_name, sample_stats, navbar, footer):
         """
