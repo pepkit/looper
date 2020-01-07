@@ -509,9 +509,11 @@ def run_custom_summarizers(project):
             summarizers = iface.get_attribute(pl, "summarizers")
             if summarizers is not None:
                 for summarizer in set(summarizers):
-                    summarizer_abspath = os.path.join(os.path.dirname(iface.pipe_iface_file), summarizer)
+                    if not os.path.isabs(summarizer):
+                        summarizer = os.path.join(os.path.dirname(iface.pipe_iface_file), summarizer)
                     try:
-                        subprocess.call([summarizer_abspath, project.config_file])
+                        _LOGGER.debug("Running custom summarizer: {}".format(summarizer))
+                        subprocess.call([summarizer, project.config_file])
                     except OSError:
                         _LOGGER.warning("Summarizer was unable to run: " + str(summarizer))
 

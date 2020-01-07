@@ -29,15 +29,18 @@ class HTMLReportBuilder(object):
         self.j_env = get_jinja_env()
         self.reports_dir = get_reports_dir(self.prj)
         self.index_html_path = get_index_html_path(self.prj)
+        self.index_html_filename = os.path.basename(self.index_html_path)
         _LOGGER.debug("Reports dir: {}".format(self.reports_dir))
 
     def __call__(self, objs, stats, columns):
         """ Do the work of the subcommand/program. """
         # Generate HTML report
-        navbar = self.create_navbar(self.create_navbar_links(objs=objs, stats=stats, wd=self.prj.metadata.output_dir))
-        navbar_reports = self.create_navbar(self.create_navbar_links(objs=objs, stats=stats, wd=self.reports_dir))
-        index_html_path = self.create_index_html(objs, stats, columns, navbar=navbar, navbar_reports=navbar_reports,
-                                                 footer=self.create_footer())
+        navbar = self.create_navbar(self.create_navbar_links(objs=objs, stats=stats, wd=self.prj.metadata.output_dir),
+                                    self.index_html_filename)
+        navbar_reports = self.create_navbar(self.create_navbar_links(objs=objs, stats=stats, wd=self.reports_dir),
+                                            os.path.join("..", self.index_html_filename))
+        index_html_path = self.create_index_html(objs, stats, columns, footer=self.create_footer(), navbar=navbar,
+                                                 navbar_reports=navbar_reports)
         return index_html_path
 
     def create_object_parent_html(self, objs, navbar, footer):
@@ -97,14 +100,14 @@ class HTMLReportBuilder(object):
         template_vars = dict(navbar=navbar, footer=footer, labels=labels, pages=pages, header="Samples")
         return render_jinja_template("navbar_list_parent.html", self.j_env, template_vars)
 
-    def create_navbar(self, navbar_links):
+    def create_navbar(self, navbar_links, index_html_relpath):
         """
         Creates the navbar using the privided links
 
         :param str navbar_links: HTML list of links to be inserted into a navbar
         :return str: navbar HTML
         """
-        template_vars = dict(navbar_links=navbar_links, index_html=self.index_html_path)
+        template_vars = dict(navbar_links=navbar_links, index_html=index_html_relpath)
         return render_jinja_template("navbar.html", self.j_env, template_vars)
 
     def create_footer(self):
