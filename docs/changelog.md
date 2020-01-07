@@ -2,13 +2,17 @@
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format. 
 
-## [0.12.6] -- 2020-01-06
+## [0.12.6] -- 2020-01-XX
 ### Changed
 - in the summary page account for missing values when plotting; the value is disregarded in such a case and plot is still created
 - show 50 rows in the summary table
+- make links to the summary page relative
+- long entries in the sample stats table are truncated with an option to see original value in a popover
 
 ### Fixed
 - inactive jQuery dependent components in the status page
+- project objects layout in the summary index page
+- inactivation of popovers after Bootstrap Table events
 
 ## [0.12.5] -- 2019-12-13
 ### Changed
