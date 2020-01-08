@@ -1,15 +1,15 @@
     <div class="container-fluid">
         <div class="d-flex justify-content-between">
             <div class="table-responsive-sm">
-                <table data-toggle="table" data-search="true" data-show-columns="true" data-fixed-columns="true" data-sort-stable="true">
+                <table data-toggle="table" data-search="true" data-show-columns="true" data-fixed-columns="true" class="table-sm">
                 <thead class="thead-light">
                     <tr>
                         <th class="text-nowrap text-center">Sample name</th>
                         <th class="text-nowrap text-center">Status</th>
                     {% if not basic %}
                         <th class="text-nowrap text-center">Log file</th>
-                        <th class="text-nowrap text-center" data-sortable="true">Runtime</th>
-                        <th class="text-nowrap text-center" data-sortable="true">Peak memory use</th>
+                        <th class="text-nowrap text-center">Runtime</th>
+                        <th class="text-nowrap text-center">Peak memory use</th>
                     {% endif %}
                     </tr>
                 </thead>
