@@ -3,6 +3,9 @@
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format. 
 
 ## [0.12.6] -- 2020-01-XX
+### Added
+- possibility to execute library module as a script: `python -m looper ...`
+
 ### Changed
 - in the summary page account for missing values when plotting; the value is disregarded in such a case and plot is still created
 - show 50 rows in the summary table
