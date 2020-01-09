@@ -836,11 +836,3 @@ def main():
 
         if args.command == "clean":
             return Cleaner(prj)(args)
-
-
-if __name__ == '__main__':
-    try:
-        sys.exit(main())
-    except KeyboardInterrupt:
-        _LOGGER.error("Program canceled by user!")
-        sys.exit(1)

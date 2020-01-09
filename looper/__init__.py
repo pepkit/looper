@@ -71,7 +71,7 @@ def build_parser():
     additional_description = "For subcommand-specific options, type: '%(prog)s <subcommand> -h'"
     additional_description += "\nhttps://github.com/pepkit/looper"
 
-    parser = VersionInHelpParser(description=banner, epilog=additional_description, version=__version__)
+    parser = VersionInHelpParser(prog="looper", description=banner, epilog=additional_description, version=__version__)
 
     # Logging control
     parser.add_argument(
