@@ -10,7 +10,7 @@ import sys
 from warnings import warn
 from datetime import timedelta
 from ._version import __version__ as v
-from .const import TEMPLATES_DIRNAME, APPEARANCE_BY_FLAG, NO_DATA_PLACEHOLDER, IMAGE_EXTS, PROFILE_COLNAMES
+from .const import TEMPLATES_DIRNAME, BUTTON_APPEARANCE_BY_FLAG, TABLE_APPEARANCE_BY_FLAG, NO_DATA_PLACEHOLDER, IMAGE_EXTS, PROFILE_COLNAMES
 from copy import copy as cp
 _LOGGER = logging.getLogger("looper")
 
@@ -268,20 +268,6 @@ class HTMLReportBuilder(object):
         if not os.path.exists(os.path.dirname(html_page)):
             os.makedirs(os.path.dirname(html_page))
         sample_dir = os.path.join(self.prj.results_folder, sample_name)
-        button_appearance_by_flag = {
-            "completed": {
-                "button_class": "btn btn-success",
-                "flag": "Completed"
-            },
-            "running": {
-                "button_class": "btn btn-warning",
-                "flag": "Running"
-            },
-            "failed": {
-                "button_class": "btn btn-danger",
-                "flag": "Failed"
-            }
-        }
         if os.path.exists(sample_dir):
             if single_sample.empty:
                 # When there is no objects.tsv file, search for the
@@ -305,15 +291,15 @@ class HTMLReportBuilder(object):
             log_file_path = _get_relpath_to_file(
                 log_name, sample_name, self.prj.results_folder, self.reports_dir)
             if not flag:
-                button_class = "btn btn-danger"
+                button_class = "btn btn-secondary"
                 flag = "Missing"
             elif len(flag) > 1:
-                button_class = "btn btn-warning"
+                button_class = "btn btn-secondary"
                 flag = "Multiple"
             else:
                 flag = flag[0]
                 try:
-                    flag_dict = button_appearance_by_flag[flag]
+                    flag_dict = BUTTON_APPEARANCE_BY_FLAG[flag]
                 except KeyError:
                     button_class = "btn btn-secondary"
                     flag = "Unknown"
@@ -798,7 +784,7 @@ def create_status_table(prj, final=True):
             else:
                 flag = flag[0]
                 try:
-                    flag_dict = APPEARANCE_BY_FLAG[flag]
+                    flag_dict = TABLE_APPEARANCE_BY_FLAG[flag]
                 except KeyError:
                     button_class = "table-secondary"
                     flag = "Unknown"
