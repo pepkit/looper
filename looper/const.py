@@ -1,12 +1,12 @@
 """ Shared project constants """
 
 __author__ = "Databio lab"
-__email__ = "nsheff@code.databio.org"
+__email__ = "nathan@code.databio.org"
 
 
 __all__ = ["BUTTON_APPEARANCE_BY_FLAG", "TABLE_APPEARANCE_BY_FLAG", "NO_DATA_PLACEHOLDER", "OUTKEY",
            "PIPELINE_INTERFACES_KEY", "PIPELINE_REQUIREMENTS_KEY",
-           "RESULTS_SUBDIR_KEY", "SUBMISSION_SUBDIR_KEY", "TEMPLATES_DIRNAME", ]
+           "RESULTS_SUBDIR_KEY", "SUBMISSION_SUBDIR_KEY", "TEMPLATES_DIRNAME"]
 
 APPEARANCE_BY_FLAG = {
     "completed": {
@@ -36,9 +36,9 @@ def _get_apperance_dict(type, templ=APPEARANCE_BY_FLAG):
     """
     Based on the type of the HTML element provided construct the appearence mapping using the template
 
-    :param dict templ:
-    :param str type:
-    :return dict:
+    :param dict templ: appearance templete to populate
+    :param str type: type of HTML element to populate template with
+    :return dict: populated appearance template
     """
     from copy import deepcopy
     ret = deepcopy(templ)
