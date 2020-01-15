@@ -16,6 +16,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - inactive jQuery dependent components in the status page
 - project objects layout in the summary index page
 - inactivation of popovers after Bootstrap Table events
+- non-homogeneous status flags appearance
 
 ## [0.12.5] -- 2019-12-13
 ### Changed
