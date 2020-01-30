@@ -8,6 +8,7 @@ import os
 import peppy
 from peppy import METADATA_KEY, OUTDIR_KEY
 from ubiquerg import is_command_callable
+import eido
 from .const import *
 from .exceptions import DuplicatePipelineKeyException, \
     PipelineInterfaceRequirementsError
@@ -51,6 +52,15 @@ class Project(peppy.Project):
     def required_metadata(self):
         """ Which metadata attributes are required. """
         return [OUTDIR_KEY]
+
+    def eido_validate(self, schema):
+        """
+        Validate the Project object against a schema.
+
+        :param str schema: path to a schema to validate against
+        :raise jsonschema.exceptions.ValidationError: if validation is not successful
+        """
+        eido.validate_project(project=self, schema=schema)
 
     def build_submission_bundles(self, protocol, priority=True):
         """

@@ -584,6 +584,19 @@ class PipelineInterface(PXAM):
                       .format(PROTOMAP_KEY), DeprecationWarning)
         return self.protocol_mapping
 
+    def get_pipeline_schema(self, pipeline_name):
+        """
+        Get path to the pipeline schema.
+
+        :param str pipeline_name: pipeline name
+        :return str: absolute path to the pipeline schema file
+        """
+        schema_filepath = self.get_attribute(pipeline_name, "schema", path_as_list=False)
+        _LOGGER.debug("Read schema filepath: {}".format(schema_filepath))
+        if schema_filepath and not os.path.isabs(schema_filepath):
+            schema_filepath = os.path.join(os.path.split(self.pipe_iface_file)[0], schema_filepath)
+        return schema_filepath
+
     def select_pipeline(self, pipeline_name):
         """
         Check to make sure that pipeline has an entry and if so, return it.

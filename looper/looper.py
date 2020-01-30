@@ -28,7 +28,7 @@ from . import FLAGS, GENERIC_PROTOCOL_KEY, LOGGING_LEVEL, __version__, \
     build_parser, _LEVEL_BY_VERBOSITY
 from .conductor import SubmissionConductor
 from .const import *
-from .exceptions import JobSubmissionException
+from .exceptions import JobSubmissionException, PipelineInterfaceConfigError
 from .html_reports import HTMLReportBuilder, get_index_html_path, get_reports_dir
 from .pipeline_interface import RESOURCES_KEY
 from .project import Project
@@ -310,6 +310,20 @@ class Runner(Executor):
 
         protocols = {s.protocol for s in self.prj.samples
                      if hasattr(s, "protocol")}
+
+        for protocol in protocols:
+            pifaces = self.prj.get_interfaces(protocol)
+            for piface in pifaces:
+                pipeline = piface.fetch_pipelines(protocol)
+                schema_file = piface.get_pipeline_schema(pipeline)
+                if schema_file:
+                    if os.path.exists(schema_file):
+                        self.prj.eido_validate(schema=schema_file)
+                        _LOGGER.info("PEP validation successful for '{}' pipeline".format(pipeline))
+                    else:
+                        raise PipelineInterfaceConfigError("Pipeline '{}' schema file does not exist: {}"
+                                                           .format(pipeline, schema_file))
+
         failures = defaultdict(list)  # Collect problems by sample.
         processed_samples = set()  # Enforce one-time processing.
 
@@ -799,7 +813,6 @@ def main():
     except yaml.parser.ParserError as e:
         _LOGGER.error("Project config parse failed -- {}".format(e))
         sys.exit(1)
-
     compute_cli_spec = getattr(args, COMPUTE_KEY, None)
     if compute_cli_spec and compute_cli_spec != DEFAULT_COMPUTE_RESOURCES_NAME:
         prj.dcc.activate_package(compute_cli_spec)
