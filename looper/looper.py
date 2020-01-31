@@ -339,6 +339,10 @@ class Runner(Executor):
         num_commands_possible = 0
         failed_submission_scripts = []
 
+        # config validation (samples excluded) against each schema
+        [self.prj.eido_validate_config(schema=schema_file)
+            for schema_file in self.prj.get_schemas(mapped_protos)]
+
         for sample in self.prj.samples[:upper_sample_bound]:
             # First, step through the samples and determine whether any
             # should be skipped entirely, based on sample attributes alone
@@ -346,8 +350,7 @@ class Runner(Executor):
 
             # Start by displaying the sample index and a fresh collection
             # of sample-skipping reasons.
-            _LOGGER.info(self.counter.show(
-                    sample.sample_name, sample.protocol))
+            _LOGGER.info(self.counter.show(sample.sample_name, sample.protocol))
             skip_reasons = []
 
             # Don't submit samples with duplicate names unless suppressed.
@@ -379,19 +382,9 @@ class Runner(Executor):
                 failures[sample.name] = skip_reasons
                 continue
 
-            # sample validation against a schema
-            pifaces = self.prj.get_interfaces(protocol)
-            for piface in pifaces:
-                pipelines = piface.fetch_pipelines(protocol)
-                if not isinstance(pipelines, list):
-                    pipelines = [pipelines]
-                for pipeline in pipelines:
-                    schema_file = piface.get_pipeline_schema(pipeline)
-                    if schema_file:
-                        if os.path.exists(schema_file):
-                            self.prj.eido_validate_sample(
-                                sample_name=sample.sample_name,
-                                schema=schema_file)
+            # single sample validation against a single schema (matched by sample's protocol)
+            [self.prj.eido_validate_sample(sample.sample_name, schema_file)
+                for schema_file in self.prj.get_schemas(protocol)]
 
             # Processing preconditions have been met.
             # Add this sample to the processed collection.

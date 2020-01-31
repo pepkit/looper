@@ -57,7 +57,7 @@ class Project(peppy.Project):
         """
         Validate the Project object against a schema.
 
-        :param str schema: path to a schema to validate against
+        :param str | Mapping schema: schema dict or path to a schema file to validate against
         :raise jsonschema.exceptions.ValidationError: if validation is not successful
         """
         eido.validate_project(project=self, schema=schema)
@@ -67,10 +67,19 @@ class Project(peppy.Project):
         Validate the selected Sample object against a schema.
 
         :param str | int sample_name: name or id of the sample to validate
-        :param str schema: path to a schema to validate against
+        :param str | Mapping schema: schema dict or path to a schema file to validate against
         :raise jsonschema.exceptions.ValidationError: if validation is not successful
         """
         eido.validate_sample(project=self, sample_name=sample_name, schema=schema)
+
+    def eido_validate_config(self, schema):
+        """
+        Validate the config part of the object against a schema.
+
+        :param str | Mapping schema: schema dict or path to a schema file to validate against
+        :raise jsonschema.exceptions.ValidationError: if validation is not successful
+        """
+        eido.validate_config(project=self, schema=schema)
 
     def build_submission_bundles(self, protocol, priority=True):
         """
@@ -246,6 +255,28 @@ class Project(peppy.Project):
             to any pipeline interface
         """
         return self.interfaces[protocol]
+
+    def get_schemas(self, protocols):
+        """
+        Get the list of unique schema paths for a list of protocols
+
+        :param str | Iterable[str] protocols: protocols to
+            search pipeline schemas for
+        :return Iterable[str]: unique list of schema file paths
+        """
+        if isinstance(protocols, str):
+            protocols = [protocols]
+        schema_set = set()
+        for protocol in protocols:
+            for piface in self.get_interfaces(protocol):
+                pipelines = piface.fetch_pipelines(protocol)
+                if not isinstance(pipelines, list):
+                    pipelines = [pipelines]
+                for pipeline in pipelines:
+                    schema_file = piface.get_pipeline_schema(pipeline)
+                    if schema_file:
+                        schema_set.update([schema_file])
+        return list(schema_set)
 
     def get_outputs(self, skip_sample_less=True):
         """
