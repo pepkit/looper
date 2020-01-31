@@ -311,19 +311,6 @@ class Runner(Executor):
         protocols = {s.protocol for s in self.prj.samples
                      if hasattr(s, "protocol")}
 
-        for protocol in protocols:
-            pifaces = self.prj.get_interfaces(protocol)
-            for piface in pifaces:
-                pipeline = piface.fetch_pipelines(protocol)
-                schema_file = piface.get_pipeline_schema(pipeline)
-                if schema_file:
-                    if os.path.exists(schema_file):
-                        self.prj.eido_validate(schema=schema_file)
-                        _LOGGER.info("PEP validation successful for '{}' pipeline".format(pipeline))
-                    else:
-                        raise PipelineInterfaceConfigError("Pipeline '{}' schema file does not exist: {}"
-                                                           .format(pipeline, schema_file))
-
         failures = defaultdict(list)  # Collect problems by sample.
         processed_samples = set()  # Enforce one-time processing.
 
@@ -391,6 +378,20 @@ class Runner(Executor):
                     "> Not submitted: {}".format(", ".join(skip_reasons)))
                 failures[sample.name] = skip_reasons
                 continue
+
+            # sample validation against a schema
+            pifaces = self.prj.get_interfaces(protocol)
+            for piface in pifaces:
+                pipelines = piface.fetch_pipelines(protocol)
+                if not isinstance(pipelines, list):
+                    pipelines = [pipelines]
+                for pipeline in pipelines:
+                    schema_file = piface.get_pipeline_schema(pipeline)
+                    if schema_file:
+                        if os.path.exists(schema_file):
+                            self.prj.eido_validate_sample(
+                                sample_name=sample.sample_name,
+                                schema=schema_file)
 
             # Processing preconditions have been met.
             # Add this sample to the processed collection.
@@ -787,6 +788,7 @@ def main():
     # Establish the project-root logger and attach one for this module.
     logger_kwargs = {"level": level, "logfile": args.logfile, "devmode": args.dbg}
     init_logger(name="peppy", **logger_kwargs)
+    init_logger(name="eido", **logger_kwargs)
     global _LOGGER
     _LOGGER = init_logger(name=_PKGNAME, **logger_kwargs)
 
