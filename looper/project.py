@@ -62,6 +62,16 @@ class Project(peppy.Project):
         """
         eido.validate_project(project=self, schema=schema)
 
+    def eido_validate_sample(self, sample_name, schema):
+        """
+        Validate the selected Sample object against a schema.
+
+        :param str | int sample_name: name or id of the sample to validate
+        :param str schema: path to a schema to validate against
+        :raise jsonschema.exceptions.ValidationError: if validation is not successful
+        """
+        eido.validate_sample(project=self, sample_name=sample_name, schema=schema)
+
     def build_submission_bundles(self, protocol, priority=True):
         """
         Create pipelines to submit for each sample of a particular protocol.
