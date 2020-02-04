@@ -407,6 +407,23 @@ class PipelineInterface(PXAM):
 
         return argstring
 
+    def parse_mapped_pipelines(self, protocol):
+        """
+        Parse pipielines string mapped to a specified protocol
+        in the specified pipeline interface
+
+        :param str protocol: protocol to match pipelines against
+        :return Iterable[str]: pipeline keys
+        """
+        this_protocol_pipelines = self.fetch_pipelines(protocol)
+        if not this_protocol_pipelines:
+            _LOGGER.debug("No pipelines; available: {}".format(
+                ", ".join(self.protocol_mapping.keys())))
+            return None
+
+        pipeline_keys = this_protocol_pipelines.split(",")
+        return [pk.strip() for pk in pipeline_keys]
+
     def fetch_pipelines(self, protocol):
         """
         Fetch the mapping for a particular protocol, null if unmapped.
