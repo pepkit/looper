@@ -1,7 +1,6 @@
 protocol_mapping:
   RRBS: rrbs
   WGBS: wgbs
-  BS: rrbs;wgbs
   EG: wgbs
 
 pipelines:
