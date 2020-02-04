@@ -127,35 +127,9 @@ class Project(peppy.Project):
         bundle_by_strict_pipe_key = {}
 
         for pipe_iface in pipeline_interfaces:
-            # "Break"-like mechanism for short-circuiting if we care only
-            # about the highest-priority match for pipeline submission.
-            # That is, if the intent is to submit pipeline(s) from a single
-            # location for each sample of the given protocol, we can stop
-            # searching the pool of pipeline interface information once we've
-            # found a match for the protocol.
-            if priority and len(job_submission_bundles) > 0:
-                return job_submission_bundles[0]
-
-            this_protocol_pipelines = pipe_iface.fetch_pipelines(protocol)
-            if not this_protocol_pipelines:
-                _LOGGER.debug("No pipelines; available: {}".format(
-                        ", ".join(pipe_iface.protocol_mapping.keys())))
+            pipeline_keys = pipe_iface.parse_mapped_pipelines(protocol)
+            if pipeline_keys is None:
                 continue
-
-            # TODO: update once dependency-encoding logic is in place.
-            # The proposed dependency-encoding format uses a semicolon
-            # between pipelines for which the dependency relationship is
-            # serial. For now, simply treat those as multiple independent
-            # pipelines by replacing the semicolon with a comma, which is the
-            # way in which multiple independent pipelines for a single protocol
-            # are represented in the mapping declaration.
-            pipeline_keys = \
-                this_protocol_pipelines.replace(";", ",") \
-                    .strip(" ()\n") \
-                    .split(",")
-            # These cleaned pipeline keys are what's used to resolve the path
-            # to the pipeline to run.
-            pipeline_keys = [pk.strip() for pk in pipeline_keys]
 
             # Skip over pipelines already mapped by another location.
             already_mapped, new_scripts = \
@@ -191,7 +165,6 @@ class Project(peppy.Project):
                 # Determine how to reference the pipeline and where it is.
                 strict_pipe_key, full_pipe_path, full_pipe_path_with_flags = \
                     pipe_iface.finalize_pipeline_key_and_paths(pipeline_key)
-
                 # Skip and warn about nonexistent alleged pipeline path.
                 if not (os.path.exists(full_pipe_path) or
                             is_command_callable(full_pipe_path)):
@@ -269,7 +242,7 @@ class Project(peppy.Project):
         schema_set = set()
         for protocol in protocols:
             for piface in self.get_interfaces(protocol):
-                pipelines = piface.fetch_pipelines(protocol)
+                pipelines = piface.parse_mapped_pipelines(protocol)
                 if not isinstance(pipelines, list):
                     pipelines = [pipelines]
                 for pipeline in pipelines:
