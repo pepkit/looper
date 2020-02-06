@@ -195,14 +195,13 @@ class SubmissionConductor(object):
         
         try:
             # Add pipeline-specific attributes.
-            sample.set_pipeline_attributes(
-                    self.pl_iface, pipeline_name=self.pl_key)
+            sample.set_pipeline_attributes(self.pl_iface, pipeline_name=self.pl_key)
         except AttributeError:
             # TODO: inform about WHICH missing attributes?
             fail_message = "Pipeline required attribute missing"
             _LOGGER.warning("> Not submitted: %s", fail_message)
             use_this_sample and skip_reasons.append(fail_message)
-            
+
         # Check for any missing requirements before submitting.
         _LOGGER.debug("Determining missing requirements")
         error_type, missing_reqs_general, missing_reqs_specific = \
@@ -231,10 +230,10 @@ class SubmissionConductor(object):
         # Append arguments for this pipeline
         # Sample-level arguments are handled by the pipeline interface.
         try:
-            argstring = self.pl_iface.get_arg_string(
-                pipeline_name=self.pl_key, sample=sample,
-                submission_folder_path=self.prj.submission_folder)
+            argstring = self.pl_iface.get_arg_string(pipeline_name=self.pl_key, sample=sample, project=self.prj)
         except AttributeError:
+            # get_arg_string raises jinja2.exceptions.UndefinedError with attr name info.
+            # we should catch it and warn using the msg
             argstring = None
             # TODO: inform about which missing attribute.
             fail_message = "Required attribute missing " \
@@ -416,18 +415,13 @@ class SubmissionConductor(object):
         :param float size: cumulative size of the given pool
         :return str: Path to the job submission script created.
         """
-
         template_values, extra_parts_text = self._cmd_text_extra(size)
 
-        def get_final_cmd(c):
+        def _get_final_cmd(c):
             return "{} {}".format(c, extra_parts_text) if extra_parts_text else c
 
-        def get_base_cmd(argstr):
-            b = self.cmd_base
-            return (argstr and "{} {}".format(b, argstr.strip(" "))) or b
-
         # Create the individual commands to lump into this job.
-        commands = [get_final_cmd(get_base_cmd(argstring)) for _, argstring in pool]
+        commands = [_get_final_cmd(argstring) for _, argstring in pool]
 
         jobname = self._jobname(pool)
         submission_base = os.path.join(

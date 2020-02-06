@@ -5,7 +5,7 @@ import inspect
 import logging
 import os
 import warnings
-
+import jinja2
 import yaml
 from yaml import SafeLoader
 
@@ -67,7 +67,6 @@ class PipelineInterface(PXAM):
                         "Failed to parse YAML from {}:\n{}".
                         format(config, "".join(f.readlines())))
                 raise
-
         # Check presence of 2 main sections (protocol mapping and pipelines).
         missing = [s for s in self.REQUIRED_SECTIONS if s not in config]
         if missing:
@@ -288,124 +287,28 @@ class PipelineInterface(PXAM):
 
         return strict_pipeline_key, script_path_only, script_path_with_flags
 
-    def get_arg_string(self, pipeline_name, sample,
-                       submission_folder_path="", **null_replacements):
+    def get_arg_string(self, pipeline_name, sample, project):
         """
-        For a given pipeline and sample, return the argument string.
+        For a given pipeline, sample and project return the argument string.
 
         :param str pipeline_name: Name of pipeline.
         :param Sample sample: current sample for which job is being built
-        :param str submission_folder_path: path to folder in which files
-            related to submission of this sample will be placed.
-        :param dict null_replacements: mapping from name of Sample attribute
-            name to value to use in arg string if Sample attribute's value
-            is null
+        :param Project project: project for which job is being built
         :return str: command-line argument string for pipeline
         """
-
-        def update_argtext(argtext, option, argument):
-            if argument is None or "" == argument:
-                _LOGGER.debug("Skipping null/empty argument for option "
-                              "'{}': {}".format(option, type(argument)))
-                return argtext
-            _LOGGER.debug("Adding argument for pipeline option '{}': {}".
-                          format(option, argument))
-            return "{} {} {}".format(argtext, option, argument)
-
-        default_filepath = os.path.join(
-                submission_folder_path, sample.generate_filename())
-        _LOGGER.debug("Default sample filepath: '%s'", default_filepath)
-        proxies = {SAMPLE_YAML_FILE_KEY: default_filepath}
-        proxies.update(null_replacements)
-
-        _LOGGER.debug("Building arguments string")
-        config = self.select_pipeline(pipeline_name)
-        argstring = ""
-
-        if "arguments" not in config:
-            _LOGGER.info("No arguments found for '%s' in '%s'",
-                              pipeline_name, self.pipe_iface_file)
-            return argstring
-
-        args = config["arguments"]
-        for pipe_opt, sample_attr in args.iteritems():
-            if sample_attr is None:
-                _LOGGER.debug("Option '%s' is not mapped to a sample "
-                              "attribute, so it will be added to the pipeline "
-                              "argument string as a flag-like option.",
-                              str(pipe_opt))
-                argstring += " {}".format(pipe_opt)
-                continue
-
-            try:
-               arg = getattr(sample, sample_attr)
-            except AttributeError:
-                _LOGGER.error(
-                        "Error (missing attribute): '%s' requires sample "
-                        "attribute '%s' for option '%s'",
-                        pipeline_name, sample_attr, pipe_opt)
-                raise
-
-            # It's undesirable to put a null value in the argument string.
-            if arg is None:
-                _LOGGER.debug("Null value for sample attribute: '%s'",
-                              sample_attr)
-                try:
-                    arg = proxies[sample_attr]
-                except KeyError:
-                    reason = "No default for null sample attribute: '{}'".\
-                            format(sample_attr)
-                    raise ValueError(reason)
-                _LOGGER.debug("Found default for '{}': '{}'".
-                              format(sample_attr, arg))
-
-            argstring = update_argtext(
-                    argstring, option=pipe_opt, argument=arg)
-
-        # Add optional arguments
-        if "optional_arguments" in config:
-            _LOGGER.debug("Processing options")
-            args = config["optional_arguments"]
-            missing_optional_args = []
-            for pipe_opt, sample_attr in args.iteritems():
-                _LOGGER.debug("Option '%s' maps to sample attribute '%s'",
-                              pipe_opt, sample_attr)
-                if sample_attr is None or sample_attr == "":
-                    _LOGGER.debug("Null/empty sample attribute name for "
-                                  "pipeline option '{}'".format(pipe_opt))
-                    continue
-                try:
-                    arg = getattr(sample, sample_attr)
-                except AttributeError:
-                    missing_optional_args.append((pipeline_name, sample_attr, pipe_opt))
-                    continue
-                argstring = update_argtext(
-                        argstring, option=pipe_opt, argument=arg)
-
-            if len(missing_optional_args) > 0:
-                warning_msg = {}
-                for pipeline_name, sample_attr, pipe_opt in missing_optional_args:
-                    msg = "{arg}: '{attr}';".format(attr=sample_attr,
-                        arg=pipe_opt)
-                    if not pipeline_name in warning_msg.keys():
-                        warning_msg[pipeline_name] = [msg]
-                    else:
-                        warning_msg[pipeline_name].append(msg)
-
-                for pipeline_name, msg in warning_msg.items():
-                    n_missing = len(msg)
-                    if n_missing > 5:
-                        _LOGGER.info(
-                        "> NOTE: {} missing optional attributes for pipeline '{}'.".format(n_missing,
-                            pipeline_name))
-                    else:
-                        _LOGGER.info(
-                        "> NOTE: {} missing optional attributes for pipeline '{}': {}".format(n_missing,
-                            pipeline_name, " ".join(msg)))
-
-        _LOGGER.debug("Script args: '%s'", argstring)
-
-        return argstring
+        poi = self["pipelines"][pipeline_name]  # pipeline of interest
+        env = jinja2.Environment(undefined=jinja2.StrictUndefined)
+        _LOGGER.debug("CLI arg str template: {}".format(poi["command_template"]))
+        template = env.from_string(poi["command_template"])
+        try:
+            rendered = template.render(sample=sample, project=project, pipeline=poi)
+        except jinja2.exceptions.UndefinedError:
+            _LOGGER.error("Missing sample, project or pipeline attributes required "
+                          "by pipeline command template: '{}'"
+                          .format(poi["command_template"]))
+            raise
+        _LOGGER.debug("rendered CLI arg str: {}".format(rendered))
+        return rendered
 
     def parse_mapped_pipelines(self, protocol):
         """
