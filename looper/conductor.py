@@ -16,6 +16,8 @@ from .sample import Sample
 from peppy import VALID_READ_TYPES
 from peppy.sample import SAMPLE_YAML_EXT
 
+from jinja2.exceptions import UndefinedError
+
 
 __author__ = "Vince Reuter"
 __email__ = "vreuter@virginia.edu"
@@ -230,16 +232,13 @@ class SubmissionConductor(object):
         # Append arguments for this pipeline
         # Sample-level arguments are handled by the pipeline interface.
         try:
-            argstring = self.pl_iface.get_arg_string(pipeline_name=self.pl_key, sample=sample, project=self.prj)
-        except AttributeError:
-            # get_arg_string raises jinja2.exceptions.UndefinedError with attr name info.
-            # we should catch it and warn using the msg
+            argstring = self.pl_iface.get_arg_string(
+                pipeline_name=self.pl_key, sample=sample, project=self.prj)
+        except UndefinedError as jinja_exception:
             argstring = None
-            # TODO: inform about which missing attribute.
-            fail_message = "Required attribute missing " \
-                           "for pipeline arguments string"
-            _LOGGER.warning("> Not submitted: %s", fail_message)
-            use_this_sample and skip_reasons.append(fail_message)
+            _LOGGER.warning("> Not submitted: {}".
+                            format(str(jinja_exception)))
+            use_this_sample and skip_reasons.append(str(jinja_exception))
             use_this_sample = False
 
         this_sample_size = float(sample.input_file_size)
