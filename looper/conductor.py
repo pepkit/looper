@@ -231,14 +231,19 @@ class SubmissionConductor(object):
 
         # Append arguments for this pipeline
         # Sample-level arguments are handled by the pipeline interface.
+        argstring = None
         try:
             argstring = self.pl_iface.get_arg_string(
                 pipeline_name=self.pl_key, sample=sample, project=self.prj)
         except UndefinedError as jinja_exception:
-            argstring = None
             _LOGGER.warning("> Not submitted: {}".
                             format(str(jinja_exception)))
             use_this_sample and skip_reasons.append(str(jinja_exception))
+            use_this_sample = False
+        except KeyError as e:
+            exc = "pipeline interface is missing {} section".format(str(e))
+            _LOGGER.warning("> Not submitted: {}".format(exc))
+            use_this_sample and skip_reasons.append(str(exc))
             use_this_sample = False
 
         this_sample_size = float(sample.input_file_size)
