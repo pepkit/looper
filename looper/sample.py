@@ -21,6 +21,29 @@ class Sample(PeppySample):
 
     def __init__(self, series, prj=None):
         super(Sample, self).__init__(series, prj)
+        self._listify_merged_attrs()
+
+    def _listify_merged_attrs(self):
+        """
+        Convert merged attributes (space-separated string) to lists
+
+        peppy merges the sample attributes into a space-separated strings,
+        which is not amenable for iteration in the template-based command in pipeline iterface.
+        Therefore we take each subsample and split each defined attribute value into a list.
+        This results in plural sample attribute always being a list.
+        """
+        SAMPLE_ATTRS = ['sample_name', 'sample']
+        merged_attrs = set()
+        if hasattr(self, "subsamples"):
+            for subsample in self["subsamples"]:
+                attrs = subsample.keys()
+                for sa in SAMPLE_ATTRS:
+                    attrs.remove(sa)
+                merged_attrs.update(attrs)
+            for ma in merged_attrs:
+                if hasattr(self, ma) and isinstance(self[ma], str):
+                    _LOGGER.debug("splitting merged attrs: {}".format(self[ma]))
+                    self[ma] = self[ma].split(SUBSAMPLE_MERGE_SEP)
 
     def determine_missing_requirements(self):
         """
@@ -43,35 +66,6 @@ class Sample(PeppySample):
             _LOGGER.debug("No required inputs")
             return null_return
 
-        # First, attributes
-        missing, empty = [], []
-        for file_attribute in self.required_inputs_attr:
-            _LOGGER.whisper("Checking '{}'".format(file_attribute))
-            try:
-                attval = getattr(self, file_attribute)
-            except AttributeError:
-                _LOGGER.whisper(
-                    "Missing required input attribute '%s'", file_attribute)
-                missing.append(file_attribute)
-                continue
-            if attval == "":
-                _LOGGER.whisper(
-                    "Empty required input attribute '%s'", file_attribute)
-                empty.append(file_attribute)
-            else:
-                _LOGGER.whisper(
-                    "'{}' is valid: '{}'".format(file_attribute, attval))
-
-        if missing:
-            reason_key = "Missing attribute"
-            reason_detail = "Missing: {}".format(", ".join(missing))
-            return AttributeError, reason_key, reason_detail
-
-        if empty:
-            reason_key = "Empty attribute"
-            reason_detail = "Empty: {}".format(",".join(empty))
-            return AttributeError, reason_key, reason_detail
-
         # Second, files
         missing_files = []
         for paths in self.required_inputs:
@@ -80,8 +74,7 @@ class Sample(PeppySample):
             for path in paths.split(" "):
                 _LOGGER.whisper("Checking path: '{}'".format(path))
                 if not os.path.exists(path):
-                    _LOGGER.whisper(
-                        "Missing required input file: '{}'".format(path))
+                    _LOGGER.whisper("Missing required input file: '{}'".format(path))
                     missing_files.append(path)
 
         if not missing_files:
