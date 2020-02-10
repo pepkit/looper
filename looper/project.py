@@ -33,18 +33,16 @@ class Project(peppy.Project):
     :param str config_file: path to configuration file with data from
         which Project is to be built
     :param str subproject: name indicating subproject to use, optional
+    :param Iterable[str] pifaces: list of path to pipeline interfaces.
+        Overrides the config-defined ones.
     """
     def __init__(self, config_file, subproject=None, pifaces=None, **kwargs):
         super(Project, self).__init__(
                 config_file, subproject=subproject, 
                 no_environment_exception=RuntimeError,
                 no_compute_exception=RuntimeError, **kwargs)
-        if pifaces:
-            pifaces_paths = []
-            for i in pifaces:
-                pifaces_paths.extend(i)
-        else:
-            pifaces_paths = self[METADATA_KEY][PIPELINE_INTERFACES_KEY]
+
+        pifaces_paths = pifaces or self[METADATA_KEY][PIPELINE_INTERFACES_KEY]
         self.interfaces = process_pipeline_interfaces(pifaces_paths)
 
     @property

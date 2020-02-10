@@ -685,6 +685,22 @@ def uniqify(seq):
     return [x for x in seq if not (x in seen or seen_add(x))]
 
 
+def parse_user_input(x):
+    """
+    Inputs overriding config-defined options are list of lists of strings.
+    To make the manipulation more convenient we need to make them lists of strings
+
+    :param Iterable[Iterable[str], ...] | None x: user-provided argument
+    :return Iterable[str] | None: flattened user input or None if not provided
+    """
+    if x is None:
+        return
+    flat_input = []
+    for i in x:
+        flat_input.extend(i)
+    return flat_input
+
+
 class LooperCounter(object):
     """
     Count samples as you loop through them, and create text for the
@@ -801,10 +817,13 @@ def main():
     else:
         _LOGGER.debug("compute_env_file: " + str(getattr(args, 'env', None)))
     _LOGGER.debug("Building Project")
+
     try:
         prj = Project(
-            determine_config_path(conf_file), subproject=args.subproject, pifaces=args.pifaces,
-            file_checks=args.file_checks, compute_env_file=getattr(args, 'env', None))
+            determine_config_path(conf_file), subproject=args.subproject,
+            pifaces=parse_user_input(args.pifaces), file_checks=args.file_checks,
+            compute_env_file=getattr(args, 'env', None)
+        )
     except yaml.parser.ParserError as e:
         _LOGGER.error("Project config parse failed -- {}".format(e))
         sys.exit(1)
