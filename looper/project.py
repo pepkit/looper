@@ -34,13 +34,18 @@ class Project(peppy.Project):
         which Project is to be built
     :param str subproject: name indicating subproject to use, optional
     """
-    def __init__(self, config_file, subproject=None, **kwargs):
+    def __init__(self, config_file, subproject=None, pifaces=None, **kwargs):
         super(Project, self).__init__(
                 config_file, subproject=subproject, 
                 no_environment_exception=RuntimeError,
                 no_compute_exception=RuntimeError, **kwargs)
-        self.interfaces = process_pipeline_interfaces(
-            self[METADATA_KEY][PIPELINE_INTERFACES_KEY])
+        if pifaces:
+            pifaces_paths = []
+            for i in pifaces:
+                pifaces_paths.extend(i)
+        else:
+            pifaces_paths = self[METADATA_KEY][PIPELINE_INTERFACES_KEY]
+        self.interfaces = process_pipeline_interfaces(pifaces_paths)
 
     @property
     def project_folders(self):

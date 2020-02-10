@@ -189,6 +189,9 @@ def build_parser():
                 "config_file",
                 help="Project configuration file (YAML).")
         subparser.add_argument(
+                "--pipeline-interfaces", dest="pifaces", required=False, default=None,
+                nargs="+", action='append', help="Path to a pipeline interface file")
+        subparser.add_argument(
                 "--file-checks", dest="file_checks",
                 action=_StoreBoolActionType, default=True, type=html_checkbox(checked=True),
                 help="Perform input file checks. Default=True.")

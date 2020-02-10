@@ -803,7 +803,7 @@ def main():
     _LOGGER.debug("Building Project")
     try:
         prj = Project(
-            determine_config_path(conf_file), subproject=args.subproject,
+            determine_config_path(conf_file), subproject=args.subproject, pifaces=args.pifaces,
             file_checks=args.file_checks, compute_env_file=getattr(args, 'env', None))
     except yaml.parser.ParserError as e:
         _LOGGER.error("Project config parse failed -- {}".format(e))
