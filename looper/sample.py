@@ -21,29 +21,6 @@ class Sample(PeppySample):
 
     def __init__(self, series, prj=None):
         super(Sample, self).__init__(series, prj)
-        self._listify_merged_attrs()
-
-    def _listify_merged_attrs(self):
-        """
-        Convert merged attributes (space-separated string) to lists
-
-        peppy merges the sample attributes into a space-separated strings,
-        which is not amenable for iteration in the template-based command in pipeline iterface.
-        Therefore we take each subsample and split each defined attribute value into a list.
-        This results in plural sample attribute always being a list.
-        """
-        SAMPLE_ATTRS = ['sample_name', 'sample']
-        merged_attrs = set()
-        if hasattr(self, "subsamples"):
-            for subsample in self["subsamples"]:
-                attrs = subsample.keys()
-                for sa in SAMPLE_ATTRS:
-                    attrs.remove(sa)
-                merged_attrs.update(attrs)
-            for ma in merged_attrs:
-                if hasattr(self, ma) and isinstance(self[ma], str):
-                    _LOGGER.debug("splitting merged attrs: {}".format(self[ma]))
-                    self[ma] = self[ma].split(SUBSAMPLE_MERGE_SEP)
 
     def determine_missing_requirements(self):
         """
