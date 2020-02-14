@@ -287,6 +287,30 @@ class PipelineInterface(PXAM):
 
         return strict_pipeline_key, script_path_only, script_path_with_flags
 
+    def absolutize_pipeline_path(self, pipeline_key):
+        """
+
+        :param pipeline_key:
+        :return:
+        """
+        ori_path = self.get_attribute(pipeline_key, "path")
+        if ori_path:
+            script_path = os.path.expanduser(os.path.expandvars(ori_path[0].strip()))
+            if os.path.isdir(script_path):
+                script_path = os.path.join(script_path, pipeline_key)
+        else:
+            script_path = pipeline_key
+
+        if not os.path.isabs(script_path) and not is_command_callable(script_path):
+            _LOGGER.debug("Expanding pipeline path: '{}'".format(script_path))
+            script_path = os.path.join(self.pipelines_path, script_path)
+            _LOGGER.debug("Absolute script path: '%s'", script_path)
+        try:
+            setattr(self["pipelines"][pipeline_key], "path", script_path)
+        except KeyError:
+            _LOGGER.warning("Could not set '{}' pipeline path: {}"
+                            .format(pipeline_key, script_path))
+
     def get_arg_string(self, pipeline_name, sample, project):
         """
         For a given pipeline, sample and project return the argument string.
@@ -296,6 +320,7 @@ class PipelineInterface(PXAM):
         :param Project project: project for which job is being built
         :return str: command-line argument string for pipeline
         """
+        self.absolutize_pipeline_path(pipeline_name)
         poi = self["pipelines"][pipeline_name]  # pipeline of interest
         env = jinja2.Environment(undefined=jinja2.StrictUndefined)
         _LOGGER.debug("CLI arg str template: {}".format(poi["command_template"]))
