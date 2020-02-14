@@ -167,6 +167,8 @@ class PipelineInterface(PXAM):
 
         try:
             resources = universal_compute[RESOURCES_KEY]
+            _LOGGER.debug("Found '{}' in compute section of pipeline inferface".
+                          format(RESOURCES_KEY))
         except KeyError:
             try:
                 resources = pl[RESOURCES_KEY]
@@ -229,7 +231,7 @@ class PipelineInterface(PXAM):
                 _LOGGER.debug(
                     "Selected '{}' package with min file size {} Gb for file "
                     "of size {} Gb.".format(rp_name, size_ante, file_size))
-                rp_data.update(universal_compute)
+                rp_data.update(resources[rp_name])
                 return rp_data
 
     def finalize_pipeline_key_and_paths(self, pipeline_key):
