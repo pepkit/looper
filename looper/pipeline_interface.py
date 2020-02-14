@@ -289,9 +289,9 @@ class PipelineInterface(PXAM):
 
     def absolutize_pipeline_path(self, pipeline_key):
         """
+        Make the selected pipeline's path absolute
 
-        :param pipeline_key:
-        :return:
+        :param str pipeline_key: key to identify the pipeline of interest
         """
         ori_path = self.get_attribute(pipeline_key, "path")
         if ori_path:
@@ -304,9 +304,10 @@ class PipelineInterface(PXAM):
         if not os.path.isabs(script_path) and not is_command_callable(script_path):
             _LOGGER.debug("Expanding pipeline path: '{}'".format(script_path))
             script_path = os.path.join(self.pipelines_path, script_path)
-            _LOGGER.debug("Absolute script path: '%s'", script_path)
         try:
             setattr(self["pipelines"][pipeline_key], "path", script_path)
+            _LOGGER.debug("'{}' pipeline path set to: {}"
+                          .format(pipeline_key, script_path))
         except KeyError:
             _LOGGER.warning("Could not set '{}' pipeline path: {}"
                             .format(pipeline_key, script_path))
