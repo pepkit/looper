@@ -83,7 +83,7 @@ setup(
     license="BSD2",
     entry_points={
         "console_scripts": [
-            'looper = looper.looper:main'
+            'looper = looper.__main__:main'
         ],
     },
     scripts=scripts,
