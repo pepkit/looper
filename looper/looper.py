@@ -36,6 +36,7 @@ from .utils import determine_config_path, fetch_flag_files, sample_folder
 
 from divvy import DEFAULT_COMPUTE_RESOURCES_NAME, NEW_COMPUTE_KEY as COMPUTE_KEY
 from logmuse import init_logger
+from peppy.const import *
 
 from ubiquerg import query_yes_no
 
@@ -398,7 +399,7 @@ class Runner(Executor):
             if skip_reasons:
                 _LOGGER.warning(
                     "> Not submitted: {}".format(", ".join(skip_reasons)))
-                failures[sample.name] = skip_reasons
+                failures[sample.sample_name] = skip_reasons
                 continue
 
             # # single sample validation against a single schema (matched by sample's protocol)
@@ -434,7 +435,7 @@ class Runner(Executor):
                 else:
                     pl_fails.extend(curr_pl_fails)
             if pl_fails:
-                failures[sample.name].extend(pl_fails)
+                failures[sample.sample_name].extend(pl_fails)
 
         job_sub_total = 0
         cmd_sub_total = 0
@@ -616,7 +617,7 @@ def _create_obj_summary(project, counter):
             continue
         t = _pd.read_csv(objs_file, sep="\t", header=None,
                          names=['key', 'filename', 'anchor_text', 'anchor_image', 'annotation'])
-        t['sample_name'] = sample.name
+        t['sample_name'] = sample.sample_name
         objs = objs.append(t, ignore_index=True)
     if missing_files > 0:
         _LOGGER.warning("Object files missing for {} samples".format(missing_files))
@@ -627,14 +628,16 @@ def _create_obj_summary(project, counter):
 
 def get_file_for_project(prj, appendix):
     """
-    Create a path to the file for the current project. Takes the possibility of amendment being activated at the time
+    Create a path to the file for the current project.
+    Takes the possibility of amendment being activated at the time
+
     :param looper.Project prj: project object
     :param str appendix: the appendix of the file to create the path for, like 'objs_summary.tsv' for objects summary file
     :return str: path to the file
     """
-    fp = os.path.join(prj.metadata.output_dir, prj.name)
-    if hasattr(prj, "amendment") and prj.amendment:
-        fp += '_' + prj.amendment
+    fp = os.path.join(prj[CONFIG_KEY][OUTDIR_KEY], prj[NAME_KEY])
+    if hasattr(prj, AMENDMENTS_KEY) and prj[AMENDMENTS_KEY]:
+        fp += '_' + "_".join(prj[AMENDMENTS_KEY])
     fp += '_' + appendix
     return fp
 
@@ -839,7 +842,7 @@ def main():
 
     try:
         prj = Project(config_file=determine_config_path(conf_file),
-                      amendments=args.amendment,
+                      amendments=args.amendments,
                       pifaces=parse_user_input(args.pifaces),
                       file_checks=args.file_checks,
                       compute_env_file=getattr(args, 'env', None))

@@ -196,7 +196,7 @@ def build_parser():
         subparser.add_argument(
                 "-d", "--dry-run", dest="dry_run",
                 action=_StoreBoolActionType, default=False, type=html_checkbox(checked=False),
-                help="Don't actually submit the project/amendment.  Default=False")
+                help="Don't actually submit the jobs.  Default=False")
 
         fetch_samples_group = \
             subparser.add_argument_group("select samples",
@@ -215,8 +215,8 @@ def build_parser():
                 help="Operate only on samples associated with these attribute values;"
                      " if not provided, all samples are used.")
         subparser.add_argument(
-                "--sp", dest="amendment",
-                help="Name of amendment to use, as designated in the "
+                "-a", "--amendments", dest="amendments", nargs="+",
+                help="Name of amendment(s) to use, as designated in the "
                      "project's configuration file")
 
     return parser

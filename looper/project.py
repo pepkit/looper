@@ -103,7 +103,6 @@ class Project(peppy.Project):
                  permissive=True, **kwargs):
         super(Project, self).__init__(config_file, amendments=amendments,
                                       **kwargs)
-
         pifaces_paths = pifaces or self[CONFIG_KEY][PIPELINE_INTERFACES_KEY]
         self.interfaces = process_pipeline_interfaces(pifaces_paths)
         self.file_checks = file_checks
