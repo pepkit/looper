@@ -339,9 +339,9 @@ class Runner(Executor):
         num_commands_possible = 0
         failed_submission_scripts = []
 
-        # # config validation (samples excluded) against each schema
-        # [self.prj.eido_validate_config(schema=schema_file)
-        #     for schema_file in self.prj.get_schemas(mapped_protos)]
+        # config validation (samples excluded) against each schema
+        [self.prj.validate_config(schema=schema_file)
+         for schema_file in self.prj.get_schemas(mapped_protos)]
 
         for sample in self.prj.samples[:upper_sample_bound]:
             # First, step through the samples and determine whether any
@@ -402,9 +402,9 @@ class Runner(Executor):
                 failures[sample.sample_name] = skip_reasons
                 continue
 
-            # # single sample validation against a single schema (matched by sample's protocol)
-            # [self.prj.eido_validate_sample(sample.sample_name, schema_file)
-            #     for schema_file in self.prj.get_schemas(protocol)]
+            # single sample validation against a single schema (matched by sample's protocol)
+            [self.prj.validate_sample(sample.sample_name, schema_file)
+                for schema_file in self.prj.get_schemas(protocol)]
 
             # Processing preconditions have been met.
             # Add this sample to the processed collection.
@@ -870,7 +870,7 @@ def main():
             except IOError:
                 _LOGGER.error("{} pipeline_interfaces: '{}'".
                               format(prj.__class__.__name__,
-                                     prj.pipeline_interfaces))
+                                     prj[CONFIG_KEY][PIPELINE_INTERFACES_KEY]))
                 raise
 
         if args.command == "destroy":
