@@ -84,7 +84,7 @@ class PipelineInterface(PXAM):
                 "Interface key already mapped: {} ({})".format(k, self[k])
             self[k] = v
 
-    def __repr__(self):
+    def __str__(self):
         """ String representation """
         source = self.pipe_iface_file or "Mapping"
         num_pipelines = len(self.pipelines)

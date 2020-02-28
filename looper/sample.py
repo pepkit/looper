@@ -46,8 +46,9 @@ class Sample(PeppySample):
         missing_files = []
         for paths in self.required_inputs:
             _LOGGER.debug("Text to split and check paths: '%s'", paths)
-            # There can be multiple, space-separated values here.
-            for path in paths.split(" "):
+            # There can be multiple values here.
+            paths = paths if isinstance(paths, list) else [paths]
+            for path in paths:
                 _LOGGER.debug("Checking path: '{}'".format(path))
                 if not os.path.exists(path):
                     _LOGGER.debug("Missing required input file: '{}'".format(path))
