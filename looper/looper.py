@@ -24,7 +24,7 @@ from colorama import Fore, Style
 from shutil import rmtree
 import pandas as _pd
 
-from . import FLAGS, GENERIC_PROTOCOL_KEY, LOGGING_LEVEL, __version__, \
+from . import GENERIC_PROTOCOL_KEY, LOGGING_LEVEL, __version__, \
     build_parser, _LEVEL_BY_VERBOSITY
 from .conductor import SubmissionConductor
 from .const import *
@@ -36,7 +36,6 @@ from .utils import determine_config_path, fetch_flag_files, sample_folder
 
 from divvy import DEFAULT_COMPUTE_RESOURCES_NAME, NEW_COMPUTE_KEY as COMPUTE_KEY
 from logmuse import init_logger
-from peppy import ProjectContext, METADATA_KEY, SAMPLE_EXECUTION_TOGGLE
 
 from ubiquerg import query_yes_no
 
@@ -293,7 +292,7 @@ class Runner(Executor):
         """
 
         if not self.prj.interfaces:
-            pipe_locs = getattr(self.prj[METADATA_KEY], PIPELINE_INTERFACES_KEY, [])
+            pipe_locs = getattr(self.prj, PIPELINE_INTERFACES_KEY, [])
             # TODO: should these cases be handled as equally exceptional?
             # That is, should they either both raise errors, or both log errors?
             if len(pipe_locs) == 0:
@@ -797,7 +796,6 @@ def main():
     # Establish the project-root logger and attach one for this module.
     logger_kwargs = {"level": level, "logfile": args.logfile, "devmode": args.dbg}
     init_logger(name="peppy", **logger_kwargs)
-    init_logger(name="eido", **logger_kwargs)
     global _LOGGER
     _LOGGER = init_logger(name=_PKGNAME, **logger_kwargs)
 
@@ -833,33 +831,33 @@ def main():
 
     _LOGGER.debug("Results subdir: " + prj.results_folder)
 
-    with ProjectContext(prj,
-            selector_attribute=args.selector_attribute,
-            selector_include=args.selector_include,
-            selector_exclude=args.selector_exclude) as prj:
+    # with ProjectContext(prj,
+    #         selector_attribute=args.selector_attribute,
+    #         selector_include=args.selector_include,
+    #         selector_exclude=args.selector_exclude) as prj:
 
-        if args.command in ["run", "rerun"]:
-            run = Runner(prj)
-            try:
-                compute_kwargs = _proc_resources_spec(
-                    getattr(args, RESOURCES_KEY, ""))
-                run(args, remaining_args,
-                    rerun=(args.command == "rerun"), **compute_kwargs)
-            except IOError:
-                _LOGGER.error("{} pipeline_interfaces: '{}'".format(
-                        prj.__class__.__name__, prj.metadata.pipeline_interfaces))
-                raise
+    if args.command in ["run", "rerun"]:
+        run = Runner(prj)
+        try:
+            compute_kwargs = _proc_resources_spec(
+                getattr(args, RESOURCES_KEY, ""))
+            run(args, remaining_args,
+                rerun=(args.command == "rerun"), **compute_kwargs)
+        except IOError:
+            _LOGGER.error("{} pipeline_interfaces: '{}'".format(
+                    prj.__class__.__name__, prj.metadata.pipeline_interfaces))
+            raise
 
-        if args.command == "destroy":
-            return Destroyer(prj)(args)
+    if args.command == "destroy":
+        return Destroyer(prj)(args)
 
-        if args.command == "summarize":
-            Summarizer(prj)()
+    if args.command == "summarize":
+        Summarizer(prj)()
 
-        if args.command == "check":
-            # TODO: hook in fixed samples once protocol differentiation is
-            # TODO (continued) figured out (related to #175).
-            Checker(prj)(flags=args.flags)
+    if args.command == "check":
+        # TODO: hook in fixed samples once protocol differentiation is
+        # TODO (continued) figured out (related to #175).
+        Checker(prj)(flags=args.flags)
 
-        if args.command == "clean":
-            return Cleaner(prj)(args)
+    if args.command == "clean":
+        return Cleaner(prj)(args)

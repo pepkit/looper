@@ -22,9 +22,6 @@ from divvy import DEFAULT_COMPUTE_RESOURCES_NAME, NEW_COMPUTE_KEY as COMPUTE_KEY
 # looper, so that other modules within this package need not worry about
 # the locations of some of the peppy declarations. Effectively, concentrate
 # the connection between peppy and looper here, to the extent possible.
-from peppy import \
-    FLAGS, IMPLICATIONS_DECLARATION, SAMPLE_INDEPENDENT_PROJECT_SECTIONS, \
-    SAMPLE_NAME_COLNAME
 
 __all__ = ["Project", "PipelineInterface", "Sample", "SubmissionConductor"]
 

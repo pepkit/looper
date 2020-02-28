@@ -2,19 +2,20 @@
 
 from collections import namedtuple
 from functools import partial
+from logging import getLogger
 import itertools
 import os
 
 import peppy
-from peppy import METADATA_KEY, OUTDIR_KEY
+from peppy import OUTDIR_KEY
+from divvy import DEFAULT_COMPUTE_RESOURCES_NAME, ComputingConfiguration
 from ubiquerg import is_command_callable
-import eido
 from .const import *
 from .exceptions import DuplicatePipelineKeyException, \
     PipelineInterfaceRequirementsError
 from .pipeline_interface import PROTOMAP_KEY
 from .project_piface_group import ProjectPifaceGroup
-from .utils import get_logger, partition
+from .utils import partition
 
 
 __author__ = "Vince Reuter"
@@ -23,7 +24,7 @@ __email__ = "vreuter@virginia.edu"
 __all__ = ["Project", "process_pipeline_interfaces"]
 
 
-_LOGGER = get_logger(__name__)
+_LOGGER = getLogger(__name__)
 
 
 class Project(peppy.Project):
@@ -33,17 +34,23 @@ class Project(peppy.Project):
     :param str config_file: path to configuration file with data from
         which Project is to be built
     :param str subproject: name indicating subproject to use, optional
+    :param str compute_env_file: Environment configuration YAML file specifying
+        compute settings.
     :param Iterable[str] pifaces: list of path to pipeline interfaces.
         Overrides the config-defined ones.
     """
-    def __init__(self, config_file, subproject=None, pifaces=None, **kwargs):
+    def __init__(self, config_file, amendments=None, pifaces=None,
+                 compute_env_file=None, no_environment_exception=RuntimeError,
+                no_compute_exception=RuntimeError, **kwargs):
         super(Project, self).__init__(
-                config_file, subproject=subproject, 
-                no_environment_exception=RuntimeError,
-                no_compute_exception=RuntimeError, **kwargs)
+                config_file, amendments=amendments, **kwargs)
 
-        pifaces_paths = pifaces or self[METADATA_KEY][PIPELINE_INTERFACES_KEY]
+        pifaces_paths = pifaces or self[PIPELINE_INTERFACES_KEY]
         self.interfaces = process_pipeline_interfaces(pifaces_paths)
+        self.dcc = ComputingConfiguration(
+            config_file=compute_env_file, no_env_error=no_environment_exception,
+            no_compute_exception=no_compute_exception
+        )
 
     @property
     def project_folders(self):
@@ -55,34 +62,6 @@ class Project(peppy.Project):
     def required_metadata(self):
         """ Which metadata attributes are required. """
         return [OUTDIR_KEY]
-
-    def eido_validate(self, schema):
-        """
-        Validate the Project object against a schema.
-
-        :param str | Mapping schema: schema dict or path to a schema file to validate against
-        :raise jsonschema.exceptions.ValidationError: if validation is not successful
-        """
-        eido.validate_project(project=self, schema=schema)
-
-    def eido_validate_sample(self, sample_name, schema):
-        """
-        Validate the selected Sample object against a schema.
-
-        :param str | int sample_name: name or id of the sample to validate
-        :param str | Mapping schema: schema dict or path to a schema file to validate against
-        :raise jsonschema.exceptions.ValidationError: if validation is not successful
-        """
-        eido.validate_sample(project=self, sample_name=sample_name, schema=schema)
-
-    def eido_validate_config(self, schema):
-        """
-        Validate the config part of the object against a schema.
-
-        :param str | Mapping schema: schema dict or path to a schema file to validate against
-        :raise jsonschema.exceptions.ValidationError: if validation is not successful
-        """
-        eido.validate_config(project=self, schema=schema)
 
     def build_submission_bundles(self, protocol, priority=True):
         """
@@ -293,7 +272,7 @@ class Project(peppy.Project):
                 _LOGGER.debug("No {} declared for pipeline: {}".
                               format(OUTKEY, name))
                 continue
-            snames = [s.name for s in self.samples if s.protocol in prots]
+            snames = [s.sample_name for s in self.samples if s.protocol in prots]
             if not snames and skip_sample_less:
                 _LOGGER.debug("No samples matching protocol(s): {}".
                               format(", ".join(prots)))

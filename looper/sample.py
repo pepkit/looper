@@ -2,19 +2,18 @@
 
 import os
 from operator import itemgetter
+from logging import getLogger
 from peppy import Sample as PeppySample
-from peppy.const import *
-from peppy.sample import SAMPLE_YAML_EXT
-from peppy.utils import get_logger
 from ngstk import get_file_size, parse_ftype, \
     peek_read_lengths_and_paired_counts_from_bam
+from .const import *
 
 __author__ = "Vince Reuter"
 __email__ = "vreuter@virginia.edu"
 
 __all__ = ["Sample"]
 
-_LOGGER = get_logger(__name__)
+_LOGGER = getLogger(__name__)
 
 
 class Sample(PeppySample):

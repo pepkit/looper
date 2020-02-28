@@ -1,18 +1,18 @@
 """ Group of Project's PipelineInterface instances """
 
 import sys
+from logging import getLogger
 if sys.version_info < (3, 3):
     from collections import Mapping
 else:
     from collections.abc import Mapping
 from .pipeline_interface import PipelineInterface, PROTOMAP_KEY
-from .utils import get_logger
 
 __author__ = "Vince Reuter"
 __email__ = "vreuter@virginia.edu"
 
 
-_LOGGER = get_logger(__name__)
+_LOGGER = getLogger(__name__)
 
 
 class ProjectPifaceGroup(object):

@@ -1,13 +1,10 @@
 """ Helpers without an obvious logical home. """
 
 from collections import defaultdict, Iterable
+from logging import getLogger
 import copy
 import glob
 import os
-
-from peppy import \
-    FLAGS, SAMPLE_INDEPENDENT_PROJECT_SECTIONS, SAMPLE_NAME_COLNAME
-from peppy.utils import get_logger
 from .const import *
 
 
@@ -15,7 +12,7 @@ DEFAULT_METADATA_FOLDER = "metadata"
 DEFAULT_CONFIG_SUFFIX = "_config.yaml"
 
 
-_LOGGER = get_logger(__name__)
+_LOGGER = getLogger(__name__)
 
 
 def create_looper_args_text(pl_key, submission_settings, prj):

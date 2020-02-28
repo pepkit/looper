@@ -5,8 +5,10 @@ __email__ = "nathan@code.databio.org"
 
 
 __all__ = ["BUTTON_APPEARANCE_BY_FLAG", "TABLE_APPEARANCE_BY_FLAG", "NO_DATA_PLACEHOLDER", "OUTKEY",
-           "PIPELINE_INTERFACES_KEY", "PIPELINE_REQUIREMENTS_KEY",
-           "RESULTS_SUBDIR_KEY", "SUBMISSION_SUBDIR_KEY", "TEMPLATES_DIRNAME"]
+           "PIPELINE_INTERFACES_KEY", "PIPELINE_REQUIREMENTS_KEY", "FLAGS",
+           "RESULTS_SUBDIR_KEY", "SUBMISSION_SUBDIR_KEY", "TEMPLATES_DIRNAME","SAMPLE_YAML_FILE_KEY","SAMPLE_YAML_EXT","SAMPLE_EXECUTION_TOGGLE","VALID_READ_TYPES","REQUIRED_INPUTS_ATTR_NAME", "ALL_INPUTS_ATTR_NAME"]
+
+FLAGS = ["completed", "running", "failed", "waiting", "partial"]
 
 APPEARANCE_BY_FLAG = {
     "completed": {
@@ -34,9 +36,10 @@ APPEARANCE_BY_FLAG = {
 
 def _get_apperance_dict(type, templ=APPEARANCE_BY_FLAG):
     """
-    Based on the type of the HTML element provided construct the appearence mapping using the template
+    Based on the type of the HTML element provided construct the appearence
+     mapping using the template
 
-    :param dict templ: appearance templete to populate
+    :param dict templ: appearance template to populate
     :param str type: type of HTML element to populate template with
     :return dict: populated appearance template
     """
@@ -59,3 +62,10 @@ SUBMISSION_SUBDIR_KEY = "submission_subdir"
 TEMPLATES_DIRNAME = "jinja_templates"
 IMAGE_EXTS = ('.png', '.jpg', '.jpeg', '.svg', '.gif')
 PROFILE_COLNAMES = ['pid', 'hash', 'cid', 'runtime', 'mem', 'cmd', 'lock']  # this strongly depends on pypiper's profile.tsv format
+
+SAMPLE_YAML_FILE_KEY = "yaml_file"
+SAMPLE_YAML_EXT = ".yaml"
+SAMPLE_EXECUTION_TOGGLE = "toggle"
+VALID_READ_TYPES = ["single", "paired"]
+REQUIRED_INPUTS_ATTR_NAME = "required_inputs_attr"
+ALL_INPUTS_ATTR_NAME = "all_inputs_attr"

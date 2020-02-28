@@ -8,6 +8,7 @@ import warnings
 import jinja2
 import yaml
 from yaml import SafeLoader
+from logging import getLogger
 
 from .const import PIPELINE_REQUIREMENTS_KEY
 from .exceptions import InvalidResourceSpecificationException, \
@@ -15,16 +16,14 @@ from .exceptions import InvalidResourceSpecificationException, \
     PipelineInterfaceRequirementsError
 from .pipereqs import create_pipeline_requirement, RequiredExecutable
 from .sample import Sample
-from .utils import get_logger
 from attmap import PathExAttMap as PXAM
 from divvy import DEFAULT_COMPUTE_RESOURCES_NAME, NEW_COMPUTE_KEY as COMPUTE_KEY
 from divvy.const import OLD_COMPUTE_KEY
 from peppy import utils as peputil
-from peppy.sample import SAMPLE_YAML_FILE_KEY
 from ubiquerg import expandpath, is_command_callable, is_url
 
 
-_LOGGER = get_logger(__name__)
+_LOGGER = getLogger(__name__)
 
 
 PL_KEY = "pipelines"
