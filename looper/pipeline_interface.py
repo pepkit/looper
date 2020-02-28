@@ -109,7 +109,8 @@ class PipelineInterface(PXAM):
                 m_sub = PXAM()
                 for k_sub, v_sub in v.items():
                     if k_sub == PIPELINE_REQUIREMENTS_KEY:
-                        m_sub.__setitem__(k_sub, read_pipe_reqs(v_sub), finalize=False)
+                        m_sub.__setitem__(k_sub, read_pipe_reqs(v_sub),
+                                          finalize=False)
                     else:
                         m_sub.__setitem__(k_sub, v_sub, finalize=True)
                 m.__setitem__(k, m_sub, finalize=False)
@@ -139,7 +140,7 @@ class PipelineInterface(PXAM):
                              "negative file size: {}".format(file_size))
 
         def notify(msg):
-            msg += " for pipeline {}".format(pipeline_name)
+            msg += " for pipeline '{}'".format(pipeline_name)
             if self.pipe_iface_file is not None:
                 msg += " in interface {}".format(self.pipe_iface_file)
             _LOGGER.debug(msg)
@@ -179,7 +180,8 @@ class PipelineInterface(PXAM):
                 _LOGGER.warning(
                     "{rk} section found in both {c} section and top-level "
                     "pipelines section of pipeline interface; {c} section "
-                    "version will be used".format(rk=RESOURCES_KEY, c=COMPUTE_KEY))
+                    "version will be used".format(rk=RESOURCES_KEY,
+                                                  c=COMPUTE_KEY))
 
         # Require default resource package specification.
         try:
@@ -276,14 +278,14 @@ class PipelineInterface(PXAM):
         # TODO: determine how to deal with pipelines_path (i.e., could be null)
         if not os.path.isabs(script_path_only) and not \
                 is_command_callable(script_path_only):
-            _LOGGER.whisper("Expanding non-absolute script path: '%s'",
+            _LOGGER.debug("Expanding non-absolute script path: '%s'",
                             script_path_only)
             script_path_only = os.path.join(
                     self.pipelines_path, script_path_only)
-            _LOGGER.whisper("Absolute script path: '%s'", script_path_only)
+            _LOGGER.debug("Absolute script path: '%s'", script_path_only)
             script_path_with_flags = os.path.join(
                     self.pipelines_path, script_path_with_flags)
-            _LOGGER.whisper("Absolute script path with flags: '%s'",
+            _LOGGER.debug("Absolute script path with flags: '%s'",
                             script_path_with_flags)
 
         return strict_pipeline_key, script_path_only, script_path_with_flags
@@ -296,13 +298,15 @@ class PipelineInterface(PXAM):
         """
         ori_path = self.get_attribute(pipeline_key, "path")
         if ori_path:
-            script_path = os.path.expanduser(os.path.expandvars(ori_path[0].strip()))
+            script_path = \
+                os.path.expanduser(os.path.expandvars(ori_path[0].strip()))
             if os.path.isdir(script_path):
                 script_path = os.path.join(script_path, pipeline_key)
         else:
             script_path = pipeline_key
 
-        if not os.path.isabs(script_path) and not is_command_callable(script_path):
+        if not os.path.isabs(script_path) \
+                and not is_command_callable(script_path):
             _LOGGER.debug("Expanding pipeline path: '{}'".format(script_path))
             script_path = os.path.join(self.pipelines_path, script_path)
         try:
@@ -325,13 +329,15 @@ class PipelineInterface(PXAM):
         self.absolutize_pipeline_path(pipeline_name)
         poi = self["pipelines"][pipeline_name]  # pipeline of interest
         env = jinja2.Environment(undefined=jinja2.StrictUndefined)
-        _LOGGER.debug("CLI arg str template: {}".format(poi["command_template"]))
+        _LOGGER.debug("CLI arg str template: {}".
+                      format(poi["command_template"]))
         template = env.from_string(poi["command_template"])
         try:
-            rendered = template.render(sample=sample, project=project, pipeline=poi)
+            rendered = \
+                template.render(sample=sample, project=project, pipeline=poi)
         except jinja2.exceptions.UndefinedError:
-            _LOGGER.error("Missing sample, project or pipeline attributes required "
-                          "by pipeline command template: '{}'"
+            _LOGGER.error("Missing sample, project or pipeline attributes"
+                          " required by pipeline command template: '{}'"
                           .format(poi["command_template"]))
             raise
         _LOGGER.debug("rendered CLI arg str: {}".format(rendered))
@@ -481,7 +487,8 @@ class PipelineInterface(PXAM):
         """
         reqs_data = {name: req for name, req in
                      self.get(PIPELINE_REQUIREMENTS_KEY, {}).items()}
-        reqs_data.update(self.select_pipeline(pipeline).get(PIPELINE_REQUIREMENTS_KEY, {}))
+        reqs_data.update(self.select_pipeline(pipeline).
+                         get(PIPELINE_REQUIREMENTS_KEY, {}))
         return [v.req for v in reqs_data.values() if not v.satisfied]
 
     @property
@@ -538,13 +545,15 @@ class PipelineInterface(PXAM):
         :param str pipeline_name: pipeline name
         :return str: absolute path to the pipeline schema file
         """
-        schema_source = self.get_attribute(pipeline_name, "schema", path_as_list=False)
+        schema_source = self.get_attribute(pipeline_name, "schema",
+                                           path_as_list=False)
         _LOGGER.debug("Got schema source: {}".format(schema_source))
         if schema_source:
             if is_url(schema_source):
                 return schema_source
             elif not os.path.isabs(schema_source):
-                schema_source = os.path.join(os.path.split(self.pipe_iface_file)[0], schema_source)
+                schema_source = \
+                    os.path.join(os.path.split(self.pipe_iface_file)[0], schema_source)
         return schema_source
 
     def select_pipeline(self, pipeline_name):
@@ -604,9 +613,9 @@ def expand_pl_paths(piface):
     for pipe_data in piface[PL_KEY].values():
         if "path" in pipe_data:
             pipe_path = pipe_data["path"]
-            _LOGGER.whisper("Expanding path: '%s'", pipe_path)
+            _LOGGER.debug("Expanding path: '%s'", pipe_path)
             pipe_path = expandpath(pipe_path)
-            _LOGGER.whisper("Expanded: '%s'", pipe_path)
+            _LOGGER.debug("Expanded: '%s'", pipe_path)
             pipe_data["path"] = pipe_path
     return piface
 
@@ -676,7 +685,8 @@ def _import_sample_subtype(pipeline_filepath, subtype_name=None):
         if _LOGGER.getEffectiveLevel() > logging.DEBUG:
             with open(os.devnull, 'w') as temp_standard_streams:
                 with peputil.standard_stream_redirector(temp_standard_streams):
-                    pipeline_module = peputil.import_from_source(pipeline_filepath)
+                    pipeline_module = \
+                        peputil.import_from_source(pipeline_filepath)
         else:
             pipeline_module = peputil.import_from_source(pipeline_filepath)
 

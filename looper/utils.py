@@ -6,6 +6,7 @@ import copy
 import glob
 import os
 from .const import *
+from peppy.const import *
 
 
 DEFAULT_METADATA_FOLDER = "metadata"
@@ -188,6 +189,33 @@ def fetch_sample_flags(prj, sample, pl_names=None):
     return [os.path.join(sfolder, f) for f in os.listdir(sfolder)
             if os.path.splitext(f)[1] == ".flag" and pl_match(f)]
 
+# def grab_project_data(prj):
+#     """
+#     From the given Project, grab Sample-independent data.
+#
+#     There are some aspects of a Project of which it's beneficial for a Sample
+#     to be aware, particularly for post-hoc analysis. Since Sample objects
+#     within a Project are mutually independent, though, each doesn't need to
+#     know about any of the others. A Project manages its, Sample instances,
+#     so for each Sample knowledge of Project data is limited. This method
+#     facilitates adoption of that conceptual model.
+#
+#     :param Project prj: Project from which to grab data
+#     :return Mapping: Sample-independent data sections from given Project
+#     """
+#
+#     if not prj:
+#         return {}
+#
+#     data = {}
+#     for section in SAMPLE_INDEPENDENT_PROJECT_SECTIONS:
+#         try:
+#             data[section] = prj[section]
+#         except KeyError:
+#             _LOGGER.debug("Project lacks section '%s', skipping", section)
+#
+#     return data
+
 
 def grab_project_data(prj):
     """
@@ -207,13 +235,10 @@ def grab_project_data(prj):
     if not prj:
         return {}
 
-    data = {}
-    for section in SAMPLE_INDEPENDENT_PROJECT_SECTIONS:
-        try:
-            data[section] = prj[section]
-        except KeyError:
-            _LOGGER.debug("Project lacks section '%s', skipping", section)
-
+    try:
+        data = prj[CONFIG_KEY]
+    except KeyError:
+        _LOGGER.debug("Project lacks section '%s', skipping", CONFIG_KEY)
     return data
 
 
@@ -236,9 +261,9 @@ def partition(items, test):
     :return: list[object], list[object]: partitioned items sequences
     """
     passes, fails = [], []
-    _LOGGER.whisper("Testing {} items: {}".format(len(items), items))
+    _LOGGER.debug("Testing {} items: {}".format(len(items), items))
     for item in items:
-        _LOGGER.whisper("Testing item {}".format(item))
+        _LOGGER.debug("Testing item {}".format(item))
         group = passes if test(item) else fails
         group.append(item)
     return passes, fails
@@ -254,4 +279,4 @@ def sample_folder(prj, sample):
     :return str: this Project's root folder for the given Sample
     """
     return os.path.join(prj.results_folder,
-                        sample[SAMPLE_NAME_COLNAME])
+                        sample[SAMPLE_NAME_ATTR])

@@ -7,7 +7,7 @@ import itertools
 import os
 
 import peppy
-from peppy import OUTDIR_KEY
+from peppy import OUTDIR_KEY, CONFIG_KEY
 from divvy import DEFAULT_COMPUTE_RESOURCES_NAME, ComputingConfiguration
 from ubiquerg import is_command_callable
 from .const import *
@@ -27,41 +27,180 @@ __all__ = ["Project", "process_pipeline_interfaces"]
 _LOGGER = getLogger(__name__)
 
 
+class ProjectContext(object):
+    """ Wrap a Project to provide protocol-specific Sample selection. """
+
+    def __init__(self, prj, selector_attribute="protocol",
+                 selector_include=None, selector_exclude=None):
+        """ Project and what to include/exclude defines the context. """
+        if not isinstance(selector_attribute, str):
+            raise TypeError(
+                "Name of attribute for sample selection isn't a string: {} "
+                "({})".format(selector_attribute, type(selector_attribute)))
+        self.prj = prj
+        self.include = selector_include
+        self.exclude = selector_exclude
+        self.attribute = selector_attribute
+
+    def __getattr__(self, item):
+        """ Samples are context-specific; other requests are handled
+        locally or dispatched to Project. """
+        if item == "samples":
+            return fetch_samples(prj=self.prj, selector_attribute=self.attribute,
+                                      selector_include=self.include,
+                                      selector_exclude=self.exclude)
+        if item in ["prj", "include", "exclude"]:
+            # Attributes requests that this context/wrapper handles
+            return self.__dict__[item]
+        else:
+            # Dispatch attribute request to Project.
+            return getattr(self.prj, item)
+
+    def __getitem__(self, item):
+        """ Provide the Mapping-like item access to the instance's Project. """
+        return self.prj[item]
+
+    def __enter__(self):
+        """ References pass through this instance as needed, so the context
+         provided is the instance itself. """
+        return self
+
+    def __exit__(self, *args):
+        """ Context teardown. """
+        pass
+
+
 class Project(peppy.Project):
     """
     Looper-specific NGS Project.
 
     :param str config_file: path to configuration file with data from
         which Project is to be built
-    :param str subproject: name indicating subproject to use, optional
+    :param Iterable[str] amendments: name indicating amendment to use, optional
     :param str compute_env_file: Environment configuration YAML file specifying
         compute settings.
     :param Iterable[str] pifaces: list of path to pipeline interfaces.
         Overrides the config-defined ones.
+    :param bool dry: If dry mode is activated, no directories
+        will be created upon project instantiation.
+    :param bool permissive: Whether a error should be thrown if
+        a sample input file(s) do not exist or cannot be open.
+    :param bool file_checks: Whether sample input files should be checked
+        for their  attributes (read type, read length)
+        if this is not set in sample metadata.
+    :param str compute_env_file: Environment configuration YAML file specifying
+        compute settings.
+    :param type no_environment_exception: type of exception to raise if environment
+        settings can't be established, optional; if null (the default),
+        a warning message will be logged, and no exception will be raised.
+    :param type no_compute_exception: type of exception to raise if compute
+        settings can't be established, optional; if null (the default),
+        a warning message will be logged, and no exception will be raised.
     """
-    def __init__(self, config_file, amendments=None, pifaces=None,
+    def __init__(self, config_file, amendments=None, pifaces=None, dry=False,
                  compute_env_file=None, no_environment_exception=RuntimeError,
-                no_compute_exception=RuntimeError, **kwargs):
-        super(Project, self).__init__(
-                config_file, amendments=amendments, **kwargs)
+                no_compute_exception=RuntimeError, file_checks=False,
+                 permissive=True, **kwargs):
+        super(Project, self).__init__(config_file, amendments=amendments,
+                                      **kwargs)
 
-        pifaces_paths = pifaces or self[PIPELINE_INTERFACES_KEY]
+        pifaces_paths = pifaces or self[CONFIG_KEY][PIPELINE_INTERFACES_KEY]
         self.interfaces = process_pipeline_interfaces(pifaces_paths)
+        self.file_checks = file_checks
+        self.permissive = permissive
         self.dcc = ComputingConfiguration(
             config_file=compute_env_file, no_env_error=no_environment_exception,
             no_compute_exception=no_compute_exception
         )
+        # Set project's directory structure
+        if not dry:
+            _LOGGER.debug("Ensuring project directories exist")
+            self.make_project_dirs()
 
     @property
     def project_folders(self):
         """ Critical project folder keys """
-        return {OUTDIR_KEY: OUTDIR_KEY, RESULTS_SUBDIR_KEY: "results_pipeline",
+        return {OUTDIR_KEY: OUTDIR_KEY,
+                RESULTS_SUBDIR_KEY: "results_pipeline",
                 SUBMISSION_SUBDIR_KEY: "submission"}
 
     @property
     def required_metadata(self):
         """ Which metadata attributes are required. """
         return [OUTDIR_KEY]
+
+    @property
+    def results_folder(self):
+        return self._relpath(RESULTS_FOLDER_KEY)
+
+    @property
+    def submission_folder(self):
+        return self._relpath(SUBMISSION_FOLDER_KEY)
+
+    @property
+    def output_dir(self):
+        """
+        Directory in which to place results and submissions folders.
+        By default, assume that the project's configuration file specifies
+        an output directory, and that this is therefore available within
+        the project metadata. If that assumption does not hold, though,
+        consider the folder in which the project configuration file lives
+        to be the project's output directory.
+        :return str: path to the project's output directory, either as
+            specified in the configuration file or the folder that contains
+            the project's configuration file.
+        :raise Exception: if this property is requested on a project that
+            was not created from a config file and lacks output folder
+            declaration in its metadata section
+        """
+        try:
+            return self[CONFIG_KEY][OUTDIR_KEY]
+        except KeyError:
+            if not self.config_file:
+                raise Exception("Project lacks both a config file and an "
+                                "output folder in metadata; using ")
+            return os.path.dirname(self.config_file)
+
+    def _relpath(self, key):
+        return os.path.join(
+            self[CONFIG_KEY][OUTDIR_KEY],
+            self[CONFIG_KEY].get(key, self.project_folders[key]))
+
+    def make_project_dirs(self):
+        """
+        Creates project directory structure if it doesn't exist.
+        """
+        for folder_key, folder_val in self.project_folders.items():
+            try:
+                folder_path = self[CONFIG_KEY][folder_key]
+            except KeyError:
+                folder_path = os.path.join(self[CONFIG_KEY].output_dir,
+                                           folder_val)
+            _LOGGER.debug("Ensuring project dir exists: '{}'".
+                          format(folder_path))
+            if not os.path.exists(folder_path):
+                _LOGGER.debug("Attempting to create project folder: '{}'".
+                              format(folder_path))
+                try:
+                    os.makedirs(folder_path)
+                except OSError as e:
+                    _LOGGER.warning("Could not create project folder: '{}'".
+                                    format(str(e)))
+
+    @property
+    def protocols(self):
+        """
+        Determine this Project's unique protocol names.
+        :return Set[str]: collection of this Project's unique protocol names
+        """
+        protos = set()
+        for s in self.samples:
+            try:
+                protos.add(s.protocol)
+            except AttributeError:
+                _LOGGER.debug("Sample '{}' lacks protocol".
+                              format(s.sample_name))
+        return protos
 
     def build_submission_bundles(self, protocol, priority=True):
         """
@@ -233,6 +372,58 @@ class Project(peppy.Project):
                         schema_set.update([schema_file])
         return list(schema_set)
 
+    def get_arg_string(self, pipeline_name, yield_precedence=None):
+        """
+        Build argstring from opts/args in project config file for given pipeline.
+        :param str pipeline_name: identifier for the relevant pipeline
+        :param Iterable[str] yield_precedence: collection of opts/args to
+            yield to, i.e. to omit from the argstring (e.g., CLI-specified
+            extra arguments that take priority over those in project config)
+        """
+
+        def make_optarg_text(opt, arg):
+            """ Transform flag/option into CLI-ready text version. """
+            if arg:
+                try:
+                    arg = os.path.expandvars(arg)
+                except TypeError:
+                    # Rely on direct string formatting of arg.
+                    pass
+                return "{} {}".format(opt, arg)
+            else:
+                return opt
+
+        def create_argtext(name):
+            """ Create command-line argstring text from config section. """
+            try:
+                optargs = getattr(self.pipeline_args, name)
+            except AttributeError:
+                return ""
+            # NS using __dict__ will add in the metadata from AttrDict (doh!)
+            _LOGGER.debug("optargs.items(): {}".format(optargs.items()))
+            optargs_texts = [make_optarg_text(opt, arg)
+                             for opt, arg in optargs.items() if opt not in (yield_precedence or set())]
+            _LOGGER.debug("optargs_texts: {}".format(optargs_texts))
+            # TODO: may need to fix some spacing issues here.
+            return " ".join(optargs_texts)
+
+        default_argtext = create_argtext(DEFAULT_COMPUTE_RESOURCES_NAME)
+        _LOGGER.debug("Creating additional argstring text for pipeline '%s'",
+                      pipeline_name)
+        pipeline_argtext = create_argtext(pipeline_name)
+
+        if not pipeline_argtext:
+            # The project config may not have an entry for this pipeline;
+            # no problem! There are no pipeline-specific args. Return text
+            # from default arguments, whether empty or not.
+            return default_argtext
+        elif default_argtext:
+            # Non-empty pipeline-specific and default argtext
+            return " ".join([default_argtext, pipeline_argtext])
+        else:
+            # No default argtext, but non-empty pipeline-specific argtext
+            return pipeline_argtext
+
     def get_outputs(self, skip_sample_less=True):
         """
         Map pipeline identifier to collection of output specifications.
@@ -328,11 +519,11 @@ def _gather_ifaces(ifaces):
     return specs
 
 
-def process_pipeline_interfaces(pipeline_interface_locations):
+def process_pipeline_interfaces(piface_paths):
     """
     Create a PipelineInterface for each pipeline location given.
 
-    :param Iterable[str] pipeline_interface_locations: locations, each of
+    :param Iterable[str] | str piface_paths: locations, each of
         which should be either a directory path or a filepath, that specifies
         pipeline interface and protocol mappings information. Each such file
         should have a pipelines section and a protocol mappings section.
@@ -340,7 +531,9 @@ def process_pipeline_interfaces(pipeline_interface_locations):
         name to interface(s) for which that protocol is mapped
     """
     iface_group = ProjectPifaceGroup()
-    for loc in pipeline_interface_locations:
+    piface_paths = piface_paths \
+        if isinstance(piface_paths, list) else [piface_paths]
+    for loc in piface_paths:
         if not os.path.exists(loc):
             _LOGGER.warning("Ignoring nonexistent pipeline interface location: "
                             "{}".format(loc))
@@ -357,6 +550,88 @@ def process_pipeline_interfaces(pipeline_interface_locations):
                                 format(f, str(e)))
     return iface_group
 
+
+def fetch_samples(prj, selector_attribute=None, selector_include=None,
+                  selector_exclude=None):
+    """
+    Collect samples of particular protocol(s).
+
+    Protocols can't be both positively selected for and negatively
+    selected against. That is, it makes no sense and is not allowed to
+    specify both selector_include and selector_exclude protocols. On the
+    other hand, if
+    neither is provided, all of the Project's Samples are returned.
+    If selector_include is specified, Samples without a protocol will be
+    excluded,
+    but if selector_exclude is specified, protocol-less Samples will be
+    included.
+
+    :param Project prj: the Project with Samples to fetch
+    :param str selector_attribute: name of attribute on which to base the
+    fetch
+    :param Iterable[str] | str selector_include: protocol(s) of interest;
+        if specified, a Sample must
+    :param Iterable[str] | str selector_exclude: protocol(s) to include
+    :return list[Sample]: Collection of this Project's samples with
+        protocol that either matches one of those in selector_include,
+        or either
+        lacks a protocol or does not match one of those in selector_exclude
+    :raise TypeError: if both selector_include and selector_exclude
+    protocols are
+        specified; TypeError since it's basically providing two arguments
+        when only one is accepted, so remain consistent with vanilla
+        Python2;
+        also possible if name of attribute for selection isn't a string
+    """
+    if selector_attribute is None or (not selector_include and not selector_exclude):
+        # Simple; keep all samples.  In this case, this function simply
+        # offers a list rather than an iterator.
+        return list(prj.samples)
+
+    if not isinstance(selector_attribute, str):
+        raise TypeError(
+            "Name for attribute on which to base selection isn't string: "
+            "{} "
+            "({})".format(selector_attribute, type(selector_attribute)))
+
+    # At least one of the samples has to have the specified attribute
+    if prj.samples and not any(
+            [hasattr(s, selector_attribute) for s in prj.samples]):
+        raise AttributeError(
+            "The Project samples do not have the attribute '{attr}'".
+                format(attr=selector_attribute))
+
+    # Intersection between selector_include and selector_exclude is
+    # nonsense user error.
+    if selector_include and selector_exclude:
+        raise TypeError(
+            "Specify only selector_include or selector_exclude parameter, "
+            "not both.")
+
+    # Ensure that we're working with sets.
+    def make_set(items):
+        if isinstance(items, str):
+            items = [items]
+        return items
+
+    # Use the attr check here rather than exception block in case the
+    # hypothetical AttributeError would occur; we want such
+    # an exception to arise, not to catch it as if the Sample lacks
+    # "protocol"
+    if not selector_include:
+        # Loose; keep all samples not in the selector_exclude.
+        def keep(s):
+            return not hasattr(s, selector_attribute) or getattr(s,
+                                                                 selector_attribute) not in make_set(
+                selector_exclude)
+    else:
+        # Strict; keep only samples in the selector_include.
+        def keep(s):
+            return hasattr(s, selector_attribute) and getattr(s,
+                                                              selector_attribute) in make_set(
+                selector_include)
+
+    return list(filter(keep, prj.samples))
 
 OutputGroup = namedtuple("OutputGroup", field_names=["path", "samples"])
 

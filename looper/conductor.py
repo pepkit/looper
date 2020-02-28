@@ -159,7 +159,7 @@ class SubmissionConductor(object):
             the base Sample class, raise a TypeError.
         """
 
-        _LOGGER.debug("Adding {} to conductor for {}".format(sample.name, self.pl_name))
+        _LOGGER.debug("Adding {} to conductor for {}".format(sample.sample_name, self.pl_name))
         flag_files = fetch_sample_flags(self.prj, sample, self.pl_name)
         use_this_sample = True
 
@@ -170,11 +170,11 @@ class SubmissionConductor(object):
             failed_flag = any("failed" in x for x in flag_files)
             if rerun and failed_flag:
                 _LOGGER.info("> Re-running failed sample '%s' for pipeline '%s'.",
-                     sample.name, self.pl_name)
+                     sample.sample_name, self.pl_name)
                 use_this_sample = True
             if not use_this_sample:
                 _LOGGER.info("> Skipping sample '%s' for pipeline '%s', "
-                             "%s found: %s", sample.name, self.pl_name,
+                             "%s found: %s", sample.sample_name, self.pl_name,
                              "flags" if len(flag_files) > 1 else "flag",
                              ", ".join(['{}'.format(
                                  os.path.basename(fp)) for fp in flag_files]))
@@ -186,9 +186,9 @@ class SubmissionConductor(object):
             sample = self.sample_subtype(sample.to_dict())
         else:
             _LOGGER.debug(
-                "{} is already of type {}".format(sample.name, self.sample_subtype))
+                "{} is already of type {}".format(sample.sample_name, self.sample_subtype))
         _LOGGER.debug("Created %s instance: '%s'",
-                      self.sample_subtype.__name__, sample.name)
+                      self.sample_subtype.__name__, sample.sample_name)
         sample.prj = grab_project_data(self.prj)
 
         skip_reasons = []
@@ -196,7 +196,7 @@ class SubmissionConductor(object):
         try:
             # Add pipeline-specific attributes.
             sample.set_pipeline_attributes(self.pl_iface, pipeline_name=self.pl_key)
-        except AttributeError:
+        except NameError:
             # TODO: inform about WHICH missing attributes?
             fail_message = "Pipeline required attribute missing"
             _LOGGER.warning("> Not submitted: %s", fail_message)
@@ -247,7 +247,7 @@ class SubmissionConductor(object):
         this_sample_size = float(sample.input_file_size)
 
         if _use_sample(use_this_sample, skip_reasons):
-            _check_argstring(argstring, sample.name)
+            _check_argstring(argstring, sample.sample_name)
             self._pool.append((sample, argstring))
             self._curr_size += this_sample_size
             if self.automatic and self._is_full(self._pool, self._curr_size):
@@ -319,7 +319,7 @@ class SubmissionConductor(object):
                 if not _is_base_sample(s):
                     subtype_name = s.__class__.__name__
                     _LOGGER.debug("Writing %s representation to disk: '%s'",
-                                  subtype_name, s.name)
+                                  subtype_name, s.sample_name)
                 add_outputs(s)
                 yaml_path = s.to_yaml(subs_folder_path=self.prj.submission_folder)
                 _LOGGER.debug("Wrote sample YAML: {}".format(yaml_path))
@@ -342,7 +342,7 @@ class SubmissionConductor(object):
                     subprocess.check_call(submission_command, shell=True)
                 except subprocess.CalledProcessError:
                     self._failed_sample_names.extend(
-                            [s.name for s in self._samples])
+                            [s.sample_name for s in self._samples])
                     self._reset_pool()
                     raise JobSubmissionException(sub_cmd, script)
                 time.sleep(self.delay)
@@ -392,7 +392,7 @@ class SubmissionConductor(object):
                 "must be determined with exactly one sample in the pool, but " \
                 "there is/are {}.".format(len(pool))
             sample, _ = pool[0]
-            name = sample.name
+            name = sample.sample_name
         else:
             # Note the order in which the increment of submission count and
             # the call to this function can influence naming. Make the jobname

@@ -15,6 +15,7 @@ from .project import Project
 from .sample import Sample
 from ._version import __version__
 from .parser_types import *
+from .const import *
 
 from ubiquerg import VersionInHelpParser
 from divvy import DEFAULT_COMPUTE_RESOURCES_NAME, NEW_COMPUTE_KEY as COMPUTE_KEY
@@ -195,7 +196,7 @@ def build_parser():
         subparser.add_argument(
                 "-d", "--dry-run", dest="dry_run",
                 action=_StoreBoolActionType, default=False, type=html_checkbox(checked=False),
-                help="Don't actually submit the project/subproject.  Default=False")
+                help="Don't actually submit the project/amendment.  Default=False")
 
         fetch_samples_group = \
             subparser.add_argument_group("select samples",
@@ -214,8 +215,8 @@ def build_parser():
                 help="Operate only on samples associated with these attribute values;"
                      " if not provided, all samples are used.")
         subparser.add_argument(
-                "--sp", dest="subproject",
-                help="Name of subproject to use, as designated in the "
+                "--sp", dest="amendment",
+                help="Name of amendment to use, as designated in the "
                      "project's configuration file")
 
     return parser

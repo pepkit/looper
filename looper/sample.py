@@ -45,12 +45,12 @@ class Sample(PeppySample):
         # Second, files
         missing_files = []
         for paths in self.required_inputs:
-            _LOGGER.whisper("Text to split and check paths: '%s'", paths)
+            _LOGGER.debug("Text to split and check paths: '%s'", paths)
             # There can be multiple, space-separated values here.
             for path in paths.split(" "):
-                _LOGGER.whisper("Checking path: '{}'".format(path))
+                _LOGGER.debug("Checking path: '{}'".format(path))
                 if not os.path.exists(path):
-                    _LOGGER.whisper("Missing required input file: '{}'".format(path))
+                    _LOGGER.debug("Missing required input file: '{}'".format(path))
                     missing_files.append(path)
 
         if not missing_files:
@@ -73,8 +73,8 @@ class Sample(PeppySample):
             subtype; this is only relevant if the instance is of a subclass
         :return str: name for file with which to represent this Sample on disk
         """
-        base = self.name if type(self) is Sample else \
-            "{}{}{}".format(self.name, delimiter, type(self).__name__)
+        base = self.sample_name if type(self) is Sample else \
+            "{}{}{}".format(self.sample_name, delimiter, type(self).__name__)
         return "{}{}".format(base, SAMPLE_YAML_EXT)
 
     def set_pipeline_attributes(
@@ -103,11 +103,11 @@ class Sample(PeppySample):
                           ("required_input_files", REQUIRED_INPUTS_ATTR_NAME),
                           ("all_input_files", ALL_INPUTS_ATTR_NAME)]
         for name_src_attr, name_dst_attr in req_attr_names:
-            _LOGGER.whisper("Value of '%s' will be assigned to '%s'",
+            _LOGGER.debug("Value of '%s' will be assigned to '%s'",
                         name_src_attr, name_dst_attr)
             value = pipeline_interface.get_attribute(
                 pipeline_name, name_src_attr)
-            _LOGGER.whisper("Assigning '{}': {}".format(name_dst_attr, value))
+            _LOGGER.debug("Assigning '{}': {}".format(name_dst_attr, value))
             setattr(self, name_dst_attr, value)
 
         # Post-processing of input attribute assignments.
@@ -117,7 +117,7 @@ class Sample(PeppySample):
             setattr(self, ALL_INPUTS_ATTR_NAME, required_inputs)
         # Convert attribute keys into values.
         if self.ngs_inputs_attr:
-            _LOGGER.whisper("Handling NGS input attributes: '%s'", self.name)
+            _LOGGER.debug("Handling NGS input attributes: '%s'", self.sample_name)
             # NGS data inputs exit, so we can add attributes like
             # read_type, read_length, paired.
             self.ngs_inputs = self.get_attr_values("ngs_inputs_attr")
@@ -132,18 +132,18 @@ class Sample(PeppySample):
             if set_rtype_reason:
                 _LOGGER.debug(
                     "Setting read_type for %s '%s': %s",
-                    self.__class__.__name__, self.name, set_rtype_reason)
+                    self.__class__.__name__, self.sample_name, set_rtype_reason)
                 self.set_read_type(permissive=permissive)
             else:
                 _LOGGER.debug("read_type is already valid: '%s'",
                               self.read_type)
         else:
-            _LOGGER.whisper("No NGS inputs: '%s'", self.name)
+            _LOGGER.debug("No NGS inputs: '%s'", self.sample_name)
 
         # Assign values for actual inputs attributes.
         self.required_inputs = self.get_attr_values(REQUIRED_INPUTS_ATTR_NAME)
         self.all_inputs = self.get_attr_values(ALL_INPUTS_ATTR_NAME)
-        _LOGGER.debug("All '{}' inputs: {}".format(self.name, self.all_inputs))
+        _LOGGER.debug("All '{}' inputs: {}".format(self.sample_name, self.all_inputs))
         self.input_file_size = get_file_size(self.all_inputs)
 
     def set_read_type(self, rlen_sample_size=10, permissive=True):
@@ -164,7 +164,7 @@ class Sample(PeppySample):
         # attributes at least exist - as long as they are not already set!
         for attr in ["read_length", "read_type", "paired"]:
             if not hasattr(self, attr):
-                _LOGGER.whisper("Setting null for missing attribute: '%s'",
+                _LOGGER.debug("Setting null for missing attribute: '%s'",
                             attr)
                 setattr(self, attr, None)
 
@@ -243,16 +243,16 @@ class Sample(PeppySample):
             if 1 == len(feature_values):
                 feat_val = files[0][i]
             else:
-                _LOGGER.whisper("%d values among %d files for feature '%s'",
+                _LOGGER.debug("%d values among %d files for feature '%s'",
                             len(feature_values), len(files), feature)
                 feat_val = None
-            _LOGGER.whisper("Setting '%s' on %s to %s",
+            _LOGGER.debug("Setting '%s' on %s to %s",
                         feature, self.__class__.__name__, feat_val)
             setattr(self, feature, feat_val)
 
             if getattr(self, feature) is None and len(existing_files) > 0:
                 _LOGGER.warning(
-                    "Not all input files agree on '%s': '%s'", feature, self.name)
+                    "Not all input files agree on '%s': '%s'", feature, self.sample_name)
 
 
 def _check_fastq(fastq, o):

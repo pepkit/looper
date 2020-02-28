@@ -31,7 +31,7 @@ from .const import *
 from .exceptions import JobSubmissionException, PipelineInterfaceConfigError
 from .html_reports import HTMLReportBuilder, get_index_html_path, get_reports_dir
 from .pipeline_interface import RESOURCES_KEY
-from .project import Project
+from .project import Project, ProjectContext
 from .utils import determine_config_path, fetch_flag_files, sample_folder
 
 from divvy import DEFAULT_COMPUTE_RESOURCES_NAME, NEW_COMPUTE_KEY as COMPUTE_KEY
@@ -338,9 +338,9 @@ class Runner(Executor):
         num_commands_possible = 0
         failed_submission_scripts = []
 
-        # config validation (samples excluded) against each schema
-        [self.prj.eido_validate_config(schema=schema_file)
-            for schema_file in self.prj.get_schemas(mapped_protos)]
+        # # config validation (samples excluded) against each schema
+        # [self.prj.eido_validate_config(schema=schema_file)
+        #     for schema_file in self.prj.get_schemas(mapped_protos)]
 
         for sample in self.prj.samples[:upper_sample_bound]:
             # First, step through the samples and determine whether any
@@ -359,8 +359,28 @@ class Runner(Executor):
                 else:
                     skip_reasons.append("Duplicate sample name")
 
+            def _sample_is_dormant(sample):
+                """
+                Determine whether this Sample is inactive.
+                By default, a Sample is regarded as active. That is,
+                if it lacks an
+                indication about activation status, it's assumed to be
+                active. If,
+                however, and there's an indication of such status, it must be
+                '1'
+                in order to be considered switched 'on.'
+                :return bool: whether this Sample's been designated as dormant
+                """
+                try:
+                    flag = sample[SAMPLE_EXECUTION_TOGGLE]
+                except KeyError:
+                    # Regard default Sample state as active.
+                    return False
+                # If specified, the activation flag must be set to '1'.
+                return flag != "1"
+
             # Check if sample should be run.
-            if sample.is_dormant():
+            if _sample_is_dormant(sample):
                 skip_reasons.append(
                         "Inactive status (via '{}' column/attribute)".
                         format(SAMPLE_EXECUTION_TOGGLE))
@@ -381,9 +401,9 @@ class Runner(Executor):
                 failures[sample.name] = skip_reasons
                 continue
 
-            # single sample validation against a single schema (matched by sample's protocol)
-            [self.prj.eido_validate_sample(sample.sample_name, schema_file)
-                for schema_file in self.prj.get_schemas(protocol)]
+            # # single sample validation against a single schema (matched by sample's protocol)
+            # [self.prj.eido_validate_sample(sample.sample_name, schema_file)
+            #     for schema_file in self.prj.get_schemas(protocol)]
 
             # Processing preconditions have been met.
             # Add this sample to the processed collection.
@@ -607,14 +627,14 @@ def _create_obj_summary(project, counter):
 
 def get_file_for_project(prj, appendix):
     """
-    Create a path to the file for the current project. Takes the possibility of subproject being activated at the time
+    Create a path to the file for the current project. Takes the possibility of amendment being activated at the time
     :param looper.Project prj: project object
     :param str appendix: the appendix of the file to create the path for, like 'objs_summary.tsv' for objects summary file
     :return str: path to the file
     """
     fp = os.path.join(prj.metadata.output_dir, prj.name)
-    if hasattr(prj, "subproject") and prj.subproject:
-        fp += '_' + prj.subproject
+    if hasattr(prj, "amendment") and prj.amendment:
+        fp += '_' + prj.amendment
     fp += '_' + appendix
     return fp
 
@@ -736,10 +756,9 @@ class LooperCounter(object):
 
 
 def _submission_status_text(curr, total, sample_name, sample_protocol, color):
-    return color + \
-           "## [{n} of {N}] {sample} ({protocol})".format(
-               n=curr, N=total, sample=sample_name, protocol=sample_protocol) + \
-           Style.RESET_ALL
+    return color + "## [{n} of {N}] {sample} ({protocol})".\
+        format(n=curr, N=total, sample=sample_name, protocol=sample_protocol) \
+           + Style.RESET_ALL
 
 
 def _proc_resources_spec(spec):
@@ -794,7 +813,9 @@ def main():
         level = LOGGING_LEVEL
 
     # Establish the project-root logger and attach one for this module.
-    logger_kwargs = {"level": level, "logfile": args.logfile, "devmode": args.dbg}
+    logger_kwargs = {"level": level,
+                     "logfile": args.logfile,
+                     "devmode": args.dbg}
     init_logger(name="peppy", **logger_kwargs)
     global _LOGGER
     _LOGGER = init_logger(name=_PKGNAME, **logger_kwargs)
@@ -817,11 +838,11 @@ def main():
     _LOGGER.debug("Building Project")
 
     try:
-        prj = Project(
-            determine_config_path(conf_file), subproject=args.subproject,
-            pifaces=parse_user_input(args.pifaces), file_checks=args.file_checks,
-            compute_env_file=getattr(args, 'env', None)
-        )
+        prj = Project(config_file=determine_config_path(conf_file),
+                      amendments=args.amendment,
+                      pifaces=parse_user_input(args.pifaces),
+                      file_checks=args.file_checks,
+                      compute_env_file=getattr(args, 'env', None))
     except yaml.parser.ParserError as e:
         _LOGGER.error("Project config parse failed -- {}".format(e))
         sys.exit(1)
@@ -831,33 +852,34 @@ def main():
 
     _LOGGER.debug("Results subdir: " + prj.results_folder)
 
-    # with ProjectContext(prj,
-    #         selector_attribute=args.selector_attribute,
-    #         selector_include=args.selector_include,
-    #         selector_exclude=args.selector_exclude) as prj:
+    with ProjectContext(prj=prj,
+                        selector_attribute=args.selector_attribute,
+                        selector_include=args.selector_include,
+                        selector_exclude=args.selector_exclude) as prj:
 
-    if args.command in ["run", "rerun"]:
-        run = Runner(prj)
-        try:
-            compute_kwargs = _proc_resources_spec(
-                getattr(args, RESOURCES_KEY, ""))
-            run(args, remaining_args,
-                rerun=(args.command == "rerun"), **compute_kwargs)
-        except IOError:
-            _LOGGER.error("{} pipeline_interfaces: '{}'".format(
-                    prj.__class__.__name__, prj.metadata.pipeline_interfaces))
-            raise
+        if args.command in ["run", "rerun"]:
+            run = Runner(prj)
+            try:
+                compute_kwargs = _proc_resources_spec(
+                    getattr(args, RESOURCES_KEY, ""))
+                run(args, remaining_args, rerun=(args.command == "rerun"),
+                    **compute_kwargs)
+            except IOError:
+                _LOGGER.error("{} pipeline_interfaces: '{}'".
+                              format(prj.__class__.__name__,
+                                     prj.pipeline_interfaces))
+                raise
 
-    if args.command == "destroy":
-        return Destroyer(prj)(args)
+        if args.command == "destroy":
+            return Destroyer(prj)(args)
 
-    if args.command == "summarize":
-        Summarizer(prj)()
+        if args.command == "summarize":
+            Summarizer(prj)()
 
-    if args.command == "check":
-        # TODO: hook in fixed samples once protocol differentiation is
-        # TODO (continued) figured out (related to #175).
-        Checker(prj)(flags=args.flags)
+        if args.command == "check":
+            # TODO: hook in fixed samples once protocol differentiation is
+            # TODO (continued) figured out (related to #175).
+            Checker(prj)(flags=args.flags)
 
-    if args.command == "clean":
-        return Cleaner(prj)(args)
+        if args.command == "clean":
+            return Cleaner(prj)(args)
