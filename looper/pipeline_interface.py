@@ -326,9 +326,20 @@ class PipelineInterface(PXAM):
         :param Project project: project for which job is being built
         :return str: command-line argument string for pipeline
         """
+
+        def _finfun(x):
+            """
+            A callable that can be used to process the result of a variable
+            expression before it is output. Joins list elements
+            """
+            return " ".join(x) if isinstance(x, list) else x
+
         self.absolutize_pipeline_path(pipeline_name)
         poi = self["pipelines"][pipeline_name]  # pipeline of interest
-        env = jinja2.Environment(undefined=jinja2.StrictUndefined)
+        env = jinja2.Environment(undefined=jinja2.StrictUndefined,
+                                 variable_start_string="{",
+                                 variable_end_string="}",
+                                 finalize=_finfun)
         _LOGGER.debug("CLI arg str template: {}".
                       format(poi["command_template"]))
         template = env.from_string(poi["command_template"])
