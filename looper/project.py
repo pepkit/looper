@@ -9,7 +9,7 @@ import os
 import peppy
 from peppy import OUTDIR_KEY, CONFIG_KEY
 from divvy import DEFAULT_COMPUTE_RESOURCES_NAME, ComputingConfiguration
-from ubiquerg import is_command_callable
+from ubiquerg import is_command_callable, is_url
 from .const import *
 from .exceptions import DuplicatePipelineKeyException, \
     PipelineInterfaceRequirementsError
@@ -534,12 +534,18 @@ def process_pipeline_interfaces(piface_paths):
         if isinstance(piface_paths, list) else [piface_paths]
     for loc in piface_paths:
         if not os.path.exists(loc):
-            _LOGGER.warning("Ignoring nonexistent pipeline interface location: "
-                            "{}".format(loc))
-            continue
-        fs = [loc] if os.path.isfile(loc) else \
-            [os.path.join(loc, f) for f in os.listdir(loc)
-             if os.path.splitext(f)[1] in [".yaml", ".yml"]]
+            if not is_url(loc):
+                _LOGGER.warning("Ignoring nonexistent pipeline interface "
+                                "location: {}".format(loc))
+                continue
+            _LOGGER.debug("Got remote pipeline interface: {}".format(loc))
+        if os.path.isdir(loc):
+            # loc is a directory, get all the yamls
+            fs = [os.path.join(loc, f) for f in os.listdir(loc)
+                  if os.path.splitext(f)[1] in [".yaml", ".yml"]]
+        else:
+            # existing file or URL
+            fs = [loc]
         for f in fs:
             _LOGGER.debug("Processing interface definition: {}".format(f))
             try:

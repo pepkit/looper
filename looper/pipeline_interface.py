@@ -6,8 +6,6 @@ import logging
 import os
 import warnings
 import jinja2
-import yaml
-from yaml import SafeLoader
 from logging import getLogger
 
 from .const import PIPELINE_REQUIREMENTS_KEY
@@ -21,6 +19,7 @@ from divvy import DEFAULT_COMPUTE_RESOURCES_NAME, NEW_COMPUTE_KEY as COMPUTE_KEY
 from divvy.const import OLD_COMPUTE_KEY
 from peppy import utils as peputil
 from ubiquerg import expandpath, is_command_callable, is_url
+from yacman import load_yaml
 
 
 _LOGGER = getLogger(__name__)
@@ -57,15 +56,7 @@ class PipelineInterface(PXAM):
                           config, self.__class__.__name__)
             self.pipe_iface_file = config
             self.source = config
-            try:
-                with open(config, 'r') as f:
-                    config = yaml.load(f, SafeLoader)
-            except yaml.parser.ParserError:
-                with open(config, 'r') as f:
-                    _LOGGER.error(
-                        "Failed to parse YAML from {}:\n{}".
-                        format(config, "".join(f.readlines())))
-                raise
+            config = load_yaml(config)
         # Check presence of 2 main sections (protocol mapping and pipelines).
         missing = [s for s in self.REQUIRED_SECTIONS if s not in config]
         if missing:
