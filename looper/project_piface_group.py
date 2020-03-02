@@ -28,7 +28,19 @@ class ProjectPifaceGroup(object):
         self._interfaces = []
         self._indices_by_protocol = {}
         piface and self.update(piface)
-    
+
+    def __repr__(self):
+        msg = "ProjectPifaceGroup"
+        try:
+            protos = self.protocols
+        except (KeyError, AttributeError):
+            pass
+        else:
+            msg += "\n Protocols: {}".format(", ".join(protos))
+        msg += "\nInterfaces:" + "\n - " + \
+               "\n - ".join([pi.__repr__() for pi in self._interfaces])
+        return msg
+
     def __eq__(self, other):
         """
         Instances are equivalent iff interfaces and protocol mappings are.
