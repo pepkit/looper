@@ -11,6 +11,8 @@ from warnings import warn
 from datetime import timedelta
 from ._version import __version__ as v
 from .const import TEMPLATES_DIRNAME, BUTTON_APPEARANCE_BY_FLAG, TABLE_APPEARANCE_BY_FLAG, NO_DATA_PLACEHOLDER, IMAGE_EXTS, PROFILE_COLNAMES
+from .utils import get_file_for_project
+from peppy.const import *
 from copy import copy as cp
 _LOGGER = logging.getLogger("looper")
 
@@ -27,8 +29,8 @@ class HTMLReportBuilder(object):
         super(HTMLReportBuilder, self).__init__()
         self.prj = prj
         self.j_env = get_jinja_env()
-        self.reports_dir = get_reports_dir(self.prj)
-        self.index_html_path = get_index_html_path(self.prj)
+        self.reports_dir = get_file_for_project(self.prj, "reports")
+        self.index_html_path = get_file_for_project(self.prj, "_summary.html")
         self.index_html_filename = os.path.basename(self.index_html_path)
         _LOGGER.debug("Reports dir: {}".format(self.reports_dir))
 
@@ -432,7 +434,7 @@ class HTMLReportBuilder(object):
 
         :param pandas.DataFrame objs: project level dataframe containing
             any reported objects for all samples
-        :param list stats[dict]: a summary file of pipeline statistics for each
+        :param list[dict] stats: a summary file of pipeline statistics for each
             analyzed sample
         :param list col_names: all unique column names used in the stats file
         :param str navbar: HTML to be included as the navbar in the main summary page
@@ -441,6 +443,7 @@ class HTMLReportBuilder(object):
         """
         # set default encoding when running in python2
         if sys.version[0] == '2':
+            from importlib import reload
             reload(sys)
             sys.setdefaultencoding("utf-8")
         _LOGGER.debug("Building index page...")
@@ -452,7 +455,7 @@ class HTMLReportBuilder(object):
         if not objs.dropna().empty:
             objs.drop_duplicates(keep='last', inplace=True)
         # Generate parent index.html page path
-        index_html_path = get_index_html_path(self.prj)
+        index_html_path = get_file_for_project(self.prj, "_summary.html")
 
         # Add stats_summary.tsv button link
         stats_file_name = os.path.join(self.prj.metadata.output_dir, self.prj.name)
@@ -508,30 +511,6 @@ class HTMLReportBuilder(object):
                              project_objects=project_objects, columns=col_names, table_row_data=table_row_data)
         save_html(index_html_path, render_jinja_template("index.html", self.j_env, template_vars))
         return index_html_path
-
-
-def get_reports_dir(prj):
-    """
-    Get the reports directory path depending on the subproject activation status
-
-    :param looper.Project prj: the project to determine the reports directory for
-    :return str: path to the reports directory
-    """
-    rep_dir_name = "reports" if prj.subproject is None else "reports_" + prj.subproject
-    return os.path.join(prj.metadata.output_dir, rep_dir_name)
-
-
-def get_index_html_path(prj):
-    """
-    Get the index HTML path depending on the subproject activation status
-
-    :param looper.Project prj: the project to determine the index HTML path for
-    :return str: path to the index HTML
-    """
-    index_html_root = os.path.join(prj.metadata.output_dir, prj.name)
-    if prj.subproject is not None:
-        index_html_root += "_" + prj.subproject
-    return index_html_root + "_summary.html"
 
 
 def render_jinja_template(name, jinja_env, args=dict()):
@@ -794,8 +773,8 @@ def create_status_table(prj, final=True):
             row_classes.append(button_class)
             # get first column data (sample name/link)
             page_name = sample_name + ".html"
-            page_path = os.path.join(get_reports_dir(prj), page_name.replace(' ', '_').lower())
-            page_relpath = os.path.relpath(page_path, get_reports_dir(prj))
+            page_path = os.path.join(get_file_for_project(prj, "reports"), page_name.replace(' ', '_').lower())
+            page_relpath = os.path.relpath(page_path, get_file_for_project(prj, "reports"))
             sample_paths.append(page_relpath)
             sample_link_names.append(sample_name)
             # get second column data (status/flag)
@@ -803,7 +782,7 @@ def create_status_table(prj, final=True):
             # get third column data (log file/link)
             log_name = _match_file_for_sample(sample_name, "log.md", prj.results_folder)
             log_file_link = _get_relpath_to_file(log_name, sample_name, prj.results_folder,
-                                                 get_reports_dir(prj))
+                                                 get_file_for_project(prj, "reports"))
             log_link_names.append(log_name)
             log_paths.append(log_file_link)
             # get fourth column data (runtime) and fifth column data (memory)

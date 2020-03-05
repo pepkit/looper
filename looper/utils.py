@@ -280,3 +280,20 @@ def sample_folder(prj, sample):
     """
     return os.path.join(prj.results_folder,
                         sample[SAMPLE_NAME_ATTR])
+
+
+def get_file_for_project(prj, appendix):
+    """
+    Create a path to the file for the current project.
+    Takes the possibility of amendment being activated at the time
+
+    :param looper.Project prj: project object
+    :param str appendix: the appendix of the file to create the path for, like 'objs_summary.tsv' for objects summary file
+    :return str: path to the file
+    """
+    fp = os.path.join(prj[CONFIG_KEY][OUTDIR_KEY], prj[NAME_KEY])
+    if hasattr(prj, AMENDMENTS_KEY) and getattr(prj, AMENDMENTS_KEY):
+        _LOGGER.warning("prj[AMENDMENTS_KEY]: {}".format(getattr(prj, AMENDMENTS_KEY)))
+        fp += '_' + '_'.join(getattr(prj, AMENDMENTS_KEY))
+    fp += '_' + appendix
+    return fp

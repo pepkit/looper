@@ -29,10 +29,11 @@ from . import GENERIC_PROTOCOL_KEY, LOGGING_LEVEL, __version__, \
 from .conductor import SubmissionConductor
 from .const import *
 from .exceptions import JobSubmissionException, PipelineInterfaceConfigError
-from .html_reports import HTMLReportBuilder, get_index_html_path, get_reports_dir
+from .html_reports import HTMLReportBuilder
 from .pipeline_interface import RESOURCES_KEY
 from .project import Project, ProjectContext
-from .utils import determine_config_path, fetch_flag_files, sample_folder
+from .utils import determine_config_path, fetch_flag_files, sample_folder, \
+    get_file_for_project
 
 from divvy import DEFAULT_COMPUTE_RESOURCES_NAME, NEW_COMPUTE_KEY as COMPUTE_KEY
 from logmuse import init_logger
@@ -204,8 +205,9 @@ class Destroyer(Executor):
             _LOGGER.info("Dry run. No files destroyed.")
             return 0
 
-        if not args.force_yes and not query_yes_no("Are you sure you want to permanently delete all pipeline "
-                                                   "results for this project?"):
+        if not args.force_yes and not query_yes_no(
+                "Are you sure you want to permanently delete all pipeline "
+                "results for this project?"):
             _LOGGER.info("Destroy action aborted by user.")
             return 1
 
@@ -626,22 +628,6 @@ def _create_obj_summary(project, counter):
     return objs
 
 
-def get_file_for_project(prj, appendix):
-    """
-    Create a path to the file for the current project.
-    Takes the possibility of amendment being activated at the time
-
-    :param looper.Project prj: project object
-    :param str appendix: the appendix of the file to create the path for, like 'objs_summary.tsv' for objects summary file
-    :return str: path to the file
-    """
-    fp = os.path.join(prj[CONFIG_KEY][OUTDIR_KEY], prj[NAME_KEY])
-    if hasattr(prj, AMENDMENTS_KEY) and prj[AMENDMENTS_KEY]:
-        fp += '_' + "_".join(prj[AMENDMENTS_KEY])
-    fp += '_' + appendix
-    return fp
-
-
 def aggregate_exec_skip_reasons(skip_reasons_sample_pairs):
     """
     Collect the reasons for skipping submission/execution of each sample
@@ -693,8 +679,10 @@ def destroy_summary(prj, dry_run=False):
     """
     Delete the summary files if not in dry run mode
     """
-    _remove_or_dry_run([get_index_html_path(prj), get_file_for_project(prj, 'stats_summary.tsv'),
-                        get_file_for_project(prj, 'objs_summary.tsv'), get_reports_dir(prj)], dry_run)
+    _remove_or_dry_run([get_file_for_project(prj, "_summary.html"),
+                        get_file_for_project(prj, 'stats_summary.tsv'),
+                        get_file_for_project(prj, 'objs_summary.tsv'),
+                        get_file_for_project(prj, "reports")], dry_run)
 
 
 def uniqify(seq):
