@@ -24,7 +24,7 @@ from colorama import Fore, Style
 from shutil import rmtree
 import pandas as _pd
 
-from . import GENERIC_PROTOCOL_KEY, LOGGING_LEVEL, __version__, \
+from . import LOGGING_LEVEL, __version__, \
     build_parser, _LEVEL_BY_VERBOSITY
 from .conductor import SubmissionConductor
 from .const import *

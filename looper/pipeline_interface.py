@@ -223,7 +223,7 @@ class PipelineInterface(PXAM):
                 _LOGGER.debug(
                     "Selected '{}' package with min file size {} Gb for file "
                     "of size {} Gb.".format(rp_name, size_ante, file_size))
-                rp_data.update(resources[rp_name])
+                rp_data.update(universal_compute)
                 return rp_data
 
     def finalize_pipeline_key_and_paths(self, pipeline_key):
