@@ -14,13 +14,13 @@ from .exceptions import InvalidResourceSpecificationException, \
     PipelineInterfaceRequirementsError
 from .pipereqs import create_pipeline_requirement, RequiredExecutable
 from .sample import Sample
+from .const import GENERIC_PROTOCOL_KEY
 from attmap import PathExAttMap as PXAM
 from divvy import DEFAULT_COMPUTE_RESOURCES_NAME, NEW_COMPUTE_KEY as COMPUTE_KEY
 from divvy.const import OLD_COMPUTE_KEY
 from peppy import utils as peputil
 from ubiquerg import expandpath, is_command_callable, is_url
 from yacman import load_yaml
-
 
 _LOGGER = getLogger(__name__)
 
@@ -371,6 +371,9 @@ class PipelineInterface(PXAM):
         :return str | Iterable[str] | NoneType: pipeline(s) to which the given
             protocol is mapped, otherwise null
         """
+        if not self.protocol_mapping.get(protocol):
+            if GENERIC_PROTOCOL_KEY in self.protocol_mapping.keys():
+                protocol = GENERIC_PROTOCOL_KEY
         return self.protocol_mapping.get(protocol)
 
     def fetch_sample_subtype(

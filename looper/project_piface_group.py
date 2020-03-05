@@ -7,6 +7,7 @@ if sys.version_info < (3, 3):
 else:
     from collections.abc import Mapping
 from .pipeline_interface import PipelineInterface, PROTOMAP_KEY
+from .const import GENERIC_PROTOCOL_KEY
 
 __author__ = "Vince Reuter"
 __email__ = "vreuter@virginia.edu"
@@ -38,7 +39,7 @@ class ProjectPifaceGroup(object):
         else:
             msg += "\n Protocols: {}".format(", ".join(protos))
         msg += "\nInterfaces:" + "\n - " + \
-               "\n - ".join([pi.__repr__() for pi in self._interfaces])
+               "\n - ".join([pi.__str__() for pi in self._interfaces])
         return msg
 
     def __eq__(self, other):
@@ -64,6 +65,13 @@ class ProjectPifaceGroup(object):
         :param str item: name of protocol for which to fetch interfaces.
         :return Iterable[looper.PipelineInterface]: 
         """
+        if item not in self._indices_by_protocol.keys():
+            if GENERIC_PROTOCOL_KEY in self._indices_by_protocol.keys():
+                item = GENERIC_PROTOCOL_KEY
+            else:
+                _LOGGER.error("Neither '{}' nor '{}' found in known protocols".
+                              format(item, GENERIC_PROTOCOL_KEY))
+                return []
         return [self._interfaces[i] for i in self._indices_by_protocol[item]]
 
     def __iter__(self):

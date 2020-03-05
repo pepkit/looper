@@ -27,7 +27,6 @@ from divvy import DEFAULT_COMPUTE_RESOURCES_NAME, NEW_COMPUTE_KEY as COMPUTE_KEY
 __all__ = ["Project", "PipelineInterface", "Sample", "SubmissionConductor"]
 
 
-GENERIC_PROTOCOL_KEY = "*"
 LOGGING_LEVEL = "INFO"
 
 # Descending by severity for correspondence with logic inversion.

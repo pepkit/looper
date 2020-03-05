@@ -255,8 +255,8 @@ def process_protocols(prj, protocols, resource_setting_kwargs=None, **kwargs):
         comp_vars = deepcopy(prj.dcc[COMPUTE_KEY])
     comp_vars.update(resource_setting_kwargs or {})
 
-    _LOGGER.info("Known protocols: {}".format(
-        ", ".join(prj.interfaces.protocols)))
+    _LOGGER.info("Known protocols: {}".
+                 format(", ".join(prj.interfaces.protocols)))
 
     for proto in set(protocols) | {GENERIC_PROTOCOL_KEY}:
         _LOGGER.debug("Determining sample type, script, and flags for "
@@ -264,8 +264,8 @@ def process_protocols(prj, protocols, resource_setting_kwargs=None, **kwargs):
         submission_bundles = prj.build_submission_bundles(proto)
         if not submission_bundles:
             if proto != GENERIC_PROTOCOL_KEY:
-                _LOGGER.warning(
-                    "No valid pipelines for protocol '{}'".format(proto))
+                _LOGGER.warning("No valid pipelines for protocol: {}".
+                                format(proto))
             continue
         for pl_iface, sample_subtype, pl_key, script_with_flags in \
                 submission_bundles:
@@ -300,9 +300,9 @@ class Runner(Executor):
             # That is, should they either both raise errors, or both log errors?
             if len(pipe_locs) == 0:
                 raise AttributeError(
-                    "Looper requires at least one pointer to pipeline(s), set "
-                    "with the pipeline_interfaces key in the metadata section "
-                    "of a project config file")
+                    "Looper requires at least one pointer to pipeline(s), "
+                    "set with the '{}' key in the project config file".
+                        format(PIPELINE_INTERFACES_KEY))
             else:
                 _LOGGER.error("No protocols found; does the PEP point to at "
                               "least one pipeline interface that exists? "
