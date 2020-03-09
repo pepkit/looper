@@ -204,8 +204,9 @@ class SubmissionConductor(object):
 
         # Check for any missing requirements before submitting.
         _LOGGER.debug("Determining missing requirements")
+        s = self.pl_iface.get_pipeline_schema(self.pl_key)
         error_type, missing_reqs_general, missing_reqs_specific = \
-            sample.determine_missing_requirements()
+            sample.validate_inputs(schema=s)
         if missing_reqs_general:
             missing_reqs_msg = "{}: {}".format(
                 missing_reqs_general, missing_reqs_specific)

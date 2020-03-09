@@ -258,7 +258,7 @@ def process_protocols(prj, protocols, resource_setting_kwargs=None, **kwargs):
     _LOGGER.info("Known protocols: {}".
                  format(", ".join(prj.interfaces.protocols)))
 
-    for proto in set(protocols) | {GENERIC_PROTOCOL_KEY}:
+    for proto in set(protocols) or {GENERIC_PROTOCOL_KEY}:
         _LOGGER.debug("Determining sample type, script, and flags for "
                       "pipeline(s) associated with protocol: %s", proto)
         submission_bundles = prj.build_submission_bundles(proto)

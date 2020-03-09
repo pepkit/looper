@@ -21,46 +21,6 @@ class Sample(PeppySample):
     def __init__(self, series, prj=None):
         super(Sample, self).__init__(series, prj)
 
-    def determine_missing_requirements(self):
-        """
-        Determine which of this Sample's required attributes/files are missing.
-
-        :return (type, str): hypothetical exception type along with message
-            about what's missing; null and empty if nothing exceptional
-            is detected
-        """
-
-        null_return = (None, "", "")
-
-        # set_pipeline_attributes must be run first.
-        if not hasattr(self, "required_inputs"):
-            _LOGGER.warning("You must run set_pipeline_attributes before "
-                            "determine_missing_requirements")
-            return null_return
-
-        if not self.required_inputs:
-            _LOGGER.debug("No required inputs")
-            return null_return
-
-        # Second, files
-        missing_files = []
-        for paths in self.required_inputs:
-            _LOGGER.debug("Text to split and check paths: '%s'", paths)
-            # There can be multiple values here.
-            paths = paths if isinstance(paths, list) else [paths]
-            for path in paths:
-                _LOGGER.debug("Checking path: '{}'".format(path))
-                if not os.path.exists(path):
-                    _LOGGER.debug("Missing required input file: '{}'".format(path))
-                    missing_files.append(path)
-
-        if not missing_files:
-            return null_return
-        else:
-            reason_key = "Missing file(s)"
-            reason_detail = ", ".join(missing_files)
-            return IOError, reason_key, reason_detail
-
     def generate_filename(self, delimiter="_"):
         """
         Create a name for file in which to represent this Sample.
@@ -77,75 +37,6 @@ class Sample(PeppySample):
         base = self.sample_name if type(self) is Sample else \
             "{}{}{}".format(self.sample_name, delimiter, type(self).__name__)
         return "{}{}".format(base, SAMPLE_YAML_EXT)
-
-    def set_pipeline_attributes(
-            self, pipeline_interface, pipeline_name, permissive=True):
-        """
-        Set pipeline-specific sample attributes.
-
-        Some sample attributes are relative to a particular pipeline run,
-        like which files should be considered inputs, what is the total
-        input file size for the sample, etc. This function sets these
-        pipeline-specific sample attributes, provided via a PipelineInterface
-        object and the name of a pipeline to select from that interface.
-
-        :param PipelineInterface pipeline_interface: A PipelineInterface
-            object that has the settings for this given pipeline.
-        :param str pipeline_name: Which pipeline to choose.
-        :param bool permissive: whether to simply log a warning or error
-            message rather than raising an exception if sample file is not
-            found or otherwise cannot be read, default True
-        """
-
-        # Settings ending in _attr are lists of attribute keys.
-        # These attributes are then queried to populate values
-        # for the primary entries.
-        req_attr_names = [("ngs_input_files", "ngs_inputs_attr"),
-                          ("required_input_files", REQUIRED_INPUTS_ATTR_NAME),
-                          ("all_input_files", ALL_INPUTS_ATTR_NAME)]
-        for name_src_attr, name_dst_attr in req_attr_names:
-            _LOGGER.debug("Value of '%s' will be assigned to '%s'",
-                        name_src_attr, name_dst_attr)
-            value = pipeline_interface.get_attribute(
-                pipeline_name, name_src_attr)
-            _LOGGER.debug("Assigning '{}': {}".format(name_dst_attr, value))
-            setattr(self, name_dst_attr, value)
-
-        # Post-processing of input attribute assignments.
-        # Ensure that there's a valid all_inputs_attr.
-        if not getattr(self, ALL_INPUTS_ATTR_NAME):
-            required_inputs = getattr(self, REQUIRED_INPUTS_ATTR_NAME)
-            setattr(self, ALL_INPUTS_ATTR_NAME, required_inputs)
-        # Convert attribute keys into values.
-        if self.ngs_inputs_attr:
-            _LOGGER.debug("Handling NGS input attributes: '%s'", self.sample_name)
-            # NGS data inputs exit, so we can add attributes like
-            # read_type, read_length, paired.
-            self.ngs_inputs = self.get_attr_values("ngs_inputs_attr")
-
-            set_rtype_reason = ""
-            if not hasattr(self, "read_type"):
-                set_rtype_reason = "read_type not yet set"
-            elif not self.read_type or self.read_type.lower() \
-                    not in VALID_READ_TYPES:
-                set_rtype_reason = "current read_type is invalid: '{}'". \
-                    format(self.read_type)
-            if set_rtype_reason:
-                _LOGGER.debug(
-                    "Setting read_type for %s '%s': %s",
-                    self.__class__.__name__, self.sample_name, set_rtype_reason)
-                self.set_read_type(permissive=permissive)
-            else:
-                _LOGGER.debug("read_type is already valid: '%s'",
-                              self.read_type)
-        else:
-            _LOGGER.debug("No NGS inputs: '%s'", self.sample_name)
-
-        # Assign values for actual inputs attributes.
-        self.required_inputs = self.get_attr_values(REQUIRED_INPUTS_ATTR_NAME)
-        self.all_inputs = self.get_attr_values(ALL_INPUTS_ATTR_NAME)
-        _LOGGER.debug("All '{}' inputs: {}".format(self.sample_name, self.all_inputs))
-        self.input_file_size = get_file_size(self.all_inputs)
 
     def set_read_type(self, rlen_sample_size=10, permissive=True):
         """
