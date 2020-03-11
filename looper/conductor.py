@@ -191,7 +191,7 @@ class SubmissionConductor(object):
         sample.prj = grab_project_data(self.prj)
 
         skip_reasons = []
-
+        sample.setdefault("input_file_size", 0)
         # Check for any missing requirements before submitting.
         _LOGGER.debug("Determining missing requirements")
         schema_source = self.pl_iface.get_pipeline_schema(self.pl_key)
@@ -206,8 +206,6 @@ class SubmissionConductor(object):
                 else:
                     raise error_type(missing_reqs_msg)
                 use_this_sample and skip_reasons.append(missing_reqs_general)
-        else:
-            sample.input_file_size = 0
 
         # Check if single_or_paired value is recognized.
         if hasattr(sample, "read_type"):
