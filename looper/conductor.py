@@ -9,8 +9,7 @@ import time
 from .const import *
 from .exceptions import JobSubmissionException
 from .pipeline_interface import PL_KEY
-from .utils import \
-    create_looper_args_text, grab_project_data, fetch_sample_flags
+from .utils import grab_project_data, fetch_sample_flags
 
 from .sample import Sample
 
