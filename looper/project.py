@@ -371,58 +371,6 @@ class Project(peppy.Project):
                         schema_set.update([schema_file])
         return list(schema_set)
 
-    def get_arg_string(self, pipeline_name, yield_precedence=None):
-        """
-        Build argstring from opts/args in project config file for given pipeline.
-        :param str pipeline_name: identifier for the relevant pipeline
-        :param Iterable[str] yield_precedence: collection of opts/args to
-            yield to, i.e. to omit from the argstring (e.g., CLI-specified
-            extra arguments that take priority over those in project config)
-        """
-
-        def make_optarg_text(opt, arg):
-            """ Transform flag/option into CLI-ready text version. """
-            if arg:
-                try:
-                    arg = os.path.expandvars(arg)
-                except TypeError:
-                    # Rely on direct string formatting of arg.
-                    pass
-                return "{} {}".format(opt, arg)
-            else:
-                return opt
-
-        def create_argtext(name):
-            """ Create command-line argstring text from config section. """
-            try:
-                optargs = getattr(self.pipeline_args, name)
-            except AttributeError:
-                return ""
-            # NS using __dict__ will add in the metadata from AttrDict (doh!)
-            _LOGGER.debug("optargs.items(): {}".format(optargs.items()))
-            optargs_texts = [make_optarg_text(opt, arg)
-                             for opt, arg in optargs.items() if opt not in (yield_precedence or set())]
-            _LOGGER.debug("optargs_texts: {}".format(optargs_texts))
-            # TODO: may need to fix some spacing issues here.
-            return " ".join(optargs_texts)
-
-        default_argtext = create_argtext(DEFAULT_COMPUTE_RESOURCES_NAME)
-        _LOGGER.debug("Creating additional argstring text for pipeline '%s'",
-                      pipeline_name)
-        pipeline_argtext = create_argtext(pipeline_name)
-
-        if not pipeline_argtext:
-            # The project config may not have an entry for this pipeline;
-            # no problem! There are no pipeline-specific args. Return text
-            # from default arguments, whether empty or not.
-            return default_argtext
-        elif default_argtext:
-            # Non-empty pipeline-specific and default argtext
-            return " ".join([default_argtext, pipeline_argtext])
-        else:
-            # No default argtext, but non-empty pipeline-specific argtext
-            return pipeline_argtext
-
     def get_outputs(self, skip_sample_less=True):
         """
         Map pipeline identifier to collection of output specifications.

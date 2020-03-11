@@ -189,33 +189,6 @@ def fetch_sample_flags(prj, sample, pl_names=None):
     return [os.path.join(sfolder, f) for f in os.listdir(sfolder)
             if os.path.splitext(f)[1] == ".flag" and pl_match(f)]
 
-# def grab_project_data(prj):
-#     """
-#     From the given Project, grab Sample-independent data.
-#
-#     There are some aspects of a Project of which it's beneficial for a Sample
-#     to be aware, particularly for post-hoc analysis. Since Sample objects
-#     within a Project are mutually independent, though, each doesn't need to
-#     know about any of the others. A Project manages its, Sample instances,
-#     so for each Sample knowledge of Project data is limited. This method
-#     facilitates adoption of that conceptual model.
-#
-#     :param Project prj: Project from which to grab data
-#     :return Mapping: Sample-independent data sections from given Project
-#     """
-#
-#     if not prj:
-#         return {}
-#
-#     data = {}
-#     for section in SAMPLE_INDEPENDENT_PROJECT_SECTIONS:
-#         try:
-#             data[section] = prj[section]
-#         except KeyError:
-#             _LOGGER.debug("Project lacks section '%s', skipping", section)
-#
-#     return data
-
 
 def grab_project_data(prj):
     """
