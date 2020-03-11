@@ -394,7 +394,7 @@ class SubmissionConductor(object):
             try:
                 argstring = self.pl_iface.get_arg_string(
                     pipeline_name=self.pl_key, sample=sample, project=self.prj,
-                    looper_settings=settings
+                    looper_context=settings
                 )
             except UndefinedError as jinja_exception:
                 _LOGGER.warning("> Not submitted: {}".
