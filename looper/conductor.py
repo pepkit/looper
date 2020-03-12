@@ -353,21 +353,20 @@ class SubmissionConductor(object):
             name = "lump{}".format(self._num_total_job_submissions + 1)
         return "{}_{}".format(self.pl_key, name)
 
-    def write_script(self, pool, size):
+    def _get_looper_attr_dict(self, pool, size):
         """
-        Create the script for job submission.
+        Compile a dictionary of looper/submission related settings for users to
+        use in the command templates. Accessible via: {looper.attrname}
 
         :param Iterable[(peppy.Sample, str)] pool: collection of pairs in which
             first component is a sample instance and second is command/argstring
         :param float size: cumulative size of the given pool
-        :return str: Path to the job submission script created.
+        :return dict: looper/submission related settings
         """
         settings = self.pl_iface.choose_resource_package(self.pl_key, size)
         settings.update(self.compute_variables or {})
         settings.update({"output_folder": self.prj.results_folder})
-        jobname = self._jobname(pool)
-        settings.update({"job_name": jobname})
-
+        settings.update({"job_name": self._jobname(pool)})
         if hasattr(self.prj, "pipeline_config"):
             # Index with 'pl_key' instead of 'pipeline'
             # because we don't care about parameters here.
@@ -383,11 +382,21 @@ class SubmissionConductor(object):
                     _LOGGER.info("Found config file: %s", pl_config_file)
                     # Append arg for config file if found
                     settings.update({"pipeline_config": pl_config_file})
+        return settings
+
+    def write_script(self, pool, size):
+        """
+        Create the script for job submission.
+
+        :param Iterable[(peppy.Sample, str)] pool: collection of pairs in which
+            first component is a sample instance and second is command/argstring
+        :param float size: cumulative size of the given pool
+        :return str: Path to the job submission script created.
+        """
+        settings = self._get_looper_attr_dict(pool, size)
 
         extra_parts_text = " ".join(self.extra_pipe_args) \
             if self.extra_pipe_args else ""
-
-        _LOGGER.debug("settings contents: {}".format(settings))
 
         commands = []
         for sample in pool:
@@ -405,14 +414,14 @@ class SubmissionConductor(object):
             else:
                 commands.append("{} {}".format(argstring, extra_parts_text))
 
-        submission_base = os.path.join(self.prj.submission_folder, jobname)
-        settings["JOBNAME"] = jobname
-        settings["CODE"] = "\n".join(commands)
+        # get values to populate submission template
+        submission_base = os.path.join(self.prj.submission_folder, settings["job_name"])
+        settings["JOBNAME"] = settings["job_name"]
         settings["LOGFILE"] = submission_base + ".log"
-        submission_script = submission_base + ".sub"
-
+        settings["CODE"] = "\n".join(commands)
+        _LOGGER.debug("settings contents: {}".format(settings))
         _LOGGER.debug("> Creating submission script; command count: %d", len(commands))
-        return self.prj.dcc.write_script(submission_script, settings)
+        return self.prj.dcc.write_script(submission_base + ".sub", settings)
 
     def write_skipped_sample_scripts(self):
         """
