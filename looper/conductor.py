@@ -365,6 +365,9 @@ class SubmissionConductor(object):
         settings = self.pl_iface.choose_resource_package(self.pl_key, size)
         settings.update(self.compute_variables or {})
         settings.update({"output_folder": self.prj.results_folder})
+        jobname = self._jobname(pool)
+        settings.update({"job_name": jobname})
+
         if hasattr(self.prj, "pipeline_config"):
             # Index with 'pl_key' instead of 'pipeline'
             # because we don't care about parameters here.
@@ -402,7 +405,6 @@ class SubmissionConductor(object):
             else:
                 commands.append("{} {}".format(argstring, extra_parts_text))
 
-        jobname = self._jobname(pool)
         submission_base = os.path.join(self.prj.submission_folder, jobname)
         settings["JOBNAME"] = jobname
         settings["CODE"] = "\n".join(commands)
