@@ -12,7 +12,7 @@ from divvy import DEFAULT_COMPUTE_RESOURCES_NAME, ComputingConfiguration
 from ubiquerg import is_command_callable, is_url
 from .const import *
 from .exceptions import DuplicatePipelineKeyException, \
-    PipelineInterfaceRequirementsError
+    PipelineInterfaceRequirementsError, MisconfigurationException
 from .pipeline_interface import PROTOMAP_KEY
 from .project_piface_group import ProjectPifaceGroup
 from .utils import partition
@@ -124,11 +124,6 @@ class Project(peppy.Project):
                 SUBMISSION_SUBDIR_KEY: "submission"}
 
     @property
-    def required_metadata(self):
-        """ Which metadata attributes are required. """
-        return [OUTDIR_KEY]
-
-    @property
     def results_folder(self):
         return self._relpath(RESULTS_FOLDER_KEY)
 
@@ -173,10 +168,12 @@ class Project(peppy.Project):
             try:
                 folder_path = self[CONFIG_KEY][folder_key]
             except KeyError:
-                folder_path = os.path.join(self[CONFIG_KEY].output_dir,
-                                           folder_val)
-            _LOGGER.debug("Ensuring project dir exists: '{}'".
-                          format(folder_path))
+                if OUTDIR_KEY in self[CONFIG_KEY]:
+                    folder_path = os.path.join(self[CONFIG_KEY][OUTDIR_KEY], folder_val)
+                    _LOGGER.debug("Ensuring project dir exists: '{}'".format(folder_path))
+                else:
+                    raise MisconfigurationException("'{}' not found in config"
+                                                    .format(OUTDIR_KEY))
             if not os.path.exists(folder_path):
                 _LOGGER.debug("Attempting to create project folder: '{}'".
                               format(folder_path))

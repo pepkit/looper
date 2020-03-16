@@ -12,13 +12,18 @@ _all__ = ["DuplicatePipelineKeyException",
           "LooperError",
           "MissingPipelineConfigurationException",
           "PipelineInterfaceConfigError",
-          "PipelineInterfaceRequirementsError"]
+          "PipelineInterfaceRequirementsError",
+          "MisconfigurationException"]
 
 
 class LooperError(Exception):
     """ Base type for custom package errors. """
     __metaclass__ = ABCMeta
 
+class MisconfigurationException(LooperError):
+    """ Duplication of pipeline identifier precludes unique pipeline ref. """
+    def __init__(self, key):
+        super(MisconfigurationException, self).__init__(key)
 
 class DuplicatePipelineKeyException(LooperError):
     """ Duplication of pipeline identifier precludes unique pipeline ref. """

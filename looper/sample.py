@@ -4,9 +4,7 @@ import os
 from operator import itemgetter
 from logging import getLogger
 from peppy import Sample as PeppySample
-from ngstk import get_file_size, parse_ftype, \
-    peek_read_lengths_and_paired_counts_from_bam
-from .const import *
+from ngstk import parse_ftype, peek_read_lengths_and_paired_counts_from_bam
 
 __author__ = "Vince Reuter"
 __email__ = "vreuter@virginia.edu"
@@ -20,23 +18,6 @@ class Sample(PeppySample):
 
     def __init__(self, series, prj=None):
         super(Sample, self).__init__(series, prj)
-
-    def generate_filename(self, delimiter="_"):
-        """
-        Create a name for file in which to represent this Sample.
-
-        This uses knowledge of the instance's subtype, sandwiching a delimiter
-        between the name of this Sample and the name of the subtype before the
-        extension. If the instance is a base Sample type, then the filename
-        is simply the sample name with an extension.
-
-        :param str delimiter: what to place between sample name and name of
-            subtype; this is only relevant if the instance is of a subclass
-        :return str: name for file with which to represent this Sample on disk
-        """
-        base = self.sample_name if type(self) is Sample else \
-            "{}{}{}".format(self.sample_name, delimiter, type(self).__name__)
-        return "{}{}".format(base, SAMPLE_YAML_EXT)
 
     def set_read_type(self, rlen_sample_size=10, permissive=True):
         """

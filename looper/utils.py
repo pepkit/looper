@@ -149,7 +149,6 @@ def grab_project_data(prj):
     :param Project prj: Project from which to grab data
     :return Mapping: Sample-independent data sections from given Project
     """
-
     if not prj:
         return {}
 
