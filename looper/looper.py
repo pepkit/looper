@@ -853,7 +853,7 @@ def main():
             except IOError:
                 _LOGGER.error("{} pipeline_interfaces: '{}'".
                               format(prj.__class__.__name__,
-                                     prj[CONFIG_KEY][PIPELINE_INTERFACES_KEY]))
+                                     prj[CONFIG_KEY][LOOPER_KEY][PIPELINE_INTERFACES_KEY]))
                 raise
 
         if args.command == "destroy":

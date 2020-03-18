@@ -46,9 +46,10 @@ class ProjectContext(object):
         """ Samples are context-specific; other requests are handled
         locally or dispatched to Project. """
         if item == "samples":
-            return fetch_samples(prj=self.prj, selector_attribute=self.attribute,
-                                      selector_include=self.include,
-                                      selector_exclude=self.exclude)
+            return fetch_samples(prj=self.prj,
+                                 selector_attribute=self.attribute,
+                                 selector_include=self.include,
+                                 selector_exclude=self.exclude)
         if item in ["prj", "include", "exclude"]:
             # Attributes requests that this context/wrapper handles
             return self.__dict__[item]
@@ -103,7 +104,11 @@ class Project(peppy.Project):
                  permissive=True, **kwargs):
         super(Project, self).__init__(config_file, amendments=amendments,
                                       **kwargs)
-        pifaces_paths = pifaces or self[CONFIG_KEY][PIPELINE_INTERFACES_KEY]
+        if LOOPER_KEY not in self[CONFIG_KEY]:
+            raise MisconfigurationException("'{}' key not found in config".
+                                            format(LOOPER_KEY))
+        pifaces_paths = pifaces or \
+                        self[CONFIG_KEY][LOOPER_KEY][PIPELINE_INTERFACES_KEY]
         self.interfaces = process_pipeline_interfaces(pifaces_paths)
         self.file_checks = file_checks
         self.permissive = permissive
@@ -148,7 +153,7 @@ class Project(peppy.Project):
             declaration in its metadata section
         """
         try:
-            return self[CONFIG_KEY][OUTDIR_KEY]
+            return self[CONFIG_KEY][LOOPER_KEY][OUTDIR_KEY]
         except KeyError:
             if not self.config_file:
                 raise Exception("Project lacks both a config file and an "
@@ -157,8 +162,8 @@ class Project(peppy.Project):
 
     def _relpath(self, key):
         return os.path.join(
-            self[CONFIG_KEY][OUTDIR_KEY],
-            self[CONFIG_KEY].get(key, self.project_folders[key]))
+            self[CONFIG_KEY][LOOPER_KEY][OUTDIR_KEY],
+            self[CONFIG_KEY][LOOPER_KEY].get(key, self.project_folders[key]))
 
     def make_project_dirs(self):
         """
@@ -166,11 +171,14 @@ class Project(peppy.Project):
         """
         for folder_key, folder_val in self.project_folders.items():
             try:
-                folder_path = self[CONFIG_KEY][folder_key]
+                folder_path = self[CONFIG_KEY][LOOPER_KEY][folder_key]
             except KeyError:
-                if OUTDIR_KEY in self[CONFIG_KEY]:
-                    folder_path = os.path.join(self[CONFIG_KEY][OUTDIR_KEY], folder_val)
-                    _LOGGER.debug("Ensuring project dir exists: '{}'".format(folder_path))
+                if OUTDIR_KEY in self[CONFIG_KEY][LOOPER_KEY]:
+                    folder_path = \
+                        os.path.join(self[CONFIG_KEY][LOOPER_KEY][OUTDIR_KEY],
+                                     folder_val)
+                    _LOGGER.debug("Ensuring project dir exists: '{}'".
+                                  format(folder_path))
                 else:
                     raise MisconfigurationException("'{}' not found in config"
                                                     .format(OUTDIR_KEY))
@@ -284,7 +292,7 @@ class Project(peppy.Project):
                     pipe_iface.finalize_pipeline_key_and_paths(pipeline_key)
                 # Skip and warn about nonexistent alleged pipeline path.
                 if not (os.path.exists(full_pipe_path) or
-                            is_command_callable(full_pipe_path)):
+                        is_command_callable(full_pipe_path)):
                     _LOGGER.warning(
                         "Missing pipeline script: '%s'", full_pipe_path)
                     continue
@@ -317,8 +325,8 @@ class Project(peppy.Project):
                     errmsg = "Strict pipeline key '{}' maps to more than " \
                              "one combination of pipeline script + flags, " \
                              "sample subtype, and pipeline interface. " \
-                             "'{}'\n{}".format(
-                        strict_pipe_key, maybe_new_bundle, old_bundle)
+                             "'{}'\n{}".format(strict_pipe_key,
+                                               maybe_new_bundle, old_bundle)
                     raise ValueError(errmsg)
 
                 # Add this bundle to the collection of ones relevant for the
@@ -407,7 +415,8 @@ class Project(peppy.Project):
                 _LOGGER.debug("No {} declared for pipeline: {}".
                               format(OUTKEY, name))
                 continue
-            snames = [s.sample_name for s in self.samples if s.protocol in prots]
+            snames = \
+                [s.sample_name for s in self.samples if s.protocol in prots]
             if not snames and skip_sample_less:
                 _LOGGER.debug("No samples matching protocol(s): {}".
                               format(", ".join(prots)))
@@ -533,7 +542,8 @@ def fetch_samples(prj, selector_attribute=None, selector_include=None,
         Python2;
         also possible if name of attribute for selection isn't a string
     """
-    if selector_attribute is None or (not selector_include and not selector_exclude):
+    if selector_attribute is None or \
+            (not selector_include and not selector_exclude):
         # Simple; keep all samples.  In this case, this function simply
         # offers a list rather than an iterator.
         return list(prj.samples)
@@ -571,17 +581,18 @@ def fetch_samples(prj, selector_attribute=None, selector_include=None,
     if not selector_include:
         # Loose; keep all samples not in the selector_exclude.
         def keep(s):
-            return not hasattr(s, selector_attribute) or getattr(s,
-                                                                 selector_attribute) not in make_set(
-                selector_exclude)
+            return not hasattr(s, selector_attribute) \
+                   or getattr(s, selector_attribute) \
+                   not in make_set(selector_exclude)
     else:
         # Strict; keep only samples in the selector_include.
         def keep(s):
-            return hasattr(s, selector_attribute) and getattr(s,
-                                                              selector_attribute) in make_set(
-                selector_include)
+            return hasattr(s, selector_attribute) \
+                   and getattr(s,selector_attribute) \
+                   in make_set(selector_include)
 
     return list(filter(keep, prj.samples))
+
 
 OutputGroup = namedtuple("OutputGroup", field_names=["path", "samples"])
 
