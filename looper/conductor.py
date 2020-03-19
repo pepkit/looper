@@ -416,8 +416,6 @@ class SubmissionConductor(object):
         looper.command = "\n".join(commands)
         _LOGGER.debug("looper namespace:\n{}".format(looper))
         subm_base = os.path.join(self.prj.submission_folder, looper.job_name)
-        import logmuse
-        logmuse.init_logger("divvy", "DEBUG", devmode=True)
         return self.prj.dcc.write_script(output_path=subm_base + ".sub",
                                          extra_vars=[{"looper": looper}])
 
