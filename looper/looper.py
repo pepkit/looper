@@ -48,7 +48,7 @@ _FAIL_DISPLAY_PROPORTION_THRESHOLD = 0.5
 _MAX_FAIL_SAMPLE_DISPLAY = 20
 _PKGNAME = "looper"
 _LOGGER = logging.getLogger(_PKGNAME)
-
+CURRENT_COMPUTE_KEY = "compute"
 
 class Executor(object):
     """ Base class that ensures the program's Sample counter starts.
@@ -246,13 +246,13 @@ def process_protocols(prj, protocols, resource_setting_kwargs=None, **kwargs):
         resource_setting_kwargs = {}
 
     try:
-        comp_vars = prj.dcc[COMPUTE_KEY].to_map()
+        comp_vars = prj.dcc[CURRENT_COMPUTE_KEY].to_map()
     except AttributeError:
-        if not isinstance(prj.dcc[COMPUTE_KEY], Mapping):
+        if not isinstance(prj.dcc[CURRENT_COMPUTE_KEY], Mapping):
             raise TypeError("Project's computing config isn't a mapping: {} ({})".
-                            format(prj.dcc[COMPUTE_KEY], type(prj.dcc[COMPUTE_KEY])))
+                            format(prj.dcc[CURRENT_COMPUTE_KEY], type(prj.dcc[CURRENT_COMPUTE_KEY])))
         from copy import deepcopy
-        comp_vars = deepcopy(prj.dcc[COMPUTE_KEY])
+        comp_vars = deepcopy(prj.dcc[CURRENT_COMPUTE_KEY])
     comp_vars.update(resource_setting_kwargs or {})
 
     _LOGGER.info("Known protocols: {}".
@@ -399,8 +399,7 @@ class Runner(Executor):
                     skip_reasons.append("No pipeline for protocol")
 
             if skip_reasons:
-                _LOGGER.warning(
-                    "> Not submitted: {}".format(", ".join(skip_reasons)))
+                _LOGGER.warning(NOT_SUB_MSG.format(", ".join(skip_reasons)))
                 failures[sample.sample_name] = skip_reasons
                 continue
 

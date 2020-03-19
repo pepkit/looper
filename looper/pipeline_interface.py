@@ -308,7 +308,7 @@ class PipelineInterface(PXAM):
             _LOGGER.warning("Could not set '{}' pipeline path: {}"
                             .format(pipeline_key, script_path))
 
-    def get_arg_string(self, pipeline_name, sample, project, looper_context):
+    def get_arg_string(self, pipeline_name, sample, project, looper, compute):
         """
         For a given pipeline, sample and project return the argument string.
 
@@ -339,7 +339,8 @@ class PipelineInterface(PXAM):
                 sample=sample,
                 project=project,
                 pipeline=poi,
-                looper=looper_context
+                looper=looper,
+                compute=compute
             )
         except jinja2.exceptions.UndefinedError:
             _LOGGER.error("Missing sample, project or pipeline attributes"

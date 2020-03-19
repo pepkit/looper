@@ -588,7 +588,7 @@ def fetch_samples(prj, selector_attribute=None, selector_include=None,
         # Strict; keep only samples in the selector_include.
         def keep(s):
             return hasattr(s, selector_attribute) \
-                   and getattr(s,selector_attribute) \
+                   and getattr(s, selector_attribute) \
                    in make_set(selector_include)
 
     return list(filter(keep, prj.samples))

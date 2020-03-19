@@ -5,20 +5,15 @@ import os
 import re
 import subprocess
 import time
+from jinja2.exceptions import UndefinedError
+
+from attmap import AttMap
 
 from .const import *
 from .exceptions import JobSubmissionException
 from .pipeline_interface import PL_KEY
 from .utils import grab_project_data, fetch_sample_flags
-
 from .sample import Sample
-
-from jinja2.exceptions import UndefinedError
-
-
-__author__ = "Vince Reuter"
-__email__ = "vreuter@virginia.edu"
-
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -202,7 +197,7 @@ class SubmissionConductor(object):
                 missing_reqs_msg = "{}: {}".format(
                     missing_reqs_general, missing_reqs_specific)
                 if self.prj.permissive:
-                    _LOGGER.warning("> Not submitted: %s", missing_reqs_msg)
+                    _LOGGER.warning(NOT_SUB_MSG.format(missing_reqs_msg))
                 else:
                     raise error_type(missing_reqs_msg)
                 use_this_sample and skip_reasons.append(missing_reqs_general)
@@ -353,20 +348,21 @@ class SubmissionConductor(object):
             name = "lump{}".format(self._num_total_job_submissions + 1)
         return "{}_{}".format(self.pl_key, name)
 
-    def _get_looper_attr_dict(self, pool, size):
+    def _set_looper_namespace(self, pool, size):
         """
-        Compile a dictionary of looper/submission related settings for users to
-        use in the command templates. Accessible via: {looper.attrname}
+        Compile a dictionary of looper/submission related settings for use in
+        the command templates and in submission script creation
+        in divvy (via adapters). Accessible via: {looper.attrname}
 
         :param Iterable[(peppy.Sample, str)] pool: collection of pairs in which
             first component is a sample instance and second is command/argstring
-        :param float size: cumulative size of the given pool
         :return dict: looper/submission related settings
         """
-        settings = self.pl_iface.choose_resource_package(self.pl_key, size)
-        settings.update(self.compute_variables or {})
-        settings.update({"output_folder": self.prj.results_folder})
-        settings.update({"job_name": self._jobname(pool)})
+        settings = AttMap()
+        settings.output_folder = self.prj.results_folder
+        settings.job_name = self._jobname(pool)
+        settings.total_input_size = size
+        settings.log_file = os.path.join(self.prj.submission_folder, settings.job_name) + ".log"
         if hasattr(self.prj, "pipeline_config"):
             # Index with 'pl_key' instead of 'pipeline'
             # because we don't care about parameters here.
@@ -381,7 +377,7 @@ class SubmissionConductor(object):
                         raise IOError(pl_config_file)
                     _LOGGER.info("Found config file: %s", pl_config_file)
                     # Append arg for config file if found
-                    settings.update({"pipeline_config": pl_config_file})
+                    settings.pipeline_config = pl_config_file
         return settings
 
     def write_script(self, pool, size):
@@ -393,35 +389,37 @@ class SubmissionConductor(object):
         :param float size: cumulative size of the given pool
         :return str: Path to the job submission script created.
         """
-        settings = self._get_looper_attr_dict(pool, size)
-
+        # looper settings determination
+        looper = self._set_looper_namespace(pool, size)
+        # cascading compute settings determination:
+        # divcfg < pipeline interface < config < CLI
+        cli = self.compute_variables or {}  # CLI
+        res_pkg = self.pl_iface.choose_resource_package(self.pl_key, size) # piface < config
+        res_pkg.update(cli)
+        self.prj.dcc.compute.update(res_pkg)  # divcfg
         extra_parts_text = " ".join(self.extra_pipe_args) \
             if self.extra_pipe_args else ""
-
         commands = []
         for sample in pool:
             try:
                 argstring = self.pl_iface.get_arg_string(
                     pipeline_name=self.pl_key, sample=sample, project=self.prj,
-                    looper_context=settings
+                    looper=looper, compute=self.prj.dcc.compute
                 )
             except UndefinedError as jinja_exception:
-                _LOGGER.warning("> Not submitted: {}".
-                                format(str(jinja_exception)))
+                _LOGGER.warning(NOT_SUB_MSG.format(str(jinja_exception)))
             except KeyError as e:
                 exc = "pipeline interface is missing {} section".format(str(e))
-                _LOGGER.warning("> Not submitted: {}".format(exc))
+                _LOGGER.warning(NOT_SUB_MSG.format(exc))
             else:
                 commands.append("{} {}".format(argstring, extra_parts_text))
-
-        # get values to populate submission template
-        submission_base = os.path.join(self.prj.submission_folder, settings["job_name"])
-        settings["JOBNAME"] = settings["job_name"]
-        settings["LOGFILE"] = submission_base + ".log"
-        settings["CODE"] = "\n".join(commands)
-        _LOGGER.debug("settings contents: {}".format(settings))
-        _LOGGER.debug("> Creating submission script; command count: %d", len(commands))
-        return self.prj.dcc.write_script(submission_base + ".sub", settings)
+        looper.command = "\n".join(commands)
+        _LOGGER.debug("looper namespace:\n{}".format(looper))
+        subm_base = os.path.join(self.prj.submission_folder, looper.job_name)
+        import logmuse
+        logmuse.init_logger("divvy", "DEBUG", devmode=True)
+        return self.prj.dcc.write_script(output_path=subm_base + ".sub",
+                                         extra_vars=[{"looper": looper}])
 
     def write_skipped_sample_scripts(self):
         """

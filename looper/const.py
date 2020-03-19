@@ -5,7 +5,7 @@ __email__ = "nathan@code.databio.org"
 
 
 __all__ = ["BUTTON_APPEARANCE_BY_FLAG", "TABLE_APPEARANCE_BY_FLAG", "NO_DATA_PLACEHOLDER", "OUTKEY", "RESULTS_FOLDER_KEY", "OUTDIR_KEY", "LOOPER_KEY",
-           "PIPELINE_INTERFACES_KEY", "PIPELINE_REQUIREMENTS_KEY", "FLAGS", "PIPE_ARGS_SECTION", "SUBMISSION_FOLDER_KEY", "GENERIC_PROTOCOL_KEY",
+           "PIPELINE_INTERFACES_KEY", "PIPELINE_REQUIREMENTS_KEY", "FLAGS", "PIPE_ARGS_SECTION", "SUBMISSION_FOLDER_KEY", "GENERIC_PROTOCOL_KEY", "NOT_SUB_MSG",
            "RESULTS_SUBDIR_KEY", "SUBMISSION_SUBDIR_KEY", "TEMPLATES_DIRNAME", "SAMPLE_YAML_FILE_KEY","SAMPLE_YAML_EXT", "SAMPLE_EXECUTION_TOGGLE","VALID_READ_TYPES","REQUIRED_INPUTS_ATTR_NAME", "ALL_INPUTS_ATTR_NAME"]
 
 FLAGS = ["completed", "running", "failed", "waiting", "partial"]
@@ -60,6 +60,7 @@ OUTKEY = "outputs"
 RESULTS_SUBDIR_KEY = "results_subdir"
 SUBMISSION_SUBDIR_KEY = "submission_subdir"
 TEMPLATES_DIRNAME = "jinja_templates"
+NOT_SUB_MSG = "> Not submitted: {}"
 IMAGE_EXTS = ('.png', '.jpg', '.jpeg', '.svg', '.gif')
 PROFILE_COLNAMES = ['pid', 'hash', 'cid', 'runtime', 'mem', 'cmd', 'lock']  # this strongly depends on pypiper's profile.tsv format
 
