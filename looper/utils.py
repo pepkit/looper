@@ -7,6 +7,7 @@ import glob
 import os
 from .const import *
 from peppy.const import *
+import jinja2
 
 
 DEFAULT_METADATA_FOLDER = "metadata"
@@ -214,3 +215,37 @@ def get_file_for_project(prj, appendix):
         fp += '_' + '_'.join(getattr(prj, AMENDMENTS_KEY))
     fp += '_' + appendix
     return fp
+
+
+def jinja_render_cmd_strictly(cmd_template, namespaces):
+    """
+    Render a command string in the provided namespaces context.
+
+    Strictly, which means that all the requested attributes must be
+    available in the namespaces
+
+    :param cmd_template:
+    :param namespaces:
+    :return:
+    """
+    def _finfun(x):
+        """
+        A callable that can be used to process the result of a variable
+        expression before it is output. Joins list elements
+        """
+        return " ".join(x) if isinstance(x, list) else x
+
+    env = jinja2.Environment(undefined=jinja2.StrictUndefined,
+                             variable_start_string="{",
+                             variable_end_string="}",
+                             finalize=_finfun)
+    template = env.from_string(cmd_template)
+    try:
+        rendered = template.render(**namespaces)
+    except jinja2.exceptions.UndefinedError:
+        _LOGGER.error("Missing sample, project or pipeline attributes"
+                      " required by command template: '{}'"
+                      .format(cmd_template))
+        raise
+    _LOGGER.debug("rendered arg str: {}".format(rendered))
+    return rendered

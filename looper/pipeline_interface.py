@@ -5,7 +5,6 @@ import inspect
 import logging
 import os
 import warnings
-import jinja2
 import pandas as pd
 from logging import getLogger
 
@@ -16,7 +15,7 @@ from .exceptions import InvalidResourceSpecificationException, \
 from .pipereqs import create_pipeline_requirement, RequiredExecutable
 from .sample import Sample
 from .const import GENERIC_PROTOCOL_KEY, COMPUTE_KEY, SIZE_DEP_VARS_KEY, \
-    ID_COLNAME, FILE_SIZE_COLNAME, LOOPER_KEY
+    ID_COLNAME, FILE_SIZE_COLNAME, LOOPER_KEY, FLUID_ATTRS_KEY
 from peppy import CONFIG_KEY
 from attmap import PathExAttMap as PXAM
 from divvy import DEFAULT_COMPUTE_RESOURCES_NAME, NEW_COMPUTE_KEY as DIVVY_COMPUTE_KEY
@@ -112,7 +111,7 @@ class PipelineInterface(PXAM):
         else:
             super(PipelineInterface, self).__setitem__(key, value)
 
-    def choose_resource_package(self, pipeline_name, file_size, project):
+    def choose_resource_package(self, pipeline_name, file_size, project, sample):
         """
         Select resource bundle for given input file size to given pipeline.
 
@@ -151,7 +150,27 @@ class PipelineInterface(PXAM):
                 msg += " in interface {}".format(self.pipe_iface_file)
             _LOGGER.debug(msg)
 
-        def _load_pl_resources(piface, pipeline, pipeline_name):
+        def _load_fluid_attrs(pipeline):
+            json = None
+            if COMPUTE_KEY in pipeline \
+                    and FLUID_ATTRS_KEY in pipeline[COMPUTE_KEY]:
+                from subprocess import check_output
+                from json import loads
+                from .utils import jinja_render_cmd_strictly
+                try:
+                    cmd = jinja_render_cmd_strictly(
+                        cmd_template=pipeline[COMPUTE_KEY][FLUID_ATTRS_KEY],
+                        namespaces={"project": project, "sample": sample})
+                    json = loads(check_output(cmd, shell=True))
+                except Exception:
+                    _LOGGER.error(
+                        "Could not retrieve JSON via command: '{}'"
+                            .format(pipeline[COMPUTE_KEY][FLUID_ATTRS_KEY])
+                    )
+                    raise
+            return json
+
+        def _load_size_dep_vars(piface, pipeline, pipeline_name):
             df = None
             if COMPUTE_KEY in pipeline \
                     and SIZE_DEP_VARS_KEY in pipeline[COMPUTE_KEY]:
@@ -168,10 +187,12 @@ class PipelineInterface(PXAM):
             else:
                 _notify("No '{}' defined".format(SIZE_DEP_VARS_KEY))
             return df
-
-        resources_data = {}
         pl = self.select_pipeline(pipeline_name)
-        resources_df = _load_pl_resources(self, pl, pipeline_name)
+        fluid_resources = _load_fluid_attrs(pl)
+        if fluid_resources is not None:
+            return fluid_resources
+        resources_df = _load_size_dep_vars(self, pl, pipeline_name)
+        resources_data = {}
         if resources_df is not None:
             resources = resources_df.to_dict('index')
             try:
@@ -291,48 +312,6 @@ class PipelineInterface(PXAM):
         except KeyError:
             _LOGGER.warning("Could not set '{}' pipeline path: {}"
                             .format(pipeline_key, script_path))
-
-    def get_arg_string(self, pipeline_name, sample, project, looper, compute):
-        """
-        For a given pipeline, sample and project return the argument string.
-
-        :param str pipeline_name: Name of pipeline.
-        :param Sample sample: current sample for which job is being built
-        :param Project project: project for which job is being built
-        :return str: command-line argument string for pipeline
-        """
-
-        def _finfun(x):
-            """
-            A callable that can be used to process the result of a variable
-            expression before it is output. Joins list elements
-            """
-            return " ".join(x) if isinstance(x, list) else x
-
-        self.absolutize_pipeline_path(pipeline_name)
-        poi = self["pipelines"][pipeline_name]  # pipeline of interest
-        env = jinja2.Environment(undefined=jinja2.StrictUndefined,
-                                 variable_start_string="{",
-                                 variable_end_string="}",
-                                 finalize=_finfun)
-        _LOGGER.debug("CLI arg str template: {}".
-                      format(poi["command_template"]))
-        template = env.from_string(poi["command_template"])
-        try:
-            rendered = template.render(
-                sample=sample,
-                project=project,
-                pipeline=poi,
-                looper=looper,
-                compute=compute
-            )
-        except jinja2.exceptions.UndefinedError:
-            _LOGGER.error("Missing sample, project or pipeline attributes"
-                          " required by pipeline command template: '{}'"
-                          .format(poi["command_template"]))
-            raise
-        _LOGGER.debug("rendered CLI arg str: {}".format(rendered))
-        return rendered
 
     def parse_mapped_pipelines(self, protocol):
         """

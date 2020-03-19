@@ -13,7 +13,8 @@ from peppy.const import CONFIG_KEY
 from .const import *
 from .exceptions import JobSubmissionException
 from .pipeline_interface import PL_KEY
-from .utils import grab_project_data, fetch_sample_flags
+from .utils import grab_project_data, fetch_sample_flags, \
+    jinja_render_cmd_strictly
 from .sample import Sample
 
 _LOGGER = logging.getLogger(__name__)
@@ -399,22 +400,27 @@ class SubmissionConductor(object):
         """
         # looper settings determination
         looper = self._set_looper_namespace(pool, size)
-        # cascading compute settings determination:
-        # divcfg < pipeline interface < config < CLI
-        cli = self.compute_variables or {}  # CLI
-        res_pkg = self.pl_iface.choose_resource_package(self.pl_key, size, self.prj) # piface < config
-        res_pkg.update(cli)
-        self.prj.dcc.compute.update(res_pkg)  # divcfg
         extra_parts_text = " ".join(self.extra_pipe_args) \
             if self.extra_pipe_args else ""
         commands = []
+        namespaces = dict(project=self.prj[CONFIG_KEY],
+                          looper=looper,
+                          # compute=self.prj.dcc.compute,
+                          pipeline=self.pl_iface["pipelines"][self.pl_key])
+        templ = self.pl_iface["pipelines"][self.pl_key]["command_template"]
         for sample in pool:
+            # cascading compute settings determination:
+            # divcfg < pipeline interface < config < CLI
+            cli = self.compute_variables or {}  # CLI
+            res_pkg = self.pl_iface.choose_resource_package(self.pl_key, size, self.prj, sample)  #
+            # piface < config
+            res_pkg.update(cli)
+            self.prj.dcc.compute.update(res_pkg)  # divcfg
+            namespaces.update({"sample": sample,
+                               "compute": self.prj.dcc.compute})
             try:
-                argstring = self.pl_iface.get_arg_string(
-                    pipeline_name=self.pl_key, sample=sample,
-                    project=self.prj[CONFIG_KEY], looper=looper,
-                    compute=self.prj.dcc.compute
-                )
+                argstring = jinja_render_cmd_strictly(cmd_template=templ,
+                                                      namespaces=namespaces)
             except UndefinedError as jinja_exception:
                 _LOGGER.warning(NOT_SUB_MSG.format(str(jinja_exception)))
             except KeyError as e:
