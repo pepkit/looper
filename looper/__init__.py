@@ -130,7 +130,6 @@ def build_parser():
                      " Set this option to override this setting. Default=False")
         subparser.add_argument(
                 "--compute-package", dest=COMPUTE_KEY,
-                default=DEFAULT_COMPUTE_RESOURCES_NAME,
                 help="Name of computing resource package to use")
         subparser.add_argument(
                 "--resources",

@@ -13,7 +13,7 @@ __all__ = [
     "RESULTS_SUBDIR_KEY", "SUBMISSION_SUBDIR_KEY", "TEMPLATES_DIRNAME",
     "SAMPLE_YAML_FILE_KEY", "SAMPLE_YAML_EXT", "SAMPLE_EXECUTION_TOGGLE",
     "VALID_READ_TYPES", "REQUIRED_INPUTS_ATTR_NAME", "ALL_INPUTS_ATTR_NAME",
-    "FILE_SIZE_COLNAME"
+    "FILE_SIZE_COLNAME", "COMPUTE_PACKAGE_KEY"
 ]
 
 FLAGS = ["completed", "running", "failed", "waiting", "partial"]
@@ -68,6 +68,7 @@ OUTKEY = "outputs"
 RESULTS_SUBDIR_KEY = "results_subdir"
 SUBMISSION_SUBDIR_KEY = "submission_subdir"
 COMPUTE_KEY = "compute"
+COMPUTE_PACKAGE_KEY = "compute_package"
 SIZE_DEP_VARS_KEY = "size_dependent_variables"
 TEMPLATES_DIRNAME = "jinja_templates"
 NOT_SUB_MSG = "> Not submitted: {}"

@@ -810,17 +810,9 @@ def main():
 
     _LOGGER.info("Command: {} (Looper version: {})".
                  format(args.command, __version__))
+
     # Initialize project
-
-    # Although the value of args.env might be None, the actual env variable used will be DIVCFG or PEPENV
-    # (checked in this very order), which is implemented in divvy, the underlying package for
-    # computing environment configuration
-    if getattr(args, 'env', None) is None:
-        _LOGGER.debug("compute_env_file: DIVCFG or PEPENV")
-    else:
-        _LOGGER.debug("compute_env_file: " + str(getattr(args, 'env', None)))
     _LOGGER.debug("Building Project")
-
     try:
         prj = Project(config_file=determine_config_path(conf_file),
                       amendments=args.amendments,
@@ -830,11 +822,16 @@ def main():
     except yaml.parser.ParserError as e:
         _LOGGER.error("Project config parse failed -- {}".format(e))
         sys.exit(1)
-    compute_cli_spec = getattr(args, DIVVY_COMPUTE_KEY, None)
-    if compute_cli_spec and compute_cli_spec != DEFAULT_COMPUTE_RESOURCES_NAME:
-        prj.dcc.activate_package(compute_cli_spec)
-
     _LOGGER.debug("Results subdir: " + prj.results_folder)
+
+    selected_cli_compute_pkg = getattr(args, DIVVY_COMPUTE_KEY, None)
+    # compute package selection priority list: cli > project > default
+    selected_compute_pkg = DEFAULT_COMPUTE_RESOURCES_NAME
+    if COMPUTE_PACKAGE_KEY in prj[CONFIG_KEY][LOOPER_KEY]:
+        selected_compute_pkg = prj[CONFIG_KEY][LOOPER_KEY][COMPUTE_PACKAGE_KEY]
+    if selected_cli_compute_pkg:
+        selected_compute_pkg = selected_cli_compute_pkg
+    prj.dcc.activate_package(selected_compute_pkg)
 
     with ProjectContext(prj=prj,
                         selector_attribute=args.selector_attribute,
