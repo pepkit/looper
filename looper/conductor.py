@@ -330,23 +330,27 @@ class SubmissionConductor(object):
         """
         return [s for s in self._pool]
 
-    def _jobname(self, pool):
-        """ Create the name for a job submission. """
+    def _sample_lump_name(self, pool):
+        """ Determine how to refer to the 'sample' for this submission. """
         if 1 == self.max_cmds:
             assert 1 == len(pool), \
-                "If there's a single-command limit on job submission, jobname " \
-                "must be determined with exactly one sample in the pool, but " \
-                "there is/are {}.".format(len(pool))
+                "If there's a single-command limit on job submission, jobname" \
+                " must be determined with exactly one sample in the pool," \
+                " but there is/are {}.".format(len(pool))
             sample = pool[0]
-            name = sample.sample_name
+            return sample.sample_name
         else:
             # Note the order in which the increment of submission count and
             # the call to this function can influence naming. Make the jobname
             # generation call (this method) before incrementing the
             # submission counter, but add 1 to the index so that we get a
             # name concordant with 1-based, not 0-based indexing.
-            name = "lump{}".format(self._num_total_job_submissions + 1)
-        return "{}_{}".format(self.pl_key, name)
+            return "lump{}".format(self._num_total_job_submissions + 1)
+
+    def _jobname(self, pool):
+        """ Create the name for a job submission. """
+
+        return "{}_{}".format(self.pl_key, self._sample_lump_name(pool))
 
     def _set_looper_namespace(self, pool, size):
         """
@@ -361,9 +365,12 @@ class SubmissionConductor(object):
         settings = AttMap()
         settings.pep_config = self.prj.config_file
         settings.output_folder = self.prj.results_folder
+        settings.sample_output_folder = \
+            os.path.join(self.prj.results_folder, self._sample_lump_name(pool))
         settings.job_name = self._jobname(pool)
         settings.total_input_size = size
-        settings.log_file = os.path.join(self.prj.submission_folder, settings.job_name) + ".log"
+        settings.log_file = \
+            os.path.join(self.prj.submission_folder, settings.job_name) + ".log"
         if hasattr(self.prj, "pipeline_config"):
             # Index with 'pl_key' instead of 'pipeline'
             # because we don't care about parameters here.
