@@ -359,6 +359,7 @@ class SubmissionConductor(object):
         :return dict: looper/submission related settings
         """
         settings = AttMap()
+        settings.pep_config = self.prj.config_file
         settings.output_folder = self.prj.results_folder
         settings.job_name = self._jobname(pool)
         settings.total_input_size = size
