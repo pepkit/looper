@@ -394,7 +394,7 @@ class SubmissionConductor(object):
         # cascading compute settings determination:
         # divcfg < pipeline interface < config < CLI
         cli = self.compute_variables or {}  # CLI
-        res_pkg = self.pl_iface.choose_resource_package(self.pl_key, size) # piface < config
+        res_pkg = self.pl_iface.choose_resource_package(self.pl_key, size, self.prj) # piface < config
         res_pkg.update(cli)
         self.prj.dcc.compute.update(res_pkg)  # divcfg
         extra_parts_text = " ".join(self.extra_pipe_args) \

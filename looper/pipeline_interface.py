@@ -6,6 +6,7 @@ import logging
 import os
 import warnings
 import jinja2
+import pandas as pd
 from logging import getLogger
 
 from .const import PIPELINE_REQUIREMENTS_KEY
@@ -14,9 +15,11 @@ from .exceptions import InvalidResourceSpecificationException, \
     PipelineInterfaceRequirementsError
 from .pipereqs import create_pipeline_requirement, RequiredExecutable
 from .sample import Sample
-from .const import GENERIC_PROTOCOL_KEY
+from .const import GENERIC_PROTOCOL_KEY, COMPUTE_KEY, SIZE_DEP_VARS_KEY, \
+    ID_COLNAME, FILE_SIZE_COLNAME, LOOPER_KEY
+from peppy import CONFIG_KEY
 from attmap import PathExAttMap as PXAM
-from divvy import DEFAULT_COMPUTE_RESOURCES_NAME, NEW_COMPUTE_KEY as COMPUTE_KEY
+from divvy import DEFAULT_COMPUTE_RESOURCES_NAME, NEW_COMPUTE_KEY as DIVVY_COMPUTE_KEY
 from divvy.const import OLD_COMPUTE_KEY
 from peppy import utils as peputil
 from ubiquerg import expandpath, is_command_callable, is_url
@@ -109,7 +112,7 @@ class PipelineInterface(PXAM):
         else:
             super(PipelineInterface, self).__setitem__(key, value)
 
-    def choose_resource_package(self, pipeline_name, file_size):
+    def choose_resource_package(self, pipeline_name, file_size, project):
         """
         Select resource bundle for given input file size to given pipeline.
 
@@ -130,101 +133,87 @@ class PipelineInterface(PXAM):
             raise ValueError("Attempted selection of resource package for "
                              "negative file size: {}".format(file_size))
 
-        def notify(msg):
+        def _file_size_ante(name, data):
+            # Retrieve this package's minimum file size.
+            # Retain backwards compatibility while enforcing key presence.
+            fsize = float(data[FILE_SIZE_COLNAME])
+            # Negative file size is illogical and problematic for comparison.
+            if fsize < 0:
+                raise InvalidResourceSpecificationException(
+                    "Found negative value () in '{}' column; package '{}'".
+                        format(fsize, FILE_SIZE_COLNAME, name)
+                )
+            return fsize
+
+        def _notify(msg):
             msg += " for pipeline '{}'".format(pipeline_name)
             if self.pipe_iface_file is not None:
                 msg += " in interface {}".format(self.pipe_iface_file)
             _LOGGER.debug(msg)
 
-        pl = self.select_pipeline(pipeline_name)
-
-        try:
-            universal_compute = pl[COMPUTE_KEY]
-        except KeyError:
-            notify("No compute settings (by {})".format(COMPUTE_KEY))
-            with warnings.catch_warnings():
-                warnings.filterwarnings("ignore", category=DeprecationWarning)
+        def _load_pl_resources(piface, pipeline, pipeline_name):
+            df = None
+            if COMPUTE_KEY in pipeline \
+                    and SIZE_DEP_VARS_KEY in pipeline[COMPUTE_KEY]:
+                resources_tsv_path = pipeline[COMPUTE_KEY][SIZE_DEP_VARS_KEY]
+                if not os.path.isabs(resources_tsv_path):
+                    resources_tsv_path = os.path.join(
+                        os.path.dirname(piface.pipe_iface_file),
+                        resources_tsv_path)
                 try:
-                    universal_compute = pl[OLD_COMPUTE_KEY]
-                except KeyError:
-                    universal_compute = PXAM()
-                else:
-                    warnings.warn(
-                        "To declare pipeline compute section, use {} rather "
-                        "than {}".format(COMPUTE_KEY, OLD_COMPUTE_KEY),
-                        DeprecationWarning)
-        _LOGGER.debug("Universal compute (for {}): {}".
-                      format(pipeline_name, universal_compute))
+                    df = pd.read_csv(resources_tsv_path, sep='\t', header=0,
+                                     index_col=ID_COLNAME)
+                except ValueError:
+                    raise InvalidResourceSpecificationException(
+                        "'{}' column not found in the resources file ({})".
+                            format(ID_COLNAME, resources_tsv_path)
+                    )
+                _LOGGER.debug("Loaded resources ({}) for pipeline '{}':\n{}".
+                              format(resources_tsv_path, pipeline_name, df))
+            else:
+                _notify("No '{}' defined".format(SIZE_DEP_VARS_KEY))
+            return df
 
-        try:
-            resources = universal_compute[RESOURCES_KEY]
-            _LOGGER.debug("Found '{}' in compute section of pipeline inferface".
-                          format(RESOURCES_KEY))
-        except KeyError:
+        resources_data = {}
+        pl = self.select_pipeline(pipeline_name)
+        resources_df = _load_pl_resources(self, pl, pipeline_name)
+        if resources_df is not None:
+            resources = resources_df.to_dict('index')
             try:
-                resources = pl[RESOURCES_KEY]
-            except KeyError:
-                notify("No resources")
-                return {}
-        else:
-            if RESOURCES_KEY in pl:
-                _LOGGER.warning(
-                    "{rk} section found in both {c} section and top-level "
-                    "pipelines section of pipeline interface; {c} section "
-                    "version will be used".format(rk=RESOURCES_KEY,
-                                                  c=COMPUTE_KEY))
+                # Sort packages by descending file size minimum to return first
+                # package for which given file size satisfies the minimum.
+                resource_packages = sorted(
+                    resources.items(),
+                    key=lambda name_and_data: _file_size_ante(*name_and_data),
+                    reverse=True)
+            except ValueError:
+                _LOGGER.error("Unable to use file size to prioritize "
+                              "resource packages: {}".format(resources))
+                raise
 
-        # Require default resource package specification.
-        try:
-            default_resource_package = \
-                    resources[DEFAULT_COMPUTE_RESOURCES_NAME]
-        except KeyError:
-            raise InvalidResourceSpecificationException(
-                "Pipeline resources specification lacks '{}' section".
-                    format(DEFAULT_COMPUTE_RESOURCES_NAME))
+            # choose minimally-sufficient package
+            for rp_name, rp_data in resource_packages:
+                size_ante = _file_size_ante(rp_name, rp_data)
+                if file_size >= size_ante:
+                    _LOGGER.debug(
+                        "Selected '{}' package with file size {} Gb for file "
+                        "of size {} Gb.".format(rp_name, size_ante, file_size))
+                    _LOGGER.debug("Selected resource package data:\n{}".
+                                  format(rp_data))
+                    resources_data = rp_data
 
-        # Parse min file size to trigger use of a resource package.
-        def file_size_ante(name, data):
-            # Retrieve this package's minimum file size.
-            # Retain backwards compatibility while enforcing key presence.
-            try:
-                fsize = data["min_file_size"]
-            except KeyError:
-                fsize = data["file_size"]
-            fsize = float(fsize)
-            # Negative file size is illogical and problematic for comparison.
-            if fsize < 0:
-                raise ValueError(
-                        "Negative file size threshold for resource package "
-                        "'{}': {}".format(name, fsize))
-            return fsize
+        if COMPUTE_KEY in pl and RESOURCES_KEY in pl[COMPUTE_KEY]:
+            # overwrite possibly selected size dependent data with values
+            # explicitly defined in the piface
+            resources_data.update(pl[COMPUTE_KEY][RESOURCES_KEY])
 
-        # Enforce default package minimum of 0.
-        if "file_size" in default_resource_package:
-            del default_resource_package["file_size"]
-        resources[DEFAULT_COMPUTE_RESOURCES_NAME]["min_file_size"] = 0
+        if COMPUTE_KEY in project[CONFIG_KEY][LOOPER_KEY] \
+                and RESOURCES_KEY in project[CONFIG_KEY][LOOPER_KEY][COMPUTE_KEY]:
+            # overwrite with values from project.looper.compute.resources
+            resources_data.\
+                update(project[CONFIG_KEY][LOOPER_KEY][COMPUTE_KEY][RESOURCES_KEY])
 
-        try:
-            # Sort packages by descending file size minimum to return first
-            # package for which given file size satisfies the minimum.
-            resource_packages = sorted(
-                resources.items(),
-                key=lambda name_and_data: file_size_ante(*name_and_data),
-                reverse=True)
-        except ValueError:
-            _LOGGER.error("Unable to use file size to prioritize "
-                          "resource packages: {}".format(resources))
-            raise
-
-        # "Descend" packages by min file size, choosing minimally-sufficient.
-        for rp_name, rp_data in resource_packages:
-            size_ante = file_size_ante(rp_name, rp_data)
-            if file_size >= size_ante:
-                _LOGGER.debug(
-                    "Selected '{}' package with min file size {} Gb for file "
-                    "of size {} Gb.".format(rp_name, size_ante, file_size))
-                rp_data.update(universal_compute)
-                return rp_data
+        return resources_data
 
     def finalize_pipeline_key_and_paths(self, pipeline_key):
         """
