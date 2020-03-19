@@ -9,6 +9,7 @@ from jinja2.exceptions import UndefinedError
 
 from attmap import AttMap
 
+from peppy.const import CONFIG_KEY
 from .const import *
 from .exceptions import JobSubmissionException
 from .pipeline_interface import PL_KEY
@@ -349,7 +350,6 @@ class SubmissionConductor(object):
 
     def _jobname(self, pool):
         """ Create the name for a job submission. """
-
         return "{}_{}".format(self.pl_key, self._sample_lump_name(pool))
 
     def _set_looper_namespace(self, pool, size):
@@ -411,8 +411,9 @@ class SubmissionConductor(object):
         for sample in pool:
             try:
                 argstring = self.pl_iface.get_arg_string(
-                    pipeline_name=self.pl_key, sample=sample, project=self.prj,
-                    looper=looper, compute=self.prj.dcc.compute
+                    pipeline_name=self.pl_key, sample=sample,
+                    project=self.prj[CONFIG_KEY], looper=looper,
+                    compute=self.prj.dcc.compute
                 )
             except UndefinedError as jinja_exception:
                 _LOGGER.warning(NOT_SUB_MSG.format(str(jinja_exception)))
