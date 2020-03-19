@@ -160,14 +160,9 @@ class PipelineInterface(PXAM):
                     resources_tsv_path = os.path.join(
                         os.path.dirname(piface.pipe_iface_file),
                         resources_tsv_path)
-                try:
-                    df = pd.read_csv(resources_tsv_path, sep='\t', header=0,
-                                     index_col=ID_COLNAME)
-                except ValueError:
-                    raise InvalidResourceSpecificationException(
-                        "'{}' column not found in the resources file ({})".
-                            format(ID_COLNAME, resources_tsv_path)
-                    )
+                df = pd.read_csv(resources_tsv_path, sep='\t', header=0).fillna(0)
+                df[ID_COLNAME] = df.index
+                df.set_index(ID_COLNAME)
                 _LOGGER.debug("Loaded resources ({}) for pipeline '{}':\n{}".
                               format(resources_tsv_path, pipeline_name, df))
             else:

@@ -89,4 +89,4 @@ GENERIC_PROTOCOL_KEY = "*"
 
 # resource package TSV-related consts
 ID_COLNAME = "id"
-FILE_SIZE_COLNAME = "file_size"
+FILE_SIZE_COLNAME = "max_file_size"
