@@ -217,6 +217,7 @@ class PipelineInterface(PXAM):
                     _LOGGER.debug("Selected resource package data:\n{}".
                                   format(rp_data))
                     resources_data = rp_data
+                    break
 
         if COMPUTE_KEY in pl and RESOURCES_KEY in pl[COMPUTE_KEY]:
             # overwrite possibly selected size dependent data with values
