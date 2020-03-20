@@ -5,7 +5,7 @@ pandas>=0.20.2
 pyyaml>=3.12
 divvy>=0.3.1
 peppy>=0.22.4-dev
-ubiquerg>=0.4.5
+ubiquerg>=0.6.0-dev
 ngstk>=0.0.1rc1
 jinja2
 eido>=0.0.4
