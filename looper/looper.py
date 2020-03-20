@@ -38,7 +38,7 @@ from .utils import determine_config_path, fetch_flag_files, sample_folder, \
 from divvy import DEFAULT_COMPUTE_RESOURCES_NAME, NEW_COMPUTE_KEY as DIVVY_COMPUTE_KEY
 from logmuse import init_logger
 from peppy.const import *
-
+from eido import validate_sample, validate_config
 from ubiquerg import query_yes_no
 
 SUBMISSION_FAILURE_MESSAGE = "Cluster resource failure"
@@ -341,7 +341,7 @@ class Runner(Executor):
         failed_submission_scripts = []
 
         # config validation (samples excluded) against each schema
-        [self.prj.validate_config(schema=schema_file)
+        [validate_config(self.prj, schema_file)
          for schema_file in self.prj.get_schemas(mapped_protos)]
 
         for sample in self.prj.samples[:upper_sample_bound]:
@@ -403,7 +403,7 @@ class Runner(Executor):
                 continue
 
             # single sample validation against a single schema (matched by sample's protocol)
-            [self.prj.validate_sample(sample.sample_name, schema_file)
+            [validate_sample(self.prj, sample.sample_name, schema_file)
                 for schema_file in self.prj.get_schemas(protocol)]
 
             # Processing preconditions have been met.
