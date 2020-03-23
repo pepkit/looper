@@ -251,6 +251,7 @@ class PipelineInterface(PXAM):
             # explicitly defined in the piface
             resources_data.update(pl[COMPUTE_KEY][RESOURCES_KEY])
 
+        project = namespaces["project"]
         if COMPUTE_KEY in project[CONFIG_KEY][LOOPER_KEY] \
                 and RESOURCES_KEY in project[CONFIG_KEY][LOOPER_KEY][COMPUTE_KEY]:
             # overwrite with values from project.looper.compute.resources
