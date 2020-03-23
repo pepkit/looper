@@ -111,7 +111,7 @@ class PipelineInterface(PXAM):
         else:
             super(PipelineInterface, self).__setitem__(key, value)
 
-    def choose_resource_package(self, pipeline_name, file_size, project, sample):
+    def choose_resource_package(self, pipeline_name, file_size, namespaces):
         """
         Select resource bundle for given input file size to given pipeline.
 
@@ -150,27 +150,54 @@ class PipelineInterface(PXAM):
                 msg += " in interface {}".format(self.pipe_iface_file)
             _LOGGER.debug(msg)
 
-        def _load_fluid_attrs(pipeline):
+        def _load_fluid_attrs(pipeline, pipeline_name):
+            """
+            Render command string (jinja2 template), execute it in a subprocess
+            and its result (JSON object) as a dict
+
+            :param Mapping pipeline: pipeline dict
+            :param str pipeline_name: pipeline name
+            :return Mapping: a dict with attributes returned in the JSON
+                by called command
+            """
+            def _log_raise_latest():
+                """ Log error info and raise latest handled exception """
+                _LOGGER.error(
+                    "Could not retrieve JSON via command: '{}'".format(
+                        pipeline[COMPUTE_KEY][FLUID_ATTRS_KEY]))
+                raise
             json = None
             if COMPUTE_KEY in pipeline \
                     and FLUID_ATTRS_KEY in pipeline[COMPUTE_KEY]:
-                from subprocess import check_output
+                from subprocess import check_output, CalledProcessError
                 from json import loads
                 from .utils import jinja_render_cmd_strictly
                 try:
                     cmd = jinja_render_cmd_strictly(
                         cmd_template=pipeline[COMPUTE_KEY][FLUID_ATTRS_KEY],
-                        namespaces={"project": project, "sample": sample})
-                    json = loads(check_output(cmd, shell=True))
-                except Exception:
-                    _LOGGER.error(
-                        "Could not retrieve JSON via command: '{}'"
-                            .format(pipeline[COMPUTE_KEY][FLUID_ATTRS_KEY])
+                        namespaces=namespaces
                     )
-                    raise
+                    json = loads(check_output(cmd, shell=True))
+                except CalledProcessError as e:
+                    print(e.output)
+                    _log_raise_latest()
+                except Exception:
+                    _log_raise_latest()
+                else:
+                    _LOGGER.debug(
+                        "Loaded resources from JSON returned by a command for"
+                        " pipeline '{}':\n{}".format(pipeline_name, json))
             return json
 
         def _load_size_dep_vars(piface, pipeline, pipeline_name):
+            """
+            Read the resources from a TSV provided in the pipeline interface
+
+            :param looper.PipelineInterface piface: currently processed piface
+            :param Mapping pipeline: pipeline dict
+            :param str pipeline_name: pipeline name
+            :return pandas.DataFrame: resources
+            """
             df = None
             if COMPUTE_KEY in pipeline \
                     and SIZE_DEP_VARS_KEY in pipeline[COMPUTE_KEY]:
@@ -188,7 +215,7 @@ class PipelineInterface(PXAM):
                 _notify("No '{}' defined".format(SIZE_DEP_VARS_KEY))
             return df
         pl = self.select_pipeline(pipeline_name)
-        fluid_resources = _load_fluid_attrs(pl)
+        fluid_resources = _load_fluid_attrs(pl, pipeline_name)
         if fluid_resources is not None:
             return fluid_resources
         resources_df = _load_size_dep_vars(self, pl, pipeline_name)

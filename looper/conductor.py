@@ -193,8 +193,10 @@ class SubmissionConductor(object):
         _LOGGER.debug("Determining missing requirements")
         schema_source = self.pl_iface.get_pipeline_schema(self.pl_key)
         if schema_source:
+            from eido import read_schema
+            schema_dict = read_schema(schema_source)
             error_type, missing_reqs_general, missing_reqs_specific = \
-                sample.validate_inputs(schema=schema_source)
+                sample.validate_inputs(schema=schema_dict)
             if missing_reqs_general:
                 missing_reqs_msg = "{}: {}".format(
                     missing_reqs_general, missing_reqs_specific)
@@ -412,12 +414,12 @@ class SubmissionConductor(object):
             # cascading compute settings determination:
             # divcfg < pipeline interface < config < CLI
             cli = self.compute_variables or {}  # CLI
-            res_pkg = self.pl_iface.choose_resource_package(self.pl_key, size, self.prj, sample)  #
-            # piface < config
+            namespaces.update({"sample": sample})
+            res_pkg = self.pl_iface.choose_resource_package(
+                self.pl_key, size, namespaces)  # piface < config
             res_pkg.update(cli)
             self.prj.dcc.compute.update(res_pkg)  # divcfg
-            namespaces.update({"sample": sample,
-                               "compute": self.prj.dcc.compute})
+            namespaces.update({"compute": self.prj.dcc.compute})
             try:
                 argstring = jinja_render_cmd_strictly(cmd_template=templ,
                                                       namespaces=namespaces)
