@@ -13,7 +13,7 @@ __all__ = [
     "RESULTS_SUBDIR_KEY", "SUBMISSION_SUBDIR_KEY", "TEMPLATES_DIRNAME",
     "SAMPLE_YAML_FILE_KEY", "SAMPLE_YAML_EXT", "SAMPLE_EXECUTION_TOGGLE",
     "VALID_READ_TYPES", "REQUIRED_INPUTS_ATTR_NAME", "ALL_INPUTS_ATTR_NAME",
-    "FILE_SIZE_COLNAME", "COMPUTE_PACKAGE_KEY"
+    "FILE_SIZE_COLNAME", "COMPUTE_PACKAGE_KEY", "COLLATORS_KEY"
 ]
 
 FLAGS = ["completed", "running", "failed", "waiting", "partial"]
@@ -63,6 +63,7 @@ TABLE_APPEARANCE_BY_FLAG = _get_apperance_dict("table")
 BUTTON_APPEARANCE_BY_FLAG = _get_apperance_dict("btn btn")
 NO_DATA_PLACEHOLDER = "NA"
 PIPELINE_INTERFACES_KEY = "pipeline_interfaces"
+COLLATORS_KEY = "collators"
 PIPELINE_REQUIREMENTS_KEY = "required_executables"
 OUTKEY = "outputs"
 RESULTS_SUBDIR_KEY = "results_subdir"

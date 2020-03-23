@@ -15,7 +15,7 @@ from .exceptions import InvalidResourceSpecificationException, \
 from .pipereqs import create_pipeline_requirement, RequiredExecutable
 from .sample import Sample
 from .const import GENERIC_PROTOCOL_KEY, COMPUTE_KEY, SIZE_DEP_VARS_KEY, \
-    ID_COLNAME, FILE_SIZE_COLNAME, LOOPER_KEY, FLUID_ATTRS_KEY
+    ID_COLNAME, FILE_SIZE_COLNAME, LOOPER_KEY, FLUID_ATTRS_KEY, COLLATORS_KEY
 from peppy import CONFIG_KEY
 from attmap import PathExAttMap as PXAM
 from divvy import DEFAULT_COMPUTE_RESOURCES_NAME, NEW_COMPUTE_KEY as DIVVY_COMPUTE_KEY
@@ -80,11 +80,18 @@ class PipelineInterface(PXAM):
     def __str__(self):
         """ String representation """
         source = self.pipe_iface_file or "Mapping"
-        num_pipelines = len(self.pipelines)
         # TODO: could use 'name' here
-        pipelines = ", ".join(self.pipelines.keys())
-        return "{} from {}, with {} pipeline(s): {}".format(
-                self.__class__.__name__, source, num_pipelines, pipelines)
+        pipelines = self.pipelines.keys()
+        collators = self[COLLATORS_KEY].keys() \
+            if COLLATORS_KEY in self else None
+        txt = "{} from {}. Defines {} pipelines ({})".\
+            format(self.__class__.__name__, source,
+                   len(pipelines),
+                   ", ".join(pipelines))
+        if collators:
+            txt += " and {} {} ({})".\
+                format(len(collators), COLLATORS_KEY, ", ".join(collators))
+        return txt
 
     def __setitem__(self, key, value):
         if key == PIPELINE_REQUIREMENTS_KEY:
@@ -117,6 +124,8 @@ class PipelineInterface(PXAM):
 
         :param str pipeline_name: Name of pipeline.
         :param float file_size: Size of input data (in gigabytes).
+        :param Mapping[Mapping[str]] namespaces: namespaced variables to pass
+            as a context for fluid attributes command rendering
         :return MutableMapping: resource bundle appropriate for given pipeline,
             for given input file size
         :raises ValueError: if indicated file size is negative, or if the
