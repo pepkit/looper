@@ -283,7 +283,7 @@ class Collator(Executor):
     """" Submitter for project-level pipelines """
     def __init__(self, prj):
         """
-        The Project defines the instance; establish an iteration counter.
+        Initializes an instance
 
         :param Project prj: Project with which to work/operate on
         """
@@ -299,11 +299,13 @@ class Collator(Executor):
 
     def __call__(self, args, remaining_args, **compute_kwargs):
         """
+        Matches collators by protocols, creates submission scripts
+        and submits them
 
-        :param args:
-        :param remaining_args:
-        :param compute_kwargs:
-        :return:
+        :param argparse.Namespace args: parsed command-line options and
+            arguments, recognized by looper
+        :param list remaining_args: command-line options and arguments not
+            recognized by looper, germane to samples/pipelines
         """
         try:
             collator_key = args.collator_protocol or \
@@ -319,6 +321,7 @@ class Collator(Executor):
         if not self.cols:
             _LOGGER.warning("Selected collator protocol ({}) did not "
                             "match any pipelines".format(collator_key))
+            sys.exit(0)
         self.counter = LooperCounter(len(self.cols))
         for collator_name, collator_data in self.cols.items():
             _LOGGER.info(self.counter.show(name=collator_name))
