@@ -314,11 +314,10 @@ class Project(peppy.Project):
                 # Package the pipeline's interface, subtype, command, and key.
                 submission_bundle = SubmissionBundle(
                     pipe_iface, sample_subtype, strict_pipe_key,
-                    full_pipe_path_with_flags)
+                )
 
                 # Enforce bundle uniqueness for each strict pipeline key.
-                maybe_new_bundle = (full_pipe_path_with_flags,
-                                    sample_subtype, pipe_iface)
+                maybe_new_bundle = (sample_subtype, pipe_iface)
                 old_bundle = bundle_by_strict_pipe_key.setdefault(
                     strict_pipe_key, maybe_new_bundle)
                 if old_bundle != maybe_new_bundle:
@@ -600,7 +599,7 @@ OutputGroup = namedtuple("OutputGroup", field_names=["path", "samples"])
 # Collect PipelineInterface, Sample type, pipeline path, and script with flags.
 SubmissionBundle = namedtuple(
     "SubmissionBundle",
-    field_names=["interface", "subtype", "pipeline", "pipeline_with_flags"])
+    field_names=["interface", "subtype", "pipeline"])
 SUBMISSION_BUNDLE_PIPELINE_KEY_INDEX = 2
 
 

@@ -7,7 +7,7 @@ if sys.version_info < (3, 3):
 else:
     from collections.abc import Mapping
 from .pipeline_interface import PipelineInterface, PROTOMAP_KEY
-from .const import GENERIC_PROTOCOL_KEY
+from .const import GENERIC_PROTOCOL_KEY, COLLATORS_KEY, COLLATOR_MAPPINGS_KEY
 
 __author__ = "Vince Reuter"
 __email__ = "vreuter@virginia.edu"
@@ -90,6 +90,27 @@ class ProjectPifaceGroup(object):
         :return int: number of interfaces in this group
         """
         return sum(1 for _ in iter(self))
+
+    def collators(self, protocol):
+        """
+        Return all collators associated stored in this group
+
+        :return Iterable[attamp.PathExtAttMap]: list of collator mappings
+        """
+        # TODO: we might want to get collators by collator-specific protocols
+        collators = {}
+        for interface in self._interfaces:
+            if all(e in interface for e in [COLLATOR_MAPPINGS_KEY, COLLATORS_KEY]):
+                if protocol in interface[COLLATOR_MAPPINGS_KEY]:
+                    collator_matches = interface[COLLATOR_MAPPINGS_KEY][protocol]
+                    collator_matches = [collator_matches] \
+                        if isinstance(collator_matches, str) else collator_matches
+                    for match in collator_matches:
+                        if match in interface[COLLATORS_KEY]:
+                            collators.update(
+                                {match: interface}
+                            )
+        return collators
 
     @property
     def protocols(self):

@@ -80,7 +80,6 @@ class PipelineInterface(PXAM):
     def __str__(self):
         """ String representation """
         source = self.pipe_iface_file or "Mapping"
-        # TODO: could use 'name' here
         pipelines = self.pipelines.keys()
         collators = self[COLLATORS_KEY].keys() \
             if COLLATORS_KEY in self else None
@@ -118,7 +117,7 @@ class PipelineInterface(PXAM):
         else:
             super(PipelineInterface, self).__setitem__(key, value)
 
-    def choose_resource_package(self, pipeline_name, file_size, namespaces):
+    def choose_resource_package(self, pipeline_name, namespaces, file_size, collate=False):
         """
         Select resource bundle for given input file size to given pipeline.
 
@@ -223,7 +222,7 @@ class PipelineInterface(PXAM):
             else:
                 _notify("No '{}' defined".format(SIZE_DEP_VARS_KEY))
             return df
-        pl = self.select_pipeline(pipeline_name)
+        pl = self.select_pipeline(pipeline_name, collate=collate)
         fluid_resources = _load_fluid_attrs(pl, pipeline_name)
         if fluid_resources is not None:
             return fluid_resources
@@ -464,7 +463,7 @@ class PipelineInterface(PXAM):
         value = config.get(attribute_key)
         return [value] if isinstance(value, str) and path_as_list else value
 
-    def get_pipeline_name(self, pipeline):
+    def get_pipeline_name(self, pipeline, collate=False):
         """
         Translate a pipeline name (e.g., stripping file extension).
 
@@ -473,7 +472,7 @@ class PipelineInterface(PXAM):
         :return str: translated pipeline name, as specified in config or by
             stripping the pipeline's file extension
         """
-        config = self.select_pipeline(pipeline)
+        config = self.select_pipeline(pipeline, collate)
         try:
             return config["name"]
         except KeyError:
@@ -567,7 +566,7 @@ class PipelineInterface(PXAM):
                     os.path.join(os.path.split(self.pipe_iface_file)[0], schema_source)
         return schema_source
 
-    def select_pipeline(self, pipeline_name):
+    def select_pipeline(self, pipeline_name, collate=False):
         """
         Check to make sure that pipeline has an entry and if so, return it.
 
@@ -576,11 +575,12 @@ class PipelineInterface(PXAM):
         :raises MissingPipelineConfigurationException: if there's no
             configuration data for the indicated pipeline
         """
+        pl_key = COLLATORS_KEY if collate else PL_KEY
         try:
             # For unmapped pipeline, Return empty interface instead of None.
-            return self[PL_KEY][pipeline_name] or dict()
+            return self[pl_key][pipeline_name] or dict()
         except KeyError:
-            names = ["'{}'".format(p) for p in self.pipelines.keys()]
+            names = ["'{}'".format(p) for p in self[pl_key].keys()]
             _LOGGER.error(
                 "Missing pipeline description: '{}' not found ({} known: {})".
                 format(pipeline_name, len(names), ", ".join(names)))

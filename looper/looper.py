@@ -49,6 +49,7 @@ _MAX_FAIL_SAMPLE_DISPLAY = 20
 _PKGNAME = "looper"
 _LOGGER = logging.getLogger(_PKGNAME)
 
+
 class Executor(object):
     """ Base class that ensures the program's Sample counter starts.
 
@@ -266,16 +267,56 @@ def process_protocols(prj, protocols, resource_setting_kwargs=None, **kwargs):
                 _LOGGER.warning("No valid pipelines for protocol: {}".
                                 format(proto))
             continue
-        for pl_iface, sample_subtype, pl_key, script_with_flags in \
+        for pl_iface, sample_subtype, pl_key in \
                 submission_bundles:
             _LOGGER.debug("%s: %s", pl_key, sample_subtype.__name__)
             conductor = SubmissionConductor(
-                pl_key, pl_iface, script_with_flags, prj,
+                pl_key, pl_iface, prj,
                 sample_subtype=sample_subtype,
                 compute_variables=comp_vars, **kwargs)
             submission_conductors[pl_key] = conductor
             pipe_keys_by_protocol[proto].append(pl_key)
     return submission_conductors, pipe_keys_by_protocol
+
+
+class Collator(Executor):
+    """" Submitter for project-level pipelines """
+    def __init__(self, prj):
+        """
+        The Project defines the instance; establish an iteration counter.
+
+        :param Project prj: Project with which to work/operate on
+        """
+        super(Executor, self).__init__()
+        self.prj = prj
+        if not self.prj.interfaces \
+                or not hasattr(self.prj[CONFIG_KEY][LOOPER_KEY], PROTOCOL_KEY):
+            raise AttributeError(
+                "Looper requires at least one pointer to collator in a pipeline"
+                " interface file, set with the '{p}' key in the project config "
+                "file and define {c} in '{c}' section in that file".
+                    format(p=PIPELINE_INTERFACES_KEY, c=COLLATORS_KEY)
+            )
+        protos = self.prj[CONFIG_KEY][LOOPER_KEY][PROTOCOL_KEY]
+        self.cols = self.prj.interfaces.collators(protos)
+        self.counter = LooperCounter(len(self.cols))
+
+    def __call__(self, args, remaining_args, **compute_kwargs):
+        for collator_name, collator_data in self.cols.items():
+            _LOGGER.info(self.counter.show(name=collator_name))
+            conductor = SubmissionConductor(
+                pipeline_key=collator_name,
+                pipeline_interface=collator_data,
+                prj=self.prj,
+                compute_variables=compute_kwargs,
+                dry_run=args.dry_run,
+                delay=args.time_delay,
+                extra_args=remaining_args,
+                ignore_flags=args.ignore_flags,
+                collate=True
+            )
+            conductor._pool = [None]
+            conductor.submit()
 
 
 class Runner(Executor):
@@ -716,7 +757,7 @@ class LooperCounter(object):
         self.count = 0
         self.total = total
 
-    def show(self, name, protocol):
+    def show(self, name, protocol=None):
         """
         Display sample counts status for a particular protocol type.
 
@@ -729,8 +770,8 @@ class LooperCounter(object):
         """
         self.count += 1
         return _submission_status_text(
-            curr=self.count, total=self.total, sample_name=name,
-            sample_protocol=protocol, color=Fore.CYAN)
+            curr=self.count, total=self.total, name=name,
+            protocol=protocol, color=Fore.CYAN)
 
     def reset(self):
         self.count = 0
@@ -739,10 +780,13 @@ class LooperCounter(object):
         return "LooperCounter of size {}".format(self.total)
 
 
-def _submission_status_text(curr, total, sample_name, sample_protocol, color):
-    return color + "## [{n} of {N}] {sample} ({protocol})".\
-        format(n=curr, N=total, sample=sample_name, protocol=sample_protocol) \
-           + Style.RESET_ALL
+def _submission_status_text(curr, total, name, protocol=None, color=Fore.CYAN):
+    """ Generate submission sample text for run or collate """
+    txt = color + "## [{n} of {N}] {name} ".\
+        format(n=curr, N=total, name=name)
+    if protocol:
+        txt += "({protocol})".format(protocol=protocol)
+    return txt + Style.RESET_ALL
 
 
 def _proc_resources_spec(spec):
@@ -850,6 +894,12 @@ def main():
                               format(prj.__class__.__name__,
                                      prj[CONFIG_KEY][LOOPER_KEY][PIPELINE_INTERFACES_KEY]))
                 raise
+
+        if args.command == "collate":
+            compute_kwargs = _proc_resources_spec(
+                getattr(args, RESOURCES_KEY, ""))
+            collate = Collator(prj)
+            collate(args, remaining_args, **compute_kwargs)
 
         if args.command == "destroy":
             return Destroyer(prj)(args)

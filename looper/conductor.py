@@ -8,6 +8,7 @@ import time
 from jinja2.exceptions import UndefinedError
 
 from attmap import AttMap
+from eido import read_schema
 
 from peppy.const import CONFIG_KEY
 from .const import *
@@ -32,10 +33,10 @@ class SubmissionConductor(object):
 
     """
 
-    def __init__(self, pipeline_key, pipeline_interface, cmd_base, prj,
-                 dry_run=False, delay=0, sample_subtype=None, extra_args=None,
-                 ignore_flags=False, compute_variables=None,
-                 max_cmds=None, max_size=None, automatic=True):
+    def __init__(self, pipeline_key, pipeline_interface, prj, dry_run=False,
+                 delay=0, sample_subtype=None, extra_args=None,
+                 ignore_flags=False, compute_variables=None, max_cmds=None,
+                 max_size=None, automatic=True, collate=False):
         """
         Create a job submission manager.
 
@@ -49,9 +50,6 @@ class SubmissionConductor(object):
         :param PipelineInterface pipeline_interface: Collection of important
             data for one or more pipelines, like resource allocation packages
             and option/argument specifications
-        :param str cmd_base: Base of each command for each job, e.g. the
-            script path and command-line options/flags that are constant
-            across samples.
         :param prj: Project with which each sample being considered is
             associated (what generated each sample)
         :param bool dry_run: Whether this is a dry run and thus everything
@@ -73,51 +71,50 @@ class SubmissionConductor(object):
             size of inputs used by the commands lumped into single job script.
         :param bool automatic: Whether the submission should be automatic once
             the pool reaches capacity.
+        :param bool collate: Whether a collate job is to be submitted (runs on
+            the project level, rather that on the sample level)
         """
 
         super(SubmissionConductor, self).__init__()
-
+        self.collate = collate
         self.pl_key = pipeline_key
         self.pl_iface = pipeline_interface
-        self.pl_name = pipeline_interface.get_pipeline_name(pipeline_key)
-        self.cmd_base = cmd_base.rstrip(" ")
+        self.pl_name = \
+            pipeline_interface.get_pipeline_name(pipeline_key, self.collate)
+        self.prj = prj
+        self.compute_variables = compute_variables
+        self.extra_pipe_args = extra_args or []
+        self.ignore_flags = ignore_flags
 
         self.dry_run = dry_run
         self.delay = float(delay)
-
-        self.sample_subtype = sample_subtype or Sample
-        if not issubclass(self.sample_subtype, Sample):
-            raise TypeError("Sample type must extend {}; got {}".format(
-                Sample.__name__, type(self.sample_subtype).__name__))
-
-        self.compute_variables = compute_variables
-        self.extra_pipe_args = extra_args or []
-        #self.extra_args_text = (extra_args and " ".join(extra_args)) or ""
-        self.uses_looper_args = \
-                pipeline_interface.uses_looper_args(pipeline_key)
-        self.ignore_flags = ignore_flags
-        self.prj = prj
-        self.automatic = automatic
-
-        if max_cmds is None and max_size is None:
-            self.max_cmds = 1
-        elif (max_cmds is not None and max_cmds < 1) or \
-                (max_size is not None and max_size < 0):
-            raise ValueError(
-                    "If specified, max per-job command count must positive, "
-                    "and max per-job total file size must be nonnegative")
-        else:
-            self.max_cmds = max_cmds
-        self.max_size = max_size or float("inf")
-
-        self._failed_sample_names = []
-        self._pool = []
-        self._curr_size = 0
-        self._reset_curr_skips()
-        self._skipped_sample_pools = []
         self._num_good_job_submissions = 0
         self._num_total_job_submissions = 0
         self._num_cmds_submitted = 0
+        self._curr_size = 0
+        self._failed_sample_names = []
+
+        if not self.collate:
+            self.sample_subtype = sample_subtype or Sample
+            if not issubclass(self.sample_subtype, Sample):
+                raise TypeError("Sample type must extend {}; got {}".format(
+                    Sample.__name__, type(self.sample_subtype).__name__))
+
+            self.automatic = automatic
+            if max_cmds is None and max_size is None:
+                self.max_cmds = 1
+            elif (max_cmds is not None and max_cmds < 1) or \
+                    (max_size is not None and max_size < 0):
+                raise ValueError(
+                        "If specified, max per-job command count must positive, "
+                        "and max per-job total file size must be nonnegative")
+            else:
+                self.max_cmds = max_cmds
+            self.max_size = max_size or float("inf")
+
+            self._pool = []
+            self._reset_curr_skips()
+            self._skipped_sample_pools = []
 
     @property
     def failed_samples(self):
@@ -154,8 +151,8 @@ class SubmissionConductor(object):
         :raise TypeError: If sample subtype is provided but does not extend
             the base Sample class, raise a TypeError.
         """
-
-        _LOGGER.debug("Adding {} to conductor for {}".format(sample.sample_name, self.pl_name))
+        _LOGGER.debug("Adding {} to conductor for {}".
+                      format(sample.sample_name, self.pl_name))
         flag_files = fetch_sample_flags(self.prj, sample, self.pl_name)
         use_this_sample = True
 
@@ -165,8 +162,9 @@ class SubmissionConductor(object):
             # But rescue the sample in case rerun/failed passes
             failed_flag = any("failed" in x for x in flag_files)
             if rerun and failed_flag:
-                _LOGGER.info("> Re-running failed sample '%s' for pipeline '%s'.",
-                     sample.sample_name, self.pl_name)
+                _LOGGER.info(
+                    "> Re-running failed sample '%s' for pipeline '%s'.",
+                    sample.sample_name, self.pl_name)
                 use_this_sample = True
             if not use_this_sample:
                 _LOGGER.info("> Skipping sample '%s' for pipeline '%s', "
@@ -182,7 +180,8 @@ class SubmissionConductor(object):
             sample = self.sample_subtype(sample.to_dict())
         else:
             _LOGGER.debug(
-                "{} is already of type {}".format(sample.sample_name, self.sample_subtype))
+                "{} is already of type {}".format(sample.sample_name,
+                                                  self.sample_subtype))
         _LOGGER.debug("Created %s instance: '%s'",
                       self.sample_subtype.__name__, sample.sample_name)
         sample.prj = grab_project_data(self.prj)
@@ -193,7 +192,6 @@ class SubmissionConductor(object):
         _LOGGER.debug("Determining missing requirements")
         schema_source = self.pl_iface.get_pipeline_schema(self.pl_key)
         if schema_source:
-            from eido import read_schema
             schema_dict = read_schema(schema_source)
             error_type, missing_reqs_general, missing_reqs_specific = \
                 sample.validate_inputs(schema=schema_dict)
@@ -228,7 +226,8 @@ class SubmissionConductor(object):
             self._curr_skip_size += this_sample_size
             self._curr_skip_pool.append(sample)
             if self._is_full(self._curr_skip_pool, self._curr_skip_size):
-                self._skipped_sample_pools.append((self._curr_skip_pool, self._curr_skip_size))
+                self._skipped_sample_pools.append((self._curr_skip_pool,
+                                                   self._curr_skip_size))
                 self._reset_curr_skips()
 
         return skip_reasons
@@ -246,41 +245,27 @@ class SubmissionConductor(object):
         :return bool: Whether a job was submitted (or would've been if
             not for dry run)
         """
-
         if not self._pool:
             _LOGGER.debug("No submission (no pooled samples): %s", self.pl_name)
             submitted = False
-
-        elif force or self._is_full(self._pool, self._curr_size):
-            # Ensure that each sample is individually represented on disk,
-            # specific to subtype as applicable (should just be a single
-            # subtype for each submission conductor, but some may just be
-            # the base Sample while others are the single valid subtype.)
-            pipe_data = self.pl_iface[PL_KEY][self.pl_key]
-            try:
-                outputs = pipe_data[OUTKEY]
-            except KeyError:
-                _LOGGER.debug("No outputs for pipeline '{}'".format(self.pl_key))
-                add_outputs = lambda _: None
-            else:
-                def add_outputs(s):
-                    s[OUTKEY] = outputs
-            for s in self._pool:
-                if not _is_base_sample(s):
-                    subtype_name = s.__class__.__name__
-                    _LOGGER.debug("Writing %s representation to disk: '%s'",
-                                  subtype_name, s.sample_name)
-                add_outputs(s)
-                yaml_path = s.to_yaml(subs_folder_path=self.prj.submission_folder)
-                _LOGGER.debug("Wrote sample YAML: {}".format(yaml_path))
+        elif self.collate or force or self._is_full(self._pool, self._curr_size):
+            if not self.collate:
+                for s in self._pool:
+                    if not _is_base_sample(s):
+                        subtype_name = s.__class__.__name__
+                        _LOGGER.debug("Writing %s representation to disk: '%s'",
+                                      subtype_name, s.sample_name)
+                    yaml_path = \
+                        s.to_yaml(subs_folder_path=self.prj.submission_folder)
+                    _LOGGER.debug("Wrote sample YAML: {}".format(yaml_path))
 
             script = self.write_script(self._pool, self._curr_size)
 
             self._num_total_job_submissions += 1
 
             # Determine whether to actually do the submission.
-            _LOGGER.info("Job script (n=%d; %.2f Gb): %s",
-                         len(self._pool), self._curr_size, script)
+            _LOGGER.info("Job script (n={0}; {1:.2f}Gb): {2}".
+                         format(len(self._pool), self._curr_size, script))
             if self.dry_run:
                 _LOGGER.info("Dry run, not submitted")
             else:
@@ -291,8 +276,9 @@ class SubmissionConductor(object):
                 try:
                     subprocess.check_call(submission_command, shell=True)
                 except subprocess.CalledProcessError:
-                    self._failed_sample_names.extend(
-                            [s.sample_name for s in self._samples])
+                    fails = "" if self.collate \
+                        else [s.sample_name for s in self._samples]
+                    self._failed_sample_names.extend(fails)
                     self._reset_pool()
                     raise JobSubmissionException(sub_cmd, script)
                 time.sleep(self.delay)
@@ -336,13 +322,15 @@ class SubmissionConductor(object):
 
     def _sample_lump_name(self, pool):
         """ Determine how to refer to the 'sample' for this submission. """
+        if self.collate:
+            return "collate{}".format(self._num_total_job_submissions + 1)
         if 1 == self.max_cmds:
             assert 1 == len(pool), \
                 "If there's a single-command limit on job submission, jobname" \
                 " must be determined with exactly one sample in the pool," \
                 " but there is/are {}.".format(len(pool))
             sample = pool[0]
-            return sample.sample_name
+            return sample.sample_name if sample else "collate"
         else:
             # Note the order in which the increment of submission count and
             # the call to this function can influence naming. Make the jobname
@@ -361,8 +349,8 @@ class SubmissionConductor(object):
         the command templates and in submission script creation
         in divvy (via adapters). Accessible via: {looper.attrname}
 
-        :param Iterable[(peppy.Sample, str)] pool: collection of pairs in which
-            first component is a sample instance and second is command/argstring
+        :param Iterable[peppy.Sample] pool: collection of sample instances
+        :param float size: cumulative size of the given pool
         :return dict: looper/submission related settings
         """
         settings = AttMap()
@@ -395,28 +383,30 @@ class SubmissionConductor(object):
         """
         Create the script for job submission.
 
-        :param Iterable[(peppy.Sample, str)] pool: collection of pairs in which
-            first component is a sample instance and second is command/argstring
+        :param Iterable[peppy.Sample] pool: collection of sample instances
         :param float size: cumulative size of the given pool
         :return str: Path to the job submission script created.
         """
         # looper settings determination
+        if self.collate:
+            pool = [None]
         looper = self._set_looper_namespace(pool, size)
         extra_parts_text = " ".join(self.extra_pipe_args) \
             if self.extra_pipe_args else ""
         commands = []
+        pkey = COLLATORS_KEY if self.collate else PL_KEY
         namespaces = dict(project=self.prj[CONFIG_KEY],
                           looper=looper,
-                          # compute=self.prj.dcc.compute,
-                          pipeline=self.pl_iface["pipelines"][self.pl_key])
-        templ = self.pl_iface["pipelines"][self.pl_key]["command_template"]
+                          pipeline=self.pl_iface[pkey][self.pl_key])
+        templ = self.pl_iface[pkey][self.pl_key]["command_template"]
         for sample in pool:
             # cascading compute settings determination:
             # divcfg < pipeline interface < config < CLI
             cli = self.compute_variables or {}  # CLI
-            namespaces.update({"sample": sample})
+            if sample:
+                namespaces.update({"sample": sample})
             res_pkg = self.pl_iface.choose_resource_package(
-                self.pl_key, size, namespaces)  # piface < config
+                self.pl_key, namespaces, size or 0, self.collate)  # piface < config
             res_pkg.update(cli)
             self.prj.dcc.compute.update(res_pkg)  # divcfg
             namespaces.update({"compute": self.prj.dcc.compute})

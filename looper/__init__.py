@@ -93,6 +93,7 @@ def build_parser():
     msg_by_cmd = {
             "run": "Main Looper function: Submit jobs for samples.",
             "rerun": "Resubmit jobs with failed flags.",
+            "collate": "Submit jobs for a project.",
             "summarize": "Summarize statistics of project samples.",
             "destroy": "Remove all files of the project.",
             "check": "Checks flag status of current runs.",
@@ -108,7 +109,8 @@ def build_parser():
     # Run and rerun command
     run_subparser = add_subparser("run")
     rerun_subparser = add_subparser("rerun")
-    for subparser in [run_subparser, rerun_subparser]:
+    collate_subparser = add_subparser("collate")
+    for subparser in [run_subparser, rerun_subparser, collate_subparser]:
         subparser.add_argument(
                 "--ignore-flags", dest="ignore_flags", default=False,
                 action=_StoreBoolActionType, type=html_checkbox(checked=False),
@@ -141,6 +143,7 @@ def build_parser():
                 "--limit", dest="limit", default=None,
                 type=html_range(min_val=1, max_val="num_samples", value="num_samples"),
                 help="Limit to n samples.")
+    for subparser in [run_subparser, rerun_subparser]:
         # Note that defaults for otherwise numeric lump parameters are set to
         # null by default so that the logic that parses their values may
         # distinguish between explicit 0 and lack of specification.
@@ -180,7 +183,8 @@ def build_parser():
 
     # Common arguments
     for subparser in [run_subparser, rerun_subparser, summarize_subparser,
-                      destroy_subparser, check_subparser, clean_subparser]:
+                      destroy_subparser, check_subparser, clean_subparser,
+                      collate_subparser]:
         subparser.add_argument(
                 "config_file",
                 help="Project configuration file (YAML).")
