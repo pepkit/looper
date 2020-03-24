@@ -330,7 +330,7 @@ class SubmissionConductor(object):
                 " must be determined with exactly one sample in the pool," \
                 " but there is/are {}.".format(len(pool))
             sample = pool[0]
-            return sample.sample_name if sample else "collate"
+            return sample.sample_name
         else:
             # Note the order in which the increment of submission count and
             # the call to this function can influence naming. Make the jobname

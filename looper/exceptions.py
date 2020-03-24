@@ -20,10 +20,12 @@ class LooperError(Exception):
     """ Base type for custom package errors. """
     __metaclass__ = ABCMeta
 
+
 class MisconfigurationException(LooperError):
     """ Duplication of pipeline identifier precludes unique pipeline ref. """
     def __init__(self, key):
         super(MisconfigurationException, self).__init__(key)
+
 
 class DuplicatePipelineKeyException(LooperError):
     """ Duplication of pipeline identifier precludes unique pipeline ref. """
@@ -39,7 +41,6 @@ class InvalidResourceSpecificationException(LooperError):
 
 class JobSubmissionException(LooperError):
     """ Error type for when job submission fails. """
-
     def __init__(self, sub_cmd, script):
         self.script = script
         reason = "Error for command {} and script '{}'".\

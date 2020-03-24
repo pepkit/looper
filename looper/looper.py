@@ -28,7 +28,7 @@ from . import LOGGING_LEVEL, __version__, \
     build_parser, _LEVEL_BY_VERBOSITY
 from .conductor import SubmissionConductor
 from .const import *
-from .exceptions import JobSubmissionException, PipelineInterfaceConfigError
+from .exceptions import JobSubmissionException, MisconfigurationException
 from .html_reports import HTMLReportBuilder
 from .pipeline_interface import RESOURCES_KEY
 from .project import Project, ProjectContext
@@ -289,19 +289,37 @@ class Collator(Executor):
         """
         super(Executor, self).__init__()
         self.prj = prj
-        if not self.prj.interfaces \
-                or not hasattr(self.prj[CONFIG_KEY][LOOPER_KEY], PROTOCOL_KEY):
-            raise AttributeError(
+        if not self.prj.interfaces:
+            raise MisconfigurationException(
                 "Looper requires at least one pointer to collator in a pipeline"
                 " interface file, set with the '{p}' key in the project config "
                 "file and define {c} in '{c}' section in that file".
                     format(p=PIPELINE_INTERFACES_KEY, c=COLLATORS_KEY)
             )
-        protos = self.prj[CONFIG_KEY][LOOPER_KEY][PROTOCOL_KEY]
-        self.cols = self.prj.interfaces.collators(protos)
-        self.counter = LooperCounter(len(self.cols))
 
     def __call__(self, args, remaining_args, **compute_kwargs):
+        """
+
+        :param args:
+        :param remaining_args:
+        :param compute_kwargs:
+        :return:
+        """
+        try:
+            collator_key = args.collator_protocol or \
+                           self.prj[CONFIG_KEY][LOOPER_KEY][PROTOCOL_KEY]
+        except KeyError:
+            raise MisconfigurationException(
+                "Looper requires a pointer to collator protocol to use. "
+                "Use '{p}' key in the project config file or provide it "
+                "on the command line".
+                    format(p=PIPELINE_INTERFACES_KEY, c=COLLATORS_KEY)
+            )
+        self.cols = self.prj.interfaces.collators(collator_key)
+        if not self.cols:
+            _LOGGER.warning("Selected collator protocol ({}) did not "
+                            "match any pipelines".format(collator_key))
+        self.counter = LooperCounter(len(self.cols))
         for collator_name, collator_data in self.cols.items():
             _LOGGER.info(self.counter.show(name=collator_name))
             conductor = SubmissionConductor(

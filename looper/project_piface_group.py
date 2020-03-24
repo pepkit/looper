@@ -93,23 +93,23 @@ class ProjectPifaceGroup(object):
 
     def collators(self, protocol):
         """
-        Return all collators associated stored in this group
+        Return all collators stored in this group and associated with the
+        selected protocol
 
         :return Iterable[attamp.PathExtAttMap]: list of collator mappings
         """
-        # TODO: we might want to get collators by collator-specific protocols
+        # TODO: implement match all '*'
+        coll_sections = [COLLATOR_MAPPINGS_KEY, COLLATORS_KEY]
         collators = {}
         for interface in self._interfaces:
-            if all(e in interface for e in [COLLATOR_MAPPINGS_KEY, COLLATORS_KEY]):
+            if all(e in interface for e in coll_sections):
                 if protocol in interface[COLLATOR_MAPPINGS_KEY]:
-                    collator_matches = interface[COLLATOR_MAPPINGS_KEY][protocol]
-                    collator_matches = [collator_matches] \
-                        if isinstance(collator_matches, str) else collator_matches
-                    for match in collator_matches:
+                    coll_hits = interface[COLLATOR_MAPPINGS_KEY][protocol]
+                    coll_hits = [coll_hits] \
+                        if isinstance(coll_hits, str) else coll_hits
+                    for match in coll_hits:
                         if match in interface[COLLATORS_KEY]:
-                            collators.update(
-                                {match: interface}
-                            )
+                            collators.update({match: interface})
         return collators
 
     @property

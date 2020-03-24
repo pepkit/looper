@@ -181,6 +181,9 @@ def build_parser():
             help="Provide upfront confirmation of cleaning intent, "
                  "to skip console query.  Default=False")
 
+    collate_subparser.add_argument(
+        "--collator-protocol", help="Collator protocol to use", type=str)
+
     # Common arguments
     for subparser in [run_subparser, rerun_subparser, summarize_subparser,
                       destroy_subparser, check_subparser, clean_subparser,
