@@ -32,13 +32,19 @@ class ProjectPifaceGroup(object):
         piface and self.update(piface)
 
     def __repr__(self):
-        msg = "ProjectPifaceGroup"
+        msg = type(self).__name__
         try:
             protos = self.protocols
         except (KeyError, AttributeError):
             pass
         else:
             msg += "\n Protocols: {}".format(", ".join(protos))
+        try:
+            coll_protos = self.collator_protocols
+        except (KeyError, AttributeError):
+            pass
+        else:
+            msg += "\n Collator protocols: {}".format(", ".join(coll_protos))
         msg += "\nInterfaces:" + "\n - " + \
                "\n - ".join([pi.__str__() for pi in self._interfaces])
         return msg
@@ -124,6 +130,18 @@ class ProjectPifaceGroup(object):
             one pipeline represented by an interface in this group
         """
         return [p for p in self._indices_by_protocol]
+
+    @property
+    def collator_protocols(self):
+        """
+        Get the collection of names of collator protocols within this group.
+
+        :return list[str]: collection of protocol names that map to at least
+            one pipeline represented by an interface in this group
+        """
+        return sum([interface[COLLATOR_MAPPINGS_KEY].keys()
+                    for interface in self
+                    if COLLATOR_MAPPINGS_KEY in interface], [])
 
     def update(self, piface):
         """
