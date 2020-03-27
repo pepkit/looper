@@ -59,7 +59,8 @@ class ProjectPifaceGroup(object):
         """
         return isinstance(other, ProjectPifaceGroup) and \
             self._interfaces == other._interfaces and \
-            self._indices_by_protocol == other._indices_by_protocol
+            self._indices_by_protocol == other._indices_by_protocol and \
+            self.collator_protocols == other.collator_protocols
 
     def __ne__(self, other):
         """ Leverage the overridden equivalence operator. """

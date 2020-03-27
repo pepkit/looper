@@ -322,6 +322,7 @@ class Collator(Executor):
             _LOGGER.warning("Selected collator protocol ({}) did not "
                             "match any pipelines".format(collator_key))
             sys.exit(0)
+        self.prj.validate_pipeline_outputs()
         self.counter = LooperCounter(len(self.cols))
         for collator_name, collator_data in self.cols.items():
             _LOGGER.info(self.counter.show(name=collator_name))
@@ -372,7 +373,7 @@ class Runner(Executor):
                 return
 
         protocols = {s.protocol for s in self.prj.samples
-                     if hasattr(s, "protocol")}
+                     if hasattr(s, PROTOCOL_KEY)}
 
         failures = defaultdict(list)  # Collect problems by sample.
         processed_samples = set()  # Enforce one-time processing.

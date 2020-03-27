@@ -1,15 +1,18 @@
 """ Looper version of NGS project model. """
 
-from collections import namedtuple
-from functools import partial
-from logging import getLogger
 import itertools
 import os
 
-import peppy
-from peppy import OUTDIR_KEY, CONFIG_KEY
+from collections import namedtuple
+from functools import partial
+from logging import getLogger
+
+from peppy import OUTDIR_KEY, CONFIG_KEY, Project as peppyProject
+from eido import populate_sample_paths, read_schema, populate_project_paths, \
+    PathAttrNotFoundError
 from divvy import DEFAULT_COMPUTE_RESOURCES_NAME, ComputingConfiguration
 from ubiquerg import is_command_callable, is_url
+
 from .const import *
 from .exceptions import DuplicatePipelineKeyException, \
     PipelineInterfaceRequirementsError, MisconfigurationException
@@ -17,12 +20,7 @@ from .pipeline_interface import PROTOMAP_KEY
 from .project_piface_group import ProjectPifaceGroup
 from .utils import partition
 
-
-__author__ = "Vince Reuter"
-__email__ = "vreuter@virginia.edu"
-
 __all__ = ["Project", "process_pipeline_interfaces"]
-
 
 _LOGGER = getLogger(__name__)
 
@@ -30,7 +28,7 @@ _LOGGER = getLogger(__name__)
 class ProjectContext(object):
     """ Wrap a Project to provide protocol-specific Sample selection. """
 
-    def __init__(self, prj, selector_attribute="protocol",
+    def __init__(self, prj, selector_attribute=PROTOCOL_KEY,
                  selector_include=None, selector_exclude=None):
         """ Project and what to include/exclude defines the context. """
         if not isinstance(selector_attribute, str):
@@ -71,7 +69,7 @@ class ProjectContext(object):
         pass
 
 
-class Project(peppy.Project):
+class Project(peppyProject):
     """
     Looper-specific NGS Project.
 
@@ -353,12 +351,13 @@ class Project(peppy.Project):
         """
         return self.interfaces[protocol]
 
-    def get_schemas(self, protocols):
+    def get_schemas(self, protocols, schema_key=SCHEMA_KEY):
         """
         Get the list of unique schema paths for a list of protocols
 
         :param str | Iterable[str] protocols: protocols to
             search pipeline schemas for
+        :param str schema_key: where to look for schemas in the pipeline iface
         :return Iterable[str]: unique list of schema file paths
         """
         if isinstance(protocols, str):
@@ -370,10 +369,32 @@ class Project(peppy.Project):
                 if not isinstance(pipelines, list):
                     pipelines = [pipelines]
                 for pipeline in pipelines:
-                    schema_file = piface.get_pipeline_schema(pipeline)
+                    schema_file = piface.get_pipeline_schema(pipeline,
+                                                             schema_key)
                     if schema_file:
                         schema_set.update([schema_file])
         return list(schema_set)
+
+    def validate_pipeline_outputs(self):
+        """
+        Populate project and sample output attributes based on output schemas
+        that pipeline interfaces point to. Additionally check for the
+        constructed paths existence on disk
+        """
+        for sample in self.samples:
+            if PROTOCOL_KEY in sample:
+                paths = self.get_schemas(sample.protocol, OUTPUT_SCHEMA_KEY)
+                for path in paths:
+                    schema = read_schema(path)
+                    try:
+                        populate_project_paths(self, schema, True)
+                        populate_sample_paths(sample, schema, True)
+                    except PathAttrNotFoundError:
+                        _LOGGER.error(
+                            "Missing outputs of pipelines matched by protocol: "
+                            "{}".format(sample.protocol)
+                        )
+                        raise
 
     def get_outputs(self, skip_sample_less=True):
         """

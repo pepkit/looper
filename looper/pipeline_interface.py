@@ -14,8 +14,7 @@ from .exceptions import InvalidResourceSpecificationException, \
     PipelineInterfaceRequirementsError
 from .pipereqs import create_pipeline_requirement, RequiredExecutable
 from .sample import Sample
-from .const import GENERIC_PROTOCOL_KEY, COMPUTE_KEY, SIZE_DEP_VARS_KEY, \
-    ID_COLNAME, FILE_SIZE_COLNAME, LOOPER_KEY, FLUID_ATTRS_KEY, COLLATORS_KEY
+from .const import *
 from peppy import CONFIG_KEY
 from attmap import PathExAttMap as PXAM
 from divvy import DEFAULT_COMPUTE_RESOURCES_NAME, NEW_COMPUTE_KEY as DIVVY_COMPUTE_KEY
@@ -552,14 +551,15 @@ class PipelineInterface(PXAM):
                       .format(PROTOMAP_KEY), DeprecationWarning)
         return self.protocol_mapping
 
-    def get_pipeline_schema(self, pipeline_name):
+    def get_pipeline_schema(self, pipeline_name, schema_key=SCHEMA_KEY):
         """
         Get path to the pipeline schema.
 
         :param str pipeline_name: pipeline name
+        :param str schema_key: where to look for schemas in the pipeline iface
         :return str: absolute path to the pipeline schema file
         """
-        schema_source = self.get_attribute(pipeline_name, "schema",
+        schema_source = self.get_attribute(pipeline_name, schema_key,
                                            path_as_list=False)
         _LOGGER.debug("Got schema source: {}".format(schema_source))
         if schema_source:
