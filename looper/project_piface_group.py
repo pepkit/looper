@@ -7,7 +7,8 @@ if sys.version_info < (3, 3):
 else:
     from collections.abc import Mapping
 from .pipeline_interface import PipelineInterface, PROTOMAP_KEY
-from .const import GENERIC_PROTOCOL_KEY, COLLATORS_KEY, COLLATOR_MAPPINGS_KEY
+from .const import GENERIC_PROTOCOL_KEY, COLLATORS_KEY, COLLATOR_MAPPINGS_KEY, \
+    ALL_COLL_KEYS
 
 __author__ = "Vince Reuter"
 __email__ = "vreuter@virginia.edu"
@@ -98,18 +99,20 @@ class ProjectPifaceGroup(object):
 
         :return Iterable[attamp.PathExtAttMap]: list of collator mappings
         """
-        # TODO: implement match all '*'
-        coll_sections = [COLLATOR_MAPPINGS_KEY, COLLATORS_KEY]
         collators = {}
         for interface in self._interfaces:
-            if all(e in interface for e in coll_sections):
+            if all(e in interface for e in ALL_COLL_KEYS):
                 if protocol in interface[COLLATOR_MAPPINGS_KEY]:
                     coll_hits = interface[COLLATOR_MAPPINGS_KEY][protocol]
-                    coll_hits = [coll_hits] \
-                        if isinstance(coll_hits, str) else coll_hits
-                    for match in coll_hits:
-                        if match in interface[COLLATORS_KEY]:
-                            collators.update({match: interface})
+                elif protocol == GENERIC_PROTOCOL_KEY:
+                    coll_hits = interface[COLLATOR_MAPPINGS_KEY].values()
+                else:
+                    continue
+                coll_hits = [coll_hits] \
+                    if isinstance(coll_hits, str) else coll_hits
+                for match in coll_hits:
+                    if match in interface[COLLATORS_KEY]:
+                        collators.update({match: interface})
         return collators
 
     @property

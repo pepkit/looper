@@ -117,7 +117,8 @@ class PipelineInterface(PXAM):
         else:
             super(PipelineInterface, self).__setitem__(key, value)
 
-    def choose_resource_package(self, pipeline_name, namespaces, file_size, collate=False):
+    def choose_resource_package(self, pipeline_name, namespaces, file_size,
+                                collate=False):
         """
         Select resource bundle for given input file size to given pipeline.
 
@@ -125,6 +126,8 @@ class PipelineInterface(PXAM):
         :param float file_size: Size of input data (in gigabytes).
         :param Mapping[Mapping[str]] namespaces: namespaced variables to pass
             as a context for fluid attributes command rendering
+        :param bool collate: Whether a collate job is to be submitted (runs on
+            the project level, rather that on the sample level)
         :return MutableMapping: resource bundle appropriate for given pipeline,
             for given input file size
         :raises ValueError: if indicated file size is negative, or if the
@@ -467,8 +470,9 @@ class PipelineInterface(PXAM):
         """
         Translate a pipeline name (e.g., stripping file extension).
 
-        :param str pipeline: Pipeline name or script (top-level key in
+        :param str pipeline: pipeline name or script (top-level key in
             pipeline interface mapping).
+        :param bool collate: whether to get a project-level name (collator)
         :return str: translated pipeline name, as specified in config or by
             stripping the pipeline's file extension
         """
@@ -571,6 +575,7 @@ class PipelineInterface(PXAM):
         Check to make sure that pipeline has an entry and if so, return it.
 
         :param str pipeline_name: Name of pipeline.
+        :param bool collate: whether to select from collators.
         :return Mapping: configuration data for pipeline indicated
         :raises MissingPipelineConfigurationException: if there's no
             configuration data for the indicated pipeline

@@ -80,7 +80,7 @@ class SubmissionConductor(object):
         self.pl_key = pipeline_key
         self.pl_iface = pipeline_interface
         self.pl_name = \
-            pipeline_interface.get_pipeline_name(pipeline_key, self.collate)
+            pipeline_interface.get_pipeline_name(self.pl_key, self.collate)
         self.prj = prj
         self.compute_variables = compute_variables
         self.extra_pipe_args = extra_args or []

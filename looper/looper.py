@@ -803,8 +803,7 @@ class LooperCounter(object):
 
 def _submission_status_text(curr, total, name, protocol=None, color=Fore.CYAN):
     """ Generate submission sample text for run or collate """
-    txt = color + "## [{n} of {N}] {name} ".\
-        format(n=curr, N=total, name=name)
+    txt = color + "## [{n} of {t}] {name} ".format(n=curr, t=total, name=name)
     if protocol:
         txt += "({protocol})".format(protocol=protocol)
     return txt + Style.RESET_ALL
