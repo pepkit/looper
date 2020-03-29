@@ -64,7 +64,6 @@ class PipelineInterface(PXAM):
             raise PipelineInterfaceConfigError(missing)
 
         # Format and add the protocol mappings and individual interfaces.
-        config = expand_pl_paths(config)
         assert PROTOMAP_KEY in config, \
             "For protocol mapping standardization, pipeline interface data " \
             "must contain key '{}'".format(PROTOMAP_KEY)
@@ -75,6 +74,7 @@ class PipelineInterface(PXAM):
             assert k not in self, \
                 "Interface key already mapped: {} ({})".format(k, self[k])
             self[k] = v
+        self.expand_pipeline_paths()
 
     def __str__(self):
         """ String representation """
@@ -115,6 +115,35 @@ class PipelineInterface(PXAM):
             super(PipelineInterface, self).__setitem__(key, m)
         else:
             super(PipelineInterface, self).__setitem__(key, value)
+
+    def expand_pipeline_paths(self):
+        """
+        Expand path to each pipeline in pipelines and collators subsection
+        of pipeline interface
+        """
+        sections = []
+        if PL_KEY not in self:
+            raise PipelineInterfaceConfigError(
+                "Pipeline interface must contain '{}' key".format(PL_KEY))
+        sections.append(PL_KEY)
+        if COLLATORS_KEY in self:
+            sections.append(COLLATORS_KEY)
+        for section in sections:
+            for pipe_data in self[section].values():
+                if "path" in pipe_data:
+                    pipe_path = pipe_data["path"]
+                    pipe_path = expandpath(pipe_path)
+                    if not os.path.isabs(pipe_path):
+                        abs = os.path.join(os.path.dirname(
+                            self.pipe_iface_file), pipe_path)
+                        if os.path.exists(abs):
+                            _LOGGER.debug(
+                                "Pipeline path relative to pipeline interface"
+                                " made absolute: {}".format(abs))
+                            pipe_data["path"] = abs
+                            continue
+                    _LOGGER.debug("Expanded path: {}".format(pipe_path))
+                    pipe_data["path"] = pipe_path
 
     def choose_resource_package(self, pipeline_name, namespaces, file_size,
                                 collate=False):
@@ -613,27 +642,6 @@ class PipelineInterface(PXAM):
             is not defined in this interface
         """
         return not self.missing_requirements(pipeline)
-
-
-def expand_pl_paths(piface):
-    """
-    Expand path to each pipeline in a declared mapping
-
-    :param Mapping piface: Key-value mapping in which one value is a collection
-        of pipeline manifests, i.e. in the pipelines section of a pipeline
-        interface config file
-    :return Mapping: Same as input, but with any pipeline path expanded
-    """
-    assert PL_KEY in piface, "For pipeline path expansion, pipeline interface" \
-        "data must contain key '{}'".format(PL_KEY)
-    for pipe_data in piface[PL_KEY].values():
-        if "path" in pipe_data:
-            pipe_path = pipe_data["path"]
-            _LOGGER.debug("Expanding path: '%s'", pipe_path)
-            pipe_path = expandpath(pipe_path)
-            _LOGGER.debug("Expanded: '%s'", pipe_path)
-            pipe_data["path"] = pipe_path
-    return piface
 
 
 def read_pipe_reqs(reqs_data):
