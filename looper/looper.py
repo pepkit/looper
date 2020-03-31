@@ -322,7 +322,7 @@ class Collator(Executor):
             _LOGGER.warning("Selected collator protocol ({}) did not "
                             "match any pipelines".format(collator_key))
             sys.exit(0)
-        self.prj.validate_pipeline_outputs()
+        self.prj.populate_pipeline_outputs()
         self.counter = LooperCounter(len(self.cols))
         for collator_name, collator_data in self.cols.items():
             _LOGGER.info(self.counter.show(name=collator_name))

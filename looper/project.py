@@ -375,7 +375,7 @@ class Project(peppyProject):
                         schema_set.update([schema_file])
         return list(schema_set)
 
-    def validate_pipeline_outputs(self):
+    def populate_pipeline_outputs(self, check_exist=False):
         """
         Populate project and sample output attributes based on output schemas
         that pipeline interfaces point to. Additionally check for the
@@ -387,63 +387,14 @@ class Project(peppyProject):
                 for path in paths:
                     schema = read_schema(path)
                     try:
-                        populate_project_paths(self, schema, True)
-                        populate_sample_paths(sample, schema, True)
+                        populate_project_paths(self, schema, check_exist)
+                        populate_sample_paths(sample, schema, check_exist)
                     except PathAttrNotFoundError:
                         _LOGGER.error(
                             "Missing outputs of pipelines matched by protocol: "
                             "{}".format(sample.protocol)
                         )
                         raise
-
-    def get_outputs(self, skip_sample_less=True):
-        """
-        Map pipeline identifier to collection of output specifications.
-
-        This method leverages knowledge of two collections of different kinds
-        of entities that meet in the manifestation of a Project. The first
-        is a collection of samples, which is known even in peppy.Project. The
-        second is a mapping from protocol/assay/library strategy to a collection
-        of pipeline interfaces, in which kinds of output may be declared.
-
-        Knowledge of these two items is here harnessed to map the identifier
-        for each pipeline about which this Project is aware to a collection of
-        pairs of identifier for a kind of output and the collection of
-        this Project's samples for which it's applicable (i.e., those samples
-        with protocol that maps to the corresponding pipeline).
-
-        :param bool skip_sample_less: whether to omit pipelines that are for
-            protocols of which the Project has no Sample instances
-        :return Mapping[str, Mapping[str, namedtuple]]: collection of bindings
-            between identifier for pipeline and collection of bindings between
-            name for a kind of output and pair in which first component is a
-            path template and the second component is a collection of
-            sample names
-        :raise TypeError: if argument to sample-less pipeline skipping parameter
-            is not a Boolean
-        """
-        if not isinstance(skip_sample_less, bool):
-            raise TypeError(
-                "Non-Boolean argument to sample-less skip flag: {} ({})".
-                format(skip_sample_less, type(skip_sample_less)))
-        prots_data_pairs = _gather_ifaces(self.interfaces)
-        m = {}
-        for name, (prots, data) in prots_data_pairs.items():
-            try:
-                outs = data[OUTKEY]
-            except KeyError:
-                _LOGGER.debug("No {} declared for pipeline: {}".
-                              format(OUTKEY, name))
-                continue
-            snames = \
-                [s.sample_name for s in self.samples if s.protocol in prots]
-            if not snames and skip_sample_less:
-                _LOGGER.debug("No samples matching protocol(s): {}".
-                              format(", ".join(prots)))
-                continue
-            m[name] = {path_key: (path_val, snames)
-                       for path_key, path_val in outs.items()}
-        return m
 
     def _omit_from_repr(self, k, cls):
         """

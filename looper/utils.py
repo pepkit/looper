@@ -206,12 +206,12 @@ def get_file_for_project(prj, appendix):
     Takes the possibility of amendment being activated at the time
 
     :param looper.Project prj: project object
-    :param str appendix: the appendix of the file to create the path for, like 'objs_summary.tsv' for objects summary file
+    :param str appendix: the appendix of the file to create the path for,
+        like 'objs_summary.tsv' for objects summary file
     :return str: path to the file
     """
-    fp = os.path.join(prj[CONFIG_KEY][OUTDIR_KEY], prj[NAME_KEY])
+    fp = os.path.join(prj[CONFIG_KEY][LOOPER_KEY][OUTDIR_KEY], prj[NAME_KEY])
     if hasattr(prj, AMENDMENTS_KEY) and getattr(prj, AMENDMENTS_KEY):
-        _LOGGER.warning("prj[AMENDMENTS_KEY]: {}".format(getattr(prj, AMENDMENTS_KEY)))
         fp += '_' + '_'.join(getattr(prj, AMENDMENTS_KEY))
     fp += '_' + appendix
     return fp

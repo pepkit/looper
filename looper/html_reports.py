@@ -10,9 +10,12 @@ import sys
 from warnings import warn
 from datetime import timedelta
 from ._version import __version__ as v
-from .const import TEMPLATES_DIRNAME, BUTTON_APPEARANCE_BY_FLAG, TABLE_APPEARANCE_BY_FLAG, NO_DATA_PLACEHOLDER, IMAGE_EXTS, PROFILE_COLNAMES
+from .const import TEMPLATES_DIRNAME, BUTTON_APPEARANCE_BY_FLAG, \
+    TABLE_APPEARANCE_BY_FLAG, NO_DATA_PLACEHOLDER, IMAGE_EXTS, \
+    PROFILE_COLNAMES, LOOPER_KEY, OUTDIR_KEY
 from .utils import get_file_for_project
 from peppy.const import *
+from eido import get_project_outputs, read_schema
 from copy import copy as cp
 _LOGGER = logging.getLogger("looper")
 
@@ -32,17 +35,23 @@ class HTMLReportBuilder(object):
         self.reports_dir = get_file_for_project(self.prj, "reports")
         self.index_html_path = get_file_for_project(self.prj, "_summary.html")
         self.index_html_filename = os.path.basename(self.index_html_path)
+        self._outdir = self.prj[CONFIG_KEY][LOOPER_KEY][OUTDIR_KEY]
         _LOGGER.debug("Reports dir: {}".format(self.reports_dir))
 
     def __call__(self, objs, stats, columns):
         """ Do the work of the subcommand/program. """
         # Generate HTML report
-        navbar = self.create_navbar(self.create_navbar_links(objs=objs, stats=stats, wd=self.prj.metadata.output_dir),
-                                    self.index_html_filename)
-        navbar_reports = self.create_navbar(self.create_navbar_links(objs=objs, stats=stats, wd=self.reports_dir),
-                                            os.path.join("..", self.index_html_filename))
-        index_html_path = self.create_index_html(objs, stats, columns, footer=self.create_footer(), navbar=navbar,
-                                                 navbar_reports=navbar_reports)
+        navbar = self.create_navbar(self.create_navbar_links(
+            objs=objs, stats=stats,
+            wd=self._outdir),
+            self.index_html_filename)
+        navbar_reports = self.create_navbar(
+            self.create_navbar_links(
+                objs=objs, stats=stats, wd=self.reports_dir),
+            os.path.join("..", self.index_html_filename))
+        index_html_path = self.create_index_html(
+            objs, stats, columns, footer=self.create_footer(),
+            navbar=navbar, navbar_reports=navbar_reports)
         return index_html_path
 
     def create_object_parent_html(self, objs, navbar, footer):
@@ -206,9 +215,9 @@ class HTMLReportBuilder(object):
                 err_msg = ("Sample: {} | " + "Missing valid object path for: {}")
                 # Report the sample that fails, if that information exists
                 if str(row['sample_name']) and str(row['filename']):
-                    _LOGGER.warn(err_msg.format(row['sample_name'], row['filename']))
+                    _LOGGER.warning(err_msg.format(row['sample_name'], row['filename']))
                 else:
-                    _LOGGER.warn(err_msg.format("Unknown sample"))
+                    _LOGGER.warning(err_msg.format("Unknown sample"))
                 object_relpath = ""
 
             # Set the PATH to the image/file. Catch any errors.
@@ -219,13 +228,13 @@ class HTMLReportBuilder(object):
                 try:
                     image_path = os.path.join(self.prj.results_folder, row['sample_name'], row['anchor_image'])
                 except AttributeError:
-                    _LOGGER.warn(str(row))
+                    _LOGGER.warning(str(row))
                     err_msg = ("Sample: {} | " + "Missing valid image path for: {}")
                     # Report the sample that fails, if that information exists
                     if str(row['sample_name']) and str(row['filename']):
-                        _LOGGER.warn(err_msg.format(row['sample_name'], row['filename']))
+                        _LOGGER.warning(err_msg.format(row['sample_name'], row['filename']))
                     else:
-                        _LOGGER.warn(err_msg.format("Unknown", "Unknown"))
+                        _LOGGER.warning(err_msg.format("Unknown", "Unknown"))
                     image_path = ""
 
             # Check for the presence of both the file and thumbnail
@@ -265,7 +274,7 @@ class HTMLReportBuilder(object):
         """
         html_filename = sample_name + ".html"
         html_page = os.path.join(self.reports_dir, html_filename.replace(' ', '_').lower())
-        sample_page_relpath = os.path.relpath(html_page, self.prj.metadata.output_dir)
+        sample_page_relpath = os.path.relpath(html_page, self._outdir)
         single_sample = _pd.DataFrame() if objs.empty else objs[objs['sample_name'] == sample_name]
         if not os.path.exists(os.path.dirname(html_page)):
             os.makedirs(os.path.dirname(html_page))
@@ -373,17 +382,22 @@ class HTMLReportBuilder(object):
         :return str: rendered status HTML file
         """
         _LOGGER.debug("Building status page...")
-        template_vars = dict(status_table=status_table, navbar=navbar, footer=footer)
+        template_vars = dict(status_table=status_table, navbar=navbar,
+                             footer=footer)
         return render_jinja_template("status.html", self.j_env, template_vars)
 
     def create_project_objects(self):
-        """ Render available project level summaries as additional figures/links """
-        _LOGGER.debug("Building project object...")
+        """
+        Render available project level outputs defined in the
+        pipeline output schemas
+        """
+        _LOGGER.debug("Building project objects section...")
         all_protocols = [sample.protocol for sample in self.prj.samples]
 
         # For each protocol report the project summarizers' results
         for protocol in set(all_protocols):
-            _LOGGER.debug("Creating project objects for protocol:{}".format(protocol))
+            _LOGGER.debug("Creating project-level outputs for protocol: {}".
+                          format(protocol))
             figures = []
             links = []
             warnings = []
@@ -392,40 +406,60 @@ class HTMLReportBuilder(object):
             # Check the interface files for summarizers
             for iface in ifaces:
                 pl = iface.fetch_pipelines(protocol)
-                summary_results = iface.get_attribute(pl, "summary_results")
+                output_schema_paths = iface.get_attribute(pl, "output_schema")
+                if output_schema_paths is not None:
+                    for output_schema_path in output_schema_paths:
+                        results = get_project_outputs(
+                            self.prj, read_schema(output_schema_path))
+                        for name, result in results.items():
+                            title = str(result.setdefault('title', "No caption"))
+                            result_type = str(result['type'])
+                            result_file = str(result['path'])
+                            result_img = str(result.setdefault('thumbnail_path',
+                                                               None))
+                            if result_img and not os.path.isabs(result_file):
+                                result_img = os.path.join(
+                                    self._outdir, result_img)
+                            if not os.path.isabs(result_file):
+                                result_file = os.path.join(
+                                    self._outdir, result_file)
 
-                # Build the HTML for each summary result
-                if summary_results is not None:
-                    for result in summary_results:
-                        result.setdefault('caption', "No caption")
-                        caption = str(result['caption'])
-                        result_file = str(result['path']).replace('{name}', str(self.prj.name))
-                        result_img = str(result['thumbnail_path']).replace('{name}', str(self.prj.name))
-                        search = os.path.join(self.prj.metadata.output_dir, '{}'.format(result_file))
-                        # Confirm the file itself was produced
-                        if glob.glob(search):
-                            file_path = str(glob.glob(search)[0])
-                            file_relpath = os.path.relpath(file_path, self.prj.metadata.output_dir)
-                            search = os.path.join(self.prj.metadata.output_dir, '{}'.format(result_img))
+                            # Confirm the file itself was produced
+                            if glob.glob(result_file):
+                                file_path = str(glob.glob(result_file)[0])
+                                file_relpath = os.path.relpath(
+                                    file_path, self._outdir)
+                                if result_type == "image":
+                                    # Add as a figure, find thumbnail
+                                    search = os.path.join(self._outdir,
+                                                          result_img)
+                                    if glob.glob(search):
+                                        img_path = str(glob.glob(search)[0])
+                                        img_relpath = os.path.relpath(
+                                            img_path, self._outdir)
+                                        figures.append([file_relpath, title,
+                                                        img_relpath])
 
-                            # Add as a figure if thumbnail exists
-                            if glob.glob(search):
-                                img_path = str(glob.glob(search)[0])
-                                img_relpath = os.path.relpath(img_path, self.prj.metadata.output_dir)
-                                figures.append([file_relpath, caption, img_relpath])
-                            # add as a link otherwise
+                                # add as a link otherwise
+                                # TODO: add more fine-grained type support?
+                                #  not just image and link
+                                else:
+                                    links.append([title, file_relpath])
+
                             else:
-                                links.append([caption, file_relpath])
-
-                        else:
-                            warnings.append("{} ({})".format(caption, result_file))
+                                warnings.append("{} ({})".format(title,
+                                                                 result_file))
                 else:
-                    _LOGGER.debug("No custom summarizers were found for this pipeline. Proceeded with default only.")
+                    _LOGGER.debug("No project-level outputs defined in "
+                                  "schema: {}".format(output_schema_paths))
             if warnings:
-                _LOGGER.warning("Summarizer was unable to find: " + ', '.join(str(x) for x in warnings))
-
+                _LOGGER.warning("Summarizer was unable to find: "
+                                + ', '.join(str(x) for x in warnings))
+        _LOGGER.debug("collected project-level figures: {}".format(figures))
+        _LOGGER.debug("collected project-level links: {}".format(links))
         template_vars = dict(figures=figures, links=links)
-        return render_jinja_template("project_object.html", self.j_env, template_vars)
+        return render_jinja_template("project_object.html", self.j_env,
+                                     template_vars)
 
     def create_index_html(self, objs, stats, col_names, navbar, footer, navbar_reports=None):
         """
@@ -455,14 +489,14 @@ class HTMLReportBuilder(object):
         if not objs.dropna().empty:
             objs.drop_duplicates(keep='last', inplace=True)
         # Generate parent index.html page path
-        index_html_path = get_file_for_project(self.prj, "_summary.html")
+        index_html_path = get_file_for_project(self.prj, "summary.html")
 
         # Add stats_summary.tsv button link
-        stats_file_name = os.path.join(self.prj.metadata.output_dir, self.prj.name)
+        stats_file_name = os.path.join(self._outdir, self.prj.name)
         if hasattr(self.prj, "subproject") and self.prj.subproject:
             stats_file_name += '_' + self.prj.subproject
         stats_file_name += '_stats_summary.tsv'
-        stats_file_path = os.path.relpath(stats_file_name, self.prj.metadata.output_dir)
+        stats_file_path = os.path.relpath(stats_file_name, self._outdir)
         # Add stats summary table to index page and produce individual
         # sample pages
         if os.path.isfile(stats_file_name):
