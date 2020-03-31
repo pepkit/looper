@@ -174,7 +174,12 @@ class PipelineInterface(PXAM):
         def _file_size_ante(name, data):
             # Retrieve this package's minimum file size.
             # Retain backwards compatibility while enforcing key presence.
-            fsize = float(data[FILE_SIZE_COLNAME])
+            try:
+                fsize = float(data[FILE_SIZE_COLNAME])
+            except KeyError:
+                raise InvalidResourceSpecificationException(
+                    "Required column '{}' does not exist in resource "
+                    "specification TSV.".format(FILE_SIZE_COLNAME))
             # Negative file size is illogical and problematic for comparison.
             if fsize < 0:
                 raise InvalidResourceSpecificationException(
