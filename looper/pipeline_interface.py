@@ -289,11 +289,12 @@ class PipelineInterface(PXAM):
                                   format(rp_data))
                     resources_data = rp_data
                     break
-
-        if COMPUTE_KEY in pl and RESOURCES_KEY in pl[COMPUTE_KEY]:
-            # overwrite possibly selected size dependent data with values
-            # explicitly defined in the piface
-            resources_data.update(pl[COMPUTE_KEY][RESOURCES_KEY])
+        if COMPUTE_KEY in pl:
+            resources_data.update(pl[COMPUTE_KEY])
+            if RESOURCES_KEY in pl[COMPUTE_KEY]:
+                # overwrite possibly selected size dependent data with values
+                # explicitly defined in the piface
+                resources_data.update(pl[COMPUTE_KEY][RESOURCES_KEY])
 
         project = namespaces["project"]
         if COMPUTE_KEY in project[LOOPER_KEY] \
@@ -301,7 +302,7 @@ class PipelineInterface(PXAM):
             # overwrite with values from project.looper.compute.resources
             resources_data.\
                 update(project[LOOPER_KEY][COMPUTE_KEY][RESOURCES_KEY])
-
+        _LOGGER.debug("Compute/resources data: \n{}".format(resources_data))
         return resources_data
 
     def finalize_pipeline_key_and_paths(self, pipeline_key):
