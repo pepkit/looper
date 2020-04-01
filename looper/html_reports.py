@@ -13,9 +13,10 @@ from ._version import __version__ as v
 from .const import TEMPLATES_DIRNAME, BUTTON_APPEARANCE_BY_FLAG, \
     TABLE_APPEARANCE_BY_FLAG, NO_DATA_PLACEHOLDER, IMAGE_EXTS, \
     PROFILE_COLNAMES, LOOPER_KEY, OUTDIR_KEY
+from .processed_project import get_project_outputs
 from .utils import get_file_for_project
 from peppy.const import *
-from eido import get_project_outputs, read_schema
+from eido import read_schema
 from copy import copy as cp
 _LOGGER = logging.getLogger("looper")
 

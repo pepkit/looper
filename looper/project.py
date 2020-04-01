@@ -8,11 +8,11 @@ from functools import partial
 from logging import getLogger
 
 from peppy import OUTDIR_KEY, CONFIG_KEY, Project as peppyProject
-from eido import populate_sample_paths, read_schema, populate_project_paths, \
-    PathAttrNotFoundError
+from eido import read_schema, PathAttrNotFoundError
 from divvy import DEFAULT_COMPUTE_RESOURCES_NAME, ComputingConfiguration
 from ubiquerg import is_command_callable, is_url
 
+from .processed_project import populate_sample_paths, populate_project_paths
 from .const import *
 from .exceptions import DuplicatePipelineKeyException, \
     PipelineInterfaceRequirementsError, MisconfigurationException
