@@ -454,8 +454,8 @@ class HTMLReportBuilder(object):
                     _LOGGER.debug("No project-level outputs defined in "
                                   "schema: {}".format(output_schema_paths))
             if warnings:
-                _LOGGER.warning("Summarizer was unable to find: "
-                                + ', '.join(str(x) for x in warnings))
+                _LOGGER.warning("Not found: {}".
+                                format([str(x) for x in warnings]))
         _LOGGER.debug("collected project-level figures: {}".format(figures))
         _LOGGER.debug("collected project-level links: {}".format(links))
         template_vars = dict(figures=figures, links=links)
@@ -838,18 +838,11 @@ def create_status_table(prj, final=True):
 
     # Alert the user to any warnings generated
     if status_warning:
-        warn("The stats table is incomplete, likely because " +
-             "one or more jobs either failed or is still running.")
+        _LOGGER.warning("The stats table is incomplete, likely because one or "
+                        "more jobs either failed or is still running.")
     if sample_warning:
-        if len(sample_warning) == 1:
-            warn("{} is not present in {}".format(
-                ''.join(str(sample) for sample in sample_warning),
-                prj.results_folder))
-        else:
-            warn_msg = "The following samples are not present in {}: {}"
-            warn(warn_msg.format(
-                prj.results_folder,
-                ' '.join(str(sample) for sample in sample_warning)))
+        _LOGGER.warning("Samples not present in {}: {}".format(
+            prj.results_folder, str([sample for sample in sample_warning])))
     template_vars = dict(sample_link_names=sample_link_names, row_classes=row_classes, flags=flags, times=times,
                          mems=mems)
     template_name = "status_table_no_links.html"

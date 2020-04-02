@@ -224,9 +224,12 @@ def jinja_render_cmd_strictly(cmd_template, namespaces):
     Strictly, which means that all the requested attributes must be
     available in the namespaces
 
-    :param cmd_template:
-    :param namespaces:
-    :return:
+    :param str cmd_template: command template do be filled in with the
+        variables in the provided namespaces. For example:
+        "prog.py --name {project.name} --len {sample.len}"
+    :param Mapping[Mapping[str] namespaces: context for command rendering.
+        Possible namespaces are: looper, project, sample, pipeline
+    :return str: rendered command
     """
     def _finfun(x):
         """

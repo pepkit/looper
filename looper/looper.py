@@ -566,7 +566,6 @@ class Summarizer(Executor):
 
     def __call__(self):
         """ Do the summarization. """
-        run_custom_summarizers(self.prj)
         # initialize the report builder
         report_builder = HTMLReportBuilder(self.prj)
         # run the report builder. a set of HTML pages is produced
@@ -574,41 +573,10 @@ class Summarizer(Executor):
         _LOGGER.info("HTML Report (n=" + str(len(self.stats)) + "): " + report_path)
 
 
-def run_custom_summarizers(project):
-    """
-    Run custom summarizers if any are defined
-
-    :param looper.Project project: the project to be summarized
-    """
-    summarizers_to_run = set()
-    pipelines = []
-    all_protocols = [sample.protocol for sample in project.samples]
-    for protocol in set(all_protocols):
-        try:
-            ifaces = project.get_interfaces(protocol)
-        except KeyError:
-            _LOGGER.warning("No interface for protocol '{}', skipping summary".format(protocol))
-            continue
-        for iface in ifaces:
-            pl = iface.fetch_pipelines(protocol)
-            pipelines.append(pl)
-    if pipelines is not None:
-        for pl in set(pipelines):
-            pl_summarizers = iface.get_attribute(pl, "summarizers")
-            if pl_summarizers is not None:
-                for summarizer in pl_summarizers:
-                    if not os.path.isabs(summarizer):
-                        summarizer = os.path.join(os.path.dirname(iface.pipe_iface_file), summarizer)
-                    try:
-                        _LOGGER.debug("Running custom summarizer: {}".format(summarizer))
-                        subprocess.call([summarizer, project.config_file])
-                    except OSError:
-                        _LOGGER.warning("Summarizer was unable to run: " + str(summarizer))
-
-
 def _create_stats_summary(project, counter):
     """
-    Create stats spreadsheet and columns to be considered in the report, save the spreadsheet to file
+    Create stats spreadsheet and columns to be considered in the report, save
+    the spreadsheet to file
 
     :param looper.Project project: the project to be summarized
     :param looper.LooperCounter counter: a counter object
@@ -617,7 +585,7 @@ def _create_stats_summary(project, counter):
     columns = []
     stats = []
     project_samples = project.samples
-    missing_files = 0
+    missing_files = []
     _LOGGER.info("Creating stats summary...")
     for sample in project_samples:
         _LOGGER.info(counter.show(sample.sample_name, sample.protocol))
@@ -629,9 +597,10 @@ def _create_stats_summary(project, counter):
         # Version 0.3 standardized all stats into a single file
         stats_file = os.path.join(sample_output_folder, "stats.tsv")
         if not os.path.isfile(stats_file):
-            missing_files += 1
+            missing_files.append(stats_file)
             continue
-        t = _pd.read_csv(stats_file, sep="\t", header=None, names=['key', 'value', 'pl'])
+        t = _pd.read_csv(stats_file, sep="\t", header=None,
+                         names=['key', 'value', 'pl'])
         t.drop_duplicates(subset=['key', 'pl'], keep='last', inplace=True)
         t.loc[:, 'plkey'] = t['pl'] + ":" + t['key']
         dupes = t.duplicated(subset=['key'], keep=False)
@@ -640,10 +609,12 @@ def _create_stats_summary(project, counter):
         stats.append(sample_stats)
         columns.extend(t.key.tolist())
     tsv_outfile_path = get_file_for_project(project, 'stats_summary.tsv')
-    if missing_files > 0:
-        _LOGGER.warning("Stats files missing for {} samples".format(missing_files))
+    if missing_files:
+        _LOGGER.warning("Stats files missing for {} samples: {}".
+                        format(len(missing_files),missing_files))
     tsv_outfile = open(tsv_outfile_path, 'w')
-    tsv_writer = csv.DictWriter(tsv_outfile, fieldnames=uniqify(columns), delimiter='\t', extrasaction='ignore')
+    tsv_writer = csv.DictWriter(tsv_outfile, fieldnames=uniqify(columns),
+                                delimiter='\t', extrasaction='ignore')
     tsv_writer.writeheader()
     for row in stats:
         tsv_writer.writerow(row)
@@ -664,21 +635,23 @@ def _create_obj_summary(project, counter):
     _LOGGER.info("Creating objects summary...")
     objs = _pd.DataFrame()
     # Create objects summary file
-    missing_files = 0
+    missing_files = []
     for sample in project.samples:
         # Process any reported objects
         _LOGGER.info(counter.show(sample.sample_name, sample.protocol))
         sample_output_folder = sample_folder(project, sample)
         objs_file = os.path.join(sample_output_folder, "objects.tsv")
         if not os.path.isfile(objs_file):
-            missing_files += 1
+            missing_files.append(objs_file)
             continue
         t = _pd.read_csv(objs_file, sep="\t", header=None,
-                         names=['key', 'filename', 'anchor_text', 'anchor_image', 'annotation'])
+                         names=['key', 'filename', 'anchor_text',
+                                'anchor_image', 'annotation'])
         t['sample_name'] = sample.sample_name
         objs = objs.append(t, ignore_index=True)
-    if missing_files > 0:
-        _LOGGER.warning("Object files missing for {} samples".format(missing_files))
+    if missing_files:
+        _LOGGER.warning("Object files missing for {} samples: {}".
+                        format(len(missing_files), missing_files))
     # create the path to save the objects file in
     objs.to_csv(get_file_for_project(project, 'objs_summary.tsv'), sep="\t")
     return objs
