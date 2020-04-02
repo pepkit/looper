@@ -281,10 +281,10 @@ class PipelineInterface(PXAM):
             # choose minimally-sufficient package
             for rp_name, rp_data in resource_packages:
                 size_ante = _file_size_ante(rp_name, rp_data)
-                if file_size >= size_ante:
+                if file_size <= size_ante:
                     _LOGGER.debug(
-                        "Selected '{}' package with file size {} Gb for file "
-                        "of size {} Gb.".format(rp_name, size_ante, file_size))
+                        "Selected '{}' package with file size {}Gb for file "
+                        "of size {}Gb.".format(rp_name, size_ante, file_size))
                     _LOGGER.debug("Selected resource package data:\n{}".
                                   format(rp_data))
                     resources_data = rp_data
@@ -302,7 +302,6 @@ class PipelineInterface(PXAM):
             # overwrite with values from project.looper.compute.resources
             resources_data.\
                 update(project[LOOPER_KEY][COMPUTE_KEY][RESOURCES_KEY])
-        _LOGGER.debug("Compute/resources data: \n{}".format(resources_data))
         return resources_data
 
     def finalize_pipeline_key_and_paths(self, pipeline_key):
