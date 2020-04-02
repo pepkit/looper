@@ -138,7 +138,7 @@ def build_parser():
                 help="Specification of individual computing resource settings; "
                      "separate setting name/key from value with equals sign, "
                      "and separate key-value pairs from each other by comma; "
-                     "e.g., --resources k1=v1,k2=v2")
+                     "e.g., " + EXAMPLE_RES_SPEC_FMT)
         subparser.add_argument(
                 "--limit", dest="limit", default=None,
                 type=html_range(min_val=1, max_val="num_samples", value="num_samples"),

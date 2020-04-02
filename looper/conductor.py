@@ -323,7 +323,7 @@ class SubmissionConductor(object):
     def _sample_lump_name(self, pool):
         """ Determine how to refer to the 'sample' for this submission. """
         if self.collate:
-            return "collate{}".format(self._num_total_job_submissions + 1)
+            return "collate"
         if 1 == self.max_cmds:
             assert 1 == len(pool), \
                 "If there's a single-command limit on job submission, jobname" \
@@ -398,6 +398,7 @@ class SubmissionConductor(object):
         namespaces = dict(project=self.prj[CONFIG_KEY],
                           looper=looper,
                           pipeline=self.pl_iface[pkey][self.pl_key])
+
         templ = self.pl_iface[pkey][self.pl_key]["command_template"]
         for sample in pool:
             # cascading compute settings determination:
@@ -421,6 +422,11 @@ class SubmissionConductor(object):
             else:
                 commands.append("{} {}".format(argstring, extra_parts_text))
         looper.command = "\n".join(commands)
+        _LOGGER.debug("sample namespace:\n{}".format(sample))
+        _LOGGER.debug("project namespace:\n{}".format(self.prj[CONFIG_KEY]))
+        _LOGGER.debug("pipeline namespace:\n{}".
+                      format(self.pl_iface[pkey][self.pl_key]))
+        _LOGGER.debug("compute namespace:\n{}".format(self.prj.dcc.compute))
         _LOGGER.debug("looper namespace:\n{}".format(looper))
         subm_base = os.path.join(self.prj.submission_folder, looper.job_name)
         return self.prj.dcc.write_script(output_path=subm_base + ".sub",

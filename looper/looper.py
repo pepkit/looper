@@ -834,7 +834,7 @@ def _proc_resources_spec(spec):
     if bads:
         raise ValueError("Could not completely parse itemized resource "
                          "specification; these failed as key-value pairs; "
-                         "please check usage: {}".format(", ".join(bads)))
+                         "correct format: " + EXAMPLE_RES_SPEC_FMT)
     return data
 
 
