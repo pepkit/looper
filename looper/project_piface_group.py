@@ -7,7 +7,7 @@ if sys.version_info < (3, 3):
 else:
     from collections.abc import Mapping
 from .pipeline_interface import PipelineInterface, PROTOMAP_KEY
-from .const import GENERIC_PROTOCOL_KEY, COLLATORS_KEY, COLLATOR_MAPPINGS_KEY, \
+from .const import GENERIC_PROTOCOL_KEY, COLLATORS_KEY, COLLATOR_MAPPING_KEY, \
     ALL_COLL_KEYS
 
 __author__ = "Vince Reuter"
@@ -107,19 +107,22 @@ class ProjectPifaceGroup(object):
         :return Iterable[attamp.PathExtAttMap]: list of collator mappings
         """
         collators = {}
+        coll_hits = set()
         for interface in self._interfaces:
             if all(e in interface for e in ALL_COLL_KEYS):
-                if protocol in interface[COLLATOR_MAPPINGS_KEY]:
-                    coll_hits = interface[COLLATOR_MAPPINGS_KEY][protocol]
-                elif protocol == GENERIC_PROTOCOL_KEY:
-                    coll_hits = interface[COLLATOR_MAPPINGS_KEY].values()
-                else:
-                    continue
-                coll_hits = [coll_hits] \
-                    if isinstance(coll_hits, str) else coll_hits
-                for match in coll_hits:
-                    if match in interface[COLLATORS_KEY]:
-                        collators.update({match: interface})
+                if GENERIC_PROTOCOL_KEY \
+                        in interface[COLLATOR_MAPPING_KEY].keys():
+                    coll_hits.add(
+                        interface[COLLATOR_MAPPING_KEY][GENERIC_PROTOCOL_KEY])
+                if protocol in interface[COLLATOR_MAPPING_KEY]:
+                    coll_hits.add(interface[COLLATOR_MAPPING_KEY][protocol])
+                if protocol == GENERIC_PROTOCOL_KEY:
+                    [coll_hits.add(x)
+                     for x in interface[COLLATOR_MAPPING_KEY].values()]
+                if coll_hits:
+                    for match in coll_hits:
+                        if match in interface[COLLATORS_KEY]:
+                            collators.update({match: interface})
         return collators
 
     @property
@@ -140,9 +143,9 @@ class ProjectPifaceGroup(object):
         :return list[str]: collection of protocol names that map to at least
             one pipeline represented by an interface in this group
         """
-        return sum([interface[COLLATOR_MAPPINGS_KEY].keys()
+        return sum([interface[COLLATOR_MAPPING_KEY].keys()
                     for interface in self
-                    if COLLATOR_MAPPINGS_KEY in interface], [])
+                    if COLLATOR_MAPPING_KEY in interface], [])
 
     def update(self, piface):
         """
