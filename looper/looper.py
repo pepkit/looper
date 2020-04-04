@@ -473,12 +473,6 @@ class Runner(Executor):
             # Add this sample to the processed collection.
             processed_samples.add(sample.sample_name)
 
-            # At this point, we have a generic Sample; write that to disk
-            # for reuse in case of many jobs (pipelines) using base Sample.
-            # Do a single overwrite here, then any subsequent Sample can be sure
-            # that the file is fresh, with respect to this run of looper.
-            sample.to_yaml(subs_folder_path=self.prj.submission_folder)
-
             pipe_keys = pipe_keys_by_protocol.get(sample.protocol) \
                 or pipe_keys_by_protocol.get(GENERIC_PROTOCOL_KEY)
             _LOGGER.debug("Considering {} pipeline(s): {}".

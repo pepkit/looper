@@ -9,8 +9,9 @@ from jinja2.exceptions import UndefinedError
 
 from attmap import AttMap
 from eido import read_schema
-
 from peppy.const import CONFIG_KEY
+
+from .processed_project import populate_sample_paths
 from .const import *
 from .exceptions import JobSubmissionException
 from .pipeline_interface import PL_KEY
@@ -192,9 +193,8 @@ class SubmissionConductor(object):
         _LOGGER.debug("Determining missing requirements")
         schema_source = self.pl_iface.get_pipeline_schema(self.pl_key)
         if schema_source:
-            schema_dict = read_schema(schema_source)
             error_type, missing_reqs_general, missing_reqs_specific = \
-                sample.validate_inputs(schema=schema_dict)
+                sample.validate_inputs(schema=read_schema(schema_source))
             if missing_reqs_general:
                 missing_reqs_msg = "{}: {}".format(
                     missing_reqs_general, missing_reqs_specific)
@@ -255,6 +255,9 @@ class SubmissionConductor(object):
                         subtype_name = s.__class__.__name__
                         _LOGGER.debug("Writing %s representation to disk: '%s'",
                                       subtype_name, s.sample_name)
+                    schemas = self.prj.get_schemas(s.protocol, OUTPUT_SCHEMA_KEY)
+                    [populate_sample_paths(s, read_schema(schema))
+                     for schema in schemas]
                     yaml_path = \
                         s.to_yaml(subs_folder_path=self.prj.submission_folder)
                     _LOGGER.debug("Wrote sample YAML: {}".format(yaml_path))
