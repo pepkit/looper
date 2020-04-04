@@ -8,14 +8,12 @@ import warnings
 import pandas as pd
 from logging import getLogger
 
-from .const import PIPELINE_REQUIREMENTS_KEY
 from .exceptions import InvalidResourceSpecificationException, \
     MissingPipelineConfigurationException, PipelineInterfaceConfigError, \
     PipelineInterfaceRequirementsError
 from .pipereqs import create_pipeline_requirement, RequiredExecutable
 from .sample import Sample
 from .const import *
-from peppy import CONFIG_KEY
 from attmap import PathExAttMap as PXAM
 from divvy import DEFAULT_COMPUTE_RESOURCES_NAME, NEW_COMPUTE_KEY as DIVVY_COMPUTE_KEY
 from divvy.const import OLD_COMPUTE_KEY
@@ -25,10 +23,6 @@ from yacman import load_yaml
 
 _LOGGER = getLogger(__name__)
 
-
-PL_KEY = "pipelines"
-PROTOMAP_KEY = "protocol_mapping"
-RESOURCES_KEY = "resources"
 SUBTYPE_MAPPING_SECTION = "sample_subtypes"
 
 
@@ -379,7 +373,7 @@ class PipelineInterface(PXAM):
             _LOGGER.debug("Expanding pipeline path: '{}'".format(script_path))
             script_path = os.path.join(self.pipelines_path, script_path)
         try:
-            setattr(self["pipelines"][pipeline_key], "path", script_path)
+            setattr(self[PL_KEY][pipeline_key], "path", script_path)
             _LOGGER.debug("'{}' pipeline path set to: {}"
                           .format(pipeline_key, script_path))
         except KeyError:

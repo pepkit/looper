@@ -9,7 +9,7 @@ from jinja2.exceptions import UndefinedError
 
 from attmap import AttMap
 from eido import read_schema
-from peppy.const import CONFIG_KEY
+from peppy.const import CONFIG_KEY, SAMPLE_YAML_EXT
 
 from .processed_project import populate_sample_paths
 from .const import *
@@ -78,6 +78,7 @@ class SubmissionConductor(object):
 
         super(SubmissionConductor, self).__init__()
         self.collate = collate
+        self.section_key = COLLATORS_KEY if self.collate else PL_KEY
         self.pl_key = pipeline_key
         self.pl_iface = pipeline_interface
         self.pl_name = \
@@ -251,19 +252,11 @@ class SubmissionConductor(object):
         elif self.collate or force or self._is_full(self._pool, self._curr_size):
             if not self.collate:
                 for s in self._pool:
-                    if not _is_base_sample(s):
-                        subtype_name = s.__class__.__name__
-                        _LOGGER.debug("Writing %s representation to disk: '%s'",
-                                      subtype_name, s.sample_name)
                     schemas = self.prj.get_schemas(s.protocol, OUTPUT_SCHEMA_KEY)
                     [populate_sample_paths(s, read_schema(schema))
                      for schema in schemas]
-                    yaml_path = \
-                        s.to_yaml(subs_folder_path=self.prj.submission_folder)
-                    _LOGGER.debug("Wrote sample YAML: {}".format(yaml_path))
-
+                    s.to_yaml(self._get_sample_yaml_path(s))
             script = self.write_script(self._pool, self._curr_size)
-
             self._num_total_job_submissions += 1
 
             # Determine whether to actually do the submission.
@@ -299,6 +292,30 @@ class SubmissionConductor(object):
             submitted = False
 
         return submitted
+
+    def _get_sample_yaml_path(self, sample):
+        """
+        Generate path to the sample YAML target location.
+
+        Render path template defined in the pipeline section
+        (relative to the pipeline output directory).
+        If no template defined, output to the submission directory.
+
+        :param peppy.Sample sample: sample to generate yaml path for
+        :return str: path to yaml file
+        """
+        if SAMPLE_YAML_PATH_KEY \
+                not in self.pl_iface[self.section_key][self.pl_key]:
+            return os.path.join(self.prj.submission_folder,
+                                "{}{}".format(sample.sample_name,
+                                              SAMPLE_YAML_EXT[0]))
+        pth_templ = \
+            self.pl_iface[self.section_key][self.pl_key][SAMPLE_YAML_PATH_KEY]
+        namespaces = {"sample": sample, "project": self.prj.prj[CONFIG_KEY],
+                      "pipeline": self.pl_iface[self.section_key][self.pl_key]}
+        path = jinja_render_cmd_strictly(pth_templ, namespaces)
+        return path if os.path.isabs(path) \
+            else os.path.join(self.prj.output_dir, path)
 
     def _is_full(self, pool, size):
         """
@@ -397,12 +414,11 @@ class SubmissionConductor(object):
         extra_parts_text = " ".join(self.extra_pipe_args) \
             if self.extra_pipe_args else ""
         commands = []
-        pkey = COLLATORS_KEY if self.collate else PL_KEY
         namespaces = dict(project=self.prj[CONFIG_KEY],
                           looper=looper,
-                          pipeline=self.pl_iface[pkey][self.pl_key])
+                          pipeline=self.pl_iface[self.section_key][self.pl_key])
 
-        templ = self.pl_iface[pkey][self.pl_key]["command_template"]
+        templ = self.pl_iface[self.section_key][self.pl_key]["command_template"]
         for sample in pool:
             # cascading compute settings determination:
             # divcfg < pipeline interface < config < CLI
@@ -428,7 +444,7 @@ class SubmissionConductor(object):
         _LOGGER.debug("sample namespace:\n{}".format(sample))
         _LOGGER.debug("project namespace:\n{}".format(self.prj[CONFIG_KEY]))
         _LOGGER.debug("pipeline namespace:\n{}".
-                      format(self.pl_iface[pkey][self.pl_key]))
+                      format(self.pl_iface[self.section_key][self.pl_key]))
         _LOGGER.debug("compute namespace:\n{}".format(self.prj.dcc.compute))
         _LOGGER.debug("looper namespace:\n{}".format(looper))
         subm_base = os.path.join(self.prj.submission_folder, looper.job_name)

@@ -11,11 +11,11 @@ __all__ = [
     "PIPELINE_REQUIREMENTS_KEY", "FLAGS", "PIPE_ARGS_SECTION", "FLUID_ATTRS_KEY",
     "SUBMISSION_FOLDER_KEY", "GENERIC_PROTOCOL_KEY", "NOT_SUB_MSG",
     "RESULTS_SUBDIR_KEY", "SUBMISSION_SUBDIR_KEY", "TEMPLATES_DIRNAME",
-    "SAMPLE_YAML_FILE_KEY", "SAMPLE_YAML_EXT", "SAMPLE_EXECUTION_TOGGLE",
-    "VALID_READ_TYPES", "REQUIRED_INPUTS_ATTR_NAME", "ALL_INPUTS_ATTR_NAME",
+    "SAMPLE_EXECUTION_TOGGLE", "VALID_READ_TYPES", "REQUIRED_INPUTS_ATTR_NAME",
     "FILE_SIZE_COLNAME", "COMPUTE_PACKAGE_KEY", "COLLATORS_KEY", "PROTOCOL_KEY",
     "COLLATOR_MAPPINGS_KEY", "ALL_COLL_KEYS", "SCHEMA_KEY", "OUTPUT_SCHEMA_KEY",
-    "EXAMPLE_RES_SPEC_FMT"
+    "EXAMPLE_RES_SPEC_FMT", "ALL_INPUTS_ATTR_NAME","PL_KEY", "PROTOMAP_KEY",
+    "SAMPLE_YAML_PATH_KEY", "RESOURCES_KEY"
 ]
 
 FLAGS = ["completed", "running", "failed", "waiting", "partial"]
@@ -65,11 +65,15 @@ TABLE_APPEARANCE_BY_FLAG = _get_apperance_dict("table")
 BUTTON_APPEARANCE_BY_FLAG = _get_apperance_dict("btn btn")
 NO_DATA_PLACEHOLDER = "NA"
 PIPELINE_INTERFACES_KEY = "pipeline_interfaces"
+PL_KEY = "pipelines"
+PROTOMAP_KEY = "protocol_mapping"
+RESOURCES_KEY = "resources"
 COLLATORS_KEY = "collators"
-COLLATOR_MAPPINGS_KEY = "collator_mappings"
+COLLATOR_MAPPINGS_KEY = "collator_mapping"
 ALL_COLL_KEYS = [COLLATOR_MAPPINGS_KEY, COLLATORS_KEY]
 SCHEMA_KEY = "schema"
 OUTPUT_SCHEMA_KEY = "output_schema"
+SAMPLE_YAML_PATH_KEY = "sample_yaml_path"
 PIPELINE_REQUIREMENTS_KEY = "required_executables"
 OUTKEY = "outputs"
 RESULTS_SUBDIR_KEY = "results_subdir"
@@ -83,8 +87,6 @@ NOT_SUB_MSG = "> Not submitted: {}"
 IMAGE_EXTS = ('.png', '.jpg', '.jpeg', '.svg', '.gif')
 PROFILE_COLNAMES = ['pid', 'hash', 'cid', 'runtime', 'mem', 'cmd', 'lock']  # this strongly depends on pypiper's profile.tsv format
 
-SAMPLE_YAML_FILE_KEY = "yaml_file"
-SAMPLE_YAML_EXT = ".yaml"
 SAMPLE_EXECUTION_TOGGLE = "toggle"
 VALID_READ_TYPES = ["single", "paired"]
 REQUIRED_INPUTS_ATTR_NAME = "required_inputs_attr"
