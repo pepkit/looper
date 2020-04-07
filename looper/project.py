@@ -14,11 +14,10 @@ from ubiquerg import is_command_callable, is_url
 
 from .processed_project import populate_sample_paths, populate_project_paths
 from .const import *
-from .exceptions import DuplicatePipelineKeyException, \
-    PipelineInterfaceRequirementsError, MisconfigurationException
-from .pipeline_interface import PROTOMAP_KEY
+from .exceptions import *
 from .project_piface_group import ProjectPifaceGroup
 from .utils import partition
+from .looper_config import *
 
 __all__ = ["Project", "process_pipeline_interfaces"]
 
@@ -99,15 +98,19 @@ class Project(peppyProject):
     def __init__(self, config_file, amendments=None, pifaces=None, dry=False,
                  compute_env_file=None, no_environment_exception=RuntimeError,
                 no_compute_exception=RuntimeError, file_checks=False,
-                 permissive=True, **kwargs):
+                 permissive=True, looper_config=None, **kwargs):
         super(Project, self).__init__(config_file, amendments=amendments,
                                       **kwargs)
         if LOOPER_KEY not in self[CONFIG_KEY]:
             raise MisconfigurationException("'{}' key not found in config".
                                             format(LOOPER_KEY))
-        pifaces_paths = pifaces or \
-                        self[CONFIG_KEY][LOOPER_KEY][PIPELINE_INTERFACES_KEY]
-        self.interfaces = process_pipeline_interfaces(pifaces_paths)
+        if looper_config and pifaces:
+            {looper_config.add_protocol_mapping(proto, piface)
+             for proto, piface in pifaces.items()}
+        elif not looper_config:
+            looper_config = LooperConfig(entries={PROTOMAP_KEY: pifaces})
+        self.interfaces = looper_config
+        # self.interfaces = process_pipeline_interfaces(pifaces)
         self.file_checks = file_checks
         self.permissive = permissive
         self.dcc = ComputingConfiguration(
@@ -235,121 +238,35 @@ class Project(peppyProject):
         # the locations indicated in the project configuration file) as a
         # sort of pool of information about possible ways in which to submit
         # pipeline(s) for sample(s) of the indicated protocol.
-        try:
-            pipeline_interfaces = self.get_interfaces(protocol)
-        except KeyError:
-            # Messaging can be done by the caller.
-            _LOGGER.debug("No interface for protocol: %s", protocol)
-            return []
+        pifaces = self.interfaces.get_pipeline_interface(protocol)
+        if not pifaces:
+            raise PipelineInterfaceConfigError(
+                "No interfaces for protocol: {}".format(protocol))
+
+        # coonvert to a list, in the future we might allow to match multiple
+        pifaces = pifaces if isinstance(pifaces, str) else [pifaces]
 
         job_submission_bundles = []
-        pipeline_keys_used = set()
-        _LOGGER.debug("Building pipelines for {} interface(s)...".
-                      format(len(pipeline_interfaces)))
+        new_jobs = []
 
-        bundle_by_strict_pipe_key = {}
+        _LOGGER.debug("Building pipelines matched by protocol: {}".
+                      format(protocol))
 
-        for pipe_iface in pipeline_interfaces:
-            pipeline_keys = pipe_iface.parse_mapped_pipelines(protocol)
-            if pipeline_keys is None:
+        for pipe_iface in pifaces:
+            # Determine how to reference the pipeline and where it is.
+            path = pipe_iface[SAMPLE_PL_KEY]["path"]
+            if not (os.path.exists(path) or
+                    is_command_callable(path)):
+                _LOGGER.warning("Missing pipeline script: {}".
+                                format(path))
                 continue
 
-            # Skip over pipelines already mapped by another location.
-            already_mapped, new_scripts = \
-                partition(pipeline_keys,
-                          partial(_is_member, items=pipeline_keys_used))
-            pipeline_keys_used |= set(pipeline_keys)
-
-            # Attempt to validate that partition yielded disjoint subsets.
-            try:
-                disjoint_partition_violation = \
-                    set(already_mapped) & set(new_scripts)
-            except TypeError:
-                _LOGGER.debug("Unable to hash partitions for validation")
-            else:
-                assert not disjoint_partition_violation, \
-                    "Partitioning {} with membership in {} as " \
-                    "predicate produced intersection: {}".format(
-                        pipeline_keys, pipeline_keys_used,
-                        disjoint_partition_violation)
-
-            if len(already_mapped) > 0:
-                _LOGGER.debug("Skipping {} already-mapped script name(s): {}".
-                              format(len(already_mapped), already_mapped))
-            _LOGGER.debug("{} new scripts for protocol {} from "
-                          "pipeline(s) location '{}': {}".
-                          format(len(new_scripts), protocol,
-                                 pipe_iface.source, new_scripts))
-
-            # For each pipeline script to which this protocol will pertain,
-            # create the new jobs/submission bundles.
-            new_jobs = []
-            for pipeline_key in new_scripts:
-                # Determine how to reference the pipeline and where it is.
-                strict_pipe_key, full_pipe_path, full_pipe_path_with_flags = \
-                    pipe_iface.finalize_pipeline_key_and_paths(pipeline_key)
-                # Skip and warn about nonexistent alleged pipeline path.
-                if not (os.path.exists(full_pipe_path) or
-                        is_command_callable(full_pipe_path)):
-                    _LOGGER.warning(
-                        "Missing pipeline script: '%s'", full_pipe_path)
-                    continue
-
-                if not pipe_iface.validate(pipeline_key):
-                    unmet = pipe_iface.missing_requirements(pipeline_key)
-                    _LOGGER.warning(
-                        "{n} requirements unsatisfied for pipeline '{p}' "
-                        "(interface from {s}): {data}".format(
-                            n=len(unmet), p=pipeline_key, s=pipe_iface.source,
-                            data=unmet))
-                    continue
-
-                # Determine which interface and Sample subtype to use.
-                sample_subtype = \
-                    pipe_iface.fetch_sample_subtype(
-                            protocol, strict_pipe_key, full_pipe_path)
-
-                # Package the pipeline's interface, subtype, command, and key.
-                submission_bundle = SubmissionBundle(
-                    pipe_iface, sample_subtype, strict_pipe_key,
-                )
-
-                # Enforce bundle uniqueness for each strict pipeline key.
-                maybe_new_bundle = (sample_subtype, pipe_iface)
-                old_bundle = bundle_by_strict_pipe_key.setdefault(
-                    strict_pipe_key, maybe_new_bundle)
-                if old_bundle != maybe_new_bundle:
-                    errmsg = "Strict pipeline key '{}' maps to more than " \
-                             "one combination of pipeline script + flags, " \
-                             "sample subtype, and pipeline interface. " \
-                             "'{}'\n{}".format(strict_pipe_key,
-                                               maybe_new_bundle, old_bundle)
-                    raise ValueError(errmsg)
-
-                # Add this bundle to the collection of ones relevant for the
-                # current PipelineInterface.
-                new_jobs.append(submission_bundle)
+            # Add this bundle to the collection of ones relevant for the
+            # current PipelineInterface.
+            new_jobs.append(pipe_iface)
 
             job_submission_bundles.append(new_jobs)
-
-        # Repeat logic check of short-circuit conditional to account for
-        # edge case in which it's satisfied during the final iteration.
-        if priority and len(job_submission_bundles) > 1:
-            return job_submission_bundles[0]
-        else:
-            return list(itertools.chain(*job_submission_bundles))
-
-    def get_interfaces(self, protocol):
-        """
-        Get the pipeline interfaces associated with the given protocol.
-
-        :param str protocol: name of the protocol for which to get interfaces
-        :return Iterable[looper.PipelineInterface]: collection of pipeline
-            interfaces associated with the given protocol
-        :raise KeyError: if the given protocol is not (perhaps yet) mapped
-            to any pipeline interface
-        """
-        return self.interfaces[protocol]
+        return list(itertools.chain(*job_submission_bundles))
 
     def get_schemas(self, protocols, schema_key=SCHEMA_KEY):
         """
@@ -364,15 +281,10 @@ class Project(peppyProject):
             protocols = [protocols]
         schema_set = set()
         for protocol in protocols:
-            for piface in self.get_interfaces(protocol):
-                pipelines = piface.parse_mapped_pipelines(protocol)
-                if not isinstance(pipelines, list):
-                    pipelines = [pipelines]
-                for pipeline in pipelines:
-                    schema_file = piface.get_pipeline_schema(pipeline,
-                                                             schema_key)
-                    if schema_file:
-                        schema_set.update([schema_file])
+            piface = self.interfaces.get_pipeline_interface(protocol)
+            schema_file = piface.get_pipeline_schema(SAMPLE_PL_KEY, schema_key)
+            if schema_file:
+                schema_set.update([schema_file])
         return list(schema_set)
 
     def populate_pipeline_outputs(self, check_exist=False):
@@ -571,8 +483,7 @@ OutputGroup = namedtuple("OutputGroup", field_names=["path", "samples"])
 # Collect PipelineInterface, Sample type, pipeline path, and script with flags.
 SubmissionBundle = namedtuple(
     "SubmissionBundle",
-    field_names=["interface", "subtype", "pipeline"])
-SUBMISSION_BUNDLE_PIPELINE_KEY_INDEX = 2
+    field_names=["interface"])
 
 
 def _is_member(item, items):

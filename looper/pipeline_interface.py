@@ -202,17 +202,17 @@ class PipelineInterface(PXAM):
                 """ Log error info and raise latest handled exception """
                 _LOGGER.error(
                     "Could not retrieve JSON via command: '{}'".format(
-                        pipeline[COMPUTE_KEY][FLUID_ATTRS_KEY]))
+                        pipeline[COMPUTE_KEY][DYN_VARS_KEY]))
                 raise
             json = None
             if COMPUTE_KEY in pipeline \
-                    and FLUID_ATTRS_KEY in pipeline[COMPUTE_KEY]:
+                    and DYN_VARS_KEY in pipeline[COMPUTE_KEY]:
                 from subprocess import check_output, CalledProcessError
                 from json import loads
                 from .utils import jinja_render_cmd_strictly
                 try:
                     cmd = jinja_render_cmd_strictly(
-                        cmd_template=pipeline[COMPUTE_KEY][FLUID_ATTRS_KEY],
+                        cmd_template=pipeline[COMPUTE_KEY][DYN_VARS_KEY],
                         namespaces=namespaces
                     )
                     json = loads(check_output(cmd, shell=True))

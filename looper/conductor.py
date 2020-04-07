@@ -14,7 +14,6 @@ from peppy.const import CONFIG_KEY, SAMPLE_YAML_EXT
 from .processed_project import populate_sample_paths
 from .const import *
 from .exceptions import JobSubmissionException
-from .pipeline_interface import PL_KEY
 from .utils import grab_project_data, fetch_sample_flags, \
     jinja_render_cmd_strictly
 from .sample import Sample
@@ -34,7 +33,7 @@ class SubmissionConductor(object):
 
     """
 
-    def __init__(self, pipeline_key, pipeline_interface, prj, dry_run=False,
+    def __init__(self, pipeline_interface, prj, dry_run=False,
                  delay=0, sample_subtype=None, extra_args=None,
                  ignore_flags=False, compute_variables=None, max_cmds=None,
                  max_size=None, automatic=True, collate=False):
@@ -78,11 +77,9 @@ class SubmissionConductor(object):
 
         super(SubmissionConductor, self).__init__()
         self.collate = collate
-        self.section_key = COLLATORS_KEY if self.collate else PL_KEY
-        self.pl_key = pipeline_key
+        self.section_key = PROJECT_PL_KEY if self.collate else SAMPLE_PL_KEY
         self.pl_iface = pipeline_interface
-        self.pl_name = \
-            pipeline_interface.get_pipeline_name(self.pl_key, self.collate)
+        self.pl_name = self.pl_iface.pipeline_name
         self.prj = prj
         self.compute_variables = compute_variables
         self.extra_pipe_args = extra_args or []
@@ -192,7 +189,7 @@ class SubmissionConductor(object):
         sample.setdefault("input_file_size", 0)
         # Check for any missing requirements before submitting.
         _LOGGER.debug("Determining missing requirements")
-        schema_source = self.pl_iface.get_pipeline_schema(self.pl_key)
+        schema_source = self.pl_iface.get_pipeline_schema(self.section_key)
         if schema_source:
             error_type, missing_reqs_general, missing_reqs_specific = \
                 sample.validate_inputs(schema=read_schema(schema_source))
@@ -305,14 +302,14 @@ class SubmissionConductor(object):
         :return str: path to yaml file
         """
         if SAMPLE_YAML_PATH_KEY \
-                not in self.pl_iface[self.section_key][self.pl_key]:
+                not in self.pl_iface[self.section_key]:
             return os.path.join(self.prj.submission_folder,
                                 "{}{}".format(sample.sample_name,
                                               SAMPLE_YAML_EXT[0]))
-        pth_templ = \
-            self.pl_iface[self.section_key][self.pl_key][SAMPLE_YAML_PATH_KEY]
-        namespaces = {"sample": sample, "project": self.prj.prj[CONFIG_KEY],
-                      "pipeline": self.pl_iface[self.section_key][self.pl_key]}
+        pth_templ = self.pl_iface[self.section_key][SAMPLE_YAML_PATH_KEY]
+        namespaces = {"sample": sample,
+                      "project": self.prj.prj[CONFIG_KEY],
+                      "pipeline": self.pl_iface[self.section_key]}
         path = jinja_render_cmd_strictly(pth_templ, namespaces)
         return path if os.path.isabs(path) \
             else os.path.join(self.prj.output_dir, path)
@@ -361,7 +358,8 @@ class SubmissionConductor(object):
 
     def _jobname(self, pool):
         """ Create the name for a job submission. """
-        return "{}_{}".format(self.pl_key, self._sample_lump_name(pool))
+        return "{}_{}".format(self.pl_iface.pipeline_name,
+                              self._sample_lump_name(pool))
 
     def _set_looper_namespace(self, pool, size):
         """
@@ -385,9 +383,10 @@ class SubmissionConductor(object):
         if hasattr(self.prj, "pipeline_config"):
             # Index with 'pl_key' instead of 'pipeline'
             # because we don't care about parameters here.
-            if hasattr(self.prj.pipeline_config, self.pl_key):
+            if hasattr(self.prj.pipeline_config, self.section_key):
                 # First priority: pipeline config in project config
-                pl_config_file = getattr(self.prj.pipeline_config, self.pl_key)
+                pl_config_file = getattr(self.prj.pipeline_config,
+                                         self.section_key)
                 # Make sure it's a file (it could be provided as null.)
                 if pl_config_file:
                     if not os.path.isfile(pl_config_file):
@@ -416,9 +415,9 @@ class SubmissionConductor(object):
         commands = []
         namespaces = dict(project=self.prj[CONFIG_KEY],
                           looper=looper,
-                          pipeline=self.pl_iface[self.section_key][self.pl_key])
+                          pipeline=self.pl_iface[self.section_key])
 
-        templ = self.pl_iface[self.section_key][self.pl_key]["command_template"]
+        templ = self.pl_iface[self.section_key]["command_template"]
         for sample in pool:
             # cascading compute settings determination:
             # divcfg < pipeline interface < config < CLI
@@ -426,7 +425,7 @@ class SubmissionConductor(object):
             if sample:
                 namespaces.update({"sample": sample})
             res_pkg = self.pl_iface.choose_resource_package(
-                self.pl_key, namespaces, size or 0, self.collate)  # piface < config
+                self.section_key, namespaces, size or 0)  # config
             res_pkg.update(cli)
             self.prj.dcc.compute.update(res_pkg)  # divcfg
             namespaces.update({"compute": self.prj.dcc.compute})
@@ -444,7 +443,7 @@ class SubmissionConductor(object):
         _LOGGER.debug("sample namespace:\n{}".format(sample))
         _LOGGER.debug("project namespace:\n{}".format(self.prj[CONFIG_KEY]))
         _LOGGER.debug("pipeline namespace:\n{}".
-                      format(self.pl_iface[self.section_key][self.pl_key]))
+                      format(self.pl_iface[self.section_key]))
         _LOGGER.debug("compute namespace:\n{}".format(self.prj.dcc.compute))
         _LOGGER.debug("looper namespace:\n{}".format(looper))
         subm_base = os.path.join(self.prj.submission_folder, looper.job_name)

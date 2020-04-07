@@ -134,11 +134,11 @@ def build_parser():
                 "--compute-package", dest=COMPUTE_KEY,
                 help="Name of computing resource package to use")
         subparser.add_argument(
-                "--resources",
+                "--compute",
                 help="Specification of individual computing resource settings; "
                      "separate setting name/key from value with equals sign, "
                      "and separate key-value pairs from each other by comma; "
-                     "e.g., " + EXAMPLE_RES_SPEC_FMT)
+                     "e.g., " + EXAMPLE_COMPUTE_SPEC_FMT)
         subparser.add_argument(
                 "--limit", dest="limit", default=None,
                 type=html_range(min_val=1, max_val="num_samples", value="num_samples"),
@@ -189,8 +189,10 @@ def build_parser():
                       destroy_subparser, check_subparser, clean_subparser,
                       collate_subparser]:
         subparser.add_argument(
-                "config_file",
-                help="Project configuration file (YAML).")
+                "config_file", help="Project configuration file (YAML).")
+        subparser.add_argument(
+                "-c", "--config", required=False, default=None,
+                dest="looper_config", help="Looper configuration file (YAML).")
         subparser.add_argument(
                 "--pipeline-interfaces", dest="pifaces", required=False, default=None,
                 nargs="+", action='append', help="Path to a pipeline interface file")

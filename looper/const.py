@@ -8,14 +8,14 @@ __all__ = [
     "BUTTON_APPEARANCE_BY_FLAG", "TABLE_APPEARANCE_BY_FLAG", "ID_COLNAME",
     "NO_DATA_PLACEHOLDER", "OUTKEY", "RESULTS_FOLDER_KEY", "OUTDIR_KEY",
     "LOOPER_KEY", "COMPUTE_KEY", "PIPELINE_INTERFACES_KEY", "SIZE_DEP_VARS_KEY",
-    "PIPELINE_REQUIREMENTS_KEY", "FLAGS", "PIPE_ARGS_SECTION", "FLUID_ATTRS_KEY",
-    "SUBMISSION_FOLDER_KEY", "GENERIC_PROTOCOL_KEY", "NOT_SUB_MSG",
+    "PIPELINE_REQUIREMENTS_KEY", "FLAGS", "PIPE_ARGS_SECTION", "DYN_VARS_KEY",
+    "SAMPLE_YAML_PATH_KEY", "RESOURCES_KEY", "SUBMISSION_FOLDER_KEY", "GENERIC_PROTOCOL_KEY", "NOT_SUB_MSG", "PIFACE_SCHEMA_URL",
     "RESULTS_SUBDIR_KEY", "SUBMISSION_SUBDIR_KEY", "TEMPLATES_DIRNAME",
     "SAMPLE_EXECUTION_TOGGLE", "VALID_READ_TYPES", "REQUIRED_INPUTS_ATTR_NAME",
     "FILE_SIZE_COLNAME", "COMPUTE_PACKAGE_KEY", "COLLATORS_KEY", "PROTOCOL_KEY",
     "COLLATOR_MAPPING_KEY", "ALL_COLL_KEYS", "SCHEMA_KEY", "OUTPUT_SCHEMA_KEY",
-    "EXAMPLE_RES_SPEC_FMT", "ALL_INPUTS_ATTR_NAME","PL_KEY", "PROTOMAP_KEY",
-    "SAMPLE_YAML_PATH_KEY", "RESOURCES_KEY"
+    "EXAMPLE_COMPUTE_SPEC_FMT", "ALL_INPUTS_ATTR_NAME", "PL_KEY", "PROTOMAP_KEY",
+    "SAMPLE_PL_KEY", "PROJECT_PL_KEY", "CFG_ENV_VARS"
 ]
 
 FLAGS = ["completed", "running", "failed", "waiting", "partial"]
@@ -61,6 +61,7 @@ def _get_apperance_dict(type, templ=APPEARANCE_BY_FLAG):
     return ret
 
 
+CFG_ENV_VARS = ["LOOPER"]
 TABLE_APPEARANCE_BY_FLAG = _get_apperance_dict("table")
 BUTTON_APPEARANCE_BY_FLAG = _get_apperance_dict("btn btn")
 NO_DATA_PLACEHOLDER = "NA"
@@ -71,6 +72,10 @@ RESOURCES_KEY = "resources"
 COLLATORS_KEY = "collators"
 COLLATOR_MAPPING_KEY = "collator_mapping"
 ALL_COLL_KEYS = [COLLATOR_MAPPING_KEY, COLLATORS_KEY]
+SAMPLE_PL_KEY = "sample_pipeline"
+PROJECT_PL_KEY = "project_pipeline"
+PIFACE_SCHEMA_URL = \
+    "https://schema.databio.org/pipelines/pipeline_interface.yaml"
 SCHEMA_KEY = "schema"
 OUTPUT_SCHEMA_KEY = "output_schema"
 SAMPLE_YAML_PATH_KEY = "sample_yaml_path"
@@ -81,7 +86,7 @@ SUBMISSION_SUBDIR_KEY = "submission_subdir"
 COMPUTE_KEY = "compute"
 COMPUTE_PACKAGE_KEY = "compute_package"
 SIZE_DEP_VARS_KEY = "size_dependent_variables"
-FLUID_ATTRS_KEY = "fluid_attributes"
+DYN_VARS_KEY = "dynamic_variables_command_template"
 TEMPLATES_DIRNAME = "jinja_templates"
 NOT_SUB_MSG = "> Not submitted: {}"
 IMAGE_EXTS = ('.png', '.jpg', '.jpeg', '.svg', '.gif')
@@ -98,7 +103,7 @@ SUBMISSION_FOLDER_KEY = "submission_subdir"
 OUTDIR_KEY = "output_dir"
 PROTOCOL_KEY = "protocol"
 GENERIC_PROTOCOL_KEY = "*"
-EXAMPLE_RES_SPEC_FMT = "--resources k1=v1,k2=v2"
+EXAMPLE_COMPUTE_SPEC_FMT = "--compute k1=v1,k2=v2"
 
 # resource package TSV-related consts
 ID_COLNAME = "id"

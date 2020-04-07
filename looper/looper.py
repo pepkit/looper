@@ -34,6 +34,7 @@ from .pipeline_interface import RESOURCES_KEY
 from .project import Project, ProjectContext
 from .utils import determine_config_path, fetch_flag_files, sample_folder, \
     get_file_for_project
+from .looper_config import *
 
 from divvy import DEFAULT_COMPUTE_RESOURCES_NAME, NEW_COMPUTE_KEY as DIVVY_COMPUTE_KEY
 from logmuse import init_logger
@@ -235,13 +236,13 @@ def process_protocols(prj, protocols, resource_setting_kwargs=None, **kwargs):
     # Job submissions are managed on a per-pipeline basis so that
     # individual commands (samples) may be lumped into a single job.
     submission_conductors = {}
-    pipe_keys_by_protocol = defaultdict(list)
 
     if resource_setting_kwargs:
         if not isinstance(resource_setting_kwargs, Mapping):
             raise TypeError(
-                "Resource settings argument must be mapping; got {} ({})".
-                    format(resource_setting_kwargs, type(resource_setting_kwargs)))
+                "Resource settings argument must be mapping; "
+                "got {} ({})".format(resource_setting_kwargs,
+                                     type(resource_setting_kwargs)))
     else:
         resource_setting_kwargs = {}
 
@@ -249,14 +250,15 @@ def process_protocols(prj, protocols, resource_setting_kwargs=None, **kwargs):
         comp_vars = prj.dcc[COMPUTE_KEY].to_map()
     except AttributeError:
         if not isinstance(prj.dcc[COMPUTE_KEY], Mapping):
-            raise TypeError("Project's computing config isn't a mapping: {} ({})".
-                            format(prj.dcc[COMPUTE_KEY], type(prj.dcc[COMPUTE_KEY])))
+            raise TypeError(
+                "Project's computing config isn't a mapping: {} ({})".
+                    format(prj.dcc[COMPUTE_KEY], type(prj.dcc[COMPUTE_KEY])))
         from copy import deepcopy
         comp_vars = deepcopy(prj.dcc[COMPUTE_KEY])
     comp_vars.update(resource_setting_kwargs or {})
 
     _LOGGER.info("Known protocols: {}".
-                 format(", ".join(prj.interfaces.protocols)))
+                 format(prj.interfaces[PROTOMAP_KEY].keys()))
 
     for proto in set(protocols) or {GENERIC_PROTOCOL_KEY}:
         _LOGGER.debug("Determining sample type, script, and flags for "
@@ -267,16 +269,15 @@ def process_protocols(prj, protocols, resource_setting_kwargs=None, **kwargs):
                 _LOGGER.warning("No valid pipelines for protocol: {}".
                                 format(proto))
             continue
-        for pl_iface, sample_subtype, pl_key in \
-                submission_bundles:
-            _LOGGER.debug("%s: %s", pl_key, sample_subtype.__name__)
+        for pl_iface in submission_bundles:
             conductor = SubmissionConductor(
-                pl_key, pl_iface, prj,
-                sample_subtype=sample_subtype,
-                compute_variables=comp_vars, **kwargs)
-            submission_conductors[pl_key] = conductor
-            pipe_keys_by_protocol[proto].append(pl_key)
-    return submission_conductors, pipe_keys_by_protocol
+                pipeline_interface=pl_iface,
+                prj=prj,
+                compute_variables=comp_vars,
+                **kwargs
+            )
+            submission_conductors[proto] = conductor
+    return submission_conductors
 
 
 class Collator(Executor):
@@ -355,22 +356,23 @@ class Runner(Executor):
         :param bool rerun: whether the given sample is being rerun rather than
             run for the first time
         """
-
         if not self.prj.interfaces:
-            pipe_locs = getattr(self.prj, PIPELINE_INTERFACES_KEY, [])
-            # TODO: should these cases be handled as equally exceptional?
-            # That is, should they either both raise errors, or both log errors?
-            if len(pipe_locs) == 0:
-                raise AttributeError(
-                    "Looper requires at least one pointer to pipeline(s), "
-                    "set with the '{}' key in the project config file".
-                        format(PIPELINE_INTERFACES_KEY))
-            else:
-                _LOGGER.error("No protocols found; does the PEP point to at "
-                              "least one pipeline interface that exists? "
-                              " Pipeline  interfaces: {}".
-                              format(", ".format(pipe_locs)))
-                return
+            raise AttributeError("Looper requires at least one pointer to pipeline")
+        # if not self.prj.interfaces:
+        #     pipe_locs = getattr(self.prj, PIPELINE_INTERFACES_KEY, [])
+        #     # TODO: should these cases be handled as equally exceptional?
+        #     # That is, should they either both raise errors, or both log errors?
+        #     if len(pipe_locs) == 0:
+        #         raise AttributeError(
+        #             "Looper requires at least one pointer to pipeline(s), "
+        #             "set with the '{}' key in the project config file".
+        #                 format(PIPELINE_INTERFACES_KEY))
+        #     else:
+        #         _LOGGER.error("No protocols found; does the PEP point to at "
+        #                       "least one pipeline interface that exists? "
+        #                       " Pipeline  interfaces: {}".
+        #                       format(", ".format(pipe_locs)))
+        #         return
 
         protocols = {s.protocol for s in self.prj.samples
                      if hasattr(s, PROTOCOL_KEY)}
@@ -381,12 +383,13 @@ class Runner(Executor):
         _LOGGER.info("Finding pipelines for protocol(s): {}".
                      format(", ".join(self.prj.protocols)))
 
-        submission_conductors, pipe_keys_by_protocol = process_protocols(
+        submission_conductors = process_protocols(
             self.prj, protocols, compute_kwargs, dry_run=args.dry_run,
             delay=args.time_delay, extra_args=remaining_args,
             ignore_flags=args.ignore_flags,
             max_cmds=args.lumpn, max_size=args.lump)
-        mapped_protos = set(pipe_keys_by_protocol.keys())
+
+        matched_protocols = submission_conductors.keys()
 
         # Determine number of samples eligible for processing.
         num_samples = len(self.prj.samples)
@@ -405,50 +408,37 @@ class Runner(Executor):
 
         # config validation (samples excluded) against each schema
         [validate_config(self.prj, schema_file)
-         for schema_file in self.prj.get_schemas(mapped_protos)]
+         for schema_file in self.prj.get_schemas(matched_protocols)]
 
         for sample in self.prj.samples[:upper_sample_bound]:
-            # First, step through the samples and determine whether any
-            # should be skipped entirely, based on sample attributes alone
-            # and independent of anything about any of its pipelines.
-
-            # Start by displaying the sample index and a fresh collection
-            # of sample-skipping reasons.
             _LOGGER.info(self.counter.show(sample.sample_name, sample.protocol))
             skip_reasons = []
 
-            # Don't submit samples with duplicate names unless suppressed.
-            if sample.sample_name in processed_samples:
-                if args.allow_duplicate_names:
-                    _LOGGER.warning("Duplicate name detected, but submitting anyway")
-                else:
-                    skip_reasons.append("Duplicate sample name")
-
-            def _sample_is_dormant(sample):
-                """
-                Determine whether this Sample is inactive.
-                By default, a Sample is regarded as active. That is,
-                if it lacks an
-                indication about activation status, it's assumed to be
-                active. If,
-                however, and there's an indication of such status, it must be
-                '1'
-                in order to be considered switched 'on.'
-                :return bool: whether this Sample's been designated as dormant
-                """
-                try:
-                    flag = sample[SAMPLE_EXECUTION_TOGGLE]
-                except KeyError:
-                    # Regard default Sample state as active.
-                    return False
-                # If specified, the activation flag must be set to '1'.
-                return flag != "1"
-
-            # Check if sample should be run.
-            if _sample_is_dormant(sample):
-                skip_reasons.append(
-                        "Inactive status (via '{}' column/attribute)".
-                        format(SAMPLE_EXECUTION_TOGGLE))
+            # def _sample_is_dormant(sample):
+            #     """
+            #     Determine whether this Sample is inactive.
+            #     By default, a Sample is regarded as active. That is,
+            #     if it lacks an
+            #     indication about activation status, it's assumed to be
+            #     active. If,
+            #     however, and there's an indication of such status, it must be
+            #     '1'
+            #     in order to be considered switched 'on.'
+            #     :return bool: whether this Sample's been designated as dormant
+            #     """
+            #     try:
+            #         flag = sample[SAMPLE_EXECUTION_TOGGLE]
+            #     except KeyError:
+            #         # Regard default Sample state as active.
+            #         return False
+            #     # If specified, the activation flag must be set to '1'.
+            #     return flag != "1"
+            #
+            # # Check if sample should be run.
+            # if _sample_is_dormant(sample):
+            #     skip_reasons.append(
+            #             "Inactive status (via '{}' column/attribute)".
+            #             format(SAMPLE_EXECUTION_TOGGLE))
 
             # Get the base protocol-to-pipeline mappings.
             try:
@@ -456,8 +446,8 @@ class Runner(Executor):
             except AttributeError:
                 skip_reasons.append("Sample has no protocol")
             else:
-                if protocol not in mapped_protos and \
-                        GENERIC_PROTOCOL_KEY not in mapped_protos:
+                if protocol not in matched_protocols and \
+                        GENERIC_PROTOCOL_KEY not in matched_protocols:
                     skip_reasons.append("No pipeline for protocol")
 
             if skip_reasons:
@@ -473,18 +463,10 @@ class Runner(Executor):
             # Add this sample to the processed collection.
             processed_samples.add(sample.sample_name)
 
-            pipe_keys = pipe_keys_by_protocol.get(sample.protocol) \
-                or pipe_keys_by_protocol.get(GENERIC_PROTOCOL_KEY)
-            _LOGGER.debug("Considering {} pipeline(s): {}".
-                          format(len(pipe_keys), ", ".join(pipe_keys)))
-
             pl_fails = []
-            for pl_key in pipe_keys:
+            for proto in matched_protocols:
                 num_commands_possible += 1
-                # TODO: of interest to track failures by pipeline?
-                conductor = submission_conductors[pl_key]
-                # TODO: check return value from add() to determine whether
-                # TODO (cont.) to grow the failures list.
+                conductor = submission_conductors[proto]
                 try:
                     curr_pl_fails = conductor.add_sample(sample, rerun=rerun)
                 except JobSubmissionException as e:
@@ -496,7 +478,8 @@ class Runner(Executor):
 
         job_sub_total = 0
         cmd_sub_total = 0
-        for conductor in submission_conductors.values():
+
+        for proto, conductor in submission_conductors.items():
             conductor.submit(force=True)
             job_sub_total += conductor.num_job_submissions
             cmd_sub_total += conductor.num_cmd_submissions
@@ -779,9 +762,9 @@ def _submission_status_text(curr, total, name, protocol=None, color=Fore.CYAN):
 
 def _proc_resources_spec(spec):
     """
-    Process CLI-specified itemized compute resource setting specification.
+    Process CLI-specified itemized compute setting specification.
 
-    :param str | NoneType spec: itemized resource specification from CLI
+    :param str | NoneType spec: itemized compute specification from CLI
     :return Mapping[str, str]: binding between resource setting name and value
     :raise ValueError: if interpretation of the given specification as encoding
         of key-value pairs fails
@@ -799,15 +782,14 @@ def _proc_resources_spec(spec):
         else:
             data[k] = v
     if bads:
-        raise ValueError("Could not completely parse itemized resource "
-                         "specification; these failed as key-value pairs; "
-                         "correct format: " + EXAMPLE_RES_SPEC_FMT)
+        raise ValueError(
+            "Could not completely parse itemized compute specification. "
+            "Correct format: " + EXAMPLE_COMPUTE_SPEC_FMT)
     return data
 
 
 def main():
     """ Primary workflow """
-
     parser = build_parser()
     args, remaining_args = parser.parse_known_args()
 
@@ -840,6 +822,9 @@ def main():
         _LOGGER.debug("Remaining arguments passed to pipelines: {}".
                       format(" ".join([str(x) for x in remaining_args])))
 
+    lc = LooperConfig(select_looper_config(filename=args.looper_config))
+    _LOGGER.debug("Determined genome config: {}".format(lc))
+
     _LOGGER.info("Command: {} (Looper version: {})".
                  format(args.command, __version__))
 
@@ -850,7 +835,8 @@ def main():
                       amendments=args.amendments,
                       pifaces=parse_user_input(args.pifaces),
                       file_checks=args.file_checks,
-                      compute_env_file=getattr(args, 'env', None))
+                      compute_env_file=getattr(args, 'env', None),
+                      looper_config=lc)
     except yaml.parser.ParserError as e:
         _LOGGER.error("Project config parse failed -- {}".format(e))
         sys.exit(1)
@@ -874,13 +860,11 @@ def main():
             run = Runner(prj)
             try:
                 compute_kwargs = _proc_resources_spec(
-                    getattr(args, RESOURCES_KEY, ""))
+                    getattr(args, "compute", ""))
                 run(args, remaining_args, rerun=(args.command == "rerun"),
                     **compute_kwargs)
             except IOError:
-                _LOGGER.error("{} pipeline_interfaces: '{}'".
-                              format(prj.__class__.__name__,
-                                     prj[CONFIG_KEY][LOOPER_KEY][PIPELINE_INTERFACES_KEY]))
+                _LOGGER.error("{} pipeline_interfaces: '{}'".format(prj.__class__.__name__, prj.interfaces[PROTOMAP_KEY].keys()))
                 raise
 
         if args.command == "collate":
