@@ -108,7 +108,6 @@ class Project(peppyProject):
                                             format(LOOPER_KEY))
         self._samples_by_interface = _samples_by_piface(self.samples)
         self._interfaces_by_sample = self._piface_by_samples()
-        # self.interfaces = process_pipeline_interfaces(pifaces)
         self.file_checks = file_checks
         self.permissive = permissive
         self.dcc = ComputingConfiguration(

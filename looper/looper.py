@@ -357,19 +357,13 @@ class Runner(Executor):
         failures = defaultdict(list)  # Collect problems by sample.
         processed_samples = set()  # Enforce one-time processing.
         submission_conductors = {}
-
-        if compute_kwargs:
-            if not isinstance(compute_kwargs, Mapping):
-                raise TypeError("Resource settings argument must be mapping; "
-                                "got {} ({})".format(compute_kwargs, type(compute_kwargs)))
-        else:
-            compute_kwargs = {}
-
         try:
             comp_vars = self.prj.dcc[COMPUTE_KEY].to_map()
         except AttributeError:
             if not isinstance(self.prj.dcc[COMPUTE_KEY], Mapping):
-                raise TypeError("Project's computing config isn't a mapping: {} ({})".format(self.prj.dcc[COMPUTE_KEY], type(self.prj.dcc[COMPUTE_KEY])))
+                raise TypeError("Project's computing config isn't a mapping: {}"
+                                " ({})".format(self.prj.dcc[COMPUTE_KEY],
+                                               type(self.prj.dcc[COMPUTE_KEY])))
             from copy import deepcopy
             comp_vars = deepcopy(self.prj.dcc[COMPUTE_KEY])
         comp_vars.update(compute_kwargs or {})
@@ -379,12 +373,12 @@ class Runner(Executor):
         if args.limit is None:
             upper_sample_bound = num_samples
         elif args.limit < 0:
-            raise ValueError(
-                "Invalid number of samples to run: {}".format(args.limit))
+            raise ValueError("Invalid number of samples to run: {}".
+                             format(args.limit))
         else:
             upper_sample_bound = min(args.limit, num_samples)
-        _LOGGER.debug("Limiting to %d of %d samples",
-                      upper_sample_bound, num_samples)
+        _LOGGER.debug("Limiting to {} of {} samples".
+                      format(upper_sample_bound, num_samples))
 
         num_commands_possible = 0
         failed_submission_scripts = []
@@ -394,15 +388,18 @@ class Runner(Executor):
         [validate_config(self.prj, schema_file)
          for schema_file in self.prj.get_schemas(self.prj.pipeline_interfaces)]
 
-        # TODO: need to swap the looping. Loop through valid pipeline interfaces
-        #  and create one submission conductor per pipeline. then loop through
-        #  samples that map to the pipeline and add to the conductor
         for piface in self.prj.pipeline_interfaces:
-            conductor = SubmissionConductor(pipeline_interface=piface,
-                prj=self.prj, compute_variables=comp_vars,
-                dry_run=args.dry_run, delay=args.time_delay,
-                extra_args=remaining_args, ignore_flags=args.ignore_flags,
-                max_cmds=args.lumpn, max_size=args.lump)
+            conductor = SubmissionConductor(
+                pipeline_interface=piface,
+                prj=self.prj,
+                compute_variables=comp_vars,
+                dry_run=args.dry_run,
+                delay=args.time_delay,
+                extra_args=remaining_args,
+                ignore_flags=args.ignore_flags,
+                max_cmds=args.lumpn,
+                max_size=args.lump
+            )
             submission_conductors[piface.pipe_iface_file] = conductor
 
         for sample in self.prj.samples[:upper_sample_bound]:
@@ -448,13 +445,13 @@ class Runner(Executor):
         # Report what went down.
         max_samples = min(len(self.prj.samples), args.limit or float("inf"))
         _LOGGER.info("\nLooper finished")
-        _LOGGER.info("Samples valid for job generation: %d of %d",
-                     len(processed_samples), max_samples)
-        _LOGGER.info("Successful samples: %d of %d",
-                     max_samples - len(failures), max_samples)
-        _LOGGER.info("Commands submitted: %d of %d",
-                     cmd_sub_total, num_commands_possible)
-        _LOGGER.info("Jobs submitted: %d", job_sub_total)
+        _LOGGER.info("Samples valid for job generation: {} of {}".
+                     format(len(processed_samples), max_samples))
+        _LOGGER.info("Successful samples: {} of {}".
+                     format(max_samples - len(failures), max_samples))
+        _LOGGER.info("Commands submitted: {} of {}".
+                     format(cmd_sub_total, num_commands_possible))
+        _LOGGER.info("Jobs submitted: {}".format(job_sub_total))
         if args.dry_run:
             _LOGGER.info("Dry run. No jobs were actually submitted.")
 
