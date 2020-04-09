@@ -579,7 +579,7 @@ class PipelineInterface(PXAM):
                       .format(PROTOMAP_KEY), DeprecationWarning)
         return self.protocol_mapping
 
-    def get_pipeline_schema(self, pipeline_name, schema_key=SCHEMA_KEY):
+    def get_pipeline_schema(self, pipeline_name, schema_key=INPUT_SCHEMA_KEY):
         """
         Get path to the pipeline schema.
 

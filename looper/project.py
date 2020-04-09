@@ -309,7 +309,8 @@ class Project(peppyProject):
         """
         for sample in self.samples:
             if PROTOCOL_KEY in sample:
-                paths = self.get_schemas(sample.protocol, OUTPUT_SCHEMA_KEY)
+                sample_piface = self.get_sample_piface(sample[SAMPLE_NAME_ATTR])
+                paths = self.get_schemas(sample_piface, OUTPUT_SCHEMA_KEY)
                 for path in paths:
                     schema = read_schema(path)
                     try:

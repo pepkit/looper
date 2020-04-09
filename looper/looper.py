@@ -219,64 +219,6 @@ class Destroyer(Executor):
         return self(args, preview_flag=False)
 
 
-# def process_protocols(prj, resource_setting_kwargs=None, **kwargs):
-#     """
-#     Create submission conductors and collect by protocol the mapped pipelines.
-#
-#     :param looper.Project prj: project definition
-#     :param Iterable[str] protocols: names of protocols mapped to pipelines
-#         for which conductors are to be created
-#     :param Mapping resource_setting_kwargs: key-value pairs collection storing
-#         specific compute resource settings
-#     :return Mapping[str, looper.conductor.SubmissionConductor], Mapping[str, list[str]]:
-#         mapping from pipeline key to submission conductor, and mapping from
-#         protocol name to collection of keys for pipelines for that protocol
-#     :raise TypeError: if the project's computing configuration instance isn't
-#         a mapping
-#     """
-#     # Job submissions are managed on a per-pipeline basis so that
-#     # individual commands (samples) may be lumped into a single job.
-#     submission_conductors = {}
-#
-#     if resource_setting_kwargs:
-#         if not isinstance(resource_setting_kwargs, Mapping):
-#             raise TypeError(
-#                 "Resource settings argument must be mapping; "
-#                 "got {} ({})".format(resource_setting_kwargs,
-#                                      type(resource_setting_kwargs)))
-#     else:
-#         resource_setting_kwargs = {}
-#
-#     try:
-#         comp_vars = prj.dcc[COMPUTE_KEY].to_map()
-#     except AttributeError:
-#         if not isinstance(prj.dcc[COMPUTE_KEY], Mapping):
-#             raise TypeError(
-#                 "Project's computing config isn't a mapping: {} ({})".
-#                     format(prj.dcc[COMPUTE_KEY], type(prj.dcc[COMPUTE_KEY])))
-#         from copy import deepcopy
-#         comp_vars = deepcopy(prj.dcc[COMPUTE_KEY])
-#     comp_vars.update(resource_setting_kwargs or {})
-#
-#     for sample in prj.samples:
-#         pifaces = sample[PIPELINE_INTERFACES_KEY]
-#         if not pifaces:
-#             _LOGGER.warning("No valid pipelines for sample: {}".
-#                             format(sample[SAMPLE_NAME_ATTR]))
-#             continue
-#         _LOGGER.info("Processing {} sources ({}) for sample: {}".format(
-#             PIPELINE_INTERFACES_KEY, pifaces, sample[SAMPLE_NAME_ATTR]))
-#         for piface in pifaces:
-#             conductor = SubmissionConductor(
-#                 pipeline_interface=PipelineInterface2(piface),
-#                 prj=prj,
-#                 compute_variables=comp_vars,
-#                 **kwargs
-#             )
-#             submission_conductors[proto] = conductor
-#     return submission_conductors
-
-
 class Collator(Executor):
     """" Submitter for project-level pipelines """
     def __init__(self, prj):
@@ -287,12 +229,12 @@ class Collator(Executor):
         """
         super(Executor, self).__init__()
         self.prj = prj
-        if not self.prj.interfaces:
+        if not self.prj.pipeline_interfaces:
             raise MisconfigurationException(
-                "Looper requires at least one pointer to collator in a pipeline"
-                " interface file, set with the '{p}' key in the project config "
-                "file and define {c} in '{c}' section in that file".
-                    format(p=PIPELINE_INTERFACES_KEY, c=COLLATORS_KEY)
+                "Looper requires at least one pointer to project-level in a "
+                "pipeline interface file, set with the '{p}' key in the project"
+                " config file and define {c} in '{c}' section in that file".
+                    format(p=PIPELINE_INTERFACES_KEY, c=PROJECT_PL_KEY)
             )
 
     def __call__(self, args, remaining_args, **compute_kwargs):
@@ -305,28 +247,28 @@ class Collator(Executor):
         :param list remaining_args: command-line options and arguments not
             recognized by looper, germane to samples/pipelines
         """
-        try:
-            collator_key = args.collator_protocol or \
-                           self.prj[CONFIG_KEY][LOOPER_KEY][PROTOCOL_KEY]
-        except KeyError:
-            raise MisconfigurationException(
-                "Looper requires a pointer to collator protocol to use. "
-                "Use '{p}' key in the project config file or provide it "
-                "on the command line".
-                    format(p=PIPELINE_INTERFACES_KEY, c=COLLATORS_KEY)
-            )
-        self.cols = self.prj.interfaces.collators(collator_key)
-        if not self.cols:
-            _LOGGER.warning("Selected collator protocol ({}) did not "
-                            "match any pipelines".format(collator_key))
+        jobs = 0
+        project_pifaces = self.prj._samples_by_interface.keys()
+        _LOGGER.debug("Matched {} project pipeline interfaces"
+                     .format(len(project_pifaces)))
+        if PIPELINE_INTERFACES_KEY in self.prj[CONFIG_KEY][LOOPER_KEY]:
+            # pipeline interfaces sources defined in the project config override
+            # ones that are matched by the Samples in this Project
+            project_pifaces = \
+                [PipelineInterface2(expandpath(src)) for src in
+                 self.prj[CONFIG_KEY][LOOPER_KEY][PIPELINE_INTERFACES_KEY]]
+        if not project_pifaces:
+            _LOGGER.warning("No pipelines found to run for this project")
             sys.exit(0)
         self.prj.populate_pipeline_outputs()
-        self.counter = LooperCounter(len(self.cols))
-        for collator_name, collator_data in self.cols.items():
-            _LOGGER.info(self.counter.show(name=collator_name))
+        self.counter = LooperCounter(len(project_pifaces))
+        for project_piface in project_pifaces:
+            project_piface_object = PipelineInterface2(project_piface)
+            _LOGGER.info(self.counter.show(
+                name=self.prj.name, type="project",
+                pipeline_name=project_piface_object.pipeline_name))
             conductor = SubmissionConductor(
-                pipeline_key=collator_name,
-                pipeline_interface=collator_data,
+                pipeline_interface=project_piface_object,
                 prj=self.prj,
                 compute_variables=compute_kwargs,
                 dry_run=args.dry_run,
@@ -337,6 +279,9 @@ class Collator(Executor):
             )
             conductor._pool = [None]
             conductor.submit()
+            jobs += conductor.num_job_submissions
+        _LOGGER.info("\nLooper finished")
+        _LOGGER.info("Jobs submitted: {}".format(jobs))
 
 
 class Runner(Executor):
@@ -353,7 +298,8 @@ class Runner(Executor):
         :param bool rerun: whether the given sample is being rerun rather than
             run for the first time
         """
-
+        max_cmds = sum(list(map(len, self.prj._samples_by_interface.values())))
+        self.counter.total = max_cmds
         failures = defaultdict(list)  # Collect problems by sample.
         processed_samples = set()  # Enforce one-time processing.
         submission_conductors = {}
@@ -405,8 +351,6 @@ class Runner(Executor):
         for sample in self.prj.samples[:upper_sample_bound]:
             pl_fails = []
             skip_reasons = []
-            _LOGGER.info(self.counter.show(sample.sample_name))
-
             sample_pifaces = self.prj.get_sample_piface(sample[SAMPLE_NAME_ATTR])
             if not sample_pifaces:
                 skip_reasons.append("No pipeline interfaces defined")
@@ -423,6 +367,11 @@ class Runner(Executor):
             processed_samples.add(sample[SAMPLE_NAME_ATTR])
 
             for sample_piface in sample_pifaces:
+                _LOGGER.info(
+                    self.counter.show(name=sample.sample_name,
+                                      pipeline_name=sample_piface.pipeline_name)
+                )
+                num_commands_possible += 1
                 cndtr = submission_conductors[sample_piface.pipe_iface_file]
                 try:
                     curr_pl_fails = cndtr.add_sample(sample, rerun=rerun)
@@ -443,14 +392,14 @@ class Runner(Executor):
             conductor.write_skipped_sample_scripts()
 
         # Report what went down.
-        max_samples = min(len(self.prj.samples), args.limit or float("inf"))
+        # max_cmds = min(len(self.prj.samples), args.limit or float("inf"))
         _LOGGER.info("\nLooper finished")
         _LOGGER.info("Samples valid for job generation: {} of {}".
-                     format(len(processed_samples), max_samples))
+                     format(len(processed_samples), num_samples))
         _LOGGER.info("Successful samples: {} of {}".
-                     format(max_samples - len(failures), max_samples))
+                     format(num_samples - len(failures), num_samples))
         _LOGGER.info("Commands submitted: {} of {}".
-                     format(cmd_sub_total, num_commands_possible))
+                     format(cmd_sub_total, max_cmds))
         _LOGGER.info("Jobs submitted: {}".format(job_sub_total))
         if args.dry_run:
             _LOGGER.info("Dry run. No jobs were actually submitted.")
@@ -684,7 +633,7 @@ class LooperCounter(object):
         self.count = 0
         self.total = total
 
-    def show(self, name, protocol=None):
+    def show(self, name, type="sample", pipeline_name=None):
         """
         Display sample counts status for a particular protocol type.
 
@@ -692,13 +641,14 @@ class LooperCounter(object):
         and as a side-effect of the call, the running count is incremented.
 
         :param str name: name of the sample
-        :param str protocol: name of the protocol
+        :param str pipeline_name: name of the pipeline
         :return str: message suitable for logging a status update
         """
         self.count += 1
-        return _submission_status_text(
+        return _submission_status_text(type=type,
             curr=self.count, total=self.total, name=name,
-            protocol=protocol, color=Fore.CYAN)
+            pipeline_name=pipeline_name, color=Fore.CYAN
+        )
 
     def reset(self):
         self.count = 0
@@ -707,11 +657,13 @@ class LooperCounter(object):
         return "LooperCounter of size {}".format(self.total)
 
 
-def _submission_status_text(curr, total, name, protocol=None, color=Fore.CYAN):
+def _submission_status_text(curr, total, name, pipeline_name=None,
+                            type="sample", color=Fore.CYAN):
     """ Generate submission sample text for run or collate """
-    txt = color + "## [{n} of {t}] {name} ".format(n=curr, t=total, name=name)
-    if protocol:
-        txt += "({protocol})".format(protocol=protocol)
+    txt = color + "## [{n} of {t}] {type}: {name}".\
+        format(n=curr, t=total, type=type, name=name)
+    if pipeline_name:
+        txt += "; pipeline: {}".format(pipeline_name)
     return txt + Style.RESET_ALL
 
 
@@ -821,9 +773,8 @@ def main():
                 _LOGGER.error("{} pipeline_interfaces: '{}'".format(prj.__class__.__name__, prj.interfaces[PROTOMAP_KEY].keys()))
                 raise
 
-        if args.command == "collate":
-            compute_kwargs = _proc_resources_spec(
-                getattr(args, RESOURCES_KEY, ""))
+        if args.command == "runp":
+            compute_kwargs = _proc_resources_spec(getattr(args, "compute", ""))
             collate = Collator(prj)
             collate(args, remaining_args, **compute_kwargs)
 

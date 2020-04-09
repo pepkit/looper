@@ -93,7 +93,7 @@ def build_parser():
     msg_by_cmd = {
             "run": "Main Looper function: Submit jobs for samples.",
             "rerun": "Resubmit jobs with failed flags.",
-            "collate": "Submit jobs for a project.",
+            "runp": "Submit jobs for a project.",
             "summarize": "Summarize statistics of project samples.",
             "destroy": "Remove all files of the project.",
             "check": "Checks flag status of current runs.",
@@ -109,7 +109,7 @@ def build_parser():
     # Run and rerun command
     run_subparser = add_subparser("run")
     rerun_subparser = add_subparser("rerun")
-    collate_subparser = add_subparser("collate")
+    collate_subparser = add_subparser("runp")
     for subparser in [run_subparser, rerun_subparser, collate_subparser]:
         subparser.add_argument(
                 "--ignore-flags", dest="ignore_flags", default=False,
@@ -180,9 +180,6 @@ def build_parser():
             "--force-yes", action=_StoreBoolActionType, default=False, type=html_checkbox(checked=False),
             help="Provide upfront confirmation of cleaning intent, "
                  "to skip console query.  Default=False")
-
-    collate_subparser.add_argument(
-        "--collator-protocol", help="Collator protocol to use", type=str)
 
     # Common arguments
     for subparser in [run_subparser, rerun_subparser, summarize_subparser,
