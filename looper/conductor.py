@@ -9,7 +9,7 @@ from jinja2.exceptions import UndefinedError
 
 from attmap import AttMap
 from eido import read_schema
-from peppy.const import CONFIG_KEY, SAMPLE_YAML_EXT
+from peppy.const import CONFIG_KEY, SAMPLE_YAML_EXT, SAMPLE_NAME_ATTR
 
 from .processed_project import populate_sample_paths
 from .const import *
@@ -202,17 +202,6 @@ class SubmissionConductor(object):
                     raise error_type(missing_reqs_msg)
                 use_this_sample and skip_reasons.append(missing_reqs_general)
 
-        # Check if single_or_paired value is recognized.
-        if hasattr(sample, "read_type"):
-            # Drop "-end", "_end", or "end" from end of the column value.
-            rtype = re.sub('[_\\-]?end$', '',
-                           str(sample.read_type))
-            sample.read_type = rtype.lower()
-            if sample.read_type not in VALID_READ_TYPES:
-                _LOGGER.debug(
-                    "Invalid read type: '{}'".format(sample.read_type))
-                use_this_sample and skip_reasons.append(
-                    "read_type must be in {}".format(VALID_READ_TYPES))
         this_sample_size = float(sample.input_file_size)
 
         if _use_sample(use_this_sample, skip_reasons):
@@ -249,7 +238,8 @@ class SubmissionConductor(object):
         elif self.collate or force or self._is_full(self._pool, self._curr_size):
             if not self.collate:
                 for s in self._pool:
-                    schemas = self.prj.get_schemas(s.protocol, OUTPUT_SCHEMA_KEY)
+                    schemas = self.prj.get_schemas(self.prj.get_sample_piface(
+                        s[SAMPLE_NAME_ATTR]), OUTPUT_SCHEMA_KEY)
                     [populate_sample_paths(s, read_schema(schema))
                      for schema in schemas]
                     s.to_yaml(self._get_sample_yaml_path(s))

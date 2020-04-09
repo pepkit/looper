@@ -46,7 +46,7 @@ class PipelineInterface2(PXAM):
         self._expand_pipeline_paths()
         self._validate(PIFACE_SCHEMA_URL)
 
-    def get_pipeline_schema(self, section, schema_key=SCHEMA_KEY):
+    def get_pipeline_schema(self, section, schema_key=INPUT_SCHEMA_KEY):
         """
         Get path to the pipeline schema.
 

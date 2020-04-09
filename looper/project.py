@@ -4,10 +4,12 @@ import itertools
 import os
 
 from collections import namedtuple
+from jsonschema import ValidationError
 from functools import partial
 from logging import getLogger
 
-from peppy import OUTDIR_KEY, CONFIG_KEY, Project as peppyProject
+from peppy import SAMPLE_NAME_ATTR, OUTDIR_KEY, CONFIG_KEY, \
+    Project as peppyProject
 from eido import read_schema, PathAttrNotFoundError
 from divvy import DEFAULT_COMPUTE_RESOURCES_NAME, ComputingConfiguration
 from ubiquerg import is_command_callable, is_url
@@ -98,18 +100,14 @@ class Project(peppyProject):
     def __init__(self, config_file, amendments=None, pifaces=None, dry=False,
                  compute_env_file=None, no_environment_exception=RuntimeError,
                 no_compute_exception=RuntimeError, file_checks=False,
-                 permissive=True, looper_config=None, **kwargs):
+                 permissive=True, **kwargs):
         super(Project, self).__init__(config_file, amendments=amendments,
                                       **kwargs)
         if LOOPER_KEY not in self[CONFIG_KEY]:
             raise MisconfigurationException("'{}' key not found in config".
                                             format(LOOPER_KEY))
-        if looper_config and pifaces:
-            {looper_config.add_protocol_mapping(proto, piface)
-             for proto, piface in pifaces.items()}
-        elif not looper_config:
-            looper_config = LooperConfig(entries={PROTOMAP_KEY: pifaces})
-        self.interfaces = looper_config
+        self._samples_by_interface = _samples_by_piface(self.samples)
+        self._interfaces_by_sample = self._piface_by_samples()
         # self.interfaces = process_pipeline_interfaces(pifaces)
         self.file_checks = file_checks
         self.permissive = permissive
@@ -193,19 +191,36 @@ class Project(peppyProject):
                                     format(str(e)))
 
     @property
-    def protocols(self):
+    def pipeline_interfaces(self):
         """
-        Determine this Project's unique protocol names.
-        :return Set[str]: collection of this Project's unique protocol names
+        Flat list of pipeline all valid interface objects associated
+        with this Project
+
+        Note that only valid pipeline interfaces will show up in the
+        result (ones that exist on disk/remotely and validate successfully
+        against the schema)
+
+        :return list[looper.PipelineInterface]:
         """
-        protos = set()
-        for s in self.samples:
-            try:
-                protos.add(s.protocol)
-            except AttributeError:
-                _LOGGER.debug("Sample '{}' lacks protocol".
-                              format(s.sample_name))
-        return protos
+        return [i for s in self._interfaces_by_sample.values() for i in s]
+
+    def get_sample_piface(self, sample_name):
+        """
+        Get a list of pipeline interfaces associated with the specified sample.
+
+        Note that only valid pipeline interfaces will show up in the
+        result (ones that exist on disk/remotely and validate successfully
+        against the schema)
+
+        :param str sample_name: name of the sample to retrieve list of
+            pipeline interfaces for
+        :return list[looper.PipelineInterface]: collection of valid
+            pipeline interfaces associated with selected sample
+        """
+        try:
+            return self._interfaces_by_sample[sample_name]
+        except KeyError:
+            return None
 
     def build_submission_bundles(self, protocol, priority=True):
         """
@@ -268,20 +283,20 @@ class Project(peppyProject):
             job_submission_bundles.append(new_jobs)
         return list(itertools.chain(*job_submission_bundles))
 
-    def get_schemas(self, protocols, schema_key=SCHEMA_KEY):
+    @staticmethod
+    def get_schemas(pifaces, schema_key=INPUT_SCHEMA_KEY):
         """
-        Get the list of unique schema paths for a list of protocols
+        Get the list of unique schema paths for a list of pipeline interfaces
 
-        :param str | Iterable[str] protocols: protocols to
-            search pipeline schemas for
-        :param str schema_key: where to look for schemas in the pipeline iface
+        :param str | Iterable[str] pifaces: pipeline interfaces to search
+            schemas for
+        :param str schema_key: where to look for schemas in the piface
         :return Iterable[str]: unique list of schema file paths
         """
-        if isinstance(protocols, str):
-            protocols = [protocols]
+        if isinstance(pifaces, str):
+            pifaces = [pifaces]
         schema_set = set()
-        for protocol in protocols:
-            piface = self.interfaces.get_pipeline_interface(protocol)
+        for piface in pifaces:
             schema_file = piface.get_pipeline_schema(SAMPLE_PL_KEY, schema_key)
             if schema_file:
                 schema_set.update([schema_file])
@@ -307,6 +322,21 @@ class Project(peppyProject):
                             "{}".format(sample.protocol)
                         )
                         raise
+
+    def _piface_by_samples(self):
+        """
+        Create a mapping of all defined interfaces in this Project by samples.
+
+        :return list[str]: a collection of pipeline interfaces keyed by
+        sample name
+        """
+        pifaces_by_sample = {}
+        for source, sample_names in self._samples_by_interface.items():
+            for sample_name in sample_names:
+                pifaces_by_sample.setdefault(sample_name, [])
+                pifaces_by_sample[sample_name].\
+                    append(PipelineInterface2(source))
+        return pifaces_by_sample
 
     def _omit_from_repr(self, k, cls):
         """
@@ -353,6 +383,36 @@ def _gather_ifaces(ifaces):
                         protos_by_name.get(k, set())
             specs[name] = (old_prots | new_prots, dat)
     return specs
+
+
+def _samples_by_piface(samples):
+    """
+    Create a collection of all samples with valid pipeline interfaces
+
+    :param Iterable[peppy.Sample] samples: list of samples to search
+        for interfaces for
+    :return list[str]: a collection of samples keyed by pipeline interface
+        source
+    """
+    samples_by_piface = {}
+    for sample in samples:
+        if PIPELINE_INTERFACES_KEY in sample \
+                and sample[PIPELINE_INTERFACES_KEY]:
+            piface_srcs = sample[PIPELINE_INTERFACES_KEY]
+            if isinstance(piface_srcs, str):
+                piface_srcs = [piface_srcs]
+            for source in piface_srcs:
+                source = expandpath(source)
+                try:
+                    PipelineInterface2(source)
+                except (ValidationError, FileNotFoundError):
+                    _LOGGER.debug("I gnoring invalid pipeline interface source:"
+                                  " {}".format(source))
+                    continue
+                else:
+                    samples_by_piface.setdefault(source, set())
+                    samples_by_piface[source].add(sample[SAMPLE_NAME_ATTR])
+    return samples_by_piface
 
 
 def process_pipeline_interfaces(piface_paths):
