@@ -255,7 +255,7 @@ class Collator(Executor):
             # pipeline interfaces sources defined in the project config override
             # ones that are matched by the Samples in this Project
             project_pifaces = \
-                [PipelineInterface2(expandpath(src)) for src in
+                [expandpath(src) for src in
                  self.prj[CONFIG_KEY][LOOPER_KEY][PIPELINE_INTERFACES_KEY]]
         if not project_pifaces:
             _LOGGER.warning("No pipelines found to run for this project")
@@ -263,7 +263,12 @@ class Collator(Executor):
         self.prj.populate_pipeline_outputs()
         self.counter = LooperCounter(len(project_pifaces))
         for project_piface in project_pifaces:
-            project_piface_object = PipelineInterface2(project_piface)
+            try:
+                project_piface_object = PipelineInterface2(project_piface)
+            except FileNotFoundError:
+                _LOGGER.warning("Pipeline interface does not exist: {}".
+                             format(project_piface))
+                continue
             _LOGGER.info(self.counter.show(
                 name=self.prj.name, type="project",
                 pipeline_name=project_piface_object.pipeline_name))
