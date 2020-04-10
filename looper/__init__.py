@@ -12,7 +12,6 @@ import logging
 from .conductor import SubmissionConductor
 from .pipeline_interface import PipelineInterface
 from .project import Project
-from .sample import Sample
 from ._version import __version__
 from .parser_types import *
 from .const import *
@@ -24,10 +23,7 @@ from divvy import DEFAULT_COMPUTE_RESOURCES_NAME, NEW_COMPUTE_KEY as COMPUTE_KEY
 # the locations of some of the peppy declarations. Effectively, concentrate
 # the connection between peppy and looper here, to the extent possible.
 
-__all__ = ["Project", "PipelineInterface", "Sample", "SubmissionConductor"]
-
-
-LOGGING_LEVEL = "INFO"
+__all__ = ["Project", "PipelineInterface", "SubmissionConductor"]
 
 # Descending by severity for correspondence with logic inversion.
 # That is, greater verbosity setting corresponds to lower logging level.
@@ -187,11 +183,11 @@ def build_parser():
                       collate_subparser]:
         subparser.add_argument(
                 "config_file", help="Project configuration file (YAML).")
+        # subparser.add_argument(
+        #         "-c", "--config", required=False, default=None,
+        #         dest="looper_config", help="Looper configuration file (YAML).")
         subparser.add_argument(
-                "-c", "--config", required=False, default=None,
-                dest="looper_config", help="Looper configuration file (YAML).")
-        subparser.add_argument(
-                "--pipeline-interfaces", dest="pifaces", required=False, default=None,
+                "--pipeline-interfaces", dest="pifaces",
                 nargs="+", action='append', help="Path to a pipeline interface file")
         subparser.add_argument(
                 "--file-checks", dest="file_checks",

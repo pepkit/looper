@@ -3,25 +3,21 @@
 import itertools
 import os
 
-from collections import namedtuple
 from jsonschema import ValidationError
-from functools import partial
 from logging import getLogger
 
 from peppy import SAMPLE_NAME_ATTR, OUTDIR_KEY, CONFIG_KEY, \
     Project as peppyProject
 from eido import read_schema, PathAttrNotFoundError
 from divvy import DEFAULT_COMPUTE_RESOURCES_NAME, ComputingConfiguration
-from ubiquerg import is_command_callable, is_url
+from ubiquerg import is_command_callable
 
 from .processed_project import populate_sample_paths, populate_project_paths
 from .const import *
 from .exceptions import *
-from .project_piface_group import ProjectPifaceGroup
-from .utils import partition
 from .looper_config import *
 
-__all__ = ["Project", "process_pipeline_interfaces"]
+__all__ = ["Project"]
 
 _LOGGER = getLogger(__name__)
 
@@ -29,7 +25,7 @@ _LOGGER = getLogger(__name__)
 class ProjectContext(object):
     """ Wrap a Project to provide protocol-specific Sample selection. """
 
-    def __init__(self, prj, selector_attribute=PROTOCOL_KEY,
+    def __init__(self, prj, selector_attribute=None,
                  selector_include=None, selector_exclude=None):
         """ Project and what to include/exclude defines the context. """
         if not isinstance(selector_attribute, str):
@@ -106,6 +102,7 @@ class Project(peppyProject):
         if LOOPER_KEY not in self[CONFIG_KEY]:
             raise MisconfigurationException("'{}' key not found in config".
                                             format(LOOPER_KEY))
+        self._apply_user_pifaces(pifaces)
         self._samples_by_interface = _samples_by_piface(self.samples)
         self._interfaces_by_sample = self._piface_by_samples()
         self.file_checks = file_checks
@@ -202,6 +199,44 @@ class Project(peppyProject):
         :return list[looper.PipelineInterface]:
         """
         return [i for s in self._interfaces_by_sample.values() for i in s]
+
+    @property
+    def pipeline_interface_sources(self):
+        """
+        Get a list of all valid pipeline interface sources associated
+        with this project. Sources that are file paths are expanded
+
+        :return list[str]: collection of valid pipeline interface sources
+        """
+        return self._samples_by_interface.keys()
+
+    def _apply_user_pifaces(self, pifaces):
+        """
+        Overwrite sample pipeline interface sources with the provided ones
+
+        :param Iterable[str] | str | NoneType pifaces: collection of pipeline
+            interface sources
+        """
+        _LOGGER.debug("CLI-specified pifaces: {}".format(pifaces))
+        valid_pi = []
+        if not pifaces:
+            # No CLI-specified pipeline interface sources
+            return
+        if isinstance(pifaces, str):
+            pifaces = [pifaces]
+        for piface in pifaces:
+            pi = expandpath(piface)
+            try:
+                PipelineInterface(pi)
+            except Exception as e:
+                _LOGGER.warning("Provided pipeline interface source ({}) is "
+                                "invalid. Caught exception:\n{}".
+                                format(pi, getattr(e, 'message', repr(e))))
+            else:
+                valid_pi.append(pi)
+        [setattr(s, PIPELINE_INTERFACES_KEY, valid_pi) for s in self.samples]
+        _LOGGER.info("Provided valid pipeline interface sources ({}) "
+                     "set in all samples".format(", ".join(valid_pi)))
 
     def get_sample_piface(self, sample_name):
         """
@@ -335,7 +370,7 @@ class Project(peppyProject):
             for sample_name in sample_names:
                 pifaces_by_sample.setdefault(sample_name, [])
                 pifaces_by_sample[sample_name].\
-                    append(PipelineInterface2(source))
+                    append(PipelineInterface(source))
         return pifaces_by_sample
 
     def _omit_from_repr(self, k, cls):
@@ -346,43 +381,6 @@ class Project(peppyProject):
         :param type cls: placeholder to comply with superclass signature
         """
         return super(Project, self)._omit_from_repr(k, cls) or k == "interfaces"
-
-
-def _gather_ifaces(ifaces):
-    """
-    For each pipeline map identifier to protocols and interface data.
-
-    :param Iterable[looper.PipelineInterface] ifaces: collection of pipeline
-        interface objects
-    :return Mapping[str, (set[str], attmap.AttMap)]: collection of bindings
-        between pipeline identifier and pair in which first component is
-        collection of associated protocol names, and second component is a
-        collection of interface data for pipeline identified by the key
-    :raise looper.DuplicatePipelineKeyException: if the same identifier (key or
-        name) points to collections of pipeline interface data (for a
-        particular pipeline) that are not equivalent
-    """
-    specs = {}
-    for pi in ifaces:
-        protos_by_name = {}
-        for p, names in pi[PROTOMAP_KEY].items():
-            if isinstance(names, str):
-                names = [names]
-            for n in names:
-                protos_by_name.setdefault(n, set()).add(p)
-        for k, dat in pi.iterpipes():
-            name = dat.get("name") or k
-            try:
-                old_prots, old_dat = specs[name]
-            except KeyError:
-                old_prots = set()
-            else:
-                if dat != old_dat:
-                    raise DuplicatePipelineKeyException(name)
-            new_prots = protos_by_name.get(name, set()) | \
-                        protos_by_name.get(k, set())
-            specs[name] = (old_prots | new_prots, dat)
-    return specs
 
 
 def _samples_by_piface(samples):
@@ -404,53 +402,15 @@ def _samples_by_piface(samples):
             for source in piface_srcs:
                 source = expandpath(source)
                 try:
-                    PipelineInterface2(source)
+                    PipelineInterface(source)
                 except (ValidationError, FileNotFoundError):
-                    _LOGGER.debug("I gnoring invalid pipeline interface source:"
+                    _LOGGER.debug("Ignoring invalid pipeline interface source:"
                                   " {}".format(source))
                     continue
                 else:
                     samples_by_piface.setdefault(source, set())
                     samples_by_piface[source].add(sample[SAMPLE_NAME_ATTR])
     return samples_by_piface
-
-
-def process_pipeline_interfaces(piface_paths):
-    """
-    Create a PipelineInterface for each pipeline location given.
-
-    :param Iterable[str] | str piface_paths: locations, each of
-        which should be either a directory path or a filepath, that specifies
-        pipeline interface and protocol mappings information. Each such file
-        should have a pipelines section and a protocol mappings section.
-    :return Mapping[str, Iterable[PipelineInterface]]: mapping from protocol
-        name to interface(s) for which that protocol is mapped
-    """
-    iface_group = ProjectPifaceGroup()
-    piface_paths = piface_paths \
-        if isinstance(piface_paths, list) else [piface_paths]
-    for loc in piface_paths:
-        if not os.path.exists(loc):
-            if not is_url(loc):
-                _LOGGER.warning("Ignoring nonexistent pipeline interface "
-                                "location: {}".format(loc))
-                continue
-            _LOGGER.debug("Got remote pipeline interface: {}".format(loc))
-        if os.path.isdir(loc):
-            # loc is a directory, get all the yamls
-            fs = [os.path.join(loc, f) for f in os.listdir(loc)
-                  if os.path.splitext(f)[1] in [".yaml", ".yml"]]
-        else:
-            # existing file or URL
-            fs = [loc]
-        for f in fs:
-            _LOGGER.debug("Processing interface definition: {}".format(f))
-            try:
-                iface_group.update(f)
-            except PipelineInterfaceRequirementsError as e:
-                _LOGGER.warning("Cannot build pipeline interface from {} ({})".
-                                format(f, str(e)))
-    return iface_group
 
 
 def fetch_samples(prj, selector_attribute=None, selector_include=None,
@@ -535,17 +495,3 @@ def fetch_samples(prj, selector_attribute=None, selector_include=None,
                    in make_set(selector_include)
 
     return list(filter(keep, prj.samples))
-
-
-OutputGroup = namedtuple("OutputGroup", field_names=["path", "samples"])
-
-
-# Collect PipelineInterface, Sample type, pipeline path, and script with flags.
-SubmissionBundle = namedtuple(
-    "SubmissionBundle",
-    field_names=["interface"])
-
-
-def _is_member(item, items):
-    """ Determine whether an item is a member of a collection. """
-    return item in items

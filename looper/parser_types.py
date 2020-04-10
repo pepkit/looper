@@ -27,9 +27,11 @@ def html_checkbox(caravel=False, checked=False):
     :return callable: argument to the type parameter of an
         argparse.ArgumentParser's add_argument method.
     """
-    caravel_data = PathExAttMap({"element_type": "checkbox", "element_args": {}})
+    caravel_data = \
+        PathExAttMap({"element_type": "checkbox", "element_args": {}})
     if checked:
         caravel_data.add_entries({"element_args": {"checked": True}})
+
     def fun(x=None, caravel_data=caravel_data, caravel=caravel):
         return caravel_data if caravel else eval(x)
     return fun
@@ -47,9 +49,11 @@ def html_select(choices, caravel=False):
     """
     if not isinstance(choices, list):
         raise TypeError(
-            "Argument to choices parameter must be list, got {}.".format(type(choices)))
+            "Argument to choices parameter must be list, got {}.".
+                format(type(choices)))
     caravel_data = PathExAttMap(
         {"element_type": "select", "element_args": {"option": choices}})
+
     def fun(x=None, caravel_data=caravel_data, caravel=caravel):
         return caravel_data if caravel else x
     return fun

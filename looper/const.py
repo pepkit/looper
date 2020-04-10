@@ -3,19 +3,18 @@
 __author__ = "Databio lab"
 __email__ = "nathan@code.databio.org"
 
-
 __all__ = [
-    "BUTTON_APPEARANCE_BY_FLAG", "TABLE_APPEARANCE_BY_FLAG", "ID_COLNAME",
-    "NO_DATA_PLACEHOLDER", "OUTKEY", "RESULTS_FOLDER_KEY", "OUTDIR_KEY",
-    "LOOPER_KEY", "COMPUTE_KEY", "PIPELINE_INTERFACES_KEY", "SIZE_DEP_VARS_KEY",
-    "PIPELINE_REQUIREMENTS_KEY", "FLAGS", "PIPE_ARGS_SECTION", "DYN_VARS_KEY",
-    "SAMPLE_YAML_PATH_KEY", "RESOURCES_KEY", "SUBMISSION_FOLDER_KEY", "GENERIC_PROTOCOL_KEY", "NOT_SUB_MSG", "PIFACE_SCHEMA_URL",
-    "RESULTS_SUBDIR_KEY", "SUBMISSION_SUBDIR_KEY", "TEMPLATES_DIRNAME",
-    "SAMPLE_EXECUTION_TOGGLE", "VALID_READ_TYPES", "REQUIRED_INPUTS_ATTR_NAME",
-    "FILE_SIZE_COLNAME", "COMPUTE_PACKAGE_KEY", "COLLATORS_KEY", "PROTOCOL_KEY",
-    "COLLATOR_MAPPING_KEY", "ALL_COLL_KEYS", "INPUT_SCHEMA_KEY", "OUTPUT_SCHEMA_KEY",
-    "EXAMPLE_COMPUTE_SPEC_FMT", "ALL_INPUTS_ATTR_NAME", "PL_KEY", "PROTOMAP_KEY",
-    "SAMPLE_PL_KEY", "PROJECT_PL_KEY", "CFG_ENV_VARS"
+    "BUTTON_APPEARANCE_BY_FLAG", "TABLE_APPEARANCE_BY_FLAG",
+    "ID_COLNAME", "NO_DATA_PLACEHOLDER", "OUTKEY", "RESULTS_FOLDER_KEY",
+    "OUTDIR_KEY", "LOOPER_KEY", "COMPUTE_KEY", "PIPELINE_INTERFACES_KEY",
+    "SIZE_DEP_VARS_KEY", "FLAGS", "DYN_VARS_KEY", "SAMPLE_YAML_PATH_KEY",
+    "RESOURCES_KEY", "SUBMISSION_FOLDER_KEY", "NOT_SUB_MSG",
+    "PIFACE_SCHEMA_URL", "RESULTS_SUBDIR_KEY", "SUBMISSION_SUBDIR_KEY",
+    "TEMPLATES_DIRNAME", "REQUIRED_INPUTS_ATTR_NAME", "FILE_SIZE_COLNAME",
+    "COMPUTE_PACKAGE_KEY", "INPUT_SCHEMA_KEY", "OUTPUT_SCHEMA_KEY",
+    "EXAMPLE_COMPUTE_SPEC_FMT", "ALL_INPUTS_ATTR_NAME", "SAMPLE_PL_KEY",
+    "PROJECT_PL_KEY", "CFG_ENV_VARS", "LOGGING_LEVEL",
+    "SUBMISSION_FAILURE_MESSAGE"
 ]
 
 FLAGS = ["completed", "running", "failed", "waiting", "partial"]
@@ -61,25 +60,22 @@ def _get_apperance_dict(type, templ=APPEARANCE_BY_FLAG):
     return ret
 
 
+LOGGING_LEVEL = "INFO"
 CFG_ENV_VARS = ["LOOPER"]
 TABLE_APPEARANCE_BY_FLAG = _get_apperance_dict("table")
 BUTTON_APPEARANCE_BY_FLAG = _get_apperance_dict("btn btn")
 NO_DATA_PLACEHOLDER = "NA"
 PIPELINE_INTERFACES_KEY = "pipeline_interfaces"
-PL_KEY = "pipelines"
-PROTOMAP_KEY = "protocol_mapping"
 RESOURCES_KEY = "resources"
-COLLATORS_KEY = "collators"
-COLLATOR_MAPPING_KEY = "collator_mapping"
-ALL_COLL_KEYS = [COLLATOR_MAPPING_KEY, COLLATORS_KEY]
 SAMPLE_PL_KEY = "sample_pipeline"
 PROJECT_PL_KEY = "project_pipeline"
+# PIFACE_SCHEMA_URL = \
+#     "https://schema.databio.org/pipelines/pipeline_interface.yaml"
 PIFACE_SCHEMA_URL = \
-    "https://schema.databio.org/pipelines/pipeline_interface.yaml"
+    "/Users/mstolarczyk/Uczelnia/UVA/code/schema.databio.org/pipelines/pipeline_interface.yaml"
 INPUT_SCHEMA_KEY = "schema"
 OUTPUT_SCHEMA_KEY = "output_schema"
 SAMPLE_YAML_PATH_KEY = "sample_yaml_path"
-PIPELINE_REQUIREMENTS_KEY = "required_executables"
 OUTKEY = "outputs"
 RESULTS_SUBDIR_KEY = "results_subdir"
 SUBMISSION_SUBDIR_KEY = "submission_subdir"
@@ -92,8 +88,6 @@ NOT_SUB_MSG = "> Not submitted: {}"
 IMAGE_EXTS = ('.png', '.jpg', '.jpeg', '.svg', '.gif')
 PROFILE_COLNAMES = ['pid', 'hash', 'cid', 'runtime', 'mem', 'cmd', 'lock']  # this strongly depends on pypiper's profile.tsv format
 
-SAMPLE_EXECUTION_TOGGLE = "toggle"
-VALID_READ_TYPES = ["single", "paired"]
 REQUIRED_INPUTS_ATTR_NAME = "required_inputs_attr"
 ALL_INPUTS_ATTR_NAME = "all_inputs_attr"
 PIPE_ARGS_SECTION = "pipeline_args"
@@ -101,9 +95,8 @@ RESULTS_FOLDER_KEY = "results_subdir"
 LOOPER_KEY = "looper"
 SUBMISSION_FOLDER_KEY = "submission_subdir"
 OUTDIR_KEY = "output_dir"
-PROTOCOL_KEY = "protocol"
-GENERIC_PROTOCOL_KEY = "*"
 EXAMPLE_COMPUTE_SPEC_FMT = "--compute k1=v1,k2=v2"
+SUBMISSION_FAILURE_MESSAGE = "Cluster resource failure"
 
 # resource package TSV-related consts
 ID_COLNAME = "id"

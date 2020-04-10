@@ -5,7 +5,6 @@ Looper: a pipeline submission engine. https://github.com/pepkit/looper
 
 import abc
 import csv
-from collections import defaultdict
 import glob
 import logging
 import os
@@ -16,38 +15,33 @@ if sys.version_info < (3, 3):
 else:
     from collections.abc import Mapping
 import yaml
+import pandas as _pd
 
+from collections import defaultdict
 # Need specific sequence of actions for colorama imports?
 from colorama import init
 init()
 from colorama import Fore, Style
 from shutil import rmtree
-from jsonschema.exceptions import ValidationError
-import pandas as _pd
 
-from . import LOGGING_LEVEL, __version__, \
-    build_parser, _LEVEL_BY_VERBOSITY
+from . import __version__, build_parser, _LEVEL_BY_VERBOSITY
 from .conductor import SubmissionConductor
 from .const import *
 from .exceptions import JobSubmissionException, MisconfigurationException
 from .html_reports import HTMLReportBuilder
-from .pipeline_interface import RESOURCES_KEY
 from .project import Project, ProjectContext
 from .utils import determine_config_path, fetch_flag_files, sample_folder, \
     get_file_for_project
 from .looper_config import *
 
-from divvy import DEFAULT_COMPUTE_RESOURCES_NAME, NEW_COMPUTE_KEY as DIVVY_COMPUTE_KEY
+from divvy import DEFAULT_COMPUTE_RESOURCES_NAME, \
+    NEW_COMPUTE_KEY as DIVVY_COMPUTE_KEY
 from logmuse import init_logger
 from peppy.const import *
 from eido import validate_sample, validate_config
 from ubiquerg import query_yes_no
 
-SUBMISSION_FAILURE_MESSAGE = "Cluster resource failure"
 
-
-_FAIL_DISPLAY_PROPORTION_THRESHOLD = 0.5
-_MAX_FAIL_SAMPLE_DISPLAY = 20
 _PKGNAME = "looper"
 _LOGGER = logging.getLogger(_PKGNAME)
 
@@ -115,8 +109,9 @@ class Checker(Executor):
         for flag in flags:
             try:
                 files = files_by_flag[flag]
-            except:
-                # No files for flag.
+            except Exception as e:
+                _LOGGER.debug("No files for {} flag. Caught exception: {}".
+                              format(flags, getattr(e, 'message', repr(e))))
                 continue
             # If checking on a specific flag, do not limit the number of
             # reported filepaths, but do not report empty file lists
@@ -165,8 +160,9 @@ class Cleaner(Executor):
             _LOGGER.info("Dry run. No files cleaned.")
             return 0
 
-        if not args.force_yes and not query_yes_no("Are you sure you want to permanently delete all "
-                            "intermediate pipeline results for this project?"):
+        if not args.force_yes and not \
+                query_yes_no("Are you sure you want to permanently delete all "
+                             "intermediate pipeline results for this project?"):
             _LOGGER.info("Clean action aborted by user.")
             return 1
 
@@ -264,7 +260,7 @@ class Collator(Executor):
         self.counter = LooperCounter(len(project_pifaces))
         for project_piface in project_pifaces:
             try:
-                project_piface_object = PipelineInterface2(project_piface)
+                project_piface_object = PipelineInterface(project_piface)
             except FileNotFoundError:
                 _LOGGER.warning("Pipeline interface does not exist: {}".
                              format(project_piface))
@@ -365,7 +361,8 @@ class Runner(Executor):
                 failures[sample.sample_name] = skip_reasons
                 continue
 
-            # single sample validation against a single schema (from sample's piface)
+            # single sample validation against a single schema
+            # (from sample's piface)
             [validate_sample(self.prj, sample.sample_name, schema_file)
              for schema_file in self.prj.get_schemas(sample_pifaces)]
 
@@ -435,7 +432,7 @@ class Runner(Executor):
         if samples_by_reason:
             _LOGGER.info("\n{} unique reasons for submission failure: {}".format(
                 len(samples_by_reason), ", ".join(samples_by_reason.keys())))
-            full_fail_msgs = [create_failure_message(reason, samples)
+            full_fail_msgs = [_create_failure_message(reason, samples)
                               for reason, samples in samples_by_reason.items()]
             _LOGGER.info("\nSummary of failures:\n{}".
                          format("\n".join(full_fail_msgs)))
@@ -446,7 +443,8 @@ class Summarizer(Executor):
     def __init__(self, prj):
         # call the inherited initialization
         super(Summarizer, self).__init__(prj)
-        # pull together all the fits and stats from each sample into project-combined spreadsheets.
+        # pull together all the fits and stats from each sample into
+        # project-combined spreadsheets.
         self.stats, self.columns = _create_stats_summary(self.prj, self.counter)
         self.objs = _create_obj_summary(self.prj, self.counter)
 
@@ -455,8 +453,10 @@ class Summarizer(Executor):
         # initialize the report builder
         report_builder = HTMLReportBuilder(self.prj)
         # run the report builder. a set of HTML pages is produced
-        report_path = report_builder(self.objs, self.stats, uniqify(self.columns))
-        _LOGGER.info("HTML Report (n=" + str(len(self.stats)) + "): " + report_path)
+        report_path = report_builder(self.objs, self.stats,
+                                     uniqify(self.columns))
+        _LOGGER.info("HTML Report (n=" + str(len(self.stats)) + "): "
+                     + report_path)
 
 
 def _create_stats_summary(project, counter):
@@ -543,24 +543,7 @@ def _create_obj_summary(project, counter):
     return objs
 
 
-def aggregate_exec_skip_reasons(skip_reasons_sample_pairs):
-    """
-    Collect the reasons for skipping submission/execution of each sample
-
-    :param Iterable[(Iterable[str], str)] skip_reasons_sample_pairs: pairs of
-        collection of reasons for which a sample was skipped for submission,
-        and the name of the sample itself
-    :return Mapping[str, Iterable[str]]: mapping from explanation to
-        collection of names of samples to which it pertains
-    """
-    samples_by_skip_reason = defaultdict(list)
-    for skip_reasons, sample in skip_reasons_sample_pairs:
-        for reason in set(skip_reasons):
-            samples_by_skip_reason[reason].append(sample)
-    return samples_by_skip_reason
-
-
-def create_failure_message(reason, samples):
+def _create_failure_message(reason, samples):
     """ Explain lack of submission for a single reason, 1 or more samples. """
     color = Fore.LIGHTRED_EX
     reason_text = color + reason + Style.RESET_ALL
@@ -570,10 +553,12 @@ def create_failure_message(reason, samples):
 
 def _remove_or_dry_run(paths, dry_run=False):
     """
-    Remove file or directory or just inform what would be removed in case of dry run
+    Remove file or directory or just inform what would be removed in
+    case of dry run
 
     :param list|str paths: list of paths to files/dirs to be removed
-    :param bool dry_run: logical indicating whether the files should remain untouched and massage printed
+    :param bool dry_run: logical indicating whether the files should remain
+        untouched and massage printed
     """
     paths = paths if isinstance(paths, list) else [paths]
     for path in paths:
@@ -594,7 +579,7 @@ def destroy_summary(prj, dry_run=False):
     """
     Delete the summary files if not in dry run mode
     """
-    _remove_or_dry_run([get_file_for_project(prj, "_summary.html"),
+    _remove_or_dry_run([get_file_for_project(prj, "summary.html"),
                         get_file_for_project(prj, 'stats_summary.tsv'),
                         get_file_for_project(prj, 'objs_summary.tsv'),
                         get_file_for_project(prj, "reports")], dry_run)
@@ -613,7 +598,8 @@ def uniqify(seq):
 def parse_user_input(x):
     """
     Inputs overriding config-defined options are list of lists of strings.
-    To make the manipulation more convenient we need to make them lists of strings
+    To make the manipulation more convenient we need to make them
+    lists of strings
 
     :param Iterable[Iterable[str], ...] | None x: user-provided argument
     :return Iterable[str] | None: flattened user input or None if not provided
@@ -702,6 +688,8 @@ def _proc_resources_spec(spec):
 
 def main():
     """ Primary workflow """
+    global _LOGGER
+
     parser = build_parser()
     args, remaining_args = parser.parse_known_args()
 
@@ -727,7 +715,8 @@ def main():
                      "logfile": args.logfile,
                      "devmode": args.dbg}
     init_logger(name="peppy", **logger_kwargs)
-    global _LOGGER
+    init_logger(name="divvy", **logger_kwargs)
+    init_logger(name="eido", **logger_kwargs)
     _LOGGER = init_logger(name=_PKGNAME, **logger_kwargs)
 
     if len(remaining_args) > 0:
@@ -745,7 +734,7 @@ def main():
     try:
         prj = Project(config_file=determine_config_path(conf_file),
                       amendments=args.amendments,
-                      pifaces=parse_user_input(args.pifaces),
+                      pifaces=args.pifaces[0],
                       file_checks=args.file_checks,
                       compute_env_file=getattr(args, 'env', None))
     except yaml.parser.ParserError as e:
@@ -775,7 +764,9 @@ def main():
                 run(args, remaining_args, rerun=(args.command == "rerun"),
                     **compute_kwargs)
             except IOError:
-                _LOGGER.error("{} pipeline_interfaces: '{}'".format(prj.__class__.__name__, prj.interfaces[PROTOMAP_KEY].keys()))
+                _LOGGER.error("{} pipeline_interfaces: '{}'".
+                              format(prj.__class__.__name__,
+                                     prj.pipeline_interface_sources))
                 raise
 
         if args.command == "runp":

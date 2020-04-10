@@ -11,6 +11,9 @@ from eido.exceptions import *
 from peppy.sample import Sample
 from peppy.project import Project
 
+__author__ = "Michal Stolarczyk"
+__email__ = "michal@virginia.edu"
+
 _LOGGER = getLogger(__name__)
 PATH_KEY = "path"
 THUMB_PATH_KEY = "thumbnail_path"

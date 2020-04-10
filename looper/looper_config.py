@@ -5,7 +5,7 @@ from logging import getLogger
 from ubiquerg import expandpath, is_url
 
 from .const import *
-from .pipeline_interface2 import PipelineInterface2
+from .pipeline_interface import PipelineInterface
 
 _LOGGER = getLogger(__name__)
 
@@ -30,7 +30,7 @@ class LooperConfig(YacAttMap):
         if PROTOMAP_KEY in self:
             if protocol in self[PROTOMAP_KEY]:
                 return self[PROTOMAP_KEY][protocol] if raw else \
-                    PipelineInterface2(config=self[PROTOMAP_KEY][protocol])
+                    PipelineInterface(config=self[PROTOMAP_KEY][protocol])
         return None
 
     def add_protocol_mapping(self, protocol, loc):

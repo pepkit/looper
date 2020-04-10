@@ -2,7 +2,6 @@
 
 import logging
 import os
-import re
 import subprocess
 import time
 from jinja2.exceptions import UndefinedError
@@ -16,7 +15,6 @@ from .const import *
 from .exceptions import JobSubmissionException
 from .utils import grab_project_data, fetch_sample_flags, \
     jinja_render_cmd_strictly
-from .sample import Sample
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -34,9 +32,9 @@ class SubmissionConductor(object):
     """
 
     def __init__(self, pipeline_interface, prj, dry_run=False,
-                 delay=0, sample_subtype=None, extra_args=None,
-                 ignore_flags=False, compute_variables=None, max_cmds=None,
-                 max_size=None, automatic=True, collate=False):
+                 delay=0, extra_args=None, ignore_flags=False,
+                 compute_variables=None, max_cmds=None, max_size=None,
+                 automatic=True, collate=False):
         """
         Create a job submission manager.
 
@@ -45,8 +43,6 @@ class SubmissionConductor(object):
         information like resource allocation packages and which pipeline will
         be overseen by this instance, respectively.
 
-        :param str pipeline_key: 'Hook' into the pipeline interface, and the
-            datum that determines which pipeline this manager will oversee.
         :param PipelineInterface pipeline_interface: Collection of important
             data for one or more pipelines, like resource allocation packages
             and option/argument specifications
@@ -56,13 +52,11 @@ class SubmissionConductor(object):
             but the actual job submission should be done.
         :param float delay: Time (in seconds) to wait before submitting a job
             once it's ready
-        :param type sample_subtype: Extension of base Sample, for particular
-            pipeline for which submissions will be managed by this instance
         :param list extra_args: Additional arguments to add (positionally) to
             each command within each job generated
         :param bool ignore_flags: Whether to ignore flag files present in
             the sample folder for each sample considered for submission
-        :param str compute_variables: A dict with variables that will be made
+        :param dict[str] compute_variables: A dict with variables that will be made
             available to the compute package. For example, this should include
             the name of the cluster partition to which job or jobs will be submitted
         :param int | NoneType max_cmds: Upper bound on number of commands to
@@ -94,19 +88,14 @@ class SubmissionConductor(object):
         self._failed_sample_names = []
 
         if not self.collate:
-            self.sample_subtype = sample_subtype or Sample
-            if not issubclass(self.sample_subtype, Sample):
-                raise TypeError("Sample type must extend {}; got {}".format(
-                    Sample.__name__, type(self.sample_subtype).__name__))
-
             self.automatic = automatic
             if max_cmds is None and max_size is None:
                 self.max_cmds = 1
             elif (max_cmds is not None and max_cmds < 1) or \
                     (max_size is not None and max_size < 0):
                 raise ValueError(
-                        "If specified, max per-job command count must positive, "
-                        "and max per-job total file size must be nonnegative")
+                    "If specified, max per-job command count must positive, "
+                    "and max per-job total file size must be nonnegative")
             else:
                 self.max_cmds = max_cmds
             self.max_size = max_size or float("inf")
@@ -173,16 +162,6 @@ class SubmissionConductor(object):
                                  os.path.basename(fp)) for fp in flag_files]))
                 _LOGGER.debug("NO SUBMISSION")
 
-        if type(sample) != self.sample_subtype:
-            _LOGGER.debug(
-                "Building {} from {}".format(self.sample_subtype, type(sample)))
-            sample = self.sample_subtype(sample.to_dict())
-        else:
-            _LOGGER.debug(
-                "{} is already of type {}".format(sample.sample_name,
-                                                  self.sample_subtype))
-        _LOGGER.debug("Created %s instance: '%s'",
-                      self.sample_subtype.__name__, sample.sample_name)
         sample.prj = grab_project_data(self.prj)
 
         skip_reasons = []
