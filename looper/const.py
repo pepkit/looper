@@ -69,10 +69,8 @@ PIPELINE_INTERFACES_KEY = "pipeline_interfaces"
 RESOURCES_KEY = "resources"
 SAMPLE_PL_KEY = "sample_pipeline"
 PROJECT_PL_KEY = "project_pipeline"
-# PIFACE_SCHEMA_URL = \
-#     "https://schema.databio.org/pipelines/pipeline_interface.yaml"
 PIFACE_SCHEMA_URL = \
-    "/Users/mstolarczyk/Uczelnia/UVA/code/schema.databio.org/pipelines/pipeline_interface.yaml"
+    "https://schema.databio.org/pipelines/pipeline_interface.yaml"
 INPUT_SCHEMA_KEY = "schema"
 OUTPUT_SCHEMA_KEY = "output_schema"
 SAMPLE_YAML_PATH_KEY = "sample_yaml_path"
