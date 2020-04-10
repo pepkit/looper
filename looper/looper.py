@@ -734,7 +734,7 @@ def main():
     try:
         prj = Project(config_file=determine_config_path(conf_file),
                       amendments=args.amendments,
-                      pifaces=args.pifaces[0],
+                      pifaces=args.pifaces[0] if args.pifaces else None,
                       file_checks=args.file_checks,
                       compute_env_file=getattr(args, 'env', None))
     except yaml.parser.ParserError as e:

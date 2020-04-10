@@ -230,7 +230,7 @@ class Project(peppyProject):
                 PipelineInterface(pi)
             except Exception as e:
                 _LOGGER.warning("Provided pipeline interface source ({}) is "
-                                "invalid. Caught exception:\n{}".
+                                "invalid. Caught exception: {}".
                                 format(pi, getattr(e, 'message', repr(e))))
             else:
                 valid_pi.append(pi)
