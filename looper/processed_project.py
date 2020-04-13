@@ -53,7 +53,8 @@ def _populate_paths(object, schema, check_exist):
             populated = templ.format(**dict(object.items()))
         except Exception as e:
             _LOGGER.warning("Caught exception: {}.\n"
-                            "Could not populate path: {}".format(str(e), templ))
+                            "Could not populate path: {}".
+                            format(getattr(e, 'message', repr(e)), templ))
         else:
             setattr(object, ps, populated)
             _LOGGER.debug("Path set to: {}".format(object[ps]))

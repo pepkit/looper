@@ -339,24 +339,23 @@ class Project(peppyProject):
     def populate_pipeline_outputs(self, check_exist=False):
         """
         Populate project and sample output attributes based on output schemas
-        that pipeline interfaces point to. Additionally check for the
-        constructed paths existence on disk
+        that pipeline interfaces point to. Additionally, if requested,  check
+        for the constructed paths existence on disk
         """
         for sample in self.samples:
-            if PROTOCOL_KEY in sample:
-                sample_piface = self.get_sample_piface(sample[SAMPLE_NAME_ATTR])
-                paths = self.get_schemas(sample_piface, OUTPUT_SCHEMA_KEY)
-                for path in paths:
-                    schema = read_schema(path)
-                    try:
-                        populate_project_paths(self, schema, check_exist)
-                        populate_sample_paths(sample, schema, check_exist)
-                    except PathAttrNotFoundError:
-                        _LOGGER.error(
-                            "Missing outputs of pipelines matched by protocol: "
-                            "{}".format(sample.protocol)
-                        )
-                        raise
+            sample_piface = self.get_sample_piface(sample[SAMPLE_NAME_ATTR])
+            paths = self.get_schemas(sample_piface, OUTPUT_SCHEMA_KEY)
+            for path in paths:
+                schema = read_schema(path)
+                try:
+                    populate_project_paths(self, schema, check_exist)
+                    populate_sample_paths(sample, schema, check_exist)
+                except PathAttrNotFoundError:
+                    _LOGGER.error(
+                        "Missing outputs of pipelines matched by protocol: "
+                        "{}".format(sample.protocol)
+                    )
+                    raise
 
     def _piface_by_samples(self):
         """
