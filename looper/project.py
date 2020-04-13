@@ -103,7 +103,8 @@ class Project(peppyProject):
             raise MisconfigurationException("'{}' key not found in config".
                                             format(LOOPER_KEY))
         self._apply_user_pifaces(pifaces)
-        self._samples_by_interface = _samples_by_piface(self.samples)
+        self._samples_by_interface = \
+            _samples_by_piface(self.samples, self.piface_key)
         self._interfaces_by_sample = self._piface_by_samples()
         self.file_checks = file_checks
         self.permissive = permissive
@@ -115,6 +116,20 @@ class Project(peppyProject):
         if not dry:
             _LOGGER.debug("Ensuring project directories exist")
             self.make_project_dirs()
+
+    @property
+    def piface_key(self):
+        """
+        Name of the pipeline interface attribute for this project
+
+        :return str: name of the pipeline interface attribute
+        """
+        pik = PIPELINE_INTERFACES_KEY
+        if CONFIG_KEY in self and\
+            LOOPER_KEY in self[CONFIG_KEY] and\
+                PIFACE_KEY_SELECTOR in self[CONFIG_KEY][LOOPER_KEY]:
+            pik = str(self[CONFIG_KEY][LOOPER_KEY][PIFACE_KEY_SELECTOR])
+        return pik
 
     @property
     def project_folders(self):
@@ -234,7 +249,7 @@ class Project(peppyProject):
                                 format(pi, getattr(e, 'message', repr(e))))
             else:
                 valid_pi.append(pi)
-        [setattr(s, PIPELINE_INTERFACES_KEY, valid_pi) for s in self.samples]
+        [setattr(s, self.piface_key, valid_pi) for s in self.samples]
         _LOGGER.info("Provided valid pipeline interface sources ({}) "
                      "set in all samples".format(", ".join(valid_pi)))
 
@@ -382,20 +397,21 @@ class Project(peppyProject):
         return super(Project, self)._omit_from_repr(k, cls) or k == "interfaces"
 
 
-def _samples_by_piface(samples):
+def _samples_by_piface(samples, piface_key):
     """
     Create a collection of all samples with valid pipeline interfaces
 
     :param Iterable[peppy.Sample] samples: list of samples to search
         for interfaces for
+    :param str piface_key: name of the attribute that holds pipeline interfaces
     :return list[str]: a collection of samples keyed by pipeline interface
         source
     """
     samples_by_piface = {}
     for sample in samples:
-        if PIPELINE_INTERFACES_KEY in sample \
-                and sample[PIPELINE_INTERFACES_KEY]:
-            piface_srcs = sample[PIPELINE_INTERFACES_KEY]
+        if piface_key in sample \
+                and sample[piface_key]:
+            piface_srcs = sample[piface_key]
             if isinstance(piface_srcs, str):
                 piface_srcs = [piface_srcs]
             for source in piface_srcs:
