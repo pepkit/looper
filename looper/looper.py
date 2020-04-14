@@ -749,7 +749,9 @@ def main():
         selected_compute_pkg = prj[CONFIG_KEY][LOOPER_KEY][COMPUTE_PACKAGE_KEY]
     if selected_cli_compute_pkg:
         selected_compute_pkg = selected_cli_compute_pkg
-    prj.dcc.activate_package(selected_compute_pkg)
+    if not prj.dcc.activate_package(selected_compute_pkg):
+        _LOGGER.info("Failed to activate '{}' computing package. "
+                     "Using the default one".format(selected_compute_pkg))
 
     with ProjectContext(prj=prj,
                         selector_attribute=args.selector_attribute,
