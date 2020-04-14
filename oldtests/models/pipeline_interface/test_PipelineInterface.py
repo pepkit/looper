@@ -25,7 +25,7 @@ from peppy.const import *
 from ubiquerg import powerset
 
 from .conftest import ATAC_PROTOCOL_NAME, write_config_data
-from tests.helpers import remove_piface_requirements
+from oldtests.helpers import remove_piface_requirements
 
 
 __author__ = "Vince Reuter"

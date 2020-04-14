@@ -8,8 +8,8 @@ from looper.pipeline_interface import \
 from looper.pipereqs import KEY_EXEC_REQ, KEY_FILE_REQ, KEY_FOLDER_REQ
 import pytest
 import yaml
-from tests.helpers import build_pipeline_iface
-from tests.models.pipeline_interface.conftest import \
+from oldtests.helpers import build_pipeline_iface
+from oldtests.models.pipeline_interface.conftest import \
     ATAC_PIPE_NAME, ATAC_PROTOCOL_NAME
 from veracitools import ExpectContext
 

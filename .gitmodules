@@ -1,0 +1,4 @@
+[submodule "tests/data/example_peps"]
+	path = tests/data/example_peps
+	url = https://github.com/pepkit/example_peps
+	branch = cfg2

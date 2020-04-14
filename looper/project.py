@@ -204,8 +204,7 @@ class Project(peppyProject):
     @property
     def pipeline_interfaces(self):
         """
-        Flat list of pipeline all valid interface objects associated
-        with this Project
+        Flat list of all valid interface objects associated with this Project
 
         Note that only valid pipeline interfaces will show up in the
         result (ones that exist on disk/remotely and validate successfully
@@ -359,18 +358,19 @@ class Project(peppyProject):
         """
         for sample in self.samples:
             sample_piface = self.get_sample_piface(sample[SAMPLE_NAME_ATTR])
-            paths = self.get_schemas(sample_piface, OUTPUT_SCHEMA_KEY)
-            for path in paths:
-                schema = read_schema(path)
-                try:
-                    populate_project_paths(self, schema, check_exist)
-                    populate_sample_paths(sample, schema, check_exist)
-                except PathAttrNotFoundError:
-                    _LOGGER.error(
-                        "Missing outputs of pipelines matched by protocol: "
-                        "{}".format(sample.protocol)
-                    )
-                    raise
+            if sample_piface:
+                paths = self.get_schemas(sample_piface, OUTPUT_SCHEMA_KEY)
+                for path in paths:
+                    schema = read_schema(path)
+                    try:
+                        populate_project_paths(self, schema, check_exist)
+                        populate_sample_paths(sample, schema, check_exist)
+                    except PathAttrNotFoundError:
+                        _LOGGER.error(
+                            "Missing outputs of pipelines matched by protocol: "
+                            "{}".format(sample.protocol)
+                        )
+                        raise
 
     def _piface_by_samples(self):
         """

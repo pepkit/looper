@@ -1,5 +1,5 @@
 # ignore test results
-tests/test/*
+oldtests/test/*
 
 # toy/experimental files
 *.csv

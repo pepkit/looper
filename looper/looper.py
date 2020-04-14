@@ -225,13 +225,6 @@ class Collator(Executor):
         """
         super(Executor, self).__init__()
         self.prj = prj
-        if not self.prj.pipeline_interfaces:
-            raise MisconfigurationException(
-                "Looper requires at least one pointer to project-level in a "
-                "pipeline interface file, set with the '{p}' key in the project"
-                " config file and define {c} in '{c}' section in that file".
-                    format(p=self.prj.piface_key, c=PROJECT_PL_KEY)
-            )
 
     def __call__(self, args, remaining_args, **compute_kwargs):
         """
@@ -245,17 +238,21 @@ class Collator(Executor):
         """
         jobs = 0
         project_pifaces = self.prj._samples_by_interface.keys()
-        _LOGGER.debug("Matched {} project pipeline interfaces"
-                     .format(len(project_pifaces)))
         if self.prj.piface_key in self.prj[CONFIG_KEY][LOOPER_KEY]:
             # pipeline interfaces sources defined in the project config override
             # ones that are matched by the Samples in this Project
             project_pifaces = \
                 [expandpath(src) for src in
                  self.prj[CONFIG_KEY][LOOPER_KEY][self.prj.piface_key]]
+        _LOGGER.debug("Matched {} project pipeline interfaces".
+                      format(len(project_pifaces)))
         if not project_pifaces:
-            _LOGGER.warning("No pipelines found to run for this project")
-            sys.exit(0)
+            raise MisconfigurationException(
+                "Looper requires at least one pointer to project-level pipeline"
+                " in a pipeline interface file, set with the '{p}' key in the "
+                "project config file and define {c} in '{c}' section in that "
+                "file".format(p=self.prj.piface_key, c=PROJECT_PL_KEY)
+            )
         self.prj.populate_pipeline_outputs()
         self.counter = LooperCounter(len(project_pifaces))
         for project_piface in project_pifaces:

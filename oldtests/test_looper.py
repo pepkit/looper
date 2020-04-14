@@ -1,6 +1,6 @@
-"""Initial, broad-scope looper tests.
+"""Initial, broad-scope looper oldtests.
 
-Along with tests/tests.py, this is one of the initial unit test modules.
+Along with oldtests/oldtests.py, this is one of the initial unit test modules.
 The primary function under test here is the creation of a project instance.
 
 """
@@ -15,8 +15,8 @@ import pytest
 
 from looper import build_parser
 from looper.looper import aggregate_exec_skip_reasons
-from tests.conftest import LOOPER_ARGS_BY_PIPELINE
-from tests.helpers import named_param
+from oldtests.conftest import LOOPER_ARGS_BY_PIPELINE
+from oldtests.helpers import named_param
 
 
 _LOGGER = logging.getLogger("looper.{}".format(__name__))

@@ -12,8 +12,8 @@ from looper.const import PIPELINE_REQUIREMENTS_KEY
 from looper.pipeline_interface import PL_KEY, PROTOMAP_KEY
 from looper.pipereqs import KEY_EXEC_REQ, KEY_FILE_REQ, KEY_FOLDER_REQ
 from looper.project_piface_group import ProjectPifaceGroup
-import tests
-from tests.helpers import build_pipeline_iface
+import oldtests
+from oldtests.helpers import build_pipeline_iface
 from ubiquerg import powerset
 
 __author__ = "Vince Reuter"
@@ -31,7 +31,7 @@ BAD_REQS_MAPS = list(map(dict, powerset(BAD_EXEC_REQS_DATA + BAD_PATH_REQS_DATA,
 BAD_REQS_LISTS = list(map(list, powerset([r for r, _ in BAD_PATH_REQS_DATA], nonempty=True)))
 
 ANNS_FILE_NAME = "anns.csv"
-DATA_FOLDER_PATH = os.path.join(os.path.dirname(tests.__file__), "data")
+DATA_FOLDER_PATH = os.path.join(os.path.dirname(oldtests.__file__), "data")
 INTERFACE_FILEPATH = os.path.join(DATA_FOLDER_PATH, "methyl_piface.yaml")
 
 """

@@ -1,4 +1,4 @@
-""" Configuration for modules with independent tests of models. """
+""" Configuration for modules with independent oldtests of models. """
 
 from collections import OrderedDict
 import copy

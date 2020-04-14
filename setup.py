@@ -89,7 +89,7 @@ setup(
     scripts=scripts,
     package_data={'looper': ['submit_templates/*']},
     include_package_data=True,
-    test_suite="tests",
+    test_suite="oldtests",
     tests_require=(["mock", "pytest"]),
     setup_requires=(["pytest-runner"] if {"test", "pytest", "ptr"} & set(sys.argv) else []),
     **extra

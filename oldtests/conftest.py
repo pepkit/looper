@@ -1,7 +1,7 @@
 """Fixtures for pytest-based units.
 
 Constants and helper functions can also be defined here. Doing so seems to
-necessitate provision of an __init__.py file in this tests/ directory
+necessitate provision of an __init__.py file in this oldtests/ directory
 such that Python considers it a package, but if that's already in place and
 test execution is not deleteriously affected, then it should be no problem.
 
@@ -183,7 +183,7 @@ _ATTR_BY_TYPE = {
 
 
 # TODO: split models conftest stuff into its own subdirectory.
-# Provide some basic atomic-type data for models tests.
+# Provide some basic atomic-type data for models oldtests.
 _BASE_KEYS = ("epigenomics", "H3K", "ac", "EWS", "FLI1")
 _BASE_VALUES = \
     ("topic", "residue", "acetylation", "RNA binding protein", "FLI1")
@@ -212,7 +212,7 @@ def pytest_addoption(parser):
     """ Facilitate command-line test behavior adjustment. """
     parser.addoption("--logging-level",
                      default="WARN",
-                     help="Project root logger level to use for tests")
+                     help="Project root logger level to use for oldtests")
 
 
 def pytest_generate_tests(metafunc):
@@ -236,7 +236,7 @@ def conf_logs(request):
     level = request.config.getoption("--logging-level")
     init_logger(name=_LOGNAME, level=level, devmode=True)
     logging.getLogger(_LOGNAME).info(
-        "Configured looper logger at level %s; attaching tests' logger %s",
+        "Configured looper logger at level %s; attaching oldtests' logger %s",
         str(level), __name__)
     global _LOGGER
     _LOGGER = logging.getLogger("looper.{}".format(__name__))
@@ -474,9 +474,9 @@ _TEST_DATA = {"{}.txt".format(name):
 
 def _write_test_data_files(tempdir):
     """
-    Write the temporary data files used by the tests.
+    Write the temporary data files used by the oldtests.
 
-    :param str tempdir: path to tests' primary temporary directory,
+    :param str tempdir: path to oldtests' primary temporary directory,
         within which temp data files may be placed directly or within
         subdirectory/ies.
     """

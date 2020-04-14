@@ -5,9 +5,9 @@ import logging
 import os
 import pytest
 import looper
-from tests.conftest import \
+from oldtests.conftest import \
     NUM_SAMPLES, NGS_SAMPLE_INDICES, PIPELINE_TO_REQD_INFILES_BY_SAMPLE
-from tests.helpers import named_param
+from oldtests.helpers import named_param
 
 
 __author__ = "Vince Reuter"

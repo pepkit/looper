@@ -17,7 +17,7 @@ from looper.const import *
 from looper.looper import Project
 from looper.pipeline_interface import PROTOMAP_KEY, RESOURCES_KEY
 from looper.utils import fetch_sample_flags, sample_folder
-from tests.helpers import process_protocols
+from oldtests.helpers import process_protocols
 
 __author__ = "Vince Reuter"
 __email__ = "vreuter@virginia.edu"

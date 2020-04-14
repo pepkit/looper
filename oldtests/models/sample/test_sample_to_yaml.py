@@ -7,12 +7,12 @@ import yaml
 from looper import Project as LProject, Sample as LSample
 from looper.const import OUTKEY
 from looper.pipeline_interface import PL_KEY
-from tests.conftest import write_temp, \
+from oldtests.conftest import write_temp, \
     PIPELINE_INTERFACES_KEY, PIPELINE_TO_REQD_INFILES_BY_SAMPLE, \
     PIPELINE_INTERFACE_CONFIG_LINES, PROJECT_CONFIG_LINES, ANNOTATIONS_FILENAME, \
     SAMPLE_ANNOTATION_LINES, SAMPLE_SUBANNOTATIONS_KEY
 
-from tests.helpers import process_protocols
+from oldtests.helpers import process_protocols
 from peppy import Sample as PSample, OUTDIR_KEY, SAMPLE_NAME_COLNAME
 from peppy.sample import SAMPLE_YAML_EXT, SAMPLE_YAML_FILE_KEY
 from ubiquerg import powerset

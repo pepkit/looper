@@ -10,7 +10,7 @@ from looper import PipelineInterface, Project, SubmissionConductor
 from looper.pipeline_interface import PL_KEY, PROTOMAP_KEY
 from peppy.const import *
 from peppy.utils import count_repeats
-from tests.helpers import randconf
+from oldtests.helpers import randconf
 from ubiquerg import powerset
 
 __author__ = "Vince Reuter"

@@ -6,7 +6,7 @@ import string
 import pytest
 from looper.utils import determine_config_path, DEFAULT_CONFIG_SUFFIX, \
     DEFAULT_METADATA_FOLDER
-from tests.helpers import randstr, LETTERS_AND_DIGITS
+from oldtests.helpers import randstr, LETTERS_AND_DIGITS
 
 
 __author__ = "Vince Reuter"
