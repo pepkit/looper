@@ -256,6 +256,8 @@ class Collator(Executor):
             )
         self.prj.populate_pipeline_outputs()
         self.counter = LooperCounter(len(project_pifaces))
+        if isinstance(project_pifaces, str):
+            project_pifaces = [project_pifaces]
         for project_piface in project_pifaces:
             try:
                 project_piface_object = PipelineInterface(project_piface)
