@@ -2,3 +2,4 @@ include requirements/*
 include README.md
 include logo_looper.svg
 include looper/jinja_templates/*
+include looper/schemas/*

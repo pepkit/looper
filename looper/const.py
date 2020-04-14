@@ -1,5 +1,7 @@
 """ Shared project constants """
 
+import os
+
 __author__ = "Databio lab"
 __email__ = "nathan@code.databio.org"
 
@@ -9,7 +11,7 @@ __all__ = [
     "OUTDIR_KEY", "LOOPER_KEY", "COMPUTE_KEY", "PIPELINE_INTERFACES_KEY",
     "SIZE_DEP_VARS_KEY", "FLAGS", "DYN_VARS_KEY", "SAMPLE_YAML_PATH_KEY",
     "RESOURCES_KEY", "SUBMISSION_FOLDER_KEY", "NOT_SUB_MSG",
-    "PIFACE_SCHEMA_URL", "RESULTS_SUBDIR_KEY", "SUBMISSION_SUBDIR_KEY",
+    "PIFACE_SCHEMA_SRC", "RESULTS_SUBDIR_KEY", "SUBMISSION_SUBDIR_KEY",
     "TEMPLATES_DIRNAME", "REQUIRED_INPUTS_ATTR_NAME", "FILE_SIZE_COLNAME",
     "COMPUTE_PACKAGE_KEY", "INPUT_SCHEMA_KEY", "OUTPUT_SCHEMA_KEY",
     "EXAMPLE_COMPUTE_SPEC_FMT", "ALL_INPUTS_ATTR_NAME", "SAMPLE_PL_KEY",
@@ -70,8 +72,8 @@ PIPELINE_INTERFACES_KEY = "pipeline_interfaces"
 RESOURCES_KEY = "resources"
 SAMPLE_PL_KEY = "sample_pipeline"
 PROJECT_PL_KEY = "project_pipeline"
-PIFACE_SCHEMA_URL = \
-    "https://schema.databio.org/pipelines/pipeline_interface.yaml"
+PIFACE_SCHEMA_SRC = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                 "schemas","pipeline_interface_schema.yaml")
 INPUT_SCHEMA_KEY = "schema"
 OUTPUT_SCHEMA_KEY = "output_schema"
 SAMPLE_YAML_PATH_KEY = "sample_yaml_path"

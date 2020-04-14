@@ -46,7 +46,7 @@ class PipelineInterface(PXAM):
             self.source = config
             config = load_yaml(config)
         self.update(config)
-        self._validate(PIFACE_SCHEMA_URL)
+        self._validate(PIFACE_SCHEMA_SRC)
         self._expand_pipeline_paths()
 
     def get_pipeline_schema(self, section, schema_key=INPUT_SCHEMA_KEY):
