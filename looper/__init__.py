@@ -127,8 +127,7 @@ def build_parser():
                      " is duplicated, since samples names should be unique.  "
                      " Set this option to override this setting. Default=False")
         subparser.add_argument(
-                "--compute-package", dest=COMPUTE_KEY,
-                help="Name of computing resource package to use")
+                "--package", help="Name of computing resource package to use")
         subparser.add_argument(
                 "--compute",
                 help="Specification of individual computing resource settings; "

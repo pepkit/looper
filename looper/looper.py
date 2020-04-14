@@ -742,7 +742,7 @@ def main():
         sys.exit(1)
     _LOGGER.debug("Results subdir: " + prj.results_folder)
 
-    selected_cli_compute_pkg = getattr(args, DIVVY_COMPUTE_KEY, None)
+    selected_cli_compute_pkg = getattr(args, "package", None)
     # compute package selection priority list: cli > project > default
     selected_compute_pkg = DEFAULT_COMPUTE_RESOURCES_NAME
     if COMPUTE_PACKAGE_KEY in prj[CONFIG_KEY][LOOPER_KEY]:
