@@ -23,6 +23,7 @@ from colorama import init
 init()
 from colorama import Fore, Style
 from shutil import rmtree
+from jsonschema import ValidationError
 
 from . import __version__, build_parser, _LEVEL_BY_VERBOSITY
 from .conductor import SubmissionConductor
@@ -258,9 +259,11 @@ class Collator(Executor):
         for project_piface in project_pifaces:
             try:
                 project_piface_object = PipelineInterface(project_piface)
-            except FileNotFoundError:
-                _LOGGER.warning("Pipeline interface does not exist: {}".
-                             format(project_piface))
+            except (FileNotFoundError, ValidationError) as e:
+                _LOGGER.warning(
+                    "Ignoring invalid pipeline interface source: {}. "
+                    "Caught exception: {}".
+                        format(project_piface, getattr(e, 'message', repr(e))))
                 continue
             _LOGGER.info(self.counter.show(
                 name=self.prj.name, type="project",
