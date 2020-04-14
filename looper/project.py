@@ -418,9 +418,11 @@ def _samples_by_piface(samples, piface_key):
                 source = expandpath(source)
                 try:
                     PipelineInterface(source)
-                except (ValidationError, FileNotFoundError):
-                    _LOGGER.debug("Ignoring invalid pipeline interface source:"
-                                  " {}".format(source))
+                except (ValidationError, FileNotFoundError) as e:
+                    _LOGGER.warning(
+                        "Ignoring invalid pipeline interface source: {}. "
+                        "Caught exception: {}".format(
+                            source, getattr(e, 'message', repr(e))))
                     continue
                 else:
                     samples_by_piface.setdefault(source, set())
