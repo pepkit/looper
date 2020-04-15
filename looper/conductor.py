@@ -139,28 +139,30 @@ class SubmissionConductor(object):
         :raise TypeError: If sample subtype is provided but does not extend
             the base Sample class, raise a TypeError.
         """
-        _LOGGER.debug("Adding {} to conductor for {}".
-                      format(sample.sample_name, self.pl_name))
+        _LOGGER.debug("Adding {} to conductor for {} to {}run".format(
+            sample.sample_name, self.pl_name, "re" if rerun else ""))
         flag_files = fetch_sample_flags(self.prj, sample, self.pl_name)
-        use_this_sample = True
+        use_this_sample = not rerun
 
-        if flag_files:
+        if flag_files or rerun:
             if not self.ignore_flags:
                 use_this_sample = False
             # But rescue the sample in case rerun/failed passes
             failed_flag = any("failed" in x for x in flag_files)
-            if rerun and failed_flag:
-                _LOGGER.info(
-                    "> Re-running failed sample '%s' for pipeline '%s'.",
-                    sample.sample_name, self.pl_name)
-                use_this_sample = True
+            if rerun:
+                if failed_flag:
+                    _LOGGER.info(
+                        "> Re-running failed sample '%s' for pipeline '%s'.",
+                        sample.sample_name, self.pl_name)
+                    use_this_sample = True
+                else:
+                    use_this_sample = False
             if not use_this_sample:
-                _LOGGER.info("> Skipping sample '%s' for pipeline '%s', "
-                             "%s found: %s", sample.sample_name, self.pl_name,
-                             "flags" if len(flag_files) > 1 else "flag",
-                             ", ".join(['{}'.format(
-                                 os.path.basename(fp)) for fp in flag_files]))
-                _LOGGER.debug("NO SUBMISSION")
+                msg = "> Skipping sample '{}' for pipeline '{}'".\
+                    format(sample.sample_name, self.pl_name)
+                if flag_files:
+                    msg += ". Flags found: {}".format(flag_files)
+                _LOGGER.info(msg)
 
         sample.prj = grab_project_data(self.prj)
 
