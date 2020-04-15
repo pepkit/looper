@@ -77,8 +77,6 @@ class PipelineInterface(PXAM):
         :param float file_size: Size of input data (in gigabytes).
         :param Mapping[Mapping[str]] namespaces: namespaced variables to pass
             as a context for fluid attributes command rendering
-        :param bool collate: Whether a collate job is to be submitted (runs on
-            the project level, rather that on the sample level)
         :return MutableMapping: resource bundle appropriate for given pipeline,
             for given input file size
         :raises ValueError: if indicated file size is negative, or if the
@@ -112,7 +110,7 @@ class PipelineInterface(PXAM):
         def _load_fluid_attrs(pipeline):
             """
             Render command string (jinja2 template), execute it in a subprocess
-            and its result (JSON object) as a dict
+            and return its result (JSON object) as a dict
 
             :param Mapping pipeline: pipeline dict
             :return Mapping: a dict with attributes returned in the JSON
@@ -164,7 +162,8 @@ class PipelineInterface(PXAM):
                     resources_tsv_path = os.path.join(
                         os.path.dirname(piface.pipe_iface_file),
                         resources_tsv_path)
-                df = pd.read_csv(resources_tsv_path, sep='\t', header=0).fillna(0)
+                df = pd.read_csv(resources_tsv_path, sep='\t', header=0).\
+                    fillna(float("inf"))
                 df[ID_COLNAME] = df.index
                 df.set_index(ID_COLNAME)
                 _LOGGER.debug("Loaded resources ({}) for pipeline '{}':\n{}".
@@ -192,7 +191,7 @@ class PipelineInterface(PXAM):
                 resource_packages = sorted(
                     resources.items(),
                     key=lambda name_and_data: _file_size_ante(*name_and_data),
-                    reverse=True)
+                    reverse=False)
             except ValueError:
                 _LOGGER.error("Unable to use file size to prioritize "
                               "resource packages: {}".format(resources))
