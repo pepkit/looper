@@ -151,15 +151,12 @@ class SubmissionConductor(object):
             failed_flag = any("failed" in x for x in flag_files)
             if rerun:
                 if failed_flag:
-                    _LOGGER.info(
-                        "> Re-running failed sample '%s' for pipeline '%s'.",
-                        sample.sample_name, self.pl_name)
+                    _LOGGER.info("> Re-running failed sample")
                     use_this_sample = True
                 else:
                     use_this_sample = False
             if not use_this_sample:
-                msg = "> Skipping sample '{}' for pipeline '{}'".\
-                    format(sample.sample_name, self.pl_name)
+                msg = "> Skipping sample"
                 if flag_files:
                     msg += ". Flags found: {}".format(flag_files)
                 _LOGGER.info(msg)
