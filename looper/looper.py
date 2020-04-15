@@ -242,9 +242,14 @@ class Collator(Executor):
         if self.prj.piface_key in self.prj[CONFIG_KEY][LOOPER_KEY]:
             # pipeline interfaces sources defined in the project config override
             # ones that are matched by the Samples in this Project
-            project_pifaces = \
-                [expandpath(src) for src in
-                 self.prj[CONFIG_KEY][LOOPER_KEY][self.prj.piface_key]]
+            cfg_pifaces = self.prj[CONFIG_KEY][LOOPER_KEY][self.prj.piface_key]
+            _LOGGER.debug("Overwriting sample-matched pifaces with a "
+                          "config-specified ones: {}".format(cfg_pifaces))
+            # make sure it's a list, so both lists and strings can be
+            # specified in the config
+            if isinstance(cfg_pifaces, str):
+                cfg_pifaces = [cfg_pifaces]
+            project_pifaces = [expandpath(src) for src in cfg_pifaces]
         _LOGGER.debug("Matched {} project pipeline interfaces".
                       format(len(project_pifaces)))
         if not project_pifaces:
@@ -256,8 +261,6 @@ class Collator(Executor):
             )
         self.prj.populate_pipeline_outputs()
         self.counter = LooperCounter(len(project_pifaces))
-        if isinstance(project_pifaces, str):
-            project_pifaces = [project_pifaces]
         for project_piface in project_pifaces:
             try:
                 project_piface_object = PipelineInterface(project_piface)
