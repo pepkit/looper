@@ -249,8 +249,9 @@ class Project(peppyProject):
             else:
                 valid_pi.append(pi)
         [setattr(s, self.piface_key, valid_pi) for s in self.samples]
-        _LOGGER.info("Provided valid pipeline interface sources ({}) "
-                     "set in all samples".format(", ".join(valid_pi)))
+        if valid_pi:
+            _LOGGER.info("Provided valid pipeline interface sources ({}) "
+                         "set in all samples".format(", ".join(valid_pi)))
 
     def get_sample_piface(self, sample_name):
         """
@@ -408,9 +409,9 @@ def _samples_by_piface(samples, piface_key):
         source
     """
     samples_by_piface = {}
+    msgs = set()
     for sample in samples:
-        if piface_key in sample \
-                and sample[piface_key]:
+        if piface_key in sample and sample[piface_key]:
             piface_srcs = sample[piface_key]
             if isinstance(piface_srcs, str):
                 piface_srcs = [piface_srcs]
@@ -419,14 +420,16 @@ def _samples_by_piface(samples, piface_key):
                 try:
                     PipelineInterface(source)
                 except (ValidationError, FileNotFoundError) as e:
-                    _LOGGER.warning(
-                        "Ignoring invalid pipeline interface source: {}. "
-                        "Caught exception: {}".format(
-                            source, getattr(e, 'message', repr(e))))
+                    msg = "Ignoring invalid pipeline interface source: {}. " \
+                          "Caught exception: {}".\
+                        format(source, getattr(e, 'message', repr(e)))
+                    msgs.add(msg)
                     continue
                 else:
                     samples_by_piface.setdefault(source, set())
                     samples_by_piface[source].add(sample[SAMPLE_NAME_ATTR])
+        for msg in msgs:
+            _LOGGER.warning(msg)
     return samples_by_piface
 
 
