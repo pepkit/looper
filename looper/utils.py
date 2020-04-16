@@ -110,30 +110,24 @@ def fetch_flag_files(prj=None, results_folder="", flags=FLAGS):
     return files_by_flag
 
 
-def fetch_sample_flags(prj, sample, pl_names=None):
+def fetch_sample_flags(prj, sample, pl_name):
     """
     Find any flag files present for a sample associated with a project
 
     :param looper.Project prj: project of interest
-    :param peppy.Sample | str sample: sample object or sample name of interest
-    :param str | Iterable[str] pl_names: name of the pipeline for which flag(s)
-        should be found
+    :param peppy.Sample sample: sample object of interest
+    :param str pl_name: name of the pipeline for which flag(s) should be found
     :return Iterable[str]: collection of flag file path(s) associated with the
         given sample for the given project
     """
-    sfolder = os.path.join(prj.results_folder, sample) if isinstance(sample, str) \
-        else sample_folder(prj=prj, sample=sample)
+    sfolder = sample_folder(prj=prj, sample=sample)
     if not os.path.isdir(sfolder):
-        _LOGGER.debug("Folder doesn't exist for sample {}: {}".format(str(sample), sfolder))
+        _LOGGER.debug("Results folder ({}) doesn't exist for sample {}".
+                      format(sfolder, str(sample)))
         return []
-    if not pl_names:
-        pl_match = lambda _: True
-    else:
-        if isinstance(pl_names, str):
-            pl_names = [pl_names]
-        pl_match = lambda n: any(n.startswith(pl) for pl in pl_names)
-    return [os.path.join(sfolder, f) for f in os.listdir(sfolder)
-            if os.path.splitext(f)[1] == ".flag" and pl_match(f)]
+    folder_contents = [os.path.join(sfolder, f) for f in os.listdir(sfolder)]
+    return [x for x in folder_contents if os.path.splitext(x)[1] == ".flag"
+            and os.path.basename(x).startswith(pl_name)]
 
 
 def grab_project_data(prj):
