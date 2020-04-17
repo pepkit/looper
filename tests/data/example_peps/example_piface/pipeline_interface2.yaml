@@ -5,13 +5,16 @@ sample_pipeline:
   output_schema: output_schema.yaml
   command_template: >
     {pipeline.path} --sample-name {sample.sample_name}
-
+  compute:
+    size_dependent_variables: resources-sample.tsv
 project_pipeline:
   name: OTHER_PIPELINE2
   path: pipelines/col_pipeline2.py
   output_schema: output_schema.yaml
   command_template: >
-    {pipeline.path} --sample-name {sample.sample_name}
+    {pipeline.path} --project-name {project.name}
+  compute:
+    size_dependent_variables: resources-project.tsv
 
 bioconductor:
   readFunName: readData

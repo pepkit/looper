@@ -11,7 +11,7 @@ project_pipeline:
   path: pipelines/col_pipeline1.py
   output_schema: output_schema.yaml
   command_template: >
-    {pipeline.path} --sample-name {sample.sample_name}
+    {pipeline.path} --project-name {project.name}
   bioconductor:
     readFunName: readData
     readFunPath: readData.R

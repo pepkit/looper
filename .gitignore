@@ -2,7 +2,6 @@
 oldtests/test/*
 
 # toy/experimental files
-*.tsv
 *.pkl
 
 # ignore eggs
