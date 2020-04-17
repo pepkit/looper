@@ -1,50 +1,18 @@
-# content of test_pyconv.py
 import pytest
 import os
-from peppy import Project
 from tempfile import gettempdir as gtd
 from shutil import copyfile as cpf
-import subprocess
 
-# we reuse a bit of pytest's own testing machinery, this should eventually come
-# from a separatedly installable pytest-cli plugin.
-pytest_plugins = ["pytester"]
-EB = "cfg2"
 CFG = "project_config.yaml"
 ST = "annotation_sheet.csv"
 PI = "pipeline_interface{}.yaml"
 OS = "output_schema.yaml"
 
-
-# @pytest.fixture
-# def subp_run(example_pep_piface_path):
-#     """
-#     looper run in a subprocess, example cfg
-#     """
-#     pth = os.path.join(example_pep_piface_path, CFG)
-#     proc = subprocess.Popen(["looper", "run", "-d", pth],
-#                             stderr=subprocess.PIPE, stdout=subprocess.PIPE)
-#     stdout, stderr = proc.communicate()
-#     return str(stdout), str(stderr), proc.returncode
-#
-#
-# @pytest.fixture
-# def temp_subp_run(prep_temp_pep):
-#     """
-#     looper run in a subprocess, temp cfg
-#     """
-#     proc = subprocess.Popen(["looper", "run", "-d", prep_temp_pep],
-#                             stderr=subprocess.PIPE, stdout=subprocess.PIPE)
-#     stdout, stderr = proc.communicate()
-#     return str(stdout), str(stderr), proc.returncode
-
-
 @pytest.fixture
 def example_pep_piface_path():
     return os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-        "data/example_peps-{}/example_piface".format(EB)
-    )
+        "data/example_peps/example_piface")
 
 
 @pytest.fixture
