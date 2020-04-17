@@ -5,6 +5,10 @@ python:
   - "3.6"
 os:
   - linux
+before_install:
+  - pip install git+https://github.com/pepkit/ubiquerg.git@dev
+  - pip install git+https://github.com/pepkit/peppy.git@dev
+  - pip install git+https://github.com/pepkit/divvy.git@dev
 install:
   - pip install --upgrade six
   - pip install .
