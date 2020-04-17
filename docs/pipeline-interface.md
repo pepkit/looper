@@ -31,24 +31,144 @@ sample_pipeline:
       {pipeline.path} "--input" {sample.data_path}
 ```
 
-Pretty simple. The `pipeline_name` is totally arbitrary; it's just used for messaging and identification. You can set it to whatever you want. Ideally, it's unique to each pipeline.
-
-Each of the `sample_pipeline` or `project_pipeline` sections can have any of these components:
+Pretty simple. The `pipeline_name` is arbitrary. It's used for messaging and identification. Ideally, it's unique to each pipeline. In this example, we define a single sample-level pipeline. Each `sample_pipeline` or `project_pipeline` section can have any of these components:
 
 ### path (REQUIRED)
 
-Absolute or relative path to the script for this pipeline. Relative paths are considered **relative to your pipeline_interface file**. We strongly recommend using relative paths where possible to keep your pipeline interface file portable. You may also use shell environment variables (like `${HOME}`) in the `path`.
+Absolute or relative path to the script or command for this pipeline. Relative paths are considered **relative to your pipeline_interface file**. We strongly recommend using relative paths where possible to keep your pipeline interface file portable. You may also use shell environment variables (like `${HOME}`) in the `path`.
 
 ### input_schema (RECOMMENDED)
 
-- `required_input_files` (optional): A list of sample attributes (annotation sheets column names) that will point to input files that must exist.
-- `all_input_files` (optional): A list of sample attributes (annotation sheet column names) that will point to input files that are not required, but if they exist, should be counted in the total size calculation for requesting resources.
+The input schema formally specifies the input data for this pipeline. It is based on the extended [PEP JSON-schema validation framework](http://pep.databio.org/en/latest/howto_schema/), but adds some additional looper-specific capabilities. With this schema it is possible to tag sample attributes, as required, as pointing to required or optional input files. Here's an example:
+
+```
+description: A PEP for ATAC-seq samples for the PEPATAC pipeline.
+imports: http://schema.databio.org/pep/2.0.0.yaml
+properties:
+  samples:
+    type: array
+    items:
+      type: object
+      properties:
+        sample_name: 
+          type: string
+          description: "Name of the sample"
+        organism: 
+          type: string
+          description: "Organism"
+        protocol: 
+          type: string
+          description: "Must be an ATAC-seq or DNAse-seq sample"
+          enum: ["ATAC", "ATAC-SEQ", "ATAC-seq", "DNase", "DNase-seq"]
+        genome:
+          type: string
+          description: "Refgenie genome registry identifier"
+        read_type:
+          type: string
+          description: "Is this single or paired-end data?"
+          enum: ["SINGLE", "PAIRED"]
+        read1:
+          type: string
+          description: "Fastq file for read 1"
+        read2:
+          type: string
+          description: "Fastq file for read 2 (for paired-end experiments)"
+      required:
+        - sample_name
+        - read1
+        - genome
+      required_input_attrs:
+        - read1
+      input_attrs:
+        - read1
+        - read2
+required:
+  - samples
+```
+
+The available extended sections are:
+
+- `required` (optional): A list of sample attributes that must be defined on the sample
+- `required_input_attrs` (optional): A list of sample attributes (annotation sheet column names) that will point to input files that must exist.
+- `input_attrs` (optional): A list of sample attributes (annotation sheet column names) that will point to input files that are not necessarily required, but if they exist, should be counted in the total size calculation for requesting resources.
 - `ngs_input_files` (optional): For pipelines using sequencing data, provide a list of sample attributes (annotation sheet column names) that will point to input files to be used for automatic detection of `read_length` and `read_type` sample attributes.
 
 ### output_schema (RECOMMENDED)
 
-- `outputs`: key-value pairs in which each key is a name for a kind of output file (or group of them) that a pipeline may produce, and the value is a template template for a path that will be populated by sample variables
+The output schema formally specifies the output produced by this pipeline. Like the input schema, it is based on the extended [PEP JSON-schema validation framework](http://pep.databio.org/en/latest/howto_schema/), but adding some looper-specific capabilities
 
+```
+description: objects produced by PEPPRO pipeline.
+properties:
+  samples:
+    type: array
+    items:
+      type: object
+      properties:
+        smooth_bw: 
+          path: "aligned_{genome}/{sample_name}_smooth.bw"
+          type: string
+          description: "Test sample property"
+        exact_bw:
+          path: "aligned_{genome}_exact/{sample_name}_exact.bw"
+          type: string
+          description: "Test sample property"
+        aligned_bam: 
+          path: "aligned_{genome}/{sample_name}_sort.bam"
+          type: string
+          description: "Test sample property"
+        peaks_bed: 
+          path: "peak_calling_{genome}/{sample_name}_peaks.bed"
+          type: string
+          description: "Test sample property"
+        summits_bed: 
+          path: "peak_calling_{genome}/{sample_name}_summits.bed"
+          type: string
+          description: "Test sample property"
+  alignment_percent_file:
+    title: "Alignment percent file"
+    description: "Plots percent of total alignment to all pre-alignments and primary genome."
+    thumbnail_path: "summary/{name}_alignmentPercent.png"
+    path: "summary/{name}_alignmentPercent.pdf"
+    type: image
+  alignment_raw_file:
+    title: "Alignment raw file"
+    description: "Plots raw alignment rates to all pre-alignments and primary genome."
+    thumbnail_path: "summary/{name}_alignmentRaw.png"
+    path: "summary/{name}_alignmentRaw.pdf"
+    type: image
+  tss_file:
+    title: "TSS enrichment file"
+    description: "Plots TSS scores for each sample."
+    thumbnail_path: "summary/{name}_TSSEnrichment.png"
+    path: "summary/{name}_TSSEnrichment.pdf"
+    type: image
+  library_complexity_file:
+    title: "Library complexity file"
+    description: "Plots each sample's library complexity on a single plot."
+    thumbnail_path: "summary/{name}_libComplexity.png"
+    path: "summary/{name}_libComplexity.pdf"
+    type: image
+  consensus_peaks_file:
+    title: "Consensus peaks file"
+    description: "A set of consensus peaks across samples."
+    thumbnail_path: "summary/{name}_consensusPeaks.png"
+    path: "summary/{name}_consensusPeaks.narrowPeak"
+    type: image
+  counts_table:
+    title: "Project peak coverage file"
+    description: "Project peak coverages: chr_start_end X sample"
+    path: "summary/{name}_peaks_coverage.tsv"
+    type: link
+```
+
+The base schema has two *properties* sections, one that pertains to the project, and one that pertains to the samples. In each case, these sections follow the base JSON-schema format, but add a few additional capabitiles, as described below. The *properties* sections for both sample and project will recognize these attributes: 
+
+- `title`, following the base JSON-schema spec.
+- `description`, following the base JSON-schema spec.
+- `path` This attribute can be used to specify a relative path to output files represing each output sample attribute. The name of the attribute is the name of a kind of output file (or group of them) that a pipeline may produce, and the value in the `path` attribute is a template for a path that will be populated by sample variables. Sample variables can be used in these template using brace notation, like `{sample_attribute}`.
+- `thumbnail_path`, templates similar to the `path` attribute, but used to specify a thumbnail output version.
+- `type`, can be one of: link, image, file.
 
 ### `command_template` (REQUIRED)
 
