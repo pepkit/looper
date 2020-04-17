@@ -400,8 +400,6 @@ class Project(peppyProject):
         """
         Create a collection of all samples with valid pipeline interfaces
 
-        :param Iterable[peppy.Sample] samples: list of samples to search
-            for interfaces for
         :param str piface_key: name of the attribute that holds pipeline interfaces
         :return list[str]: a collection of samples keyed by pipeline interface
             source
@@ -421,8 +419,8 @@ class Project(peppyProject):
                     try:
                         PipelineInterface(source)
                     except (ValidationError, FileNotFoundError) as e:
-                        msg = "Ignoring invalid pipeline interface source: {}. " \
-                              "Caught exception: {}".\
+                        msg = "Ignoring invalid pipeline interface source: " \
+                              "{}. Caught exception: {}".\
                             format(source, getattr(e, 'message', repr(e)))
                         msgs.add(msg)
                         continue
