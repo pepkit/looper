@@ -15,7 +15,9 @@ install:
   - pip install .
   - pip install -r requirements/requirements-dev.txt
   - pip install -r requirements/requirements-test.txt
-script: pytest tests/smoketests --cov=looper
+script: pytest tests --cov=looper
+after_success:
+  - coveralls
 branches:
   only:
     - dev
