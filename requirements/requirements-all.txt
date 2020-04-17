@@ -4,7 +4,7 @@ logmuse>=0.2.0
 pandas>=0.20.2
 pyyaml>=3.12
 divvy>=0.3.1
-peppy>=0.22.4-dev
+peppy>=0.23.0-dev
 ubiquerg>=0.5.2-dev
 ngstk>=0.0.1rc1
 jinja2
