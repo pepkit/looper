@@ -103,8 +103,7 @@ class Project(peppyProject):
             raise MisconfigurationException("'{}' key not found in config".
                                             format(LOOPER_KEY))
         self._apply_user_pifaces(pifaces)
-        self._samples_by_interface = \
-            _samples_by_piface(self.samples, self.piface_key)
+        self._samples_by_interface = self._samples_by_piface(self.piface_key)
         self._interfaces_by_sample = self._piface_by_samples()
         self.file_checks = file_checks
         self.permissive = permissive
@@ -397,40 +396,40 @@ class Project(peppyProject):
         """
         return super(Project, self)._omit_from_repr(k, cls) or k == "interfaces"
 
+    def _samples_by_piface(self, piface_key):
+        """
+        Create a collection of all samples with valid pipeline interfaces
 
-def _samples_by_piface(samples, piface_key):
-    """
-    Create a collection of all samples with valid pipeline interfaces
-
-    :param Iterable[peppy.Sample] samples: list of samples to search
-        for interfaces for
-    :param str piface_key: name of the attribute that holds pipeline interfaces
-    :return list[str]: a collection of samples keyed by pipeline interface
-        source
-    """
-    samples_by_piface = {}
-    msgs = set()
-    for sample in samples:
-        if piface_key in sample and sample[piface_key]:
-            piface_srcs = sample[piface_key]
-            if isinstance(piface_srcs, str):
-                piface_srcs = [piface_srcs]
-            for source in piface_srcs:
-                source = expandpath(source)
-                try:
-                    PipelineInterface(source)
-                except (ValidationError, FileNotFoundError) as e:
-                    msg = "Ignoring invalid pipeline interface source: {}. " \
-                          "Caught exception: {}".\
-                        format(source, getattr(e, 'message', repr(e)))
-                    msgs.add(msg)
-                    continue
-                else:
-                    samples_by_piface.setdefault(source, set())
-                    samples_by_piface[source].add(sample[SAMPLE_NAME_ATTR])
-        for msg in msgs:
-            _LOGGER.warning(msg)
-    return samples_by_piface
+        :param str piface_key: name of the attribute that holds pipeline interfaces
+        :return list[str]: a collection of samples keyed by pipeline interface
+            source
+        """
+        samples_by_piface = {}
+        msgs = set()
+        for sample in self.samples:
+            if piface_key in sample and sample[piface_key]:
+                piface_srcs = sample[piface_key]
+                if isinstance(piface_srcs, str):
+                    piface_srcs = [piface_srcs]
+                for source in piface_srcs:
+                    source = expandpath(source)
+                    if not os.path.isabs(source):
+                        source = os.path.join(
+                            os.path.dirname(self.config_file), source)
+                    try:
+                        PipelineInterface(source)
+                    except (ValidationError, FileNotFoundError) as e:
+                        msg = "Ignoring invalid pipeline interface source: " \
+                              "{}. Caught exception: {}".\
+                            format(source, getattr(e, 'message', repr(e)))
+                        msgs.add(msg)
+                        continue
+                    else:
+                        samples_by_piface.setdefault(source, set())
+                        samples_by_piface[source].add(sample[SAMPLE_NAME_ATTR])
+            for msg in msgs:
+                _LOGGER.warning(msg)
+        return samples_by_piface
 
 
 def fetch_samples(prj, selector_attribute=None, selector_include=None,

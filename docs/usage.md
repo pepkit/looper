@@ -17,19 +17,18 @@ Each task is controlled by one of the five main commands `run`, `summarize`, `de
 
 Here you can see the command-line usage instructions for the main looper command and for each subcommand:
 ## `looper --help`
-
-```console
-version: 0.11.0
-usage: looper [-h] [-V] [--logfile LOGFILE] [--verbosity {0,1,2,3,4}] [--dbg]
-              [--env ENV]
-              {run,rerun,summarize,destroy,check,clean} ...
+version: 0.12.6-dev
+usage: looper [-h] [--version] [--logfile LOGFILE] [--verbosity {0,1,2,3,4}]
+              [--dbg] [--env ENV]
+              {run,rerun,runp,summarize,destroy,check,clean} ...
 
 looper - Loop through samples and submit pipelines.
 
 positional arguments:
-  {run,rerun,summarize,destroy,check,clean}
+  {run,rerun,runp,summarize,destroy,check,clean}
     run                 Main Looper function: Submit jobs for samples.
     rerun               Resubmit jobs with failed flags.
+    runp                Submit jobs for a project.
     summarize           Summarize statistics of project samples.
     destroy             Remove all files of the project.
     check               Checks flag status of current runs.
@@ -38,7 +37,7 @@ positional arguments:
 
 optional arguments:
   -h, --help            show this help message and exit
-  -V, --version         show program's version number and exit
+  --version             show program's version number and exit
   --logfile LOGFILE     Optional output file for looper logs (default: None)
   --verbosity {0,1,2,3,4}
                         Choose level of verbosity (default: None)
@@ -51,17 +50,17 @@ https://github.com/pepkit/looper
 ```
 
 ## `looper run --help`
-
-```console
-version: 0.11.0
 usage: looper run [-h] [--ignore-flags] [-t TIME_DELAY]
-                  [--allow-duplicate-names] [--compute COMPUTE]
-                  [--resources RESOURCES] [--limit LIMIT] [--lump LUMP]
-                  [--lumpn LUMPN] [--file-checks] [-d]
+                  [--allow-duplicate-names] [--package PACKAGE]
+                  [--compute COMPUTE] [--limit LIMIT] [--lump LUMP]
+                  [--lumpn LUMPN]
+                  [--pipeline-interfaces PIFACES [PIFACES ...]]
+                  [--file-checks] [-d]
                   [--selector-attribute SELECTOR_ATTRIBUTE]
                   [--selector-exclude [SELECTOR_EXCLUDE [SELECTOR_EXCLUDE ...]]
                   | --selector-include
-                  [SELECTOR_INCLUDE [SELECTOR_INCLUDE ...]]] [--sp SUBPROJECT]
+                  [SELECTOR_INCLUDE [SELECTOR_INCLUDE ...]]]
+                  [-a AMENDMENTS [AMENDMENTS ...]]
                   config_file
 
 Main Looper function: Submit jobs for samples.
@@ -83,21 +82,22 @@ optional arguments:
                         pipelines will not be submitted if a sample name is
                         duplicated, since samples names should be unique. Set
                         this option to override this setting. Default=False
-  --compute COMPUTE     YAML file with looper environment compute settings.
-  --resources RESOURCES
-                        Specification of individual computing resource
+  --package PACKAGE     Name of computing resource package to use
+  --compute COMPUTE     Specification of individual computing resource
                         settings; separate setting name/key from value with
                         equals sign, and separate key-value pairs from each
-                        other by comma; e.g., --resources k1=v1,k2=v2
+                        other by comma; e.g., --compute k1=v1,k2=v2
   --limit LIMIT         Limit to n samples.
   --lump LUMP           Maximum total input file size for a lump/batch of
                         commands in a single job (in GB)
   --lumpn LUMPN         Number of individual scripts grouped into single
                         submission
+  --pipeline-interfaces PIFACES [PIFACES ...]
+                        Path to a pipeline interface file
   --file-checks         Perform input file checks. Default=True.
-  -d, --dry-run         Don't actually submit the project/subproject.
-                        Default=False
-  --sp SUBPROJECT       Name of subproject to use, as designated in the
+  -d, --dry-run         Don't actually submit the jobs. Default=False
+  -a AMENDMENTS [AMENDMENTS ...], --amendments AMENDMENTS [AMENDMENTS ...]
+                        Name of amendment(s) to use, as designated in the
                         project's configuration file
 
 select samples:
@@ -118,15 +118,13 @@ select samples:
 ```
 
 ## `looper summarize --help`
-
-```console
-version: 0.11.0
-usage: looper summarize [-h] [--file-checks] [-d]
+usage: looper summarize [-h] [--pipeline-interfaces PIFACES [PIFACES ...]]
+                        [--file-checks] [-d]
                         [--selector-attribute SELECTOR_ATTRIBUTE]
                         [--selector-exclude [SELECTOR_EXCLUDE [SELECTOR_EXCLUDE ...]]
                         | --selector-include
                         [SELECTOR_INCLUDE [SELECTOR_INCLUDE ...]]]
-                        [--sp SUBPROJECT]
+                        [-a AMENDMENTS [AMENDMENTS ...]]
                         config_file
 
 Summarize statistics of project samples.
@@ -136,10 +134,12 @@ positional arguments:
 
 optional arguments:
   -h, --help            show this help message and exit
+  --pipeline-interfaces PIFACES [PIFACES ...]
+                        Path to a pipeline interface file
   --file-checks         Perform input file checks. Default=True.
-  -d, --dry-run         Don't actually submit the project/subproject.
-                        Default=False
-  --sp SUBPROJECT       Name of subproject to use, as designated in the
+  -d, --dry-run         Don't actually submit the jobs. Default=False
+  -a AMENDMENTS [AMENDMENTS ...], --amendments AMENDMENTS [AMENDMENTS ...]
+                        Name of amendment(s) to use, as designated in the
                         project's configuration file
 
 select samples:
@@ -160,15 +160,14 @@ select samples:
 ```
 
 ## `looper destroy --help`
-
-```console
-version: 0.11.0
-usage: looper destroy [-h] [--force-yes] [--file-checks] [-d]
+usage: looper destroy [-h] [--force-yes]
+                      [--pipeline-interfaces PIFACES [PIFACES ...]]
+                      [--file-checks] [-d]
                       [--selector-attribute SELECTOR_ATTRIBUTE]
                       [--selector-exclude [SELECTOR_EXCLUDE [SELECTOR_EXCLUDE ...]]
                       | --selector-include
                       [SELECTOR_INCLUDE [SELECTOR_INCLUDE ...]]]
-                      [--sp SUBPROJECT]
+                      [-a AMENDMENTS [AMENDMENTS ...]]
                       config_file
 
 Remove all files of the project.
@@ -180,10 +179,12 @@ optional arguments:
   -h, --help            show this help message and exit
   --force-yes           Provide upfront confirmation of destruction intent, to
                         skip console query. Default=False
+  --pipeline-interfaces PIFACES [PIFACES ...]
+                        Path to a pipeline interface file
   --file-checks         Perform input file checks. Default=True.
-  -d, --dry-run         Don't actually submit the project/subproject.
-                        Default=False
-  --sp SUBPROJECT       Name of subproject to use, as designated in the
+  -d, --dry-run         Don't actually submit the jobs. Default=False
+  -a AMENDMENTS [AMENDMENTS ...], --amendments AMENDMENTS [AMENDMENTS ...]
+                        Name of amendment(s) to use, as designated in the
                         project's configuration file
 
 select samples:
@@ -204,15 +205,14 @@ select samples:
 ```
 
 ## `looper check --help`
-
-```console
-version: 0.11.0
-usage: looper check [-h] [-A] [-F [FLAGS [FLAGS ...]]] [--file-checks] [-d]
+usage: looper check [-h] [-A] [-F [FLAGS [FLAGS ...]]]
+                    [--pipeline-interfaces PIFACES [PIFACES ...]]
+                    [--file-checks] [-d]
                     [--selector-attribute SELECTOR_ATTRIBUTE]
                     [--selector-exclude [SELECTOR_EXCLUDE [SELECTOR_EXCLUDE ...]]
                     | --selector-include
                     [SELECTOR_INCLUDE [SELECTOR_INCLUDE ...]]]
-                    [--sp SUBPROJECT]
+                    [-a AMENDMENTS [AMENDMENTS ...]]
                     config_file
 
 Checks flag status of current runs.
@@ -227,10 +227,12 @@ optional arguments:
                         used. Default=False
   -F [FLAGS [FLAGS ...]], --flags [FLAGS [FLAGS ...]]
                         Check on only these flags/status values.
+  --pipeline-interfaces PIFACES [PIFACES ...]
+                        Path to a pipeline interface file
   --file-checks         Perform input file checks. Default=True.
-  -d, --dry-run         Don't actually submit the project/subproject.
-                        Default=False
-  --sp SUBPROJECT       Name of subproject to use, as designated in the
+  -d, --dry-run         Don't actually submit the jobs. Default=False
+  -a AMENDMENTS [AMENDMENTS ...], --amendments AMENDMENTS [AMENDMENTS ...]
+                        Name of amendment(s) to use, as designated in the
                         project's configuration file
 
 select samples:
@@ -251,15 +253,14 @@ select samples:
 ```
 
 ## `looper clean --help`
-
-```console
-version: 0.11.0
-usage: looper clean [-h] [--force-yes] [--file-checks] [-d]
+usage: looper clean [-h] [--force-yes]
+                    [--pipeline-interfaces PIFACES [PIFACES ...]]
+                    [--file-checks] [-d]
                     [--selector-attribute SELECTOR_ATTRIBUTE]
                     [--selector-exclude [SELECTOR_EXCLUDE [SELECTOR_EXCLUDE ...]]
                     | --selector-include
                     [SELECTOR_INCLUDE [SELECTOR_INCLUDE ...]]]
-                    [--sp SUBPROJECT]
+                    [-a AMENDMENTS [AMENDMENTS ...]]
                     config_file
 
 Runs clean scripts to remove intermediate files of already processed jobs.
@@ -271,10 +272,12 @@ optional arguments:
   -h, --help            show this help message and exit
   --force-yes           Provide upfront confirmation of cleaning intent, to
                         skip console query. Default=False
+  --pipeline-interfaces PIFACES [PIFACES ...]
+                        Path to a pipeline interface file
   --file-checks         Perform input file checks. Default=True.
-  -d, --dry-run         Don't actually submit the project/subproject.
-                        Default=False
-  --sp SUBPROJECT       Name of subproject to use, as designated in the
+  -d, --dry-run         Don't actually submit the jobs. Default=False
+  -a AMENDMENTS [AMENDMENTS ...], --amendments AMENDMENTS [AMENDMENTS ...]
+                        Name of amendment(s) to use, as designated in the
                         project's configuration file
 
 select samples:
@@ -295,18 +298,17 @@ select samples:
 ```
 
 ## `looper rerun --help`
-
-```console
-version: 0.11.0
 usage: looper rerun [-h] [--ignore-flags] [-t TIME_DELAY]
-                    [--allow-duplicate-names] [--compute COMPUTE]
-                    [--resources RESOURCES] [--limit LIMIT] [--lump LUMP]
-                    [--lumpn LUMPN] [--file-checks] [-d]
+                    [--allow-duplicate-names] [--package PACKAGE]
+                    [--compute COMPUTE] [--limit LIMIT] [--lump LUMP]
+                    [--lumpn LUMPN]
+                    [--pipeline-interfaces PIFACES [PIFACES ...]]
+                    [--file-checks] [-d]
                     [--selector-attribute SELECTOR_ATTRIBUTE]
                     [--selector-exclude [SELECTOR_EXCLUDE [SELECTOR_EXCLUDE ...]]
                     | --selector-include
                     [SELECTOR_INCLUDE [SELECTOR_INCLUDE ...]]]
-                    [--sp SUBPROJECT]
+                    [-a AMENDMENTS [AMENDMENTS ...]]
                     config_file
 
 Resubmit jobs with failed flags.
@@ -328,21 +330,22 @@ optional arguments:
                         pipelines will not be submitted if a sample name is
                         duplicated, since samples names should be unique. Set
                         this option to override this setting. Default=False
-  --compute COMPUTE     YAML file with looper environment compute settings.
-  --resources RESOURCES
-                        Specification of individual computing resource
+  --package PACKAGE     Name of computing resource package to use
+  --compute COMPUTE     Specification of individual computing resource
                         settings; separate setting name/key from value with
                         equals sign, and separate key-value pairs from each
-                        other by comma; e.g., --resources k1=v1,k2=v2
+                        other by comma; e.g., --compute k1=v1,k2=v2
   --limit LIMIT         Limit to n samples.
   --lump LUMP           Maximum total input file size for a lump/batch of
                         commands in a single job (in GB)
   --lumpn LUMPN         Number of individual scripts grouped into single
                         submission
+  --pipeline-interfaces PIFACES [PIFACES ...]
+                        Path to a pipeline interface file
   --file-checks         Perform input file checks. Default=True.
-  -d, --dry-run         Don't actually submit the project/subproject.
-                        Default=False
-  --sp SUBPROJECT       Name of subproject to use, as designated in the
+  -d, --dry-run         Don't actually submit the jobs. Default=False
+  -a AMENDMENTS [AMENDMENTS ...], --amendments AMENDMENTS [AMENDMENTS ...]
+                        Name of amendment(s) to use, as designated in the
                         project's configuration file
 
 select samples:
