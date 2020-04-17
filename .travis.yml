@@ -8,13 +8,13 @@ os:
 before_install:
   - pip install git+https://github.com/pepkit/ubiquerg.git@dev
   - pip install git+https://github.com/pepkit/peppy.git@dev
-  - pip install git+https://github.com/pepkit/divvy.git@dev
+  - pip install git+https://github.com/pepkit/divvy.git@adapters
 install:
   - pip install --upgrade six
   - pip install .
   - pip install -r requirements/requirements-dev.txt
   - pip install -r requirements/requirements-test.txt
-script: pytest --cov=looper
+script: pytest tests/smoketests --cov=looper
 branches:
   only:
     - dev
