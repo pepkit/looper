@@ -201,6 +201,43 @@ class Project(peppyProject):
                                     format(str(e)))
 
     @property
+    def project_pipeline_interface_sources(self):
+        """
+        Get a list of all valid project-level pipeline interface sources
+        associated with this project. Sources that are file paths are expanded
+
+        :return list[str]: collection of valid pipeline interface sources:
+        """
+        project_pifaces = self._samples_by_interface.keys()
+        if self.piface_key in self[CONFIG_KEY][LOOPER_KEY]:
+            # pipeline interfaces sources defined in the project config override
+            # ones that are matched by the Samples in this Project
+            cfg_pifaces = self[CONFIG_KEY][LOOPER_KEY][self.piface_key]
+            _LOGGER.debug("Overwriting sample-matched pifaces with a "
+                          "config-specified ones: {}".format(cfg_pifaces))
+            # make sure it's a list, so both lists and strings can be
+            # specified in the config
+            if isinstance(cfg_pifaces, str):
+                cfg_pifaces = [cfg_pifaces]
+            project_pifaces = [expandpath(src) for src in cfg_pifaces]
+        return project_pifaces
+
+    @property
+    def project_pipeline_interfaces(self):
+        """
+        Flat list of all valid project-level interface objects associated
+        with this Project
+
+        Note that only valid pipeline interfaces will show up in the
+        result (ones that exist on disk/remotely and validate successfully
+        against the schema)
+
+        :return list[looper.PipelineInterface]: list of pipeline interfaces
+        """
+        return [PipelineInterface(pi)
+                for pi in self.project_pipeline_interface_sources]
+
+    @property
     def pipeline_interfaces(self):
         """
         Flat list of all valid interface objects associated with this Project
@@ -209,7 +246,7 @@ class Project(peppyProject):
         result (ones that exist on disk/remotely and validate successfully
         against the schema)
 
-        :return list[looper.PipelineInterface]:
+        :return list[looper.PipelineInterface]: list of pipeline interfaces
         """
         return [i for s in self._interfaces_by_sample.values() for i in s]
 

@@ -403,7 +403,7 @@ class HTMLReportBuilder(object):
             links = []
             warnings = []
             ifaces = self.prj.get_interfaces(protocol)
-
+            ifaces = self.prj.pipeline_interfaces
             # Check the interface files for summarizers
             for iface in ifaces:
                 pl = iface.fetch_pipelines(protocol)

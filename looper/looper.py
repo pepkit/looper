@@ -238,20 +238,7 @@ class Collator(Executor):
             recognized by looper, germane to samples/pipelines
         """
         jobs = 0
-        project_pifaces = self.prj._samples_by_interface.keys()
-        if self.prj.piface_key in self.prj[CONFIG_KEY][LOOPER_KEY]:
-            # pipeline interfaces sources defined in the project config override
-            # ones that are matched by the Samples in this Project
-            cfg_pifaces = self.prj[CONFIG_KEY][LOOPER_KEY][self.prj.piface_key]
-            _LOGGER.debug("Overwriting sample-matched pifaces with a "
-                          "config-specified ones: {}".format(cfg_pifaces))
-            # make sure it's a list, so both lists and strings can be
-            # specified in the config
-            if isinstance(cfg_pifaces, str):
-                cfg_pifaces = [cfg_pifaces]
-            project_pifaces = [expandpath(src) for src in cfg_pifaces]
-        _LOGGER.debug("Matched {} project pipeline interfaces".
-                      format(len(project_pifaces)))
+        project_pifaces = self.prj.project_pipeline_interface_sources
         if not project_pifaces:
             raise MisconfigurationException(
                 "Looper requires at least one pointer to project-level pipeline"
