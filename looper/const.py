@@ -73,8 +73,8 @@ RESOURCES_KEY = "resources"
 SAMPLE_PL_KEY = "sample_pipeline"
 PROJECT_PL_KEY = "project_pipeline"
 PIFACE_SCHEMA_SRC = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                 "schemas","pipeline_interface_schema.yaml")
-INPUT_SCHEMA_KEY = "schema"
+                                 "schemas", "pipeline_interface_schema.yaml")
+INPUT_SCHEMA_KEY = "input_schema"
 OUTPUT_SCHEMA_KEY = "output_schema"
 SAMPLE_YAML_PATH_KEY = "sample_yaml_path"
 OUTKEY = "outputs"
