@@ -167,7 +167,7 @@ class SubmissionConductor(object):
         sample.setdefault("input_file_size", 0)
         # Check for any missing requirements before submitting.
         _LOGGER.debug("Determining missing requirements")
-        schema_source = self.pl_iface.get_pipeline_schema(self.section_key)
+        schema_source = self.pl_iface.get_pipeline_schemas(self.section_key)
         if schema_source:
             error_type, missing_reqs_general, missing_reqs_specific = \
                 sample.validate_inputs(schema=read_schema(schema_source))

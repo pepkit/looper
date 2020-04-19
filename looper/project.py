@@ -382,7 +382,7 @@ class Project(peppyProject):
             pifaces = [pifaces]
         schema_set = set()
         for piface in pifaces:
-            schema_file = piface.get_pipeline_schema(SAMPLE_PL_KEY, schema_key)
+            schema_file = piface.get_pipeline_schemas(SAMPLE_PL_KEY, schema_key)
             if schema_file:
                 schema_set.update([schema_file])
         return list(schema_set)

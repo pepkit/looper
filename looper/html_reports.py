@@ -10,9 +10,7 @@ import sys
 from warnings import warn
 from datetime import timedelta
 from ._version import __version__ as v
-from .const import TEMPLATES_DIRNAME, BUTTON_APPEARANCE_BY_FLAG, \
-    TABLE_APPEARANCE_BY_FLAG, NO_DATA_PLACEHOLDER, IMAGE_EXTS, \
-    PROFILE_COLNAMES, LOOPER_KEY, OUTDIR_KEY
+from .const import *
 from .processed_project import get_project_outputs
 from .utils import get_file_for_project
 from peppy.const import *
@@ -393,69 +391,60 @@ class HTMLReportBuilder(object):
         pipeline output schemas
         """
         _LOGGER.debug("Building project objects section...")
-        all_protocols = [sample.protocol for sample in self.prj.samples]
-
+        figures = []
+        links = []
+        warnings = []
         # For each protocol report the project summarizers' results
-        for protocol in set(all_protocols):
-            _LOGGER.debug("Creating project-level outputs for protocol: {}".
-                          format(protocol))
-            figures = []
-            links = []
-            warnings = []
-            ifaces = self.prj.get_interfaces(protocol)
-            ifaces = self.prj.pipeline_interfaces
-            # Check the interface files for summarizers
-            for iface in ifaces:
-                pl = iface.fetch_pipelines(protocol)
-                output_schema_paths = iface.get_attribute(pl, "output_schema")
-                if output_schema_paths is not None:
-                    for output_schema_path in output_schema_paths:
-                        results = get_project_outputs(
-                            self.prj, read_schema(output_schema_path))
-                        for name, result in results.items():
-                            title = str(result.setdefault('title', "No caption"))
-                            result_type = str(result['type'])
-                            result_file = str(result['path'])
-                            result_img = str(result.setdefault('thumbnail_path',
-                                                               None))
-                            if result_img and not os.path.isabs(result_file):
-                                result_img = os.path.join(
-                                    self._outdir, result_img)
-                            if not os.path.isabs(result_file):
-                                result_file = os.path.join(
-                                    self._outdir, result_file)
+        ifaces = self.prj.project_pipeline_interfaces
+        # Check the interface files for summarizers
+        for iface in ifaces:
+            schema_paths = \
+                iface.get_pipeline_schemas(PROJECT_PL_KEY, OUTPUT_SCHEMA_KEY)
+            if schema_paths is not None:
+                for output_schema_path in schema_paths:
+                    results = get_project_outputs(
+                        self.prj, read_schema(output_schema_path))
+                    for name, result in results.items():
+                        title = str(result.setdefault('title', "No caption"))
+                        result_type = str(result['type'])
+                        result_file = str(result['path'])
+                        result_img = \
+                            str(result.setdefault('thumbnail_path', None))
+                        if result_img and not os.path.isabs(result_file):
+                            result_img = os.path.join(
+                                self._outdir, result_img)
+                        if not os.path.isabs(result_file):
+                            result_file = os.path.join(
+                                self._outdir, result_file)
 
-                            # Confirm the file itself was produced
-                            if glob.glob(result_file):
-                                file_path = str(glob.glob(result_file)[0])
-                                file_relpath = os.path.relpath(
-                                    file_path, self._outdir)
-                                if result_type == "image":
-                                    # Add as a figure, find thumbnail
-                                    search = os.path.join(self._outdir,
-                                                          result_img)
-                                    if glob.glob(search):
-                                        img_path = str(glob.glob(search)[0])
-                                        img_relpath = os.path.relpath(
-                                            img_path, self._outdir)
-                                        figures.append([file_relpath, title,
-                                                        img_relpath])
-
-                                # add as a link otherwise
-                                # TODO: add more fine-grained type support?
-                                #  not just image and link
-                                else:
-                                    links.append([title, file_relpath])
-
+                        # Confirm the file itself was produced
+                        if glob.glob(result_file):
+                            file_path = str(glob.glob(result_file)[0])
+                            file_relpath = \
+                                os.path.relpath(file_path, self._outdir)
+                            if result_type == "image":
+                                # Add as a figure, find thumbnail
+                                search = os.path.join(self._outdir, result_img)
+                                if glob.glob(search):
+                                    img_path = str(glob.glob(search)[0])
+                                    img_relpath = \
+                                        os.path.relpath(img_path, self._outdir)
+                                    figures.append(
+                                        [file_relpath, title, img_relpath])
+                            # add as a link otherwise
+                            # TODO: add more fine-grained type support?
+                            #  not just image and link
                             else:
-                                warnings.append("{} ({})".format(title,
-                                                                 result_file))
-                else:
-                    _LOGGER.debug("No project-level outputs defined in "
-                                  "schema: {}".format(output_schema_paths))
-            if warnings:
-                _LOGGER.warning("Not found: {}".
-                                format([str(x) for x in warnings]))
+                                links.append([title, file_relpath])
+                        else:
+                            warnings.append("{} ({})".format(title,
+                                                             result_file))
+            else:
+                _LOGGER.debug("No project-level outputs defined in "
+                              "schema: {}".format(schema_paths))
+        if warnings:
+            _LOGGER.warning("Not found: {}".
+                            format([str(x) for x in warnings]))
         _LOGGER.debug("collected project-level figures: {}".format(figures))
         _LOGGER.debug("collected project-level links: {}".format(links))
         template_vars = dict(figures=figures, links=links)

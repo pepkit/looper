@@ -49,8 +49,8 @@ class PipelineInterface(PXAM):
         self._validate(PIFACE_SCHEMA_SRC)
         self._expand_pipeline_paths()
 
-    def get_pipeline_schema(self, section, schema_key=INPUT_SCHEMA_KEY):
-        """
+    def get_pipeline_schemas(self, section, schema_key=INPUT_SCHEMA_KEY):
+        """ipy
         Get path to the pipeline schema.
 
         :param str section: pipeline name
