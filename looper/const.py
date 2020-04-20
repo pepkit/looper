@@ -16,7 +16,7 @@ __all__ = [
     "COMPUTE_PACKAGE_KEY", "INPUT_SCHEMA_KEY", "OUTPUT_SCHEMA_KEY",
     "EXAMPLE_COMPUTE_SPEC_FMT", "ALL_INPUTS_ATTR_NAME", "SAMPLE_PL_KEY",
     "PROJECT_PL_KEY", "CFG_ENV_VARS", "LOGGING_LEVEL", "PIFACE_KEY_SELECTOR",
-    "SUBMISSION_FAILURE_MESSAGE"
+    "SUBMISSION_FAILURE_MESSAGE", "IMAGE_EXTS", "PROFILE_COLNAMES"
 ]
 
 FLAGS = ["completed", "running", "failed", "waiting", "partial"]
@@ -102,3 +102,5 @@ SUBMISSION_FAILURE_MESSAGE = "Cluster resource failure"
 # resource package TSV-related consts
 ID_COLNAME = "id"
 FILE_SIZE_COLNAME = "max_file_size"
+IMAGE_EXTS = ('.png', '.jpg', '.jpeg', '.svg', '.gif')
+PROFILE_COLNAMES = ['pid', 'hash', 'cid', 'runtime', 'mem', 'cmd', 'lock']  # this strongly depends on pypiper's profile.tsv format

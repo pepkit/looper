@@ -401,6 +401,8 @@ class HTMLReportBuilder(object):
             schema_paths = \
                 iface.get_pipeline_schemas(PROJECT_PL_KEY, OUTPUT_SCHEMA_KEY)
             if schema_paths is not None:
+                if isinstance(schema_paths, str):
+                    schema_paths = [schema_paths]
                 for output_schema_path in schema_paths:
                     results = get_project_outputs(
                         self.prj, read_schema(output_schema_path))
