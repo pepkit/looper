@@ -210,9 +210,10 @@ class SubmissionConductor(object):
         :return bool: Whether a job was submitted (or would've been if
             not for dry run)
         """
+        submitted = False
         if not self._pool:
             _LOGGER.debug("No submission (no pooled samples): %s", self.pl_name)
-            submitted = False
+            # submitted = False
         elif self.collate or force or self._is_full(self._pool, self._curr_size):
             if not self.collate:
                 for s in self._pool:
@@ -222,14 +223,12 @@ class SubmissionConductor(object):
                      for schema in schemas]
                     s.to_yaml(self._get_sample_yaml_path(s))
             script = self.write_script(self._pool, self._curr_size)
-            self._num_total_job_submissions += 1
-
             # Determine whether to actually do the submission.
             _LOGGER.info("Job script (n={0}; {1:.2f}Gb): {2}".
                          format(len(self._pool), self._curr_size, script))
             if self.dry_run:
                 _LOGGER.info("Dry run, not submitted")
-            else:
+            elif self._rendered_ok:
                 sub_cmd = self.prj.dcc.compute.submission_command
                 submission_command = "{} {}".format(sub_cmd, script)
                 # Capture submission command return value so that we can
@@ -246,15 +245,15 @@ class SubmissionConductor(object):
 
             # Update the job and command submission tallies.
             _LOGGER.debug("SUBMITTED")
-            submitted = True
-            self._num_good_job_submissions += 1
-            self._num_cmds_submitted += len(self._pool)
+            if self._rendered_ok:
+                submitted = True
+                self._num_cmds_submitted += len(self._pool)
             self._reset_pool()
 
         else:
             _LOGGER.debug("No submission (pool is not full and submission "
                           "was not forced): %s", self.pl_name)
-            submitted = False
+            # submitted = False
 
         return submitted
 
@@ -397,6 +396,7 @@ class SubmissionConductor(object):
             res_pkg.update(cli)
             self.prj.dcc.compute.update(res_pkg)  # divcfg
             namespaces.update({"compute": self.prj.dcc.compute})
+            self._rendered_ok = False
             try:
                 argstring = jinja_render_cmd_strictly(cmd_template=templ,
                                                       namespaces=namespaces)
@@ -407,6 +407,9 @@ class SubmissionConductor(object):
                 _LOGGER.warning(NOT_SUB_MSG.format(exc))
             else:
                 commands.append("{} {}".format(argstring, extra_parts_text))
+                self._rendered_ok = True
+                self._num_good_job_submissions += 1
+                self._num_total_job_submissions += 1
         looper.command = "\n".join(commands)
         _LOGGER.debug("sample namespace:\n{}".format(sample))
         _LOGGER.debug("project namespace:\n{}".format(self.prj[CONFIG_KEY]))
@@ -441,15 +444,6 @@ class SubmissionConductor(object):
     def _reset_curr_skips(self):
         self._curr_skip_pool = []
         self._curr_skip_size = 0
-
-
-def _check_argstring(argstring, sample_name):
-    assert argstring is not None, \
-        "Failed to create argstring for sample: {}".format(sample_name)
-
-
-def _is_base_sample(s):
-    return type(s) is Sample
 
 
 def _use_sample(flag, skips):

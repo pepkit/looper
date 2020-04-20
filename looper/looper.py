@@ -390,8 +390,6 @@ class Runner(Executor):
         _LOGGER.info("\nLooper finished")
         _LOGGER.info("Samples valid for job generation: {} of {}".
                      format(len(processed_samples), num_samples))
-        _LOGGER.info("Successful samples: {} of {}".
-                     format(num_samples - len(failures), num_samples))
         _LOGGER.info("Commands submitted: {} of {}".
                      format(cmd_sub_total, max_cmds))
         _LOGGER.info("Jobs submitted: {}".format(job_sub_total))
