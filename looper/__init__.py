@@ -120,13 +120,6 @@ def build_parser():
                 type=html_range(min_val=0, max_val=30, value=0), default=0,
                 help="Time delay in seconds between job submissions.")
         subparser.add_argument(
-                "--allow-duplicate-names", default=False,
-                action=_StoreBoolActionType, type=html_checkbox(checked=False),
-                help="Allow duplicate names? Default: False. "
-                     "By default, pipelines will not be submitted if a sample name"
-                     " is duplicated, since samples names should be unique.  "
-                     " Set this option to override this setting. Default=False")
-        subparser.add_argument(
                 "--package", help="Name of computing resource package to use")
         subparser.add_argument(
                 "--compute",

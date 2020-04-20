@@ -21,6 +21,24 @@ def _subp_exec(pth, cmd, appendix=list(), dry=True):
     return str(stdout), str(stderr), proc.returncode
 
 
+def _is_in_file(fs, s, reverse=False):
+    """
+    Verify if string is in files content
+
+    :param str | Iterable[str] fs: list of files
+    :param str s: string to look for
+    :param bool reverse: whether the reverse should be checked
+    """
+    if isinstance(fs, str):
+        fs = [fs]
+    for f in fs:
+        with open(f, 'r') as fh:
+            if reverse:
+                assert s not in fh.read()
+            else:
+                assert s in fh.read()
+
+
 def _get_outdir(pth):
     """
     Get output directory from a config file
@@ -198,9 +216,8 @@ class LooperRunSubmissionScriptTests:
 
     def test_looper_lumping(self, prep_temp_pep):
         tp = prep_temp_pep
-        outdir = _get_outdir(tp)
         stdout, stderr, rc = _subp_exec(tp, "run", ["--lumpn", "2"])
-        sd = os.path.join(outdir, "submission")
+        sd = os.path.join(_get_outdir(tp), "submission")
         subm_err = \
             IOError("Not found in submission directory ({}): 4 "
                               "submission scripts (2 per pipeline) and 3 sample"
@@ -215,9 +232,8 @@ class LooperRunSubmissionScriptTests:
 
     def test_looper_lumping(self, prep_temp_pep):
         tp = prep_temp_pep
-        outdir = _get_outdir(tp)
         stdout, stderr, rc = _subp_exec(tp, "run", ["--lumpn", "2"])
-        sd = os.path.join(outdir, "submission")
+        sd = os.path.join(_get_outdir(tp), "submission")
         subm_err = \
             IOError("Not found in submission directory ({}): 4 "
                               "submission scripts (2 per pipeline) and 3 sample"
@@ -231,9 +247,8 @@ class LooperRunSubmissionScriptTests:
 
     def test_looper_limiting(self, prep_temp_pep):
         tp = prep_temp_pep
-        outdir = _get_outdir(tp)
         stdout, stderr, rc = _subp_exec(tp, "run", ["--limit", "2"])
-        sd = os.path.join(outdir, "submission")
+        sd = os.path.join(_get_outdir(tp), "submission")
         subm_err = \
             IOError("Not found in submission directory ({}): 4 "
                               "submission scripts (2 per pipeline) and 2 sample"
@@ -245,17 +260,34 @@ class LooperRunSubmissionScriptTests:
         assert sum([f.endswith(".sub") for f in os.listdir(sd)]) == 4, subm_err
         assert sum([f.endswith(".yaml") for f in os.listdir(sd)]) == 2, subm_err
 
+    def test_looper_unrecognized_args_passing(self, prep_temp_pep):
+        tp = prep_temp_pep
+        stdout, stderr, rc = _subp_exec(tp, "run", ["--unknown-flag"])
+        sd = os.path.join(_get_outdir(tp), "submission")
+        print(stderr)
+        assert rc == 0
+        subs_list = \
+            [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
+        _is_in_file(subs_list, "--unknown-flag")
 
 
+class LooperRunComputeTests:
+    def test_looper_respects_pkg_selection(self, prep_temp_pep):
+        tp = prep_temp_pep
+        stdout, stderr, rc = _subp_exec(tp, "run", ["--package", "local"])
+        sd = os.path.join(_get_outdir(tp), "submission")
+        print(stderr)
+        assert rc == 0
+        subs_list = \
+            [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
+        _is_in_file(subs_list, "#SBATCH", reverse=True)
 
-
-
-
-
-
-
-
-
-
-
-
+    def test_looper_uses_cli_compute_options_spec(self, prep_temp_pep):
+        tp = prep_temp_pep
+        stdout, stderr, rc = _subp_exec(tp, "run", ["--compute", "mem=12345"])
+        sd = os.path.join(_get_outdir(tp), "submission")
+        print(stderr)
+        assert rc == 0
+        subs_list = \
+            [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
+        _is_in_file(subs_list, "#SBATCH --mem='12345'")
