@@ -20,10 +20,12 @@ class LooperRunBehaviorTests:
     def test_looper_run_basic(self, example_pep_piface_path_cfg):
         """ Verify looper runs in a basic case and return code is 0 """
         stdout, stderr, rc = _subp_exec(example_pep_piface_path_cfg, "run")
+        print(stderr)
         assert rc == 0
 
     def test_looper_multi_pipeline(self, example_pep_piface_path_cfg):
         stdout, stderr, rc = _subp_exec(example_pep_piface_path_cfg, "run")
+        print(stderr)
         assert "Commands submitted: 6 of 6" in stderr
 
     def test_looper_single_pipeline(self, prep_temp_pep):
@@ -39,6 +41,7 @@ class LooperRunBehaviorTests:
         with open(tp, 'w') as conf_file:
             dump(config_data, conf_file)
         stdout, stderr, rc = _subp_exec(tp, "run")
+        print(stderr)
         assert rc == 0
         assert "Commands submitted: 6 of 6" not in stderr
 
@@ -56,6 +59,7 @@ class LooperRunBehaviorTests:
         with open(tp, 'w') as conf_file:
             dump(config_data, conf_file)
         stdout, stderr, rc = _subp_exec(tp, "run")
+        print(stderr)
         assert rc == 0
         assert "Jobs submitted: 0" in stderr
         assert "No pipeline interfaces defined"
@@ -74,6 +78,7 @@ class LooperRunBehaviorTests:
         with open(tp, 'w') as conf_file:
             dump(config_data, conf_file)
         stdout, stderr, rc = _subp_exec(tp, "run")
+        print(stderr)
         assert rc == 0
         assert "Jobs submitted: 0" in stderr
         assert "Ignoring invalid pipeline interface source"
@@ -102,6 +107,7 @@ class LooperRunBehaviorTests:
         with open(piface_path, 'w') as piface_file:
             dump(piface_data, piface_file)
         stdout, stderr, rc = _subp_exec(tp, "run")
+        print(stderr)
         assert rc == 0
         assert "Jobs submitted: 0" in stderr
         assert "Ignoring invalid pipeline interface source"
@@ -131,6 +137,7 @@ class LooperRunpBehaviorTests:
         with open(tp, 'w') as conf_file:
             dump(config_data, conf_file)
         stdout, stderr, rc = _subp_exec(tp, "runp")
+        print(stderr)
         assert rc == 0
         assert "Jobs submitted: 2" not in stderr
         assert "Jobs submitted: 1" in stderr
@@ -153,6 +160,7 @@ class LooperRunSubmissionScriptTests:
             FileNotFoundError("Not found in submission directory ({}): 6 "
                               "submission scripts (3 per pipeline) and 3 sample"
                               " YAML representations".format(sd))
+        print(stderr)
         assert rc == 0
         assert os.path.isdir(sd)
         assert len(os.listdir(sd)) == 9, subm_err
