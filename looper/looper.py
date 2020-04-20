@@ -138,13 +138,13 @@ class Cleaner(Executor):
         :param argparse.Namespace args: command-line options and arguments
         :param bool preview_flag: whether to halt before actually removing files
         """
-        _LOGGER.info("Files to clean:")
-
         for sample in self.prj.samples:
             _LOGGER.info(self.counter.show(sample.sample_name))
             sample_output_folder = sample_folder(self.prj, sample)
             cleanup_files = glob.glob(os.path.join(sample_output_folder,
-                                                   "*_cleanup.sh"))
+            if not cleanup_files:
+                _LOGGER.info("Nothing to clean.")
+                continue
             if preview_flag:
                 # Preview: Don't actually clean, just show what will be cleaned.
                 _LOGGER.info("Files to clean: %s", ", ".join(cleanup_files))
@@ -152,23 +152,18 @@ class Cleaner(Executor):
                 for f in cleanup_files:
                     _LOGGER.info(f)
                     subprocess.call(["sh", f])
-
         if not preview_flag:
             _LOGGER.info("Clean complete.")
             return 0
-
         if args.dry_run:
             _LOGGER.info("Dry run. No files cleaned.")
             return 0
-
         if not args.force_yes and not \
                 query_yes_no("Are you sure you want to permanently delete all "
                              "intermediate pipeline results for this project?"):
             _LOGGER.info("Clean action aborted by user.")
             return 1
-
         self.counter.reset()
-
         return self(args, preview_flag=False)
 
 

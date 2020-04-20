@@ -284,7 +284,8 @@ class LooperRunComputeTests:
 
     def test_looper_uses_cli_compute_options_spec(self, prep_temp_pep):
         tp = prep_temp_pep
-        stdout, stderr, rc = _subp_exec(tp, "run", ["--compute", "mem=12345"])
+        stdout, stderr, rc = _subp_exec(tp, "run", ["--compute", "mem=12345",
+                                                    "--package", "slurm"])
         sd = os.path.join(_get_outdir(tp), "submission")
         print(stderr)
         assert rc == 0
