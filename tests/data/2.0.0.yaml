@@ -1,0 +1,18 @@
+description: "Schema for a minimal PEP"
+version: "2.0.0"
+imports:
+  - https://schema.databio.org/pep/2.0.0.yaml
+properties:
+  samples:
+    type: array
+    items:
+      type: object
+      properties:
+        sample_name: 
+          type: string
+          pattern: "^\\S*$"
+          description: "Unique name of the sample"
+      required:
+        - sample_name
+required:
+  - samples

@@ -257,12 +257,13 @@ class PipelineInterface(PXAM):
         :param bool exclude_case: whether to exclude validated objects
             from the error. Useful when used ith large projects
         """
-        schema = read_schema(schema_url)
-        try:
-            jsonschema.validate(self, schema)
-            _LOGGER.debug("Successfully validated {} against schema: {}".
-                          format(self.__class__.__name__, schema))
-        except jsonschema.exceptions.ValidationError as e:
-            if not exclude_case:
-                raise e
-            raise jsonschema.exceptions.ValidationError(e.message)
+        schemas = read_schema(schema_url)
+        for schema in schemas:
+            try:
+                jsonschema.validate(self, schema)
+                _LOGGER.debug("Successfully validated {} against schema: {}".
+                              format(self.__class__.__name__, schema))
+            except jsonschema.exceptions.ValidationError as e:
+                if not exclude_case:
+                    raise e
+                raise jsonschema.exceptions.ValidationError(e.message)

@@ -164,11 +164,31 @@ class LooperRunBehaviorTests:
         assert rc == 0
         assert "Jobs submitted: 0" in stderr
 
+    def test_looper_sample_name_whitespace(self, prep_temp_pep):
+        """
+        Piface is ignored when when it does not exist
+        """
+        tp = prep_temp_pep
+        imply_whitespace = \
+            [{IMPLIED_IF_KEY: {'sample_name': 'sample1'},
+              IMPLIED_THEN_KEY: {'sample_name': 'sample whitespace'}}]
+        with open(tp, 'r') as conf_file:
+            config_data = safe_load(conf_file)
+        print("\nconfig_data: \n{}\n".format(config_data))
+        config_data[SAMPLE_MODS_KEY][IMPLIED_KEY] = imply_whitespace
+        print("\nconfig_data: \n{}\n".format(config_data))
+        with open(tp, 'w') as conf_file:
+            dump(config_data, conf_file)
+        stdout, stderr, rc = _subp_exec(tp, "run")
+        print(stderr)
+        assert rc != 0
+
 
 class LooperRunpBehaviorTests:
     def test_looper_runp_basic(self, example_pep_piface_path_cfg):
         """ Verify looper runps in a basic case and return code is 0 """
         stdout, stderr, rc = _subp_exec(example_pep_piface_path_cfg, "runp")
+        print(stderr)
         assert rc == 0
 
     def test_looper_multi_pipeline(self, example_pep_piface_path_cfg):

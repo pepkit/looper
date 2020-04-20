@@ -142,6 +142,7 @@ class Cleaner(Executor):
             _LOGGER.info(self.counter.show(sample.sample_name))
             sample_output_folder = sample_folder(self.prj, sample)
             cleanup_files = glob.glob(os.path.join(sample_output_folder,
+                                                   "*_cleanup.sh"))
             if not cleanup_files:
                 _LOGGER.info("Nothing to clean.")
                 continue

@@ -398,7 +398,7 @@ class Project(peppyProject):
             if sample_piface:
                 paths = self.get_schemas(sample_piface, OUTPUT_SCHEMA_KEY)
                 for path in paths:
-                    schema = read_schema(path)
+                    schema = read_schema(path)[0]
                     try:
                         populate_project_paths(self, schema, check_exist)
                         populate_sample_paths(sample, schema, check_exist)

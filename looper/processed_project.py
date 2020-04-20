@@ -38,7 +38,7 @@ def _populate_paths(object, schema, check_exist):
 
     :param Mapping object: object with attributes to populate path template with
     :param dict schema: schema with path attributes defined, e.g.
-        output od read_schema function
+        output of read_schema function
     :param bool check_exist: whether the paths should be check for existence
     :return Mapping: object with path templates populated
     """
@@ -71,13 +71,14 @@ def populate_sample_paths(sample, schema, check_exist=False):
     based on a defined template, e.g. '/Users/x/test_{name}/{genome}_file.txt'
 
     :param peppy.Sample sample: sample to populate paths in
-    :param dict schema: schema with path attributes defined, e.g.
-        output od read_schema function
+    :param Iterable[dict] schema: schema with path attributes defined, e.g.
+        output of read_schema function
     :param bool check_exist: whether the paths should be check for existence
     :return Mapping: Sample with path templates populated
     """
     if not isinstance(sample, Sample):
         raise TypeError("Can only populate paths in peppy.Sample objects")
+    # schema = schema[-1]  # use only first schema, in case there are imports
     if PROP_KEY in schema and "samples" in schema[PROP_KEY]:
         _populate_paths(sample, schema[PROP_KEY]["samples"]["items"],
                         check_exist)
@@ -90,7 +91,7 @@ def populate_project_paths(project, schema, check_exist=False):
 
     :param peppy.Project project: project to populate paths in
     :param dict schema: schema with path attributes defined, e.g.
-        output od read_schema function
+        output of read_schema function
     :param bool check_exist: whether the paths should be check for existence
     :return Mapping: Project with path templates populated
     """
@@ -105,7 +106,7 @@ def get_project_outputs(project, schema):
     project attributes
 
     :param peppy.Project project:
-    :param dict schema:
+    :param Iterable[dict] schema:
     :return attmap.PathExAttMap: mapping with populated path-like attributes
     """
     from attmap import PathExAttMap
@@ -113,6 +114,7 @@ def get_project_outputs(project, schema):
     #             issubclass(type(project), Project)]):
     #     raise TypeError("Can only populate paths in peppy.Project "
     #                     "objects or it subclasses")
+    schema = schema[-1]  # use only first schema, in case there are imports
     if PROP_KEY not in schema:
         raise EidoSchemaInvalidError("Schema is missing properties section.")
     res = {}
