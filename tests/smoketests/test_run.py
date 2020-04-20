@@ -82,7 +82,6 @@ class LooperRunBehaviorTests:
         assert rc == 0
         assert "Jobs submitted: 0" in stderr
         assert "Ignoring invalid pipeline interface source"
-        assert "FileNotFoundError"
 
     def test_looper_pipeline_invalid(self, prep_temp_pep):
         """
@@ -152,12 +151,8 @@ class LooperRunSubmissionScriptTests:
         outdir = config_data[LOOPER_KEY][OUTDIR_KEY]
         stdout, stderr, rc = _subp_exec(tp, "run")
         sd = os.path.join(outdir, "submission")
-        try:
-            FileNotFoundError
-        except NameError:
-            FileNotFoundError = IOError
         subm_err = \
-            FileNotFoundError("Not found in submission directory ({}): 6 "
+            IOError("Not found in submission directory ({}): 6 "
                               "submission scripts (3 per pipeline) and 3 sample"
                               " YAML representations".format(sd))
         print(stderr)

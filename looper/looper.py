@@ -251,7 +251,7 @@ class Collator(Executor):
         for project_piface in project_pifaces:
             try:
                 project_piface_object = PipelineInterface(project_piface)
-            except (FileNotFoundError, ValidationError) as e:
+            except (IOError, ValidationError) as e:
                 _LOGGER.warning(
                     "Ignoring invalid pipeline interface source: {}. "
                     "Caught exception: {}".

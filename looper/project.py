@@ -455,7 +455,7 @@ class Project(peppyProject):
                             os.path.dirname(self.config_file), source)
                     try:
                         PipelineInterface(source)
-                    except (ValidationError, FileNotFoundError) as e:
+                    except (ValidationError, IOError) as e:
                         msg = "Ignoring invalid pipeline interface source: " \
                               "{}. Caught exception: {}".\
                             format(source, getattr(e, 'message', repr(e)))
