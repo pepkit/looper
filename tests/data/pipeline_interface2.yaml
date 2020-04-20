@@ -4,7 +4,7 @@ sample_pipeline:
   path: pipelines/other_pipeline2.py
   output_schema: output_schema.yaml
   command_template: >
-    {pipeline.path} --sample-name {sample.sample_name}
+    {pipeline.path} --sample-name {sample.sample_name} --req-attr {sample.attr}
   compute:
     size_dependent_variables: resources-sample.tsv
 project_pipeline:

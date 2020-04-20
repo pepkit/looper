@@ -9,6 +9,7 @@ looper:
 sample_modifiers: 
   append:
     pipeline_interfaces: ["pipeline_interface1.yaml", "pipeline_interface2.yaml"]
+    attr: "val"
   derive:
     attributes: [read1, read2]
     sources:
