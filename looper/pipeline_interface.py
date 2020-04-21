@@ -228,7 +228,10 @@ class PipelineInterface(PXAM):
         for section in [SAMPLE_PL_KEY, PROJECT_PL_KEY]:
             if section not in self:
                 continue
-            raw_path = self[section]["path"]
+            try:
+                raw_path = self[section]["path"]
+            except KeyError:
+                continue
             split_path = raw_path.split(" ")
             if len(split_path) > 1:
                 _LOGGER.warning(

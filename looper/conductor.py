@@ -391,6 +391,8 @@ class SubmissionConductor(object):
             cli = self.compute_variables or {}  # CLI
             if sample:
                 namespaces.update({"sample": sample})
+            else:
+                namespaces.update({"samples": self.prj.samples})
             res_pkg = self.pl_iface.choose_resource_package(
                 self.section_key, namespaces, size or 0)  # config
             res_pkg.update(cli)

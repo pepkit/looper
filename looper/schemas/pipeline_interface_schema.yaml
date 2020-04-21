@@ -14,7 +14,6 @@ anyOf:
 definitions:
   pipeline:
     required:
-      - path
       - command_template
     type: object
     description: "attributes of the pipeline to run across all the samples in the project"
