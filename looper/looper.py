@@ -343,6 +343,11 @@ class Runner(Executor):
             sample_pifaces = self.prj.get_sample_piface(sample[SAMPLE_NAME_ATTR])
             if not sample_pifaces:
                 skip_reasons.append("No pipeline interfaces defined")
+            if SAMPLE_TOGGLE_ATTR in sample and sample[SAMPLE_TOGGLE_ATTR] == 0:
+                _LOGGER.warning("Skiping sample '{}' (toggle: {})".
+                                format(sample[SAMPLE_NAME_ATTR],
+                                       sample[SAMPLE_TOGGLE_ATTR]))
+                continue
 
             if skip_reasons:
                 _LOGGER.warning(NOT_SUB_MSG.format(", ".join(skip_reasons)))
