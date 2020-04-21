@@ -320,7 +320,7 @@ class Runner(Executor):
 
         # config validation (samples excluded) against all schemas defined
         # for every pipeline matched for this project
-        [validate_config(self.prj, schema_file, exclude_case=True)
+        [validate_config(self.prj, schema_file, True)
          for schema_file in self.prj.get_schemas(self.prj.pipeline_interfaces)]
 
         for piface in self.prj.pipeline_interfaces:
@@ -343,12 +343,6 @@ class Runner(Executor):
             sample_pifaces = self.prj.get_sample_piface(sample[SAMPLE_NAME_ATTR])
             if not sample_pifaces:
                 skip_reasons.append("No pipeline interfaces defined")
-            if SAMPLE_TOGGLE_ATTR in sample \
-                    and int(sample[SAMPLE_TOGGLE_ATTR]) == 0:
-                _LOGGER.warning("Skiping sample '{}' (toggle: {})".
-                                format(sample[SAMPLE_NAME_ATTR],
-                                       sample[SAMPLE_TOGGLE_ATTR]))
-                continue
 
             if skip_reasons:
                 _LOGGER.warning(NOT_SUB_MSG.format(", ".join(skip_reasons)))
@@ -357,7 +351,7 @@ class Runner(Executor):
 
             # single sample validation against a single schema
             # (from sample's piface)
-            [validate_sample(self.prj, sample.sample_name, schema_file, exclude_case=True)
+            [validate_sample(self.prj, sample.sample_name, schema_file, True)
              for schema_file in self.prj.get_schemas(sample_pifaces)]
 
             processed_samples.add(sample[SAMPLE_NAME_ATTR])

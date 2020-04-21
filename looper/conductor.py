@@ -161,6 +161,11 @@ class SubmissionConductor(object):
                     msg += ". Flags found: {}".format(flag_files)
                 _LOGGER.info(msg)
 
+        if SAMPLE_TOGGLE_ATTR in sample and int(sample[SAMPLE_TOGGLE_ATTR]) == 0:
+            _LOGGER.warning("> Skiping sample (toggle: {})".
+                            format(sample[SAMPLE_TOGGLE_ATTR]))
+            use_this_sample = False
+
         sample.prj = grab_project_data(self.prj)
 
         skip_reasons = []
