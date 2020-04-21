@@ -561,7 +561,7 @@ def _remove_or_dry_run(paths, dry_run=False):
                 if os.path.isfile(path):
                     os.remove(path)
                 else:
-                    rmtree(path)
+                    rmtree(path, ignore_errors=True)
         else:
             _LOGGER.info(path + " does not exist.")
 
