@@ -183,6 +183,23 @@ class LooperRunBehaviorTests:
         print(stderr)
         assert rc != 0
 
+    def test_looper_toogle(self, prep_temp_pep):
+        """
+        If all samples have tooggle attr set to 0, no jobs are submitted
+        """
+        tp = prep_temp_pep
+        with open(tp, 'r') as conf_file:
+            config_data = safe_load(conf_file)
+        print("\nconfig_data: \n{}\n".format(config_data))
+        config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][SAMPLE_TOGGLE_ATTR] = 0
+        print("\nconfig_data: \n{}\n".format(config_data))
+        with open(tp, 'w') as conf_file:
+            dump(config_data, conf_file)
+        stdout, stderr, rc = _subp_exec(tp, "run")
+        print(stderr)
+        assert rc == 0
+        assert "Jobs submitted: 0" in stderr
+
 
 class LooperRunpBehaviorTests:
     def test_looper_runp_basic(self, example_pep_piface_path_cfg):
@@ -271,8 +288,8 @@ class LooperRunSubmissionScriptTests:
         sd = os.path.join(_get_outdir(tp), "submission")
         subm_err = \
             IOError("Not found in submission directory ({}): 4 "
-                              "submission scripts (2 per pipeline) and 2 sample"
-                              " YAML representations. Listdir: \n{}".
+                    "submission scripts (2 per pipeline) and 2 sample "
+                    "YAML representations. Listdir: \n{}".
                     format(sd, os.listdir(sd)))
         print(stderr)
         assert rc == 0
