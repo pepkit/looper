@@ -252,15 +252,15 @@ class PipelineInterface(PXAM):
                 _LOGGER.debug("Expanded path: {}".format(pipe_path))
                 self[section]["path"] = pipe_path
 
-    def _validate(self, schema_url, exclude_case=False):
+    def _validate(self, schema_src, exclude_case=False):
         """
         Generic function to validate object against a schema
 
-        :param str schema_url: URL to the schema to validate against
+        :param str schema_src: schema source to validate against, URL or path
         :param bool exclude_case: whether to exclude validated objects
             from the error. Useful when used ith large projects
         """
-        schemas = read_schema(schema_url)
+        schemas = read_schema(schema_src)
         for schema in schemas:
             try:
                 jsonschema.validate(self, schema)
