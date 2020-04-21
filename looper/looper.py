@@ -320,7 +320,7 @@ class Runner(Executor):
 
         # config validation (samples excluded) against all schemas defined
         # for every pipeline matched for this project
-        [validate_config(self.prj, schema_file)
+        [validate_config(self.prj, schema_file, exclude_case=True)
          for schema_file in self.prj.get_schemas(self.prj.pipeline_interfaces)]
 
         for piface in self.prj.pipeline_interfaces:
@@ -351,7 +351,7 @@ class Runner(Executor):
 
             # single sample validation against a single schema
             # (from sample's piface)
-            [validate_sample(self.prj, sample.sample_name, schema_file)
+            [validate_sample(self.prj, sample.sample_name, schema_file, exclude_case=True)
              for schema_file in self.prj.get_schemas(sample_pifaces)]
 
             processed_samples.add(sample[SAMPLE_NAME_ATTR])
