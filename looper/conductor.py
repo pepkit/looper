@@ -421,7 +421,10 @@ class SubmissionConductor(object):
                 self._num_good_job_submissions += 1
                 self._num_total_job_submissions += 1
         looper.command = "\n".join(commands)
-        _LOGGER.debug("sample namespace:\n{}".format(sample))
+        if self.collate:
+            _LOGGER.debug("samples namespace:\n{}".format(self.prj.samples))
+        else:
+            _LOGGER.debug("sample namespace:\n{}".format(sample))
         _LOGGER.debug("project namespace:\n{}".format(self.prj[CONFIG_KEY]))
         _LOGGER.debug("pipeline namespace:\n{}".
                       format(self.pl_iface[self.section_key]))
