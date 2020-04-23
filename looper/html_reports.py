@@ -221,6 +221,7 @@ class HTMLReportBuilder(object):
 
             # Set the PATH to the image/file. Catch any errors.
             # Check if the object is an HTML document
+
             if not str(row['anchor_image']).lower().endswith(IMAGE_EXTS):
                 image_path = object_path
             else:
@@ -235,7 +236,6 @@ class HTMLReportBuilder(object):
                     else:
                         _LOGGER.warning(err_msg.format("Unknown", "Unknown"))
                     image_path = ""
-
             # Check for the presence of both the file and thumbnail
             if os.path.isfile(image_path) and os.path.isfile(object_path):
                 image_relpath = os.path.relpath(image_path, self.reports_dir)
@@ -418,7 +418,8 @@ class HTMLReportBuilder(object):
                         if not os.path.isabs(result_file):
                             result_file = os.path.join(
                                 self._outdir, result_file)
-
+                        _LOGGER.debug("Looking for project file: {}".
+                                      format(result_file))
                         # Confirm the file itself was produced
                         if glob.glob(result_file):
                             file_path = str(glob.glob(result_file)[0])
