@@ -17,7 +17,7 @@ __all__ = [
     "EXAMPLE_COMPUTE_SPEC_FMT", "ALL_INPUTS_ATTR_NAME", "SAMPLE_PL_KEY",
     "PROJECT_PL_KEY", "CFG_ENV_VARS", "LOGGING_LEVEL", "PIFACE_KEY_SELECTOR",
     "SUBMISSION_FAILURE_MESSAGE", "IMAGE_EXTS", "PROFILE_COLNAMES",
-    "SAMPLE_TOGGLE_ATTR"
+    "SAMPLE_TOGGLE_ATTR", "TOGGLE_KEY_SELECTOR"
 ]
 
 FLAGS = ["completed", "running", "failed", "waiting", "partial"]
@@ -78,6 +78,7 @@ PIFACE_SCHEMA_SRC = os.path.join(os.path.dirname(os.path.abspath(__file__)),
 INPUT_SCHEMA_KEY = "input_schema"
 OUTPUT_SCHEMA_KEY = "output_schema"
 SAMPLE_YAML_PATH_KEY = "sample_yaml_path"
+TOGGLE_KEY_SELECTOR = "toggle_key"
 SAMPLE_TOGGLE_ATTR = "toggle"
 OUTKEY = "outputs"
 RESULTS_SUBDIR_KEY = "results_subdir"

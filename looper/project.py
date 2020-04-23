@@ -131,6 +131,20 @@ class Project(peppyProject):
         return pik
 
     @property
+    def toggle_key(self):
+        """
+        Name of the toggle attribute for this project
+
+        :return str: name of the toggle attribute
+        """
+        tk = SAMPLE_TOGGLE_ATTR
+        if CONFIG_KEY in self and\
+            LOOPER_KEY in self[CONFIG_KEY] and\
+                TOGGLE_KEY_SELECTOR in self[CONFIG_KEY][LOOPER_KEY]:
+            tk = str(self[CONFIG_KEY][LOOPER_KEY][TOGGLE_KEY_SELECTOR])
+        return tk
+
+    @property
     def project_folders(self):
         """ Critical project folder keys """
         return {OUTDIR_KEY: OUTDIR_KEY,
