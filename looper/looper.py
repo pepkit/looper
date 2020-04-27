@@ -703,6 +703,12 @@ def main():
     init_logger(name="eido", **logger_kwargs)
     _LOGGER = init_logger(name=_PKGNAME, **logger_kwargs)
 
+    # lc = LooperConfig(select_looper_config(filename=args.looper_config))
+    # _LOGGER.debug("Determined genome config: {}".format(lc))
+
+    _LOGGER.info("Looper version: {}\nCommand: {}".
+                 format(__version__, args.command))
+
     if len(args.pipeline_args) > 0:
         _LOGGER.info("String appended to every pipeline command: {}".
                       format(args.pipeline_args))
@@ -710,12 +716,6 @@ def main():
     if len(remaining_args) > 0:
         _LOGGER.warning("Unrecoginzed arguments: {}".
                       format(" ".join([str(x) for x in remaining_args])))
-
-    # lc = LooperConfig(select_looper_config(filename=args.looper_config))
-    # _LOGGER.debug("Determined genome config: {}".format(lc))
-
-    _LOGGER.info("Looper version: {}\nCommand: {}".
-                 format(__version__, args.command))
 
     # Initialize project
     _LOGGER.debug("Building Project")
