@@ -714,7 +714,7 @@ def main():
                       format(args.pipeline_args))
 
     if len(remaining_args) > 0:
-        _LOGGER.warning("Unrecoginzed arguments: {}".
+        _LOGGER.warning("Unrecognized arguments: {}".
                       format(" ".join([str(x) for x in remaining_args])))
 
     # Initialize project
