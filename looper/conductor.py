@@ -52,8 +52,8 @@ class SubmissionConductor(object):
             but the actual job submission should be done.
         :param float delay: Time (in seconds) to wait before submitting a job
             once it's ready
-        :param list extra_args: Additional arguments to add (positionally) to
-            each command within each job generated
+        :param str extra_args: string to pass to each job generated,
+            for example additional pipeline arguments
         :param bool ignore_flags: Whether to ignore flag files present in
             the sample folder for each sample considered for submission
         :param dict[str] compute_variables: A dict with variables that will be made
@@ -76,7 +76,7 @@ class SubmissionConductor(object):
         self.pl_name = self.pl_iface.pipeline_name
         self.prj = prj
         self.compute_variables = compute_variables
-        self.extra_pipe_args = extra_args or []
+        self.extra_pipe_args = extra_args
         self.ignore_flags = ignore_flags
 
         self.dry_run = dry_run
@@ -385,8 +385,6 @@ class SubmissionConductor(object):
         if self.collate:
             pool = [None]
         looper = self._set_looper_namespace(pool, size)
-        extra_parts_text = " ".join(self.extra_pipe_args) \
-            if self.extra_pipe_args else ""
         commands = []
         namespaces = dict(project=self.prj[CONFIG_KEY],
                           looper=looper,
@@ -416,7 +414,7 @@ class SubmissionConductor(object):
                 exc = "pipeline interface is missing {} section".format(str(e))
                 _LOGGER.warning(NOT_SUB_MSG.format(exc))
             else:
-                commands.append("{} {}".format(argstring, extra_parts_text))
+                commands.append("{} {}".format(argstring, self.extra_pipe_args))
                 self._rendered_ok = True
                 self._num_good_job_submissions += 1
                 self._num_total_job_submissions += 1

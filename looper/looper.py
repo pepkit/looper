@@ -223,15 +223,13 @@ class Collator(Executor):
         super(Executor, self).__init__()
         self.prj = prj
 
-    def __call__(self, args, remaining_args, **compute_kwargs):
+    def __call__(self, args, **compute_kwargs):
         """
         Matches collators by protocols, creates submission scripts
         and submits them
 
         :param argparse.Namespace args: parsed command-line options and
             arguments, recognized by looper
-        :param list remaining_args: command-line options and arguments not
-            recognized by looper, germane to samples/pipelines
         """
         jobs = 0
         project_pifaces = self.prj.project_pipeline_interface_sources
@@ -262,7 +260,7 @@ class Collator(Executor):
                 compute_variables=compute_kwargs,
                 dry_run=args.dry_run,
                 delay=args.time_delay,
-                extra_args=remaining_args,
+                extra_args=args.pipeline_args,
                 ignore_flags=args.ignore_flags,
                 collate=True
             )
@@ -276,7 +274,7 @@ class Collator(Executor):
 class Runner(Executor):
     """ The true submitter of pipelines """
 
-    def __call__(self, args, remaining_args, rerun=False, **compute_kwargs):
+    def __call__(self, args, rerun=False, **compute_kwargs):
         """
         Do the Sample submission.
 
@@ -330,7 +328,7 @@ class Runner(Executor):
                 compute_variables=comp_vars,
                 dry_run=args.dry_run,
                 delay=args.time_delay,
-                extra_args=remaining_args,
+                extra_args=args.pipeline_args,
                 ignore_flags=args.ignore_flags,
                 max_cmds=args.lumpn,
                 max_size=args.lump
@@ -705,8 +703,12 @@ def main():
     init_logger(name="eido", **logger_kwargs)
     _LOGGER = init_logger(name=_PKGNAME, **logger_kwargs)
 
+    if len(args.pipeline_args) > 0:
+        _LOGGER.info("String appended to every pipeline command: {}".
+                      format(args.pipeline_args))
+
     if len(remaining_args) > 0:
-        _LOGGER.debug("Remaining arguments passed to pipelines: {}".
+        _LOGGER.warning("Unrecoginzed arguments: {}".
                       format(" ".join([str(x) for x in remaining_args])))
 
     # lc = LooperConfig(select_looper_config(filename=args.looper_config))
@@ -749,8 +751,7 @@ def main():
             try:
                 compute_kwargs = _proc_resources_spec(
                     getattr(args, "compute", ""))
-                run(args, remaining_args, rerun=(args.command == "rerun"),
-                    **compute_kwargs)
+                run(args, rerun=(args.command == "rerun"), **compute_kwargs)
             except IOError:
                 _LOGGER.error("{} pipeline_interfaces: '{}'".
                               format(prj.__class__.__name__,
@@ -760,7 +761,7 @@ def main():
         if args.command == "runp":
             compute_kwargs = _proc_resources_spec(getattr(args, "compute", ""))
             collate = Collator(prj)
-            collate(args, remaining_args, **compute_kwargs)
+            collate(args, **compute_kwargs)
 
         if args.command == "destroy":
             return Destroyer(prj)(args)

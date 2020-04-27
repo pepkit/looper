@@ -120,7 +120,8 @@ def build_parser():
                 type=html_range(min_val=0, max_val=30, value=0), default=0,
                 help="Time delay in seconds between job submissions.")
         subparser.add_argument(
-                "--package", help="Name of computing resource package to use")
+                "-p", "--package",
+                help="Name of computing resource package to use")
         subparser.add_argument(
                 "--compute",
                 help="Specification of individual computing resource settings; "
@@ -131,6 +132,13 @@ def build_parser():
                 "--limit", dest="limit", default=None,
                 type=html_range(min_val=1, max_val="num_samples", value="num_samples"),
                 help="Limit to n samples.")
+        subparser.add_argument(
+                "-a", "--pipeline-args", dest="pipeline_args", default="",
+                help="arguments to pass to a pipline")
+        # subparser.add_argument(
+        #         "-s", "--settings", dest="settings", default=None,
+        #         help="path to a YAML-formatted settings file used to populate "
+        #              "the command template")
     for subparser in [run_subparser, rerun_subparser]:
         # Note that defaults for otherwise numeric lump parameters are set to
         # null by default so that the logic that parses their values may
@@ -207,7 +215,7 @@ def build_parser():
                 help="Operate only on samples associated with these attribute values;"
                      " if not provided, all samples are used.")
         subparser.add_argument(
-                "-a", "--amendments", dest="amendments", nargs="+",
+                "--amendments", dest="amendments", nargs="+",
                 help="Name of amendment(s) to use, as designated in the "
                      "project's configuration file")
 
