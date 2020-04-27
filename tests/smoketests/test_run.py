@@ -297,15 +297,25 @@ class LooperRunSubmissionScriptTests:
         assert sum([f.endswith(".sub") for f in os.listdir(sd)]) == 4, subm_err
         assert sum([f.endswith(".yaml") for f in os.listdir(sd)]) == 2, subm_err
 
-    def test_looper_unrecognized_args_passing(self, prep_temp_pep):
+    def test_pipeline_args_passing(self, prep_temp_pep):
         tp = prep_temp_pep
-        stdout, stderr, rc = _subp_exec(tp, "run", ["--unknown-flag"])
+        stdout, stderr, rc = _subp_exec(tp, "run", ["-a", "'string'"])
         sd = os.path.join(_get_outdir(tp), "submission")
         print(stderr)
         assert rc == 0
         subs_list = \
             [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
-        _is_in_file(subs_list, "--unknown-flag")
+        _is_in_file(subs_list, "string")
+
+    def test_unrecognized_args_not_passing(self, prep_temp_pep):
+        tp = prep_temp_pep
+        stdout, stderr, rc = _subp_exec(tp, "run", ["--unknown-arg", "4"])
+        sd = os.path.join(_get_outdir(tp), "submission")
+        print(stderr)
+        assert rc == 0
+        subs_list = \
+            [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
+        _is_in_file(subs_list, "--unknown-arg", reverse=True)
 
 
 class LooperRunComputeTests:
