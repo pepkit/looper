@@ -41,7 +41,7 @@ from divvy import DEFAULT_COMPUTE_RESOURCES_NAME, \
 from logmuse import init_logger
 from peppy.const import *
 from eido import validate_sample, validate_config
-from ubiquerg import query_yes_no
+from ubiquerg import query_yes_no, merge_dicts
 
 
 _PKGNAME = "looper"
@@ -677,8 +677,8 @@ def main():
     dotfile_path = os.path.join(os.getcwd(), LOOPER_DOTFILE_NAME)
     args = enrich_args_via_dotfile(args, dotfile_path)
     if args.dotfile_template:
-        defaults = {**parser.arg_defaults(top_level=True),
-                    **parser.arg_defaults(unique=True)}
+        defaults = merge_dicts(parser.arg_defaults(top_level=True),
+                               parser.arg_defaults(unique=True))
         print("# looper dotfile path: {}\n".format(dotfile_path))
         for k, v in defaults.items():
             if k != "dotfile_template":
