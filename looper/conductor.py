@@ -442,7 +442,7 @@ class SubmissionConductor(object):
                 (self._curr_skip_pool, self._curr_skip_size)
             )
         if self._skipped_sample_pools:
-            _LOGGER.info("Writing submission scripts for {} skipped samples".
+            _LOGGER.info("Writing {} submission scripts for skipped samples".
                           format(len(self._skipped_sample_pools)))
             [self.write_script(pool, size)
              for pool, size in self._skipped_sample_pools]

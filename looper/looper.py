@@ -24,6 +24,7 @@ init()
 from colorama import Fore, Style
 from shutil import rmtree
 from jsonschema import ValidationError
+from copy import copy
 
 from . import __version__, build_parser, _LEVEL_BY_VERBOSITY
 from .conductor import SubmissionConductor
@@ -32,7 +33,7 @@ from .exceptions import JobSubmissionException, MisconfigurationException
 from .html_reports import HTMLReportBuilder
 from .project import Project, ProjectContext
 from .utils import determine_config_path, fetch_flag_files, sample_folder, \
-    get_file_for_project
+    get_file_for_project, enrich_cli_via_dotfile
 from .looper_config import *
 
 from divvy import DEFAULT_COMPUTE_RESOURCES_NAME, \
@@ -673,16 +674,18 @@ def _proc_resources_spec(spec):
 def main():
     """ Primary workflow """
     global _LOGGER
-
     parser = build_parser()
     args, remaining_args = parser.parse_known_args()
-
-    try:
-        conf_file = args.config_file
-    except AttributeError:
+    dotfile_path = os.path.join(os.getcwd(), ".looper.yaml")
+    if os.path.exists(dotfile_path):
+        args = enrich_cli_via_dotfile(args, dotfile_path)
+    if args.config_file is None:
+        _LOGGER.error(
+            "Path to a project configuration file is a required, provide it as "
+            "a positional argument or in the looper dotfile\n")
         parser.print_help(sys.stderr)
         sys.exit(1)
-
+    conf_file = args.config_file
     # Set the logging level.
     if args.dbg:
         # Debug mode takes precedence and will listen for all messages.

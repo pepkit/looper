@@ -246,3 +246,29 @@ def jinja_render_cmd_strictly(cmd_template, namespaces):
         raise
     _LOGGER.debug("rendered arg str: {}".format(rendered))
     return rendered
+
+
+def enrich_cli_via_dotfile(args, path):
+    """
+
+    :param path:
+    :param args:
+    :return:
+    """
+    def _read_yaml_file(filepath):
+        """
+        Read a YAML file
+
+        :param str filepath: path to the file to read
+        :return dict: read data
+        """
+        with open(filepath, 'r') as f:
+            data = yaml.safe_load(f)
+        return data
+    argsc_cpy = copy(args)
+    args_dict = vars(argsc_cpy)
+    dotfile_args = _read_yaml_file(path)
+    for k, v in args_dict.items():
+        if k in dotfile_args:
+            setattr(args, k, dotfile_args[k])
+    return args
