@@ -304,13 +304,12 @@ class Runner(Executor):
 
         # Determine number of samples eligible for processing.
         num_samples = len(self.prj.samples)
-        lim = args.limit if args.limit is None else int(args.limit)
-        if lim is None:
+        if args.limit is None:
             upper_sample_bound = num_samples
-        elif lim < 0:
-            raise ValueError("Invalid number of samples to run: {}".format(lim))
+        elif args.limit < 0:
+            raise ValueError("Invalid number of samples to run: {}".format(args.limit))
         else:
-            upper_sample_bound = min(lim, num_samples)
+            upper_sample_bound = min(args.limit, num_samples)
         _LOGGER.debug("Limiting to {} of {} samples".
                       format(upper_sample_bound, num_samples))
 
@@ -675,8 +674,16 @@ def main():
     global _LOGGER
     parser = build_parser()
     args, remaining_args = parser.parse_known_args()
-    dotfile_path = os.path.join(os.getcwd(), ".looper.yaml")
+    dotfile_path = os.path.join(os.getcwd(), LOOPER_DOTFILE_NAME)
     args = enrich_args_via_dotfile(args, dotfile_path)
+    if args.dotfile_template:
+        defaults = {**parser.arg_defaults(top_level=True),
+                    **parser.arg_defaults(unique=True)}
+        print("# looper dotfile path: {}\n".format(dotfile_path))
+        for k, v in defaults.items():
+            if k != "dotfile_template":
+                print("{}: '{}'".format(k, v))
+        sys.exit(0)
     if args.config_file is None:
         _LOGGER.error(
             "Path to a project configuration file is a required, provide it as "

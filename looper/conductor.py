@@ -87,9 +87,6 @@ class SubmissionConductor(object):
         self._curr_size = 0
         self._failed_sample_names = []
 
-        max_cmds = int(max_cmds) if max_cmds is not None else max_cmds
-        max_size = float(max_size) if max_size is not None else max_size
-
         if not self.collate:
             self.automatic = automatic
             if max_cmds is None and max_size is None:

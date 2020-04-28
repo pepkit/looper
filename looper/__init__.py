@@ -90,6 +90,8 @@ def build_parser():
             default=None,
             help="Environment variable that points to the DIVCFG file. "
                  "(default: DIVCFG)")
+    parser.add_argument("--dotfile-template", action="store_true",
+                        help="Print out a looper dotfile template and exit")
 
     # Individual subcommands
     msg_by_cmd = {
@@ -215,8 +217,7 @@ def build_parser():
                 "This group of arguments lets you specify samples to use by "
                 "exclusion OR inclusion of the samples attribute values.")
         fetch_samples_group.add_argument(
-            "--selector-attribute", dest="selector_attribute",
-            default="protocol",
+            "--selector-attribute", dest="selector_attribute", default="toggle",
             help="Specify the attribute for samples exclusion OR inclusion")
         protocols = fetch_samples_group.add_mutually_exclusive_group()
         protocols.add_argument(

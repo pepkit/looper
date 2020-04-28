@@ -9,6 +9,7 @@ from peppy.const import *
 import jinja2
 import yaml
 import argparse
+from ubiquerg import convert_value
 
 
 DEFAULT_METADATA_FOLDER = "metadata"
@@ -271,19 +272,23 @@ def enrich_args_via_dotfile(parser_args, dotfile_path):
             with open(filepath, 'r') as f:
                 data = yaml.safe_load(f)
         return data
-
     dotfile_args = _read_yaml_file(dotfile_path)
     aux_parser = argparse.ArgumentParser(argument_default=argparse.SUPPRESS)
     result = argparse.Namespace()
     for arg in vars(parser_args):
-        aux_parser.add_argument('--' + arg)
+        if arg not in POSITIONAL:
+            aux_parser.add_argument('--' + arg)
+        else:
+            if getattr(parser_args, arg) is not None:
+                setattr(result, arg, getattr(parser_args, arg))
     cli_args, _ = aux_parser.parse_known_args()
     for dest in vars(parser_args):
-        if dest in cli_args:
-            r = getattr(cli_args, dest)
-        elif dotfile_args is not None and dest in dotfile_args:
-            r = dotfile_args[dest]
-        else:
-            r = getattr(parser_args, dest)
-        setattr(result, dest, r)
+        if dest not in POSITIONAL or not hasattr(result, dest):
+            if dest in cli_args:
+                r = convert_value(getattr(cli_args, dest))
+            elif dotfile_args is not None and dest in dotfile_args:
+                r = convert_value(dotfile_args[dest])
+            else:
+                r = getattr(parser_args, dest)
+            setattr(result, dest, r)
     return result

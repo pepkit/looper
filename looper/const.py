@@ -17,7 +17,8 @@ __all__ = [
     "EXAMPLE_COMPUTE_SPEC_FMT", "ALL_INPUTS_ATTR_NAME", "SAMPLE_PL_KEY",
     "PROJECT_PL_KEY", "CFG_ENV_VARS", "LOGGING_LEVEL", "PIFACE_KEY_SELECTOR",
     "SUBMISSION_FAILURE_MESSAGE", "IMAGE_EXTS", "PROFILE_COLNAMES",
-    "SAMPLE_TOGGLE_ATTR", "TOGGLE_KEY_SELECTOR"
+    "SAMPLE_TOGGLE_ATTR", "TOGGLE_KEY_SELECTOR", "LOOPER_DOTFILE_NAME",
+    "POSITIONAL"
 ]
 
 FLAGS = ["completed", "running", "failed", "waiting", "partial"]
@@ -101,6 +102,8 @@ SUBMISSION_FOLDER_KEY = "submission_subdir"
 OUTDIR_KEY = "output_dir"
 EXAMPLE_COMPUTE_SPEC_FMT = "--compute k1=v1,k2=v2"
 SUBMISSION_FAILURE_MESSAGE = "Cluster resource failure"
+LOOPER_DOTFILE_NAME = "." + LOOPER_KEY + ".yaml"
+POSITIONAL = ["config_file"]
 
 # resource package TSV-related consts
 ID_COLNAME = "id"
