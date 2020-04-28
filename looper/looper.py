@@ -655,7 +655,12 @@ def _proc_resources_spec(args):
         of key-value pairs fails
     """
     spec = getattr(args, "compute", "")
-    settings_data = read_yaml_file(args.settings) or {}
+    try:
+        settings_data = read_yaml_file(args.settings) or {}
+    except yaml.YAMLError:
+        _LOGGER.warning("Settings file ({}) does not follow YAML format,"
+                        " disregarding".format(args.settings))
+        settings_data = {}
     if not spec:
         return settings_data
     kvs = spec.strip().split(",")
