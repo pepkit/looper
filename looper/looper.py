@@ -304,13 +304,13 @@ class Runner(Executor):
 
         # Determine number of samples eligible for processing.
         num_samples = len(self.prj.samples)
-        if args.limit is None:
+        lim = args.limit if args.limit is None else int(args.limit)
+        if lim is None:
             upper_sample_bound = num_samples
-        elif args.limit < 0:
-            raise ValueError("Invalid number of samples to run: {}".
-                             format(args.limit))
+        elif lim < 0:
+            raise ValueError("Invalid number of samples to run: {}".format(lim))
         else:
-            upper_sample_bound = min(args.limit, num_samples)
+            upper_sample_bound = min(lim, num_samples)
         _LOGGER.debug("Limiting to {} of {} samples".
                       format(upper_sample_bound, num_samples))
 
@@ -381,7 +381,6 @@ class Runner(Executor):
             conductor.write_skipped_sample_scripts()
 
         # Report what went down.
-        # max_cmds = min(len(self.prj.samples), args.limit or float("inf"))
         _LOGGER.info("\nLooper finished")
         _LOGGER.info("Samples valid for job generation: {} of {}".
                      format(len(processed_samples), num_samples))

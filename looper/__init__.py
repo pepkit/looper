@@ -33,11 +33,13 @@ _LEVEL_BY_VERBOSITY = [logging.ERROR, logging.CRITICAL, logging.WARN,
 
 class _StoreBoolActionType(argparse.Action):
     """
-    Enables the storage of a boolean const and custom type definition needed for systematic html interface generation.
-    To get the _StoreTrueAction output use default=False in the add_argument function
+    Enables the storage of a boolean const and custom type definition needed
+    for systematic html interface generation. To get the _StoreTrueAction
+    output use default=False in the add_argument function
     and default=True to get _StoreFalseAction output.
     """
-    def __init__(self, option_strings, dest, type, default, required=False, help=None):
+    def __init__(self, option_strings, dest, type, default,
+                 required=False, help=None):
         super(_StoreBoolActionType, self).__init__(
             option_strings=option_strings,
             dest=dest,
@@ -61,10 +63,13 @@ def build_parser():
 
     # Main looper program help text messages
     banner = "%(prog)s - Loop through samples and submit pipelines."
-    additional_description = "For subcommand-specific options, type: '%(prog)s <subcommand> -h'"
+    additional_description = "For subcommand-specific options, " \
+                             "type: '%(prog)s <subcommand> -h'"
     additional_description += "\nhttps://github.com/pepkit/looper"
 
-    parser = VersionInHelpParser(prog="looper", description=banner, epilog=additional_description, version=__version__)
+    parser = VersionInHelpParser(
+        prog="looper", description=banner, epilog=additional_description,
+        version=__version__)
 
     # Logging control
     parser.add_argument(
@@ -83,7 +88,8 @@ def build_parser():
     parser.add_argument(
             "--env", dest="env",
             default=None,
-            help="Environment variable that points to the DIVCFG file. (default: DIVCFG)")
+            help="Environment variable that points to the DIVCFG file. "
+                 "(default: DIVCFG)")
 
     # Individual subcommands
     msg_by_cmd = {
@@ -130,7 +136,8 @@ def build_parser():
                      "e.g., " + EXAMPLE_COMPUTE_SPEC_FMT)
         subparser.add_argument(
                 "--limit", dest="limit", default=None,
-                type=html_range(min_val=1, max_val="num_samples", value="num_samples"),
+                type=html_range(min_val=1, max_val="num_samples",
+                                value="num_samples"),
                 help="Limit to n samples.")
         subparser.add_argument(
                 "-a", "--pipeline-args", dest="pipeline_args", default="",
@@ -146,12 +153,13 @@ def build_parser():
         subparser.add_argument(
                 "--lump", default=None,
                 type=html_range(min_val=0, max_val=100, step=0.1, value=0),
-                help="Maximum total input file size for a lump/batch of commands "
-                     "in a single job (in GB)")
+                help="Maximum total input file size for a lump/batch of "
+                     "commands in a single job (in GB)")
         subparser.add_argument(
                 "--lumpn", default=None,
                 type=html_range(min_val=1, max_val="num_samples", value=1),
-                help="Number of individual scripts grouped into single submission")
+                help="Number of individual scripts grouped into "
+                     "single submission")
 
     # Other commands
     summarize_subparser = add_subparser("summarize")
@@ -160,22 +168,22 @@ def build_parser():
     clean_subparser = add_subparser("clean")
 
     check_subparser.add_argument(
-            "-A", "--all-folders", action=_StoreBoolActionType, default=False, type=html_checkbox(checked=False),
+            "-A", "--all-folders", action=_StoreBoolActionType,
+            default=False, type=html_checkbox(checked=False),
             help="Check status for all project's output folders, not just "
-                 "those for samples specified in the config file used. Default=False")
+                 "those for samples specified in the config file used. "
+                 "Default=False")
     check_subparser.add_argument(
-            "-F", "--flags", nargs='*', default=FLAGS, type=html_select(choices=FLAGS),
+            "-F", "--flags", nargs='*', default=FLAGS,
+            type=html_select(choices=FLAGS),
             help="Check on only these flags/status values.")
 
-    destroy_subparser.add_argument(
-            "--force-yes", action=_StoreBoolActionType, default=False, type=html_checkbox(checked=False),
-            help="Provide upfront confirmation of destruction intent, "
-                 "to skip console query.  Default=False")
-
-    clean_subparser.add_argument(
-            "--force-yes", action=_StoreBoolActionType, default=False, type=html_checkbox(checked=False),
-            help="Provide upfront confirmation of cleaning intent, "
-                 "to skip console query.  Default=False")
+    for subparser in [destroy_subparser, clean_subparser]:
+        subparser.add_argument(
+                "--force-yes", action=_StoreBoolActionType, default=False,
+                type=html_checkbox(checked=False),
+                help="Provide upfront confirmation of destruction intent, "
+                     "to skip console query.  Default=False")
 
     # Common arguments
     for subparser in [run_subparser, rerun_subparser, summarize_subparser,
@@ -188,32 +196,37 @@ def build_parser():
         #         dest="looper_config", help="Looper configuration file (YAML).")
         subparser.add_argument(
                 "--pipeline-interfaces", dest="pifaces",
-                nargs="+", action='append', help="Path to a pipeline interface file")
+                nargs="+", action='append',
+                help="Path to a pipeline interface file")
         subparser.add_argument(
                 "--file-checks", dest="file_checks",
-                action=_StoreBoolActionType, default=True, type=html_checkbox(checked=True),
+                action=_StoreBoolActionType, default=True,
+                type=html_checkbox(checked=True),
                 help="Perform input file checks. Default=True.")
         subparser.add_argument(
                 "-d", "--dry-run", dest="dry_run",
-                action=_StoreBoolActionType, default=False, type=html_checkbox(checked=False),
+                action=_StoreBoolActionType, default=False,
+                type=html_checkbox(checked=False),
                 help="Don't actually submit the jobs.  Default=False")
 
         fetch_samples_group = \
-            subparser.add_argument_group("select samples",
-                                         "This group of arguments lets you specify samples to use by "
-                                         "exclusion OR inclusion of the samples attribute values.")
-        fetch_samples_group.add_argument("--selector-attribute", dest="selector_attribute",
-                                         help="Specify the attribute for samples exclusion OR inclusion",
-                                         default="protocol")
+            subparser.add_argument_group(
+                "select samples",
+                "This group of arguments lets you specify samples to use by "
+                "exclusion OR inclusion of the samples attribute values.")
+        fetch_samples_group.add_argument(
+            "--selector-attribute", dest="selector_attribute",
+            default="protocol",
+            help="Specify the attribute for samples exclusion OR inclusion")
         protocols = fetch_samples_group.add_mutually_exclusive_group()
         protocols.add_argument(
                 "--selector-exclude", nargs='*', dest="selector_exclude",
-                help="Operate only on samples that either lack this attribute value or "
-                     "for which this value is not in this collection.")
+                help="Operate only on samples that either lack this attribute "
+                     "value or for which this value is not in this collection.")
         protocols.add_argument(
                 "--selector-include", nargs='*', dest="selector_include",
-                help="Operate only on samples associated with these attribute values;"
-                     " if not provided, all samples are used.")
+                help="Operate only on samples associated with these attribute "
+                     "values; if not provided, all samples are used.")
         subparser.add_argument(
                 "--amendments", dest="amendments", nargs="+",
                 help="Name of amendment(s) to use, as designated in the "
