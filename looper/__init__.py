@@ -181,8 +181,8 @@ def build_parser():
     for subparser in [run_subparser, rerun_subparser, summarize_subparser,
                       destroy_subparser, check_subparser, clean_subparser,
                       collate_subparser]:
-        subparser.add_argument("config_file", nargs='?',
-               help="Project configuration file (YAML).")
+        subparser.add_argument("config_file", nargs="?",
+                               help="Project configuration file (YAML).")
         # subparser.add_argument(
         #         "-c", "--config", required=False, default=None,
         #         dest="looper_config", help="Looper configuration file (YAML).")

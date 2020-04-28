@@ -33,7 +33,7 @@ from .exceptions import JobSubmissionException, MisconfigurationException
 from .html_reports import HTMLReportBuilder
 from .project import Project, ProjectContext
 from .utils import determine_config_path, fetch_flag_files, sample_folder, \
-    get_file_for_project, enrich_cli_via_dotfile
+    get_file_for_project, enrich_args_via_dotfile
 from .looper_config import *
 
 from divvy import DEFAULT_COMPUTE_RESOURCES_NAME, \
@@ -677,12 +677,13 @@ def main():
     parser = build_parser()
     args, remaining_args = parser.parse_known_args()
     dotfile_path = os.path.join(os.getcwd(), ".looper.yaml")
-    if os.path.exists(dotfile_path):
-        args = enrich_cli_via_dotfile(args, dotfile_path)
+    args = enrich_args_via_dotfile(args, dotfile_path)
+    print(args)
     if args.config_file is None:
         _LOGGER.error(
             "Path to a project configuration file is a required, provide it as "
-            "a positional argument or in the looper dotfile\n")
+            "a positional argument or in the looper dotfile in this directory ("
+            "{})\n".format(dotfile_path))
         parser.print_help(sys.stderr)
         sys.exit(1)
     conf_file = args.config_file

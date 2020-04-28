@@ -2,12 +2,13 @@
 
 from collections import defaultdict, Iterable
 from logging import getLogger
-import copy
 import glob
 import os
 from .const import *
 from peppy.const import *
 import jinja2
+import yaml
+import argparse
 
 
 DEFAULT_METADATA_FOLDER = "metadata"
@@ -248,12 +249,15 @@ def jinja_render_cmd_strictly(cmd_template, namespaces):
     return rendered
 
 
-def enrich_cli_via_dotfile(args, path):
+def enrich_args_via_dotfile(parser_args, dotfile_path):
     """
+    Read in a looper dotfile and set arguments.
 
-    :param path:
-    :param args:
-    :return:
+    Priority order: CLI > dotfile > parser default
+
+    :param argparse.Namespace parser_args: parsed args by the original parser
+    :param str dotfile_path: path to a dotfile to use
+    :return argparse.Namespace: selected argument values
     """
     def _read_yaml_file(filepath):
         """
@@ -262,13 +266,24 @@ def enrich_cli_via_dotfile(args, path):
         :param str filepath: path to the file to read
         :return dict: read data
         """
-        with open(filepath, 'r') as f:
-            data = yaml.safe_load(f)
+        data = None
+        if os.path.exists(filepath):
+            with open(filepath, 'r') as f:
+                data = yaml.safe_load(f)
         return data
-    argsc_cpy = copy(args)
-    args_dict = vars(argsc_cpy)
-    dotfile_args = _read_yaml_file(path)
-    for k, v in args_dict.items():
-        if k in dotfile_args:
-            setattr(args, k, dotfile_args[k])
-    return args
+
+    dotfile_args = _read_yaml_file(dotfile_path)
+    aux_parser = argparse.ArgumentParser(argument_default=argparse.SUPPRESS)
+    result = argparse.Namespace()
+    for arg in vars(parser_args):
+        aux_parser.add_argument('--' + arg)
+    cli_args, _ = aux_parser.parse_known_args()
+    for dest in vars(parser_args):
+        if dest in cli_args:
+            r = getattr(cli_args, dest)
+        elif dotfile_args is not None and dest in dotfile_args:
+            r = dotfile_args[dest]
+        else:
+            r = getattr(parser_args, dest)
+        setattr(result, dest, r)
+    return result
