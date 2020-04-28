@@ -32,8 +32,7 @@ from .const import *
 from .exceptions import JobSubmissionException, MisconfigurationException
 from .html_reports import HTMLReportBuilder
 from .project import Project, ProjectContext
-from .utils import determine_config_path, fetch_flag_files, sample_folder, \
-    get_file_for_project, enrich_args_via_dotfile
+from .utils import *
 from .looper_config import *
 
 from divvy import DEFAULT_COMPUTE_RESOURCES_NAME, \
@@ -41,7 +40,7 @@ from divvy import DEFAULT_COMPUTE_RESOURCES_NAME, \
 from logmuse import init_logger
 from peppy.const import *
 from eido import validate_sample, validate_config
-from ubiquerg import query_yes_no, merge_dicts
+from ubiquerg import query_yes_no
 
 
 _PKGNAME = "looper"
@@ -641,32 +640,39 @@ def _submission_status_text(curr, total, name, pipeline_name=None,
     return txt + Style.RESET_ALL
 
 
-def _proc_resources_spec(spec):
+def _proc_resources_spec(args):
     """
-    Process CLI-specified itemized compute setting specification.
+    Process CLI-sources compute setting specification. There are two sources
+    of compute settings in the CLI alone:
+        * YAML file (--settings argument)
+        * itemized compute settings (--compute argument)
 
-    :param str | NoneType spec: itemized compute specification from CLI
+    The itemized compute specification is given priority
+
+    :param argparse.Namespace: arguments namespace
     :return Mapping[str, str]: binding between resource setting name and value
     :raise ValueError: if interpretation of the given specification as encoding
         of key-value pairs fails
     """
+    spec = getattr(args, "compute", "")
+    settings_data = read_yaml_file(args.settings) or {}
     if not spec:
-        return {}
+        return settings_data
     kvs = spec.strip().split(",")
     pairs = [(kv, kv.split("=")) for kv in kvs]
-    bads, data = [], {}
+    bads = []
     for orig, pair in pairs:
         try:
             k, v = pair
         except ValueError:
             bads.append(orig)
         else:
-            data[k] = v
+            settings_data[k] = v
     if bads:
         raise ValueError(
             "Could not correctly parse itemized compute specification. "
             "Correct format: " + EXAMPLE_COMPUTE_SPEC_FMT)
-    return data
+    return settings_data
 
 
 def main():
@@ -677,12 +683,8 @@ def main():
     dotfile_path = os.path.join(os.getcwd(), LOOPER_DOTFILE_NAME)
     args = enrich_args_via_dotfile(args, dotfile_path)
     if args.dotfile_template:
-        defaults = merge_dicts(parser.arg_defaults(top_level=True),
-                               parser.arg_defaults(unique=True))
         print("# looper dotfile path: {}\n".format(dotfile_path))
-        for k, v in defaults.items():
-            if k != "dotfile_template":
-                print("{}: '{}'".format(k, v))
+        show_dotfile_template(parser)
         sys.exit(0)
     if args.config_file is None:
         _LOGGER.error(
@@ -758,8 +760,7 @@ def main():
         if args.command in ["run", "rerun"]:
             run = Runner(prj)
             try:
-                compute_kwargs = _proc_resources_spec(
-                    getattr(args, "compute", ""))
+                compute_kwargs = _proc_resources_spec(args)
                 run(args, rerun=(args.command == "rerun"), **compute_kwargs)
             except IOError:
                 _LOGGER.error("{} pipeline_interfaces: '{}'".
@@ -768,7 +769,7 @@ def main():
                 raise
 
         if args.command == "runp":
-            compute_kwargs = _proc_resources_spec(getattr(args, "compute", ""))
+            compute_kwargs = _proc_resources_spec(args)
             collate = Collator(prj)
             collate(args, **compute_kwargs)
 

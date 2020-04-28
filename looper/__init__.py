@@ -144,10 +144,10 @@ def build_parser():
         subparser.add_argument(
                 "-a", "--pipeline-args", dest="pipeline_args", default="",
                 help="arguments to pass to a pipline")
-        # subparser.add_argument(
-        #         "-s", "--settings", dest="settings", default=None,
-        #         help="path to a YAML-formatted settings file used to populate "
-        #              "the command template")
+        subparser.add_argument(
+                "-s", "--settings", dest="settings", default="",
+                help="path to a YAML-formatted settings file used to populate "
+                     "the command template")
     for subparser in [run_subparser, rerun_subparser]:
         # Note that defaults for otherwise numeric lump parameters are set to
         # null by default so that the logic that parses their values may

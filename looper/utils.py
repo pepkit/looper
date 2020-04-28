@@ -9,7 +9,7 @@ from peppy.const import *
 import jinja2
 import yaml
 import argparse
-from ubiquerg import convert_value
+from ubiquerg import convert_value, merge_dicts
 
 
 DEFAULT_METADATA_FOLDER = "metadata"
@@ -250,6 +250,20 @@ def jinja_render_cmd_strictly(cmd_template, namespaces):
     return rendered
 
 
+def read_yaml_file(filepath):
+    """
+    Read a YAML file
+
+    :param str filepath: path to the file to read
+    :return dict: read data
+    """
+    data = None
+    if os.path.exists(filepath):
+        with open(filepath, 'r') as f:
+            data = yaml.safe_load(f)
+    return data
+
+
 def enrich_args_via_dotfile(parser_args, dotfile_path):
     """
     Read in a looper dotfile and set arguments.
@@ -260,19 +274,7 @@ def enrich_args_via_dotfile(parser_args, dotfile_path):
     :param str dotfile_path: path to a dotfile to use
     :return argparse.Namespace: selected argument values
     """
-    def _read_yaml_file(filepath):
-        """
-        Read a YAML file
-
-        :param str filepath: path to the file to read
-        :return dict: read data
-        """
-        data = None
-        if os.path.exists(filepath):
-            with open(filepath, 'r') as f:
-                data = yaml.safe_load(f)
-        return data
-    dotfile_args = _read_yaml_file(dotfile_path)
+    dotfile_args = read_yaml_file(dotfile_path)
     aux_parser = argparse.ArgumentParser(argument_default=argparse.SUPPRESS)
     result = argparse.Namespace()
     for arg in vars(parser_args):
@@ -292,3 +294,16 @@ def enrich_args_via_dotfile(parser_args, dotfile_path):
                 r = getattr(parser_args, dest)
             setattr(result, dest, r)
     return result
+
+
+def show_dotfile_template(parser):
+    """
+    Print out available dests and respective defaults in the provided subparser
+
+    :param argparse.ArgumentParser parser: parser to examine
+    """
+    defaults = merge_dicts(parser.arg_defaults(top_level=True),
+                           parser.arg_defaults(unique=True))
+    for k, v in defaults.items():
+        if k != "dotfile_template":
+            print("{}: '{}'".format(k, v))

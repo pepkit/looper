@@ -393,7 +393,7 @@ class SubmissionConductor(object):
         templ = self.pl_iface[self.section_key]["command_template"]
         for sample in pool:
             # cascading compute settings determination:
-            # divcfg < pipeline interface < config < CLI
+            # divcfg < pipeline interface < config <  CLI
             cli = self.compute_variables or {}  # CLI
             if sample:
                 namespaces.update({"sample": sample})
