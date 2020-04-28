@@ -678,7 +678,6 @@ def main():
     args, remaining_args = parser.parse_known_args()
     dotfile_path = os.path.join(os.getcwd(), ".looper.yaml")
     args = enrich_args_via_dotfile(args, dotfile_path)
-    print(args)
     if args.config_file is None:
         _LOGGER.error(
             "Path to a project configuration file is a required, provide it as "
