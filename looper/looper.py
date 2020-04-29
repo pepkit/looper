@@ -422,20 +422,15 @@ class Runner(Executor):
 
 class Report(Executor):
     """ Combine project outputs into a browsable HTML report """
-    def __call__(self, args, no_table=False):
+    def __call__(self, args):
         # initialize the report builder
         report_builder = HTMLReportBuilder(self.prj)
 
-        if not args.no_table:
-            # Do the stats and object summarization.
-            table = Table(self.prj)()
-            # run the report builder. a set of HTML pages is produced
-            report_path = report_builder(table.objs, table.stats,
-                                         uniqify(table.columns))
-        else:
-            table = Table(self.prj)(True)
-            report_path = report_builder(table.objs, table.stats,
-                                         uniqify(table.columns))
+        # Do the stats and object summarization.
+        table = Table(self.prj)()
+        # run the report builder. a set of HTML pages is produced
+        report_path = report_builder(table.objs, table.stats,
+                                     uniqify(table.columns))
 
         _LOGGER.info("HTML Report (n=" + str(len(table.stats)) + "): "
                      + report_path)
@@ -448,17 +443,15 @@ class Table(Executor):
         super(Table, self).__init__(prj)
         self.prj = prj
 
-    def __call__(self, no_write=False):
+    def __call__(self):
         # pull together all the fits and stats from each sample into
         # project-combined spreadsheets.
-        self.stats, self.columns = _create_stats_summary(self.prj,
-                                                         self.counter,
-                                                         no_write)
-        self.objs = _create_obj_summary(self.prj, self.counter, no_write)
+        self.stats, self.columns = _create_stats_summary(self.prj, self.counter)
+        self.objs = _create_obj_summary(self.prj, self.counter)
         return(self)
 
 
-def _create_stats_summary(project, counter, no_write=False):
+def _create_stats_summary(project, counter):
     """
     Create stats spreadsheet and columns to be considered in the report, save
     the spreadsheet to file
@@ -471,11 +464,9 @@ def _create_stats_summary(project, counter, no_write=False):
     stats = []
     project_samples = project.samples
     missing_files = []
-    if not no_write:
-        _LOGGER.info("Creating stats summary...")
+    _LOGGER.info("Creating stats summary...")
     for sample in project_samples:
-        if not no_write:
-            _LOGGER.info(counter.show(sample.sample_name, sample.protocol))
+        _LOGGER.info(counter.show(sample.sample_name, sample.protocol))
         sample_output_folder = sample_folder(project, sample)
         # Grab the basic info from the annotation sheet for this sample.
         # This will correspond to a row in the output.
@@ -498,22 +489,21 @@ def _create_stats_summary(project, counter, no_write=False):
     if missing_files:
         _LOGGER.warning("Stats files missing for {} samples: {}".
                         format(len(missing_files),missing_files))
-    if not no_write:
-        tsv_outfile_path = get_file_for_project(project, 'stats_summary.tsv')
-        tsv_outfile = open(tsv_outfile_path, 'w')
-        tsv_writer = csv.DictWriter(tsv_outfile, fieldnames=uniqify(columns),
-                                    delimiter='\t', extrasaction='ignore')
-        tsv_writer.writeheader()
-        for row in stats:
-            tsv_writer.writerow(row)
-        tsv_outfile.close()
-        _LOGGER.info("Statistics summary (n=" + str(len(stats)) + "): " +
-                     tsv_outfile_path)
+    tsv_outfile_path = get_file_for_project(project, 'stats_summary.tsv')
+    tsv_outfile = open(tsv_outfile_path, 'w')
+    tsv_writer = csv.DictWriter(tsv_outfile, fieldnames=uniqify(columns),
+                                delimiter='\t', extrasaction='ignore')
+    tsv_writer.writeheader()
+    for row in stats:
+        tsv_writer.writerow(row)
+    tsv_outfile.close()
+    _LOGGER.info("Statistics summary (n=" + str(len(stats)) + "): " +
+                 tsv_outfile_path)
     counter.reset()
     return stats, uniqify(columns)
 
 
-def _create_obj_summary(project, counter, no_write=False):
+def _create_obj_summary(project, counter):
     """
     Read sample specific objects files and save to a data frame
 
@@ -521,15 +511,13 @@ def _create_obj_summary(project, counter, no_write=False):
     :param looper.LooperCounter counter: a counter object
     :return pandas.DataFrame: objects spreadsheet
     """
-    if not no_write:
-        _LOGGER.info("Creating objects summary...")
+    _LOGGER.info("Creating objects summary...")
     objs = _pd.DataFrame()
     # Create objects summary file
     missing_files = []
     for sample in project.samples:
         # Process any reported objects
-        if not no_write:
-            _LOGGER.info(counter.show(sample.sample_name, sample.protocol))
+        _LOGGER.info(counter.show(sample.sample_name, sample.protocol))
         sample_output_folder = sample_folder(project, sample)
         objs_file = os.path.join(sample_output_folder, "objects.tsv")
         if not os.path.isfile(objs_file):
@@ -543,13 +531,12 @@ def _create_obj_summary(project, counter, no_write=False):
     if missing_files:
         _LOGGER.warning("Object files missing for {} samples: {}".
                         format(len(missing_files), missing_files))
-    if not no_write:
-        # create the path to save the objects file in
-        objs_file = get_file_for_project(project, 'objs_summary.tsv')
-        objs.to_csv(objs_file, sep="\t")
-        _LOGGER.info("Objects summary (n=" +
-                     str(len(project.samples) - len(missing_files)) + "): " +
-                     objs_file)
+    # create the path to save the objects file in
+    objs_file = get_file_for_project(project, 'objs_summary.tsv')
+    objs.to_csv(objs_file, sep="\t")
+    _LOGGER.info("Objects summary (n=" +
+                 str(len(project.samples) - len(missing_files)) + "): " +
+                 objs_file)
     return objs
 
 

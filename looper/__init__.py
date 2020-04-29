@@ -165,21 +165,9 @@ def build_parser():
                 help="Number of individual scripts grouped into "
                      "single submission")
 
-    report_subparser = add_subparser("report")
-    report_subparser.add_argument(
-        "--no-table", dest="no_table", default=False,
-        action=_StoreBoolActionType, type=html_checkbox(checked=False),
-        help="Skip summary statistic table generation? Default: False.")
-    
-    table_subparser = add_subparser("table")
-    for subparser in [report_subparser, table_subparser]:
-        subparser.add_argument(
-                "--no-write", dest="no_write", default=False,
-                action=_StoreBoolActionType, type=html_checkbox(checked=False),
-                help="Write summary statistic and object tables to file? "
-                     "Default: False.")
-
     # Other commands
+    table_subparser = add_subparser("table")
+    report_subparser = add_subparser("report")    
     destroy_subparser = add_subparser("destroy")
     check_subparser = add_subparser("check")
     clean_subparser = add_subparser("clean")
