@@ -420,28 +420,49 @@ class Runner(Executor):
                          format("\n".join(full_fail_msgs)))
 
 
-class Summarizer(Executor):
-    """ Project/Sample output summarizer """
-    def __init__(self, prj):
-        # call the inherited initialization
-        super(Summarizer, self).__init__(prj)
-        # pull together all the fits and stats from each sample into
-        # project-combined spreadsheets.
-        self.stats, self.columns = _create_stats_summary(self.prj, self.counter)
-        self.objs = _create_obj_summary(self.prj, self.counter)
-
-    def __call__(self):
-        """ Do the summarization. """
+#TODO: class Report(Executor) [i.e. the former Summarizer)
+#      needs to call the Table function as option (but the default)
+class Report(Executor):
+    """ Combine project outputs into a browsable HTML report """
+    def __call__(self, args, no_table=False):
         # initialize the report builder
         report_builder = HTMLReportBuilder(self.prj)
-        # run the report builder. a set of HTML pages is produced
-        report_path = report_builder(self.objs, self.stats,
-                                     uniqify(self.columns))
-        _LOGGER.info("HTML Report (n=" + str(len(self.stats)) + "): "
+
+        if not args.no_table:
+            # Do the stats and object summarization.
+            table = Table(self.prj)()
+            # run the report builder. a set of HTML pages is produced
+            report_path = report_builder(table.objs, table.stats,
+                                         uniqify(table.columns))
+        else:
+            table = Table(self.prj)(True)
+            report_path = report_builder(table.objs, table.stats,
+                                         uniqify(table.columns))
+
+        _LOGGER.info("HTML Report (n=" + str(len(table.stats)) + "): "
                      + report_path)
 
 
-def _create_stats_summary(project, counter):
+#TODO: class Table(Executor)
+#      just the stats_summary aspect of Summarizer
+class Table(Executor):
+    """ Project/Sample statistics and table output generator """
+    def __init__(self, prj):
+        # call the inherited initialization
+        super(Table, self).__init__(prj)
+        self.prj = prj
+
+    def __call__(self, no_write=False):
+        # pull together all the fits and stats from each sample into
+        # project-combined spreadsheets.
+        self.stats, self.columns = _create_stats_summary(self.prj,
+                                                         self.counter,
+                                                         no_write)
+        self.objs = _create_obj_summary(self.prj, self.counter, no_write)
+        return(self)
+
+
+def _create_stats_summary(project, counter, no_write=False):
     """
     Create stats spreadsheet and columns to be considered in the report, save
     the spreadsheet to file
@@ -454,9 +475,11 @@ def _create_stats_summary(project, counter):
     stats = []
     project_samples = project.samples
     missing_files = []
-    _LOGGER.info("Creating stats summary...")
+    if not no_write:
+        _LOGGER.info("Creating stats summary...")
     for sample in project_samples:
-        _LOGGER.info(counter.show(sample.sample_name, sample.protocol))
+        if not no_write:
+            _LOGGER.info(counter.show(sample.sample_name, sample.protocol))
         sample_output_folder = sample_folder(project, sample)
         # Grab the basic info from the annotation sheet for this sample.
         # This will correspond to a row in the output.
@@ -476,23 +499,25 @@ def _create_stats_summary(project, counter):
         sample_stats.update(t.set_index('key')['value'].to_dict())
         stats.append(sample_stats)
         columns.extend(t.key.tolist())
-    tsv_outfile_path = get_file_for_project(project, 'stats_summary.tsv')
     if missing_files:
         _LOGGER.warning("Stats files missing for {} samples: {}".
                         format(len(missing_files),missing_files))
-    tsv_outfile = open(tsv_outfile_path, 'w')
-    tsv_writer = csv.DictWriter(tsv_outfile, fieldnames=uniqify(columns),
-                                delimiter='\t', extrasaction='ignore')
-    tsv_writer.writeheader()
-    for row in stats:
-        tsv_writer.writerow(row)
-    tsv_outfile.close()
-    _LOGGER.info("Summary (n=" + str(len(stats)) + "): " + tsv_outfile_path)
+    if not no_write:
+        tsv_outfile_path = get_file_for_project(project, 'stats_summary.tsv')
+        tsv_outfile = open(tsv_outfile_path, 'w')
+        tsv_writer = csv.DictWriter(tsv_outfile, fieldnames=uniqify(columns),
+                                    delimiter='\t', extrasaction='ignore')
+        tsv_writer.writeheader()
+        for row in stats:
+            tsv_writer.writerow(row)
+        tsv_outfile.close()
+        _LOGGER.info("Statistics summary (n=" + str(len(stats)) + "): " +
+                     tsv_outfile_path)
     counter.reset()
     return stats, uniqify(columns)
 
 
-def _create_obj_summary(project, counter):
+def _create_obj_summary(project, counter, no_write=False):
     """
     Read sample specific objects files and save to a data frame
 
@@ -500,13 +525,15 @@ def _create_obj_summary(project, counter):
     :param looper.LooperCounter counter: a counter object
     :return pandas.DataFrame: objects spreadsheet
     """
-    _LOGGER.info("Creating objects summary...")
+    if not no_write:
+        _LOGGER.info("Creating objects summary...")
     objs = _pd.DataFrame()
     # Create objects summary file
     missing_files = []
     for sample in project.samples:
         # Process any reported objects
-        _LOGGER.info(counter.show(sample.sample_name, sample.protocol))
+        if not no_write:
+            _LOGGER.info(counter.show(sample.sample_name, sample.protocol))
         sample_output_folder = sample_folder(project, sample)
         objs_file = os.path.join(sample_output_folder, "objects.tsv")
         if not os.path.isfile(objs_file):
@@ -520,8 +547,13 @@ def _create_obj_summary(project, counter):
     if missing_files:
         _LOGGER.warning("Object files missing for {} samples: {}".
                         format(len(missing_files), missing_files))
-    # create the path to save the objects file in
-    objs.to_csv(get_file_for_project(project, 'objs_summary.tsv'), sep="\t")
+    if not no_write:
+        # create the path to save the objects file in
+        objs_file = get_file_for_project(project, 'objs_summary.tsv')
+        objs.to_csv(objs_file, sep="\t")
+        _LOGGER.info("Objects summary (n=" +
+                     str(len(project.samples) - len(missing_files)) + "): " +
+                     objs_file)
     return objs
 
 
@@ -685,6 +717,9 @@ def main():
     global _LOGGER
     parser = build_parser()
     args, remaining_args = parser.parse_known_args()
+    if args.command is None:
+        parser.print_help(sys.stderr)
+        sys.exit(1)
     dotfile_path = os.path.join(os.getcwd(), LOOPER_DOTFILE_NAME)
     args = enrich_args_via_dotfile(args, dotfile_path)
     if args.dotfile_template:
@@ -725,7 +760,7 @@ def main():
     _LOGGER.info("Looper version: {}\nCommand: {}".
                  format(__version__, args.command))
 
-    if len(args.pipeline_args) > 0:
+    if hasattr(args, 'pipeline_args') and len(args.pipeline_args) > 0:
         _LOGGER.info("String appended to every pipeline command: {}".
                       format(args.pipeline_args))
 
@@ -781,8 +816,11 @@ def main():
         if args.command == "destroy":
             return Destroyer(prj)(args)
 
-        if args.command == "summarize":
-            Summarizer(prj)()
+        if args.command == "table":
+            table = Table(prj)()
+        
+        if args.command == "report":
+            Report(prj)(args)
 
         if args.command == "check":
             Checker(prj)(flags=args.flags)

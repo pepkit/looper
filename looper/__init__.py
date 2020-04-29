@@ -94,11 +94,13 @@ def build_parser():
                         help="Print out a looper dotfile template and exit")
 
     # Individual subcommands
+    # TODO: "table" & "report" (which calls table by default)
     msg_by_cmd = {
             "run": "Main Looper function: Submit jobs for samples.",
             "rerun": "Resubmit jobs with failed flags.",
             "runp": "Submit jobs for a project.",
-            "summarize": "Summarize statistics of project samples.",
+            "table": "Write summary statistic and object tables for project samples.",
+            "report": "Create browsable HTML report of project results.",
             "destroy": "Remove all files of the project.",
             "check": "Checks flag status of current runs.",
             "clean": "Runs clean scripts to remove intermediate "
@@ -143,7 +145,7 @@ def build_parser():
                 help="Limit to n samples.")
         subparser.add_argument(
                 "-a", "--pipeline-args", dest="pipeline_args", default="",
-                help="arguments to pass to a pipline")
+                help="arguments to pass to a pipeline")
         subparser.add_argument(
                 "-s", "--settings", dest="settings", default="",
                 help="path to a YAML-formatted settings file used to populate "
@@ -163,8 +165,21 @@ def build_parser():
                 help="Number of individual scripts grouped into "
                      "single submission")
 
+    report_subparser = add_subparser("report")
+    report_subparser.add_argument(
+        "--no-table", dest="no_table", default=False,
+        action=_StoreBoolActionType, type=html_checkbox(checked=False),
+        help="Skip summary statistic table generation? Default: False.")
+    
+    table_subparser = add_subparser("table")
+    for subparser in [report_subparser, table_subparser]:
+        subparser.add_argument(
+                "--no-write", dest="no_write", default=False,
+                action=_StoreBoolActionType, type=html_checkbox(checked=False),
+                help="Write summary statistic and object tables to file? "
+                     "Default: False.")
+
     # Other commands
-    summarize_subparser = add_subparser("summarize")
     destroy_subparser = add_subparser("destroy")
     check_subparser = add_subparser("check")
     clean_subparser = add_subparser("clean")
@@ -188,9 +203,9 @@ def build_parser():
                      "to skip console query.  Default=False")
 
     # Common arguments
-    for subparser in [run_subparser, rerun_subparser, summarize_subparser,
-                      destroy_subparser, check_subparser, clean_subparser,
-                      collate_subparser]:
+    for subparser in [run_subparser, rerun_subparser, table_subparser,
+                      report_subparser, destroy_subparser, check_subparser,
+                      clean_subparser, collate_subparser]:
         subparser.add_argument("config_file", nargs="?",
                                help="Project configuration file (YAML).")
         # subparser.add_argument(
