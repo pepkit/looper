@@ -99,7 +99,8 @@ def build_parser():
             "run": "Main Looper function: Submit jobs for samples.",
             "rerun": "Resubmit jobs with failed flags.",
             "runp": "Submit jobs for a project.",
-            "table": "Write summary statistic and object tables for project samples.",
+            "table": "Write summary statistic and object tables for "
+                     "project samples.",
             "report": "Create browsable HTML report of project results.",
             "destroy": "Remove all files of the project.",
             "check": "Checks flag status of current runs.",

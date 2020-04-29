@@ -716,7 +716,6 @@ def main():
             "{})\n".format(dotfile_path))
         parser.print_help(sys.stderr)
         sys.exit(1)
-    conf_file = args.config_file
     # Set the logging level.
     if args.dbg:
         # Debug mode takes precedence and will listen for all messages.
@@ -743,10 +742,6 @@ def main():
     _LOGGER.info("Looper version: {}\nCommand: {}".
                  format(__version__, args.command))
 
-    if hasattr(args, 'pipeline_args') and len(args.pipeline_args) > 0:
-        _LOGGER.info("String appended to every pipeline command: {}".
-                      format(args.pipeline_args))
-
     if len(remaining_args) > 0:
         _LOGGER.warning("Unrecognized arguments: {}".
                       format(" ".join([str(x) for x in remaining_args])))
@@ -754,7 +749,7 @@ def main():
     # Initialize project
     _LOGGER.debug("Building Project")
     try:
-        prj = Project(config_file=determine_config_path(conf_file),
+        prj = Project(config_file=determine_config_path(args.config_file),
                       amendments=args.amendments,
                       pifaces=args.pifaces[0] if args.pifaces else None,
                       file_checks=args.file_checks,
@@ -800,7 +795,7 @@ def main():
             return Destroyer(prj)(args)
 
         if args.command == "table":
-            table = Table(prj)()
+            Table(prj)()
         
         if args.command == "report":
             Report(prj)(args)
