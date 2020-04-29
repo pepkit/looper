@@ -112,12 +112,8 @@ class LooperBothRunsTests:
         with open(dotfile_path, 'w') as df:
             dump({"config_file": tp}, df)
         stdout, stderr, rc = _subp_exec(cmd=cmd)
-        sd = os.path.join(_get_outdir(tp), "submission")
         print(stderr)
         assert rc == 0
-        subs_list = \
-            [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
-        _is_in_file(subs_list, "#SBATCH")
         os.remove(dotfile_path)
 
     @pytest.mark.parametrize("cmd", ["run", "runp"])
@@ -435,7 +431,7 @@ class LooperComputeTests:
         with open(settings_file_path, 'w') as sf:
             dump({"mem": "testin_mem"}, sf)
         stdout, stderr, rc = \
-            _subp_exec(tp, cmd, ["--settings", settings_file_path])
+            _subp_exec(tp, cmd, ["--settings", settings_file_path, "-p", "slurm"])
         print(stderr)
         assert rc == 0
         sd = os.path.join(_get_outdir(tp), "submission")
@@ -452,7 +448,8 @@ class LooperComputeTests:
             dump({"mem": "testin_mem"}, sf)
         stdout, stderr, rc = \
             _subp_exec(tp, cmd, ["--settings", settings_file_path,
-                                   "--compute", "mem=10"])
+                                 "--compute", "mem=10",
+                                 "-p", "slurm"])
         print(stderr)
         assert rc == 0
         sd = os.path.join(_get_outdir(tp), "submission")
