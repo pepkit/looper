@@ -6,7 +6,7 @@ import subprocess
 from yaml import safe_load, dump
 
 
-def _subp_exec(pth, cmd, appendix=list(), dry=True):
+def _subp_exec(pth=None, cmd=None, appendix=list(), dry=True):
     """
 
     :param str pth: config path
@@ -14,7 +14,9 @@ def _subp_exec(pth, cmd, appendix=list(), dry=True):
     :param Iterable[str] appendix: other args to pass to the cmd
     :return:
     """
-    x = ["looper", cmd, "-d" if dry else "", pth]
+    x = ["looper", cmd, "-d" if dry else ""]
+    if pth:
+        x.append(pth)
     x.extend(appendix)
     proc = subprocess.Popen(x, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
     stdout, stderr = proc.communicate()
@@ -49,6 +51,89 @@ def _get_outdir(pth):
     with open(pth, 'r') as conf_file:
         config_data = safe_load(conf_file)
     return config_data[LOOPER_KEY][OUTDIR_KEY]
+
+
+class LooperBothRunsTests:
+    @pytest.mark.parametrize("cmd", ["run", "runp"])
+    def test_looper_cfg_invalid(self, cmd):
+        """ Verify looper does not accept invalid cfg paths """
+        stdout, stderr, rc = _subp_exec("jdfskfds/dsjfklds/dsjklsf.yaml", cmd)
+        print(stderr)
+        assert rc != 0
+
+    @pytest.mark.parametrize("cmd", ["run", "runp"])
+    def test_looper_cfg_required(self, cmd):
+        """ Verify looper does not accept invalid cfg paths """
+        stdout, stderr, rc = _subp_exec(pth="", cmd=cmd)
+        print(stderr)
+        assert rc != 0
+
+    @pytest.mark.parametrize("cmd", ["run", "runp"])
+    def test_pipeline_args_passing(self, prep_temp_pep, cmd):
+        tp = prep_temp_pep
+        stdout, stderr, rc = _subp_exec(tp, cmd, ["-a", "'string'"])
+        sd = os.path.join(_get_outdir(tp), "submission")
+        print(stderr)
+        assert rc == 0
+        subs_list = \
+            [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
+        _is_in_file(subs_list, "string")
+
+    @pytest.mark.parametrize("cmd", ["run", "runp"])
+    def test_unrecognized_args_not_passing(self, prep_temp_pep, cmd):
+        tp = prep_temp_pep
+        stdout, stderr, rc = _subp_exec(tp, cmd, ["--unknown-arg", "4"])
+        sd = os.path.join(_get_outdir(tp), "submission")
+        print(stderr)
+        assert rc == 0
+        subs_list = \
+            [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
+        _is_in_file(subs_list, "--unknown-arg", reverse=True)
+
+    @pytest.mark.parametrize("cmd", ["run", "runp"])
+    def test_dotfile_general(self, prep_temp_pep, cmd):
+        tp = prep_temp_pep
+        dotfile_path = os.path.join(os.getcwd(), LOOPER_DOTFILE_NAME)
+        with open(dotfile_path, 'w') as df:
+            dump({"package": "local"}, df)
+        stdout, stderr, rc = _subp_exec(tp, cmd)
+        sd = os.path.join(_get_outdir(tp), "submission")
+        print(stderr)
+        assert rc == 0
+        subs_list = \
+            [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
+        _is_in_file(subs_list, "#SBATCH", reverse=True)
+        os.remove(dotfile_path)
+
+    @pytest.mark.parametrize("cmd", ["run", "runp"])
+    def test_dotfile_config_file(self, prep_temp_pep, cmd):
+        tp = prep_temp_pep
+        dotfile_path = os.path.join(os.getcwd(), LOOPER_DOTFILE_NAME)
+        with open(dotfile_path, 'w') as df:
+            dump({"config_file": tp}, df)
+        stdout, stderr, rc = _subp_exec(cmd=cmd)
+        sd = os.path.join(_get_outdir(tp), "submission")
+        print(stderr)
+        assert rc == 0
+        subs_list = \
+            [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
+        _is_in_file(subs_list, "#SBATCH")
+        os.remove(dotfile_path)
+
+    @pytest.mark.parametrize("cmd", ["run", "runp"])
+    def test_cli_overwrites_dotfile(self, prep_temp_pep, cmd):
+        tp = prep_temp_pep
+        dotfile_path = os.path.join(os.getcwd(), LOOPER_DOTFILE_NAME)
+        with open(dotfile_path, 'w') as df:
+            dump({"package": "local"}, df)
+        stdout, stderr, rc = _subp_exec(tp, cmd, ["--package", "slurm"])
+        sd = os.path.join(_get_outdir(tp), "submission")
+        print(stderr)
+        assert rc == 0
+        subs_list = \
+            [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
+        _is_in_file(subs_list, "#SBATCH")
+        os.remove(dotfile_path)
 
 
 class LooperRunBehaviorTests:
@@ -297,31 +382,12 @@ class LooperRunSubmissionScriptTests:
         assert sum([f.endswith(".sub") for f in os.listdir(sd)]) == 4, subm_err
         assert sum([f.endswith(".yaml") for f in os.listdir(sd)]) == 2, subm_err
 
-    def test_pipeline_args_passing(self, prep_temp_pep):
-        tp = prep_temp_pep
-        stdout, stderr, rc = _subp_exec(tp, "run", ["-a", "'string'"])
-        sd = os.path.join(_get_outdir(tp), "submission")
-        print(stderr)
-        assert rc == 0
-        subs_list = \
-            [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
-        _is_in_file(subs_list, "string")
 
-    def test_unrecognized_args_not_passing(self, prep_temp_pep):
+class LooperComputeTests:
+    @pytest.mark.parametrize("cmd", ["run", "runp"])
+    def test_looper_respects_pkg_selection(self, prep_temp_pep, cmd):
         tp = prep_temp_pep
-        stdout, stderr, rc = _subp_exec(tp, "run", ["--unknown-arg", "4"])
-        sd = os.path.join(_get_outdir(tp), "submission")
-        print(stderr)
-        assert rc == 0
-        subs_list = \
-            [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
-        _is_in_file(subs_list, "--unknown-arg", reverse=True)
-
-
-class LooperRunComputeTests:
-    def test_looper_respects_pkg_selection(self, prep_temp_pep):
-        tp = prep_temp_pep
-        stdout, stderr, rc = _subp_exec(tp, "run", ["--package", "local"])
+        stdout, stderr, rc = _subp_exec(tp, cmd, ["--package", "local"])
         sd = os.path.join(_get_outdir(tp), "submission")
         print(stderr)
         assert rc == 0
@@ -329,9 +395,10 @@ class LooperRunComputeTests:
             [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
         _is_in_file(subs_list, "#SBATCH", reverse=True)
 
-    def test_looper_uses_cli_compute_options_spec(self, prep_temp_pep):
+    @pytest.mark.parametrize("cmd", ["run", "runp"])
+    def test_looper_uses_cli_compute_options_spec(self, prep_temp_pep, cmd):
         tp = prep_temp_pep
-        stdout, stderr, rc = _subp_exec(tp, "run", ["--compute", "mem=12345",
+        stdout, stderr, rc = _subp_exec(tp, cmd, ["--compute", "mem=12345",
                                                     "--package", "slurm"])
         sd = os.path.join(_get_outdir(tp), "submission")
         print(stderr)
@@ -339,3 +406,56 @@ class LooperRunComputeTests:
         subs_list = \
             [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
         _is_in_file(subs_list, "#SBATCH --mem='12345'")
+
+    @pytest.mark.parametrize("cmd", ["run", "runp"])
+    def test_cli_yaml_settings_general(self, prep_temp_pep, cmd):
+        tp = prep_temp_pep
+        td = tempfile.mkdtemp()
+        settings_file_path = os.path.join(td, "settings.yaml")
+        with open(settings_file_path, 'w') as sf:
+            dump({"mem": "testin_mem"}, sf)
+        stdout, stderr, rc = \
+            _subp_exec(tp, cmd, ["--settings", settings_file_path])
+        print(stderr)
+        assert rc == 0
+
+    @pytest.mark.parametrize("cmd", ["run", "runp"])
+    def test_nonexistent_yaml_settings_disregarded(self, prep_temp_pep, cmd):
+        tp = prep_temp_pep
+        stdout, stderr, rc = \
+            _subp_exec(tp, cmd, ["--settings", "niema.yaml"])
+        print(stderr)
+        assert rc == 0
+
+    @pytest.mark.parametrize("cmd", ["run", "runp"])
+    def test_cli_yaml_settings_passes_settings(self, prep_temp_pep, cmd):
+        tp = prep_temp_pep
+        td = tempfile.mkdtemp()
+        settings_file_path = os.path.join(td, "settings.yaml")
+        with open(settings_file_path, 'w') as sf:
+            dump({"mem": "testin_mem"}, sf)
+        stdout, stderr, rc = \
+            _subp_exec(tp, cmd, ["--settings", settings_file_path])
+        print(stderr)
+        assert rc == 0
+        sd = os.path.join(_get_outdir(tp), "submission")
+        subs_list = [os.path.join(sd, f)
+                     for f in os.listdir(sd) if f.endswith(".sub")]
+        _is_in_file(subs_list, "testin_mem")
+
+    @pytest.mark.parametrize("cmd", ["run", "runp"])
+    def test_cli_compute_overwrites_yaml_settings_spec(self, prep_temp_pep, cmd):
+        tp = prep_temp_pep
+        td = tempfile.mkdtemp()
+        settings_file_path = os.path.join(td, "settings.yaml")
+        with open(settings_file_path, 'w') as sf:
+            dump({"mem": "testin_mem"}, sf)
+        stdout, stderr, rc = \
+            _subp_exec(tp, cmd, ["--settings", settings_file_path,
+                                   "--compute", "mem=10"])
+        print(stderr)
+        assert rc == 0
+        sd = os.path.join(_get_outdir(tp), "submission")
+        subs_list = [os.path.join(sd, f)
+                     for f in os.listdir(sd) if f.endswith(".sub")]
+        _is_in_file(subs_list, "testin_mem", reverse=True)
