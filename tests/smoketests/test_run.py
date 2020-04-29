@@ -161,6 +161,16 @@ class LooperRunBehaviorTests:
         assert rc == 0
         assert "Commands submitted: 6 of 6" not in stderr
 
+    def test_looper_cli_pipeline(self, prep_temp_pep):
+        """ CLI-specified pipelines overwrite ones from config """
+        tp = prep_temp_pep
+        pi_pth = os.path.join(os.path.dirname(tp), "pipeline_interface1.yaml")
+        stdout, stderr, rc = _subp_exec(tp, "run",
+                                        ["--pipeline-interfaces", pi_pth])
+        print(stderr)
+        assert rc == 0
+        assert "Commands submitted: 3 of 3" not in stdout
+
     def test_looper_no_pipeline(self, prep_temp_pep):
         """
         No jobs are submitted and proper log is produced when there are no
