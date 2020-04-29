@@ -420,8 +420,6 @@ class Runner(Executor):
                          format("\n".join(full_fail_msgs)))
 
 
-#TODO: class Report(Executor) [i.e. the former Summarizer)
-#      needs to call the Table function as option (but the default)
 class Report(Executor):
     """ Combine project outputs into a browsable HTML report """
     def __call__(self, args, no_table=False):
@@ -443,8 +441,6 @@ class Report(Executor):
                      + report_path)
 
 
-#TODO: class Table(Executor)
-#      just the stats_summary aspect of Summarizer
 class Table(Executor):
     """ Project/Sample statistics and table output generator """
     def __init__(self, prj):
