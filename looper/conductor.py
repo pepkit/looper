@@ -87,6 +87,10 @@ class SubmissionConductor(object):
         self._curr_size = 0
         self._failed_sample_names = []
 
+        if self.extra_pipe_args:
+            _LOGGER.debug("String appended to every pipeline command: "
+                          "{}".format(self.extra_pipe_args))
+
         if not self.collate:
             self.automatic = automatic
             if max_cmds is None and max_size is None:

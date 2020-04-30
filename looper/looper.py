@@ -420,25 +420,35 @@ class Runner(Executor):
                          format("\n".join(full_fail_msgs)))
 
 
-class Summarizer(Executor):
-    """ Project/Sample output summarizer """
+class Report(Executor):
+    """ Combine project outputs into a browsable HTML report """
+    def __call__(self, args):
+        # initialize the report builder
+        report_builder = HTMLReportBuilder(self.prj)
+
+        # Do the stats and object summarization.
+        table = Table(self.prj)()
+        # run the report builder. a set of HTML pages is produced
+        report_path = report_builder(table.objs, table.stats,
+                                     uniqify(table.columns))
+
+        _LOGGER.info("HTML Report (n=" + str(len(table.stats)) + "): "
+                     + report_path)
+
+
+class Table(Executor):
+    """ Project/Sample statistics and table output generator """
     def __init__(self, prj):
         # call the inherited initialization
-        super(Summarizer, self).__init__(prj)
+        super(Table, self).__init__(prj)
+        self.prj = prj
+
+    def __call__(self):
         # pull together all the fits and stats from each sample into
         # project-combined spreadsheets.
         self.stats, self.columns = _create_stats_summary(self.prj, self.counter)
         self.objs = _create_obj_summary(self.prj, self.counter)
-
-    def __call__(self):
-        """ Do the summarization. """
-        # initialize the report builder
-        report_builder = HTMLReportBuilder(self.prj)
-        # run the report builder. a set of HTML pages is produced
-        report_path = report_builder(self.objs, self.stats,
-                                     uniqify(self.columns))
-        _LOGGER.info("HTML Report (n=" + str(len(self.stats)) + "): "
-                     + report_path)
+        return(self)
 
 
 def _create_stats_summary(project, counter):
@@ -476,10 +486,10 @@ def _create_stats_summary(project, counter):
         sample_stats.update(t.set_index('key')['value'].to_dict())
         stats.append(sample_stats)
         columns.extend(t.key.tolist())
-    tsv_outfile_path = get_file_for_project(project, 'stats_summary.tsv')
     if missing_files:
         _LOGGER.warning("Stats files missing for {} samples: {}".
                         format(len(missing_files),missing_files))
+    tsv_outfile_path = get_file_for_project(project, 'stats_summary.tsv')
     tsv_outfile = open(tsv_outfile_path, 'w')
     tsv_writer = csv.DictWriter(tsv_outfile, fieldnames=uniqify(columns),
                                 delimiter='\t', extrasaction='ignore')
@@ -487,7 +497,8 @@ def _create_stats_summary(project, counter):
     for row in stats:
         tsv_writer.writerow(row)
     tsv_outfile.close()
-    _LOGGER.info("Summary (n=" + str(len(stats)) + "): " + tsv_outfile_path)
+    _LOGGER.info("Statistics summary (n=" + str(len(stats)) + "): " +
+                 tsv_outfile_path)
     counter.reset()
     return stats, uniqify(columns)
 
@@ -521,7 +532,11 @@ def _create_obj_summary(project, counter):
         _LOGGER.warning("Object files missing for {} samples: {}".
                         format(len(missing_files), missing_files))
     # create the path to save the objects file in
-    objs.to_csv(get_file_for_project(project, 'objs_summary.tsv'), sep="\t")
+    objs_file = get_file_for_project(project, 'objs_summary.tsv')
+    objs.to_csv(objs_file, sep="\t")
+    _LOGGER.info("Objects summary (n=" +
+                 str(len(project.samples) - len(missing_files)) + "): " +
+                 objs_file)
     return objs
 
 
@@ -691,6 +706,9 @@ def main():
         print("# looper dotfile path: {}\n".format(dotfile_path))
         show_dotfile_template(parser)
         sys.exit(0)
+    if args.command is None:
+        parser.print_help(sys.stderr)
+        sys.exit(1)
     if args.config_file is None:
         _LOGGER.error(
             "Path to a project configuration file is a required, provide it as "
@@ -698,7 +716,6 @@ def main():
             "{})\n".format(dotfile_path))
         parser.print_help(sys.stderr)
         sys.exit(1)
-    conf_file = args.config_file
     # Set the logging level.
     if args.dbg:
         # Debug mode takes precedence and will listen for all messages.
@@ -725,10 +742,6 @@ def main():
     _LOGGER.info("Looper version: {}\nCommand: {}".
                  format(__version__, args.command))
 
-    if len(args.pipeline_args) > 0:
-        _LOGGER.info("String appended to every pipeline command: {}".
-                      format(args.pipeline_args))
-
     if len(remaining_args) > 0:
         _LOGGER.warning("Unrecognized arguments: {}".
                       format(" ".join([str(x) for x in remaining_args])))
@@ -736,7 +749,7 @@ def main():
     # Initialize project
     _LOGGER.debug("Building Project")
     try:
-        prj = Project(config_file=determine_config_path(conf_file),
+        prj = Project(config_file=determine_config_path(args.config_file),
                       amendments=args.amendments,
                       pifaces=args.pifaces[0] if args.pifaces else None,
                       file_checks=args.file_checks,
@@ -781,8 +794,11 @@ def main():
         if args.command == "destroy":
             return Destroyer(prj)(args)
 
-        if args.command == "summarize":
-            Summarizer(prj)()
+        if args.command == "table":
+            Table(prj)()
+        
+        if args.command == "report":
+            Report(prj)(args)
 
         if args.command == "check":
             Checker(prj)(flags=args.flags)

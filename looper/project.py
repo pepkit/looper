@@ -478,8 +478,8 @@ class Project(peppyProject):
                     else:
                         samples_by_piface.setdefault(source, set())
                         samples_by_piface[source].add(sample[SAMPLE_NAME_ATTR])
-            for msg in msgs:
-                _LOGGER.warning(msg)
+        for msg in msgs:
+            _LOGGER.warning(msg)
         return samples_by_piface
 
 
