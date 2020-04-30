@@ -700,15 +700,15 @@ def main():
     global _LOGGER
     parser = build_parser()
     args, remaining_args = parser.parse_known_args()
-    if args.command is None:
-        parser.print_help(sys.stderr)
-        sys.exit(1)
     dotfile_path = os.path.join(os.getcwd(), LOOPER_DOTFILE_NAME)
     args = enrich_args_via_dotfile(args, dotfile_path)
     if args.dotfile_template:
         print("# looper dotfile path: {}\n".format(dotfile_path))
         show_dotfile_template(parser)
         sys.exit(0)
+    if args.command is None:
+        parser.print_help(sys.stderr)
+        sys.exit(1)
     if args.config_file is None:
         _LOGGER.error(
             "Path to a project configuration file is a required, provide it as "
