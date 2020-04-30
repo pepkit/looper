@@ -3,7 +3,8 @@ description: pipeline interface schema
 properties:
   pipeline_name:
     type: string
-    description: name of the pipeline
+    pattern: "^\\S*$"
+    description: name of the pipeline with no whitespaces
   sample_pipeline: 
     $ref: "#/definitions/pipeline"
   project_pipeline: 
