@@ -69,9 +69,18 @@ class LooperBothRunsTests:
         assert rc != 0
 
     @pytest.mark.parametrize("cmd", ["run", "runp"])
-    def test_pipeline_args_passing(self, prep_temp_pep, cmd):
+    @pytest.mark.parametrize("arg", [["-a", "'string'"],
+                                     ["-a", " --string"],
+                                     ["-a='--string'"]])
+    def test_pipeline_args_passing(self, prep_temp_pep, cmd, arg):
+        """
+        Argument passing functionality works only for the above
+        configurations. Notably, it does not work for: -a '--arg'.
+
+        See https://github.com/pepkit/looper/issues/245#issuecomment-621815222
+        """
         tp = prep_temp_pep
-        stdout, stderr, rc = _subp_exec(tp, cmd, ["-a", "'string'"])
+        stdout, stderr, rc = _subp_exec(tp, cmd, arg)
         sd = os.path.join(_get_outdir(tp), "submission")
         print(stderr)
         assert rc == 0
