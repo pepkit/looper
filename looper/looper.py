@@ -260,7 +260,8 @@ class Collator(Executor):
                 compute_variables=compute_kwargs,
                 dry_run=args.dry_run,
                 delay=args.time_delay,
-                extra_args=args.pipeline_args,
+                extra_args=args.command_extra,
+                extra_args_override=args.command_extra_override,
                 ignore_flags=args.ignore_flags,
                 collate=True
             )
@@ -327,7 +328,8 @@ class Runner(Executor):
                 compute_variables=comp_vars,
                 dry_run=args.dry_run,
                 delay=args.time_delay,
-                extra_args=args.pipeline_args,
+                extra_args=args.command_extra,
+                extra_args_override=args.command_extra_override,
                 ignore_flags=args.ignore_flags,
                 max_cmds=args.lumpn,
                 max_size=args.lump

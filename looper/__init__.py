@@ -145,8 +145,13 @@ def build_parser():
                                 value="num_samples"),
                 help="Limit to n samples.")
         subparser.add_argument(
-                "-a", "--pipeline-args", dest="pipeline_args", default="",
-                help="arguments to pass to a pipeline")
+                "--command-extra", dest="command_extra", default="",
+                help="string appended to every command")
+        subparser.add_argument(
+                "--command-extra-override", dest="command_extra_override",
+                default="",
+                help="string appended to every command, deactivates 'extra' "
+                     "Sample and Project.looper attributes")
         subparser.add_argument(
                 "-s", "--settings", dest="settings", default="",
                 help="path to a YAML-formatted settings file used to populate "

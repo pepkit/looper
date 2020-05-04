@@ -18,7 +18,7 @@ __all__ = [
     "PROJECT_PL_KEY", "CFG_ENV_VARS", "LOGGING_LEVEL", "PIFACE_KEY_SELECTOR",
     "SUBMISSION_FAILURE_MESSAGE", "IMAGE_EXTS", "PROFILE_COLNAMES",
     "SAMPLE_TOGGLE_ATTR", "TOGGLE_KEY_SELECTOR", "LOOPER_DOTFILE_NAME",
-    "POSITIONAL"
+    "POSITIONAL", "EXTRA_PROJECT_CMD_TEMPLATE", "EXTRA_SAMPLE_CMD_TEMPLATE"
 ]
 
 FLAGS = ["completed", "running", "failed", "waiting", "partial"]
@@ -76,6 +76,8 @@ SAMPLE_PL_KEY = "sample_pipeline"
 PROJECT_PL_KEY = "project_pipeline"
 PIFACE_SCHEMA_SRC = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                  "schemas", "pipeline_interface_schema.yaml")
+EXTRA_SAMPLE_CMD_TEMPLATE = "{%- if sample.command_extra is defined %} {sample.command_extra}{% endif -%}"
+EXTRA_PROJECT_CMD_TEMPLATE = "{%- if project.looper.command_extra is defined %} {project.looper.command_extra}{% endif -%}"
 INPUT_SCHEMA_KEY = "input_schema"
 OUTPUT_SCHEMA_KEY = "output_schema"
 SAMPLE_YAML_PATH_KEY = "sample_yaml_path"
