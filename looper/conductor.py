@@ -32,9 +32,9 @@ class SubmissionConductor(object):
     """
 
     def __init__(self, pipeline_interface, prj, dry_run=False,
-                 delay=0, extra_args=None, ignore_flags=False,
-                 compute_variables=None, max_cmds=None, max_size=None,
-                 automatic=True, collate=False):
+                 delay=0, extra_args=None, extra_args_override=None,
+                 ignore_flags=False, compute_variables=None, max_cmds=None,
+                 max_size=None, automatic=True, collate=False):
         """
         Create a job submission manager.
 
@@ -54,6 +54,11 @@ class SubmissionConductor(object):
             once it's ready
         :param str extra_args: string to pass to each job generated,
             for example additional pipeline arguments
+        :param str extra_args_override: string to pass to each job generated,
+            for example additional pipeline arguments. This deactivates the
+            'extra' functionality that appends strings defined in
+            Sample.command_extra and Project.looper.command_extra to the
+            command template.
         :param bool ignore_flags: Whether to ignore flag files present in
             the sample folder for each sample considered for submission
         :param dict[str] compute_variables: A dict with variables that will be made
@@ -77,6 +82,10 @@ class SubmissionConductor(object):
         self.prj = prj
         self.compute_variables = compute_variables
         self.extra_pipe_args = extra_args
+        self.override_extra = False
+        if extra_args_override:
+            self.extra_pipe_args = extra_args_override
+            self.override_extra = True
         self.ignore_flags = ignore_flags
 
         self.dry_run = dry_run
@@ -393,8 +402,11 @@ class SubmissionConductor(object):
         namespaces = dict(project=self.prj[CONFIG_KEY],
                           looper=looper,
                           pipeline=self.pl_iface[self.section_key])
-
         templ = self.pl_iface[self.section_key]["command_template"]
+        if not self.override_extra:
+            extras_template = EXTRA_PROJECT_CMD_TEMPLATE if self.collate \
+                else EXTRA_SAMPLE_CMD_TEMPLATE
+            templ += extras_template
         for sample in pool:
             # cascading compute settings determination:
             # divcfg < pipeline interface < config <  CLI

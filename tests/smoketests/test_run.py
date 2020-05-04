@@ -5,6 +5,8 @@ from looper.const import *
 import subprocess
 from yaml import safe_load, dump
 
+CMD_STRS = ["string", " --string", " --sjhsjd 212", "7867#$@#$cc@@"]
+
 
 def _subp_exec(pth=None, cmd=None, appendix=list(), dry=True):
     """
@@ -69,13 +71,14 @@ class LooperBothRunsTests:
         assert rc != 0
 
     @pytest.mark.parametrize("cmd", ["run", "runp"])
-    @pytest.mark.parametrize("arg", [["-a", "'string'"],
-                                     ["-a", " --string"],
-                                     ["-a='--string'"]])
-    def test_pipeline_args_passing(self, prep_temp_pep, cmd, arg):
+    @pytest.mark.parametrize("arg", [["--command-extra", CMD_STRS[0]],
+                                     ["--command-extra",  CMD_STRS[1]],
+                                     ["--command-extra", CMD_STRS[2]],
+                                     ["--command-extra", CMD_STRS[3]]])
+    def test_cmd_extra_cli(self, prep_temp_pep, cmd, arg):
         """
         Argument passing functionality works only for the above
-        configurations. Notably, it does not work for: -a '--arg'.
+        configurations. Notably, it does not work for --command-extra '--arg'.
 
         See https://github.com/pepkit/looper/issues/245#issuecomment-621815222
         """
@@ -86,7 +89,7 @@ class LooperBothRunsTests:
         assert rc == 0
         subs_list = \
             [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
-        _is_in_file(subs_list, "string")
+        _is_in_file(subs_list, arg[1])
 
     @pytest.mark.parametrize("cmd", ["run", "runp"])
     def test_unrecognized_args_not_passing(self, prep_temp_pep, cmd):
@@ -300,6 +303,52 @@ class LooperRunBehaviorTests:
         assert rc == 0
         assert "Jobs submitted: 0" in stderr
 
+    @pytest.mark.parametrize("arg", CMD_STRS)
+    def test_cmd_extra_sample(self, prep_temp_pep, arg):
+        """
+        string set by sample_modifiers in Sample.command_extra shuld be
+        appended to the pipelinecommand
+        """
+        tp = prep_temp_pep
+        with open(tp, 'r') as conf_file:
+            config_data = safe_load(conf_file)
+        print("\nconfig_data: \n{}\n".format(config_data))
+        config_data[SAMPLE_MODS_KEY][CONSTANT_KEY]["command_extra"] = arg
+        print("\nconfig_data: \n{}\n".format(config_data))
+        with open(tp, 'w') as conf_file:
+            dump(config_data, conf_file)
+        stdout, stderr, rc = _subp_exec(tp, "run")
+        sd = os.path.join(_get_outdir(tp), "submission")
+        print(stderr)
+        assert rc == 0
+        subs_list = \
+            [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
+        _is_in_file(subs_list, arg)
+
+    @pytest.mark.parametrize("arg", CMD_STRS)
+    def test_cmd_extra_override_sample(self, prep_temp_pep, arg):
+        """
+        --command-extra-override should override the Sample.command_extra
+        and Project.looper.command_extra attributes appeneded to the
+        pipeline command
+        """
+        tp = prep_temp_pep
+        with open(tp, 'r') as conf_file:
+            config_data = safe_load(conf_file)
+        print("\nconfig_data: \n{}\n".format(config_data))
+        config_data[SAMPLE_MODS_KEY][CONSTANT_KEY]["command_extra"] = arg
+        print("\nconfig_data: \n{}\n".format(config_data))
+        with open(tp, 'w') as conf_file:
+            dump(config_data, conf_file)
+        stdout, stderr, rc = \
+            _subp_exec(tp, "run", ["--command-extra-override='different'"])
+        sd = os.path.join(_get_outdir(tp), "submission")
+        print(stderr)
+        assert rc == 0
+        subs_list = \
+            [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
+        _is_in_file(subs_list, arg, reverse=True)
+
 
 class LooperRunpBehaviorTests:
     def test_looper_runp_basic(self, example_pep_piface_path_cfg):
@@ -329,6 +378,26 @@ class LooperRunpBehaviorTests:
         assert rc == 0
         assert "Jobs submitted: 2" not in stderr
         assert "Jobs submitted: 1" in stderr
+
+    @pytest.mark.parametrize("arg", CMD_STRS)
+    def test_cmd_extra_project(self, prep_temp_pep, arg):
+        """
+        """
+        tp = prep_temp_pep
+        with open(tp, 'r') as conf_file:
+            config_data = safe_load(conf_file)
+        print("\nconfig_data: \n{}\n".format(config_data))
+        config_data[LOOPER_KEY]["command_extra"] = arg
+        print("\nconfig_data: \n{}\n".format(config_data))
+        with open(tp, 'w') as conf_file:
+            dump(config_data, conf_file)
+        stdout, stderr, rc = _subp_exec(tp, "runp")
+        sd = os.path.join(_get_outdir(tp), "submission")
+        print(stderr)
+        assert rc == 0
+        subs_list = \
+            [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
+        _is_in_file(subs_list, arg)
 
 
 class LooperRunSubmissionScriptTests:

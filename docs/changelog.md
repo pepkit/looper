@@ -9,15 +9,13 @@ This version introduced backwards-incompatible changes.
 ### Added
 - Input schemas and output schemas
 
-
 ### Changed
 - Pipeline interface format changed drastically
 - The pypi name changed from 'loopercli' to 'looper'
 - resources section in pipeline interface replaced with `size_dependent_attributes`.
 
+## [0.12.6] -- 2020-02-21
 
-
-## [0.12.6] -- 2020-01-XX
 ### Added
 - possibility to execute library module as a script: `python -m looper ...`
 
