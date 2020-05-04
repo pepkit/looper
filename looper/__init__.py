@@ -62,7 +62,7 @@ def build_parser():
     """
 
     # Main looper program help text messages
-    banner = "%(prog)s - Loop through samples and submit pipelines."
+    banner = "%(prog)s - A project job submission engine and project manager."
     additional_description = "For subcommand-specific options, " \
                              "type: '%(prog)s <subcommand> -h'"
     additional_description += "\nhttps://github.com/pepkit/looper"
@@ -96,17 +96,15 @@ def build_parser():
     # Individual subcommands
     # TODO: "table" & "report" (which calls table by default)
     msg_by_cmd = {
-            "run": "Main Looper function: Submit jobs for samples.",
-            "rerun": "Resubmit jobs with failed flags.",
-            "runp": "Submit jobs for a project.",
-            "table": "Write summary statistic and object tables for "
-                     "project samples.",
+            "run": "Run or submit sample jobs.",
+            "rerun": "Resubmit sample jobs with failed flags.",
+            "runp": "Run or submit a project job.",
+            "table": "Write summary stats table for project samples.",
             "report": "Create browsable HTML report of project results.",
-            "destroy": "Remove all files of the project.",
-            "check": "Checks flag status of current runs.",
-            "clean": "Runs clean scripts to remove intermediate "
-                     "files of already processed jobs.",
-            "inspect": "Prints information about current project."}
+            "destroy": "Remove output files of the project.",
+            "check": "Check flag status of current runs.",
+            "clean": "Run clean scripts of already processed jobs.",
+            "inspect": "Print information about a project."}
 
     subparsers = parser.add_subparsers(dest="command")
 
