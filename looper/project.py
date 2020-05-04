@@ -61,6 +61,9 @@ class ProjectContext(object):
          provided is the instance itself. """
         return self
 
+    def __repr__(self):
+        return self.prj.__repr__()
+
     def __exit__(self, *args):
         """ Context teardown. """
         pass

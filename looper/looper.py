@@ -713,9 +713,9 @@ def main():
         sys.exit(1)
     if args.config_file is None:
         _LOGGER.error(
-            "Path to a project configuration file is a required, provide it as "
-            "a positional argument or in the looper dotfile in this directory ("
-            "{})\n".format(dotfile_path))
+            "No project config. Specify one with a positional argument "
+            "or with the 'config_file' attribute in "
+            "{}\n".format(dotfile_path))
         parser.print_help(sys.stderr)
         sys.exit(1)
     # Set the logging level.
@@ -807,3 +807,7 @@ def main():
 
         if args.command == "clean":
             return Cleaner(prj)(args)
+
+        if args.command == "inspect":
+            print(prj.__str__())
+

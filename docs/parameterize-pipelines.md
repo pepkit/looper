@@ -11,7 +11,7 @@ For *project pipelines*, you can specify command extras in the `looper` section 
 
 ```
 looper:
-  command_extras: "--flavor"
+  command_extra: "--flavor"
 ```
 
 Remember, these command extras are used for project pipelines, not for sample pipelines. If you want to add extras to sample pipelines, you need to modulate the sample objects.
@@ -24,7 +24,7 @@ For sample pipelines, you can use general PEP sample modifiers to add a `command
 ```
 sample_modifiers:
   append:
-    command_extras: "--flavor-flag"
+    command_extra: "--flavor-flag"
 ```
 
 Or, if you need to modulate on the basis of some other attribute value, you could use an imply modifer:
@@ -60,12 +60,12 @@ For sample pipelines,
 
 ```
 {% if sample.command_extra is defined %} {sample.command_extra}{% endif %}
-{% if CLI.command_extra is defined %} {CLI.command_extra}{% endif %}
 ```
 
 For project pipelines,
 
 ```
 {% if project.looper.command_extra is defined %} {project.looper.command_extra}{% endif %}
-{% if CLI.command_extra is defined %} {CLI.command_extra}{% endif %}
 ```
+
+In either case, after this, the CLI `command-extras` value is appended.

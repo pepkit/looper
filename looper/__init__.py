@@ -62,7 +62,7 @@ def build_parser():
     """
 
     # Main looper program help text messages
-    banner = "%(prog)s - Loop through samples and submit pipelines."
+    banner = "%(prog)s - A project job submission engine and project manager."
     additional_description = "For subcommand-specific options, " \
                              "type: '%(prog)s <subcommand> -h'"
     additional_description += "\nhttps://github.com/pepkit/looper"
@@ -96,22 +96,22 @@ def build_parser():
     # Individual subcommands
     # TODO: "table" & "report" (which calls table by default)
     msg_by_cmd = {
-            "run": "Main Looper function: Submit jobs for samples.",
-            "rerun": "Resubmit jobs with failed flags.",
-            "runp": "Submit jobs for a project.",
-            "table": "Write summary statistic and object tables for "
-                     "project samples.",
+            "run": "Run or submit sample jobs.",
+            "rerun": "Resubmit sample jobs with failed flags.",
+            "runp": "Run or submit a project job.",
+            "table": "Write summary stats table for project samples.",
             "report": "Create browsable HTML report of project results.",
-            "destroy": "Remove all files of the project.",
-            "check": "Checks flag status of current runs.",
-            "clean": "Runs clean scripts to remove intermediate "
-                     "files of already processed jobs."}
+            "destroy": "Remove output files of the project.",
+            "check": "Check flag status of current runs.",
+            "clean": "Run clean scripts of already processed jobs.",
+            "inspect": "Print information about a project."}
 
     subparsers = parser.add_subparsers(dest="command")
 
     def add_subparser(cmd):
         message = msg_by_cmd[cmd]
-        return subparsers.add_parser(cmd, description=message, help=message)
+        return subparsers.add_parser(cmd, description=message, help=message, 
+            formatter_class=lambda prog: argparse.HelpFormatter(prog, max_help_position=28, width=100))
 
     # Run and rerun command
     run_subparser = add_subparser("run")
@@ -127,46 +127,44 @@ def build_parser():
                      "'running' or 'failed'). Set this option to ignore flags "
                      "and submit the runs anyway. Default=False")
         subparser.add_argument(
-                "-t", "--time-delay", dest="time_delay",
+                "-t", "--time-delay", dest="time_delay", metavar="S",
                 type=html_range(min_val=0, max_val=30, value=0), default=0,
                 help="Time delay in seconds between job submissions.")
         subparser.add_argument(
-                "-p", "--package",
-                help="Name of computing resource package to use")
+                "-p", "--package", metavar="P",
+                help="Divvy: Name of computing resource package to use")
         subparser.add_argument(
-                "--compute",
-                help="Specification of individual computing resource settings; "
-                     "separate setting name/key from value with equals sign, "
-                     "and separate key-value pairs from each other by comma; "
+                "-s", "--settings", dest="settings", default="", metavar="S",
+                help="Divvy: Path to a YAML settings file with compute settings")
+        subparser.add_argument(
+                "-m", "--compute", metavar="C",
+                help="Divvy: Comma-separated list of computing resource key-value pairs,"
                      "e.g., " + EXAMPLE_COMPUTE_SPEC_FMT)
         subparser.add_argument(
-                "--limit", dest="limit", default=None,
+                "-l", "--limit", dest="limit", default=None, metavar="L",
                 type=html_range(min_val=1, max_val="num_samples",
                                 value="num_samples"),
                 help="Limit to n samples.")
         subparser.add_argument(
-                "--command-extra", dest="command_extra", default="",
+                "-x", "--command-extra", dest="command_extra", default="",
                 help="string appended to every command")
         subparser.add_argument(
                 "--command-extra-override", dest="command_extra_override",
                 default="",
-                help="string appended to every command, deactivates 'extra' "
+                help="string appended to every command, deactivates 'command_extra' "
                      "Sample and Project.looper attributes")
-        subparser.add_argument(
-                "-s", "--settings", dest="settings", default="",
-                help="path to a YAML-formatted settings file used to populate "
-                     "the command template")
+        
     for subparser in [run_subparser, rerun_subparser]:
         # Note that defaults for otherwise numeric lump parameters are set to
         # null by default so that the logic that parses their values may
         # distinguish between explicit 0 and lack of specification.
         subparser.add_argument(
-                "--lump", default=None,
+                "-u", "--lump", default=None, metavar="SIZE",
                 type=html_range(min_val=0, max_val=100, step=0.1, value=0),
-                help="Maximum total input file size for a lump/batch of "
-                     "commands in a single job (in GB)")
+                help="Maximum total input file size in GB for a batch of "
+                     "commands in a single job")
         subparser.add_argument(
-                "--lumpn", default=None,
+                "-n", "--lumpn", default=None, metavar="N",
                 type=html_range(min_val=1, max_val="num_samples", value=1),
                 help="Number of individual scripts grouped into "
                      "single submission")
@@ -177,6 +175,7 @@ def build_parser():
     destroy_subparser = add_subparser("destroy")
     check_subparser = add_subparser("check")
     clean_subparser = add_subparser("clean")
+    inspect_subparser = add_subparser("inspect")
 
     check_subparser.add_argument(
             "-A", "--all-folders", action=_StoreBoolActionType,
@@ -199,14 +198,14 @@ def build_parser():
     # Common arguments
     for subparser in [run_subparser, rerun_subparser, table_subparser,
                       report_subparser, destroy_subparser, check_subparser,
-                      clean_subparser, collate_subparser]:
+                      clean_subparser, collate_subparser, inspect_subparser]:
         subparser.add_argument("config_file", nargs="?",
                                help="Project configuration file (YAML).")
         # subparser.add_argument(
         #         "-c", "--config", required=False, default=None,
         #         dest="looper_config", help="Looper configuration file (YAML).")
         subparser.add_argument(
-                "--pipeline-interfaces", dest="pifaces",
+                "--pipeline-interfaces", dest="pifaces", metavar="P",
                 nargs="+", action='append',
                 help="Path to a pipeline interface file")
         subparser.add_argument(
@@ -238,8 +237,7 @@ def build_parser():
                 help="Operate only on samples associated with these attribute "
                      "values; if not provided, all samples are used.")
         subparser.add_argument(
-                "--amendments", dest="amendments", nargs="+",
-                help="Name of amendment(s) to use, as designated in the "
-                     "project's configuration file")
+                "-a", "--amendments", dest="amendments", nargs="+",
+                help="List of of amendments to activate")
 
     return parser
