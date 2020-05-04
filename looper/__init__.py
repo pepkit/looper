@@ -146,8 +146,14 @@ def build_parser():
                                 value="num_samples"),
                 help="Limit to n samples.")
         subparser.add_argument(
-                "-x", "--command-extra", dest="pipeline_args", default="",
-                help="arguments to pass to a pipeline")
+                "-x", "--command-extra", dest="command_extra", default="",
+                help="string appended to every command")
+        subparser.add_argument(
+                "--command-extra-override", dest="command_extra_override",
+                default="",
+                help="string appended to every command, deactivates 'command_extra' "
+                     "Sample and Project.looper attributes")
+        
     for subparser in [run_subparser, rerun_subparser]:
         # Note that defaults for otherwise numeric lump parameters are set to
         # null by default so that the logic that parses their values may
