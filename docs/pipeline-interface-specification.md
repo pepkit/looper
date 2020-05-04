@@ -208,10 +208,10 @@ Automatic attributes created by looper:
 
 Variables populated from the `compute` priority list. The `compute` namespace has a unique behavior: it cascades settings from various levels, overriding default values with more specific ones. The source list in priority order is:
 
-1. Looper CLI (`--compute` on-the-fly settings)
+1. Looper CLI (`--compute` or `--settings` for on-the-fly settings)
 2. PEP config, `project.looper.compute` section
 3. Pipeline interface, `pipeline.compute` section
-4. Activated divvy compute package (`--settings` or `--compute-package`)
+4. Activated divvy compute package (`--package` CLI argument)
 
 So, the compute namespace is first populated with any variables from the selected divvy compute package. It then updates this with settings given in the `compute` section of the pipeline interface. It then updates from the PEP `project.looper.compute`, and then finally anything passed to `--compute` on the looper CLI. This provides a way to module looper behavior at the level of a computing environment, a pipeline, a project, or a run -- in that order.
 
