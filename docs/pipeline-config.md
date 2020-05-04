@@ -1,12 +1,11 @@
 # Configure a PEP to work with looper
 
-Once you have a basic [PEP config](https://pepkit.github.io/docs/project_config/) file, you can add some special sections to control `looper` features. In addition to the main sections, `looper` adds these sections:
 
-### Project config section: `pipeline_config`
+### 
 
 Occasionally, a particular project needs to run a particular flavor of a pipeline. 
 Rather than creating an entirely new pipeline, you can parameterize the differences with a **pipeline config** file, 
-and then specify that file in the **project config** file.
+It used to be that you could add a `pipeline_config` section in the **project config** file.
 
 **Example**:
 
@@ -20,7 +19,14 @@ pipeline_config:
   # Or you can point to a specific config to be used in this project:
   wgbs.py: wgbs_flavor1.yaml
 ```
+  command_template: >
+    {% if project.looper.pipeline_config is defined %} -C {project.looper.pipeline_config}{% endif %}
 
+
+
+Now we simply want to do:
+
+{}
 This will instruct `looper` to pass `-C wgbs_flavor1.yaml` to any invocations of wgbs.py (for this project only). 
 Your pipelines will need to understand the config file (which will happen automatically if you use pypiper).
 

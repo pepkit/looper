@@ -1,6 +1,6 @@
 # How to link a project to a pipeline
 
-One of the advantages of looper is that it decouples projects and pipelines, so you can have many projects that all use the same pipeline, or many pipelines running on the same project. This modular connection between pipelines and projects happens through a file called the `pipeline interfaces`. The `pipeline interfaces` tell `looper` how to run the pipeline.
+One of the advantages of looper is that it decouples projects and pipelines, so you can have many projects that all use the same pipeline, or many pipelines running on the same project. This modular connection between pipelines and projects happens through a file called the *pipeline interface*. Pipeline interfaces tell `looper` how to run the pipeline.
 
 **If you're using existing looper-compatible pipelines**, all you have to do is point the samples to the `pipeline interface` files for any pipelines you want to run on them (see instructions below). For most casual users of pipelines, that's all you'll need to do;  you'll never need to create a new `pipeline interface` file. But **if you do need to make a new pipeline looper-compatible**, you do this by creating a `pipeline interface` file, which is explained in [Writing a pipeline interface](pipeline-interface.md).
 
@@ -16,6 +16,8 @@ sample_modifiers:
 ```
 
 
-The value for the `pipeline_interfaces` key should be the *absolute* path to the pipeline interface file. After that, you just need to make sure your project definition provides all the necessary sample metadata required by the pipeline you want to use. For example, you will need to make sure your sample annotation sheet specifies the correct value under `protocol` that your linked pipeline understands. Such details are specific to each pipeline and should be defined somewhere in the pipeline's documentation, e.g. in a `README` file.
+The value for the `pipeline_interfaces` key should be the *absolute* path to the pipeline interface file.
 
-You can also [link more than one pipeline](linking-multiple-pipelines.md).
+Once your PEP is linked to the pipeline, you just need to make sure your project provides any sample metadata required by the pipeline. Such details are specific to each pipeline and should be defined somewhere in the pipeline's documentation.
+
+You can also [link a PEP to more than one pipeline](linking-multiple-pipelines.md).

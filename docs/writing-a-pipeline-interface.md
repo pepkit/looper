@@ -2,25 +2,15 @@
 title: Pipeline interface specification
 ---
 
-<h1>Pipeline interface specification</h1>
-
-Table of contents:
-
-[TOC]
+# Writing a pipeline interface
 
 ## Introduction
 
-In order to run an arbitrary pipeline, we require a formal specification for how the pipeline is to be used. We define this using a *pipeline interface* file. It maps attributes of a PEP project or sample to CLI arguments. Thus, it defines the interface between the project metadata (the PEP) and the pipeline itself. The pipeline interface file is created by a pipeline author.
+If you want to use looper to run samples in a PEP through an arbitrary shell command, you will need to write a pipeline interface. Here is a basic walkthrough to write a simple interface file. Once you've been through this, you can consult the formal [pipeline interface format specification](pipeline-interface-specification.md) for further details and reference. 
 
-## Definitions of terms and components of a pipeline interface
+## Example
 
-A pipeline interface consists of up to 3 keys:
-
-- `pipeline_name` - REQUIRED. A string identifying the pipeline.
-- `sample_pipeline` - describes arguments and resources for a pipeline that runs once per sample
-- `project_pipeline` - describes arguments and resources for a pipeline that runs once on the entire project
-
-The pipeline interface should define either a single `sample_pipeline`, a single `project_pipeline`, or one of each. Let's start with a simple example:
+Let's start with a simple example:
 
 ```yaml
 pipeline_name: RRBS
@@ -39,7 +29,14 @@ Absolute or relative path to the script or command for this pipeline. Relative p
 
 ### input_schema (RECOMMENDED)
 
-The input schema formally specifies the input data for this pipeline. It is based on the extended [PEP JSON-schema validation framework](http://pep.databio.org/en/latest/howto_schema/), but adds some additional looper-specific capabilities. With this schema it is possible to tag sample attributes, as required, as pointing to required or optional input files. Here's an example:
+The input schema formally specifies the input for this pipeline. It is used for input data validation to ensure that input samples have the attributes and input files required by the pipeline. It can also document optional inputs and describe what they are. The input schema format is based on the extended [PEP JSON-schema validation framework](http://pep.databio.org/en/latest/howto_schema/), but adds some additional looper-specific capabilities. The available extended sections are:
+
+- `required` (optional): A list of sample attributes (columns in the sample table) that **must be defined**
+- `required_input_attrs` (optional): A list of sample attributes that point to **input files that must exist**.
+- `input_attrs` (optional): A list of sample attributes that point to input files that are not necessarily required, but if they exist, should be counted in the total size calculation for requesting resources.
+- `ngs_input_files` (optional): For pipelines using sequencing data, provide a list of sample attributes (annotation sheet column names) that will point to input files to be used for automatic detection of `read_length` and `read_type` sample attributes.
+
+Here's an example:
 
 ```
 description: A PEP for ATAC-seq samples for the PEPATAC pipeline.
@@ -86,16 +83,17 @@ required:
   - samples
 ```
 
-The available extended sections are:
-
-- `required` (optional): A list of sample attributes that must be defined on the sample
-- `required_input_attrs` (optional): A list of sample attributes (annotation sheet column names) that will point to input files that must exist.
-- `input_attrs` (optional): A list of sample attributes (annotation sheet column names) that will point to input files that are not necessarily required, but if they exist, should be counted in the total size calculation for requesting resources.
-- `ngs_input_files` (optional): For pipelines using sequencing data, provide a list of sample attributes (annotation sheet column names) that will point to input files to be used for automatic detection of `read_length` and `read_type` sample attributes.
-
 ### output_schema (RECOMMENDED)
 
-The output schema formally specifies the output produced by this pipeline. Like the input schema, it is based on the extended [PEP JSON-schema validation framework](http://pep.databio.org/en/latest/howto_schema/), but adding some looper-specific capabilities
+The output schema formally specifies the *output produced by this pipeline*. It is used by downstream tools to that need to be aware of the products of the pipeline for further visualization or analysis. Like the input schema, it is based on the extended [PEP JSON-schema validation framework](http://pep.databio.org/en/latest/howto_schema/), but adds looper-specific capabilities. The base schema has two *properties* sections, one that pertains to the project, and one that pertains to the samples. The *properties* sections for both sample and project will recognize these attributes: 
+
+- `title`, following the base JSON-schema spec.
+- `description`, following the base JSON-schema spec.
+- `path`, used to specify a relative path to an output file. The value in the `path` attribute is a template for a path that will be populated by sample variables. Sample variables can be used in the template using brace notation, like `{sample_attribute}`.
+- `thumbnail_path`, templates similar to the `path` attribute, but used to specify a thumbnail output version.
+- `type`, the data type of this output. Can be one of: link, image, file.
+
+The attributes added under the *Project properties* section are assumed to be project-level outputs, whereas attributes under the `samples` object are sample-level outputs. Here is an example output schema:
 
 ```
 description: objects produced by PEPPRO pipeline.
@@ -108,23 +106,19 @@ properties:
         smooth_bw: 
           path: "aligned_{genome}/{sample_name}_smooth.bw"
           type: string
-          description: "Test sample property"
+          description: "A smooth bigwig file"
         exact_bw:
           path: "aligned_{genome}_exact/{sample_name}_exact.bw"
           type: string
-          description: "Test sample property"
+          description: "An exact bigwig file"
         aligned_bam: 
           path: "aligned_{genome}/{sample_name}_sort.bam"
           type: string
-          description: "Test sample property"
+          description: "A sorted, aligned BAM file"
         peaks_bed: 
           path: "peak_calling_{genome}/{sample_name}_peaks.bed"
           type: string
-          description: "Test sample property"
-        summits_bed: 
-          path: "peak_calling_{genome}/{sample_name}_summits.bed"
-          type: string
-          description: "Test sample property"
+          description: "Peaks in BED format"
   alignment_percent_file:
     title: "Alignment percent file"
     description: "Plots percent of total alignment to all pre-alignments and primary genome."
@@ -162,13 +156,6 @@ properties:
     type: link
 ```
 
-The base schema has two *properties* sections, one that pertains to the project, and one that pertains to the samples. In each case, these sections follow the base JSON-schema format, but add a few additional capabitiles, as described below. The *properties* sections for both sample and project will recognize these attributes: 
-
-- `title`, following the base JSON-schema spec.
-- `description`, following the base JSON-schema spec.
-- `path` This attribute can be used to specify a relative path to output files represing each output sample attribute. The name of the attribute is the name of a kind of output file (or group of them) that a pipeline may produce, and the value in the `path` attribute is a template for a path that will be populated by sample variables. Sample variables can be used in these template using brace notation, like `{sample_attribute}`.
-- `thumbnail_path`, templates similar to the `path` attribute, but used to specify a thumbnail output version.
-- `type`, can be one of: link, image, file.
 
 ### `command_template` (REQUIRED)
 
@@ -207,10 +194,10 @@ Automatic attributes created by looper:
 
 Variables populated from the `compute` priority list. The `compute` namespace has a unique behavior: it cascades settings from various levels, overriding default values with more specific ones. The source list in priority order is:
 
-1. activated divvy compute package
-2. pipeline.compute section
-3. project.looper.compute
-4. looper CLI
+1. Looper CLI (`--compute` on-the-fly settings)
+2. PEP config, `project.looper.compute` section
+3. Pipeline interface, `pipeline.compute` section
+4. Activated divvy compute package (`--settings` or `--compute-package`)
 
 So, the compute namespace is first populated with any variables from the selected divvy compute package. It then updates this with settings given in the `compute` section of the pipeline interface. It then updates from the PEP `project.looper.compute`, and then finally anything passed to `--compute` on the looper CLI. This provides a way to module looper behavior at the level of a computing environment, a pipeline, a project, or a run -- in that order.
 
@@ -305,82 +292,3 @@ pipelines:
 ```
 
 
-
-## How to map different pipelines to different samples
-
-In the earlier version of looper, the pipeline interface file specified a `protocol_mappings` section. This mapped sample `protocol` (the assay type, sometimes called "library" or "library strategy") to one or more pipeline program.  This section specifies that samples of protocol `RRBS` will be mapped to the pipeline specified by key `rrbs_pipeline`. 
- 
-
-
-If you're using *existing* `looper`-compatible pipelines, you don't need to create a new interface; just [point your project at the one that comes with the pipeline](linking-a-pipeline.md). When creating *new* `looper`-compatible pipelines, you'll need to create a new pipeline interface file. Regardless of what pipelines you use, you will need to tell looper how to communicate with your pipeline. 
-
-
-
-
-## Protocol mapping section
-
-The `protocol_mapping` section explains how looper should map from a sample protocol 
-(like `RNA-seq`, which is a column in your annotation sheet) to a particular pipeline (like `rnaseq.py`), or group of pipelines. 
-Here's how to build `protocol_mapping`:
-
-**Case 1:** one protocol maps to one pipeline. Example: `RNA-seq: rnaseq.py`
-Any samples that list "RNA-seq" under `library` will be run using the `rnaseq.py` pipeline. 
-You can list as many library types as you like in the protocol mapping, 
-mapping to as many pipelines as you configure in your `pipelines` section.
-
-Example:
-    
-```yaml
-protocol_mapping:
-    RRBS: rrbs.py
-    WGBS: wgbs.py
-    EG: wgbs.py
-    ATAC: atacseq.py
-    ATAC-SEQ: atacseq.py
-    CHIP: chipseq.py
-    CHIP-SEQ: chipseq.py
-    CHIPMENTATION: chipseq.py
-    STARR: starrseq.py
-    STARR-SEQ: starrseq.py
-```
-
-**Case 2:** one protocol maps to multiple *independent* pipelines. 
-    
-Example:
-
-```yaml
-protocol_mapping
-  Drop-seq: quality_control.py, dropseq.py
-```
-
-You can map multiple pipelines to a single protocol if you want samples of a type to kick off more than one pipeline run.
-The basic formats for independent pipelines (i.e., they can run concurrently):
-
-Example A:
-```yaml
-protocol_mapping:
-    SMART-seq:  >
-      rnaBitSeq.py -f,
-      rnaTopHat.py -f
-```
-
-
-Example B:
-```yaml
-protocol_mapping:
-  PROTOCOL: [pipeline1, pipeline2, ...]
-```
-
-**Case 3:** a protocol runs one pipeline which depends on another.
-
-*Warning*: This feature (pipeline dependency) is not implemented yet. This documentation describes a protocol that may be implemented in the future, if it is necessary to have dependency among pipeline submissions.
-
-Use *semicolons to indicate dependency*.
-
-Example:
-```yaml
-protocol_mapping:
-    WGBSQC: >
-      wgbs.py;
-      (nnm.py, pdr.py)
-```
