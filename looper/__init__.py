@@ -110,7 +110,8 @@ def build_parser():
 
     def add_subparser(cmd):
         message = msg_by_cmd[cmd]
-        return subparsers.add_parser(cmd, description=message, help=message)
+        return subparsers.add_parser(cmd, description=message, help=message, 
+            formatter_class=lambda prog: argparse.HelpFormatter(prog, max_help_position=28, width=100))
 
     # Run and rerun command
     run_subparser = add_subparser("run")
@@ -126,39 +127,38 @@ def build_parser():
                      "'running' or 'failed'). Set this option to ignore flags "
                      "and submit the runs anyway. Default=False")
         subparser.add_argument(
-                "-t", "--time-delay", dest="time_delay",
+                "-t", "--time-delay", dest="time_delay", metavar="S",
                 type=html_range(min_val=0, max_val=30, value=0), default=0,
                 help="Time delay in seconds between job submissions.")
         subparser.add_argument(
-                "-p", "--package",
-                help="Name of computing resource package to use")
+                "-p", "--package", metavar="P",
+                help="Divvy: Name of computing resource package to use")
         subparser.add_argument(
-                "--compute",
-                help="Comma-separated list of computing resource key-value pairs,"
+                "-s", "--settings", dest="settings", default="", metavar="S",
+                help="Divvy: Path to a YAML settings file with compute settings")
+        subparser.add_argument(
+                "-m", "--compute", metavar="C",
+                help="Divvy: Comma-separated list of computing resource key-value pairs,"
                      "e.g., " + EXAMPLE_COMPUTE_SPEC_FMT)
         subparser.add_argument(
-                "--limit", dest="limit", default=None,
+                "-l", "--limit", dest="limit", default=None, metavar="L",
                 type=html_range(min_val=1, max_val="num_samples",
                                 value="num_samples"),
                 help="Limit to n samples.")
         subparser.add_argument(
-                "-a", "--pipeline-args", dest="pipeline_args", default="",
+                "-x", "--command-extra", dest="pipeline_args", default="",
                 help="arguments to pass to a pipeline")
-        subparser.add_argument(
-                "-s", "--settings", dest="settings", default="",
-                help="path to a YAML-formatted settings file used to populate "
-                     "the command template")
     for subparser in [run_subparser, rerun_subparser]:
         # Note that defaults for otherwise numeric lump parameters are set to
         # null by default so that the logic that parses their values may
         # distinguish between explicit 0 and lack of specification.
         subparser.add_argument(
-                "--lump", default=None,
+                "-u", "--lump", default=None, metavar="SIZE",
                 type=html_range(min_val=0, max_val=100, step=0.1, value=0),
-                help="Maximum total input file size for a lump/batch of "
-                     "commands in a single job (in GB)")
+                help="Maximum total input file size in GB for a batch of "
+                     "commands in a single job")
         subparser.add_argument(
-                "--lumpn", default=None,
+                "-n", "--lumpn", default=None, metavar="N",
                 type=html_range(min_val=1, max_val="num_samples", value=1),
                 help="Number of individual scripts grouped into "
                      "single submission")
@@ -199,7 +199,7 @@ def build_parser():
         #         "-c", "--config", required=False, default=None,
         #         dest="looper_config", help="Looper configuration file (YAML).")
         subparser.add_argument(
-                "--pipeline-interfaces", dest="pifaces",
+                "--pipeline-interfaces", dest="pifaces", metavar="P",
                 nargs="+", action='append',
                 help="Path to a pipeline interface file")
         subparser.add_argument(
@@ -231,8 +231,7 @@ def build_parser():
                 help="Operate only on samples associated with these attribute "
                      "values; if not provided, all samples are used.")
         subparser.add_argument(
-                "--amendments", dest="amendments", nargs="+",
-                help="Name of amendment(s) to use, as designated in the "
-                     "project's configuration file")
+                "-a", "--amendments", dest="amendments", nargs="+",
+                help="List of of amendments to activate")
 
     return parser

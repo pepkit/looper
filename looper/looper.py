@@ -807,5 +807,5 @@ def main():
             return Cleaner(prj)(args)
 
         if args.command == "inspect":
-            print(prj)
+            print(prj.__str__())
 
