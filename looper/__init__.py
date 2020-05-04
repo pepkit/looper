@@ -141,7 +141,7 @@ def build_parser():
                 help="Divvy: Comma-separated list of computing resource key-value pairs,"
                      "e.g., " + EXAMPLE_COMPUTE_SPEC_FMT)
         subparser.add_argument(
-                "-l", "--limit", dest="limit", default=None, metavar="L",
+                "-l", "--limit", dest="limit", default=None, metavar="N",
                 type=html_range(min_val=1, max_val="num_samples",
                                 value="num_samples"),
                 help="Limit to n samples.")
@@ -155,13 +155,11 @@ def build_parser():
         subparser.add_argument(
                 "-u", "--lump", default=None, metavar="SIZE",
                 type=html_range(min_val=0, max_val=100, step=0.1, value=0),
-                help="Maximum total input file size in GB for a batch of "
-                     "commands in a single job")
+                help="Total input file size in GB to batch into a single job")
         subparser.add_argument(
                 "-n", "--lumpn", default=None, metavar="N",
                 type=html_range(min_val=1, max_val="num_samples", value=1),
-                help="Number of individual scripts grouped into "
-                     "single submission")
+                help="Number of individual commands to batch into a single job")
 
     # Other commands
     table_subparser = add_subparser("table")

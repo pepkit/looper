@@ -12,9 +12,8 @@ nav:
   - How-to guides:    
     - Defining a project: defining-a-project.md
     - Linking a project to a pipeline: linking-a-pipeline.md
-    - Linking to multiple pipelines: linking-multiple-pipelines.md
     - Parameterizing pipelines: parameterize-pipelines.md
-    - Running on a cluster: cluster-computing.md
+    - Running on a cluster: running-on-a-cluster.md
     - Grouping many jobs into one: grouping-jobs.md
     - Running jobs in containers: containers.md
     - Handling multiple input files: how-to-merge-inputs.md
