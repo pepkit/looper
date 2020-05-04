@@ -805,3 +805,7 @@ def main():
 
         if args.command == "clean":
             return Cleaner(prj)(args)
+
+        if args.command == "inspect":
+            print(prj)
+

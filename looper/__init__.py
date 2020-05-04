@@ -105,7 +105,8 @@ def build_parser():
             "destroy": "Remove all files of the project.",
             "check": "Checks flag status of current runs.",
             "clean": "Runs clean scripts to remove intermediate "
-                     "files of already processed jobs."}
+                     "files of already processed jobs.",
+            "inspect": "Prints information about current project."}
 
     subparsers = parser.add_subparsers(dest="command")
 
@@ -172,6 +173,7 @@ def build_parser():
     destroy_subparser = add_subparser("destroy")
     check_subparser = add_subparser("check")
     clean_subparser = add_subparser("clean")
+    inspect_subparser = add_subparser("inspect")
 
     check_subparser.add_argument(
             "-A", "--all-folders", action=_StoreBoolActionType,
@@ -194,7 +196,7 @@ def build_parser():
     # Common arguments
     for subparser in [run_subparser, rerun_subparser, table_subparser,
                       report_subparser, destroy_subparser, check_subparser,
-                      clean_subparser, collate_subparser]:
+                      clean_subparser, collate_subparser, inspect_subparser]:
         subparser.add_argument("config_file", nargs="?",
                                help="Project configuration file (YAML).")
         # subparser.add_argument(
