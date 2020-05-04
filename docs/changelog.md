@@ -2,6 +2,21 @@
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format. 
 
+## [1.2.0] - 2020-05-XX
+
+This version introduced backwards-incompatible changes.
+
+### Added
+- Input schemas and output schemas
+
+
+### Changed
+- Pipeline interface format changed drastically
+- The pypi name changed from 'loopercli' to 'looper'
+- resources section in pipeline interface replaced with `size_dependent_attributes`.
+
+
+
 ## [0.12.6] -- 2020-01-XX
 ### Added
 - possibility to execute library module as a script: `python -m looper ...`
