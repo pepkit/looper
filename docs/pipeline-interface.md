@@ -177,6 +177,46 @@ In other words, it's a column name of your sample annotation sheet. Looper will 
 For flag-like arguments that lack a value, you may specify `null` as the value (e.g. `"--quiet-mode": null`). 
 These arguments are considered *required*, and `looper` will not submit a pipeline if a sample lacks an attribute that is specified as a value for an argument.
 
+#### Command template variable namespaces
+
+Within the `command_template`, you have access to variables from several sources. These variables are divided into namespaces depending on the variable source. You can access the values of these variables in the command template using the single-brace jinja2 template language syntax: `{namespace.variable}`. For example, looper automatically creates a variable called `job_name`, which you may want to pass as an argument to your pipeline. You can access this variable with `{looper.job_name}`. The available namespaces are listed below:
+
+##### 1 `project`
+All PEP config attributes.
+
+##### 2 `sample`
+All PEP post-processing sample attributes.
+
+##### 3 `pipeline`
+Everything under `pipeline` in the pipeline interface (for this pipeline).
+
+##### 4 `looper` 
+
+Automatic attributes created by looper:
+
+- `job_name` -- automatic job name string made by concatenating the pipeline identifier and unique sample name.
+- `output_folder` -- parent output folder provided in `project.looper.output_folder`
+- `sample_output_folder` -- A sample-specific output folder derived from the ({output_folder}/{sample_name})
+- `total_input_size`
+- `pipeline_config`  (renamed from `config` to disambiguate with new `pep_config` ?)
+- `pep_config` -- path to the PEP configuration file used for this looper run.
+- `log_file`
+- `command`
+
+##### 5 `compute`
+
+Variables populated from the `compute` priority list. The `compute` namespace has a unique behavior: it cascades settings from various levels, overriding default values with more specific ones. The source list in priority order is:
+
+1. activated divvy compute package
+2. pipeline.compute section
+3. project.looper.compute
+4. looper CLI
+
+So, the compute namespace is first populated with any variables from the selected divvy compute package. It then updates this with settings given in the `compute` section of the pipeline interface. It then updates from the PEP `project.looper.compute`, and then finally anything passed to `--compute` on the looper CLI. This provides a way to module looper behavior at the level of a computing environment, a pipeline, a project, or a run -- in that order.
+
+##### `samples`
+
+For project-level pipelines, there is no `sample` namespace; instead, there is a `samples` (plural) namespace, which is a list of all the samples in the project. This can be useful if you need to iterate through all the samples.
 
 #### Optional arguments
 
@@ -194,14 +234,13 @@ Any optional arguments can be accommodated using jinja2 syntax, like this. These
     {% if sample.FRIP_ref is defined %} --frip-ref-peaks {sample.FRIP_ref} {% endif %}
 ```
 
-
 ### compute (RECOMMENDED)
 
-Here, you can use a special s
+The compute section of the pipeline interface provides a way to set compute settings at the pipeline level. These variables can then be accessed in the command template. They can also be overridden by values in the PEP config, or on the command line. See the `compute` namespace under `command_template` above for details. One special attribute under `compute` is `size_dependent_variables`:
 
 #### size_dependent_variables
 
-Under `size_dependent_variables` you can specify a relative path to a tsv file that outlines variables that are modulated based on the total input file size for the sample. This can be used to add any variables, but is typically used to add  memory, CPU, and clock time to request, modulated by input file size.
+Under `size_dependent_variables` you can specify a relative path to a tsv file defining variables that are modulated based on the total input file size for the run. This can be used to add any variables, but is typically used to add memory, CPU, and clock time to request, modulated by input file size.
 
 Example:
 
@@ -245,17 +284,6 @@ pipelines:
       "--genome": genome
       "--input": data_path
       "--single-or-paired": read_type
-    resources:
-      default:
-        file_size: "0"
-        cores: "4"
-        mem: "4000"
-        time: "2-00:00:00"
-      high:
-        file_size: "4"
-        cores: "6"
-        mem: "4000"
-        time: "2-00:00:00"
 
   rnaBitSeq.py:
     looper_args: True
@@ -264,12 +292,6 @@ pipelines:
       "--genome": transcriptome
       "--input": data_path
       "--single-or-paired": read_type
-    resources:
-      default:
-        file_size: "0"
-        cores: "6"
-        mem: "6000"
-        time: "2-00:00:00"
 
   atacseq.py:
     arguments:
@@ -277,12 +299,6 @@ pipelines:
       "-I": sample_name
       "-G": genome
     looper_args: True
-    resources:
-      default:
-        file_size: "0"
-        cores: "4"
-        mem: "8000"
-        time: "08:00:00"
     outputs:
       smoothed_bw: "aligned_{sample.genome}/{sample.name}_smoothed.bw"
       pre_smoothed_bw: "aligned_{project.prealignments}/{sample.name}_smoothed.bw"
