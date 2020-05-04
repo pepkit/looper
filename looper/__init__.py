@@ -134,9 +134,7 @@ def build_parser():
                 help="Name of computing resource package to use")
         subparser.add_argument(
                 "--compute",
-                help="Specification of individual computing resource settings; "
-                     "separate setting name/key from value with equals sign, "
-                     "and separate key-value pairs from each other by comma; "
+                help="Comma-separated list of computing resource key-value pairs,"
                      "e.g., " + EXAMPLE_COMPUTE_SPEC_FMT)
         subparser.add_argument(
                 "--limit", dest="limit", default=None,
