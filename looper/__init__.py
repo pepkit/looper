@@ -174,6 +174,10 @@ def build_parser():
     clean_subparser = add_subparser("clean")
     inspect_subparser = add_subparser("inspect")
 
+    inspect_subparser.add_argument("-n", "--sample-name", required=False,
+                                   nargs="+",
+                                   help="Name of the samples to inspect.")
+
     check_subparser.add_argument(
             "-A", "--all-folders", action=_StoreBoolActionType,
             default=False, type=html_checkbox(checked=False),
