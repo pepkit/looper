@@ -146,13 +146,12 @@ def build_parser():
                                 value="num_samples"),
                 help="Limit to n samples.")
         subparser.add_argument(
-                "-x", "--command-extra", dest="command_extra", default="",
-                help="string appended to every command")
+                "-x", "--command-extra", dest="command_extra", default="", metavar="S",
+                help="String to append to every command")
         subparser.add_argument(
-                "--command-extra-override", dest="command_extra_override",
+                "-y", "--command-extra-override", dest="command_extra_override", metavar="S",
                 default="",
-                help="string appended to every command, deactivates 'command_extra' "
-                     "Sample and Project.looper attributes")
+                help="String to append to every command, overriding values in PEP.")
         
     for subparser in [run_subparser, rerun_subparser]:
         # Note that defaults for otherwise numeric lump parameters are set to
