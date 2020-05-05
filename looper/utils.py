@@ -264,17 +264,16 @@ def read_yaml_file(filepath):
     return data
 
 
-def enrich_args_via_dotfile(parser_args, dotfile_path):
+def enrich_args_via_dotfile(parser_args):
     """
     Read in a looper dotfile and set arguments.
 
     Priority order: CLI > dotfile > parser default
 
     :param argparse.Namespace parser_args: parsed args by the original parser
-    :param str dotfile_path: path to a dotfile to use
     :return argparse.Namespace: selected argument values
     """
-    dotfile_args = read_yaml_file(dotfile_path)
+    dotfile_args = read_yaml_file(dotfile_path())
     aux_parser = argparse.ArgumentParser(argument_default=argparse.SUPPRESS)
     result = argparse.Namespace()
     for arg in vars(parser_args):

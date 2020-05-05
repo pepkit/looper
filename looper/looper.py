@@ -707,7 +707,7 @@ def main():
     if args.command == "mod":
         sys.exit(int(not write_dotfile(parser, dotfile_path(must_exist=True),
                                        args, update=True)))
-    args = enrich_args_via_dotfile(args, dotfile_path())
+    args = enrich_args_via_dotfile(args)
     if args.command is None:
         parser.print_help(sys.stderr)
         sys.exit(1)
