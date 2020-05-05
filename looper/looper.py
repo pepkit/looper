@@ -715,7 +715,7 @@ def main():
         _LOGGER.error(
             "No project config. Specify one with a positional argument "
             "or with the 'config_file' attribute in "
-            "{}\n".format(dotfile_path))
+            "{}\n".format(dotfile_path()))
         parser.print_help(sys.stderr)
         sys.exit(1)
     # Set the logging level.
