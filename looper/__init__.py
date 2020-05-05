@@ -90,8 +90,6 @@ def build_parser():
             default=None,
             help="Environment variable that points to the DIVCFG file. "
                  "(default: DIVCFG)")
-    parser.add_argument("--dotfile-template", action="store_true",
-                        help="Print out a looper dotfile template and exit")
 
     # Individual subcommands
     # TODO: "table" & "report" (which calls table by default)
@@ -104,20 +102,31 @@ def build_parser():
             "destroy": "Remove output files of the project.",
             "check": "Check flag status of current runs.",
             "clean": "Run clean scripts of already processed jobs.",
-            "inspect": "Print information about a project."}
+            "inspect": "Print information about a project.",
+            "init": "Initialize looper dotfile.",
+            "mod": "Modify looper dotfile."
+    }
 
     subparsers = parser.add_subparsers(dest="command")
 
     def add_subparser(cmd):
         message = msg_by_cmd[cmd]
-        return subparsers.add_parser(cmd, description=message, help=message, 
-            formatter_class=lambda prog: argparse.HelpFormatter(prog, max_help_position=28, width=100))
+        return subparsers.add_parser(cmd, description=message, help=message, formatter_class=lambda prog: argparse.HelpFormatter(prog, max_help_position=28, width=100))
 
     # Run and rerun command
     run_subparser = add_subparser("run")
     rerun_subparser = add_subparser("rerun")
     collate_subparser = add_subparser("runp")
-    for subparser in [run_subparser, rerun_subparser, collate_subparser]:
+    table_subparser = add_subparser("table")
+    report_subparser = add_subparser("report")
+    destroy_subparser = add_subparser("destroy")
+    check_subparser = add_subparser("check")
+    clean_subparser = add_subparser("clean")
+    inspect_subparser = add_subparser("inspect")
+    init_subparser = add_subparser("init")
+    mod_subparser = add_subparser("mod")
+    for subparser in [run_subparser, rerun_subparser, collate_subparser,
+                      init_subparser, mod_subparser]:
         subparser.add_argument(
                 "--ignore-flags", dest="ignore_flags", default=False,
                 action=_StoreBoolActionType, type=html_checkbox(checked=False),
@@ -127,7 +136,7 @@ def build_parser():
                      "'running' or 'failed'). Set this option to ignore flags "
                      "and submit the runs anyway. Default=False")
         subparser.add_argument(
-                "-t", "--time-delay", dest="time_delay", metavar="S",
+                "-t", "--time-del", dest="time_delay", metavar="S",
                 type=html_range(min_val=0, max_val=30, value=0), default=0,
                 help="Time delay in seconds between job submissions.")
         subparser.add_argument(
@@ -138,22 +147,23 @@ def build_parser():
                 help="Divvy: Path to a YAML settings file with compute settings")
         subparser.add_argument(
                 "-m", "--compute", metavar="C",
-                help="Divvy: Comma-separated list of computing resource key-value pairs,"
-                     "e.g., " + EXAMPLE_COMPUTE_SPEC_FMT)
+                help="Divvy: Comma-separated list of computing resource "
+                     "key-value pairs, e.g., " + EXAMPLE_COMPUTE_SPEC_FMT)
         subparser.add_argument(
                 "-l", "--limit", dest="limit", default=None, metavar="N",
                 type=html_range(min_val=1, max_val="num_samples",
                                 value="num_samples"),
                 help="Limit to n samples.")
         subparser.add_argument(
-                "-x", "--command-extra", dest="command_extra", default="", metavar="S",
-                help="String to append to every command")
+                "-x", "--command-extra", dest="command_extra", default="",
+                metavar="S", help="String to append to every command")
         subparser.add_argument(
-                "-y", "--command-extra-override", dest="command_extra_override", metavar="S",
-                default="",
-                help="String to append to every command, overriding values in PEP.")
+                "-y", "--command-extra-override", dest="command_extra_override",
+                metavar="S", default="",
+                help="String to append to every command, "
+                     "overriding values in PEP.")
         
-    for subparser in [run_subparser, rerun_subparser]:
+    for subparser in [run_subparser, rerun_subparser, init_subparser, mod_subparser]:
         # Note that defaults for otherwise numeric lump parameters are set to
         # null by default so that the logic that parses their values may
         # distinguish between explicit 0 and lack of specification.
@@ -166,13 +176,9 @@ def build_parser():
                 type=html_range(min_val=1, max_val="num_samples", value=1),
                 help="Number of individual commands to batch into a single job")
 
-    # Other commands
-    table_subparser = add_subparser("table")
-    report_subparser = add_subparser("report")    
-    destroy_subparser = add_subparser("destroy")
-    check_subparser = add_subparser("check")
-    clean_subparser = add_subparser("clean")
-    inspect_subparser = add_subparser("inspect")
+    inspect_subparser.add_argument("-n", "--sample-name", required=False,
+                                   nargs="+",
+                                   help="Name of the samples to inspect.")
 
     check_subparser.add_argument(
             "-A", "--all-folders", action=_StoreBoolActionType,
@@ -185,7 +191,7 @@ def build_parser():
             type=html_select(choices=FLAGS),
             help="Check on only these flags/status values.")
 
-    for subparser in [destroy_subparser, clean_subparser]:
+    for subparser in [destroy_subparser, clean_subparser, init_subparser, mod_subparser]:
         subparser.add_argument(
                 "--force-yes", action=_StoreBoolActionType, default=False,
                 type=html_checkbox(checked=False),
@@ -195,12 +201,10 @@ def build_parser():
     # Common arguments
     for subparser in [run_subparser, rerun_subparser, table_subparser,
                       report_subparser, destroy_subparser, check_subparser,
-                      clean_subparser, collate_subparser, inspect_subparser]:
+                      clean_subparser, collate_subparser, inspect_subparser,
+                      init_subparser, mod_subparser]:
         subparser.add_argument("config_file", nargs="?",
                                help="Project configuration file (YAML).")
-        # subparser.add_argument(
-        #         "-c", "--config", required=False, default=None,
-        #         dest="looper_config", help="Looper configuration file (YAML).")
         subparser.add_argument(
                 "--pipeline-interfaces", dest="pifaces", metavar="P",
                 nargs="+", action='append',

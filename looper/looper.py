@@ -39,7 +39,7 @@ from divvy import DEFAULT_COMPUTE_RESOURCES_NAME, \
     NEW_COMPUTE_KEY as DIVVY_COMPUTE_KEY
 from logmuse import init_logger
 from peppy.const import *
-from eido import validate_sample, validate_config
+from eido import validate_sample, validate_config, inspect_project
 from ubiquerg import query_yes_no
 
 
@@ -702,12 +702,12 @@ def main():
     global _LOGGER
     parser = build_parser()
     args, remaining_args = parser.parse_known_args()
-    dotfile_path = os.path.join(os.getcwd(), LOOPER_DOTFILE_NAME)
-    args = enrich_args_via_dotfile(args, dotfile_path)
-    if args.dotfile_template:
-        print("# looper dotfile path: {}\n".format(dotfile_path))
-        show_dotfile_template(parser)
-        sys.exit(0)
+    if args.command == "init":
+        sys.exit(int(not write_dotfile(parser, dotfile_path(), args)))
+    if args.command == "mod":
+        sys.exit(int(not write_dotfile(parser, dotfile_path(must_exist=True),
+                                       args, update=True)))
+    args = enrich_args_via_dotfile(args)
     if args.command is None:
         parser.print_help(sys.stderr)
         sys.exit(1)
@@ -715,7 +715,7 @@ def main():
         _LOGGER.error(
             "No project config. Specify one with a positional argument "
             "or with the 'config_file' attribute in "
-            "{}\n".format(dotfile_path))
+            "{}\n".format(dotfile_path()))
         parser.print_help(sys.stderr)
         sys.exit(1)
     # Set the logging level.
@@ -751,7 +751,7 @@ def main():
     # Initialize project
     _LOGGER.debug("Building Project")
     try:
-        prj = Project(config_file=determine_config_path(args.config_file),
+        p = Project(config_file=determine_config_path(args.config_file),
                       amendments=args.amendments,
                       pifaces=args.pifaces[0] if args.pifaces else None,
                       file_checks=args.file_checks,
@@ -759,20 +759,20 @@ def main():
     except yaml.parser.ParserError as e:
         _LOGGER.error("Project config parse failed -- {}".format(e))
         sys.exit(1)
-    _LOGGER.debug("Results subdir: " + prj.results_folder)
+    _LOGGER.debug("Results subdir: " + p.results_folder)
 
     selected_cli_compute_pkg = getattr(args, "package", None)
     # compute package selection priority list: cli > project > default
     selected_compute_pkg = DEFAULT_COMPUTE_RESOURCES_NAME
-    if COMPUTE_PACKAGE_KEY in prj[CONFIG_KEY][LOOPER_KEY]:
-        selected_compute_pkg = prj[CONFIG_KEY][LOOPER_KEY][COMPUTE_PACKAGE_KEY]
+    if COMPUTE_PACKAGE_KEY in p[CONFIG_KEY][LOOPER_KEY]:
+        selected_compute_pkg = p[CONFIG_KEY][LOOPER_KEY][COMPUTE_PACKAGE_KEY]
     if selected_cli_compute_pkg:
         selected_compute_pkg = selected_cli_compute_pkg
-    if not prj.dcc.activate_package(selected_compute_pkg):
+    if not p.dcc.activate_package(selected_compute_pkg):
         _LOGGER.info("Failed to activate '{}' computing package. "
                      "Using the default one".format(selected_compute_pkg))
 
-    with ProjectContext(prj=prj,
+    with ProjectContext(prj=p,
                         selector_attribute=args.selector_attribute,
                         selector_include=args.selector_include,
                         selector_exclude=args.selector_exclude) as prj:
@@ -809,5 +809,4 @@ def main():
             return Cleaner(prj)(args)
 
         if args.command == "inspect":
-            print(prj.__str__())
-
+            inspect_project(p, args.sample_name)

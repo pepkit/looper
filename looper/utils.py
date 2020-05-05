@@ -264,17 +264,16 @@ def read_yaml_file(filepath):
     return data
 
 
-def enrich_args_via_dotfile(parser_args, dotfile_path):
+def enrich_args_via_dotfile(parser_args):
     """
     Read in a looper dotfile and set arguments.
 
     Priority order: CLI > dotfile > parser default
 
     :param argparse.Namespace parser_args: parsed args by the original parser
-    :param str dotfile_path: path to a dotfile to use
     :return argparse.Namespace: selected argument values
     """
-    dotfile_args = read_yaml_file(dotfile_path)
+    dotfile_args = read_yaml_file(dotfile_path())
     aux_parser = argparse.ArgumentParser(argument_default=argparse.SUPPRESS)
     result = argparse.Namespace()
     for arg in vars(parser_args):
@@ -296,14 +295,54 @@ def enrich_args_via_dotfile(parser_args, dotfile_path):
     return result
 
 
-def show_dotfile_template(parser):
+def write_dotfile(parser, path, arg_values=None, update=False):
     """
     Print out available dests and respective defaults in the provided subparser
 
     :param argparse.ArgumentParser parser: parser to examine
+    :param argparse.Namespace arg_values: argument values
+    :param bool update: whether the file should be read, updated and written to
+    :return bool: whether the initialization happened successfully
     """
-    defaults = merge_dicts(parser.arg_defaults(top_level=True),
-                           parser.arg_defaults(unique=True))
-    for k, v in defaults.items():
-        if k != "dotfile_template":
-            print("{}: '{}'".format(k, v))
+    if not update and os.path.exists(path):
+        print("Can't initialize, file exists: {}".format(path))
+        return False
+    arg_values = vars(arg_values) if arg_values is not None else dict()
+    if update:
+        with open(path, 'r') as dotfile:
+            defaults = yaml.safe_load(dotfile)
+    else:
+        defaults = merge_dicts(parser.arg_defaults(top_level=True),
+                               parser.arg_defaults(unique=True))
+    defaults.update(arg_values)
+    with open(path, 'w') as dotfile:
+        yaml.dump({k: str(v) for k, v in defaults.items()}, dotfile)
+    print("{} looper dotfile: {}".
+          format("Modified" if update else "Initialized", path))
+    return True
+
+
+def dotfile_path(directory=os.getcwd(), must_exist=False):
+    """
+    Get the path to the looper dotfile
+
+    If file existence is forced this function will look for it in
+    the directory parents
+
+    :param str directory: directory path to start the search in
+    :param bool must_exist: whether the file must exist
+    :return str: path to the dotfile
+    :raise OSError: if the file does not exist
+    """
+    cur_dir = directory
+    if not must_exist:
+        return os.path.join(cur_dir, LOOPER_DOTFILE_NAME)
+    while True:
+        parent_dir = os.path.dirname(cur_dir)
+        if LOOPER_DOTFILE_NAME in os.listdir(cur_dir):
+            return os.path.join(cur_dir, LOOPER_DOTFILE_NAME)
+        if cur_dir == parent_dir:
+            # root, file does not exist
+            raise OSError("Looper dotfile ({}) not found in '{}' and all "
+                          "its parents".format(LOOPER_DOTFILE_NAME, directory))
+        cur_dir = parent_dir
