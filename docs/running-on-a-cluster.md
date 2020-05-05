@@ -1,12 +1,12 @@
 # How to submit looper jobs to a cluster
 
-By default, `looper` will build a shell script for each sample and then run each sample serially on the local computer. This is convenient for simple cases, because it doesn't require any extra configuration. When it comes time to scale up, no problem! This is where `looper` really excels, in large projects that require submitting these jobs to a cluster resource manager (like SLURM, SGE, LFS, etc.). Starting with version `0.11` (released in 2019), `looper` uses [divvy](http://code.databio.org/divvy) to manage computing resource configuration so that projects and pipelines can easily travel among environments.
+By default, `looper` will build a shell script for each sample and then it sequentially on the local computer. This is convenient for simple cases, but when it comes time to scale up, this is where `looper` really excels, in large projects that require submitting these jobs to a cluster resource manager (like SLURM, SGE, LFS, etc.). Looper uses [divvy](http://code.databio.org/divvy) to manage computing configuration so projects and pipelines can easily travel among environments.
 
-`Divvy` uses a template system to build scripts for each job. To start, `divvy` includes a few built-in templates so you can run basic jobs without messing with anything, but the template system provides ultimate flexibility to customize your job scripts however you wish. This template system enables looper to run jobs on any cluster resource manager, by simply setting up a template that fits a particular cluster manager.
+`Divvy` uses a template system to build scripts for each job. This enables looper to run jobs on any cluster resource manager by simply setting up a template that fits it.
 
 ## Overview and basic example of cluster computing
 
-In a nutshell, to configure `looper` to use cluster computing, all you have to do is provide some information about your cluster setup. You create a `divvy` computing configuration file (`compute_config.yaml`) and point an environment variable (`DIVCFG`) to this file, and that's it! You then have access to any configured computing packages by using `looper --package PACKAGE`, where `PACKAGE` can be any computing system you configure.
+To configure `looper` for cluster computing, you must provide information about your cluster setup. You create a `divvy` computing configuration file (`compute_config.yaml`) and point an environment variable (`DIVCFG`) to this file, and that's it! You then have access to any configured computing packages by using `looper --package PACKAGE`, where `PACKAGE` can be any computing system you configure.
 
 For example, here's a `compute_config.yaml` file that works with a SLURM environment:
 ```yaml
@@ -14,9 +14,6 @@ compute_packages:
   default:
     submission_template: templates/local_template.sub
     submission_command: sh
-  loc:
-    submission_template: templates/local_template.sub
-    submission_command: sh    
   slurm:
     submission_template: templates/slurm_template.sub
     submission_command: sbatch
@@ -24,12 +21,39 @@ compute_packages:
 ```
 
 Each section within `compute_packages` defines a "compute package" that can be activated. 
-By default, the package named `default` will be used, You may then choose a different compute package on the fly by specifying the `--package` option: ``looper run --package PACKAGE``. In this case, `PACKAGE` could be either `loc` (which would do the same thing as the default, so doesn't change anything) or `slurm`, which would run the jobs on SLURM, from queue `queue_name`. You can make as many compute packages as you wish (for example, to submit to different SLURM partitions).
+By default, the package named `default` will be used, You may then choose a different compute package on the fly by specifying the `--package` option: ``looper run --package PACKAGE``. In this case, `PACKAGE` could be `slurm`, which would run the jobs on SLURM, from queue `queue_name`. You can make as many compute packages as you wish (for example, to submit to different SLURM partitions).
 
-This is just an overview; when you're ready to configure your computing environment, head over to the [divvy docs](http://divvy.databio.org) to get the whole story.
+The `templates/local_template.sub` is probably very simple, something like this:
+
+```
+#!/bin/bash
+
+echo 'Start time:' `date +'%Y-%m-%d %T'`
+
+{CODE} | tee {LOGFILE}
+```
 
 
-## Using divvy with looper
+The `templates/slurm_template.sub` templates a slurm submission:
+
+```
+#!/bin/bash
+#SBATCH --job-name='{JOBNAME}'
+#SBATCH --output='{LOGFILE}'
+#SBATCH --mem='{MEM}'
+#SBATCH --cpus-per-task='{CORES}'
+#SBATCH --time='{TIME}'
+#SBATCH --partition='{PARTITION}'
+
+echo 'Compute node:' `hostname`
+echo 'Start time:' `date +'%Y-%m-%d %T'`
+
+{CODE}
+```
+
+These templates use variables wrapped in braces, like `{CODE}`, which are populated with specific values for a run. By adjusting which template you use, you can change whether your jobs runs locally or is submitted to SLURM.
+
+## Mapping variables to compute templates using divvy adapters
 
 What is the source of values used to populate the variables? Well, they are pooled together from several sources. Divvy uses a hierarchical system to collect data values from global and local sources, which enables you to re-use settings across projects and environments. To start, there are a few built-ins:
 
@@ -58,3 +82,13 @@ The other pipeline interface section that is available to templates is `resource
 [Read more about pipeline_interface.yaml here](pipeline-interface.md).
 
 *project_config.yaml*. Finally, project-level variables can also be populated from the `compute` section of a project config file. We don't recommend using this and it is not yet well documented, but it would enable you to make project-specific compute changes (such as billing a particular project to a particular SLURM resource account).
+
+
+
+This is just an overview; when you're ready to configure your computing environment, head over to the [divvy docs](http://divvy.databio.org) to get the whole story.
+
+
+
+## Configuring divvy
+
+To start, `divvy` includes a few built-in templates so you can run basic jobs without messing with anything, but the template system provides ultimate flexibility to customize your job scripts however you wish.

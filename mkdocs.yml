@@ -11,7 +11,7 @@ nav:
     - Hello world: hello-world.md
   - How-to guides:    
     - Defining a project: defining-a-project.md
-    - Linking a project to a pipeline: linking-a-pipeline.md
+    - Initializing a repository: initialize.md
     - Parameterizing pipelines: parameterize-pipelines.md
     - Running on a cluster: running-on-a-cluster.md
     - Grouping many jobs into one: grouping-jobs.md
@@ -20,6 +20,7 @@ nav:
     - Writing a pipeline interface: writing-a-pipeline-interface.md
   - Reference:
     - Pipeline interface specification: pipeline-interface-specification.md
+    - Looper variable namespaces: variable-namespaces.md
     - Usage: usage.md
     - Configuration files: config-files.md
     - API: autodoc_build/looper.md
