@@ -103,7 +103,9 @@ def build_parser():
             "check": "Check flag status of current runs.",
             "clean": "Run clean scripts of already processed jobs.",
             "inspect": "Print information about a project.",
-            "init": "Initialize looper dotfile."}
+            "init": "Initialize looper dotfile.",
+            "mod": "Modify looper dotfile."
+    }
 
     subparsers = parser.add_subparsers(dest="command")
 
@@ -122,8 +124,9 @@ def build_parser():
     clean_subparser = add_subparser("clean")
     inspect_subparser = add_subparser("inspect")
     init_subparser = add_subparser("init")
+    mod_subparser = add_subparser("mod")
     for subparser in [run_subparser, rerun_subparser, collate_subparser,
-                      init_subparser]:
+                      init_subparser, mod_subparser]:
         subparser.add_argument(
                 "--ignore-flags", dest="ignore_flags", default=False,
                 action=_StoreBoolActionType, type=html_checkbox(checked=False),
@@ -160,7 +163,7 @@ def build_parser():
                 help="String to append to every command, "
                      "overriding values in PEP.")
         
-    for subparser in [run_subparser, rerun_subparser, init_subparser]:
+    for subparser in [run_subparser, rerun_subparser, init_subparser, mod_subparser]:
         # Note that defaults for otherwise numeric lump parameters are set to
         # null by default so that the logic that parses their values may
         # distinguish between explicit 0 and lack of specification.
@@ -188,7 +191,7 @@ def build_parser():
             type=html_select(choices=FLAGS),
             help="Check on only these flags/status values.")
 
-    for subparser in [destroy_subparser, clean_subparser, init_subparser]:
+    for subparser in [destroy_subparser, clean_subparser, init_subparser, mod_subparser]:
         subparser.add_argument(
                 "--force-yes", action=_StoreBoolActionType, default=False,
                 type=html_checkbox(checked=False),
@@ -199,7 +202,7 @@ def build_parser():
     for subparser in [run_subparser, rerun_subparser, table_subparser,
                       report_subparser, destroy_subparser, check_subparser,
                       clean_subparser, collate_subparser, inspect_subparser,
-                      init_subparser]:
+                      init_subparser, mod_subparser]:
         subparser.add_argument("config_file", nargs="?",
                                help="Project configuration file (YAML).")
         subparser.add_argument(

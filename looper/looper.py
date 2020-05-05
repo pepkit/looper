@@ -702,10 +702,12 @@ def main():
     global _LOGGER
     parser = build_parser()
     args, remaining_args = parser.parse_known_args()
-    dotfile_path = os.path.join(os.getcwd(), LOOPER_DOTFILE_NAME)
     if args.command == "init":
-        sys.exit(int(not init_dotfile(parser, dotfile_path, args)))
-    args = enrich_args_via_dotfile(args, dotfile_path)
+        sys.exit(int(not write_dotfile(parser, dotfile_path(), args)))
+    if args.command == "mod":
+        sys.exit(int(not write_dotfile(parser, dotfile_path(must_exist=True),
+                                       args, update=True)))
+    args = enrich_args_via_dotfile(args, dotfile_path())
     if args.command is None:
         parser.print_help(sys.stderr)
         sys.exit(1)
