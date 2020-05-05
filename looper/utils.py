@@ -296,14 +296,24 @@ def enrich_args_via_dotfile(parser_args, dotfile_path):
     return result
 
 
-def show_dotfile_template(parser):
+def init_dotfile(parser, path, arg_values=None):
     """
     Print out available dests and respective defaults in the provided subparser
 
     :param argparse.ArgumentParser parser: parser to examine
+    :param argparse.Namespace arg_values: argument values
+    :return bool: whether the initialization happened successfully
     """
+    if os.path.exists(path):
+        print("Can't initialize, file exists: {}".format(path))
+        return False
+    arg_values = vars(arg_values) if arg_values is not None else dict()
     defaults = merge_dicts(parser.arg_defaults(top_level=True),
                            parser.arg_defaults(unique=True))
-    for k, v in defaults.items():
-        if k != "dotfile_template":
-            print("{}: '{}'".format(k, v))
+    for k, v in arg_values.items():
+        if k in defaults:
+            defaults[k] = arg_values[k]
+    with open(path, 'w') as dotfile:
+        yaml.dump({k: str(v) for k, v in defaults.items()}, dotfile)
+    print("Initialized looper dotfile in: {}".format(path))
+    return True

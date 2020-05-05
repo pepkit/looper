@@ -703,11 +703,9 @@ def main():
     parser = build_parser()
     args, remaining_args = parser.parse_known_args()
     dotfile_path = os.path.join(os.getcwd(), LOOPER_DOTFILE_NAME)
+    if args.command == "init":
+        sys.exit(int(not init_dotfile(parser, dotfile_path, args)))
     args = enrich_args_via_dotfile(args, dotfile_path)
-    if args.dotfile_template:
-        print("# looper dotfile path: {}\n".format(dotfile_path))
-        show_dotfile_template(parser)
-        sys.exit(0)
     if args.command is None:
         parser.print_help(sys.stderr)
         sys.exit(1)
