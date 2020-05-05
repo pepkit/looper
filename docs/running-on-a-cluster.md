@@ -6,9 +6,16 @@ By default, `looper` will build a shell script for each sample and then it seque
 
 ## Overview and basic example of cluster computing
 
-To configure `looper` for cluster computing, you must provide information about your cluster setup. You create a `divvy` computing configuration file (`compute_config.yaml`) and point an environment variable (`DIVCFG`) to this file, and that's it! You then have access to any configured computing packages by using `looper --package PACKAGE`, where `PACKAGE` can be any computing system you configure.
+To configure `looper` for cluster computing, you must provide information about your cluster setup. This guide will show you the basics of how to set this up. If you need more details, head over to the [divvy documentation](http://divvy.databio.org).
 
-For example, here's a `compute_config.yaml` file that works with a SLURM environment:
+First, create a `divvy` computing configuration file. You can create a generic config file to start with by running:
+
+```
+divvy init -c compute_config.yaml
+```
+
+This creates compute_config.yaml. Here's an example `compute_config.yaml` file that works with a SLURM environment:
+
 ```yaml
 compute_packages:
   default:
@@ -53,6 +60,9 @@ echo 'Start time:' `date +'%Y-%m-%d %T'`
 
 These templates use variables wrapped in braces, like `{CODE}`, which are populated with specific values for a run. By adjusting which template you use, you can change whether your jobs runs locally or is submitted to SLURM.
 
+
+and point an environment variable (`DIVCFG`) to this file.
+
 ## Mapping variables to compute templates using divvy adapters
 
 What is the source of values used to populate the variables? Well, they are pooled together from several sources. Divvy uses a hierarchical system to collect data values from global and local sources, which enables you to re-use settings across projects and environments. To start, there are a few built-ins:
@@ -84,8 +94,20 @@ The other pipeline interface section that is available to templates is `resource
 *project_config.yaml*. Finally, project-level variables can also be populated from the `compute` section of a project config file. We don't recommend using this and it is not yet well documented, but it would enable you to make project-specific compute changes (such as billing a particular project to a particular SLURM resource account).
 
 
-
-This is just an overview; when you're ready to configure your computing environment, head over to the [divvy docs](http://divvy.databio.org) to get the whole story.
+Here are the default divvy adapters
+```
+adapters:
+  CODE: looper.command
+  JOBNAME: looper.job_name
+  CORES: compute.cores
+  LOGFILE: looper.log_file
+  TIME: compute.time
+  MEM: compute.mem
+  DOCKER_ARGS: compute.docker_args
+  DOCKER_IMAGE: compute.docker_image
+  SINGULARITY_IMAGE: compute.singularity_image
+  SINGULARITY_ARGS: compute.singularity_args
+```
 
 
 

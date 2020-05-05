@@ -8,7 +8,7 @@
 
 ## What makes looper better?
 
-`Looper`'s key strength is that it **decouples job handling from the pipeline process**. In a typical pipeline, job handling (managing how individual jobs are submitted to a cluster) is delicately intertwined with actual pipeline commands (running the actual code for a single compute job). The `looper` approach is modular, following the [the unix principle](https://en.wikipedia.org/wiki/Unix_philosophy): `looper` *only* manages job submission. This approach leads to several advantages compared with the traditional integrated approach:
+Looper **decouples job handling from the pipeline process**. In a typical pipeline, job handling (managing how individual jobs are submitted to a cluster) is delicately intertwined with actual pipeline commands (running the actual code for a single compute job). The `looper` approach is modular, following the [the unix principle](https://en.wikipedia.org/wiki/Unix_philosophy): `looper` *only* manages job submission. This approach leads to several advantages compared with the traditional integrated approach:
 
 1. running a pipeline on just one or two samples/jobs is simpler, and does not require a full-blown distributed compute environment.
 2. pipelines do not need to independently re-implement job handling code, which is shared.
@@ -24,13 +24,13 @@ Releases are posted as [GitHub releases](https://github.com/pepkit/looper/releas
 
 
 ```console
-pip install --user loopercli
+pip install --user looper
 ```
 
 Update with:
 
 ```console
-pip install --user --upgrade loopercli
+pip install --user --upgrade looper
 ```
 
 If the `looper` executable in not automatically in your `$PATH`, add the following line to your `.bashrc` or `.profile`:
