@@ -4,35 +4,58 @@
 
 To build job scripts, looper uses a 2-level template system consisting of an inner template wrapped by an outer template. The inner template is called a *command template*, which produces the individual commands to execute. The outer template is the *submission template*, which wraps the commands in environment handling code. This layered design allows us to decouple the computing environment from the pipeline, which improves portability.
 
-The command template is specified in the pipeline interface, at the level of the pipeline. Each pipeline provides a template for how its command should be constructed. These templates do not contain any information about computing environment. A simple command template could be something like this:
+The command template is specified by a pipeline in the pipeline interface. A very basic command template could be something like this:
 
 ```console
-command {sample.input_file} --arg
+pipeline_command {sample.input_file} --arg
 ```
 
-In theory, it would be possible to add computing environment details, like a SLURM submission script, directly into this command template. Then, looper would simply submit the jobs directly. The disadvantage is that now this pipeline can *only* be submitted via SLURM.
+In the simplest case, looper can run the pipeline by simply running these commands. This example contains no information about computing environment, such as SLURM submission directives. To extend to submitting the commands to a cluster, it may be tempting to add these details directly to the command template, which cause the jobs to be submitted to SLURM instead of run directly. However, this would restrict the pipeline to *only* running via SLURM, since the submission code would be tightly coupled to the command code.
 
-Instead, it is more flexible to introduce a second template layer using a *submission template*. The submission template is specified at the level of the computing environment. This way, it only has to be defined once per environment, and all pipelines can make use the same configuration. A submission template can be similarly simple. For a command to be run in a local computing environment, a basic script will suffice:
+Instead, looper retains flexibility by introducing a second template layer, the *submission template*. The submission template is specified at the level of the computing environment.  A submission template can also be as simple or complex as required. For a command to be run in a local computing environment, a basic template will suffice:
 
 ```console
 #! /usr/bin/bash
 
-{command}
+{CODE}
 ```
 
-This template can be enriched with environment computing options, such as cluster submission or linux container parameters. In this example, the command template is populated first, and then provided as a variable and used to populate the `{command}` variable in the submission template. Looper uses [divvy](http://divvy.databio.org) to handle submission templates.
+A SLURM submission template could be:
+
+```console
+#!/bin/bash
+#SBATCH --job-name='{JOBNAME}'
+#SBATCH --output='{LOGFILE}'
+#SBATCH --mem='{MEM}'
+#SBATCH --cpus-per-task='{CORES}'
+#SBATCH --time='{TIME}'
+echo 'Compute node:' `hostname`
+echo 'Start time:' `date +'%Y-%m-%d %T'`
+
+srun {CODE}
+```
+
+Looper first populates the command template, and then provides the output as a variable and used to populate the `{CODE}` variable in the submission template. This decoupling provides substantial advantages:
+
+1. The basic pipeline commands can be run on any computing environment by simply switching the submission template.
+2. The submission template can also be used for other computing environment parameters, such as containers.
+3. The submission template only has to be defined once *per environment*, and all pipelines can make use the same configuration.
+4. Because the submission template is universal, it can be outsourced to dedicated software that focuses only on submission templates.
+5. We can possibly [group multiple individual commands](grouping-jobs.md) into a single submission script.
+
+In fact, looper uses [divvy](http://divvy.databio.org) to handle submission templates. The divvy submission templates can be used outside looper. They can be access for interactive submission of jobs, or used by other software.
+
 
 ## Populating the templates
 
-Looper's task can be thought of as simply populating the given templates. To do this, Looper pools variables from several sources: 
+The task of running jobs can be thought of as simply populating the templates with variables. To do this, Looper pools variables from several sources: 
 
-1. the PEP, which provides information on the project and samples, 
-2. the divvy config file, which provides information on the computing environment,
+1. the command line, where the user provides any on-the-fly variables for a particular run.
+2. the PEP, which provides information on the project and samples.
 3. the pipeline interface, which provides information on the pipeline to run.
+4. the divvy config file, which provides information on the computing environment.
 
-Variables from these sources are used to populate the templates to construct the commands to run. To keep things organized, looper groups the variables into namespaces. These namespaces are used first to populate the command template, which produces a built command. This command is then treated as a variable in itself, which is pooled with the other variables to populate the submission template.
-
-Looper provides 6 variable namespaces for populating the templates:
+Variables from these sources are used to populate the templates to construct the commands to run. To keep things organized, looper groups the variables into namespaces. These namespaces are used first to populate the command template, which produces a built command. This command is then treated as a variable in itself, which is pooled with the other variables to populate the submission template. Looper provides 6 variable namespaces for populating the templates:
 
 ## 1. project
 The `project` namespace contains all PEP config attributes. For example, if you have a config file like this:
@@ -46,11 +69,11 @@ Then `project.my_variable` would have value `123`. You can use the project names
 
 ## 2. sample or samples
 
-For sample-level pipelines, the `sample` namespace contains all PEP post-processing sample attributes for the given sample. For project-level pipelines, looper constructs a single job for an entire project, so there is no `sample` namespace; instead, there is a `samples` (plural) namespace, which is a list of all the samples in the project. This can be useful if you need to iterate through all the samples.
+For sample-level pipelines, the `sample` namespace contains all PEP post-processing sample attributes for the given sample. For project-level pipelines, looper constructs a single job for an entire project, so there is no `sample` namespace; instead, there is a `samples` (plural) namespace, which is a list of all the samples in the project. This can be useful if you need to iterate through all the samples in your command template.
 
 ## 3. pipeline
 
-Everything under `pipeline` in the pipeline interface for this pipeline.
+Everything under `pipeline` in the pipeline interface for this pipeline. This simply provides a convenient way to annotate pipeline-level variables for use in templates.
 
 ## 4. looper
 
@@ -65,7 +88,7 @@ The `looper` namespace consists of automatic variables created by looper:
 - `log_file` -- an automatically created log file path, to be stored in the looper submission subdirectory
 - `command` -- the result of populating the command template
 
-The `looper.command` value enables the two-layer template system, whereby the output of the command template is used as input to the submission template.
+The `looper.command` value is what enables the two-layer template system, whereby the output of the command template is used as input to the submission template.
 
 ## 5. compute
 
@@ -76,14 +99,14 @@ The `compute` namespace consists of a group of variables relevant for computing 
 3. Pipeline interface, `pipeline.compute` section
 4. Activated divvy compute package (`--package` CLI argument)
 
-So, the compute namespace is first populated with any variables from the selected divvy compute package. It then updates this with settings given in the `compute` section of the pipeline interface. It then updates from the PEP `project.looper.compute`, and then finally anything passed to `--compute` on the looper CLI. This provides a way to module looper behavior at the level of a computing environment, a pipeline, a project, or a run -- in that order.
+So, the compute namespace is first populated with any variables from the selected divvy compute package. It then updates this with settings given in the `compute` section of the pipeline interface. It then updates from the PEP `project.looper.compute`, and then finally anything passed to `--compute` on the looper CLI. This provides a way to modulate looper behavior at the level of a computing environment, a pipeline, a project, or a run, in that order.
 
 
 ## Mapping variables to submission templates using divvy adapters
 
-One remaining issue is how to map variables from the looper variable namespaces onto the variables used in divvy templates. 
+One remaining issue is how to map variables from the looper variable namespaces onto the variables used in divvy templates. Divvy is decoupled from looper, and its templates are completely customizable, so they do not necessarily understand how to connect to looper variables into divvy templates. The default divvy templates use variables like `{CODE}`, `{JOBNAME}`, and `{LOGFILE}`, among others. A user may customize rename these or add custom variables names in divvy templates. How do we map the looper variables onto these arbitrary divvy template variables? Through divvy adapters.
 
-The default divvy templates use variables like `{CODE}`, `{JOBNAME}`, and `{LOGFILE}`, among others. These variables are linked to looper namespaces via *divvy adapters*. Here are the default divvy adapters:
+These variables are linked to looper namespaces via *divvy adapters*. Here are the default divvy adapters:
 
 ```
 adapters:
@@ -99,7 +122,7 @@ adapters:
   SINGULARITY_ARGS: compute.singularity_args
 ```
 
-The divvy adapters is a section in the divvy configuration file that links the divvy template variable (left side) to the namespaced input variables provided by looper (right side). You can adjust this section in your configuration file to map any looper-provided variables into your submission template.
+The divvy adapters is a section in the divvy configuration file that links the divvy template variable (left side) to any other arbitrary variable names (right side). This example, we've populated the adapters with links to the namespaced input variables provided by looper (right side). You can adjust this section in your configuration file to map any variables into your submission template.
 
 ## Best practices on storing compute variables
 

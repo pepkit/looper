@@ -6,13 +6,11 @@ By default, `looper` will build a shell script for each sample and then run it s
 
 ## Overview and basic example of cluster computing
 
-To configure `looper` for cluster computing, you must provide information about your cluster setup. First, create a `divvy` computing configuration file. You can create a generic config file using `divvy init`:
+To configure `looper` for cluster computing, you just configure divvy. Looper has access to all divvy configuration. Complete details on how to configure divvy are described in the [divvy documentation](http://divvy.databio.org). Briefly, first create a `divvy` computing configuration file using `divvy init`:
 
 ```
 export DIVCFG="divvy_config.yaml"
 divvy init -c $DIVCFG
 ```
 
-Looper will now have access to your computing configuration. You can run `divvy list` to see what compute packages are available. For example, you'll start with a package called 'slurm', which you can use with looper by calling `looper --package slurm`. That's all there is to it. 
-
-For many systems, the default templates will work out of the box. If you need to tweak things, the template system is flexible and you can configure it to run in any compute environment. For more details, head over to the [divvy documentation](http://divvy.databio.org).
+Looper will now have access to your computing configuration. You can run `divvy list` to see what compute packages are available in this file. For example, you'll start with a package called 'slurm', which you can use with looper by calling `looper --package slurm`. For many systems (SLURM, SGE, LFS, etc), the default divvy configuration will work out of the box. If you need to tweak things, the template system is flexible and you can configure it to run in any compute environment. That's all there is to it. 
