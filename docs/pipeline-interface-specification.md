@@ -16,7 +16,7 @@ If you're using *existing* `looper`-compatible pipelines, you don't need to crea
 
 
 
-## Definitions of terms and components of a pipeline interface
+## Definitions of terms
 
 A pipeline interface consists of up to 3 keys:
 
@@ -31,11 +31,14 @@ pipeline_name: RRBS
 sample_pipeline:
     path: path/to/rrbs.py
     input_schema: path/to/rrbs_schema.yaml
-    command_template: <
-      {pipeline.path} "--input" {sample.data_path}
+    command_template: {pipeline.path} --input {sample.data_path}
 ```
 
-Pretty simple. The `pipeline_name` is arbitrary. It's used for messaging and identification. Ideally, it's unique to each pipeline. In this example, we define a single sample-level pipeline. Each `sample_pipeline` or `project_pipeline` section can have any of these components:
+Pretty simple. The `pipeline_name` is arbitrary. It's used for messaging and identification. Ideally, it's unique to each pipeline. In this example, we define a single sample-level pipeline. 
+
+## Components of a pipeline interface
+
+Each `sample_pipeline` or `project_pipeline` section can have any of these components:
 
 ### path (REQUIRED)
 
@@ -121,10 +124,6 @@ properties:
           path: "aligned_{genome}/{sample_name}_smooth.bw"
           type: string
           description: "A smooth bigwig file"
-        exact_bw:
-          path: "aligned_{genome}_exact/{sample_name}_exact.bw"
-          type: string
-          description: "An exact bigwig file"
         aligned_bam: 
           path: "aligned_{genome}/{sample_name}_sort.bam"
           type: string
@@ -133,35 +132,11 @@ properties:
           path: "peak_calling_{genome}/{sample_name}_peaks.bed"
           type: string
           description: "Peaks in BED format"
-  alignment_percent_file:
-    title: "Alignment percent file"
-    description: "Plots percent of total alignment to all pre-alignments and primary genome."
-    thumbnail_path: "summary/{name}_alignmentPercent.png"
-    path: "summary/{name}_alignmentPercent.pdf"
-    type: image
-  alignment_raw_file:
-    title: "Alignment raw file"
-    description: "Plots raw alignment rates to all pre-alignments and primary genome."
-    thumbnail_path: "summary/{name}_alignmentRaw.png"
-    path: "summary/{name}_alignmentRaw.pdf"
-    type: image
   tss_file:
     title: "TSS enrichment file"
     description: "Plots TSS scores for each sample."
     thumbnail_path: "summary/{name}_TSSEnrichment.png"
     path: "summary/{name}_TSSEnrichment.pdf"
-    type: image
-  library_complexity_file:
-    title: "Library complexity file"
-    description: "Plots each sample's library complexity on a single plot."
-    thumbnail_path: "summary/{name}_libComplexity.png"
-    path: "summary/{name}_libComplexity.pdf"
-    type: image
-  consensus_peaks_file:
-    title: "Consensus peaks file"
-    description: "A set of consensus peaks across samples."
-    thumbnail_path: "summary/{name}_consensusPeaks.png"
-    path: "summary/{name}_consensusPeaks.narrowPeak"
     type: image
   counts_table:
     title: "Project peak coverage file"
@@ -171,7 +146,7 @@ properties:
 ```
 
 
-### `command_template` (REQUIRED)
+### command_template (REQUIRED)
 
  a `jinja2` template that will create the actual command that should be run for each sample. 
 In other words, it's a column name of your sample annotation sheet. Looper will find the value of this attribute for each sample and pass that to the pipeline as the value for that argument. 
@@ -180,59 +155,25 @@ These arguments are considered *required*, and `looper` will not submit a pipeli
 
 #### Command template variable namespaces
 
-Within the `command_template`, you have access to variables from several sources. These variables are divided into namespaces depending on the variable source. You can access the values of these variables in the command template using the single-brace jinja2 template language syntax: `{namespace.variable}`. For example, looper automatically creates a variable called `job_name`, which you may want to pass as an argument to your pipeline. You can access this variable with `{looper.job_name}`. The available namespaces are listed below:
+Within the `command_template`, you have access to variables from several sources. These variables are divided into namespaces depending on the variable source. You can access the values of these variables in the command template using the single-brace jinja2 template language syntax: `{namespace.variable}`. For example, looper automatically creates a variable called `job_name`, which you may want to pass as an argument to your pipeline. You can access this variable with `{looper.job_name}`. 
 
-##### 1 `project`
-All PEP config attributes.
+The available namespaces are described in detail in [looper variable namespaces](variable-namespaces.md).
 
-##### 2 `sample`
-All PEP post-processing sample attributes.
-
-##### 3 `pipeline`
-Everything under `pipeline` in the pipeline interface (for this pipeline).
-
-##### 4 `looper` 
-
-Automatic attributes created by looper:
-
-- `job_name` -- automatic job name string made by concatenating the pipeline identifier and unique sample name.
-- `output_folder` -- parent output folder provided in `project.looper.output_folder`
-- `sample_output_folder` -- A sample-specific output folder derived from the ({output_folder}/{sample_name})
-- `total_input_size`
-- `pipeline_config`  (renamed from `config` to disambiguate with new `pep_config` ?)
-- `pep_config` -- path to the PEP configuration file used for this looper run.
-- `log_file`
-- `command`
-
-##### 5 `compute`
-
-Variables populated from the `compute` priority list. The `compute` namespace has a unique behavior: it cascades settings from various levels, overriding default values with more specific ones. The source list in priority order is:
-
-1. Looper CLI (`--compute` or `--settings` for on-the-fly settings)
-2. PEP config, `project.looper.compute` section
-3. Pipeline interface, `pipeline.compute` section
-4. Activated divvy compute package (`--package` CLI argument)
-
-So, the compute namespace is first populated with any variables from the selected divvy compute package. It then updates this with settings given in the `compute` section of the pipeline interface. It then updates from the PEP `project.looper.compute`, and then finally anything passed to `--compute` on the looper CLI. This provides a way to module looper behavior at the level of a computing environment, a pipeline, a project, or a run -- in that order.
-
-##### `samples`
-
-For project-level pipelines, there is no `sample` namespace; instead, there is a `samples` (plural) namespace, which is a list of all the samples in the project. This can be useful if you need to iterate through all the samples.
 
 #### Optional arguments
 
 Any optional arguments can be accommodated using jinja2 syntax, like this. These will only be added to the command *if the specified attribute exists for the sample*. 
 
 ```
-  command_template: >
-    {pipeline.path}
-    --sample-name {sample.sample_name}
-    --genome {sample.genome}
-    --input {sample.read1}
-    --single-or-paired {sample.read_type}
-    {% if sample.read2 is defined %} --input2 {sample.read2} {% endif %}
-    {% if sample.peak_caller is defined %} --peak-caller {sample.peak_caller} {% endif %}
-    {% if sample.FRIP_ref is defined %} --frip-ref-peaks {sample.FRIP_ref} {% endif %}
+command_template: >
+  {pipeline.path}
+  --sample-name {sample.sample_name}
+  --genome {sample.genome}
+  --input {sample.read1}
+  --single-or-paired {sample.read_type}
+  {% if sample.read2 is defined %} --input2 {sample.read2} {% endif %}
+  {% if sample.peak_caller is defined %} --peak-caller {sample.peak_caller} {% endif %}
+  {% if sample.FRIP_ref is defined %} --frip-ref-peaks {sample.FRIP_ref} {% endif %}
 ```
 
 ### compute (RECOMMENDED)
@@ -256,7 +197,7 @@ sample_pipeline:
 
 The `resources-sample.tsv` file consists of a file with at least 1 column called `max_file_size`. Any other columns will then be added.
 
-```
+```tsv
 max_file_size cores mem time
 0.001 1 8000  00-04:00:00
 0.05  2 12000 00-08:00:00
@@ -272,37 +213,22 @@ Looper determines the size of your input file, and then iterates over the resour
 Because the partition or queue name is relative to your environment, we don't usually specify this in the `resources` section, but rather, in the `pepenv` config. 
 So, `max_file_size: "5"` means 5 GB. This means that resource package only will be used if the input files total size is greater than 5 GB.
 
-**More extensive example:**
+#### dynamic_variables_command_template
 
-```yaml
-pipelines:
-  rrbs:
-    name: RRBS
-    looper_args: True
-    path: path/to/rrbs.py
-    arguments:
-      "--sample-name": sample_name
-      "--genome": genome
-      "--input": data_path
-      "--single-or-paired": read_type
+The `dynamic_variables_command_template` specifies a Jinja2 template to construct a system command run in a subprocess. It has to return a JSON object, which is then used to populate submission templates, but see "compute settings priority order". This command template has available to it the same variables in namespaces that the job command template has.
 
-  rnaBitSeq.py:
-    looper_args: True
-    arguments:
-      "--sample-name": sample_name
-      "--genome": transcriptome
-      "--input": data_path
-      "--single-or-paired": read_type
+Example:
 
-  atacseq.py:
-    arguments:
-      "--sample-yaml": yaml_file
-      "-I": sample_name
-      "-G": genome
-    looper_args: True
-    outputs:
-      smoothed_bw: "aligned_{sample.genome}/{sample.name}_smoothed.bw"
-      pre_smoothed_bw: "aligned_{project.prealignments}/{sample.name}_smoothed.bw"
+```
+sample_pipeline:
+  path: pipelines/pepatac.py
+  command_template: >
+    {pipeline.path} ...
+  compute:
+    dynamic_variables_command_template: python script.py --arg
 ```
 
 
+## Validating a pipeline interface
+
+A pipeline interface can be validated using JSON Schema against [schema.databio.org/pipelines/pipeline_interface.yaml](http://schema.databio.org/pipelines/pipeline_interface.yaml)

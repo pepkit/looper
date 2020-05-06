@@ -1,25 +1,26 @@
-# Looper template system and namespace variables
+# Looper's concentric template system
 
-## Looper's concentric template system
+## Introduction
 
-Looper uses a 2-level template system consisting of an inner template wrapped by an outer template. The inner template is called a *command template*, which produces the individual commands to execute. The outer template is the *submission template*, which wraps the commands in environment handling code. This layered design makes looper flexible, allowing us to decouple settings of the computing environment from the pipeline, which improves portability.
+To build job scripts, looper uses a 2-level template system consisting of an inner template wrapped by an outer template. The inner template is called a *command template*, which produces the individual commands to execute. The outer template is the *submission template*, which wraps the commands in environment handling code. This layered design allows us to decouple the computing environment from the pipeline, which improves portability.
 
-The command template is specified at the level of the pipeline. Each pipeline provides a template for how its command should be constructed. These templates do not need to contain any information about computing environment. A simple command template could be something like this:
+The command template is specified in the pipeline interface, at the level of the pipeline. Each pipeline provides a template for how its command should be constructed. These templates do not contain any information about computing environment. A simple command template could be something like this:
 
+```console
+command {sample.input_file} --arg
 ```
-command_template: command {sample.input_file}
-```
 
-The submission template is specified at the level of the computing environment. This way, it only has to be defined once per environment, and all pipelines can make use the same configuration. A submission template can be similarly simple. For a command to be run in a local computing environment, a basic script will suffice:
+In theory, it would be possible to add computing environment details, like a SLURM submission script, directly into this command template. Then, looper would simply submit the jobs directly. The disadvantage is that now this pipeline can *only* be submitted via SLURM.
 
-```
+Instead, it is more flexible to introduce a second template layer using a *submission template*. The submission template is specified at the level of the computing environment. This way, it only has to be defined once per environment, and all pipelines can make use the same configuration. A submission template can be similarly simple. For a command to be run in a local computing environment, a basic script will suffice:
+
+```console
 #! /usr/bin/bash
 
 {command}
 ```
 
-This template can then be enriched with environment computing options, such as cluster submission or linux container parameters. In this example, the command template is populated first, and then provided as a variable and used to populate the `{command}` variable in the submission template.
-
+This template can be enriched with environment computing options, such as cluster submission or linux container parameters. In this example, the command template is populated first, and then provided as a variable and used to populate the `{command}` variable in the submission template. Looper uses [divvy](http://divvy.databio.org) to handle submission templates.
 
 ## Populating the templates
 
@@ -76,4 +77,52 @@ The `compute` namespace consists of a group of variables relevant for computing 
 4. Activated divvy compute package (`--package` CLI argument)
 
 So, the compute namespace is first populated with any variables from the selected divvy compute package. It then updates this with settings given in the `compute` section of the pipeline interface. It then updates from the PEP `project.looper.compute`, and then finally anything passed to `--compute` on the looper CLI. This provides a way to module looper behavior at the level of a computing environment, a pipeline, a project, or a run -- in that order.
+
+
+## Mapping variables to submission templates using divvy adapters
+
+One remaining issue is how to map variables from the looper variable namespaces onto the variables used in divvy templates. 
+
+The default divvy templates use variables like `{CODE}`, `{JOBNAME}`, and `{LOGFILE}`, among others. These variables are linked to looper namespaces via *divvy adapters*. Here are the default divvy adapters:
+
+```
+adapters:
+  CODE: looper.command
+  JOBNAME: looper.job_name
+  CORES: compute.cores
+  LOGFILE: looper.log_file
+  TIME: compute.time
+  MEM: compute.mem
+  DOCKER_ARGS: compute.docker_args
+  DOCKER_IMAGE: compute.docker_image
+  SINGULARITY_IMAGE: compute.singularity_image
+  SINGULARITY_ARGS: compute.singularity_args
+```
+
+The divvy adapters is a section in the divvy configuration file that links the divvy template variable (left side) to the namespaced input variables provided by looper (right side). You can adjust this section in your configuration file to map any looper-provided variables into your submission template.
+
+## Best practices on storing compute variables
+
+Since compute variables can be stored in several places, it can be confusing to know where you should put things. Here are some guidelines:
+
+### DIVCFG config file
+
+Variables that describes settings of a **compute environment** should go in the `DIVCFG` file. Any attributes in the activated compute package will be available to populate template variables. For example, the `partition` attribute is specified in many of our default `DIVCFG` files; that attribute is used to populate a template `{PARTITION}` variable. This is what enables pipelines to work in any compute environment, since we have no control over what your partitions are named. You can also use this to change SLURM queues on-the-fly.
+
+### Pipeline interface
+
+Variables that are **specific to a pipeline** can be defined in the `pipeline interface` file,  `compute` section.As an example of a variable pulled from the `compute` section, we defined in our `pipeline_interface.yaml` a variable pointing to the singularity or docker image that can be used to run the pipeline, like this:
+
+```
+compute:
+  singularity_image: /absolute/path/to/images/image
+```
+
+Now, this variable will be available for use in a template as `{SINGULARITY_IMAGE}`. This makes sense to put in the pipeline interface because it is specific to this pipeline. This path should probably be absolute, because a relative path will be interpreted as relative to the working directory where your job is executed (*not* relative to the pipeline interface). This section is also useful for adjusting the amount of resources we need to request from a resource manager like SLURM. For example: `{MEM}`, `{CORES}`, and `{TIME}` are all defined frequently in this section, and they vary for different input file sizes.
+
+### Project config
+
+Finally, project-level variables can also be populated from the `compute` section of a project config file. This would enable you to make project-specific compute changes (such as billing a particular project to a particular SLURM resource account).
+
+
 

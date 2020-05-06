@@ -1,116 +1,18 @@
 # How to submit looper jobs to a cluster
 
-By default, `looper` will build a shell script for each sample and then it sequentially on the local computer. This is convenient for simple cases, but when it comes time to scale up, this is where `looper` really excels, in large projects that require submitting these jobs to a cluster resource manager (like SLURM, SGE, LFS, etc.). Looper uses [divvy](http://code.databio.org/divvy) to manage computing configuration so projects and pipelines can easily travel among environments.
+By default, `looper` will build a shell script for each sample and then run it sequentially on the local computer. This is convenient for simple cases, but when it comes time to scale up, this is where `looper` really excels. Looper uses [divvy](http://code.databio.org/divvy) to manage computing configuration so projects and pipelines can easily travel among environments.
 
-`Divvy` uses a template system to build scripts for each job. This enables looper to run jobs on any cluster resource manager by simply setting up a template that fits it.
+`Divvy` uses a template system to build scripts for each job. This enables looper to run jobs on any cluster resource manager (like SLURM, SGE, LFS, etc.) by simply setting up a template for it.
 
 ## Overview and basic example of cluster computing
 
-To configure `looper` for cluster computing, you must provide information about your cluster setup. This guide will show you the basics of how to set this up. If you need more details, head over to the [divvy documentation](http://divvy.databio.org).
-
-First, create a `divvy` computing configuration file. You can create a generic config file to start with by running:
+To configure `looper` for cluster computing, you must provide information about your cluster setup. First, create a `divvy` computing configuration file. You can create a generic config file using `divvy init`:
 
 ```
-divvy init -c compute_config.yaml
+export DIVCFG="divvy_config.yaml"
+divvy init -c $DIVCFG
 ```
 
-This creates compute_config.yaml. Here's an example `compute_config.yaml` file that works with a SLURM environment:
+Looper will now have access to your computing configuration. You can run `divvy list` to see what compute packages are available. For example, you'll start with a package called 'slurm', which you can use with looper by calling `looper --package slurm`. That's all there is to it. 
 
-```yaml
-compute_packages:
-  default:
-    submission_template: templates/local_template.sub
-    submission_command: sh
-  slurm:
-    submission_template: templates/slurm_template.sub
-    submission_command: sbatch
-    partition: queue_name
-```
-
-Each section within `compute_packages` defines a "compute package" that can be activated. 
-By default, the package named `default` will be used, You may then choose a different compute package on the fly by specifying the `--package` option: ``looper run --package PACKAGE``. In this case, `PACKAGE` could be `slurm`, which would run the jobs on SLURM, from queue `queue_name`. You can make as many compute packages as you wish (for example, to submit to different SLURM partitions).
-
-The `templates/local_template.sub` is probably very simple, something like this:
-
-```
-#!/bin/bash
-
-echo 'Start time:' `date +'%Y-%m-%d %T'`
-
-{CODE} | tee {LOGFILE}
-```
-
-
-The `templates/slurm_template.sub` templates a slurm submission:
-
-```
-#!/bin/bash
-#SBATCH --job-name='{JOBNAME}'
-#SBATCH --output='{LOGFILE}'
-#SBATCH --mem='{MEM}'
-#SBATCH --cpus-per-task='{CORES}'
-#SBATCH --time='{TIME}'
-#SBATCH --partition='{PARTITION}'
-
-echo 'Compute node:' `hostname`
-echo 'Start time:' `date +'%Y-%m-%d %T'`
-
-{CODE}
-```
-
-These templates use variables wrapped in braces, like `{CODE}`, which are populated with specific values for a run. By adjusting which template you use, you can change whether your jobs runs locally or is submitted to SLURM.
-
-
-and point an environment variable (`DIVCFG`) to this file.
-
-## Mapping variables to compute templates using divvy adapters
-
-What is the source of values used to populate the variables? Well, they are pooled together from several sources. Divvy uses a hierarchical system to collect data values from global and local sources, which enables you to re-use settings across projects and environments. To start, there are a few built-ins:
-
-Built-in variables:
-
-- `{CODE}` is a reserved variable that refers to the actual command string that will run the pipeline. `Looper` will piece together this command individually for each sample
-- `{JOBNAME}` -- automatically produced by `looper` using the `sample_name` and the pipeline name.
-- `{LOGFILE}` -- automatically produced by `looper` using the `sample_name` and the pipeline name.
-
-
-Other variables are not automatically created by `looper` and are specified in a few different places:
-
-*DIVCFG config file*. Variables that describes settings of a **compute environment** should go in the `DIVCFG` file. Any attributes in the activated compute package will be available to populate template variables. For example, the `partition` attribute is specified in many of our default `DIVCFG` files; that attribute is used to populate a template `{PARTITION}` variable. This is what enables pipelines to work in any compute environment, since we have no control over what your partitions are named. You can also use this to change SLURM queues on-the-fly.
-
-*pipeline_interface.yaml*. Variables that are **specific to a pipeline** can be defined in the `pipeline interface` file. Variables in two different sections are available to templates: the `compute` and `resources` sections. The difference between the two is that the `compute` section is common to all samples, while the `resources` section varies based on sample input size. As an example of a variable pulled from the `compute` section, we defined in our `pipeline_interface.yaml` a variable pointing to the singularity or docker image that can be used to run the pipeline, like this:
-
-```
-compute:
-  singularity_image: /absolute/path/to/images/image
-```
-
-Now, this variable will be available for use in a template as `{SINGULARITY_IMAGE}`. This makes sense to put in the `compute` section because it doesn't change for different sizes of input files. This path should probably be absolute, because a relative path will be interpreted as relative to the working directory where your job is executed (*not* relative to the pipeline interface).
-
-The other pipeline interface section that is available to templates is `resources`. This section uses a list of *resource packages* that vary based on sample input size. We use these in existing templates to adjust the amount of resources we need to request from a resource manager like SLURM. For example: `{MEM}`, `{CORES}`, and `{TIME}` are all defined in this section, and they vary for different input file sizes.
-
-[Read more about pipeline_interface.yaml here](pipeline-interface.md).
-
-*project_config.yaml*. Finally, project-level variables can also be populated from the `compute` section of a project config file. We don't recommend using this and it is not yet well documented, but it would enable you to make project-specific compute changes (such as billing a particular project to a particular SLURM resource account).
-
-
-Here are the default divvy adapters
-```
-adapters:
-  CODE: looper.command
-  JOBNAME: looper.job_name
-  CORES: compute.cores
-  LOGFILE: looper.log_file
-  TIME: compute.time
-  MEM: compute.mem
-  DOCKER_ARGS: compute.docker_args
-  DOCKER_IMAGE: compute.docker_image
-  SINGULARITY_IMAGE: compute.singularity_image
-  SINGULARITY_ARGS: compute.singularity_args
-```
-
-
-
-## Configuring divvy
-
-To start, `divvy` includes a few built-in templates so you can run basic jobs without messing with anything, but the template system provides ultimate flexibility to customize your job scripts however you wish.
+For many systems, the default templates will work out of the box. If you need to tweak things, the template system is flexible and you can configure it to run in any compute environment. For more details, head over to the [divvy documentation](http://divvy.databio.org).
