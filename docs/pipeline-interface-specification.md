@@ -12,7 +12,7 @@ Table of contents:
 
 In order to run an arbitrary pipeline, we require a formal specification for how the pipeline is to be used. We define this using a *pipeline interface* file. It maps attributes of a PEP project or sample to CLI arguments. Thus, it defines the interface between the project metadata (the PEP) and the pipeline itself.
 
-If you're using *existing* `looper`-compatible pipelines, you don't need to create a new interface; just [point your project at the one that comes with the pipeline](linking-a-pipeline.md). When creating *new* `looper`-compatible pipelines, you'll need to create a new pipeline interface file.
+If you're using *existing* `looper`-compatible pipelines, you don't need to create a new interface; just [point your project at the one that comes with the pipeline](defining-a-project.md). When creating *new* `looper`-compatible pipelines, you'll need to create a new pipeline interface file.
 
 
 
@@ -227,6 +227,19 @@ sample_pipeline:
   compute:
     dynamic_variables_command_template: python script.py --arg
 ```
+
+
+### sample_yaml_path
+
+Looper produces a yaml file that represents the sample. You can choose where looper will place this file.
+
+```
+sample_yaml_path: {sample.sample_name}.yaml  # relative to looper.output_dir
+```
+
+This attribute, like the `command_template`, has access to any of the looper namespaces, in case you want to use them in the names of your sample yaml files.
+
+If sample_yaml_path section is missing, by default the file is saved in submission directory in `<sample_name>.yaml`
 
 
 ## Validating a pipeline interface
