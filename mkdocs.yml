@@ -20,7 +20,9 @@ nav:
     - Writing a pipeline interface: writing-a-pipeline-interface.md
   - Reference:
     - Pipeline interface specification: pipeline-interface-specification.md
+    - Pipeline tiers: pipeline-tiers.md
     - Looper variable namespaces: variable-namespaces.md
+    - Concentric templates: concentric-templates.md
     - Usage: usage.md
     - Configuration files: config-files.md
     - API: autodoc_build/looper.md

@@ -1,54 +1,8 @@
-# Looper's concentric template system
-
-## Introduction
-
-To build job scripts, looper uses a 2-level template system consisting of an inner template wrapped by an outer template. The inner template is called a *command template*, which produces the individual commands to execute. The outer template is the *submission template*, which wraps the commands in environment handling code. This layered design allows us to decouple the computing environment from the pipeline, which improves portability.
-
-The command template is specified by a pipeline in the pipeline interface. A very basic command template could be something like this:
-
-```console
-pipeline_command {sample.input_file} --arg
-```
-
-In the simplest case, looper can run the pipeline by simply running these commands. This example contains no information about computing environment, such as SLURM submission directives. To extend to submitting the commands to a cluster, it may be tempting to add these details directly to the command template, which cause the jobs to be submitted to SLURM instead of run directly. However, this would restrict the pipeline to *only* running via SLURM, since the submission code would be tightly coupled to the command code.
-
-Instead, looper retains flexibility by introducing a second template layer, the *submission template*. The submission template is specified at the level of the computing environment.  A submission template can also be as simple or complex as required. For a command to be run in a local computing environment, a basic template will suffice:
-
-```console
-#! /usr/bin/bash
-
-{CODE}
-```
-
-A SLURM submission template could be:
-
-```console
-#!/bin/bash
-#SBATCH --job-name='{JOBNAME}'
-#SBATCH --output='{LOGFILE}'
-#SBATCH --mem='{MEM}'
-#SBATCH --cpus-per-task='{CORES}'
-#SBATCH --time='{TIME}'
-echo 'Compute node:' `hostname`
-echo 'Start time:' `date +'%Y-%m-%d %T'`
-
-srun {CODE}
-```
-
-Looper first populates the command template, and then provides the output as a variable and used to populate the `{CODE}` variable in the submission template. This decoupling provides substantial advantages:
-
-1. The basic pipeline commands can be run on any computing environment by simply switching the submission template.
-2. The submission template can also be used for other computing environment parameters, such as containers.
-3. The submission template only has to be defined once *per environment*, and all pipelines can make use the same configuration.
-4. Because the submission template is universal, it can be outsourced to dedicated software that focuses only on submission templates.
-5. We can possibly [group multiple individual commands](grouping-jobs.md) into a single submission script.
-
-In fact, looper uses [divvy](http://divvy.databio.org) to handle submission templates. The divvy submission templates can be used outside looper. They can be access for interactive submission of jobs, or used by other software.
-
+# Looper variable namespaces
 
 ## Populating the templates
 
-The task of running jobs can be thought of as simply populating the templates with variables. To do this, Looper pools variables from several sources: 
+Loper creates job scripts using [concentric templates](concentric-templates.md) consisting of a *command template* and a *submission template*. This layered design allows us to decouple the computing environment from the pipeline, which improves portability. The task of running jobs can be thought of as simply populating the templates with variables. To do this, Looper pools variables from several sources: 
 
 1. the command line, where the user provides any on-the-fly variables for a particular run.
 2. the PEP, which provides information on the project and samples.
@@ -127,6 +81,10 @@ The divvy adapters is a section in the divvy configuration file that links the d
 ## Best practices on storing compute variables
 
 Since compute variables can be stored in several places, it can be confusing to know where you should put things. Here are some guidelines:
+
+### Partition or queue name
+
+Because the partition or queue name is relative to your environment, we don't usually specify this in the `resources` section, but rather, in the `pepenv` config. 
 
 ### DIVCFG config file
 

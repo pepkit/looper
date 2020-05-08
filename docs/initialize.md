@@ -1,5 +1,7 @@
 # How to initialize a looper repository
 
+*This is considered a beta feature and may change in future releases*.
+
 Looper provides a command `looper init` that allows you to initialize folders as looper repositories. This enables you to use `looper` without passing your PEP every time. 
 
 ```
