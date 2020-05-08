@@ -268,7 +268,10 @@ def write_dotfile(parser, aux_parser, path, arg_values=None, update=False):
         if not update:
             # init
             yaml_data = {LOOPER_KEY: {k: v for k, v in defaults.items()}}
-            yaml_data.update({PROJ_MODS_KEY: {CFG_IMPORTS_KEY: [arg_values["config_file"]]}})
+            if arg_values["config_file"] is not None:
+                yaml_data.update({
+                    PROJ_MODS_KEY:
+                        {CFG_IMPORTS_KEY: [arg_values["config_file"]]}})
         else:
             # mod
             current[LOOPER_KEY].update(defaults)
