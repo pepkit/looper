@@ -700,14 +700,20 @@ def _proc_resources_spec(args):
 def main():
     """ Primary workflow """
     global _LOGGER
-    parser = build_parser()
+    parsers = build_parser()
+    parser = parsers[0]
+    aux_parser = parsers[1]
+    aux_parser.suppress_defaults()
+    # aux_parser.suppress_defaults()
     args, remaining_args = parser.parse_known_args()
     if args.command == "init":
-        sys.exit(int(not write_dotfile(parser, dotfile_path(), args)))
+        sys.exit(int(not write_dotfile(parser, aux_parser, dotfile_path(),
+                                       args)))
     if args.command == "mod":
-        sys.exit(int(not write_dotfile(parser, dotfile_path(must_exist=True),
-                                       args, update=True)))
-    args = enrich_args_via_dotfile(args)
+        sys.exit(int(not write_dotfile(parser, aux_parser,
+                                       dotfile_path(must_exist=True), args,
+                                       update=True)))
+    args = enrich_args_via_dotfile(args, aux_parser)
     if args.command is None:
         parser.print_help(sys.stderr)
         sys.exit(1)
@@ -751,7 +757,7 @@ def main():
     # Initialize project
     _LOGGER.debug("Building Project")
     try:
-        p = Project(config_file=determine_config_path(args.config_file),
+        p = Project(config_file=args.config_file,
                       amendments=args.amendments,
                       pifaces=args.pifaces[0] if args.pifaces else None,
                       file_checks=args.file_checks,

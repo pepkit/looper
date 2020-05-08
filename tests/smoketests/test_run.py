@@ -72,7 +72,7 @@ class LooperBothRunsTests:
 
     @pytest.mark.parametrize("cmd", ["run", "runp"])
     @pytest.mark.parametrize("arg", [["--command-extra", CMD_STRS[0]],
-                                     ["--command-extra",  CMD_STRS[1]],
+                                     ["--command-extra", CMD_STRS[1]],
                                      ["--command-extra", CMD_STRS[2]],
                                      ["--command-extra", CMD_STRS[3]]])
     def test_cmd_extra_cli(self, prep_temp_pep, cmd, arg):
@@ -107,7 +107,7 @@ class LooperBothRunsTests:
         tp = prep_temp_pep
         dotfile_path = os.path.join(os.getcwd(), LOOPER_DOTFILE_NAME)
         with open(dotfile_path, 'w') as df:
-            dump({"package": "local"}, df)
+            dump({LOOPER_KEY: {"package": "local"}}, df)
         stdout, stderr, rc = _subp_exec(tp, cmd)
         sd = os.path.join(_get_outdir(tp), "submission")
         print(stderr)
@@ -122,7 +122,7 @@ class LooperBothRunsTests:
         tp = prep_temp_pep
         dotfile_path = os.path.join(os.getcwd(), LOOPER_DOTFILE_NAME)
         with open(dotfile_path, 'w') as df:
-            dump({"config_file": tp}, df)
+            dump({LOOPER_KEY: {"config_file": tp}}, df)
         stdout, stderr, rc = _subp_exec(cmd=cmd)
         print(stderr)
         assert rc == 0
@@ -133,7 +133,7 @@ class LooperBothRunsTests:
         tp = prep_temp_pep
         dotfile_path = os.path.join(os.getcwd(), LOOPER_DOTFILE_NAME)
         with open(dotfile_path, 'w') as df:
-            dump({"package": "local"}, df)
+            dump({LOOPER_KEY: {"package": "local"}}, df)
         stdout, stderr, rc = _subp_exec(tp, cmd, ["--package", "slurm"])
         sd = os.path.join(_get_outdir(tp), "submission")
         print(stderr)

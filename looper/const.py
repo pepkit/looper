@@ -103,7 +103,7 @@ OUTDIR_KEY = "output_dir"
 EXAMPLE_COMPUTE_SPEC_FMT = "--compute k1=v1,k2=v2"
 SUBMISSION_FAILURE_MESSAGE = "Cluster resource failure"
 LOOPER_DOTFILE_NAME = "." + LOOPER_KEY + ".yaml"
-POSITIONAL = ["config_file"]
+POSITIONAL = ["config_file", "command"]
 
 # resource package TSV-related consts
 ID_COLNAME = "id"
