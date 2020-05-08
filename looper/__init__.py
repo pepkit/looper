@@ -206,7 +206,7 @@ def build_parser():
         subparser.add_argument("config_file", nargs="?",
                                help="Project configuration file (YAML).")
         subparser.add_argument(
-                "--pipeline-interfaces", dest="pifaces", metavar="P",
+                "-i", "--pipeline-interfaces", dest="pifaces", metavar="P",
                 nargs="+", action='append',
                 help="Path to a pipeline interface file")
         subparser.add_argument(
@@ -238,7 +238,7 @@ def build_parser():
                 help="Operate only on samples associated with these attribute "
                      "values; if not provided, all samples are used.")
         subparser.add_argument(
-                "-a", "--amendments", dest="amendments", nargs="+",
+                "-a", "--amendments", dest="amendments", nargs="+", metavar="A",
                 help="List of of amendments to activate")
 
     return parser
