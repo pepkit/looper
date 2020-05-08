@@ -182,8 +182,9 @@ class Project(peppyProject):
             return self[CONFIG_KEY][LOOPER_KEY][OUTDIR_KEY]
         except KeyError:
             if not self.config_file:
-                raise Exception("Project lacks both a config file and an "
-                                "output folder in metadata; using ")
+                raise MisconfigurationException(
+                    "Project lacks both a config file and an {} in {}".
+                        format(OUTDIR_KEY, LOOPER_KEY))
             return os.path.dirname(self.config_file)
 
     def _relpath(self, key):

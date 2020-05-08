@@ -6,62 +6,13 @@ import glob
 import os
 from .const import *
 from peppy.const import *
+from peppy import Project as peppyProject
 import jinja2
 import yaml
 import argparse
 from ubiquerg import convert_value, merge_dicts
 
-
-DEFAULT_METADATA_FOLDER = "metadata"
-DEFAULT_CONFIG_SUFFIX = "_config.yaml"
-
-
 _LOGGER = getLogger(__name__)
-
-
-def determine_config_path(
-        root, folders=(DEFAULT_METADATA_FOLDER, ),
-        patterns=("*" + DEFAULT_CONFIG_SUFFIX, )):
-    """
-    Determine path to Project config file, allowing folder-based specification.
-
-    :param str root: path to file or main (e.g., project, folder)
-    :param Iterable[str] folders: collection of names of subfolders to consider
-    :param Iterable[str] patterns: collection of filename patterns to consider
-    :return str: unique path to extant Project config file
-    :raise ValueError: if the given root path doesn't exist, or if multiple
-        matching files are found
-    """
-
-    # Base cases
-    if not os.path.exists(root):
-        raise ValueError("Path doesn't exist: {}".format(root))
-    if os.path.isfile(root):
-        return root
-
-    # Deal with single-string argument.
-    if isinstance(folders, str):
-        folders = (folders, )
-    if isinstance(patterns, str):
-        patterns = (patterns, )
-
-    # Search particular folder for any pattern
-    def search(path):
-        return [m for p in patterns for m in glob.glob(os.path.join(path, p))]
-
-    # Search results
-    top_res = search(root)
-    sub_res = [m for sub in folders for m in search(os.path.join(root, sub))]
-    all_res = top_res + sub_res
-
-    # Deal with the 3 match count cases.
-    if len(all_res) > 1:
-        raise ValueError("Multiple ({}) config paths: {}".format(
-            len(all_res), ", ".join(map(str, all_res))))
-    try:
-        return all_res[0]
-    except IndexError:
-        return None
 
 
 def fetch_flag_files(prj=None, results_folder="", flags=FLAGS):
@@ -264,24 +215,18 @@ def read_yaml_file(filepath):
     return data
 
 
-def enrich_args_via_dotfile(parser_args):
+def enrich_args_via_dotfile(parser_args, aux_parser):
     """
     Read in a looper dotfile and set arguments.
 
-    Priority order: CLI > dotfile > parser default
+    Priority order: CLI > dotfile > config > parser default
 
     :param argparse.Namespace parser_args: parsed args by the original parser
     :return argparse.Namespace: selected argument values
     """
-    dotfile_args = read_yaml_file(dotfile_path())
-    aux_parser = argparse.ArgumentParser(argument_default=argparse.SUPPRESS)
+    dotfile_args = peppyProject(dotfile_path())[CONFIG_KEY][LOOPER_KEY] \
+        if os.path.exists(dotfile_path()) else None
     result = argparse.Namespace()
-    for arg in vars(parser_args):
-        if arg not in POSITIONAL:
-            aux_parser.add_argument('--' + arg)
-        else:
-            if getattr(parser_args, arg) is not None:
-                setattr(result, arg, getattr(parser_args, arg))
     cli_args, _ = aux_parser.parse_known_args()
     for dest in vars(parser_args):
         if dest not in POSITIONAL or not hasattr(result, dest):
@@ -295,7 +240,7 @@ def enrich_args_via_dotfile(parser_args):
     return result
 
 
-def write_dotfile(parser, path, arg_values=None, update=False):
+def write_dotfile(parser, aux_parser, path, arg_values=None, update=False):
     """
     Print out available dests and respective defaults in the provided subparser
 
@@ -310,13 +255,28 @@ def write_dotfile(parser, path, arg_values=None, update=False):
     arg_values = vars(arg_values) if arg_values is not None else dict()
     if update:
         with open(path, 'r') as dotfile:
-            defaults = yaml.safe_load(dotfile)
+            current = yaml.safe_load(dotfile)
+        parsed_args, remaining_args = aux_parser.parse_known_args()
+        defaults = vars(parsed_args)
     else:
         defaults = merge_dicts(parser.arg_defaults(top_level=True),
                                parser.arg_defaults(unique=True))
-    defaults.update(arg_values)
+        defaults.update(arg_values)
+    # no need to store command value
+    del defaults["command"]
     with open(path, 'w') as dotfile:
-        yaml.dump({k: str(v) for k, v in defaults.items()}, dotfile)
+        if not update:
+            # init
+            yaml_data = {LOOPER_KEY: {k: v for k, v in defaults.items()}}
+            if arg_values["config_file"] is not None:
+                yaml_data.update({
+                    PROJ_MODS_KEY:
+                        {CFG_IMPORTS_KEY: [arg_values["config_file"]]}})
+        else:
+            # mod
+            current[LOOPER_KEY].update(defaults)
+            yaml_data = current
+        yaml.dump(yaml_data, dotfile)
     print("{} looper dotfile: {}".
           format("Modified" if update else "Initialized", path))
     return True
