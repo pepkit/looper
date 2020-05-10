@@ -96,16 +96,16 @@ class Project(peppyProject):
         settings can't be established, optional; if null (the default),
         a warning message will be logged, and no exception will be raised.
     """
-    def __init__(self, config_file, amendments=None, pifaces=None, dry=False,
+    def __init__(self, config_file, amendments=None, dry=False,
                  compute_env_file=None, no_environment_exception=RuntimeError,
-                no_compute_exception=RuntimeError, file_checks=False,
+                 no_compute_exception=RuntimeError, file_checks=False,
                  permissive=True, **kwargs):
-        super(Project, self).__init__(config_file, amendments=amendments,
-                                      **kwargs)
-        if LOOPER_KEY not in self[CONFIG_KEY]:
-            raise MisconfigurationException("'{}' key not found in config".
-                                            format(LOOPER_KEY))
-        self._apply_user_pifaces(pifaces)
+        super(Project, self).__init__(config_file, amendments=amendments)
+        setattr(self, EXTRA_KEY, dict())
+        for attr_name in CLI_PROJ_ATTRS:
+            if attr_name in kwargs:
+                setattr(self[EXTRA_KEY], attr_name, kwargs[attr_name])
+        self._apply_user_pifaces(self.cli_pifaces[0] if self.cli_pifaces else None)
         self._samples_by_interface = self._samples_by_piface(self.piface_key)
         self._interfaces_by_sample = self._piface_by_samples()
         self.file_checks = file_checks
@@ -126,12 +126,7 @@ class Project(peppyProject):
 
         :return str: name of the pipeline interface attribute
         """
-        pik = PIPELINE_INTERFACES_KEY
-        if CONFIG_KEY in self and\
-            LOOPER_KEY in self[CONFIG_KEY] and\
-                PIFACE_KEY_SELECTOR in self[CONFIG_KEY][LOOPER_KEY]:
-            pik = str(self[CONFIG_KEY][LOOPER_KEY][PIFACE_KEY_SELECTOR])
-        return pik
+        return self._extra_cli_or_cfg(PIFACE_KEY_SELECTOR) or PIPELINE_INTERFACES_KEY
 
     @property
     def toggle_key(self):
@@ -140,75 +135,58 @@ class Project(peppyProject):
 
         :return str: name of the toggle attribute
         """
-        tk = SAMPLE_TOGGLE_ATTR
-        if CONFIG_KEY in self and\
-            LOOPER_KEY in self[CONFIG_KEY] and\
-                TOGGLE_KEY_SELECTOR in self[CONFIG_KEY][LOOPER_KEY]:
-            tk = str(self[CONFIG_KEY][LOOPER_KEY][TOGGLE_KEY_SELECTOR])
-        return tk
+        return self._extra_cli_or_cfg(TOGGLE_KEY_SELECTOR) or SAMPLE_TOGGLE_ATTR
 
     @property
-    def project_folders(self):
-        """ Critical project folder keys """
-        return {OUTDIR_KEY: OUTDIR_KEY,
-                RESULTS_SUBDIR_KEY: "results_pipeline",
-                SUBMISSION_SUBDIR_KEY: "submission"}
+    def selected_compute_package(self):
+        return self._extra_cli_or_cfg(COMPUTE_PACKAGE_KEY)
 
     @property
-    def results_folder(self):
-        return self._relpath(RESULTS_FOLDER_KEY)
-
-    @property
-    def submission_folder(self):
-        return self._relpath(SUBMISSION_FOLDER_KEY)
+    def cli_pifaces(self):
+        return self._extra_cli_or_cfg(self.piface_key)
 
     @property
     def output_dir(self):
-        """
-        Directory in which to place results and submissions folders.
-        By default, assume that the project's configuration file specifies
-        an output directory, and that this is therefore available within
-        the project metadata. If that assumption does not hold, though,
-        consider the folder in which the project configuration file lives
-        to be the project's output directory.
-        :return str: path to the project's output directory, either as
-            specified in the configuration file or the folder that contains
-            the project's configuration file.
-        :raise Exception: if this property is requested on a project that
-            was not created from a config file and lacks output folder
-            declaration in its metadata section
-        """
-        try:
-            return self[CONFIG_KEY][LOOPER_KEY][OUTDIR_KEY]
-        except KeyError:
-            if not self.config_file:
-                raise MisconfigurationException(
-                    "Project lacks both a config file and an {} in {}".
-                        format(OUTDIR_KEY, LOOPER_KEY))
-            return os.path.dirname(self.config_file)
+        return self._extra_cli_or_cfg(OUTDIR_KEY, strict=True)
 
-    def _relpath(self, key):
-        return os.path.join(
-            self[CONFIG_KEY][LOOPER_KEY][OUTDIR_KEY],
-            self[CONFIG_KEY][LOOPER_KEY].get(key, self.project_folders[key]))
+    def _extra_cli_or_cfg(self, attr_name, strict=False):
+        try:
+            result = getattr(self[EXTRA_KEY], attr_name)
+        except (AttributeError, KeyError):
+            return
+        if result is not None:
+            return result
+        if CONFIG_KEY in self and LOOPER_KEY in self[CONFIG_KEY] \
+                and attr_name in self[CONFIG_KEY][LOOPER_KEY]:
+            return self[CONFIG_KEY][LOOPER_KEY][attr_name]
+        else:
+            if strict:
+                from .utils import dotfile_path
+                raise MisconfigurationException(
+                    "'{}' is missing. Provide it as CLI argument, in '{}' "
+                    "file or in '{}' section of the config".
+                        format(attr_name, dotfile_path(), LOOPER_KEY))
+            return
+
+    @property
+    def results_folder(self):
+        return self._out_relpath(RESULTS_SUBDIR_KEY, default="results_pipeline")
+
+    @property
+    def submission_folder(self):
+        return self._out_relpath(SUBMISSION_SUBDIR_KEY, default="submission")
+
+    def _out_relpath(self, key, default):
+        return os.path.join(getattr(self, OUTDIR_KEY),
+                            getattr(self[EXTRA_KEY], key) or default)
 
     def make_project_dirs(self):
         """
         Creates project directory structure if it doesn't exist.
         """
-        for folder_key, folder_val in self.project_folders.items():
-            try:
-                folder_path = self[CONFIG_KEY][LOOPER_KEY][folder_key]
-            except KeyError:
-                if OUTDIR_KEY in self[CONFIG_KEY][LOOPER_KEY]:
-                    folder_path = \
-                        os.path.join(self[CONFIG_KEY][LOOPER_KEY][OUTDIR_KEY],
-                                     folder_val)
-                    _LOGGER.debug("Ensuring project dir exists: '{}'".
-                                  format(folder_path))
-                else:
-                    raise MisconfigurationException("'{}' not found in config"
-                                                    .format(OUTDIR_KEY))
+        for folder_key in ["results_folder", "submission_folder"]:
+            folder_path = getattr(self, folder_key)
+            _LOGGER.debug("Ensuring project dir exists: '{}'".format(folder_path))
             if not os.path.exists(folder_path):
                 _LOGGER.debug("Attempting to create project folder: '{}'".
                               format(folder_path))

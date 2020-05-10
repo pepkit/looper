@@ -209,10 +209,20 @@ def build_parser():
                           init_subparser, mod_subparser]:
             subparser.add_argument("config_file", nargs="?",
                                    help="Project configuration file (YAML).")
+            subparser.add_argument("-o", "--output-dir", dest=OUTDIR_KEY,
+                                   help="Path to the output directory")
+            subparser.add_argument("--submission-subdir", dest=SUBMISSION_SUBDIR_KEY,
+                                   help="Name of the submission subdirectory")
+            subparser.add_argument("--results-subdir", dest=RESULTS_SUBDIR_KEY,
+                                   help="Name of the results subdirectory")
+            subparser.add_argument("--pipeline-interfaces-key", dest=PIFACE_KEY_SELECTOR,
+                                   help="Name of sample attribute to look for pipeline interface sources in")
+            subparser.add_argument("--toggle-key", dest=TOGGLE_KEY_SELECTOR,
+                                   help="Name of sample attribute to look for toggle values in")
             subparser.add_argument(
-                    "--pipeline-interfaces", dest="pifaces", metavar="P",
-                    nargs="+", action='append',
-                    help="Path to a pipeline interface file")
+                    "--pipeline-interfaces", dest=PIPELINE_INTERFACES_KEY,
+                    metavar="P", nargs="+", action="append",
+                    help="Path to a pipeline interface files")
             subparser.add_argument(
                     "--file-checks", dest="file_checks",
                     action=_StoreBoolActionType, default=True,

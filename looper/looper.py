@@ -757,23 +757,24 @@ def main():
     # Initialize project
     _LOGGER.debug("Building Project")
     try:
+        # TODO: streamline self-named kwargs specification
         p = Project(config_file=args.config_file,
-                      amendments=args.amendments,
-                      pifaces=args.pifaces[0] if args.pifaces else None,
-                      file_checks=args.file_checks,
-                      compute_env_file=getattr(args, 'env', None))
+                    amendments=args.amendments, file_checks=args.file_checks,
+                    compute_env_file=getattr(args, 'env', None),
+                    output_dir=getattr(args, OUTDIR_KEY),
+                    results_subdir=getattr(args, RESULTS_SUBDIR_KEY),
+                    submission_subdir=getattr(args, SUBMISSION_SUBDIR_KEY),
+                    pipeline_interfaces=getattr(args, PIPELINE_INTERFACES_KEY),
+                    pipeline_interfaces_key=getattr(args, PIFACE_KEY_SELECTOR),
+                    toggle_key=getattr(args, TOGGLE_KEY_SELECTOR),
+                    package=getattr(args, COMPUTE_PACKAGE_KEY)
+                    )
     except yaml.parser.ParserError as e:
         _LOGGER.error("Project config parse failed -- {}".format(e))
         sys.exit(1)
-    _LOGGER.debug("Results subdir: " + p.results_folder)
 
-    selected_cli_compute_pkg = getattr(args, "package", None)
-    # compute package selection priority list: cli > project > default
-    selected_compute_pkg = DEFAULT_COMPUTE_RESOURCES_NAME
-    if COMPUTE_PACKAGE_KEY in p[CONFIG_KEY][LOOPER_KEY]:
-        selected_compute_pkg = p[CONFIG_KEY][LOOPER_KEY][COMPUTE_PACKAGE_KEY]
-    if selected_cli_compute_pkg:
-        selected_compute_pkg = selected_cli_compute_pkg
+    selected_compute_pkg = p.selected_compute_package \
+                           or DEFAULT_COMPUTE_RESOURCES_NAME
     if not p.dcc.activate_package(selected_compute_pkg):
         _LOGGER.info("Failed to activate '{}' computing package. "
                      "Using the default one".format(selected_compute_pkg))

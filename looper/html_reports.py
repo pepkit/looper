@@ -34,7 +34,7 @@ class HTMLReportBuilder(object):
         self.reports_dir = get_file_for_project(self.prj, "reports")
         self.index_html_path = get_file_for_project(self.prj, "summary.html")
         self.index_html_filename = os.path.basename(self.index_html_path)
-        self._outdir = self.prj[CONFIG_KEY][LOOPER_KEY][OUTDIR_KEY]
+        self._outdir = self.prj[OUTDIR_KEY]
         _LOGGER.debug("Reports dir: {}".format(self.reports_dir))
 
     def __call__(self, objs, stats, columns):

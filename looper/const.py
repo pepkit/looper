@@ -7,10 +7,10 @@ __email__ = "nathan@code.databio.org"
 
 __all__ = [
     "BUTTON_APPEARANCE_BY_FLAG", "TABLE_APPEARANCE_BY_FLAG",
-    "ID_COLNAME", "NO_DATA_PLACEHOLDER", "OUTKEY", "RESULTS_FOLDER_KEY",
+    "ID_COLNAME", "NO_DATA_PLACEHOLDER", "OUTKEY",
     "OUTDIR_KEY", "LOOPER_KEY", "COMPUTE_KEY", "PIPELINE_INTERFACES_KEY",
     "SIZE_DEP_VARS_KEY", "FLAGS", "DYN_VARS_KEY", "SAMPLE_YAML_PATH_KEY",
-    "RESOURCES_KEY", "SUBMISSION_FOLDER_KEY", "NOT_SUB_MSG",
+    "RESOURCES_KEY", "NOT_SUB_MSG", "EXTRA_KEY",
     "PIFACE_SCHEMA_SRC", "RESULTS_SUBDIR_KEY", "SUBMISSION_SUBDIR_KEY",
     "TEMPLATES_DIRNAME", "FILE_SIZE_COLNAME", "COMPUTE_PACKAGE_KEY",
     "INPUT_SCHEMA_KEY", "OUTPUT_SCHEMA_KEY", "EXAMPLE_COMPUTE_SPEC_FMT",
@@ -18,7 +18,7 @@ __all__ = [
     "PIFACE_KEY_SELECTOR", "SUBMISSION_FAILURE_MESSAGE", "IMAGE_EXTS",
     "PROFILE_COLNAMES", "SAMPLE_TOGGLE_ATTR", "TOGGLE_KEY_SELECTOR",
     "LOOPER_DOTFILE_NAME", "POSITIONAL", "EXTRA_PROJECT_CMD_TEMPLATE",
-    "EXTRA_SAMPLE_CMD_TEMPLATE"
+    "EXTRA_SAMPLE_CMD_TEMPLATE", "SELECTED_COMPUTE_PKG", "CLI_PROJ_ATTRS"
 ]
 
 FLAGS = ["completed", "running", "failed", "waiting", "partial"]
@@ -76,7 +76,7 @@ SAMPLE_PL_KEY = "sample_pipeline"
 PROJECT_PL_KEY = "project_pipeline"
 PIFACE_SCHEMA_SRC = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                  "schemas", "pipeline_interface_schema.yaml")
-EXTRA_SAMPLE_CMD_TEMPLATE = "{%- if sample.command_extra is defined %} {sample.command_extra}{% endif -%}"
+EXTRA_SAMPLE_CMD_TEMPLATE = "{%- if sample.command_extra is defined %} {sample.command_extra}   {% endif -%}"
 EXTRA_PROJECT_CMD_TEMPLATE = "{%- if project.looper.command_extra is defined %} {project.looper.command_extra}{% endif -%}"
 INPUT_SCHEMA_KEY = "input_schema"
 OUTPUT_SCHEMA_KEY = "output_schema"
@@ -84,10 +84,8 @@ SAMPLE_YAML_PATH_KEY = "sample_yaml_path"
 TOGGLE_KEY_SELECTOR = "toggle_key"
 SAMPLE_TOGGLE_ATTR = "toggle"
 OUTKEY = "outputs"
-RESULTS_SUBDIR_KEY = "results_subdir"
-SUBMISSION_SUBDIR_KEY = "submission_subdir"
 COMPUTE_KEY = "compute"
-COMPUTE_PACKAGE_KEY = "compute_package"
+COMPUTE_PACKAGE_KEY = "package"
 SIZE_DEP_VARS_KEY = "size_dependent_variables"
 DYN_VARS_KEY = "dynamic_variables_command_template"
 TEMPLATES_DIRNAME = "jinja_templates"
@@ -96,14 +94,18 @@ IMAGE_EXTS = ('.png', '.jpg', '.jpeg', '.svg', '.gif')
 PROFILE_COLNAMES = ['pid', 'hash', 'cid', 'runtime', 'mem', 'cmd', 'lock']  # this strongly depends on pypiper's profile.tsv format
 
 PIPE_ARGS_SECTION = "pipeline_args"
-RESULTS_FOLDER_KEY = "results_subdir"
 LOOPER_KEY = "looper"
-SUBMISSION_FOLDER_KEY = "submission_subdir"
 OUTDIR_KEY = "output_dir"
+RESULTS_SUBDIR_KEY = "results_subdir"
+SUBMISSION_SUBDIR_KEY = "submission_subdir"
 EXAMPLE_COMPUTE_SPEC_FMT = "--compute k1=v1,k2=v2"
 SUBMISSION_FAILURE_MESSAGE = "Cluster resource failure"
 LOOPER_DOTFILE_NAME = "." + LOOPER_KEY + ".yaml"
 POSITIONAL = ["config_file", "command"]
+SELECTED_COMPUTE_PKG = "package"
+EXTRA_KEY = "_cli_extra"
+CLI_PROJ_ATTRS = [OUTDIR_KEY, TOGGLE_KEY_SELECTOR, SUBMISSION_SUBDIR_KEY, PIPELINE_INTERFACES_KEY,
+                  RESULTS_SUBDIR_KEY, PIFACE_KEY_SELECTOR, SELECTED_COMPUTE_PKG, COMPUTE_PACKAGE_KEY]
 
 # resource package TSV-related consts
 ID_COLNAME = "id"
