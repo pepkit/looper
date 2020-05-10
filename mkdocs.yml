@@ -11,6 +11,7 @@ nav:
     - Hello world: hello-world.md
   - How-to guides:    
     - Defining a project: defining-a-project.md
+    - Running a pipeline: running-a-pipeline.md
     - Initializing a repository: initialize.md
     - Parameterizing pipelines: parameterize-pipelines.md
     - Running on a cluster: running-on-a-cluster.md
