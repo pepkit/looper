@@ -9,7 +9,7 @@ from logging import getLogger
 from peppy import SAMPLE_NAME_ATTR, OUTDIR_KEY, CONFIG_KEY, \
     Project as peppyProject
 from eido import read_schema, PathAttrNotFoundError
-from divvy import DEFAULT_COMPUTE_RESOURCES_NAME, ComputingConfiguration
+from divvy import ComputingConfiguration
 from ubiquerg import is_command_callable
 
 from .processed_project import populate_sample_paths, populate_project_paths
@@ -89,9 +89,9 @@ class Project(peppyProject):
         if this is not set in sample metadata.
     :param str compute_env_file: Environment configuration YAML file specifying
         compute settings.
-    :param type no_environment_exception: type of exception to raise if environment
-        settings can't be established, optional; if null (the default),
-        a warning message will be logged, and no exception will be raised.
+    :param type no_environment_exception: type of exception to raise if
+     environment settings can't be established, optional; if null (the default),
+      a warning message will be logged, and no exception will be raised.
     :param type no_compute_exception: type of exception to raise if compute
         settings can't be established, optional; if null (the default),
         a warning message will be logged, and no exception will be raised.
@@ -105,7 +105,8 @@ class Project(peppyProject):
         for attr_name in CLI_PROJ_ATTRS:
             if attr_name in kwargs:
                 setattr(self[EXTRA_KEY], attr_name, kwargs[attr_name])
-        self._apply_user_pifaces(self.cli_pifaces[0] if self.cli_pifaces else None)
+        self._apply_user_pifaces(
+            self.cli_pifaces[0] if self.cli_pifaces else None)
         self._samples_by_interface = self._samples_by_piface(self.piface_key)
         self._interfaces_by_sample = self._piface_by_samples()
         self.file_checks = file_checks
@@ -126,7 +127,8 @@ class Project(peppyProject):
 
         :return str: name of the pipeline interface attribute
         """
-        return self._extra_cli_or_cfg(PIFACE_KEY_SELECTOR) or PIPELINE_INTERFACES_KEY
+        return self._extra_cli_or_cfg(PIFACE_KEY_SELECTOR) \
+               or PIPELINE_INTERFACES_KEY
 
     @property
     def toggle_key(self):
@@ -139,17 +141,41 @@ class Project(peppyProject):
 
     @property
     def selected_compute_package(self):
+        """
+        Compute package name specified in object constructor
+
+        :return str: compute package name
+        """
         return self._extra_cli_or_cfg(COMPUTE_PACKAGE_KEY)
 
     @property
     def cli_pifaces(self):
+        """
+        Collection of pipeline interface sources specified in object constructor
+
+        :return list[str]: collection of pipeline interface sources
+        """
         return self._extra_cli_or_cfg(self.piface_key)
 
     @property
     def output_dir(self):
+        """
+        Output directory for the project, specified in object constructor
+
+        :return str: path to the output directory
+        """
         return self._extra_cli_or_cfg(OUTDIR_KEY, strict=True)
 
     def _extra_cli_or_cfg(self, attr_name, strict=False):
+        """
+        Get attribute value provided in kwargs in object constructor of from
+        looper section in the configuration file
+
+        :param str attr_name: name of the attribute to get value for
+        :param bool strict: whether a non-existent attribute is exceptional
+        :raise MisconfigurationException: in strict mode, when no attribute
+         found
+        """
         try:
             result = getattr(self[EXTRA_KEY], attr_name)
         except (AttributeError, KeyError):
@@ -170,23 +196,45 @@ class Project(peppyProject):
 
     @property
     def results_folder(self):
-        return self._out_relpath(RESULTS_SUBDIR_KEY, default="results_pipeline")
+        """
+        Path to the results folder for the project
+
+        :return str: path to the results folder in the output folder
+        """
+        return self._out_subdir_path(RESULTS_SUBDIR_KEY,
+                                     default="results_pipeline")
 
     @property
     def submission_folder(self):
-        return self._out_relpath(SUBMISSION_SUBDIR_KEY, default="submission")
+        """
+        Path to the submission folder for the project
 
-    def _out_relpath(self, key, default):
+        :return str: path to the submission in the output folder
+        """
+        return self._out_subdir_path(SUBMISSION_SUBDIR_KEY,
+                                     default="submission")
+
+    def _out_subdir_path(self, key, default):
+        """
+        Create a system path relative to the project output directory.
+        The values for the names of the subdirectories are sourced from
+        kwargs passed to the object constructor.
+
+        :param str key: name of the attribute mapped to the value of interest
+        :param str default: if key not specified, a default to use
+        :return str: path to the folder
+        """
         return os.path.join(getattr(self, OUTDIR_KEY),
                             getattr(self[EXTRA_KEY], key) or default)
 
     def make_project_dirs(self):
         """
-        Creates project directory structure if it doesn't exist.
+        Create project directory structure if it doesn't exist.
         """
         for folder_key in ["results_folder", "submission_folder"]:
             folder_path = getattr(self, folder_key)
-            _LOGGER.debug("Ensuring project dir exists: '{}'".format(folder_path))
+            _LOGGER.debug("Ensuring project dir exists: '{}'".
+                          format(folder_path))
             if not os.path.exists(folder_path):
                 _LOGGER.debug("Attempting to create project folder: '{}'".
                               format(folder_path))
@@ -433,7 +481,8 @@ class Project(peppyProject):
         """
         Create a collection of all samples with valid pipeline interfaces
 
-        :param str piface_key: name of the attribute that holds pipeline interfaces
+        :param str piface_key: name of the attribute that holds pipeline
+         interfaces
         :return list[str]: a collection of samples keyed by pipeline interface
             source
         """

@@ -757,18 +757,11 @@ def main():
     # Initialize project
     _LOGGER.debug("Building Project")
     try:
-        # TODO: streamline self-named kwargs specification
         p = Project(config_file=args.config_file,
-                    amendments=args.amendments, file_checks=args.file_checks,
+                    amendments=args.amendments,
+                    file_checks=args.file_checks,
                     compute_env_file=getattr(args, 'env', None),
-                    output_dir=getattr(args, OUTDIR_KEY),
-                    results_subdir=getattr(args, RESULTS_SUBDIR_KEY),
-                    submission_subdir=getattr(args, SUBMISSION_SUBDIR_KEY),
-                    pipeline_interfaces=getattr(args, PIPELINE_INTERFACES_KEY),
-                    pipeline_interfaces_key=getattr(args, PIFACE_KEY_SELECTOR),
-                    toggle_key=getattr(args, TOGGLE_KEY_SELECTOR),
-                    package=getattr(args, COMPUTE_PACKAGE_KEY)
-                    )
+                    **{attr: getattr(args, attr) for attr in CLI_PROJ_ATTRS})
     except yaml.parser.ParserError as e:
         _LOGGER.error("Project config parse failed -- {}".format(e))
         sys.exit(1)
