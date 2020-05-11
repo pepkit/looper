@@ -143,6 +143,24 @@ class LooperBothRunsTests:
         _is_in_file(subs_list, "#SBATCH")
         os.remove(dotfile_path)
 
+    @pytest.mark.parametrize("cmd", ["run", "runp"])
+    def test_run_after_init(self, prep_temp_pep, cmd):
+        tp = prep_temp_pep
+        stdout, stderr, rc = _subp_exec(tp, "init", ["--package", "slurm"])
+        print(stderr)
+        assert rc == 0
+        dotfile_path = os.path.join(os.getcwd(), LOOPER_DOTFILE_NAME)
+        _is_in_file(dotfile_path, "slurm")
+        _is_in_file(dotfile_path, tp)
+        stdout, stderr, rc = _subp_exec(cmd=cmd)
+        sd = os.path.join(_get_outdir(tp), "submission")
+        print(stderr)
+        assert rc == 0
+        subs_list = \
+            [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
+        _is_in_file(subs_list, "#SBATCH")
+        os.remove(dotfile_path)
+
 
 class LooperRunBehaviorTests:
     def test_looper_run_basic(self, example_pep_piface_path_cfg):
