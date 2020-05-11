@@ -22,7 +22,7 @@ you can do this by specifying variables in a project config `compute` section, w
 Example:
 ```yaml
 looper:
-  output_dir: /path/to/output
+  output_dir: "/path/to/output"
 ```
 
 ## 3. Link a pipeline to your project
@@ -31,30 +31,30 @@ looper:
 
 Looper links projects to pipelines through a file called the *pipeline interface*. Any looper-compatible pipeline must provide a pipeline interface. To link the pipeline, you simply point each sample to the pipeline interfaces for any pipelines you want to run.
 
-Looper pipeline interfaces can describe two types of pipeline: sample-level pipelines and project-level pipelines. A sample-level pipeline is executed with `looper run`, which runs individually on each sample. A project-level pipeline is executed with `looper runp`, which runs a single job on an entire project.
+Looper pipeline interfaces can describe two types of pipeline: sample-level pipelines and project-level pipelines. A sample-level pipeline is executed with `looper run`, which runs individually on each sample. A project-level pipeline is executed with `looper runp`, which runs a single job *per pipeline* on an entire project.
 
 ### Adding a sample-level pipeline interface
 
-Sample pipelines are linked by adding a sample attribute called `pipeline_interfaces`. Inside your project config, set a `pipeline_interfaces` attribute on samples to point to the pipeline. There are 2 easy ways to do this: you can simply add a `pipeline_interfaces` column in the sample table, or you can use an *append* modifier, like this:
+Sample pipelines are linked by adding a sample attribute called `pipeline_interfaces`. There are 2 easy ways to do this: you can simply add a `pipeline_interfaces` column in the sample table, or you can use an *append* modifier, like this:
 
 ```yaml
 sample_modifiers:
   append:
-    pipeline_interfaces: /path/to/pipeline_interface.yaml
+    pipeline_interfaces: "/path/to/pipeline_interface.yaml"
 ```
 
 
-The value for the `pipeline_interfaces` key should be the *absolute* path to the pipeline interface file.
+The value for the `pipeline_interfaces` key should be the *absolute* path to the pipeline interface file. The paths can consist of environment variables.
 
 Once your PEP is linked to the pipeline, you just need to make sure your project provides any sample metadata required by the pipeline.
 
 ### Adding a project-level pipeline interface
 
-For projects that have only one sample pipeline interface, the project pipeline interface will be automatically linked. But if you need to specify a particular project pipeline interface for some reason, project pipelines are linked by adding a project attribute, in the `looper` section, called `pipeline_interfaces`.
+The project pipeline interface will be automatically linked. The pipeline interfaces are selected based on the source files that were mapped to the samples within the project (but this time `project_pipelines` key within the source file is considered). But if you need to specify a particular project pipeline interface for some reason, project pipelines are linked by adding a project attribute, in the `looper` section, called `pipeline_interfaces`.
 
 ```
 looper:
-  pipeline_interfaces: [/path/to/project_pipeline_interface.yaml]
+  pipeline_interfaces: ["/path/to/project_pipeline_interface.yaml"]
 ```
 
 ### How to link to multiple pipelines
@@ -64,7 +64,7 @@ Looper decouples projects and pipelines, so you can have many projects using one
 ```yaml
 sample_modifiers:
   append:
-    pipeline_interfaces: [/path/to/pipeline_interface.yaml, /path/to/pipeline_interface2.yaml]
+    pipeline_interfaces: ["/path/to/pipeline_interface.yaml", "/path/to/pipeline_interface2.yaml"]
 ```
 
 Looper will submit jobs for both of these pipelines.
@@ -75,12 +75,12 @@ If you have a project that contains samples of different types, then you can use
 ```yaml
 sample_modifiers:
   imply:
-  	- if:
-  		protocol: "RRBS"
-	  then:
-    	pipeline_interfaces: /path/to/pipeline_interface.yaml
     - if:
-    	protocol: "ATAC"
+        protocol: "RRBS"
       then:
-        pipeline_interfaces: /path/to/pipeline_interface2.yaml
+        pipeline_interfaces: "/path/to/pipeline_interface.yaml"
+    - if:
+        protocol: "ATAC"
+      then:
+        pipeline_interfaces: "/path/to/pipeline_interface2.yaml"
 ```
