@@ -704,26 +704,29 @@ def main():
     parser = parsers[0]
     aux_parser = parsers[1]
     aux_parser.suppress_defaults()
-    # aux_parser.suppress_defaults()
     args, remaining_args = parser.parse_known_args()
-    if args.command == "init":
-        sys.exit(int(not write_dotfile(parser, aux_parser, dotfile_path(),
-                                       args)))
-    if args.command == "mod":
-        sys.exit(int(not write_dotfile(parser, aux_parser,
-                                       dotfile_path(must_exist=True), args,
-                                       update=True)))
-    args = enrich_args_via_dotfile(args, aux_parser)
     if args.command is None:
         parser.print_help(sys.stderr)
         sys.exit(1)
     if args.config_file is None:
-        _LOGGER.error(
-            "No project config. Specify one with a positional argument "
-            "or with the 'config_file' attribute in "
-            "{}\n".format(dotfile_path()))
-        parser.print_help(sys.stderr)
-        sys.exit(1)
+        m = "No project config defined"
+        try:
+            setattr(args, "config_file", dotfile_path(must_exist=True))
+        except OSError:
+            print(m + " and default config file does not exist: {}".
+                  format(dotfile_path()))
+            parser.print_help(sys.stderr)
+            sys.exit(1)
+        else:
+            print(m + ", using default config file: {}".format(dotfile_path()))
+    if args.command == "init":
+        sys.exit(int(not write_dotfile(dotfile_path(), args.config_file)))
+    # if args.command == "mod":
+    #     sys.exit(int(not write_dotfile(parser, aux_parser,
+    #                                    dotfile_path(must_exist=True), args,
+    #                                    update=True)))
+    args = enrich_args_via_cfg(args, aux_parser)
+
     # Set the logging level.
     if args.dbg:
         # Debug mode takes precedence and will listen for all messages.
