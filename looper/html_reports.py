@@ -399,7 +399,7 @@ class HTMLReportBuilder(object):
         # Check the interface files for summarizers
         for iface in ifaces:
             schema_paths = \
-                iface.get_pipeline_schemas(PROJECT_PL_KEY, OUTPUT_SCHEMA_KEY)
+                iface.get_pipeline_schemas(OUTPUT_SCHEMA_KEY)
             if schema_paths is not None:
                 if isinstance(schema_paths, str):
                     schema_paths = [schema_paths]

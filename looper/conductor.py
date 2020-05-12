@@ -188,7 +188,7 @@ class SubmissionConductor(object):
         sample.setdefault("input_file_size", 0)
         # Check for any missing requirements before submitting.
         _LOGGER.debug("Determining missing requirements")
-        schema_source = self.pl_iface.get_pipeline_schemas(self.section_key)
+        schema_source = self.pl_iface.get_pipeline_schemas()
         if schema_source:
             missing = validate_inputs(sample, read_schema(schema_source))
             if missing:
@@ -285,15 +285,14 @@ class SubmissionConductor(object):
         :param peppy.Sample sample: sample to generate yaml path for
         :return str: path to yaml file
         """
-        if SAMPLE_YAML_PATH_KEY \
-                not in self.pl_iface[self.section_key]:
+        if SAMPLE_YAML_PATH_KEY not in self.pl_iface:
             return os.path.join(self.prj.submission_folder,
                                 "{}{}".format(sample.sample_name,
                                               SAMPLE_YAML_EXT[0]))
-        pth_templ = self.pl_iface[self.section_key][SAMPLE_YAML_PATH_KEY]
+        pth_templ = self.pl_iface[SAMPLE_YAML_PATH_KEY]
         namespaces = {"sample": sample,
                       "project": self.prj.prj[CONFIG_KEY],
-                      "pipeline": self.pl_iface[self.section_key]}
+                      "pipeline": self.pl_iface}
         path = jinja_render_cmd_strictly(pth_templ, namespaces)
         return path if os.path.isabs(path) \
             else os.path.join(self.prj.output_dir, path)
@@ -365,21 +364,16 @@ class SubmissionConductor(object):
         settings.log_file = \
             os.path.join(self.prj.submission_folder, settings.job_name) + ".log"
         if hasattr(self.prj, "pipeline_config"):
-            # Index with 'pl_key' instead of 'pipeline'
-            # because we don't care about parameters here.
-            if hasattr(self.prj.pipeline_config, self.section_key):
-                # First priority: pipeline config in project config
-                pl_config_file = getattr(self.prj.pipeline_config,
-                                         self.section_key)
-                # Make sure it's a file (it could be provided as null.)
-                if pl_config_file:
-                    if not os.path.isfile(pl_config_file):
-                        _LOGGER.error("Pipeline config file specified "
-                                      "but not found: %s", pl_config_file)
-                        raise IOError(pl_config_file)
-                    _LOGGER.info("Found config file: %s", pl_config_file)
-                    # Append arg for config file if found
-                    settings.pipeline_config = pl_config_file
+            # Make sure it's a file (it could be provided as null.)
+            pl_config_file = self.prj.pipeline_config
+            if pl_config_file:
+                if not os.path.isfile(pl_config_file):
+                    _LOGGER.error("Pipeline config file specified "
+                                  "but not found: %s", pl_config_file)
+                    raise IOError(pl_config_file)
+                _LOGGER.info("Found config file: %s", pl_config_file)
+                # Append arg for config file if found
+                settings.pipeline_config = pl_config_file
         return settings
 
     def write_script(self, pool, size):
@@ -397,8 +391,8 @@ class SubmissionConductor(object):
         commands = []
         namespaces = dict(project=self.prj[CONFIG_KEY],
                           looper=looper,
-                          pipeline=self.pl_iface[self.section_key])
-        templ = self.pl_iface[self.section_key]["command_template"]
+                          pipeline=self.pl_iface)
+        templ = self.pl_iface["command_template"]
         if not self.override_extra:
             extras_template = EXTRA_PROJECT_CMD_TEMPLATE if self.collate \
                 else EXTRA_SAMPLE_CMD_TEMPLATE
@@ -411,8 +405,7 @@ class SubmissionConductor(object):
                 namespaces.update({"sample": sample})
             else:
                 namespaces.update({"samples": self.prj.samples})
-            res_pkg = self.pl_iface.choose_resource_package(
-                self.section_key, namespaces, size or 0)  # config
+            res_pkg = self.pl_iface.choose_resource_package(namespaces, size or 0)  # config
             res_pkg.update(cli)
             self.prj.dcc.compute.update(res_pkg)  # divcfg
             namespaces.update({"compute": self.prj.dcc.compute})
@@ -436,8 +429,7 @@ class SubmissionConductor(object):
         else:
             _LOGGER.debug("sample namespace:\n{}".format(sample))
         _LOGGER.debug("project namespace:\n{}".format(self.prj[CONFIG_KEY]))
-        _LOGGER.debug("pipeline namespace:\n{}".
-                      format(self.pl_iface[self.section_key]))
+        _LOGGER.debug("pipeline namespace:\n{}".format(self.pl_iface))
         _LOGGER.debug("compute namespace:\n{}".format(self.prj.dcc.compute))
         _LOGGER.debug("looper namespace:\n{}".format(looper))
         subm_base = os.path.join(self.prj.submission_folder, looper.job_name)

@@ -11,11 +11,11 @@ The `looper` section can contain a few looper-specific attributes:
 - `output_dir` - parent folder where you want looper to store your results.
 - `results_subdir` - subdirectory where pipeline results will be stored. Default: `results_pipeline`
 - `submission_subdir` - subdirectory where job submission scripts will be stored. Default: `submission`
-- `compute` - You can specify project-specific compute settings in a `compute` section, 
-but it's often more convenient and consistent to specify this globally with a `pepenv` environment configuration. 
-Instructions for doing so are at the [`pepenv` repository](https://github.com/pepkit/pepenv). 
+- `compute.resources` - You can specify project-specific compute settings in a `compute` section, 
+but it's often more convenient and consistent to specify this globally with a `divcfg` environment configuration. 
+Instructions for doing so are at the [`divcfg` repository](https://github.com/pepkit/divcfg). 
 If you do need project-specific control over compute settings (like submitting a certain project to a certain resource account), 
-you can do this by specifying variables in a project config `compute` section, which will override global `pepenv` values for that project only.
+you can do this by specifying variables in a project config `compute.resources` section, which will override global `divcfg` values for that project only.
 - `command_extra` - a string you want to append to any project-level pipelines
 - `pipeline_interfaces` - a list of pipeline interfaces for project-level pipelines
 

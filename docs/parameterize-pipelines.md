@@ -47,7 +47,7 @@ By default, the CLI extras are *appended to the command_extras specified in you 
 So, for example, make your looper call like this:
 
 ```
-looper run --command-extra "-R"
+looper run --command-extra="-R"
 ```
 
 That will append `-R` to the end of any commands created by looper.

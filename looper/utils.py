@@ -269,21 +269,42 @@ def _get_subcommand_args(cfg_path, subcommand):
     return args
 
 
-def write_dotfile(path, cfg_path=None):
+def init_dotfile(path, cfg_path):
     """
     Initialize looper dotfile
 
     :param str path: absolute path to the file to intialize
-    :param str cfg_path: absolute path to the config file
+    :param str cfg_path: path to the config file. Absolute or relative to 'path'
     :return bool: whether the file was initialized
     """
     if os.path.exists(path):
         print("Can't initialize, file exists: {}".format(path))
         return False
+    if not os.path.isabs(cfg_path):
+        cfg_path = os.path.join(os.path.dirname(path), cfg_path)
+    assert os.path.exists(cfg_path), \
+        OSError("Provided config path is invalid. You must provide path "
+                "that is either absolute or relative to: {}".
+                format(os.path.dirname(path)))
     with open(path, 'w') as dotfile:
-        yaml.dump({PROJ_MODS_KEY: {CFG_IMPORTS_KEY: [cfg_path]}}, dotfile)
+        yaml.dump({DOTFILE_CFG_PTH_KEY: cfg_path}, dotfile)
     print("Initialized looper dotfile: {}".format(path))
     return True
+
+
+def read_cfg_from_dotfile():
+    """
+    Read file path to the config file from the dotfile
+
+    :return str: path to the config file read from the dotfile
+    """
+    cfg_path = None
+    dp = dotfile_path(must_exist=True)
+    with open(dp, 'r') as dotfile:
+        dp_data = yaml.safe_load(dotfile)
+    if DOTFILE_CFG_PTH_KEY in dp_data:
+        cfg_path = str(dp_data[DOTFILE_CFG_PTH_KEY])
+    return cfg_path
 
 
 def dotfile_path(directory=os.getcwd(), must_exist=False):

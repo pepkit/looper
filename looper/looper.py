@@ -711,20 +711,16 @@ def main():
     if args.config_file is None:
         m = "No project config defined"
         try:
-            setattr(args, "config_file", dotfile_path(must_exist=True))
+            setattr(args, "config_file", read_cfg_from_dotfile())
         except OSError:
-            print(m + " and default config file does not exist: {}".
-                  format(dotfile_path()))
+            print(m + " and dotfile does not exist: {}".format(dotfile_path()))
             parser.print_help(sys.stderr)
             sys.exit(1)
         else:
-            print(m + ", using default config file: {}".format(dotfile_path()))
+            print(m + ", using: {}. Read from dotfile ({}) ".
+                  format(read_cfg_from_dotfile(), dotfile_path()))
     if args.command == "init":
-        sys.exit(int(not write_dotfile(dotfile_path(), args.config_file)))
-    # if args.command == "mod":
-    #     sys.exit(int(not write_dotfile(parser, aux_parser,
-    #                                    dotfile_path(must_exist=True), args,
-    #                                    update=True)))
+        sys.exit(int(not init_dotfile(dotfile_path(), args.config_file)))
     args = enrich_args_via_cfg(args, aux_parser)
 
     # Set the logging level.
@@ -764,6 +760,7 @@ def main():
                     amendments=args.amendments,
                     file_checks=args.file_checks,
                     compute_env_file=getattr(args, 'env', None),
+
                     **{attr: getattr(args, attr) for attr in CLI_PROJ_ATTRS})
     except yaml.parser.ParserError as e:
         _LOGGER.error("Project config parse failed -- {}".format(e))

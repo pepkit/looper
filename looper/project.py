@@ -105,8 +105,7 @@ class Project(peppyProject):
         for attr_name in CLI_PROJ_ATTRS:
             if attr_name in kwargs:
                 setattr(self[EXTRA_KEY], attr_name, kwargs[attr_name])
-        self._apply_user_pifaces(
-            self.cli_pifaces[0] if self.cli_pifaces else None)
+        self._apply_user_pifaces(self.cli_pifaces)
         self._samples_by_interface = self._samples_by_piface(self.piface_key)
         self._interfaces_by_sample = self._piface_by_samples()
         self.file_checks = file_checks
@@ -115,7 +114,6 @@ class Project(peppyProject):
             config_file=compute_env_file, no_env_error=no_environment_exception,
             no_compute_exception=no_compute_exception
         )
-        # Set project's directory structure
         if not dry:
             _LOGGER.debug("Ensuring project directories exist")
             self.make_project_dirs()
@@ -187,11 +185,9 @@ class Project(peppyProject):
             return self[CONFIG_KEY][LOOPER_KEY][attr_name]
         else:
             if strict:
-                from .utils import dotfile_path
                 raise MisconfigurationException(
-                    "'{}' is missing. Provide it as CLI argument, in '{}' "
-                    "file or in '{}' section of the config".
-                        format(attr_name, dotfile_path(), LOOPER_KEY))
+                    "'{}' is missing. Provide it as CLI argument or in '{}' "
+                    "section of the config".format(attr_name, LOOPER_KEY))
             return
 
     @property
@@ -252,19 +248,23 @@ class Project(peppyProject):
 
         :return list[str]: collection of valid pipeline interface sources:
         """
-        project_pifaces = self._samples_by_interface.keys()
-        if self.piface_key in self[CONFIG_KEY][LOOPER_KEY]:
-            # pipeline interfaces sources defined in the project config override
-            # ones that are matched by the Samples in this Project
-            cfg_pifaces = self[CONFIG_KEY][LOOPER_KEY][self.piface_key]
-            _LOGGER.debug("Overwriting sample-matched pifaces with a "
-                          "config-specified ones: {}".format(cfg_pifaces))
-            # make sure it's a list, so both lists and strings can be
-            # specified in the config
-            if isinstance(cfg_pifaces, str):
-                cfg_pifaces = [cfg_pifaces]
-            project_pifaces = [expandpath(src) for src in cfg_pifaces]
-        return project_pifaces
+        # project_pifaces = self._samples_by_interface.keys()
+        # if self.piface_key in self[CONFIG_KEY][LOOPER_KEY]:
+        #     # pipeline interfaces sources defined in the project config override
+        #     # ones that are matched by the Samples in this Project
+        #     cfg_pifaces = self[CONFIG_KEY][LOOPER_KEY][self.piface_key]
+        #     _LOGGER.debug("Overwriting sample-matched pifaces with a "
+        #                   "config-specified ones: {}".format(cfg_pifaces))
+        #     # make sure it's a list, so both lists and strings can be
+        #     # specified in the config
+        #     if isinstance(cfg_pifaces, str):
+        #         cfg_pifaces = [cfg_pifaces]
+        #     project_pifaces = [expandpath(src) for src in cfg_pifaces]
+        cli_pifaces = self.cli_pifaces
+        if isinstance(cli_pifaces, str):
+            cli_pifaces = [cli_pifaces]
+        return [expandpath(src) for src in cli_pifaces] \
+            if cli_pifaces is not None else None
 
     @property
     def project_pipeline_interfaces(self):
@@ -398,17 +398,14 @@ class Project(peppyProject):
 
         for pipe_iface in pifaces:
             # Determine how to reference the pipeline and where it is.
-            path = pipe_iface[SAMPLE_PL_KEY]["path"]
-            if not (os.path.exists(path) or
-                    is_command_callable(path)):
-                _LOGGER.warning("Missing pipeline script: {}".
-                                format(path))
+            path = pipe_iface["path"]
+            if not (os.path.exists(path) or is_command_callable(path)):
+                _LOGGER.warning("Missing pipeline script: {}".format(path))
                 continue
 
             # Add this bundle to the collection of ones relevant for the
             # current PipelineInterface.
             new_jobs.append(pipe_iface)
-
             job_submission_bundles.append(new_jobs)
         return list(itertools.chain(*job_submission_bundles))
 
@@ -426,7 +423,7 @@ class Project(peppyProject):
             pifaces = [pifaces]
         schema_set = set()
         for piface in pifaces:
-            schema_file = piface.get_pipeline_schemas(SAMPLE_PL_KEY, schema_key)
+            schema_file = piface.get_pipeline_schemas(schema_key)
             if schema_file:
                 schema_set.update([schema_file])
         return list(schema_set)

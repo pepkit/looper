@@ -5,7 +5,6 @@ sample_table: annotation_sheet.csv
 looper:
   all:
     output_dir: ../output
-  #pipeline_interfaces: ["pipeline_interface1.yml", "pipeline_interface2.yaml"]
 
 sample_modifiers: 
   append:
