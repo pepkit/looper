@@ -495,9 +495,6 @@ class Project(peppyProject):
                     piface_srcs = [piface_srcs]
                 for source in piface_srcs:
                     source = expandpath(source)
-                    if not os.path.isabs(source):
-                        source = os.path.join(
-                            os.path.dirname(self.config_file), source)
                     try:
                         PipelineInterface(source)
                     except (ValidationError, IOError) as e:

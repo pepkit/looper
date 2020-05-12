@@ -236,7 +236,10 @@ def enrich_args_via_cfg(parser_args, aux_parser):
                 x = getattr(cli_args, dest)
                 r = convert_value(x) if isinstance(x, str) else x
             elif cfg_args_all is not None and dest in cfg_args_all:
-                r = convert_value(cfg_args_all[dest])
+                if isinstance(cfg_args_all[dest], list):
+                    r = [convert_value(i) for i in cfg_args_all[dest]]
+                else:
+                    r = convert_value(cfg_args_all[dest])
             else:
                 r = getattr(parser_args, dest)
             setattr(result, dest, r)
@@ -260,7 +263,7 @@ def _get_subcommand_args(cfg_path, subcommand):
     cfg = peppyProject(cfg_path)
     if CONFIG_KEY in cfg and LOOPER_KEY in cfg[CONFIG_KEY]:
         cfg_args = cfg[CONFIG_KEY][LOOPER_KEY]
-        args = cfg_args["all"] if "all" in cfg_args else dict()
+        args = cfg_args[ALL_SUBCMD_KEY] if ALL_SUBCMD_KEY in cfg_args else dict()
         args.update(cfg_args[subcommand] if subcommand in cfg_args else dict())
         args = {k.replace("-", "_"): v for k, v in args.items()}
     return args
