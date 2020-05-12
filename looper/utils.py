@@ -218,7 +218,7 @@ def read_yaml_file(filepath):
 
 def enrich_args_via_cfg(parser_args, aux_parser):
     """
-    Read in a looper dotfile and set arguments.å
+    Read in a looper dotfile and set arguments.
 
     Priority order: CLI > dotfile/config > parser default
 
