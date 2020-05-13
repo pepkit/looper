@@ -117,17 +117,6 @@ class LooperBothRunsTests:
         _is_in_file(subs_list, "#SBATCH", reverse=True)
         os.remove(dotfile_path)
 
-    # @pytest.mark.parametrize("cmd", ["run", "runp"])
-    # def test_dotfile_config_file(self, prep_temp_pep, cmd):
-    #     tp = prep_temp_pep
-    #     dotfile_path = os.path.join(os.getcwd(), LOOPER_DOTFILE_NAME)
-    #     with open(dotfile_path, 'w') as df:
-    #         dump({LOOPER_KEY: {"config_file": tp}}, df)
-    #     stdout, stderr, rc = _subp_exec(cmd=cmd)
-    #     print(stderr)
-    #     assert rc == 0
-    #     os.remove(dotfile_path)
-
     @pytest.mark.parametrize("cmd", ["run", "runp"])
     def test_cli_overwrites_dotfile(self, prep_temp_pep, cmd):
         tp = prep_temp_pep

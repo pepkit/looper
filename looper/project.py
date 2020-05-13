@@ -99,15 +99,16 @@ class Project(peppyProject):
     def __init__(self, config_file, amendments=None, dry=False,
                  compute_env_file=None, no_environment_exception=RuntimeError,
                  no_compute_exception=RuntimeError, file_checks=False,
-                 permissive=True, **kwargs):
+                 permissive=True, runp=False, **kwargs):
         super(Project, self).__init__(config_file, amendments=amendments)
         setattr(self, EXTRA_KEY, dict())
         for attr_name in CLI_PROJ_ATTRS:
             if attr_name in kwargs:
                 setattr(self[EXTRA_KEY], attr_name, kwargs[attr_name])
-        self._apply_user_pifaces(self.cli_pifaces)
-        self._samples_by_interface = self._samples_by_piface(self.piface_key)
-        self._interfaces_by_sample = self._piface_by_samples()
+        if not runp:
+            self._overwrite_sample_pifaces_with_cli(self.cli_pifaces)
+            self._samples_by_interface = self._samples_by_piface(self.piface_key)
+            self._interfaces_by_sample = self._piface_by_samples()
         self.file_checks = file_checks
         self.permissive = permissive
         self.dcc = ComputingConfiguration(
@@ -278,7 +279,7 @@ class Project(peppyProject):
 
         :return list[looper.PipelineInterface]: list of pipeline interfaces
         """
-        return [PipelineInterface(pi)
+        return [PipelineInterface(pi, pipeline_type="project")
                 for pi in self.project_pipeline_interface_sources]
 
     @property
@@ -304,7 +305,7 @@ class Project(peppyProject):
         """
         return self._samples_by_interface.keys()
 
-    def _apply_user_pifaces(self, pifaces):
+    def _overwrite_sample_pifaces_with_cli(self, pifaces):
         """
         Overwrite sample pipeline interface sources with the provided ones
 
@@ -321,7 +322,7 @@ class Project(peppyProject):
         for piface in pifaces:
             pi = expandpath(piface)
             try:
-                PipelineInterface(pi)
+                PipelineInterface(pi, pipeline_type="sample")
             except Exception as e:
                 _LOGGER.warning("Provided pipeline interface source ({}) is "
                                 "invalid. Caught exception: {}".
@@ -462,7 +463,7 @@ class Project(peppyProject):
             for sample_name in sample_names:
                 pifaces_by_sample.setdefault(sample_name, [])
                 pifaces_by_sample[sample_name].\
-                    append(PipelineInterface(source))
+                    append(PipelineInterface(source, pipeline_type="sample"))
         return pifaces_by_sample
 
     def _omit_from_repr(self, k, cls):
@@ -493,7 +494,7 @@ class Project(peppyProject):
                 for source in piface_srcs:
                     source = expandpath(source)
                     try:
-                        PipelineInterface(source)
+                        PipelineInterface(source, pipeline_type="sample")
                     except (ValidationError, IOError) as e:
                         msg = "Ignoring invalid pipeline interface source: " \
                               "{}. Caught exception: {}".\

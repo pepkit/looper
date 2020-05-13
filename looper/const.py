@@ -76,7 +76,7 @@ RESOURCES_KEY = "resources"
 SAMPLE_PL_KEY = "sample_pipeline"
 PROJECT_PL_KEY = "project_pipeline"
 PIFACE_SCHEMA_SRC = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                 "schemas", "pipeline_interface_schema.yaml")
+                                 "schemas", "pipeline_interface_schema_{}.yaml")
 EXTRA_SAMPLE_CMD_TEMPLATE = "{%- if sample.command_extra is defined %} {sample.command_extra}   {% endif -%}"
 EXTRA_PROJECT_CMD_TEMPLATE = "{%- if project.looper.command_extra is defined %} {project.looper.command_extra}{% endif -%}"
 DOTFILE_CFG_PTH_KEY = "config_file_path"

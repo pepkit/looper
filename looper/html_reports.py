@@ -395,6 +395,7 @@ class HTMLReportBuilder(object):
         links = []
         warnings = []
         # For each protocol report the project summarizers' results
+        self.prj.populate_pipeline_outputs()
         ifaces = self.prj.project_pipeline_interfaces
         # Check the interface files for summarizers
         for iface in ifaces:

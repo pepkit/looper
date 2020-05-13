@@ -32,8 +32,10 @@ class PipelineInterface(PXAM):
 
     :param str | Mapping config: path to file from which to parse
         configuration data, or pre-parsed configuration data.
+    :param str pipeline_type: type of the pipeline,
+        must be either 'sample' or 'project'.
     """
-    def __init__(self, config):
+    def __init__(self, config, pipeline_type=None):
         super(PipelineInterface, self).__init__()
 
         if isinstance(config, Mapping):
@@ -46,7 +48,7 @@ class PipelineInterface(PXAM):
             self.source = config
             config = load_yaml(config)
         self.update(config)
-        self._validate(PIFACE_SCHEMA_SRC)
+        self._validate(PIFACE_SCHEMA_SRC, flavor=pipeline_type)
         self._expand_pipeline_paths()
 
     def get_pipeline_schemas(self, schema_key=INPUT_SCHEMA_KEY):
@@ -246,15 +248,16 @@ class PipelineInterface(PXAM):
             _LOGGER.debug("Expanded path: {}".format(pipe_path))
             self["path"] = pipe_path
 
-    def _validate(self, schema_src, exclude_case=False):
+    def _validate(self, schema_src, exclude_case=False, flavor=None):
         """
         Generic function to validate object against a schema
 
         :param str schema_src: schema source to validate against, URL or path
         :param bool exclude_case: whether to exclude validated objects
             from the error. Useful when used ith large projects
+        :param str flavor: type of the pipeline schema to use
         """
-        schemas = read_schema(schema_src)
+        schemas = read_schema(schema_src.format(flavor if flavor else "generic"))
         for schema in schemas:
             try:
                 jsonschema.validate(self, schema)

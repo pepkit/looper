@@ -240,7 +240,6 @@ class Collator(Executor):
                 "project config file and define {c} in '{c}' section in that "
                 "file".format(p=self.prj.piface_key, c=PROJECT_PL_KEY)
             )
-        self.prj.populate_pipeline_outputs()
         self.counter = LooperCounter(len(project_pifaces))
         for project_piface in project_pifaces:
             try:
@@ -760,7 +759,7 @@ def main():
                     amendments=args.amendments,
                     file_checks=args.file_checks,
                     compute_env_file=getattr(args, 'env', None),
-
+                    runp=args.command == "runp",
                     **{attr: getattr(args, attr) for attr in CLI_PROJ_ATTRS})
     except yaml.parser.ParserError as e:
         _LOGGER.error("Project config parse failed -- {}".format(e))
