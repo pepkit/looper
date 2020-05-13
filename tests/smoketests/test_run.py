@@ -182,7 +182,7 @@ class LooperRunBehaviorTests:
     def test_looper_cli_pipeline(self, prep_temp_pep):
         """ CLI-specified pipelines overwrite ones from config """
         tp = prep_temp_pep
-        pi_pth = os.path.join(os.path.dirname(tp), "pipeline_interface1.yaml")
+        pi_pth = os.path.join(os.path.dirname(tp), PIS.format("1"))
         stdout, stderr, rc = _subp_exec(tp, "run",
                                         ["--pipeline-interfaces", pi_pth])
         print(stderr)
@@ -374,10 +374,8 @@ class LooperRunpBehaviorTests:
         with open(tp, 'r') as conf_file:
             config_data = safe_load(conf_file)
         print("\nconfig_data: \n{}\n".format(config_data))
-        pifaces = \
-            config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][PIPELINE_INTERFACES_KEY]
-        config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][PIPELINE_INTERFACES_KEY] = \
-            pifaces[1]
+        piface_path = os.path.join(os.path.dirname(tp), PIP.format("1"))
+        config_data[LOOPER_KEY]["runp"][PIPELINE_INTERFACES_KEY] = piface_path
         print("\nconfig_data: \n{}\n".format(config_data))
         with open(tp, 'w') as conf_file:
             dump(config_data, conf_file)

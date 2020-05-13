@@ -106,7 +106,8 @@ class Project(peppyProject):
             if attr_name in kwargs:
                 setattr(self[EXTRA_KEY], attr_name, kwargs[attr_name])
         if not runp:
-            self._overwrite_sample_pifaces_with_cli(self.cli_pifaces)
+            self._overwrite_sample_pifaces_with_cli(
+                self.cli_pifaces[0] if self.cli_pifaces else None)
             self._samples_by_interface = self._samples_by_piface(self.piface_key)
             self._interfaces_by_sample = self._piface_by_samples()
         self.file_checks = file_checks
@@ -249,18 +250,6 @@ class Project(peppyProject):
 
         :return list[str]: collection of valid pipeline interface sources:
         """
-        # project_pifaces = self._samples_by_interface.keys()
-        # if self.piface_key in self[CONFIG_KEY][LOOPER_KEY]:
-        #     # pipeline interfaces sources defined in the project config override
-        #     # ones that are matched by the Samples in this Project
-        #     cfg_pifaces = self[CONFIG_KEY][LOOPER_KEY][self.piface_key]
-        #     _LOGGER.debug("Overwriting sample-matched pifaces with a "
-        #                   "config-specified ones: {}".format(cfg_pifaces))
-        #     # make sure it's a list, so both lists and strings can be
-        #     # specified in the config
-        #     if isinstance(cfg_pifaces, str):
-        #         cfg_pifaces = [cfg_pifaces]
-        #     project_pifaces = [expandpath(src) for src in cfg_pifaces]
         cli_pifaces = self.cli_pifaces
         if isinstance(cli_pifaces, str):
             cli_pifaces = [cli_pifaces]

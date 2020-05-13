@@ -235,11 +235,10 @@ class Collator(Executor):
         project_pifaces = self.prj.project_pipeline_interface_sources
         if not project_pifaces:
             raise MisconfigurationException(
-                "Looper requires at least one pointer to project-level pipeline"
-                " in a pipeline interface file, set with the '{p}' key in the "
-                "project config file and define {c} in '{c}' section in that "
-                "file".format(p=self.prj.piface_key, c=PROJECT_PL_KEY)
-            )
+                "Looper requires a pointer to at least one project pipeline. "
+                "Please refer to the documentation on linking project to a "
+                "pipeline: "
+                "http://looper.databio.org/en/latest/defining-a-project")
         self.counter = LooperCounter(len(project_pifaces))
         for project_piface in project_pifaces:
             try:
