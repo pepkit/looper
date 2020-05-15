@@ -28,7 +28,7 @@ Here you can see the command-line usage instructions for the main looper command
 ```console
 version: 1.2.0-dev
 usage: looper [-h] [--version] [--logfile LOGFILE] [--verbosity {0,1,2,3,4}]
-              [--dbg] [--env ENV]
+              [--dbg] [--divvy DIVVY]
               {run,rerun,runp,table,report,destroy,check,clean,inspect,init}
               ...
 
@@ -54,8 +54,9 @@ optional arguments:
   --verbosity {0,1,2,3,4}
                         Choose level of verbosity (default: None)
   --dbg                 Turn on debug mode (default: False)
-  --env ENV             Environment variable that points to the DIVCFG file.
-                        (default: DIVCFG)
+  --divvy DIVVY         Path to the divvy configuration file. If not provided,
+                        the value of $DIVCFG environment variable will be
+                        used. Currently: not set
 
 For subcommand-specific options, type: 'looper <subcommand> -h'
 https://github.com/pepkit/looper
