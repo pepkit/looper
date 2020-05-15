@@ -10,10 +10,10 @@ Looper doesn't require you to use this two-stage system, but it simply makes it 
 
 ## Sample pipelines
 
-The typical use case is sample-level pipelines. These are run with `looper run`. The sample pipelines are described in the `sample_pipeline` section of a pipeline interface.
+The typical use case is sample-level pipelines. These are run with `looper run`. Pipeline interface defining a sample pipeline must to include `pipeline_type: "sample"` statement.
 
 ## Project pipelines
 
-Optionally, a pipeline interface can add a `project_pipeline` section. A pipeline specified here will be run with `looper runp` (where the *p* stands for *project*). Running a project pipeline operates in almost exactly the same way as the sample pipeline, with 2 key exceptions: First, instead of creating a separate command for every sample, the `looper runp` will only create a single command for the project. And second, the command template itself will not have access to a `sample` namespace representing a particular sample, since it's not running on a particular sample; instead, it will have access to a `samples` (plural) namespace, which contains all the attributes from all the samples.
+Project pipelines will be run with `looper runp` (where the *p* stands for *project*). Running a project pipeline operates in almost exactly the same way as the sample pipeline, with 2 key exceptions: First, instead of creating a separate command for every sample, the `looper runp` will only create a single command per pipeline for the project. And second, the command template itself will not have access to a `sample` namespace representing a particular sample, since it's not running on a particular sample; instead, it will have access to a `samples` (plural) namespace, which contains all the attributes from all the samples.
 
 In a typical workflow, a user will first run the samples individually using `looper run`, and then, if the pipeline provides one, will run the project component using `looper runp` to summarize or aggregate the results into a project-level output.
