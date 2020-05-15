@@ -6,7 +6,6 @@ python:
 os:
   - linux
 before_install:
-  - pip install git+https://github.com/pepkit/ubiquerg.git@dev
   - pip install git+https://github.com/pepkit/peppy.git@dev
   - pip install git+https://github.com/pepkit/divvy.git@adapters
   - pip install git+https://github.com/pepkit/eido.git@dev
