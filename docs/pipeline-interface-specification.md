@@ -10,7 +10,7 @@ Table of contents:
 
 ## Introduction
 
-In order to run an arbitrary pipeline, we require a formal specification for how the pipeline is to be used. We define this using a *pipeline interface* file. It maps attributes of a PEP project or sample to CLI arguments. Thus, it defines the interface between the project metadata (the PEP) and the pipeline itself.
+In order to run an arbitrary pipeline, we require a formal specification for how the pipeline is to be used. We define this using a *pipeline interface* file. It maps attributes of a PEP project or sample to the pipeline CLI arguments. Thus, it defines the interface between the project metadata (the PEP) and the pipeline itself.
 
 If you're using *existing* `looper`-compatible pipelines, you don't need to create a new interface; just [point your project at the one that comes with the pipeline](defining-a-project.md). When creating *new* `looper`-compatible pipelines, you'll need to create a new pipeline interface file.
 
@@ -18,29 +18,29 @@ If you're using *existing* `looper`-compatible pipelines, you don't need to crea
 
 ## Definitions of terms
 
-A pipeline interface consists of up to 3 keys:
+A pipeline interface **requires** 3 pipeline interface keys to be specified:
 
-- `pipeline_name` - REQUIRED. A string identifying the pipeline.
-- `sample_pipeline` - describes arguments and resources for a pipeline that runs once per sample
-- `project_pipeline` - describes arguments and resources for a pipeline that runs once on the entire project
+- `pipeline_name` - A string identifying the pipeline,
+- `pipeline_type` - A string indicating a pipeline type, must be either "sample" (for `looper run`) or "project" (for `looper runp`),
+- `command_template` - A [Jinja2](https://jinja.palletsprojects.com/en/2.11.x/) template used to construct a pipeline command command to run.
 
-The pipeline interface should define either a single `sample_pipeline`, a single `project_pipeline`, or one of each. Let's start with a simple example:
+Additionally, a pipeline interface may consist of the following components: `path`, `input_schema`, `output_schema`, `compute` and `sample_yaml_path`.
+
+The pipeline interface should define either a single sample pipeline, a single project pipeline. Let's start with a simple example:
 
 ```yaml
 pipeline_name: RRBS
-sample_pipeline:
-    path: path/to/rrbs.py
-    input_schema: path/to/rrbs_schema.yaml
-    command_template: {pipeline.path} --input {sample.data_path}
+pipeline_type: sample
+path: path/to/rrbs.py
+input_schema: path/to/rrbs_schema.yaml
+command_template: {pipeline.path} --input {sample.data_path}
 ```
 
 Pretty simple. The `pipeline_name` is arbitrary. It's used for messaging and identification. Ideally, it's unique to each pipeline. In this example, we define a single sample-level pipeline. 
 
-## Components of a pipeline interface
+## More about the recommended components of a pipeline interface
 
-Each `sample_pipeline` or `project_pipeline` section can have any of these components:
-
-### path (REQUIRED)
+### path (RECOMMENDED)
 
 Absolute or relative path to the script or command for this pipeline. Relative paths are considered **relative to your pipeline_interface file**. We strongly recommend using relative paths where possible to keep your pipeline interface file portable. You may also use shell environment variables (like `${HOME}`) in the `path`. You can then use this variable to refer to the pipeline command to execute by using `{pipeline.path}` in the `command_template`.
 
@@ -51,8 +51,8 @@ The input schema formally specifies the *input processed by this pipeline*. Loop
 Details for how to write a schema in in [writing a schema](http://eido.databio.org/en/master/writing-a-schema/). The input schema format is an extended [PEP JSON-schema validation framework](http://pep.databio.org/en/latest/howto_validate/), which adds several capabilities:
 
 - `required` (optional): A list of sample attributes (columns in the sample table) that **must be defined**
-- `required_input_attrs` (optional): A list of sample attributes that point to **input files that must exist**.
-- `input_attrs` (optional): A list of sample attributes that point to input files that are not necessarily required, but if they exist, should be counted in the total size calculation for requesting resources.
+- `required_files` (optional): A list of sample attributes that point to **input files that must exist**.
+- `files` (optional): A list of sample attributes that point to input files that are not necessarily required, but if they exist, should be counted in the total size calculation for requesting resources.
 
 If no `input_schema` is included in the pipeline interface, looper will not be able to validate the samples and will simply submit each job without validation.
 
@@ -106,9 +106,9 @@ Looper uses the output schema in its `report` function, which produces a browsab
 
 ### command_template (REQUIRED)
 
-The command template is the most critical part of the pipeline interface. It is a [jinja2](https://jinja.palletsprojects.com/) template for the command to run for each sample. Within the `command_template`, you have access to variables from several sources. These variables are divided into namespaces depending on the variable source. You can access the values of these variables in the command template using the single-brace jinja2 template language syntax: `{namespace.variable}`. For example, looper automatically creates a variable called `job_name`, which you may want to pass as an argument to your pipeline. You can access this variable with `{looper.job_name}`. The available namespaces are described in detail in [looper variable namespaces](variable-namespaces.md).
+The command template is the most critical part of the pipeline interface. It is a [Jinja2](https://jinja.palletsprojects.com/) template for the command to run for each sample. Within the `command_template`, you have access to variables from several sources. These variables are divided into namespaces depending on the variable source. You can access the values of these variables in the command template using the single-brace jinja2 template language syntax: `{namespace.variable}`. For example, looper automatically creates a variable called `job_name`, which you may want to pass as an argument to your pipeline. You can access this variable with `{looper.job_name}`. The available namespaces are described in detail in [looper variable namespaces](variable-namespaces.md).
 
-Because it's based on jinja2, command templates are extremely flexible. For example, optional arguments can be accommodated using jinja2 syntax, like this. These will only be added to the command *if the specified attribute exists for the sample*. 
+Because it's based on Jinja2, command templates are extremely flexible. For example, optional arguments can be accommodated using Jinja2 syntax, like this: 
 
 ```
 command_template: >
@@ -121,6 +121,8 @@ command_template: >
   {% if sample.peak_caller is defined %} --peak-caller {sample.peak_caller} {% endif %}
   {% if sample.FRIP_ref is defined %} --frip-ref-peaks {sample.FRIP_ref} {% endif %}
 ```
+
+The arguments wrapped in Jinja2 conditionals will only be added to the command *if the specified attribute exists for the sample*.
 
 ### compute (RECOMMENDED)
 
@@ -161,7 +163,7 @@ This final line in the resources `tsv` must include `NaN` in the `max_file_size`
 
 #### dynamic_variables_command_template
 
-The size-dependent variables is a convenient system to modulate computing variables based on file size, but it is not flexible enough to allow modulated compute variables on the basis of other sample attributes. For a more flexible version, looper provides the `dynamic_variables_command_template`. The dynamic variables command template specifies a jinja2 template to construct a system command run in a subprocess. This command template has available all of the namespaces in the primary command template. The command should return a JSON object, which is then used to populate submission templates. This allows you to specify computing variables that depend on any attributes of a project, sample, or pipeline, which can be used for ultimate flexibility in computing.
+The size-dependent variables is a convenient system to modulate computing variables based on file size, but it is not flexible enough to allow modulated compute variables on the basis of other sample attributes. For a more flexible version, looper provides the `dynamic_variables_command_template`. The dynamic variables command template specifies a Jinja2 template to construct a system command run in a subprocess. This command template has available all of the namespaces in the primary command template. The command should return a JSON object, which is then used to populate submission templates. This allows you to specify computing variables that depend on any attributes of a project, sample, or pipeline, which can be used for ultimate flexibility in computing.
 
 Example:
 
@@ -180,11 +182,11 @@ sample_pipeline:
 Looper produces a yaml file that represents the sample. By default the file is saved in submission directory in `{sample.sample_name}.yaml`. You can override the default by specifying a `sample_yaml_path` attribute in the pipeline interface:
 
 ```
-sample_yaml_path: {sample.sample_name}.yaml  # relative to looper.output_dir
+sample_yaml_path: {sample.sample_name}.yaml
 ```
 
 This attribute, like the `command_template`, has access to any of the looper namespaces, in case you want to use them in the names of your sample yaml files.
 
 ## Validating a pipeline interface
 
-A pipeline interface can be validated using JSON Schema against [schema.databio.org/pipelines/pipeline_interface.yaml](http://schema.databio.org/pipelines/pipeline_interface.yaml)
+A pipeline interface can be validated using JSON Schema against [schema.databio.org/pipelines/pipeline_interface.yaml](http://schema.databio.org/pipelines/pipeline_interface.yaml). 
