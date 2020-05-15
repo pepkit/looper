@@ -16,22 +16,29 @@ or a pipeline *developer* (building your own pipeline).
 
 ## Pipeline users
 
-Users (non-developers) of pipelines only need to be aware of one config file - [project config](define-your-project.md). This file is specific to each project and contains information about the project's metadata, where the processed files should be saved, and other variables that allow to configure the pipelines specifically for this project. It follows the standard Portable Encapsulated Project format, or PEP for short.
+Users (non-developers) of pipelines only need to be aware of one or two config files.
 
-If you are planning to submit jobs to a cluster, then you need to be aware of environment configuration. This task is farmed out to [divvy](http://divvy.databio.org/en/latest/), a computing resource configuration manager. Follow the divvy documentation to learn about ways to tweak the computing environment settins according to your needs.
+### Project configuration
+
+[**project config**](define-your-project.md) -- this file is specific to each project and contains information about the project's metadata, where the processed files should be saved, and other variables that allow to configure the pipelines specifically for this project. It follows the standard Portable Encapsulated Project format, or PEP for short.
+
+### Environment configuration
+
+[**environment config**](http://divvy.databio.org/en/latest/configuration/) -- if you are planning to submit jobs to a cluster, then you need to be aware of environment configuration. This task is farmed out to [divvy](http://divvy.databio.org/en/latest/), a computing resource configuration manager. Follow the divvy documentation to learn about ways to tweak the computing environment settins according to your needs.
 
 That should be all you need to worry about as a pipeline user. If you need to adjust compute resources or want to develop a pipeline or have more advanced project-level control over pipelines, you'll need knowledge of the config files used by pipeline developers.
 
 
 ## Pipeline developers
 
-If you want to make pipeline compatible with `looper`, tweak the way `looper` interacts with a pipeline for a given project, 
+### Pipeline configuration
+
+If you want to make pipeline compatible with looper, tweak the way looper interacts with a pipeline for a given project, 
 or change the default cluster resources requested by a pipeline, you need to know about a configuration file that coordinates linking pipelines to a project. This happens via the [pipeline interface file](pipeline-interface-specification.md).
 
-Finally, if you're using [the `pypiper` framework](https://github.com/databio/pypiper) to develop pipelines, 
-it uses a pipeline-specific configuration file, which is detailed in the [`pypiper` documentation](http://pypiper.readthedocs.io/en/latest/advanced.html#pipeline-config-files). 
+Finally, if you're using [the pypiper framework](https://github.com/databio/pypiper) to develop pipelines, 
+it uses a pipeline-specific configuration file, which is detailed in the [pypiper documentation](http://pypiper.readthedocs.io/en/latest/advanced.html#pipeline-config-files). 
 
 Essentially, each pipeline may provide a configuration file describing where software is, 
 and parameters to use for tasks within the pipeline. This configuration file is by default named like pipeline name, 
-with a `.yaml` extension instead of `.py`. For example, by default `rna_seq.py` looks for an accompanying `rna_seq.yaml` file. 
-These files can be changed on a per-project level using the `pipeline_config` section of a [project configuration file](define-your-project.md).
+with a `.yaml` extension instead of `.py`. For example, by default `rna_seq.py` looks for an accompanying `rna_seq.yaml` file.

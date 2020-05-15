@@ -8,7 +8,6 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 - Commands:
-    - `mod`; modifies `.looper.yaml` file
     - `init`; initializes `.looper.yaml` file
     - `inspect`; inspects `Project` or `Sample` objects
     - `table`; writes summary stats table
@@ -26,7 +25,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - The PyPi name changed from 'loopercli' to 'looper'
 - resources section in pipeline interface replaced with `size_dependent_attributes` or `dynamic_variables_command_template`.
 - `--compute` can be used to specify arguments other than resources
-- `all_input_files` and `required_input_files` keys in pipeline interface moved to the input schema and renamed to `all_inputs_attr` and `required_inputs_attr`
+- `all_input_files` and `required_input_files` keys in pipeline interface moved to the input schema and renamed to `files` and `required_files`
+- pipeline interface specification
 
 ## [0.12.6] -- 2020-02-21
 
