@@ -97,8 +97,7 @@ class Project(peppyProject):
         a warning message will be logged, and no exception will be raised.
     """
     def __init__(self, config_file, amendments=None, dry=False,
-                 compute_env_file=None, no_environment_exception=RuntimeError,
-                 no_compute_exception=RuntimeError, file_checks=False,
+                 compute_env_file=None, file_checks=False,
                  permissive=True, runp=False, **kwargs):
         super(Project, self).__init__(config_file, amendments=amendments)
         setattr(self, EXTRA_KEY, dict())
@@ -108,14 +107,12 @@ class Project(peppyProject):
         if not runp:
             self._overwrite_sample_pifaces_with_cli(
                 self.cli_pifaces[0] if self.cli_pifaces else None)
-            self._samples_by_interface = self._samples_by_piface(self.piface_key)
+            self._samples_by_interface = \
+                self._samples_by_piface(self.piface_key)
             self._interfaces_by_sample = self._piface_by_samples()
         self.file_checks = file_checks
         self.permissive = permissive
-        self.dcc = ComputingConfiguration(
-            config_file=compute_env_file, no_env_error=no_environment_exception,
-            no_compute_exception=no_compute_exception
-        )
+        self.dcc = ComputingConfiguration(filepath=compute_env_file)
         if not dry:
             _LOGGER.debug("Ensuring project directories exist")
             self.make_project_dirs()

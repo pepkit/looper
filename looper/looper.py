@@ -35,8 +35,7 @@ from .project import Project, ProjectContext
 from .utils import *
 from .looper_config import *
 
-from divvy import DEFAULT_COMPUTE_RESOURCES_NAME, \
-    NEW_COMPUTE_KEY as DIVVY_COMPUTE_KEY
+from divvy import DEFAULT_COMPUTE_RESOURCES_NAME, select_divvy_config
 from logmuse import init_logger
 from peppy.const import *
 from eido import validate_sample, validate_config, inspect_project
@@ -757,7 +756,7 @@ def main():
         p = Project(config_file=args.config_file,
                     amendments=args.amendments,
                     file_checks=args.file_checks,
-                    compute_env_file=getattr(args, 'env', None),
+                    compute_env_file=select_divvy_config(filepath=args.divvy),
                     runp=args.command == "runp",
                     **{attr: getattr(args, attr) for attr in CLI_PROJ_ATTRS})
     except yaml.parser.ParserError as e:

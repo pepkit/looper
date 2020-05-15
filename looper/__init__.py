@@ -89,9 +89,11 @@ def build_parser():
                 "--dbg", action="store_true",
                 help="Turn on debug mode (default: %(default)s)")
         parser.add_argument(
-                "--env", default=None,
-                help="Environment variable that points to the DIVCFG file. "
-                     "(default: DIVCFG)")
+                "--divvy", default=None,
+                help="Path to the divvy configuration file. If not provided, "
+                     "the value of $DIVCFG environment variable will be used. "
+                     "Currently: {}".format(os.getenv('DIVCFG', None)
+                                             or "not set"))
 
         # Individual subcommands
         # TODO: "table" & "report" (which calls table by default)
