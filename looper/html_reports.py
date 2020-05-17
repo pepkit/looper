@@ -34,7 +34,7 @@ class HTMLReportBuilder(object):
         self.reports_dir = get_file_for_project(self.prj, "reports")
         self.index_html_path = get_file_for_project(self.prj, "summary.html")
         self.index_html_filename = os.path.basename(self.index_html_path)
-        self._outdir = self.prj[OUTDIR_KEY]
+        self._outdir = self.prj.output_dir
         _LOGGER.debug("Reports dir: {}".format(self.reports_dir))
 
     def __call__(self, objs, stats, columns):
@@ -754,13 +754,14 @@ def uniqify(seq):
 def create_status_table(prj, final=True):
     """
     Creates status table, the core of the status page.
-    It is abstracted into a function so that it can be used in other software packages.
-    It can produce a table of two types. With links to the samples/log files and without.
-    The one without can be used to render HTMLs for on-th-fly job status inspection
+    It is abstracted into a function so that it can be used in other software
+    packages. It can produce a table of two types. With links to the
+    samples/log files and without. The one without can be used to render HTMLs
+     for on-th-fly job status inspection.
 
     :param looper.Project prj: project to create the status table for
-    :param bool final: if the status table is created for a finalized looper run. In such a case,
-    links to samples and log files will be provided
+    :param bool final: if the status table is created for a finalized looper
+        run. In such a case, links to samples and log files will be provided
     :return str: rendered status HTML file
     """
     status_warning = False
@@ -801,23 +802,29 @@ def create_status_table(prj, final=True):
             row_classes.append(button_class)
             # get first column data (sample name/link)
             page_name = sample_name + ".html"
-            page_path = os.path.join(get_file_for_project(prj, "reports"), page_name.replace(' ', '_').lower())
-            page_relpath = os.path.relpath(page_path, get_file_for_project(prj, "reports"))
+            page_path = os.path.join(get_file_for_project(prj, "reports"),
+                                     page_name.replace(' ', '_').lower())
+            page_relpath = os.path.relpath(page_path,
+                                           get_file_for_project(prj, "reports"))
             sample_paths.append(page_relpath)
             sample_link_names.append(sample_name)
             # get second column data (status/flag)
             flags.append(flag)
             # get third column data (log file/link)
-            log_name = _match_file_for_sample(sample_name, "log.md", prj.results_folder)
-            log_file_link = _get_relpath_to_file(log_name, sample_name, prj.results_folder,
-                                                 get_file_for_project(prj, "reports"))
+            log_name = _match_file_for_sample(sample_name, "log.md",
+                                              prj.results_folder)
+            log_file_link = \
+                _get_relpath_to_file(log_name, sample_name, prj.results_folder,
+                                     get_file_for_project(prj, "reports"))
             log_link_names.append(log_name)
             log_paths.append(log_file_link)
             # get fourth column data (runtime) and fifth column data (memory)
-            profile_file_path = _match_file_for_sample(sample.sample_name, 'profile.tsv', prj.results_folder,
-                                                       full_path=True)
+            profile_file_path = \
+                _match_file_for_sample(sample.sample_name, 'profile.tsv',
+                                       prj.results_folder, full_path=True)
             if os.path.exists(profile_file_path):
-                df = _pd.read_csv(profile_file_path, sep="\t", comment="#", names=PROFILE_COLNAMES)
+                df = _pd.read_csv(profile_file_path, sep="\t", comment="#",
+                                  names=PROFILE_COLNAMES)
                 df['runtime'] = _pd.to_timedelta(df['runtime'])
                 times.append(_get_runtime(df))
                 mems.append(_get_maxmem(df))
@@ -834,14 +841,18 @@ def create_status_table(prj, final=True):
         _LOGGER.warning("The stats table is incomplete, likely because one or "
                         "more jobs either failed or is still running.")
     if sample_warning:
-        _LOGGER.warning("Samples not present in {}: {}".format(
-            prj.results_folder, str([sample for sample in sample_warning])))
-    template_vars = dict(sample_link_names=sample_link_names, row_classes=row_classes, flags=flags, times=times,
+        _LOGGER.warning("{} samples not present in {}: {}".format(
+            len(sample_warning), prj.results_folder,
+            str([sample for sample in sample_warning])))
+    template_vars = dict(sample_link_names=sample_link_names,
+                         row_classes=row_classes, flags=flags, times=times,
                          mems=mems)
     template_name = "status_table_no_links.html"
     if final:
         template_name = "status_table.html"
-        template_vars.update(dict(sample_paths=sample_paths, log_link_names=log_link_names, log_paths=log_paths))
+        template_vars.update(dict(sample_paths=sample_paths,
+                                  log_link_names=log_link_names,
+                                  log_paths=log_paths))
     return render_jinja_template(template_name, get_jinja_env(), template_vars)
 
 

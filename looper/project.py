@@ -251,7 +251,7 @@ class Project(peppyProject):
         if isinstance(cli_pifaces, str):
             cli_pifaces = [cli_pifaces]
         return [expandpath(src) for src in cli_pifaces] \
-            if cli_pifaces is not None else None
+            if cli_pifaces is not None else []
 
     @property
     def project_pipeline_interfaces(self):

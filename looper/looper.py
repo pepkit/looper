@@ -758,7 +758,7 @@ def main():
                     file_checks=args.file_checks,
                     compute_env_file=select_divvy_config(filepath=args.divvy),
                     runp=args.command == "runp",
-                    **{attr: getattr(args, attr) for attr in CLI_PROJ_ATTRS})
+                    **{attr: getattr(args, attr) for attr in CLI_PROJ_ATTRS if attr in args})
     except yaml.parser.ParserError as e:
         _LOGGER.error("Project config parse failed -- {}".format(e))
         sys.exit(1)

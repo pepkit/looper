@@ -158,7 +158,7 @@ def get_file_for_project(prj, appendix):
         like 'objs_summary.tsv' for objects summary file
     :return str: path to the file
     """
-    fp = os.path.join(prj[OUTDIR_KEY], prj[NAME_KEY])
+    fp = os.path.join(prj.output_dir, prj[NAME_KEY])
     if hasattr(prj, AMENDMENTS_KEY) and getattr(prj, AMENDMENTS_KEY):
         fp += '_' + '_'.join(getattr(prj, AMENDMENTS_KEY))
     fp += '_' + appendix
