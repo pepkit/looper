@@ -115,7 +115,8 @@ def build_parser():
 
         def add_subparser(cmd):
             message = msg_by_cmd[cmd]
-            return subparsers.add_parser(cmd, description=message, help=message, formatter_class=lambda prog: argparse.HelpFormatter(prog, max_help_position=28, width=100))
+            return subparsers.add_parser(cmd, description=message, help=message,
+                formatter_class=lambda prog: argparse.HelpFormatter(prog, max_help_position=36, width=90))
 
         # Run and rerun command
         run_subparser = add_subparser("run")
@@ -249,7 +250,7 @@ def build_parser():
                     "Specify samples to include or exclude based on sample attribute values")
             fetch_samples_group.add_argument(
                 "--sel-attr", default="toggle", metavar="ATTR",
-                help="Specify the attribute for sample exclusion OR inclusion")
+                help="Attribute for sample exclusion OR inclusion")
             protocols = fetch_samples_group.add_mutually_exclusive_group()
             protocols.add_argument(
                     "--sel-excl", nargs='*', metavar="E",
@@ -258,7 +259,7 @@ def build_parser():
                     "--sel-incl", nargs='*', metavar="I",
                     help="Include only samples with these values")
             subparser.add_argument(
-                    "-a", "--amendments", nargs="+", metavar="A",
+                    "-a", "--amend", nargs="+", metavar="A",
                     help="List of amendments to activate")
         result.append(parser)
     return result
