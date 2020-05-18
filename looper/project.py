@@ -152,7 +152,8 @@ class Project(peppyProject):
 
         :return list[str]: collection of pipeline interface sources
         """
-        return self._extra_cli_or_cfg(self.piface_key)
+        x = self._extra_cli_or_cfg(self.piface_key)
+        return [x] if isinstance(x, str) else x
 
     @property
     def output_dir(self):
@@ -247,11 +248,8 @@ class Project(peppyProject):
 
         :return list[str]: collection of valid pipeline interface sources:
         """
-        cli_pifaces = self.cli_pifaces
-        if isinstance(cli_pifaces, str):
-            cli_pifaces = [cli_pifaces]
-        return [expandpath(src) for src in cli_pifaces] \
-            if cli_pifaces is not None else []
+        return [expandpath(src) for src in self.cli_pifaces] \
+            if self.cli_pifaces is not None else []
 
     @property
     def project_pipeline_interfaces(self):
