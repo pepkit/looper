@@ -7,10 +7,10 @@ __email__ = "nathan@code.databio.org"
 
 __all__ = [
     "BUTTON_APPEARANCE_BY_FLAG", "TABLE_APPEARANCE_BY_FLAG",
-    "ID_COLNAME", "NO_DATA_PLACEHOLDER", "OUTKEY",
+    "ID_COLNAME", "NO_DATA_PLACEHOLDER", "OUTKEY", "ALL_SUBCMD_KEY",
     "OUTDIR_KEY", "LOOPER_KEY", "COMPUTE_KEY", "PIPELINE_INTERFACES_KEY",
     "SIZE_DEP_VARS_KEY", "FLAGS", "DYN_VARS_KEY", "SAMPLE_YAML_PATH_KEY",
-    "RESOURCES_KEY", "NOT_SUB_MSG", "EXTRA_KEY",
+    "RESOURCES_KEY", "NOT_SUB_MSG", "EXTRA_KEY", "DEFAULT_CFG_PATH",
     "PIFACE_SCHEMA_SRC", "RESULTS_SUBDIR_KEY", "SUBMISSION_SUBDIR_KEY",
     "TEMPLATES_DIRNAME", "FILE_SIZE_COLNAME", "COMPUTE_PACKAGE_KEY",
     "INPUT_SCHEMA_KEY", "OUTPUT_SCHEMA_KEY", "EXAMPLE_COMPUTE_SPEC_FMT",
@@ -18,7 +18,8 @@ __all__ = [
     "PIFACE_KEY_SELECTOR", "SUBMISSION_FAILURE_MESSAGE", "IMAGE_EXTS",
     "PROFILE_COLNAMES", "SAMPLE_TOGGLE_ATTR", "TOGGLE_KEY_SELECTOR",
     "LOOPER_DOTFILE_NAME", "POSITIONAL", "EXTRA_PROJECT_CMD_TEMPLATE",
-    "EXTRA_SAMPLE_CMD_TEMPLATE", "SELECTED_COMPUTE_PKG", "CLI_PROJ_ATTRS"
+    "EXTRA_SAMPLE_CMD_TEMPLATE", "SELECTED_COMPUTE_PKG", "CLI_PROJ_ATTRS",
+    "DOTFILE_CFG_PTH_KEY"
 ]
 
 FLAGS = ["completed", "running", "failed", "waiting", "partial"]
@@ -75,9 +76,10 @@ RESOURCES_KEY = "resources"
 SAMPLE_PL_KEY = "sample_pipeline"
 PROJECT_PL_KEY = "project_pipeline"
 PIFACE_SCHEMA_SRC = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                 "schemas", "pipeline_interface_schema.yaml")
+                                 "schemas", "pipeline_interface_schema_{}.yaml")
 EXTRA_SAMPLE_CMD_TEMPLATE = "{%- if sample.command_extra is defined %} {sample.command_extra}   {% endif -%}"
 EXTRA_PROJECT_CMD_TEMPLATE = "{%- if project.looper.command_extra is defined %} {project.looper.command_extra}{% endif -%}"
+DOTFILE_CFG_PTH_KEY = "config_file_path"
 INPUT_SCHEMA_KEY = "input_schema"
 OUTPUT_SCHEMA_KEY = "output_schema"
 SAMPLE_YAML_PATH_KEY = "sample_yaml_path"
@@ -104,6 +106,8 @@ LOOPER_DOTFILE_NAME = "." + LOOPER_KEY + ".yaml"
 POSITIONAL = ["config_file", "command"]
 SELECTED_COMPUTE_PKG = "package"
 EXTRA_KEY = "_cli_extra"
+ALL_SUBCMD_KEY = "all"
+DEFAULT_CFG_PATH = os.path.join(os.getcwd(), LOOPER_DOTFILE_NAME)
 CLI_PROJ_ATTRS = [OUTDIR_KEY, TOGGLE_KEY_SELECTOR, SUBMISSION_SUBDIR_KEY, PIPELINE_INTERFACES_KEY,
                   RESULTS_SUBDIR_KEY, PIFACE_KEY_SELECTOR, COMPUTE_PACKAGE_KEY]
 

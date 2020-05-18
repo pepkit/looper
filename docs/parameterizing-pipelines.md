@@ -7,29 +7,36 @@ Looper provides a feature called *command extras* to solve this problem. Command
 
 ## Project-level command extras
 
-For *project pipelines*, you can specify command extras in the `looper` section of the PEP config, like this:
+For *project pipelines*, you can specify command extras in the `looper` section of the PEP config:
 
-```
+```yaml
 looper:
-  command_extra: "--flavor"
+  runp:
+    command-extra: "--flavor"
 ```
 
-Remember, these command extras are used for project pipelines, not for sample pipelines. If you want to add extras to sample pipelines, you need to modulate the sample objects.
+or as an argument to the `looper runp` command:
+
+
+```bash
+looper runp project_config.yaml --command-extra="--flavor-flag"
+```
 
 ## Sample-level command extras
 
-For sample pipelines, you can use general PEP sample modifiers to add a `command_extras` attribute to any samples, however you wish. For example, if your extras are the same for all samples you could just use an `append` modifier:
+For sample pipelines, there are two possibilies: 1) command line argument, modulated the same way as shown above, but for `run` subcommand and 2) setting sample attribute using general PEP sample modifiers to add a `command_extra` attribute to any samples, however you wish. For example, if your extras are the same for all samples you could just use an `append` modifier:
 
 
-```
+Or, if you need to modulate on the basis of some other attribute value, you could use an imply modifer:
+
+```yaml
 sample_modifiers:
   append:
     command_extra: "--flavor-flag"
 ```
 
-Or, if you need to modulate on the basis of some other attribute value, you could use an imply modifer:
 
-```
+```yaml
 sample_modifiers:
   imply:
     - if:
@@ -40,17 +47,15 @@ sample_modifiers:
 
 ## CLI command extras
 
-Both project and sample pipelines calls can be tweaked from the command line. You use `--command-extra` to pass any arguments you want. Looper will pass these append these to your command, whether it be a sample or a project pipeline.
-
-By default, the CLI extras are *appended to the command_extras specified in you PEP*. If you instead want to *override* the command extras listed in the PEP, you can instead use `--command-extra-override`.
+By default, the CLI extras are *appended to the command_extra specified in your PEP*. If you instead want to *override* the command extras listed in the PEP, you can instead use `--command-extra-override`.
 
 So, for example, make your looper call like this:
 
-```
-looper run --command-extra "-R"
+```bash
+looper run --command-extra-override="-R"
 ```
 
-That will append `-R` to the end of any commands created by looper.
+That will remove any defined command extras and append `-R` to the end of any commands created by looper.
 
 ## Implementation
 
@@ -58,14 +63,14 @@ Under the hood, all looper is doing is automatically adding this template to the
 
 For sample pipelines,
 
-```
+```bash
 {% if sample.command_extra is defined %} {sample.command_extra}{% endif %}
 ```
 
 For project pipelines,
 
-```
+```bash
 {% if project.looper.command_extra is defined %} {project.looper.command_extra}{% endif %}
 ```
 
-In either case, after this, the CLI `command-extras` value is appended.
+In either case, after this, the CLI `command-extra` value is appended.

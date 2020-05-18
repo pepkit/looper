@@ -97,25 +97,22 @@ class Project(peppyProject):
         a warning message will be logged, and no exception will be raised.
     """
     def __init__(self, config_file, amendments=None, dry=False,
-                 compute_env_file=None, no_environment_exception=RuntimeError,
-                 no_compute_exception=RuntimeError, file_checks=False,
-                 permissive=True, **kwargs):
+                 compute_env_file=None, file_checks=False,
+                 permissive=True, runp=False, **kwargs):
         super(Project, self).__init__(config_file, amendments=amendments)
         setattr(self, EXTRA_KEY, dict())
         for attr_name in CLI_PROJ_ATTRS:
             if attr_name in kwargs:
                 setattr(self[EXTRA_KEY], attr_name, kwargs[attr_name])
-        self._apply_user_pifaces(
-            self.cli_pifaces[0] if self.cli_pifaces else None)
-        self._samples_by_interface = self._samples_by_piface(self.piface_key)
-        self._interfaces_by_sample = self._piface_by_samples()
+        if not runp:
+            self._overwrite_sample_pifaces_with_cli(
+                self.cli_pifaces[0] if self.cli_pifaces else None)
+            self._samples_by_interface = \
+                self._samples_by_piface(self.piface_key)
+            self._interfaces_by_sample = self._piface_by_samples()
         self.file_checks = file_checks
         self.permissive = permissive
-        self.dcc = ComputingConfiguration(
-            config_file=compute_env_file, no_env_error=no_environment_exception,
-            no_compute_exception=no_compute_exception
-        )
-        # Set project's directory structure
+        self.dcc = ComputingConfiguration(filepath=compute_env_file)
         if not dry:
             _LOGGER.debug("Ensuring project directories exist")
             self.make_project_dirs()
@@ -187,11 +184,9 @@ class Project(peppyProject):
             return self[CONFIG_KEY][LOOPER_KEY][attr_name]
         else:
             if strict:
-                from .utils import dotfile_path
                 raise MisconfigurationException(
-                    "'{}' is missing. Provide it as CLI argument, in '{}' "
-                    "file or in '{}' section of the config".
-                        format(attr_name, dotfile_path(), LOOPER_KEY))
+                    "'{}' is missing. Provide it as CLI argument or in '{}' "
+                    "section of the config".format(attr_name, LOOPER_KEY))
             return
 
     @property
@@ -252,19 +247,11 @@ class Project(peppyProject):
 
         :return list[str]: collection of valid pipeline interface sources:
         """
-        project_pifaces = self._samples_by_interface.keys()
-        if self.piface_key in self[CONFIG_KEY][LOOPER_KEY]:
-            # pipeline interfaces sources defined in the project config override
-            # ones that are matched by the Samples in this Project
-            cfg_pifaces = self[CONFIG_KEY][LOOPER_KEY][self.piface_key]
-            _LOGGER.debug("Overwriting sample-matched pifaces with a "
-                          "config-specified ones: {}".format(cfg_pifaces))
-            # make sure it's a list, so both lists and strings can be
-            # specified in the config
-            if isinstance(cfg_pifaces, str):
-                cfg_pifaces = [cfg_pifaces]
-            project_pifaces = [expandpath(src) for src in cfg_pifaces]
-        return project_pifaces
+        cli_pifaces = self.cli_pifaces
+        if isinstance(cli_pifaces, str):
+            cli_pifaces = [cli_pifaces]
+        return [expandpath(src) for src in cli_pifaces] \
+            if cli_pifaces is not None else []
 
     @property
     def project_pipeline_interfaces(self):
@@ -278,7 +265,7 @@ class Project(peppyProject):
 
         :return list[looper.PipelineInterface]: list of pipeline interfaces
         """
-        return [PipelineInterface(pi)
+        return [PipelineInterface(pi, pipeline_type="project")
                 for pi in self.project_pipeline_interface_sources]
 
     @property
@@ -304,7 +291,7 @@ class Project(peppyProject):
         """
         return self._samples_by_interface.keys()
 
-    def _apply_user_pifaces(self, pifaces):
+    def _overwrite_sample_pifaces_with_cli(self, pifaces):
         """
         Overwrite sample pipeline interface sources with the provided ones
 
@@ -321,7 +308,7 @@ class Project(peppyProject):
         for piface in pifaces:
             pi = expandpath(piface)
             try:
-                PipelineInterface(pi)
+                PipelineInterface(pi, pipeline_type="sample")
             except Exception as e:
                 _LOGGER.warning("Provided pipeline interface source ({}) is "
                                 "invalid. Caught exception: {}".
@@ -398,17 +385,14 @@ class Project(peppyProject):
 
         for pipe_iface in pifaces:
             # Determine how to reference the pipeline and where it is.
-            path = pipe_iface[SAMPLE_PL_KEY]["path"]
-            if not (os.path.exists(path) or
-                    is_command_callable(path)):
-                _LOGGER.warning("Missing pipeline script: {}".
-                                format(path))
+            path = pipe_iface["path"]
+            if not (os.path.exists(path) or is_command_callable(path)):
+                _LOGGER.warning("Missing pipeline script: {}".format(path))
                 continue
 
             # Add this bundle to the collection of ones relevant for the
             # current PipelineInterface.
             new_jobs.append(pipe_iface)
-
             job_submission_bundles.append(new_jobs)
         return list(itertools.chain(*job_submission_bundles))
 
@@ -426,7 +410,7 @@ class Project(peppyProject):
             pifaces = [pifaces]
         schema_set = set()
         for piface in pifaces:
-            schema_file = piface.get_pipeline_schemas(SAMPLE_PL_KEY, schema_key)
+            schema_file = piface.get_pipeline_schemas(schema_key)
             if schema_file:
                 schema_set.update([schema_file])
         return list(schema_set)
@@ -465,7 +449,7 @@ class Project(peppyProject):
             for sample_name in sample_names:
                 pifaces_by_sample.setdefault(sample_name, [])
                 pifaces_by_sample[sample_name].\
-                    append(PipelineInterface(source))
+                    append(PipelineInterface(source, pipeline_type="sample"))
         return pifaces_by_sample
 
     def _omit_from_repr(self, k, cls):
@@ -495,11 +479,8 @@ class Project(peppyProject):
                     piface_srcs = [piface_srcs]
                 for source in piface_srcs:
                     source = expandpath(source)
-                    if not os.path.isabs(source):
-                        source = os.path.join(
-                            os.path.dirname(self.config_file), source)
                     try:
-                        PipelineInterface(source)
+                        PipelineInterface(source, pipeline_type="sample")
                     except (ValidationError, IOError) as e:
                         msg = "Ignoring invalid pipeline interface source: " \
                               "{}. Caught exception: {}".\

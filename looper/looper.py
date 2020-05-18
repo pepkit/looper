@@ -35,8 +35,7 @@ from .project import Project, ProjectContext
 from .utils import *
 from .looper_config import *
 
-from divvy import DEFAULT_COMPUTE_RESOURCES_NAME, \
-    NEW_COMPUTE_KEY as DIVVY_COMPUTE_KEY
+from divvy import DEFAULT_COMPUTE_RESOURCES_NAME, select_divvy_config
 from logmuse import init_logger
 from peppy.const import *
 from eido import validate_sample, validate_config, inspect_project
@@ -235,12 +234,10 @@ class Collator(Executor):
         project_pifaces = self.prj.project_pipeline_interface_sources
         if not project_pifaces:
             raise MisconfigurationException(
-                "Looper requires at least one pointer to project-level pipeline"
-                " in a pipeline interface file, set with the '{p}' key in the "
-                "project config file and define {c} in '{c}' section in that "
-                "file".format(p=self.prj.piface_key, c=PROJECT_PL_KEY)
-            )
-        self.prj.populate_pipeline_outputs()
+                "Looper requires a pointer to at least one project pipeline. "
+                "Please refer to the documentation on linking project to a "
+                "pipeline: "
+                "http://looper.databio.org/en/latest/defining-a-project")
         self.counter = LooperCounter(len(project_pifaces))
         for project_piface in project_pifaces:
             try:
@@ -704,26 +701,25 @@ def main():
     parser = parsers[0]
     aux_parser = parsers[1]
     aux_parser.suppress_defaults()
-    # aux_parser.suppress_defaults()
     args, remaining_args = parser.parse_known_args()
-    if args.command == "init":
-        sys.exit(int(not write_dotfile(parser, aux_parser, dotfile_path(),
-                                       args)))
-    if args.command == "mod":
-        sys.exit(int(not write_dotfile(parser, aux_parser,
-                                       dotfile_path(must_exist=True), args,
-                                       update=True)))
-    args = enrich_args_via_dotfile(args, aux_parser)
     if args.command is None:
         parser.print_help(sys.stderr)
         sys.exit(1)
     if args.config_file is None:
-        _LOGGER.error(
-            "No project config. Specify one with a positional argument "
-            "or with the 'config_file' attribute in "
-            "{}\n".format(dotfile_path()))
-        parser.print_help(sys.stderr)
-        sys.exit(1)
+        m = "No project config defined"
+        try:
+            setattr(args, "config_file", read_cfg_from_dotfile())
+        except OSError:
+            print(m + " and dotfile does not exist: {}".format(dotfile_path()))
+            parser.print_help(sys.stderr)
+            sys.exit(1)
+        else:
+            print(m + ", using: {}. Read from dotfile ({}) ".
+                  format(read_cfg_from_dotfile(), dotfile_path()))
+    if args.command == "init":
+        sys.exit(int(not init_dotfile(dotfile_path(), args.config_file)))
+    args = enrich_args_via_cfg(args, aux_parser)
+
     # Set the logging level.
     if args.dbg:
         # Debug mode takes precedence and will listen for all messages.
@@ -760,8 +756,9 @@ def main():
         p = Project(config_file=args.config_file,
                     amendments=args.amendments,
                     file_checks=args.file_checks,
-                    compute_env_file=getattr(args, 'env', None),
-                    **{attr: getattr(args, attr) for attr in CLI_PROJ_ATTRS})
+                    compute_env_file=select_divvy_config(filepath=args.divvy),
+                    runp=args.command == "runp",
+                    **{attr: getattr(args, attr) for attr in CLI_PROJ_ATTRS if attr in args})
     except yaml.parser.ParserError as e:
         _LOGGER.error("Project config parse failed -- {}".format(e))
         sys.exit(1)

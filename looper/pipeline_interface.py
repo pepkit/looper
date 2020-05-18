@@ -32,8 +32,10 @@ class PipelineInterface(PXAM):
 
     :param str | Mapping config: path to file from which to parse
         configuration data, or pre-parsed configuration data.
+    :param str pipeline_type: type of the pipeline,
+        must be either 'sample' or 'project'.
     """
-    def __init__(self, config):
+    def __init__(self, config, pipeline_type=None):
         super(PipelineInterface, self).__init__()
 
         if isinstance(config, Mapping):
@@ -46,20 +48,19 @@ class PipelineInterface(PXAM):
             self.source = config
             config = load_yaml(config)
         self.update(config)
-        self._validate(PIFACE_SCHEMA_SRC)
+        self._validate(PIFACE_SCHEMA_SRC, flavor=pipeline_type)
         self._expand_pipeline_paths()
 
-    def get_pipeline_schemas(self, section, schema_key=INPUT_SCHEMA_KEY):
-        """ipy
+    def get_pipeline_schemas(self, schema_key=INPUT_SCHEMA_KEY):
+        """
         Get path to the pipeline schema.
 
-        :param str section: pipeline name
         :param str schema_key: where to look for schemas in the pipeline iface
         :return str: absolute path to the pipeline schema file
         """
         schema_source = None
-        if schema_key in self[section]:
-            schema_source = self[section][schema_key]
+        if schema_key in self:
+            schema_source = self[schema_key]
         if schema_source:
             _LOGGER.debug("Got schema source: {}".format(schema_source))
             if is_url(schema_source):
@@ -69,11 +70,10 @@ class PipelineInterface(PXAM):
                     os.path.dirname(self.pipe_iface_file), schema_source)
         return schema_source
 
-    def choose_resource_package(self, section, namespaces, file_size):
+    def choose_resource_package(self, namespaces, file_size):
         """
         Select resource bundle for given input file size to given pipeline.
 
-        :param str section: name of the section in piface.
         :param float file_size: Size of input data (in gigabytes).
         :param Mapping[Mapping[str]] namespaces: namespaced variables to pass
             as a context for fluid attributes command rendering
@@ -102,7 +102,7 @@ class PipelineInterface(PXAM):
             return fsize
 
         def _notify(msg):
-            msg += " for pipeline '{}'".format(section)
+            msg += " for pipeline"
             if self.pipe_iface_file is not None:
                 msg += " in interface {}".format(self.pipe_iface_file)
             _LOGGER.debug(msg)
@@ -145,7 +145,7 @@ class PipelineInterface(PXAM):
                         " pipeline '{}':\n{}".format(self.pipeline_name, json))
             return json
 
-        def _load_size_dep_vars(piface, section):
+        def _load_size_dep_vars(piface):
             """
             Read the resources from a TSV provided in the pipeline interface
 
@@ -154,10 +154,9 @@ class PipelineInterface(PXAM):
             :return pandas.DataFrame: resources
             """
             df = None
-            pipeline = piface[section]
-            if COMPUTE_KEY in pipeline \
-                    and SIZE_DEP_VARS_KEY in pipeline[COMPUTE_KEY]:
-                resources_tsv_path = pipeline[COMPUTE_KEY][SIZE_DEP_VARS_KEY]
+            if COMPUTE_KEY in piface \
+                    and SIZE_DEP_VARS_KEY in piface[COMPUTE_KEY]:
+                resources_tsv_path = piface[COMPUTE_KEY][SIZE_DEP_VARS_KEY]
                 if not os.path.isabs(resources_tsv_path):
                     resources_tsv_path = os.path.join(
                         os.path.dirname(piface.pipe_iface_file),
@@ -178,10 +177,10 @@ class PipelineInterface(PXAM):
                                          "package for negative file size: {}".
                                          format(file_size))
 
-        fluid_resources = _load_fluid_attrs(self[section])
+        fluid_resources = _load_fluid_attrs(self)
         if fluid_resources is not None:
             return fluid_resources
-        resources_df = _load_size_dep_vars(self, section)
+        resources_df = _load_size_dep_vars(self)
         resources_data = {}
         if resources_df is not None:
             resources = resources_df.to_dict('index')
@@ -209,8 +208,8 @@ class PipelineInterface(PXAM):
                     resources_data = rp_data
                     break
 
-        if COMPUTE_KEY in self[section]:
-            resources_data.update(self[section][COMPUTE_KEY])
+        if COMPUTE_KEY in self:
+            resources_data.update(self[COMPUTE_KEY])
 
         project = namespaces["project"]
         if LOOPER_KEY in project and COMPUTE_KEY in project[LOOPER_KEY] \
@@ -225,42 +224,40 @@ class PipelineInterface(PXAM):
         Expand path to each pipeline in pipelines and collators subsection
         of pipeline interface
         """
-        for section in [SAMPLE_PL_KEY, PROJECT_PL_KEY]:
-            if section not in self:
-                continue
-            try:
-                raw_path = self[section]["path"]
-            except KeyError:
-                continue
-            split_path = raw_path.split(" ")
-            if len(split_path) > 1:
-                _LOGGER.warning(
-                    "Pipeline path ({}) contains spaces. Use command_template "
-                    "section to construct the pipeline command. Using the first"
-                    " part as path: {}".format(raw_path, split_path[0]))
-            path = split_path[0]
-            pipe_path = expandpath(path)
-            if not os.path.isabs(pipe_path) and self.pipe_iface_file:
-                abs = os.path.join(os.path.dirname(
-                    self.pipe_iface_file), pipe_path)
-                if os.path.exists(abs):
-                    _LOGGER.debug(
-                        "Pipeline path relative to pipeline interface"
-                        " made absolute: {}".format(abs))
-                    self[section]["path"] = abs
-                    continue
-                _LOGGER.debug("Expanded path: {}".format(pipe_path))
-                self[section]["path"] = pipe_path
+        try:
+            raw_path = self["path"]
+        except KeyError:
+            return
+        split_path = raw_path.split(" ")
+        if len(split_path) > 1:
+            _LOGGER.warning(
+                "Pipeline path ({}) contains spaces. Use command_template "
+                "section to construct the pipeline command. Using the first"
+                " part as path: {}".format(raw_path, split_path[0]))
+        path = split_path[0]
+        pipe_path = expandpath(path)
+        if not os.path.isabs(pipe_path) and self.pipe_iface_file:
+            abs = os.path.join(os.path.dirname(
+                self.pipe_iface_file), pipe_path)
+            if os.path.exists(abs):
+                _LOGGER.debug(
+                    "Pipeline path relative to pipeline interface"
+                    " made absolute: {}".format(abs))
+                self["path"] = abs
+                return
+            _LOGGER.debug("Expanded path: {}".format(pipe_path))
+            self["path"] = pipe_path
 
-    def _validate(self, schema_src, exclude_case=False):
+    def _validate(self, schema_src, exclude_case=False, flavor=None):
         """
         Generic function to validate object against a schema
 
         :param str schema_src: schema source to validate against, URL or path
         :param bool exclude_case: whether to exclude validated objects
             from the error. Useful when used ith large projects
+        :param str flavor: type of the pipeline schema to use
         """
-        schemas = read_schema(schema_src)
+        schemas = read_schema(schema_src.format(flavor if flavor else "generic"))
         for schema in schemas:
             try:
                 jsonschema.validate(self, schema)

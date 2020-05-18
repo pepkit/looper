@@ -5,6 +5,7 @@ from logging import getLogger
 import glob
 import os
 from .const import *
+from .exceptions import MisconfigurationException
 from peppy.const import *
 from peppy import Project as peppyProject
 import jinja2
@@ -157,7 +158,7 @@ def get_file_for_project(prj, appendix):
         like 'objs_summary.tsv' for objects summary file
     :return str: path to the file
     """
-    fp = os.path.join(prj[OUTDIR_KEY], prj[NAME_KEY])
+    fp = os.path.join(prj.output_dir, prj[NAME_KEY])
     if hasattr(prj, AMENDMENTS_KEY) and getattr(prj, AMENDMENTS_KEY):
         fp += '_' + '_'.join(getattr(prj, AMENDMENTS_KEY))
     fp += '_' + appendix
@@ -215,17 +216,18 @@ def read_yaml_file(filepath):
     return data
 
 
-def enrich_args_via_dotfile(parser_args, aux_parser):
+def enrich_args_via_cfg(parser_args, aux_parser):
     """
     Read in a looper dotfile and set arguments.
 
-    Priority order: CLI > dotfile > config > parser default
+    Priority order: CLI > dotfile/config > parser default
 
     :param argparse.Namespace parser_args: parsed args by the original parser
     :return argparse.Namespace: selected argument values
     """
-    dotfile_args = peppyProject(dotfile_path())[CONFIG_KEY][LOOPER_KEY] \
-        if os.path.exists(dotfile_path()) else None
+    cfg_args_all = \
+        _get_subcommand_args(parser_args.config_file, parser_args.command) \
+            if os.path.exists(parser_args.config_file) else None
     result = argparse.Namespace()
     cli_args, _ = aux_parser.parse_known_args()
     for dest in vars(parser_args):
@@ -233,54 +235,76 @@ def enrich_args_via_dotfile(parser_args, aux_parser):
             if dest in cli_args:
                 x = getattr(cli_args, dest)
                 r = convert_value(x) if isinstance(x, str) else x
-            elif dotfile_args is not None and dest in dotfile_args:
-                r = convert_value(dotfile_args[dest])
+            elif cfg_args_all is not None and dest in cfg_args_all:
+                if isinstance(cfg_args_all[dest], list):
+                    r = [convert_value(i) for i in cfg_args_all[dest]]
+                else:
+                    r = convert_value(cfg_args_all[dest])
             else:
                 r = getattr(parser_args, dest)
             setattr(result, dest, r)
     return result
 
 
-def write_dotfile(parser, aux_parser, path, arg_values=None, update=False):
+def _get_subcommand_args(cfg_path, subcommand):
     """
-    Print out available dests and respective defaults in the provided subparser
+    Get the union of values for the subcommand arguments from
+    Project.looper.all and Project.looper.<subcommand> sections.
 
-    :param argparse.ArgumentParser parser: parser to examine
-    :param argparse.Namespace arg_values: argument values
-    :param bool update: whether the file should be read, updated and written to
-    :return bool: whether the initialization happened successfully
+    Additionally, convert the options strings to destinations (replace '-'
+    with '_'), which strongly relies on argument parser using default
+    destinations.
+
+    :param str cfg_path: path to an existing config file to read
+    :param str subcommand: a looper subcommand to select the arguments for
+    :return dict: mapping of argument destinations to their values
     """
-    if not update and os.path.exists(path):
+    args = None
+    cfg = peppyProject(cfg_path)
+    if CONFIG_KEY in cfg and LOOPER_KEY in cfg[CONFIG_KEY]:
+        cfg_args = cfg[CONFIG_KEY][LOOPER_KEY]
+        args = cfg_args[ALL_SUBCMD_KEY] if ALL_SUBCMD_KEY in cfg_args else dict()
+        args.update(cfg_args[subcommand] if subcommand in cfg_args else dict())
+        args = {k.replace("-", "_"): v for k, v in args.items()}
+    return args
+
+
+def init_dotfile(path, cfg_path):
+    """
+    Initialize looper dotfile
+
+    :param str path: absolute path to the file to intialize
+    :param str cfg_path: path to the config file. Absolute or relative to 'path'
+    :return bool: whether the file was initialized
+    """
+    if os.path.exists(path):
         print("Can't initialize, file exists: {}".format(path))
         return False
-    arg_values = vars(arg_values) if arg_values is not None else dict()
-    if update:
-        with open(path, 'r') as dotfile:
-            current = yaml.safe_load(dotfile)
-        parsed_args, remaining_args = aux_parser.parse_known_args()
-        defaults = vars(parsed_args)
-    else:
-        defaults = merge_dicts(parser.arg_defaults(top_level=True),
-                               parser.arg_defaults(unique=True))
-        defaults.update(arg_values)
-    # no need to store command value
-    del defaults["command"]
+    if not os.path.isabs(cfg_path):
+        cfg_path = os.path.join(os.path.dirname(path), cfg_path)
+    assert os.path.exists(cfg_path), \
+        OSError("Provided config path is invalid. You must provide path "
+                "that is either absolute or relative to: {}".
+                format(os.path.dirname(path)))
     with open(path, 'w') as dotfile:
-        if not update:
-            # init
-            yaml_data = {LOOPER_KEY: {k: v for k, v in defaults.items()}}
-            if arg_values["config_file"] is not None:
-                yaml_data.update({
-                    PROJ_MODS_KEY:
-                        {CFG_IMPORTS_KEY: [arg_values["config_file"]]}})
-        else:
-            # mod
-            current[LOOPER_KEY].update(defaults)
-            yaml_data = current
-        yaml.dump(yaml_data, dotfile)
-    print("{} looper dotfile: {}".
-          format("Modified" if update else "Initialized", path))
+        yaml.dump({DOTFILE_CFG_PTH_KEY: cfg_path}, dotfile)
+    print("Initialized looper dotfile: {}".format(path))
     return True
+
+
+def read_cfg_from_dotfile():
+    """
+    Read file path to the config file from the dotfile
+
+    :return str: path to the config file read from the dotfile
+    """
+    cfg_path = None
+    dp = dotfile_path(must_exist=True)
+    with open(dp, 'r') as dotfile:
+        dp_data = yaml.safe_load(dotfile)
+    if DOTFILE_CFG_PTH_KEY in dp_data:
+        cfg_path = str(dp_data[DOTFILE_CFG_PTH_KEY])
+    return cfg_path
 
 
 def dotfile_path(directory=os.getcwd(), must_exist=False):

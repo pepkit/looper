@@ -71,6 +71,7 @@ build/
 dist/
 looper.egg-info/
 loopercli.egg-info/
+__pycache__/
 
 
 *ipynb_checkpoints*

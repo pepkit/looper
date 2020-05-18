@@ -52,7 +52,7 @@ def _get_outdir(pth):
     """
     with open(pth, 'r') as conf_file:
         config_data = safe_load(conf_file)
-    return config_data[LOOPER_KEY][OUTDIR_KEY]
+    return config_data[LOOPER_KEY][ALL_SUBCMD_KEY][OUTDIR_KEY]
 
 
 class LooperBothRunsTests:
@@ -118,17 +118,6 @@ class LooperBothRunsTests:
         os.remove(dotfile_path)
 
     @pytest.mark.parametrize("cmd", ["run", "runp"])
-    def test_dotfile_config_file(self, prep_temp_pep, cmd):
-        tp = prep_temp_pep
-        dotfile_path = os.path.join(os.getcwd(), LOOPER_DOTFILE_NAME)
-        with open(dotfile_path, 'w') as df:
-            dump({LOOPER_KEY: {"config_file": tp}}, df)
-        stdout, stderr, rc = _subp_exec(cmd=cmd)
-        print(stderr)
-        assert rc == 0
-        os.remove(dotfile_path)
-
-    @pytest.mark.parametrize("cmd", ["run", "runp"])
     def test_cli_overwrites_dotfile(self, prep_temp_pep, cmd):
         tp = prep_temp_pep
         dotfile_path = os.path.join(os.getcwd(), LOOPER_DOTFILE_NAME)
@@ -143,16 +132,33 @@ class LooperBothRunsTests:
         _is_in_file(subs_list, "#SBATCH")
         os.remove(dotfile_path)
 
+    @pytest.mark.parametrize("cmd", ["run", "runp"])
+    def test_run_after_init(self, prep_temp_pep, cmd):
+        tp = prep_temp_pep
+        dotfile_path = os.path.join(os.getcwd(), LOOPER_DOTFILE_NAME)
+        stdout, stderr, rc = _subp_exec(tp, "init")
+        print(stderr)
+        print(stdout)
+        assert rc == 0
+        _is_in_file(dotfile_path, tp)
+        stdout, stderr, rc = _subp_exec(cmd=cmd)
+        print(stderr)
+        print(stdout)
+        assert rc == 0
+        os.remove(dotfile_path)
+
 
 class LooperRunBehaviorTests:
-    def test_looper_run_basic(self, example_pep_piface_path_cfg):
+    def test_looper_run_basic(self, prep_temp_pep):
         """ Verify looper runs in a basic case and return code is 0 """
-        stdout, stderr, rc = _subp_exec(example_pep_piface_path_cfg, "run")
+        tp = prep_temp_pep
+        stdout, stderr, rc = _subp_exec(tp, "run")
         print(stderr)
         assert rc == 0
 
-    def test_looper_multi_pipeline(self, example_pep_piface_path_cfg):
-        stdout, stderr, rc = _subp_exec(example_pep_piface_path_cfg, "run")
+    def test_looper_multi_pipeline(self, prep_temp_pep):
+        tp = prep_temp_pep
+        stdout, stderr, rc = _subp_exec(tp, "run")
         print(stderr)
         assert "Commands submitted: 6 of 6" in stderr
 
@@ -176,7 +182,7 @@ class LooperRunBehaviorTests:
     def test_looper_cli_pipeline(self, prep_temp_pep):
         """ CLI-specified pipelines overwrite ones from config """
         tp = prep_temp_pep
-        pi_pth = os.path.join(os.path.dirname(tp), "pipeline_interface1.yaml")
+        pi_pth = os.path.join(os.path.dirname(tp), PIS.format("1"))
         stdout, stderr, rc = _subp_exec(tp, "run",
                                         ["--pipeline-interfaces", pi_pth])
         print(stderr)
@@ -351,14 +357,16 @@ class LooperRunBehaviorTests:
 
 
 class LooperRunpBehaviorTests:
-    def test_looper_runp_basic(self, example_pep_piface_path_cfg):
+    def test_looper_runp_basic(self, prep_temp_pep):
         """ Verify looper runps in a basic case and return code is 0 """
-        stdout, stderr, rc = _subp_exec(example_pep_piface_path_cfg, "runp")
+        tp = prep_temp_pep
+        stdout, stderr, rc = _subp_exec(tp, "runp")
         print(stderr)
         assert rc == 0
 
-    def test_looper_multi_pipeline(self, example_pep_piface_path_cfg):
-        stdout, stderr, rc = _subp_exec(example_pep_piface_path_cfg, "runp")
+    def test_looper_multi_pipeline(self, prep_temp_pep):
+        tp = prep_temp_pep
+        stdout, stderr, rc = _subp_exec(tp, "runp")
         assert "Jobs submitted: 2" in stderr
 
     def test_looper_single_pipeline(self, prep_temp_pep):
@@ -366,10 +374,8 @@ class LooperRunpBehaviorTests:
         with open(tp, 'r') as conf_file:
             config_data = safe_load(conf_file)
         print("\nconfig_data: \n{}\n".format(config_data))
-        pifaces = \
-            config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][PIPELINE_INTERFACES_KEY]
-        config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][PIPELINE_INTERFACES_KEY] = \
-            pifaces[1]
+        piface_path = os.path.join(os.path.dirname(tp), PIP.format("1"))
+        config_data[LOOPER_KEY]["runp"][PIPELINE_INTERFACES_KEY] = piface_path
         print("\nconfig_data: \n{}\n".format(config_data))
         with open(tp, 'w') as conf_file:
             dump(config_data, conf_file)
@@ -406,7 +412,7 @@ class LooperRunSubmissionScriptTests:
         with open(tp, 'r') as conf_file:
             config_data = safe_load(conf_file)
         print("\nconfig_data: \n{}\n".format(config_data))
-        outdir = config_data[LOOPER_KEY][OUTDIR_KEY]
+        outdir = config_data[LOOPER_KEY][ALL_SUBCMD_KEY][OUTDIR_KEY]
         stdout, stderr, rc = _subp_exec(tp, "run")
         sd = os.path.join(outdir, "submission")
         subm_err = \
