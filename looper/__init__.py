@@ -147,10 +147,10 @@ def build_parser():
                     type=html_checkbox(checked=False),
                     help="Don't actually submit the jobs.  Default=False")
             subparser.add_argument(
-                    "-f", "--file-checks",
-                    action=_StoreBoolActionType, default=True,
-                    type=html_checkbox(checked=True),
-                    help="Perform input file checks. Default=True")            
+                    "-f", "--skip-file-checks",
+                    action=_StoreBoolActionType, default=False,
+                    type=html_checkbox(checked=False),
+                    help="Do not perform input file checks")
 
         # Parameter arguments
         ####################################################################

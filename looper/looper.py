@@ -752,7 +752,6 @@ def main():
     try:
         p = Project(config_file=args.config_file,
                     amendments=args.amend,
-                    file_checks=args.file_checks,
                     compute_env_file=select_divvy_config(filepath=args.divvy),
                     runp=args.command == "runp",
                     **{attr: getattr(args, attr) for attr in CLI_PROJ_ATTRS if attr in args})

@@ -80,24 +80,13 @@ class Project(peppyProject):
         compute settings.
     :param Iterable[str] pifaces: list of path to pipeline interfaces.
         Overrides the config-defined ones.
-    :param bool dry: If dry mode is activated, no directories
-        will be created upon project instantiation.
     :param bool permissive: Whether a error should be thrown if
         a sample input file(s) do not exist or cannot be open.
-    :param bool file_checks: Whether sample input files should be checked
-        for their  attributes (read type, read length)
-        if this is not set in sample metadata.
     :param str compute_env_file: Environment configuration YAML file specifying
         compute settings.
-    :param type no_environment_exception: type of exception to raise if
-     environment settings can't be established, optional; if null (the default),
-      a warning message will be logged, and no exception will be raised.
-    :param type no_compute_exception: type of exception to raise if compute
-        settings can't be established, optional; if null (the default),
-        a warning message will be logged, and no exception will be raised.
     """
     def __init__(self, config_file, amendments=None, compute_env_file=None,
-                 file_checks=False, permissive=True, runp=False, **kwargs):
+                 runp=False, **kwargs):
         super(Project, self).__init__(config_file, amendments=amendments)
         setattr(self, EXTRA_KEY, dict())
         for attr_name in CLI_PROJ_ATTRS:
@@ -109,9 +98,8 @@ class Project(peppyProject):
             self._samples_by_interface = \
                 self._samples_by_piface(self.piface_key)
             self._interfaces_by_sample = self._piface_by_samples()
-        self.file_checks = file_checks
-        self.permissive = permissive
         self.dry_run = self[EXTRA_KEY][DRY_RUN_KEY]
+        self.file_checks = not self[EXTRA_KEY][FILE_CHECKS_KEY]
         self.dcc = ComputingConfiguration(filepath=compute_env_file)
         if not self.dry_run:
             _LOGGER.debug("Ensuring project directories exist")

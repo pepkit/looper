@@ -187,14 +187,11 @@ class SubmissionConductor(object):
         # Check for any missing requirements before submitting.
         _LOGGER.debug("Determining missing requirements")
         schema_source = self.pl_iface.get_pipeline_schemas()
-        if schema_source:
+        if schema_source and self.prj.file_checks:
             missing = validate_inputs(sample, read_schema(schema_source))
             if missing:
                 missing_reqs_msg = "{}: {}".format("Missing files", missing)
-                if self.prj.permissive:
-                    _LOGGER.warning(NOT_SUB_MSG.format(missing_reqs_msg))
-                else:
-                    raise OSError(missing_reqs_msg)
+                _LOGGER.warning(NOT_SUB_MSG.format(missing_reqs_msg))
                 use_this_sample and skip_reasons.append("Missing files")
 
         if _use_sample(use_this_sample, skip_reasons):
