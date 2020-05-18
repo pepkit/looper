@@ -227,27 +227,27 @@ def build_parser():
         for subparser in [run_subparser, rerun_subparser, table_subparser,
                           report_subparser, destroy_subparser, check_subparser,
                           clean_subparser, collate_subparser, inspect_subparser]:
-            subparser.add_argument("-g", "--toggle-key", metavar="K",
-                                   help="Sample attribute specifying toggle. Default: toggle")
             subparser.add_argument("config_file", nargs="?", default=None,
                                    help="Project configuration file (YAML)")
-            subparser.add_argument("-o", "--output-dir", metavar="DIR",
-                                   help="Path to the output directory")
+            subparser.add_argument("-o", "--output-dir", metavar="DIR", help=argparse.SUPPRESS # help="Path to the output directory"
+                                  )
             subparser.add_argument("--submission-subdir", metavar="DIR",
-                                   help="Submission subdirectory name")
+                                   help=argparse.SUPPRESS) # "Submission subdirectory name"
             subparser.add_argument("--results-subdir", metavar="DIR",
-                                   help="Results subdirectory name")
+                                   help=argparse.SUPPRESS)  #"Results subdirectory name"
             subparser.add_argument("--pipeline-interfaces-key", metavar="K",
-                                   help="Sample attribute for pipeline interface sources")
+                                   help=argparse.SUPPRESS)  # "Sample attribute for pipeline interface sources"
             subparser.add_argument(
                     "--pipeline-interfaces",
                     metavar="P", nargs="+", action="append",
-                    help="Paths to pipeline interface files")
+                    help=argparse.SUPPRESS)  # "Paths to pipeline interface files"
 
             fetch_samples_group = \
                 subparser.add_argument_group(
                     "sample selection arguments",
                     "Specify samples to include or exclude based on sample attribute values")
+            fetch_samples_group.add_argument("-g", "--toggle-key", metavar="K",
+                                   help="Sample attribute specifying toggle. Default: toggle")
             fetch_samples_group.add_argument(
                 "--sel-attr", default="toggle", metavar="ATTR",
                 help="Attribute for sample exclusion OR inclusion")
