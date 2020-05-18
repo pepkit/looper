@@ -88,13 +88,6 @@ def build_parser():
         parser.add_argument(
                 "--dbg", action="store_true",
                 help="Turn on debug mode (default: %(default)s)")
-        parser.add_argument(
-                "--divvy", default=None,
-                help="Path to the divvy configuration file. If not provided, "
-                     "the value of $DIVCFG environment variable will be used. "
-                     "Currently: {}".format(os.getenv('DIVCFG', None)
-                                             or "not set"))
-
         # Individual subcommands
         # TODO: "table" & "report" (which calls table by default)
         msg_by_cmd = {
@@ -116,7 +109,7 @@ def build_parser():
         def add_subparser(cmd):
             message = msg_by_cmd[cmd]
             return subparsers.add_parser(cmd, description=message, help=message,
-                formatter_class=lambda prog: argparse.HelpFormatter(prog, max_help_position=36, width=90))
+                formatter_class=lambda prog: argparse.HelpFormatter(prog, max_help_position=37, width=90))
 
         # Run and rerun command
         run_subparser = add_subparser("run")
@@ -176,6 +169,11 @@ def build_parser():
                     "divvy arguments",
                     "Configure divvy to change computing settings")
             divvy_group.add_argument(
+                "--divvy", default=None, metavar="DIVCFG",
+                help="Path to divvy configuration file. Default=$DIVCFG env variable. "
+                     "Currently: {}".format(os.getenv('DIVCFG', None)
+                                             or "not set"))                
+            divvy_group.add_argument(
                     "-p", "--package", metavar="P",
                     help="Name of computing resource package to use")
             divvy_group.add_argument(
@@ -204,9 +202,8 @@ def build_parser():
         check_subparser.add_argument(
                 "-A", "--all-folders", action=_StoreBoolActionType,
                 default=False, type=html_checkbox(checked=False),
-                help="Check status for all project's output folders, not just "
-                     "those for samples specified in the config file used"
-                     "Default=False")
+                help="Check status for all  output folders, not just for samples "
+                    "specified in the config. Default=False")
         check_subparser.add_argument(
                 "-F", "--flags", nargs='*', default=FLAGS,
                 type=html_select(choices=FLAGS),
