@@ -96,9 +96,8 @@ class Project(peppyProject):
         settings can't be established, optional; if null (the default),
         a warning message will be logged, and no exception will be raised.
     """
-    def __init__(self, config_file, amendments=None, dry=False,
-                 compute_env_file=None, file_checks=False,
-                 permissive=True, runp=False, **kwargs):
+    def __init__(self, config_file, amendments=None, compute_env_file=None,
+                 file_checks=False, permissive=True, runp=False, **kwargs):
         super(Project, self).__init__(config_file, amendments=amendments)
         setattr(self, EXTRA_KEY, dict())
         for attr_name in CLI_PROJ_ATTRS:
@@ -112,8 +111,9 @@ class Project(peppyProject):
             self._interfaces_by_sample = self._piface_by_samples()
         self.file_checks = file_checks
         self.permissive = permissive
+        self.dry_run = self[EXTRA_KEY][DRY_RUN_KEY]
         self.dcc = ComputingConfiguration(filepath=compute_env_file)
-        if not dry:
+        if not self.dry_run:
             _LOGGER.debug("Ensuring project directories exist")
             self.make_project_dirs()
 

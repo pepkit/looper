@@ -255,7 +255,6 @@ class Collator(Executor):
                 pipeline_interface=project_piface_object,
                 prj=self.prj,
                 compute_variables=compute_kwargs,
-                dry_run=args.dry_run,
                 delay=args.time_delay,
                 extra_args=args.command_extra,
                 extra_args_override=args.command_extra_override,
@@ -323,7 +322,6 @@ class Runner(Executor):
                 pipeline_interface=piface,
                 prj=self.prj,
                 compute_variables=comp_vars,
-                dry_run=args.dry_run,
                 delay=args.time_delay,
                 extra_args=args.command_extra,
                 extra_args_override=args.command_extra_override,
@@ -668,7 +666,7 @@ def _proc_resources_spec(args):
     :raise ValueError: if interpretation of the given specification as encoding
         of key-value pairs fails
     """
-    spec = getattr(args, "compute", "")
+    spec = getattr(args, "compute", None)
     try:
         settings_data = read_yaml_file(args.settings) or {}
     except yaml.YAMLError:
@@ -677,8 +675,7 @@ def _proc_resources_spec(args):
         settings_data = {}
     if not spec:
         return settings_data
-    kvs = spec.strip().split(",")
-    pairs = [(kv, kv.split("=")) for kv in kvs]
+    pairs = [(kv, kv.split("=")) for kv in spec]
     bads = []
     for orig, pair in pairs:
         try:
@@ -754,7 +751,7 @@ def main():
     _LOGGER.debug("Building Project")
     try:
         p = Project(config_file=args.config_file,
-                    amendments=args.amendments,
+                    amendments=args.amend,
                     file_checks=args.file_checks,
                     compute_env_file=select_divvy_config(filepath=args.divvy),
                     runp=args.command == "runp",
@@ -770,9 +767,9 @@ def main():
                      "Using the default one".format(selected_compute_pkg))
 
     with ProjectContext(prj=p,
-                        selector_attribute=args.selector_attribute,
-                        selector_include=args.selector_include,
-                        selector_exclude=args.selector_exclude) as prj:
+                        selector_attribute=args.sel_attr,
+                        selector_include=args.sel_incl,
+                        selector_exclude=args.sel_excl) as prj:
 
         if args.command in ["run", "rerun"]:
             run = Runner(prj)

@@ -182,8 +182,8 @@ def build_parser():
                     "-s", "--settings", default="", metavar="S",
                     help="Path to a YAML settings file with compute settings")
             divvy_group.add_argument(
-                    "-c", "--compute", metavar="C",
-                    help="Comma-separated list of key-value pairs (" + EXAMPLE_COMPUTE_SPEC_FMT + ")")
+                    "-c", "--compute", metavar="K=V", nargs="+",
+                    help="List of key-value pairs")
 
         for subparser in [run_subparser, rerun_subparser]:
             # Note that defaults for otherwise numeric lump parameters are set to

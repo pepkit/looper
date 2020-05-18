@@ -31,10 +31,10 @@ class SubmissionConductor(object):
 
     """
 
-    def __init__(self, pipeline_interface, prj, dry_run=False,
-                 delay=0, extra_args=None, extra_args_override=None,
-                 ignore_flags=False, compute_variables=None, max_cmds=None,
-                 max_size=None, automatic=True, collate=False):
+    def __init__(self, pipeline_interface, prj, delay=0, extra_args=None,
+                 extra_args_override=None, ignore_flags=False,
+                 compute_variables=None, max_cmds=None, max_size=None,
+                 automatic=True, collate=False):
         """
         Create a job submission manager.
 
@@ -48,8 +48,6 @@ class SubmissionConductor(object):
             and option/argument specifications
         :param prj: Project with which each sample being considered is
             associated (what generated each sample)
-        :param bool dry_run: Whether this is a dry run and thus everything
-            but the actual job submission should be done.
         :param float delay: Time (in seconds) to wait before submitting a job
             once it's ready
         :param str extra_args: string to pass to each job generated,
@@ -88,7 +86,7 @@ class SubmissionConductor(object):
             self.override_extra = True
         self.ignore_flags = ignore_flags
 
-        self.dry_run = dry_run
+        self.dry_run = self.prj.dry_run
         self.delay = float(delay)
         self._num_good_job_submissions = 0
         self._num_total_job_submissions = 0
@@ -357,6 +355,7 @@ class SubmissionConductor(object):
         settings = AttMap()
         settings.pep_config = self.prj.config_file
         settings.output_folder = self.prj.results_folder
+        settings.output_dir = self.prj.output_dir
         settings.sample_output_folder = \
             os.path.join(self.prj.results_folder, self._sample_lump_name(pool))
         settings.job_name = self._jobname(pool)
