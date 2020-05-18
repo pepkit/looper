@@ -128,11 +128,32 @@ def build_parser():
         clean_subparser = add_subparser("clean")
         inspect_subparser = add_subparser("inspect")
         init_subparser = add_subparser("init")
+
+        # Flag arguments
+        ####################################################################
         for subparser in [run_subparser, rerun_subparser, collate_subparser]:
             subparser.add_argument(
-                    "-f", "--ignore-flags", default=False,
+                    "-i", "--ignore-flags", default=False,
                     action=_StoreBoolActionType, type=html_checkbox(checked=False),
-                    help="Ignore run status flags? Default: False")
+                    help="Ignore run status flags? Default=False")
+
+        for subparser in [run_subparser, rerun_subparser, table_subparser,
+                          report_subparser, destroy_subparser, check_subparser,
+                          clean_subparser, collate_subparser, inspect_subparser]:
+            subparser.add_argument(
+                    "-d", "--dry-run",
+                    action=_StoreBoolActionType, default=False,
+                    type=html_checkbox(checked=False),
+                    help="Don't actually submit the jobs.  Default=False")
+            subparser.add_argument(
+                    "-f", "--file-checks",
+                    action=_StoreBoolActionType, default=True,
+                    type=html_checkbox(checked=True),
+                    help="Perform input file checks. Default=True")            
+
+        # Parameter arguments
+        ####################################################################
+        for subparser in [run_subparser, rerun_subparser, collate_subparser]:
             subparser.add_argument(
                     "-t", "--time-delay", metavar="S",
                     type=html_range(min_val=0, max_val=30, value=0), default=0,
@@ -147,23 +168,21 @@ def build_parser():
                     metavar="S", help="String to append to every command")
             subparser.add_argument(
                     "-y", "--command-extra-override", metavar="S", default="",
-                    help="String to append to every command, "
-                         "overriding values in PEP")
-
+                    help="Same as command-extra, but overrides values in PEP")
 
             divvy_group = \
                 subparser.add_argument_group(
                     "divvy arguments",
-                    "These arguments are passed to divvy to change computing configuration")
+                    "Configure divvy to change computing settings")
             divvy_group.add_argument(
                     "-p", "--package", metavar="P",
-                    help="Divvy: Name of computing resource package to use")
+                    help="Name of computing resource package to use")
             divvy_group.add_argument(
                     "-s", "--settings", default="", metavar="S",
-                    help="Divvy: Path to a YAML settings file with compute settings")
+                    help="Path to a YAML settings file with compute settings")
             divvy_group.add_argument(
-                    "-m", "--compute", metavar="C",
-                    help="Divvy: Comma-separated list of key-value pairs (" + EXAMPLE_COMPUTE_SPEC_FMT + ")")
+                    "-c", "--compute", metavar="C",
+                    help="Comma-separated list of key-value pairs (" + EXAMPLE_COMPUTE_SPEC_FMT + ")")
 
         for subparser in [run_subparser, rerun_subparser]:
             # Note that defaults for otherwise numeric lump parameters are set to
@@ -172,11 +191,11 @@ def build_parser():
             subparser.add_argument(
                     "-u", "--lump", default=None, metavar="X",
                     type=html_range(min_val=0, max_val=100, step=0.1, value=0),
-                    help="Total input file size in GB to batch into a single job")
+                    help="Total input file size (GB) to batch into a single job")
             subparser.add_argument(
                     "-n", "--lumpn", default=None, metavar="N",
                     type=html_range(min_val=1, max_val="num_samples", value=1),
-                    help="Number of individual commands to batch into a single job")
+                    help="Number of commands to batch into a single job")
 
         inspect_subparser.add_argument("-n", "--sample-name", required=False,
                                        nargs="+",
@@ -207,11 +226,6 @@ def build_parser():
         for subparser in [run_subparser, rerun_subparser, table_subparser,
                           report_subparser, destroy_subparser, check_subparser,
                           clean_subparser, collate_subparser, inspect_subparser]:
-            subparser.add_argument(
-                    "-d", "--dry-run",
-                    action=_StoreBoolActionType, default=False,
-                    type=html_checkbox(checked=False),
-                    help="Don't actually submit the jobs.  Default=False")
             subparser.add_argument("-g", "--toggle-key", metavar="K",
                                    help="Sample attribute specifying toggle. Default: toggle")
             subparser.add_argument("config_file", nargs="?", default=None,
@@ -222,22 +236,17 @@ def build_parser():
                                    help="Submission subdirectory name")
             subparser.add_argument("--results-subdir", metavar="DIR",
                                    help="Results subdirectory name")
-            subparser.add_argument("--interfaces-key", metavar="K",
+            subparser.add_argument("--pipeline-interfaces-key", metavar="K",
                                    help="Sample attribute specifying pipeline interface sources")
             subparser.add_argument(
-                    "--interfaces",
+                    "--pipeline-interfaces",
                     metavar="P", nargs="+", action="append",
-                    help="Path to a pipeline interface files")
-            subparser.add_argument(
-                    "--file-checks",
-                    action=_StoreBoolActionType, default=True,
-                    type=html_checkbox(checked=True),
-                    help="Perform input file checks. Default=True")
+                    help="Paths to pipeline interface files")
 
             fetch_samples_group = \
                 subparser.add_argument_group(
                     "sample selection arguments",
-                    "These arguments specify samples to include or exclude based on sample attribute values")
+                    "Specify samples to include or exclude based on sample attribute values")
             fetch_samples_group.add_argument(
                 "--sel-attr", default="toggle", metavar="ATTR",
                 help="Specify the attribute for sample exclusion OR inclusion")
@@ -249,7 +258,7 @@ def build_parser():
                     "--sel-incl", nargs='*', metavar="I",
                     help="Include only samples with these values")
             subparser.add_argument(
-                    "-a", "--amendments", nargs="+",
-                    help="List of of amendments to activate")
+                    "-a", "--amendments", nargs="+", metavar="A",
+                    help="List of amendments to activate")
         result.append(parser)
     return result
