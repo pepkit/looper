@@ -192,11 +192,11 @@ def build_parser():
             subparser.add_argument(
                     "-u", "--lump", default=None, metavar="X",
                     type=html_range(min_val=0, max_val=100, step=0.1, value=0),
-                    help="Total input file size (GB) to batch into a single job")
+                    help="Total input file size (GB) to batch into one job")
             subparser.add_argument(
                     "-n", "--lumpn", default=None, metavar="N",
                     type=html_range(min_val=1, max_val="num_samples", value=1),
-                    help="Number of commands to batch into a single job")
+                    help="Number of commands to batch into one job")
 
         inspect_subparser.add_argument("-n", "--sample-name", required=False,
                                        nargs="+",
@@ -238,7 +238,7 @@ def build_parser():
             subparser.add_argument("--results-subdir", metavar="DIR",
                                    help="Results subdirectory name")
             subparser.add_argument("--pipeline-interfaces-key", metavar="K",
-                                   help="Sample attribute specifying pipeline interface sources")
+                                   help="Sample attribute for pipeline interface sources")
             subparser.add_argument(
                     "--pipeline-interfaces",
                     metavar="P", nargs="+", action="append",
