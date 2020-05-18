@@ -100,7 +100,7 @@ LOOPER_KEY = "looper"
 OUTDIR_KEY = "output_dir"
 RESULTS_SUBDIR_KEY = "results_subdir"
 SUBMISSION_SUBDIR_KEY = "submission_subdir"
-EXAMPLE_COMPUTE_SPEC_FMT = "--compute k1=v1,k2=v2"
+EXAMPLE_COMPUTE_SPEC_FMT = "k1=v1,k2=v2"
 SUBMISSION_FAILURE_MESSAGE = "Cluster resource failure"
 LOOPER_DOTFILE_NAME = "." + LOOPER_KEY + ".yaml"
 POSITIONAL = ["config_file", "command"]
