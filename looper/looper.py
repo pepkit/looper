@@ -747,6 +747,12 @@ def main():
         _LOGGER.warning("Unrecognized arguments: {}".
                       format(" ".join([str(x) for x in remaining_args])))
 
+    if not hasattr(args, "divvy"):
+        # The divvy attribute is only required for certain looper commands, like
+        # run and runp; but we use it below to produce the project before considering
+        # commands. Set to none so commands that don't need it are fine.
+        args.divvy = None
+
     # Initialize project
     _LOGGER.debug("Building Project")
     try:
