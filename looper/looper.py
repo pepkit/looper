@@ -580,33 +580,6 @@ def destroy_summary(prj, dry_run=False):
                         get_file_for_project(prj, "reports")], dry_run)
 
 
-def uniqify(seq):
-    """
-    Fast way to uniqify while preserving input order.
-    """
-    # http://stackoverflow.com/questions/480214/
-    seen = set()
-    seen_add = seen.add
-    return [x for x in seq if not (x in seen or seen_add(x))]
-
-
-def parse_user_input(x):
-    """
-    Inputs overriding config-defined options are list of lists of strings.
-    To make the manipulation more convenient we need to make them
-    lists of strings
-
-    :param Iterable[Iterable[str], ...] | None x: user-provided argument
-    :return Iterable[str] | None: flattened user input or None if not provided
-    """
-    if x is None:
-        return
-    flat_input = []
-    for i in x:
-        flat_input.extend(i)
-    return flat_input
-
-
 class LooperCounter(object):
     """
     Count samples as you loop through them, and create text for the

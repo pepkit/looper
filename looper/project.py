@@ -4,18 +4,20 @@ import itertools
 import os
 
 from jsonschema import ValidationError
+from pandas.core.common import flatten
 from logging import getLogger
 
 from peppy import SAMPLE_NAME_ATTR, OUTDIR_KEY, CONFIG_KEY, \
     Project as peppyProject
 from eido import read_schema, PathAttrNotFoundError
 from divvy import ComputingConfiguration
-from ubiquerg import is_command_callable
+from ubiquerg import is_command_callable, expandpath
 
 from .processed_project import populate_sample_paths, populate_project_paths
 from .const import *
 from .exceptions import *
-from .looper_config import *
+from .utils import *
+from .pipeline_interface import PipelineInterface
 
 __all__ = ["Project"]
 
@@ -142,7 +144,7 @@ class Project(peppyProject):
         :return list[str]: collection of pipeline interface sources
         """
         x = self._extra_cli_or_cfg(self.piface_key)
-        return [x] if isinstance(x, str) else x
+        return list(flatten([x] if isinstance(x, str) else x))
 
     @property
     def output_dir(self):

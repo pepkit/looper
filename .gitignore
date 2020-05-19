@@ -67,6 +67,7 @@ open_pipelines/
 *RESERVE*
 
 doc/
+site/
 build/
 dist/
 looper.egg-info/
