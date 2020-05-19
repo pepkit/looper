@@ -237,14 +237,25 @@ def _get_subcommand_args(cfg_path, subcmd):
     cfg = peppyProject(cfg_path, defer_samples_creation=True)
     if CONFIG_KEY in cfg and LOOPER_KEY in cfg[CONFIG_KEY] \
             and CLI_KEY in cfg[CONFIG_KEY][LOOPER_KEY]:
-        cfg_args = cfg[CONFIG_KEY][LOOPER_KEY][CLI_KEY] or dict()
-        args = cfg_args[ALL_SUBCMD_KEY] or dict() \
-            if ALL_SUBCMD_KEY in cfg_args else dict()
-        args.update(cfg_args[subcmd] if subcmd in cfg_args else dict())
+        try:
+            cfg_args = cfg[CONFIG_KEY][LOOPER_KEY][CLI_KEY] or dict()
+            args = cfg_args[ALL_SUBCMD_KEY] or dict() \
+                if ALL_SUBCMD_KEY in cfg_args else dict()
+            args.update(cfg_args[subcmd] or dict()
+                        if subcmd in cfg_args else dict())
+        except (TypeError, KeyError, AttributeError, ValueError) as e:
+            raise MisconfigurationException(
+                "Invalid '{}.{}' section in the config. Caught exception: {}".
+                    format(LOOPER_KEY, CLI_KEY, getattr(e, 'message', repr(e))))
     if CONFIG_KEY in cfg and LOOPER_KEY in cfg[CONFIG_KEY]:
-        if CLI_KEY in cfg[CONFIG_KEY][LOOPER_KEY]:
-            del cfg[CONFIG_KEY][LOOPER_KEY][CLI_KEY]
-        args.update(cfg[CONFIG_KEY][LOOPER_KEY])
+        try:
+            if CLI_KEY in cfg[CONFIG_KEY][LOOPER_KEY]:
+                del cfg[CONFIG_KEY][LOOPER_KEY][CLI_KEY]
+            args.update(cfg[CONFIG_KEY][LOOPER_KEY])
+        except (TypeError, KeyError, AttributeError, ValueError) as e:
+            raise MisconfigurationException(
+                "Invalid '{}' section in the config. Caught exception: {}".
+                    format(LOOPER_KEY, getattr(e, 'message', repr(e))))
     args = {k.replace("-", "_"): v for k, v in args.items()} if args else None
     return args
 
