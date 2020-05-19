@@ -144,7 +144,7 @@ class Project(peppyProject):
         :return list[str]: collection of pipeline interface sources
         """
         x = self._extra_cli_or_cfg(self.piface_key)
-        return list(flatten([x] if isinstance(x, str) else x))
+        return list(flatten([x] if not isinstance(x, list) else x))
 
     @property
     def output_dir(self):
