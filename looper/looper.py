@@ -39,7 +39,8 @@ from divvy import DEFAULT_COMPUTE_RESOURCES_NAME, select_divvy_config
 from logmuse import init_logger
 from peppy.const import *
 from eido import validate_sample, validate_config, inspect_project
-from ubiquerg import query_yes_no
+from ubiquerg.cli_tools import query_yes_no
+from ubiquerg.collection import uniqify
 
 
 _PKGNAME = "looper"

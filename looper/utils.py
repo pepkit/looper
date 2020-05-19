@@ -234,7 +234,7 @@ def _get_subcommand_args(cfg_path, subcmd):
     :return dict: mapping of argument destinations to their values
     """
     args = dict()
-    cfg = peppyProject(cfg_path)
+    cfg = peppyProject(cfg_path, defer_samples_creation=True)
     if CONFIG_KEY in cfg and LOOPER_KEY in cfg[CONFIG_KEY] \
             and CLI_KEY in cfg[CONFIG_KEY][LOOPER_KEY]:
         cfg_args = cfg[CONFIG_KEY][LOOPER_KEY][CLI_KEY] or dict()

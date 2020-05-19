@@ -241,6 +241,9 @@ def build_parser():
                                    nargs="+", action="append",
                                    help=argparse.SUPPRESS)
 
+        for subparser in [run_subparser, rerun_subparser, table_subparser,
+                          report_subparser, destroy_subparser, check_subparser,
+                          clean_subparser, collate_subparser]:
             fetch_samples_group = \
                 subparser.add_argument_group(
                     "sample selection arguments",
