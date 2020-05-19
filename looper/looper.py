@@ -747,19 +747,15 @@ def main():
         _LOGGER.warning("Unrecognized arguments: {}".
                       format(" ".join([str(x) for x in remaining_args])))
 
-    if not hasattr(args, "divvy"):
-        # The divvy attribute is only required for certain looper commands, like
-        # run and runp; but we use it below to produce the project before considering
-        # commands. Set to none so commands that don't need it are fine.
-        args.divvy = None
+    divcfg = select_divvy_config(filepath=args.divvy) \
+        if hasattr(args, "divvy") else None
 
     # Initialize project
     _LOGGER.debug("Building Project")
     try:
         p = Project(config_file=args.config_file,
                     amendments=args.amend,
-                    divcfg_path=select_divvy_config(filepath=args.divvy)
-                        if hasattr(args, "divvy") else None,
+                    divcfg_path=divcfg,
                     runp=args.command == "runp",
                     **{attr: getattr(args, attr) for attr in CLI_PROJ_ATTRS if attr in args})
     except yaml.parser.ParserError as e:
