@@ -93,8 +93,6 @@ class Project(peppyProject):
             if attr_name in kwargs:
                 setattr(self[EXTRA_KEY], attr_name, kwargs[attr_name])
         if not runp:
-            self._overwrite_sample_pifaces_with_cli(
-                self.cli_pifaces[0] if self.cli_pifaces else None)
             self._samples_by_interface = \
                 self._samples_by_piface(self.piface_key)
             self._interfaces_by_sample = self._piface_by_samples()
@@ -280,34 +278,34 @@ class Project(peppyProject):
         """
         return self._samples_by_interface.keys()
 
-    def _overwrite_sample_pifaces_with_cli(self, pifaces):
-        """
-        Overwrite sample pipeline interface sources with the provided ones
-
-        :param Iterable[str] | str | NoneType pifaces: collection of pipeline
-            interface sources
-        """
-        _LOGGER.debug("CLI-specified pifaces: {}".format(pifaces))
-        valid_pi = []
-        if not pifaces:
-            # No CLI-specified pipeline interface sources
-            return
-        if isinstance(pifaces, str):
-            pifaces = [pifaces]
-        for piface in pifaces:
-            pi = expandpath(piface)
-            try:
-                PipelineInterface(pi, pipeline_type="sample")
-            except Exception as e:
-                _LOGGER.warning("Provided pipeline interface source ({}) is "
-                                "invalid. Caught exception: {}".
-                                format(pi, getattr(e, 'message', repr(e))))
-            else:
-                valid_pi.append(pi)
-        [setattr(s, self.piface_key, valid_pi) for s in self.samples]
-        if valid_pi:
-            _LOGGER.info("Provided valid pipeline interface sources ({}) "
-                         "set in all samples".format(", ".join(valid_pi)))
+    # def _overwrite_sample_pifaces_with_cli(self, pifaces):
+    #     """
+    #     Overwrite sample pipeline interface sources with the provided ones
+    #
+    #     :param Iterable[str] | str | NoneType pifaces: collection of pipeline
+    #         interface sources
+    #     """
+    #     _LOGGER.debug("CLI-specified pifaces: {}".format(pifaces))
+    #     valid_pi = []
+    #     if not pifaces:
+    #         # No CLI-specified pipeline interface sources
+    #         return
+    #     if isinstance(pifaces, str):
+    #         pifaces = [pifaces]
+    #     for piface in pifaces:
+    #         pi = expandpath(piface)
+    #         try:
+    #             PipelineInterface(pi, pipeline_type="sample")
+    #         except Exception as e:
+    #             _LOGGER.warning("Provided pipeline interface source ({}) is "
+    #                             "invalid. Caught exception: {}".
+    #                             format(pi, getattr(e, 'message', repr(e))))
+    #         else:
+    #             valid_pi.append(pi)
+    #     [setattr(s, self.piface_key, valid_pi) for s in self.samples]
+    #     if valid_pi:
+    #         _LOGGER.info("Provided valid pipeline interface sources ({}) "
+    #                      "set in all samples".format(", ".join(valid_pi)))
 
     def get_sample_piface(self, sample_name):
         """
