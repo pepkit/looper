@@ -241,7 +241,8 @@ class Collator(Executor):
         self.counter = LooperCounter(len(project_pifaces))
         for project_piface in project_pifaces:
             try:
-                project_piface_object = PipelineInterface(project_piface)
+                project_piface_object = \
+                    PipelineInterface(project_piface, pipeline_type="project")
             except (IOError, ValidationError) as e:
                 _LOGGER.warning(
                     "Ignoring invalid pipeline interface source: {}. "

@@ -257,12 +257,13 @@ class PipelineInterface(PXAM):
             from the error. Useful when used ith large projects
         :param str flavor: type of the pipeline schema to use
         """
-        schemas = read_schema(schema_src.format(flavor if flavor else "generic"))
+        schema_source = schema_src.format(flavor if flavor else "generic")
+        schemas = read_schema(schema_source)
         for schema in schemas:
             try:
                 jsonschema.validate(self, schema)
                 _LOGGER.debug("Successfully validated {} against schema: {}".
-                              format(self.__class__.__name__, schema))
+                              format(self.__class__.__name__, schema_source))
             except jsonschema.exceptions.ValidationError as e:
                 if not exclude_case:
                     raise e

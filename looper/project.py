@@ -96,7 +96,6 @@ class Project(peppyProject):
             self._samples_by_interface = \
                 self._samples_by_piface(self.piface_key)
             self._interfaces_by_sample = self._piface_by_samples()
-
         if FILE_CHECKS_KEY in self[EXTRA_KEY]:
             setattr(self, "file_checks", not self[EXTRA_KEY][FILE_CHECKS_KEY])
         if DRY_RUN_KEY in self[EXTRA_KEY]:
