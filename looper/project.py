@@ -71,21 +71,19 @@ class ProjectContext(object):
 
 class Project(peppyProject):
     """
-    Looper-specific NGS Project.
+    Looper-specific Project.
 
     :param str config_file: path to configuration file with data from
         which Project is to be built
     :param Iterable[str] amendments: name indicating amendment to use, optional
-    :param str compute_env_file: Environment configuration YAML file specifying
-        compute settings.
-    :param Iterable[str] pifaces: list of path to pipeline interfaces.
-        Overrides the config-defined ones.
+    :param str divcfg_path: path to an environment configuration YAML file
+        specifying compute settings.
     :param bool permissive: Whether a error should be thrown if
         a sample input file(s) do not exist or cannot be open.
     :param str compute_env_file: Environment configuration YAML file specifying
         compute settings.
     """
-    def __init__(self, config_file, amendments=None, compute_env_file=None,
+    def __init__(self, config_file, amendments=None, divcfg_path=None,
                  runp=False, **kwargs):
         super(Project, self).__init__(config_file, amendments=amendments)
         setattr(self, EXTRA_KEY, dict())
@@ -98,10 +96,14 @@ class Project(peppyProject):
             self._samples_by_interface = \
                 self._samples_by_piface(self.piface_key)
             self._interfaces_by_sample = self._piface_by_samples()
-        self.dry_run = self[EXTRA_KEY][DRY_RUN_KEY]
-        self.file_checks = not self[EXTRA_KEY][FILE_CHECKS_KEY]
-        self.dcc = ComputingConfiguration(filepath=compute_env_file)
-        if not self.dry_run:
+
+        if FILE_CHECKS_KEY in self[EXTRA_KEY]:
+            setattr(self, FILE_CHECKS_KEY, not self[EXTRA_KEY][FILE_CHECKS_KEY])
+        if DRY_RUN_KEY in self[EXTRA_KEY]:
+            setattr(self, DRY_RUN_KEY, self[EXTRA_KEY][DRY_RUN_KEY])
+        self.dcc = None if divcfg_path is None else \
+            ComputingConfiguration(filepath=divcfg_path)
+        if hasattr(self, DRY_RUN_KEY) and not self.dry_run:
             _LOGGER.debug("Ensuring project directories exist")
             self.make_project_dirs()
 

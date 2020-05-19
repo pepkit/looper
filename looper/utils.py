@@ -273,7 +273,7 @@ def init_dotfile(path, cfg_path):
     """
     Initialize looper dotfile
 
-    :param str path: absolute path to the file to intialize
+    :param str path: absolute path to the file to initialize
     :param str cfg_path: path to the config file. Absolute or relative to 'path'
     :return bool: whether the file was initialized
     """

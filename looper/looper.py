@@ -711,7 +711,7 @@ def main():
             parser.print_help(sys.stderr)
             sys.exit(1)
         else:
-            print(m + ", using: {}. Read from dotfile ({}) ".
+            print(m + ", using: {}. Read from dotfile ({}).".
                   format(read_cfg_from_dotfile(), dotfile_path()))
     if args.command == "init":
         sys.exit(int(not init_dotfile(dotfile_path(), args.config_file)))
@@ -752,7 +752,8 @@ def main():
     try:
         p = Project(config_file=args.config_file,
                     amendments=args.amend,
-                    compute_env_file=select_divvy_config(filepath=args.divvy),
+                    divcfg_path=select_divvy_config(filepath=args.divvy)
+                        if hasattr(args, "divvy") else None,
                     runp=args.command == "runp",
                     **{attr: getattr(args, attr) for attr in CLI_PROJ_ATTRS if attr in args})
     except yaml.parser.ParserError as e:
@@ -761,7 +762,7 @@ def main():
 
     selected_compute_pkg = p.selected_compute_package \
                            or DEFAULT_COMPUTE_RESOURCES_NAME
-    if not p.dcc.activate_package(selected_compute_pkg):
+    if p.dcc is not None and not p.dcc.activate_package(selected_compute_pkg):
         _LOGGER.info("Failed to activate '{}' computing package. "
                      "Using the default one".format(selected_compute_pkg))
 
@@ -802,4 +803,4 @@ def main():
             return Cleaner(prj)(args)
 
         if args.command == "inspect":
-            inspect_project(p, args.sample_name)
+            inspect_project(p, args.sname, args.attr_limit)

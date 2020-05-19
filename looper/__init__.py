@@ -89,11 +89,10 @@ def build_parser():
                 "--dbg", action="store_true",
                 help="Turn on debug mode (default: %(default)s)")
         # Individual subcommands
-        # TODO: "table" & "report" (which calls table by default)
         msg_by_cmd = {
                 "run": "Run or submit sample jobs.",
                 "rerun": "Resubmit sample jobs with failed flags.",
-                "runp": "Run or submit a project job.",
+                "runp": "Run or submit project jobs.",
                 "table": "Write summary stats table for project samples.",
                 "report": "Create browsable HTML report of project results.",
                 "destroy": "Remove output files of the project.",
@@ -101,7 +100,6 @@ def build_parser():
                 "clean": "Run clean scripts of already processed jobs.",
                 "inspect": "Print information about a project.",
                 "init": "Initialize looper dotfile."
-                # "mod": "Modify looper dotfile."
         }
 
         subparsers = parser.add_subparsers(dest="command")
@@ -109,7 +107,8 @@ def build_parser():
         def add_subparser(cmd):
             message = msg_by_cmd[cmd]
             return subparsers.add_parser(cmd, description=message, help=message,
-                formatter_class=lambda prog: argparse.HelpFormatter(prog, max_help_position=37, width=90))
+                formatter_class=lambda prog: argparse.HelpFormatter(
+                    prog, max_help_position=37, width=90))
 
         # Run and rerun command
         run_subparser = add_subparser("run")
@@ -133,17 +132,12 @@ def build_parser():
 
         for subparser in [run_subparser, rerun_subparser, table_subparser,
                           report_subparser, destroy_subparser, check_subparser,
-                          clean_subparser, collate_subparser, inspect_subparser]:
+                          clean_subparser, collate_subparser]:
             subparser.add_argument(
                     "-d", "--dry-run",
                     action=_StoreBoolActionType, default=False,
                     type=html_checkbox(checked=False),
                     help="Don't actually submit the jobs.  Default=False")
-            subparser.add_argument(
-                    "-f", "--skip-file-checks",
-                    action=_StoreBoolActionType, default=False,
-                    type=html_checkbox(checked=False),
-                    help="Do not perform input file checks")
 
         # Parameter arguments
         ####################################################################
@@ -163,6 +157,11 @@ def build_parser():
             subparser.add_argument(
                     "-y", "--command-extra-override", metavar="S", default="",
                     help="Same as command-extra, but overrides values in PEP")
+            subparser.add_argument(
+                    "-f", "--skip-file-checks",
+                    action=_StoreBoolActionType, default=False,
+                    type=html_checkbox(checked=False),
+                    help="Do not perform input file checks")
 
             divvy_group = \
                 subparser.add_argument_group(
@@ -170,9 +169,9 @@ def build_parser():
                     "Configure divvy to change computing settings")
             divvy_group.add_argument(
                 "--divvy", default=None, metavar="DIVCFG",
-                help="Path to divvy configuration file. Default=$DIVCFG env variable. "
-                     "Currently: {}".format(os.getenv('DIVCFG', None)
-                                             or "not set"))                
+                help="Path to divvy configuration file. Default=$DIVCFG env "
+                     "variable. Currently: {}".format(os.getenv('DIVCFG', None)
+                                                      or "not set"))
             divvy_group.add_argument(
                     "-p", "--package", metavar="P",
                     help="Name of computing resource package to use")
@@ -184,9 +183,6 @@ def build_parser():
                     help="List of key-value pairs (k1=v1)")
 
         for subparser in [run_subparser, rerun_subparser]:
-            # Note that defaults for otherwise numeric lump parameters are set to
-            # null by default so that the logic that parses their values may
-            # distinguish between explicit 0 and lack of specification.
             subparser.add_argument(
                     "-u", "--lump", default=None, metavar="X",
                     type=html_range(min_val=0, max_val=100, step=0.1, value=0),
@@ -196,14 +192,18 @@ def build_parser():
                     type=html_range(min_val=1, max_val="num_samples", value=1),
                     help="Number of commands to batch into one job")
 
-        inspect_subparser.add_argument("-n", "--sample-name", required=False,
-                                       nargs="+",
-                                       help="Name of the samples to inspect")
+        inspect_subparser.add_argument(
+            "-n", "--sname", required=False, nargs="+", metavar="S",
+            help="Name of the samples to inspect")
+        inspect_subparser.add_argument(
+            "-l", "--attr-limit", required=False, type=int, default=10,
+            metavar="L", help="Number of sample attributes to display")
+
         check_subparser.add_argument(
                 "-A", "--all-folders", action=_StoreBoolActionType,
                 default=False, type=html_checkbox(checked=False),
-                help="Check status for all  output folders, not just for samples "
-                    "specified in the config. Default=False")
+                help="Check status for all  output folders, not just for "
+                     "samples specified in the config. Default=False")
         check_subparser.add_argument(
                 "-F", "--flags", nargs='*', default=FLAGS,
                 type=html_select(choices=FLAGS),
@@ -219,32 +219,36 @@ def build_parser():
         init_subparser.add_argument("config_file", help="Project configuration "
                                                         "file (YAML)")
 
-
         # Common arguments
         for subparser in [run_subparser, rerun_subparser, table_subparser,
                           report_subparser, destroy_subparser, check_subparser,
                           clean_subparser, collate_subparser, inspect_subparser]:
             subparser.add_argument("config_file", nargs="?", default=None,
                                    help="Project configuration file (YAML)")
-            subparser.add_argument("-o", "--output-dir", metavar="DIR", help=argparse.SUPPRESS # help="Path to the output directory"
-                                  )
+            # help="Path to the output directory"
+            subparser.add_argument("-o", "--output-dir", metavar="DIR",
+                                   help=argparse.SUPPRESS)
+            # "Submission subdirectory name"
             subparser.add_argument("--submission-subdir", metavar="DIR",
-                                   help=argparse.SUPPRESS) # "Submission subdirectory name"
+                                   help=argparse.SUPPRESS)
+            # "Results subdirectory name"
             subparser.add_argument("--results-subdir", metavar="DIR",
-                                   help=argparse.SUPPRESS)  #"Results subdirectory name"
+                                   help=argparse.SUPPRESS)
+            # "Sample attribute for pipeline interface sources"
             subparser.add_argument("--pipeline-interfaces-key", metavar="K",
-                                   help=argparse.SUPPRESS)  # "Sample attribute for pipeline interface sources"
-            subparser.add_argument(
-                    "--pipeline-interfaces",
-                    metavar="P", nargs="+", action="append",
-                    help=argparse.SUPPRESS)  # "Paths to pipeline interface files"
+                                   help=argparse.SUPPRESS)
+            # "Paths to pipeline interface files"
+            subparser.add_argument("--pipeline-interfaces", metavar="P",
+                                   nargs="+", action="append",
+                                   help=argparse.SUPPRESS)
 
             fetch_samples_group = \
                 subparser.add_argument_group(
                     "sample selection arguments",
                     "Specify samples to include or exclude based on sample attribute values")
-            fetch_samples_group.add_argument("-g", "--toggle-key", metavar="K",
-                                   help="Sample attribute specifying toggle. Default: toggle")
+            fetch_samples_group.add_argument(
+                "-g", "--toggle-key", metavar="K",
+                help="Sample attribute specifying toggle. Default: toggle")
             fetch_samples_group.add_argument(
                 "--sel-attr", default="toggle", metavar="ATTR",
                 help="Attribute for sample exclusion OR inclusion")
