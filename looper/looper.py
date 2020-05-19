@@ -445,7 +445,7 @@ class Table(Executor):
         # project-combined spreadsheets.
         self.stats, self.columns = _create_stats_summary(self.prj, self.counter)
         self.objs = _create_obj_summary(self.prj, self.counter)
-        return(self)
+        return self
 
 
 def _create_stats_summary(project, counter):
@@ -805,4 +805,4 @@ def main():
             return Cleaner(prj)(args)
 
         if args.command == "inspect":
-            inspect_project(p, args.sname, args.attr_limit)
+            inspect_project(p, args.snames, args.attr_limit)
