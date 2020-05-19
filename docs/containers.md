@@ -61,4 +61,4 @@ srun singularity exec instance://{JOBNAME}_image {CODE}
 singularity instance.stop {JOBNAME}_image
 ```
 
-Notice how these values will be used to populate a template that will run the pipeline in a container. Now, to use singularity, you just need to activate this compute package in the usual way, which is using the `compute` argument: ``looper run --compute singularity_slurm``. 
+Notice how these values will be used to populate a template that will run the pipeline in a container. Now, to use singularity, you just need to activate this compute package in the usual way, which is using the `package` argument: ``looper run --package singularity_slurm``. 
