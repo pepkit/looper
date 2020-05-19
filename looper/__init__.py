@@ -130,8 +130,7 @@ def build_parser():
                     action=_StoreBoolActionType, type=html_checkbox(checked=False),
                     help="Ignore run status flags? Default=False")
 
-        for subparser in [run_subparser, rerun_subparser, table_subparser,
-                          report_subparser, destroy_subparser, check_subparser,
+        for subparser in [run_subparser, rerun_subparser, destroy_subparser,
                           clean_subparser, collate_subparser]:
             subparser.add_argument(
                     "-d", "--dry-run",
@@ -193,7 +192,7 @@ def build_parser():
                     help="Number of commands to batch into one job")
 
         inspect_subparser.add_argument(
-            "-n", "--sname", required=False, nargs="+", metavar="S",
+            "-n", "--snames", required=False, nargs="+", metavar="S",
             help="Name of the samples to inspect")
         inspect_subparser.add_argument(
             "-l", "--attr-limit", required=False, type=int, default=10,
@@ -205,8 +204,8 @@ def build_parser():
                 help="Check status for all  output folders, not just for "
                      "samples specified in the config. Default=False")
         check_subparser.add_argument(
-                "-F", "--flags", nargs='*', default=FLAGS,
-                type=html_select(choices=FLAGS),
+                "-f", "--flags", nargs='*', default=FLAGS,
+                type=html_select(choices=FLAGS), metavar="F",
                 help="Check on only these flags/status values")
 
         for subparser in [destroy_subparser, clean_subparser]:
