@@ -235,7 +235,7 @@ def enrich_args_via_cfg(parser_args, aux_parser):
             if dest in cli_args:
                 x = getattr(cli_args, dest)
                 r = convert_value(x) if isinstance(x, str) else x
-            elif cfg_args_all is not None and dest in cfg_args_all:
+            elif dest in cfg_args_all:
                 if isinstance(cfg_args_all[dest], list):
                     r = [convert_value(i) for i in cfg_args_all[dest]]
                 else:
@@ -246,26 +246,33 @@ def enrich_args_via_cfg(parser_args, aux_parser):
     return result
 
 
-def _get_subcommand_args(cfg_path, subcommand):
+def _get_subcommand_args(cfg_path, subcmd):
     """
     Get the union of values for the subcommand arguments from
-    Project.looper.all and Project.looper.<subcommand> sections.
+    Project.looper, Project.looper.cli.<subcommand> and Project.looper.cli.all.
+    If any are duplicated, the above is the selection priority order.
 
     Additionally, convert the options strings to destinations (replace '-'
     with '_'), which strongly relies on argument parser using default
     destinations.
 
     :param str cfg_path: path to an existing config file to read
-    :param str subcommand: a looper subcommand to select the arguments for
+    :param str subcmd: a looper subcommand to select the arguments for
     :return dict: mapping of argument destinations to their values
     """
-    args = None
+    args = dict()
     cfg = peppyProject(cfg_path)
+    if CONFIG_KEY in cfg and LOOPER_KEY in cfg[CONFIG_KEY] \
+            and CLI_KEY in cfg[CONFIG_KEY][LOOPER_KEY]:
+        cfg_args = cfg[CONFIG_KEY][LOOPER_KEY][CLI_KEY] or dict()
+        args = cfg_args[ALL_SUBCMD_KEY] or dict() \
+            if ALL_SUBCMD_KEY in cfg_args else dict()
+        args.update(cfg_args[subcmd] if subcmd in cfg_args else dict())
     if CONFIG_KEY in cfg and LOOPER_KEY in cfg[CONFIG_KEY]:
-        cfg_args = cfg[CONFIG_KEY][LOOPER_KEY]
-        args = cfg_args[ALL_SUBCMD_KEY] if ALL_SUBCMD_KEY in cfg_args else dict()
-        args.update(cfg_args[subcommand] if subcommand in cfg_args else dict())
-        args = {k.replace("-", "_"): v for k, v in args.items()}
+        if CLI_KEY in cfg[CONFIG_KEY][LOOPER_KEY]:
+            del cfg[CONFIG_KEY][LOOPER_KEY][CLI_KEY]
+        args.update(cfg[CONFIG_KEY][LOOPER_KEY])
+    args = {k.replace("-", "_"): v for k, v in args.items()} if args else None
     return args
 
 

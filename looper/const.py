@@ -19,7 +19,7 @@ __all__ = [
     "PROFILE_COLNAMES", "SAMPLE_TOGGLE_ATTR", "TOGGLE_KEY_SELECTOR",
     "LOOPER_DOTFILE_NAME", "POSITIONAL", "EXTRA_PROJECT_CMD_TEMPLATE",
     "EXTRA_SAMPLE_CMD_TEMPLATE", "SELECTED_COMPUTE_PKG", "CLI_PROJ_ATTRS",
-    "DOTFILE_CFG_PTH_KEY", "DRY_RUN_KEY", "FILE_CHECKS_KEY"
+    "DOTFILE_CFG_PTH_KEY", "DRY_RUN_KEY", "FILE_CHECKS_KEY", "CLI_KEY"
 ]
 
 FLAGS = ["completed", "running", "failed", "waiting", "partial"]
@@ -96,6 +96,7 @@ IMAGE_EXTS = ('.png', '.jpg', '.jpeg', '.svg', '.gif')
 PROFILE_COLNAMES = ['pid', 'hash', 'cid', 'runtime', 'mem', 'cmd', 'lock']  # this strongly depends on pypiper's profile.tsv format
 
 PIPE_ARGS_SECTION = "pipeline_args"
+CLI_KEY = "cli"
 LOOPER_KEY = "looper"
 OUTDIR_KEY = "output_dir"
 RESULTS_SUBDIR_KEY = "results_subdir"

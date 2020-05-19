@@ -63,10 +63,10 @@ def prep_temp_pep(example_pep_piface_path):
     from yaml import safe_load, dump
     with open(temp_path_cfg, 'r') as f:
         piface_data = safe_load(f)
-    piface_data[LOOPER_KEY][ALL_SUBCMD_KEY] = {}
-    piface_data[LOOPER_KEY][ALL_SUBCMD_KEY][OUTDIR_KEY] = out_td
-    piface_data[LOOPER_KEY]["runp"] = {}
-    piface_data[LOOPER_KEY]["runp"][PIPELINE_INTERFACES_KEY] = \
+    piface_data[LOOPER_KEY][OUTDIR_KEY] = out_td
+    piface_data[LOOPER_KEY][CLI_KEY] = {}
+    piface_data[LOOPER_KEY][CLI_KEY]["runp"] = {}
+    piface_data[LOOPER_KEY][CLI_KEY]["runp"][PIPELINE_INTERFACES_KEY] = \
         [temp_path_piface1p, temp_path_piface2p]
     piface_data[SAMPLE_MODS_KEY][CONSTANT_KEY][PIPELINE_INTERFACES_KEY] = \
         [temp_path_piface1s, temp_path_piface2s]

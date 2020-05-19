@@ -52,7 +52,7 @@ def _get_outdir(pth):
     """
     with open(pth, 'r') as conf_file:
         config_data = safe_load(conf_file)
-    return config_data[LOOPER_KEY][ALL_SUBCMD_KEY][OUTDIR_KEY]
+    return config_data[LOOPER_KEY][OUTDIR_KEY]
 
 
 class LooperBothRunsTests:
@@ -375,7 +375,8 @@ class LooperRunpBehaviorTests:
             config_data = safe_load(conf_file)
         print("\nconfig_data: \n{}\n".format(config_data))
         piface_path = os.path.join(os.path.dirname(tp), PIP.format("1"))
-        config_data[LOOPER_KEY]["runp"][PIPELINE_INTERFACES_KEY] = piface_path
+        config_data[LOOPER_KEY][CLI_KEY]["runp"][PIPELINE_INTERFACES_KEY] = \
+            piface_path
         print("\nconfig_data: \n{}\n".format(config_data))
         with open(tp, 'w') as conf_file:
             dump(config_data, conf_file)
@@ -412,7 +413,7 @@ class LooperRunSubmissionScriptTests:
         with open(tp, 'r') as conf_file:
             config_data = safe_load(conf_file)
         print("\nconfig_data: \n{}\n".format(config_data))
-        outdir = config_data[LOOPER_KEY][ALL_SUBCMD_KEY][OUTDIR_KEY]
+        outdir = config_data[LOOPER_KEY][OUTDIR_KEY]
         stdout, stderr, rc = _subp_exec(tp, "run")
         sd = os.path.join(outdir, "submission")
         subm_err = \

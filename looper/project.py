@@ -98,12 +98,12 @@ class Project(peppyProject):
             self._interfaces_by_sample = self._piface_by_samples()
 
         if FILE_CHECKS_KEY in self[EXTRA_KEY]:
-            setattr(self, FILE_CHECKS_KEY, not self[EXTRA_KEY][FILE_CHECKS_KEY])
+            setattr(self, "file_checks", not self[EXTRA_KEY][FILE_CHECKS_KEY])
         if DRY_RUN_KEY in self[EXTRA_KEY]:
             setattr(self, DRY_RUN_KEY, self[EXTRA_KEY][DRY_RUN_KEY])
         self.dcc = None if divcfg_path is None else \
             ComputingConfiguration(filepath=divcfg_path)
-        if hasattr(self, DRY_RUN_KEY) and not self.dry_run:
+        if hasattr(self, DRY_RUN_KEY) and not self[DRY_RUN_KEY]:
             _LOGGER.debug("Ensuring project directories exist")
             self.make_project_dirs()
 
@@ -176,8 +176,8 @@ class Project(peppyProject):
         else:
             if strict:
                 raise MisconfigurationException(
-                    "'{}' is missing. Provide it as CLI argument or in '{}' "
-                    "section of the config".format(attr_name, LOOPER_KEY))
+                    "'{}' is missing. Provide it in the '{}' section of the "
+                    "project configuration file".format(attr_name, LOOPER_KEY))
             return
 
     @property
