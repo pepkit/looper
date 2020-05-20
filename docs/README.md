@@ -4,11 +4,11 @@
 
 ## What is looper?
 
-`Looper` is a pipeline submitting engine. `Looper` deploys any command-line pipeline for each sample in a project organized in [standard PEP format](https://pepkit.github.io/docs/home/). You can think of `looper` as providing a single user interface to running, summarizing, monitoring, and otherwise managing all of your sample-intensive research projects the same way, regardless of data type or pipeline used.
+Looper is a pipeline submitting engine. Looper deploys any command-line pipeline for each sample in a project organized in [standard PEP format](https://pepkit.github.io/docs/home/). You can think of looper as providing a single user interface to running, summarizing, monitoring, and otherwise managing all of your sample-intensive research projects the same way, regardless of data type or pipeline used.
 
 ## What makes looper better?
 
-Looper **decouples job handling from the pipeline process**. In a typical pipeline, job handling (managing how individual jobs are submitted to a cluster) is delicately intertwined with actual pipeline commands (running the actual code for a single compute job). The `looper` approach is modular, following the [the unix principle](https://en.wikipedia.org/wiki/Unix_philosophy): `looper` *only* manages job submission. This approach leads to several advantages compared with the traditional integrated approach:
+Looper **decouples job handling from the pipeline process**. In a typical pipeline, job handling (managing how individual jobs are submitted to a cluster) is delicately intertwined with actual pipeline commands (running the actual code for a single compute job). The looper approach is modular, following the [the unix principle](https://en.wikipedia.org/wiki/Unix_philosophy): looper *only* manages job submission. This approach leads to several advantages compared with the traditional integrated approach:
 
 1. running a pipeline on just one or two samples/jobs is simpler, and does not require a full-blown distributed compute environment.
 2. pipelines do not need to independently re-implement job handling code, which is shared.

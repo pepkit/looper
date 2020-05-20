@@ -2,7 +2,7 @@
 
 Because `looper` uses `divvy` for computing configuration, running jobs in containers is easy! `Divvy` can use the same template system to do either cluster computing or to run jobs in linux containers (for example, using `docker` or `singularity`). You can even run jobs in a container *on a cluster*.
 
-All you need to do is follow the same instructions as in [running jobs on a cluster](cluster-computing.md), but use templates that run those jobs in containers. To see examples of how to do this, refer to the [divvy docs on running containers](http://code.databio.org/divvy/containers/).
+All you need to do is follow the same instructions as in [running jobs on a cluster](running-on-a-cluster.md), but use templates that run those jobs in containers. To see examples of how to do this, refer to the [divvy docs on running containers](http://divvy.databio.org/en/latest/containers/).
 
 
 ## Overview 
