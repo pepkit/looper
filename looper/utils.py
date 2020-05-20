@@ -234,17 +234,28 @@ def _get_subcommand_args(cfg_path, subcmd):
     :return dict: mapping of argument destinations to their values
     """
     args = dict()
-    cfg = peppyProject(cfg_path)
+    cfg = peppyProject(cfg_path, defer_samples_creation=True)
     if CONFIG_KEY in cfg and LOOPER_KEY in cfg[CONFIG_KEY] \
             and CLI_KEY in cfg[CONFIG_KEY][LOOPER_KEY]:
-        cfg_args = cfg[CONFIG_KEY][LOOPER_KEY][CLI_KEY] or dict()
-        args = cfg_args[ALL_SUBCMD_KEY] or dict() \
-            if ALL_SUBCMD_KEY in cfg_args else dict()
-        args.update(cfg_args[subcmd] if subcmd in cfg_args else dict())
+        try:
+            cfg_args = cfg[CONFIG_KEY][LOOPER_KEY][CLI_KEY] or dict()
+            args = cfg_args[ALL_SUBCMD_KEY] or dict() \
+                if ALL_SUBCMD_KEY in cfg_args else dict()
+            args.update(cfg_args[subcmd] or dict()
+                        if subcmd in cfg_args else dict())
+        except (TypeError, KeyError, AttributeError, ValueError) as e:
+            raise MisconfigurationException(
+                "Invalid '{}.{}' section in the config. Caught exception: {}".
+                    format(LOOPER_KEY, CLI_KEY, getattr(e, 'message', repr(e))))
     if CONFIG_KEY in cfg and LOOPER_KEY in cfg[CONFIG_KEY]:
-        if CLI_KEY in cfg[CONFIG_KEY][LOOPER_KEY]:
-            del cfg[CONFIG_KEY][LOOPER_KEY][CLI_KEY]
-        args.update(cfg[CONFIG_KEY][LOOPER_KEY])
+        try:
+            if CLI_KEY in cfg[CONFIG_KEY][LOOPER_KEY]:
+                del cfg[CONFIG_KEY][LOOPER_KEY][CLI_KEY]
+            args.update(cfg[CONFIG_KEY][LOOPER_KEY])
+        except (TypeError, KeyError, AttributeError, ValueError) as e:
+            raise MisconfigurationException(
+                "Invalid '{}' section in the config. Caught exception: {}".
+                    format(LOOPER_KEY, getattr(e, 'message', repr(e))))
     args = {k.replace("-", "_"): v for k, v in args.items()} if args else None
     return args
 
@@ -277,14 +288,18 @@ def read_cfg_from_dotfile():
     Read file path to the config file from the dotfile
 
     :return str: path to the config file read from the dotfile
+    :raise MisconfigurationException: if the dotfile does not consist of the
+        required key pointing to the PEP
     """
-    cfg_path = None
     dp = dotfile_path(must_exist=True)
     with open(dp, 'r') as dotfile:
         dp_data = yaml.safe_load(dotfile)
     if DOTFILE_CFG_PTH_KEY in dp_data:
-        cfg_path = str(dp_data[DOTFILE_CFG_PTH_KEY])
-    return cfg_path
+        return str(dp_data[DOTFILE_CFG_PTH_KEY])
+    else:
+        raise MisconfigurationException(
+            "Looper dotfile ({}) is missing '{}' key".
+                format(dp, DOTFILE_CFG_PTH_KEY))
 
 
 def dotfile_path(directory=os.getcwd(), must_exist=False):

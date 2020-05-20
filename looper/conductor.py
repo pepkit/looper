@@ -351,7 +351,8 @@ class SubmissionConductor(object):
         """
         settings = AttMap()
         settings.pep_config = self.prj.config_file
-        settings.output_folder = self.prj.results_folder
+        settings.results_subdir = self.prj.results_folder
+        settings.submission_subdir = self.prj.submission_folder
         settings.output_dir = self.prj.output_dir
         settings.sample_output_folder = \
             os.path.join(self.prj.results_folder, self._sample_lump_name(pool))

@@ -4,6 +4,8 @@ import tempfile
 from shutil import copyfile as cpf, rmtree
 from looper.const import *
 from peppy.const import *
+from yaml import safe_load
+import subprocess
 
 CFG = "project_config.yaml"
 ST = "annotation_sheet.csv"
@@ -11,6 +13,53 @@ PIP = "pipeline_interface{}_project.yaml"
 PIS = "pipeline_interface{}_sample.yaml"
 OS = "output_schema.yaml"
 RES = "resources-{}.tsv"
+
+
+def get_outdir(pth):
+    """
+    Get output directory from a config file
+
+    :param str pth:
+    :return str: output directory
+    """
+    with open(pth, 'r') as conf_file:
+        config_data = safe_load(conf_file)
+    return config_data[LOOPER_KEY][OUTDIR_KEY]
+
+
+def is_in_file(fs, s, reverse=False):
+    """
+    Verify if string is in files content
+
+    :param str | Iterable[str] fs: list of files
+    :param str s: string to look for
+    :param bool reverse: whether the reverse should be checked
+    """
+    if isinstance(fs, str):
+        fs = [fs]
+    for f in fs:
+        with open(f, 'r') as fh:
+            if reverse:
+                assert s not in fh.read()
+            else:
+                assert s in fh.read()
+
+
+def subp_exec(pth=None, cmd=None, appendix=list(), dry=True):
+    """
+
+    :param str pth: config path
+    :param str cmd: looper subcommand
+    :param Iterable[str] appendix: other args to pass to the cmd
+    :return:
+    """
+    x = ["looper", cmd, "-d" if dry else ""]
+    if pth:
+        x.append(pth)
+    x.extend(appendix)
+    proc = subprocess.Popen(x, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+    stdout, stderr = proc.communicate()
+    return str(stdout), str(stderr), proc.returncode
 
 
 @pytest.fixture

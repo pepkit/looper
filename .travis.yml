@@ -3,11 +3,12 @@ python:
   - "2.7"
   - "3.5"
   - "3.6"
+  - "3.7"
+  - "3.8"
 os:
   - linux
 before_install:
   - pip install git+https://github.com/pepkit/peppy.git@dev
-  - pip install git+https://github.com/pepkit/divvy.git@dev
   - pip install git+https://github.com/pepkit/eido.git@dev
 install:
   - pip install --upgrade six
