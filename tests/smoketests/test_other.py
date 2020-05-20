@@ -1,8 +1,6 @@
 import pytest
 from tests.smoketests.conftest import *
 from looper.const import FLAGS
-from looper.project import Project
-from pathlib import Path
 from peppy import Project
 
 
@@ -11,13 +9,13 @@ def _make_flags(cfg, type, count):
     out_dir = p[CONFIG_KEY][LOOPER_KEY][OUTDIR_KEY]
     for s in p.samples[:count]:
         sf = os.path.join(out_dir, "results_pipeline", s[SAMPLE_NAME_ATTR])
-        Path(sf).mkdir(parents=True, exist_ok=True)
-        Path(os.path.join(sf, type + ".flag")).touch()
+        os.makedirs(sf, exist_ok=True)
+        open(os.path.join(sf, type + ".flag"), 'a').close()
 
 
 class LooperCheckTests:
     @pytest.mark.parametrize("flag_id", FLAGS)
-    @pytest.mark.parametrize("count", list(range(3)))
+    @pytest.mark.parametrize("count", list(range(2)))
     def test_check_works(self, prep_temp_pep, flag_id, count):
         """ Verify that checking works """
         tp = prep_temp_pep
@@ -28,7 +26,7 @@ class LooperCheckTests:
         assert "{}: {}".format(flag_id.upper(), str(count)) in stderr
 
     @pytest.mark.parametrize("flag_id", FLAGS)
-    @pytest.mark.parametrize("count", list(range(3)))
+    @pytest.mark.parametrize("count", list(range(2)))
     def test_check_multi(self, prep_temp_pep, flag_id, count):
         """ Verify that checking works when multiple flags are created """
         tp = prep_temp_pep
