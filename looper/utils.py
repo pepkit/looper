@@ -11,7 +11,7 @@ from peppy import Project as peppyProject
 import jinja2
 import yaml
 import argparse
-from ubiquerg import convert_value, merge_dicts
+from ubiquerg import convert_value, expandpath
 
 _LOGGER = getLogger(__name__)
 
@@ -266,19 +266,22 @@ def init_dotfile(path, cfg_path, force=False):
 
     :param str path: absolute path to the file to initialize
     :param str cfg_path: path to the config file. Absolute or relative to 'path'
+    :param bool force: whether the existing file should be overwritten
     :return bool: whether the file was initialized
     """
     if os.path.exists(path) and not force:
         print("Can't initialize, file exists: {}".format(path))
         return False
+    cfg_path = expandpath(cfg_path)
     if not os.path.isabs(cfg_path):
         cfg_path = os.path.join(os.path.dirname(path), cfg_path)
     assert os.path.exists(cfg_path), \
         OSError("Provided config path is invalid. You must provide path "
                 "that is either absolute or relative to: {}".
                 format(os.path.dirname(path)))
+    relpath = os.path.relpath(cfg_path, os.path.dirname(path))
     with open(path, 'w') as dotfile:
-        yaml.dump({DOTFILE_CFG_PTH_KEY: cfg_path}, dotfile)
+        yaml.dump({DOTFILE_CFG_PTH_KEY: relpath}, dotfile)
     print("Initialized looper dotfile: {}".format(path))
     return True
 
@@ -295,7 +298,8 @@ def read_cfg_from_dotfile():
     with open(dp, 'r') as dotfile:
         dp_data = yaml.safe_load(dotfile)
     if DOTFILE_CFG_PTH_KEY in dp_data:
-        return str(dp_data[DOTFILE_CFG_PTH_KEY])
+        return os.path.join(os.path.dirname(dp),
+                            str(os.path.join(dp_data[DOTFILE_CFG_PTH_KEY])))
     else:
         raise MisconfigurationException(
             "Looper dotfile ({}) is missing '{}' key".
