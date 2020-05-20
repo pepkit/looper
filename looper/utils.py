@@ -295,6 +295,10 @@ def read_cfg_from_dotfile():
         dp_data = yaml.safe_load(dotfile)
     if DOTFILE_CFG_PTH_KEY in dp_data:
         cfg_path = str(dp_data[DOTFILE_CFG_PTH_KEY])
+    else:
+        raise MisconfigurationException(
+            "Looper dotfile ({}) is missing '{}' key".
+                format(dp, DOTFILE_CFG_PTH_KEY))
     return cfg_path
 
 
