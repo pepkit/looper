@@ -200,7 +200,7 @@ def enrich_args_via_cfg(parser_args, aux_parser):
     """
     cfg_args_all = \
         _get_subcommand_args(parser_args.config_file, parser_args.command) \
-            if os.path.exists(parser_args.config_file) else None
+            if os.path.exists(parser_args.config_file) else dict()
     result = argparse.Namespace()
     cli_args, _ = aux_parser.parse_known_args()
     for dest in vars(parser_args):
