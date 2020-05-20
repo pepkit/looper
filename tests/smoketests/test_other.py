@@ -9,7 +9,8 @@ def _make_flags(cfg, type, count):
     out_dir = p[CONFIG_KEY][LOOPER_KEY][OUTDIR_KEY]
     for s in p.samples[:count]:
         sf = os.path.join(out_dir, "results_pipeline", s[SAMPLE_NAME_ATTR])
-        os.makedirs(sf, exist_ok=True)
+        if not os.path.exists(sf):
+            os.makedirs(sf)
         open(os.path.join(sf, type + ".flag"), 'a').close()
 
 
