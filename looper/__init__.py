@@ -218,6 +218,9 @@ def build_parser():
         init_subparser.add_argument("config_file", help="Project configuration "
                                                         "file (YAML)")
 
+        init_subparser.add_argument("-f", "--force", help="Force overwrite",
+            action="store_true", default=False)
+
         # Common arguments
         for subparser in [run_subparser, rerun_subparser, table_subparser,
                           report_subparser, destroy_subparser, check_subparser,

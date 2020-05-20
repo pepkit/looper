@@ -689,7 +689,7 @@ def main():
             print(m + ", using: {}. Read from dotfile ({}).".
                   format(read_cfg_from_dotfile(), dotfile_path()))
     if args.command == "init":
-        sys.exit(int(not init_dotfile(dotfile_path(), args.config_file)))
+        sys.exit(int(not init_dotfile(dotfile_path(), args.config_file, args.force)))
     args = enrich_args_via_cfg(args, aux_parser)
 
     # Set the logging level.

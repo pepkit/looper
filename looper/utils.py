@@ -260,7 +260,7 @@ def _get_subcommand_args(cfg_path, subcmd):
     return args
 
 
-def init_dotfile(path, cfg_path):
+def init_dotfile(path, cfg_path, force=False):
     """
     Initialize looper dotfile
 
@@ -268,7 +268,7 @@ def init_dotfile(path, cfg_path):
     :param str cfg_path: path to the config file. Absolute or relative to 'path'
     :return bool: whether the file was initialized
     """
-    if os.path.exists(path):
+    if os.path.exists(path) and not force:
         print("Can't initialize, file exists: {}".format(path))
         return False
     if not os.path.isabs(cfg_path):
