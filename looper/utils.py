@@ -288,18 +288,18 @@ def read_cfg_from_dotfile():
     Read file path to the config file from the dotfile
 
     :return str: path to the config file read from the dotfile
+    :raise MisconfigurationException: if the dotfile does not consist of the
+        required key pointing to the PEP
     """
-    cfg_path = None
     dp = dotfile_path(must_exist=True)
     with open(dp, 'r') as dotfile:
         dp_data = yaml.safe_load(dotfile)
     if DOTFILE_CFG_PTH_KEY in dp_data:
-        cfg_path = str(dp_data[DOTFILE_CFG_PTH_KEY])
+        return str(dp_data[DOTFILE_CFG_PTH_KEY])
     else:
         raise MisconfigurationException(
             "Looper dotfile ({}) is missing '{}' key".
                 format(dp, DOTFILE_CFG_PTH_KEY))
-    return cfg_path
 
 
 def dotfile_path(directory=os.getcwd(), must_exist=False):
