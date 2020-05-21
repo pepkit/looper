@@ -199,7 +199,7 @@ def enrich_args_via_cfg(parser_args, aux_parser):
     :return argparse.Namespace: selected argument values
     """
     cfg_args_all = \
-        _get_subcommand_args(parser_args.config_file, parser_args.command) \
+        _get_subcommand_args(parser_args) \
             if os.path.exists(parser_args.config_file) else dict()
     result = argparse.Namespace()
     cli_args, _ = aux_parser.parse_known_args()
@@ -219,7 +219,7 @@ def enrich_args_via_cfg(parser_args, aux_parser):
     return result
 
 
-def _get_subcommand_args(cfg_path, subcmd):
+def _get_subcommand_args(parser_args):
     """
     Get the union of values for the subcommand arguments from
     Project.looper, Project.looper.cli.<subcommand> and Project.looper.cli.all.
@@ -229,20 +229,21 @@ def _get_subcommand_args(cfg_path, subcmd):
     with '_'), which strongly relies on argument parser using default
     destinations.
 
-    :param str cfg_path: path to an existing config file to read
-    :param str subcmd: a looper subcommand to select the arguments for
+    :param argparser.Namespace parser_args: argument namespace
     :return dict: mapping of argument destinations to their values
     """
     args = dict()
-    cfg = peppyProject(cfg_path, defer_samples_creation=True)
+    cfg = peppyProject(parser_args.config_file,
+                       defer_samples_creation=True,
+                       amendments=parser_args.amend)
     if CONFIG_KEY in cfg and LOOPER_KEY in cfg[CONFIG_KEY] \
             and CLI_KEY in cfg[CONFIG_KEY][LOOPER_KEY]:
         try:
             cfg_args = cfg[CONFIG_KEY][LOOPER_KEY][CLI_KEY] or dict()
             args = cfg_args[ALL_SUBCMD_KEY] or dict() \
                 if ALL_SUBCMD_KEY in cfg_args else dict()
-            args.update(cfg_args[subcmd] or dict()
-                        if subcmd in cfg_args else dict())
+            args.update(cfg_args[parser_args.command] or dict()
+                        if parser_args.command in cfg_args else dict())
         except (TypeError, KeyError, AttributeError, ValueError) as e:
             raise MisconfigurationException(
                 "Invalid '{}.{}' section in the config. Caught exception: {}".
