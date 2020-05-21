@@ -6,53 +6,38 @@ In the simplest case all you need is a project defined in the [standard Portable
 
 ## 2. Connect the PEP to looper 
 
-Once you have a basic PEP, you can connect it to looper. Just provide two required looper-specific pieces of information: 
-
-- `output-dir`: parent folder where you want looper to store your results (always required)
-- `pipeline-interfaces`: a list of pipeline interfaces (conditionally required)
-
-You can do this in two ways:
-
-### Provide the information as arguments to the `looper` command
-
-One possibility is to provide required information on the command line, for example:
-
-```bash
-looper run project_config.yaml --output-dir /path/to/output_dir --pipeline-interfaces /path/to/pipeline_interface.yaml
-```
-
-For more CLI options refer to the subcommands [usage](usage.md)
+Once you have a basic PEP, you can connect it to looper. Just provide the required looper-specific piece of information -- `output-dir`, a parent folder where you want looper to store your results (always required)
 
 ### Add a `looper` section to your PEP
 
-The `looper` section can contain *all command line options*. The subsections within this section direct the argumets to the respective `looper` subcommands. So, to specify the output directory and pipeline interfaces for a `looper run` command use:
+`output_dir` key is expected in the top level of the `looper` section of the project configuration file. 
 
 ```yaml
 looper:
-  run:
-    output-dir: "/path/to/output_dir"
-    pipeline-interfaces: "/path/to/pipeline_interface.yaml"
+  output_dir: "/path/to/output_dir"
 ```
 
-or, to pass the arguments to any subcommand:
+Optionally, `looper.cli` section can specify any command line (CLI) options. The subsections within this section direct the argumets to the respective `looper` subcommands. So, to specify, e.g. sample submission limit for a `looper run` command use:
 
 ```yaml
 looper:
+  output_dir: "/path/to/output_dir"
+  cli:
+    run:
+      limit: 2
+```
+
+or, to pass this argument to any subcommand:
+
+```yaml
+looper:
+  output_dir: "/path/to/output_dir"
   all:
-    output-dir: "/path/to/output_dir"
-    pipeline-interfaces: "/path/to/pipeline_interface.yaml"
+    limit: 2
 ```
 
-<!-- - `output_dir` - parent folder where you want looper to store your results.
-- `results_subdir` - subdirectory where pipeline results will be stored. Default: `results_pipeline`
-- `submission_subdir` - subdirectory where job submission scripts will be stored. Default: `submission`
-- `compute.resources` - You can specify project-specific compute settings in a `compute` section, 
-but it's often more convenient and consistent to specify this globally with a `divcfg` environment configuration. 
-Instructions for doing so are at the [`divcfg` repository](https://github.com/pepkit/divcfg). 
-If you do need project-specific control over compute settings (like submitting a certain project to a certain resource account), 
-you can do this by specifying variables in a project config `compute.resources` section, which will override global `divcfg` values for that project only.
-- `command_extra` - a string you want to append to any project-level pipelines
-- `pipeline_interfaces` - a list of pipeline interfaces for project-level pipelines -->
+Keys in the `cli.<subcommand>` section *must* match the long argument parser option strings, so `command-extra`, `limit`, `dry-run` and so on. For more CLI options refer to the subcommands [usage](usage.md).
+
 
 ## 3. Link a pipeline to your project
 
@@ -72,14 +57,6 @@ sample_modifiers:
     pipeline_interfaces: "/path/to/pipeline_interface.yaml"
 ```
 
-Alternatively, you can provide this information as described in "Connect the PEP to looper" section, add `pipeline-interfaces` to the `looper` section to the project configuration file or using command line interface. This will override any pipeline interfaces defined like above:
-
-```yaml
-looper:
-  run:
-    pipeline-interfaces: "/path/to/pipeline_interface.yaml"
-```
-
 The value for the `pipeline_interfaces` key should be the *absolute* path to the pipeline interface file. The paths can consist of environment variables.
 
 Once your PEP is linked to the pipeline, you just need to make sure your project provides any sample metadata required by the pipeline.
@@ -92,12 +69,11 @@ Project pipelines are linked by providing the abosolute path to the desired file
 looper runp project_config.yaml --pipeline-interfaces /path/to/project_pipeline_interface.yaml
 ```
 
- or in the `looper` section in project configuration file. Please note that the specified subsection is `runp`:
+or in the `looper` section in project configuration file:
 
 ```
 looper:
-  runp:
-    pipeline-interfaces: "/path/to/project_pipeline_interface.yaml"
+  pipeline_interfaces: "/path/to/project_pipeline_interface.yaml"
 ```
 
 ### How to link to multiple pipelines

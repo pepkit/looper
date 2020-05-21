@@ -20,7 +20,7 @@ Users (non-developers) of pipelines only need to be aware of one or two config f
 
 ### Project configuration
 
-[**project config**](define-your-project.md) -- this file is specific to each project and contains information about the project's metadata, where the processed files should be saved, and other variables that allow to configure the pipelines specifically for this project. It follows the standard Portable Encapsulated Project format, or PEP for short.
+[**project config**](defining-a-project.md) -- this file is specific to each project and contains information about the project's metadata, where the processed files should be saved, and other variables that allow to configure the pipelines specifically for this project. It follows the standard Portable Encapsulated Project format, or PEP for short.
 
 ### Environment configuration
 
