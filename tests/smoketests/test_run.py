@@ -55,36 +55,6 @@ class LooperBothRunsTests:
         is_in_file(subs_list, "--unknown-arg", reverse=True)
 
     @pytest.mark.parametrize("cmd", ["run", "runp"])
-    def test_dotfile_general(self, prep_temp_pep, cmd):
-        tp = prep_temp_pep
-        dotfile_path = os.path.join(os.getcwd(), LOOPER_DOTFILE_NAME)
-        with open(dotfile_path, 'w') as df:
-            dump({LOOPER_KEY: {"package": "local"}}, df)
-        stdout, stderr, rc = subp_exec(tp, cmd)
-        sd = os.path.join(get_outdir(tp), "submission")
-        print(stderr)
-        assert rc == 0
-        subs_list = \
-            [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
-        is_in_file(subs_list, "#SBATCH", reverse=True)
-        os.remove(dotfile_path)
-
-    @pytest.mark.parametrize("cmd", ["run", "runp"])
-    def test_cli_overwrites_dotfile(self, prep_temp_pep, cmd):
-        tp = prep_temp_pep
-        dotfile_path = os.path.join(os.getcwd(), LOOPER_DOTFILE_NAME)
-        with open(dotfile_path, 'w') as df:
-            dump({LOOPER_KEY: {"package": "local"}}, df)
-        stdout, stderr, rc = subp_exec(tp, cmd, ["--package", "slurm"])
-        sd = os.path.join(get_outdir(tp), "submission")
-        print(stderr)
-        assert rc == 0
-        subs_list = \
-            [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
-        is_in_file(subs_list, "#SBATCH")
-        os.remove(dotfile_path)
-
-    @pytest.mark.parametrize("cmd", ["run", "runp"])
     def test_run_after_init(self, prep_temp_pep, cmd):
         tp = prep_temp_pep
         dotfile_path = os.path.join(os.getcwd(), LOOPER_DOTFILE_NAME)

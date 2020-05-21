@@ -196,6 +196,8 @@ def enrich_args_via_cfg(parser_args, aux_parser):
     Priority order: CLI > dotfile/config > parser default
 
     :param argparse.Namespace parser_args: parsed args by the original parser
+    :param argparse.Namespace aux_parser: parsed args by the a parser
+        with defaults suppressed
     :return argparse.Namespace: selected argument values
     """
     cfg_args_all = \
