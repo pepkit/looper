@@ -4,19 +4,22 @@ By default, `looper` will build a shell script for each sample and then run it s
 
 ## Overview and basic example of cluster computing
 
-To configure `looper` for cluster computing, you just configure divvy. Briefly, first create a `divvy` computing configuration file using `divvy init`:
+To configure `looper` for cluster computing, you just configure divvy. Divvy is automatically installed when you install looper. Briefly, first create a `divvy` computing configuration file using `divvy init`:
 
 ```bash
 export DIVCFG="divvy_config.yaml"
 divvy init -c $DIVCFG
 ```
 
-Looper will by default will look for the divvy configuration file in `$DIVCFG`, but you can overwrite this by specifying a path to other file with `--divvy` argument, like this:
+Looper will now have access to your computing configuration. You can run `divvy list` to see what compute packages are available in this file. For example, you'll start with a package called 'slurm', which you can use with looper by calling `looper --package slurm`. For many systems (SLURM, SGE, LFS, etc), the default divvy configuration will work out of the box. If you need to tweak things, the template system is flexible and you can configure it to run in any compute environment. That's all there is to it. 
+
+Complete details on how to configure divvy are described in the [divvy documentation](http://divvy.databio.org).
+
+## Divvy config file locations
+
+Looper will by default will look for the divvy configuration file in `$DIVCFG`, but you can override this by specifying a path to other file with `--divvy` argument, like this:
 
 ```bash
 looper --divvy /path/to/env_cfg.yaml ...
 ```
 
-Looper will now have access to your computing configuration. You can run `divvy list` to see what compute packages are available in this file. For example, you'll start with a package called 'slurm', which you can use with looper by calling `looper --package slurm`. For many systems (SLURM, SGE, LFS, etc), the default divvy configuration will work out of the box. If you need to tweak things, the template system is flexible and you can configure it to run in any compute environment. That's all there is to it. 
-
-Complete details on how to configure divvy are described in the [divvy documentation](http://divvy.databio.org).
