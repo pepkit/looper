@@ -28,7 +28,7 @@ Here you can see the command-line usage instructions for the main looper command
 ```console
 version: 1.2.0-dev
 usage: looper [-h] [--version] [--logfile LOGFILE] [--verbosity {0,1,2,3,4}]
-              [--dbg] [--divvy DIVVY]
+              [--dbg]
               {run,rerun,runp,table,report,destroy,check,clean,inspect,init}
               ...
 
@@ -38,7 +38,7 @@ positional arguments:
   {run,rerun,runp,table,report,destroy,check,clean,inspect,init}
     run                 Run or submit sample jobs.
     rerun               Resubmit sample jobs with failed flags.
-    runp                Run or submit a project job.
+    runp                Run or submit project jobs.
     table               Write summary stats table for project samples.
     report              Create browsable HTML report of project results.
     destroy             Remove output files of the project.
@@ -54,9 +54,6 @@ optional arguments:
   --verbosity {0,1,2,3,4}
                         Choose level of verbosity (default: None)
   --dbg                 Turn on debug mode (default: False)
-  --divvy DIVVY         Path to the divvy configuration file. If not provided,
-                        the value of $DIVCFG environment variable will be
-                        used. Currently: not set
 
 For subcommand-specific options, type: 'looper <subcommand> -h'
 https://github.com/pepkit/looper
@@ -64,510 +61,301 @@ https://github.com/pepkit/looper
 
 ## `looper run --help`
 ```console
-usage: looper run [-h] [--ignore-flags] [-t S] [-p P] [-s S] [-m C] [-l N] [-x S] [-y S] [-u SIZE]
-                  [-n N] [-o OUTPUT_DIR] [--submission-subdir SUBMISSION_SUBDIR]
-                  [--results-subdir RESULTS_SUBDIR]
-                  [--pipeline-interfaces-key PIPELINE_INTERFACES_KEY] [--toggle-key TOGGLE_KEY]
-                  [--pipeline-interfaces P [P ...]] [--file-checks] [-d]
-                  [--selector-attribute SELECTOR_ATTRIBUTE]
-                  [--selector-exclude [SELECTOR_EXCLUDE [SELECTOR_EXCLUDE ...]] | --selector-include
-                  [SELECTOR_INCLUDE [SELECTOR_INCLUDE ...]]] [-a AMENDMENTS [AMENDMENTS ...]]
+usage: looper run [-h] [-i] [-d] [-t S] [-l N] [-x S] [-y S] [-f] [--divvy DIVCFG] [-p P]
+                  [-s S] [-c K [K ...]] [-u X] [-n N] [-g K] [--sel-attr ATTR]
+                  [--sel-excl [E [E ...]] | --sel-incl [I [I ...]]] [-a A [A ...]]
                   [config_file]
 
 Run or submit sample jobs.
 
 positional arguments:
-  config_file               Project configuration file (YAML).
+  config_file                        Project configuration file (YAML)
 
 optional arguments:
-  -h, --help                show this help message and exit
-  --ignore-flags            Ignore run status flags? Default: False. By default, pipelines will not
-                            be submitted if a pypiper flag file exists marking the run (e.g. as
-                            'running' or 'failed'). Set this option to ignore flags and submit the
-                            runs anyway. Default=False
-  -t S, --time-delay S      Time delay in seconds between job submissions.
-  -p P, --package P         Divvy: Name of computing resource package to use
-  -s S, --settings S        Divvy: Path to a YAML settings file with compute settings
-  -m C, --compute C         Divvy: Comma-separated list of computing resource key-value pairs, e.g.,
-                            --compute k1=v1,k2=v2
-  -l N, --limit N           Limit to n samples.
-  -x S, --command-extra S   String to append to every command
-  -y S, --command-extra-override S
-                            String to append to every command, overriding values in PEP.
-  -u SIZE, --lump SIZE      Total input file size in GB to batch into a single job
-  -n N, --lumpn N           Number of individual commands to batch into a single job
-  -o OUTPUT_DIR, --output-dir OUTPUT_DIR
-                            Path to the output directory
-  --submission-subdir SUBMISSION_SUBDIR
-                            Name of the submission subdirectory
-  --results-subdir RESULTS_SUBDIR
-                            Name of the results subdirectory
-  --pipeline-interfaces-key PIPELINE_INTERFACES_KEY
-                            Name of sample attribute to look for pipeline interface sources in
-  --toggle-key TOGGLE_KEY   Name of sample attribute to look for toggle values in
-  --pipeline-interfaces P [P ...]
-                            Path to a pipeline interface files
-  --file-checks             Perform input file checks. Default=True.
-  -d, --dry-run             Don't actually submit the jobs. Default=False
-  -a AMENDMENTS [AMENDMENTS ...], --amendments AMENDMENTS [AMENDMENTS ...]
-                            List of of amendments to activate
+  -h, --help                         show this help message and exit
+  -i, --ignore-flags                 Ignore run status flags? Default=False
+  -d, --dry-run                      Don't actually submit the jobs. Default=False
+  -t S, --time-delay S               Time delay in seconds between job submissions
+  -l N, --limit N                    Limit to n samples
+  -x S, --command-extra S            String to append to every command
+  -y S, --command-extra-override S   Same as command-extra, but overrides values in PEP
+  -f, --skip-file-checks             Do not perform input file checks
+  -u X, --lump X                     Total input file size (GB) to batch into one job
+  -n N, --lumpn N                    Number of commands to batch into one job
+  -a A [A ...], --amend A [A ...]    List of amendments to activate
 
-select samples:
-  This group of arguments lets you specify samples to use by exclusion OR inclusion of the samples
-  attribute values.
+divvy arguments:
+  Configure divvy to change computing settings
 
-  --selector-attribute SELECTOR_ATTRIBUTE
-                            Specify the attribute for samples exclusion OR inclusion
-  --selector-exclude [SELECTOR_EXCLUDE [SELECTOR_EXCLUDE ...]]
-                            Operate only on samples that either lack this attribute value or for
-                            which this value is not in this collection.
-  --selector-include [SELECTOR_INCLUDE [SELECTOR_INCLUDE ...]]
-                            Operate only on samples associated with these attribute values; if not
-                            provided, all samples are used.
+  --divvy DIVCFG                     Path to divvy configuration file. Default=$DIVCFG env
+                                     variable. Currently: /Users/mstolarczyk/Uczelnia/UVA/
+                                     code//divcfg/uva_rivanna.yaml
+  -p P, --package P                  Name of computing resource package to use
+  -s S, --settings S                 Path to a YAML settings file with compute settings
+  -c K [K ...], --compute K [K ...]  List of key-value pairs (k1=v1)
+
+sample selection arguments:
+  Specify samples to include or exclude based on sample attribute values
+
+  -g K, --toggle-key K               Sample attribute specifying toggle. Default: toggle
+  --sel-attr ATTR                    Attribute for sample exclusion OR inclusion
+  --sel-excl [E [E ...]]             Exclude samples with these values
+  --sel-incl [I [I ...]]             Include only samples with these values
 ```
 
 ## `looper runp --help`
 ```console
-usage: looper runp [-h] [--ignore-flags] [-t S] [-p P] [-s S] [-m C] [-l N] [-x S] [-y S]
-                   [-o OUTPUT_DIR] [--submission-subdir SUBMISSION_SUBDIR]
-                   [--results-subdir RESULTS_SUBDIR]
-                   [--pipeline-interfaces-key PIPELINE_INTERFACES_KEY] [--toggle-key TOGGLE_KEY]
-                   [--pipeline-interfaces P [P ...]] [--file-checks] [-d]
-                   [--selector-attribute SELECTOR_ATTRIBUTE]
-                   [--selector-exclude [SELECTOR_EXCLUDE [SELECTOR_EXCLUDE ...]] |
-                   --selector-include [SELECTOR_INCLUDE [SELECTOR_INCLUDE ...]]]
-                   [-a AMENDMENTS [AMENDMENTS ...]]
+usage: looper runp [-h] [-i] [-d] [-t S] [-l N] [-x S] [-y S] [-f] [--divvy DIVCFG] [-p P]
+                   [-s S] [-c K [K ...]] [-g K] [--sel-attr ATTR] [--sel-excl [E [E ...]]
+                   | --sel-incl [I [I ...]]] [-a A [A ...]]
                    [config_file]
 
-Run or submit a project job.
+Run or submit project jobs.
 
 positional arguments:
-  config_file               Project configuration file (YAML).
+  config_file                        Project configuration file (YAML)
 
 optional arguments:
-  -h, --help                show this help message and exit
-  --ignore-flags            Ignore run status flags? Default: False. By default, pipelines will not
-                            be submitted if a pypiper flag file exists marking the run (e.g. as
-                            'running' or 'failed'). Set this option to ignore flags and submit the
-                            runs anyway. Default=False
-  -t S, --time-delay S      Time delay in seconds between job submissions.
-  -p P, --package P         Divvy: Name of computing resource package to use
-  -s S, --settings S        Divvy: Path to a YAML settings file with compute settings
-  -m C, --compute C         Divvy: Comma-separated list of computing resource key-value pairs, e.g.,
-                            --compute k1=v1,k2=v2
-  -l N, --limit N           Limit to n samples.
-  -x S, --command-extra S   String to append to every command
-  -y S, --command-extra-override S
-                            String to append to every command, overriding values in PEP.
-  -o OUTPUT_DIR, --output-dir OUTPUT_DIR
-                            Path to the output directory
-  --submission-subdir SUBMISSION_SUBDIR
-                            Name of the submission subdirectory
-  --results-subdir RESULTS_SUBDIR
-                            Name of the results subdirectory
-  --pipeline-interfaces-key PIPELINE_INTERFACES_KEY
-                            Name of sample attribute to look for pipeline interface sources in
-  --toggle-key TOGGLE_KEY   Name of sample attribute to look for toggle values in
-  --pipeline-interfaces P [P ...]
-                            Path to a pipeline interface files
-  --file-checks             Perform input file checks. Default=True.
-  -d, --dry-run             Don't actually submit the jobs. Default=False
-  -a AMENDMENTS [AMENDMENTS ...], --amendments AMENDMENTS [AMENDMENTS ...]
-                            List of of amendments to activate
+  -h, --help                         show this help message and exit
+  -i, --ignore-flags                 Ignore run status flags? Default=False
+  -d, --dry-run                      Don't actually submit the jobs. Default=False
+  -t S, --time-delay S               Time delay in seconds between job submissions
+  -l N, --limit N                    Limit to n samples
+  -x S, --command-extra S            String to append to every command
+  -y S, --command-extra-override S   Same as command-extra, but overrides values in PEP
+  -f, --skip-file-checks             Do not perform input file checks
+  -a A [A ...], --amend A [A ...]    List of amendments to activate
 
-select samples:
-  This group of arguments lets you specify samples to use by exclusion OR inclusion of the samples
-  attribute values.
+divvy arguments:
+  Configure divvy to change computing settings
 
-  --selector-attribute SELECTOR_ATTRIBUTE
-                            Specify the attribute for samples exclusion OR inclusion
-  --selector-exclude [SELECTOR_EXCLUDE [SELECTOR_EXCLUDE ...]]
-                            Operate only on samples that either lack this attribute value or for
-                            which this value is not in this collection.
-  --selector-include [SELECTOR_INCLUDE [SELECTOR_INCLUDE ...]]
-                            Operate only on samples associated with these attribute values; if not
-                            provided, all samples are used.
+  --divvy DIVCFG                     Path to divvy configuration file. Default=$DIVCFG env
+                                     variable. Currently: /Users/mstolarczyk/Uczelnia/UVA/
+                                     code//divcfg/uva_rivanna.yaml
+  -p P, --package P                  Name of computing resource package to use
+  -s S, --settings S                 Path to a YAML settings file with compute settings
+  -c K [K ...], --compute K [K ...]  List of key-value pairs (k1=v1)
+
+sample selection arguments:
+  Specify samples to include or exclude based on sample attribute values
+
+  -g K, --toggle-key K               Sample attribute specifying toggle. Default: toggle
+  --sel-attr ATTR                    Attribute for sample exclusion OR inclusion
+  --sel-excl [E [E ...]]             Exclude samples with these values
+  --sel-incl [I [I ...]]             Include only samples with these values
 ```
 
 ## `looper rerun --help`
 ```console
-usage: looper rerun [-h] [--ignore-flags] [-t S] [-p P] [-s S] [-m C] [-l N] [-x S] [-y S] [-u SIZE]
-                    [-n N] [-o OUTPUT_DIR] [--submission-subdir SUBMISSION_SUBDIR]
-                    [--results-subdir RESULTS_SUBDIR]
-                    [--pipeline-interfaces-key PIPELINE_INTERFACES_KEY] [--toggle-key TOGGLE_KEY]
-                    [--pipeline-interfaces P [P ...]] [--file-checks] [-d]
-                    [--selector-attribute SELECTOR_ATTRIBUTE]
-                    [--selector-exclude [SELECTOR_EXCLUDE [SELECTOR_EXCLUDE ...]] |
-                    --selector-include [SELECTOR_INCLUDE [SELECTOR_INCLUDE ...]]]
-                    [-a AMENDMENTS [AMENDMENTS ...]]
+usage: looper rerun [-h] [-i] [-d] [-t S] [-l N] [-x S] [-y S] [-f] [--divvy DIVCFG]
+                    [-p P] [-s S] [-c K [K ...]] [-u X] [-n N] [-g K] [--sel-attr ATTR]
+                    [--sel-excl [E [E ...]] | --sel-incl [I [I ...]]] [-a A [A ...]]
                     [config_file]
 
 Resubmit sample jobs with failed flags.
 
 positional arguments:
-  config_file               Project configuration file (YAML).
+  config_file                        Project configuration file (YAML)
 
 optional arguments:
-  -h, --help                show this help message and exit
-  --ignore-flags            Ignore run status flags? Default: False. By default, pipelines will not
-                            be submitted if a pypiper flag file exists marking the run (e.g. as
-                            'running' or 'failed'). Set this option to ignore flags and submit the
-                            runs anyway. Default=False
-  -t S, --time-delay S      Time delay in seconds between job submissions.
-  -p P, --package P         Divvy: Name of computing resource package to use
-  -s S, --settings S        Divvy: Path to a YAML settings file with compute settings
-  -m C, --compute C         Divvy: Comma-separated list of computing resource key-value pairs, e.g.,
-                            --compute k1=v1,k2=v2
-  -l N, --limit N           Limit to n samples.
-  -x S, --command-extra S   String to append to every command
-  -y S, --command-extra-override S
-                            String to append to every command, overriding values in PEP.
-  -u SIZE, --lump SIZE      Total input file size in GB to batch into a single job
-  -n N, --lumpn N           Number of individual commands to batch into a single job
-  -o OUTPUT_DIR, --output-dir OUTPUT_DIR
-                            Path to the output directory
-  --submission-subdir SUBMISSION_SUBDIR
-                            Name of the submission subdirectory
-  --results-subdir RESULTS_SUBDIR
-                            Name of the results subdirectory
-  --pipeline-interfaces-key PIPELINE_INTERFACES_KEY
-                            Name of sample attribute to look for pipeline interface sources in
-  --toggle-key TOGGLE_KEY   Name of sample attribute to look for toggle values in
-  --pipeline-interfaces P [P ...]
-                            Path to a pipeline interface files
-  --file-checks             Perform input file checks. Default=True.
-  -d, --dry-run             Don't actually submit the jobs. Default=False
-  -a AMENDMENTS [AMENDMENTS ...], --amendments AMENDMENTS [AMENDMENTS ...]
-                            List of of amendments to activate
+  -h, --help                         show this help message and exit
+  -i, --ignore-flags                 Ignore run status flags? Default=False
+  -d, --dry-run                      Don't actually submit the jobs. Default=False
+  -t S, --time-delay S               Time delay in seconds between job submissions
+  -l N, --limit N                    Limit to n samples
+  -x S, --command-extra S            String to append to every command
+  -y S, --command-extra-override S   Same as command-extra, but overrides values in PEP
+  -f, --skip-file-checks             Do not perform input file checks
+  -u X, --lump X                     Total input file size (GB) to batch into one job
+  -n N, --lumpn N                    Number of commands to batch into one job
+  -a A [A ...], --amend A [A ...]    List of amendments to activate
 
-select samples:
-  This group of arguments lets you specify samples to use by exclusion OR inclusion of the samples
-  attribute values.
+divvy arguments:
+  Configure divvy to change computing settings
 
-  --selector-attribute SELECTOR_ATTRIBUTE
-                            Specify the attribute for samples exclusion OR inclusion
-  --selector-exclude [SELECTOR_EXCLUDE [SELECTOR_EXCLUDE ...]]
-                            Operate only on samples that either lack this attribute value or for
-                            which this value is not in this collection.
-  --selector-include [SELECTOR_INCLUDE [SELECTOR_INCLUDE ...]]
-                            Operate only on samples associated with these attribute values; if not
-                            provided, all samples are used.
+  --divvy DIVCFG                     Path to divvy configuration file. Default=$DIVCFG env
+                                     variable. Currently: /Users/mstolarczyk/Uczelnia/UVA/
+                                     code//divcfg/uva_rivanna.yaml
+  -p P, --package P                  Name of computing resource package to use
+  -s S, --settings S                 Path to a YAML settings file with compute settings
+  -c K [K ...], --compute K [K ...]  List of key-value pairs (k1=v1)
+
+sample selection arguments:
+  Specify samples to include or exclude based on sample attribute values
+
+  -g K, --toggle-key K               Sample attribute specifying toggle. Default: toggle
+  --sel-attr ATTR                    Attribute for sample exclusion OR inclusion
+  --sel-excl [E [E ...]]             Exclude samples with these values
+  --sel-incl [I [I ...]]             Include only samples with these values
 ```
 
 ## `looper report --help`
 ```console
-usage: looper report [-h] [-o OUTPUT_DIR] [--submission-subdir SUBMISSION_SUBDIR]
-                     [--results-subdir RESULTS_SUBDIR]
-                     [--pipeline-interfaces-key PIPELINE_INTERFACES_KEY] [--toggle-key TOGGLE_KEY]
-                     [--pipeline-interfaces P [P ...]] [--file-checks] [-d]
-                     [--selector-attribute SELECTOR_ATTRIBUTE]
-                     [--selector-exclude [SELECTOR_EXCLUDE [SELECTOR_EXCLUDE ...]] |
-                     --selector-include [SELECTOR_INCLUDE [SELECTOR_INCLUDE ...]]]
-                     [-a AMENDMENTS [AMENDMENTS ...]]
+usage: looper report [-h] [-g K] [--sel-attr ATTR] [--sel-excl [E [E ...]] | --sel-incl
+                     [I [I ...]]] [-a A [A ...]]
                      [config_file]
 
 Create browsable HTML report of project results.
 
 positional arguments:
-  config_file               Project configuration file (YAML).
+  config_file                      Project configuration file (YAML)
 
 optional arguments:
-  -h, --help                show this help message and exit
-  -o OUTPUT_DIR, --output-dir OUTPUT_DIR
-                            Path to the output directory
-  --submission-subdir SUBMISSION_SUBDIR
-                            Name of the submission subdirectory
-  --results-subdir RESULTS_SUBDIR
-                            Name of the results subdirectory
-  --pipeline-interfaces-key PIPELINE_INTERFACES_KEY
-                            Name of sample attribute to look for pipeline interface sources in
-  --toggle-key TOGGLE_KEY   Name of sample attribute to look for toggle values in
-  --pipeline-interfaces P [P ...]
-                            Path to a pipeline interface files
-  --file-checks             Perform input file checks. Default=True.
-  -d, --dry-run             Don't actually submit the jobs. Default=False
-  -a AMENDMENTS [AMENDMENTS ...], --amendments AMENDMENTS [AMENDMENTS ...]
-                            List of of amendments to activate
+  -h, --help                       show this help message and exit
+  -a A [A ...], --amend A [A ...]  List of amendments to activate
 
-select samples:
-  This group of arguments lets you specify samples to use by exclusion OR inclusion of the samples
-  attribute values.
+sample selection arguments:
+  Specify samples to include or exclude based on sample attribute values
 
-  --selector-attribute SELECTOR_ATTRIBUTE
-                            Specify the attribute for samples exclusion OR inclusion
-  --selector-exclude [SELECTOR_EXCLUDE [SELECTOR_EXCLUDE ...]]
-                            Operate only on samples that either lack this attribute value or for
-                            which this value is not in this collection.
-  --selector-include [SELECTOR_INCLUDE [SELECTOR_INCLUDE ...]]
-                            Operate only on samples associated with these attribute values; if not
-                            provided, all samples are used.
+  -g K, --toggle-key K             Sample attribute specifying toggle. Default: toggle
+  --sel-attr ATTR                  Attribute for sample exclusion OR inclusion
+  --sel-excl [E [E ...]]           Exclude samples with these values
+  --sel-incl [I [I ...]]           Include only samples with these values
 ```
 
 ## `looper table --help`
 ```console
-usage: looper table [-h] [-o OUTPUT_DIR] [--submission-subdir SUBMISSION_SUBDIR]
-                    [--results-subdir RESULTS_SUBDIR]
-                    [--pipeline-interfaces-key PIPELINE_INTERFACES_KEY] [--toggle-key TOGGLE_KEY]
-                    [--pipeline-interfaces P [P ...]] [--file-checks] [-d]
-                    [--selector-attribute SELECTOR_ATTRIBUTE]
-                    [--selector-exclude [SELECTOR_EXCLUDE [SELECTOR_EXCLUDE ...]] |
-                    --selector-include [SELECTOR_INCLUDE [SELECTOR_INCLUDE ...]]]
-                    [-a AMENDMENTS [AMENDMENTS ...]]
+usage: looper table [-h] [-g K] [--sel-attr ATTR] [--sel-excl [E [E ...]] | --sel-incl
+                    [I [I ...]]] [-a A [A ...]]
                     [config_file]
 
 Write summary stats table for project samples.
 
 positional arguments:
-  config_file               Project configuration file (YAML).
+  config_file                      Project configuration file (YAML)
 
 optional arguments:
-  -h, --help                show this help message and exit
-  -o OUTPUT_DIR, --output-dir OUTPUT_DIR
-                            Path to the output directory
-  --submission-subdir SUBMISSION_SUBDIR
-                            Name of the submission subdirectory
-  --results-subdir RESULTS_SUBDIR
-                            Name of the results subdirectory
-  --pipeline-interfaces-key PIPELINE_INTERFACES_KEY
-                            Name of sample attribute to look for pipeline interface sources in
-  --toggle-key TOGGLE_KEY   Name of sample attribute to look for toggle values in
-  --pipeline-interfaces P [P ...]
-                            Path to a pipeline interface files
-  --file-checks             Perform input file checks. Default=True.
-  -d, --dry-run             Don't actually submit the jobs. Default=False
-  -a AMENDMENTS [AMENDMENTS ...], --amendments AMENDMENTS [AMENDMENTS ...]
-                            List of of amendments to activate
+  -h, --help                       show this help message and exit
+  -a A [A ...], --amend A [A ...]  List of amendments to activate
 
-select samples:
-  This group of arguments lets you specify samples to use by exclusion OR inclusion of the samples
-  attribute values.
+sample selection arguments:
+  Specify samples to include or exclude based on sample attribute values
 
-  --selector-attribute SELECTOR_ATTRIBUTE
-                            Specify the attribute for samples exclusion OR inclusion
-  --selector-exclude [SELECTOR_EXCLUDE [SELECTOR_EXCLUDE ...]]
-                            Operate only on samples that either lack this attribute value or for
-                            which this value is not in this collection.
-  --selector-include [SELECTOR_INCLUDE [SELECTOR_INCLUDE ...]]
-                            Operate only on samples associated with these attribute values; if not
-                            provided, all samples are used.
+  -g K, --toggle-key K             Sample attribute specifying toggle. Default: toggle
+  --sel-attr ATTR                  Attribute for sample exclusion OR inclusion
+  --sel-excl [E [E ...]]           Exclude samples with these values
+  --sel-incl [I [I ...]]           Include only samples with these values
 ```
 
 ## `looper inspect --help`
 ```console
-usage: looper inspect [-h] [-n SAMPLE_NAME [SAMPLE_NAME ...]] [-o OUTPUT_DIR]
-                      [--submission-subdir SUBMISSION_SUBDIR] [--results-subdir RESULTS_SUBDIR]
-                      [--pipeline-interfaces-key PIPELINE_INTERFACES_KEY] [--toggle-key TOGGLE_KEY]
-                      [--pipeline-interfaces P [P ...]] [--file-checks] [-d]
-                      [--selector-attribute SELECTOR_ATTRIBUTE]
-                      [--selector-exclude [SELECTOR_EXCLUDE [SELECTOR_EXCLUDE ...]] |
-                      --selector-include [SELECTOR_INCLUDE [SELECTOR_INCLUDE ...]]]
-                      [-a AMENDMENTS [AMENDMENTS ...]]
+usage: looper inspect [-h] [-n S [S ...]] [-l L] [-g K] [--sel-attr ATTR]
+                      [--sel-excl [E [E ...]] | --sel-incl [I [I ...]]] [-a A [A ...]]
                       [config_file]
 
 Print information about a project.
 
 positional arguments:
-  config_file               Project configuration file (YAML).
+  config_file                       Project configuration file (YAML)
 
 optional arguments:
-  -h, --help                show this help message and exit
-  -n SAMPLE_NAME [SAMPLE_NAME ...], --sample-name SAMPLE_NAME [SAMPLE_NAME ...]
-                            Name of the samples to inspect.
-  -o OUTPUT_DIR, --output-dir OUTPUT_DIR
-                            Path to the output directory
-  --submission-subdir SUBMISSION_SUBDIR
-                            Name of the submission subdirectory
-  --results-subdir RESULTS_SUBDIR
-                            Name of the results subdirectory
-  --pipeline-interfaces-key PIPELINE_INTERFACES_KEY
-                            Name of sample attribute to look for pipeline interface sources in
-  --toggle-key TOGGLE_KEY   Name of sample attribute to look for toggle values in
-  --pipeline-interfaces P [P ...]
-                            Path to a pipeline interface files
-  --file-checks             Perform input file checks. Default=True.
-  -d, --dry-run             Don't actually submit the jobs. Default=False
-  -a AMENDMENTS [AMENDMENTS ...], --amendments AMENDMENTS [AMENDMENTS ...]
-                            List of of amendments to activate
+  -h, --help                        show this help message and exit
+  -n S [S ...], --snames S [S ...]  Name of the samples to inspect
+  -l L, --attr-limit L              Number of sample attributes to display
+  -a A [A ...], --amend A [A ...]   List of amendments to activate
 
-select samples:
-  This group of arguments lets you specify samples to use by exclusion OR inclusion of the samples
-  attribute values.
+sample selection arguments:
+  Specify samples to include or exclude based on sample attribute values
 
-  --selector-attribute SELECTOR_ATTRIBUTE
-                            Specify the attribute for samples exclusion OR inclusion
-  --selector-exclude [SELECTOR_EXCLUDE [SELECTOR_EXCLUDE ...]]
-                            Operate only on samples that either lack this attribute value or for
-                            which this value is not in this collection.
-  --selector-include [SELECTOR_INCLUDE [SELECTOR_INCLUDE ...]]
-                            Operate only on samples associated with these attribute values; if not
-                            provided, all samples are used.
+  -g K, --toggle-key K              Sample attribute specifying toggle. Default: toggle
+  --sel-attr ATTR                   Attribute for sample exclusion OR inclusion
+  --sel-excl [E [E ...]]            Exclude samples with these values
+  --sel-incl [I [I ...]]            Include only samples with these values
 ```
 
 ## `looper init --help`
 ```console
-usage: looper init [-h] config_file
+usage: looper init [-h] [-f] config_file
 
 Initialize looper dotfile.
 
 positional arguments:
-  config_file  Project configuration file (YAML).
+  config_file  Project configuration file (YAML)
 
 optional arguments:
   -h, --help   show this help message and exit
+  -f, --force  Force overwrite
 ```
 
 ## `looper destroy --help`
 ```console
-usage: looper destroy [-h] [--force-yes] [-o OUTPUT_DIR] [--submission-subdir SUBMISSION_SUBDIR]
-                      [--results-subdir RESULTS_SUBDIR]
-                      [--pipeline-interfaces-key PIPELINE_INTERFACES_KEY] [--toggle-key TOGGLE_KEY]
-                      [--pipeline-interfaces P [P ...]] [--file-checks] [-d]
-                      [--selector-attribute SELECTOR_ATTRIBUTE]
-                      [--selector-exclude [SELECTOR_EXCLUDE [SELECTOR_EXCLUDE ...]] |
-                      --selector-include [SELECTOR_INCLUDE [SELECTOR_INCLUDE ...]]]
-                      [-a AMENDMENTS [AMENDMENTS ...]]
+usage: looper destroy [-h] [-d] [--force-yes] [-g K] [--sel-attr ATTR]
+                      [--sel-excl [E [E ...]] | --sel-incl [I [I ...]]] [-a A [A ...]]
                       [config_file]
 
 Remove output files of the project.
 
 positional arguments:
-  config_file               Project configuration file (YAML).
+  config_file                      Project configuration file (YAML)
 
 optional arguments:
-  -h, --help                show this help message and exit
-  --force-yes               Provide upfront confirmation of destruction intent, to skip console
-                            query. Default=False
-  -o OUTPUT_DIR, --output-dir OUTPUT_DIR
-                            Path to the output directory
-  --submission-subdir SUBMISSION_SUBDIR
-                            Name of the submission subdirectory
-  --results-subdir RESULTS_SUBDIR
-                            Name of the results subdirectory
-  --pipeline-interfaces-key PIPELINE_INTERFACES_KEY
-                            Name of sample attribute to look for pipeline interface sources in
-  --toggle-key TOGGLE_KEY   Name of sample attribute to look for toggle values in
-  --pipeline-interfaces P [P ...]
-                            Path to a pipeline interface files
-  --file-checks             Perform input file checks. Default=True.
-  -d, --dry-run             Don't actually submit the jobs. Default=False
-  -a AMENDMENTS [AMENDMENTS ...], --amendments AMENDMENTS [AMENDMENTS ...]
-                            List of of amendments to activate
+  -h, --help                       show this help message and exit
+  -d, --dry-run                    Don't actually submit the jobs. Default=False
+  --force-yes                      Provide upfront confirmation of destruction intent, to
+                                   skip console query. Default=False
+  -a A [A ...], --amend A [A ...]  List of amendments to activate
 
-select samples:
-  This group of arguments lets you specify samples to use by exclusion OR inclusion of the samples
-  attribute values.
+sample selection arguments:
+  Specify samples to include or exclude based on sample attribute values
 
-  --selector-attribute SELECTOR_ATTRIBUTE
-                            Specify the attribute for samples exclusion OR inclusion
-  --selector-exclude [SELECTOR_EXCLUDE [SELECTOR_EXCLUDE ...]]
-                            Operate only on samples that either lack this attribute value or for
-                            which this value is not in this collection.
-  --selector-include [SELECTOR_INCLUDE [SELECTOR_INCLUDE ...]]
-                            Operate only on samples associated with these attribute values; if not
-                            provided, all samples are used.
+  -g K, --toggle-key K             Sample attribute specifying toggle. Default: toggle
+  --sel-attr ATTR                  Attribute for sample exclusion OR inclusion
+  --sel-excl [E [E ...]]           Exclude samples with these values
+  --sel-incl [I [I ...]]           Include only samples with these values
 ```
 
 ## `looper check --help`
 ```console
-usage: looper check [-h] [-A] [-F [FLAGS [FLAGS ...]]] [-o OUTPUT_DIR]
-                    [--submission-subdir SUBMISSION_SUBDIR] [--results-subdir RESULTS_SUBDIR]
-                    [--pipeline-interfaces-key PIPELINE_INTERFACES_KEY] [--toggle-key TOGGLE_KEY]
-                    [--pipeline-interfaces P [P ...]] [--file-checks] [-d]
-                    [--selector-attribute SELECTOR_ATTRIBUTE]
-                    [--selector-exclude [SELECTOR_EXCLUDE [SELECTOR_EXCLUDE ...]] |
-                    --selector-include [SELECTOR_INCLUDE [SELECTOR_INCLUDE ...]]]
-                    [-a AMENDMENTS [AMENDMENTS ...]]
+usage: looper check [-h] [-A] [-f [F [F ...]]] [-g K] [--sel-attr ATTR]
+                    [--sel-excl [E [E ...]] | --sel-incl [I [I ...]]] [-a A [A ...]]
                     [config_file]
 
 Check flag status of current runs.
 
 positional arguments:
-  config_file               Project configuration file (YAML).
+  config_file                        Project configuration file (YAML)
 
 optional arguments:
-  -h, --help                show this help message and exit
-  -A, --all-folders         Check status for all project's output folders, not just those for
-                            samples specified in the config file used. Default=False
-  -F [FLAGS [FLAGS ...]], --flags [FLAGS [FLAGS ...]]
-                            Check on only these flags/status values.
-  -o OUTPUT_DIR, --output-dir OUTPUT_DIR
-                            Path to the output directory
-  --submission-subdir SUBMISSION_SUBDIR
-                            Name of the submission subdirectory
-  --results-subdir RESULTS_SUBDIR
-                            Name of the results subdirectory
-  --pipeline-interfaces-key PIPELINE_INTERFACES_KEY
-                            Name of sample attribute to look for pipeline interface sources in
-  --toggle-key TOGGLE_KEY   Name of sample attribute to look for toggle values in
-  --pipeline-interfaces P [P ...]
-                            Path to a pipeline interface files
-  --file-checks             Perform input file checks. Default=True.
-  -d, --dry-run             Don't actually submit the jobs. Default=False
-  -a AMENDMENTS [AMENDMENTS ...], --amendments AMENDMENTS [AMENDMENTS ...]
-                            List of of amendments to activate
+  -h, --help                         show this help message and exit
+  -A, --all-folders                  Check status for all output folders, not just for
+                                     samples specified in the config. Default=False
+  -f [F [F ...]], --flags [F [F ...]]
+                                     Check on only these flags/status values
+  -a A [A ...], --amend A [A ...]    List of amendments to activate
 
-select samples:
-  This group of arguments lets you specify samples to use by exclusion OR inclusion of the samples
-  attribute values.
+sample selection arguments:
+  Specify samples to include or exclude based on sample attribute values
 
-  --selector-attribute SELECTOR_ATTRIBUTE
-                            Specify the attribute for samples exclusion OR inclusion
-  --selector-exclude [SELECTOR_EXCLUDE [SELECTOR_EXCLUDE ...]]
-                            Operate only on samples that either lack this attribute value or for
-                            which this value is not in this collection.
-  --selector-include [SELECTOR_INCLUDE [SELECTOR_INCLUDE ...]]
-                            Operate only on samples associated with these attribute values; if not
-                            provided, all samples are used.
+  -g K, --toggle-key K               Sample attribute specifying toggle. Default: toggle
+  --sel-attr ATTR                    Attribute for sample exclusion OR inclusion
+  --sel-excl [E [E ...]]             Exclude samples with these values
+  --sel-incl [I [I ...]]             Include only samples with these values
 ```
 
 ## `looper clean --help`
 ```console
-usage: looper clean [-h] [--force-yes] [-o OUTPUT_DIR] [--submission-subdir SUBMISSION_SUBDIR]
-                    [--results-subdir RESULTS_SUBDIR]
-                    [--pipeline-interfaces-key PIPELINE_INTERFACES_KEY] [--toggle-key TOGGLE_KEY]
-                    [--pipeline-interfaces P [P ...]] [--file-checks] [-d]
-                    [--selector-attribute SELECTOR_ATTRIBUTE]
-                    [--selector-exclude [SELECTOR_EXCLUDE [SELECTOR_EXCLUDE ...]] |
-                    --selector-include [SELECTOR_INCLUDE [SELECTOR_INCLUDE ...]]]
-                    [-a AMENDMENTS [AMENDMENTS ...]]
+usage: looper clean [-h] [-d] [--force-yes] [-g K] [--sel-attr ATTR]
+                    [--sel-excl [E [E ...]] | --sel-incl [I [I ...]]] [-a A [A ...]]
                     [config_file]
 
 Run clean scripts of already processed jobs.
 
 positional arguments:
-  config_file               Project configuration file (YAML).
+  config_file                      Project configuration file (YAML)
 
 optional arguments:
-  -h, --help                show this help message and exit
-  --force-yes               Provide upfront confirmation of destruction intent, to skip console
-                            query. Default=False
-  -o OUTPUT_DIR, --output-dir OUTPUT_DIR
-                            Path to the output directory
-  --submission-subdir SUBMISSION_SUBDIR
-                            Name of the submission subdirectory
-  --results-subdir RESULTS_SUBDIR
-                            Name of the results subdirectory
-  --pipeline-interfaces-key PIPELINE_INTERFACES_KEY
-                            Name of sample attribute to look for pipeline interface sources in
-  --toggle-key TOGGLE_KEY   Name of sample attribute to look for toggle values in
-  --pipeline-interfaces P [P ...]
-                            Path to a pipeline interface files
-  --file-checks             Perform input file checks. Default=True.
-  -d, --dry-run             Don't actually submit the jobs. Default=False
-  -a AMENDMENTS [AMENDMENTS ...], --amendments AMENDMENTS [AMENDMENTS ...]
-                            List of of amendments to activate
+  -h, --help                       show this help message and exit
+  -d, --dry-run                    Don't actually submit the jobs. Default=False
+  --force-yes                      Provide upfront confirmation of destruction intent, to
+                                   skip console query. Default=False
+  -a A [A ...], --amend A [A ...]  List of amendments to activate
 
-select samples:
-  This group of arguments lets you specify samples to use by exclusion OR inclusion of the samples
-  attribute values.
+sample selection arguments:
+  Specify samples to include or exclude based on sample attribute values
 
-  --selector-attribute SELECTOR_ATTRIBUTE
-                            Specify the attribute for samples exclusion OR inclusion
-  --selector-exclude [SELECTOR_EXCLUDE [SELECTOR_EXCLUDE ...]]
-                            Operate only on samples that either lack this attribute value or for
-                            which this value is not in this collection.
-  --selector-include [SELECTOR_INCLUDE [SELECTOR_INCLUDE ...]]
-                            Operate only on samples associated with these attribute values; if not
-                            provided, all samples are used.
+  -g K, --toggle-key K             Sample attribute specifying toggle. Default: toggle
+  --sel-attr ATTR                  Attribute for sample exclusion OR inclusion
+  --sel-excl [E [E ...]]           Exclude samples with these values
+  --sel-incl [I [I ...]]           Include only samples with these values
 ```
 
