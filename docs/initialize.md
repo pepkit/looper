@@ -17,5 +17,5 @@ looper run
 The `looper init` command creates a dotfile called `.looper.yaml` in the current directory. This file simply points looper to the to the config file passed as positional argument to `looper init`:
 
 ```yaml
-config_file_path: /path/to/pep.yaml
+config_file_path: relative/path/to/pep.yaml
 ```

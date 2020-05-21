@@ -11,8 +11,10 @@ For *project pipelines*, you can specify command extras in the `looper` section 
 
 ```yaml
 looper:
-  runp:
-    command-extra: "--flavor"
+  output_dir: "/path/to/output_dir"
+  cli:
+    runp:
+      command-extra: "--flavor"
 ```
 
 or as an argument to the `looper runp` command:
