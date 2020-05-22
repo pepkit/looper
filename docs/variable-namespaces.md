@@ -36,7 +36,7 @@ The `looper` namespace consists of automatic variables created by looper:
 **paths:**
 
 - `output_dir` -- parent output directory provided in `project.looper.output_dir` in the project configuration file
-- `results_subdir` -- the path to the results directory. It is a sub direcotry of `output_dir` called `project.looper.results_subdir` or "results_pipeline" by default
+- `results_subdir` -- the path to the results directory. It is a sub directory of `output_dir` called `project.looper.results_subdir` or "results_pipeline" by default
 - `sample_output_folder` -- A sample-specific output folder (`results_subdir`/`sample.sample_name`)
 
 **others:**
