@@ -1,9 +1,7 @@
 # ignore test results
-tests/test/*
+oldtests/test/*
 
 # toy/experimental files
-*.csv
-*.tsv
 *.pkl
 
 # ignore eggs
@@ -69,10 +67,12 @@ open_pipelines/
 *RESERVE*
 
 doc/
+site/
 build/
 dist/
 looper.egg-info/
 loopercli.egg-info/
+__pycache__/
 
 
 *ipynb_checkpoints*

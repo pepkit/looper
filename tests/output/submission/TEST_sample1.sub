@@ -1,0 +1,19 @@
+#!/bin/bash
+#SBATCH --job-name='TEST_sample1'
+#SBATCH --output='../output/submission/TEST_sample1.log'
+#SBATCH --mem='{MEM}'
+#SBATCH --cpus-per-task='{CORES}'
+#SBATCH --time='{TIME}'
+#SBATCH --partition='standard'
+#SBATCH -m block
+#SBATCH --ntasks=1
+#SBATCH --open-mode=append
+
+echo 'Compute node:' `hostname`
+echo 'Start time:' `date +'%Y-%m-%d %T'`
+
+cmd="pipelines/pipeline1.py --sample-name sample1 "
+
+y=`echo "$cmd" | sed -e 's/^/srun /'`
+eval "$y"
+

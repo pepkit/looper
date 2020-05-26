@@ -2,363 +2,360 @@
 
 Looper doesn't just run pipelines; it can also check and summarize the progress of your jobs, as well as remove all files created by them.
 
-Each task is controlled by one of the five main commands `run`, `summarize`, `destroy`, `check`, `clean`, `rerun`.
+Each task is controlled by one of the following commands: `run`, `rerun`, `runp` , `table`,`report`, `destroy`, `check`, `clean`, `inspect`, `init`
 
 - `looper run`:  Runs pipelines for each sample, for each pipeline. This will use your `compute` settings to build and submit scripts to your specified compute environment, or run them sequentially on your local computer.
 
-- `looper summarize`: Summarize your project results. This command parses all key-value results reported in the each sample `stats.tsv` and collates them into a large summary matrix, which it saves in the project output directory. This creates such a matrix for each pipeline type run on the project, and a combined master summary table.
+- `looper runp`:  Runs pipelines for each pipeline for project.
+
+- `looper rerun`: Exactly the same as `looper run`, but only runs jobs with a failed flag.
+
+- `looper report`: Summarize your project results in a form of browsable HTML pages.
+
+- `looper table`: This command parses all key-value results reported in the each sample `stats.tsv` and collates them into a large summary matrix, which it saves in the project output directory. This creates such a matrix for each pipeline type run on the project, and a combined master summary table
 
 - `looper check`: Checks the run progress of the current project. This will display a summary of job status; which pipelines are currently running on which samples, which have completed, which have failed, etc.
 
 - `looper destroy`: Deletes all output results for this project.
 
-- `looper rerun`: Exactly the same as `looper run`, but only runs jobs with a failed flag.
+- `looper inspect`: Display the Prioject or Sample information
+
+- `looper init`: Initialize a looper dotfile (`.looper.yaml`) in the current directory
 
 
 Here you can see the command-line usage instructions for the main looper command and for each subcommand:
 ## `looper --help`
-
 ```console
-version: 0.11.0
-usage: looper [-h] [-V] [--logfile LOGFILE] [--verbosity {0,1,2,3,4}] [--dbg]
-              [--env ENV]
-              {run,rerun,summarize,destroy,check,clean} ...
+version: 1.2.0-dev
+usage: looper [-h] [--version] [--logfile LOGFILE] [--verbosity {0,1,2,3,4}]
+              [--dbg]
+              {run,rerun,runp,table,report,destroy,check,clean,inspect,init}
+              ...
 
-looper - Loop through samples and submit pipelines.
+looper - A project job submission engine and project manager.
 
 positional arguments:
-  {run,rerun,summarize,destroy,check,clean}
-    run                 Main Looper function: Submit jobs for samples.
-    rerun               Resubmit jobs with failed flags.
-    summarize           Summarize statistics of project samples.
-    destroy             Remove all files of the project.
-    check               Checks flag status of current runs.
-    clean               Runs clean scripts to remove intermediate files of
-                        already processed jobs.
+  {run,rerun,runp,table,report,destroy,check,clean,inspect,init}
+    run                 Run or submit sample jobs.
+    rerun               Resubmit sample jobs with failed flags.
+    runp                Run or submit project jobs.
+    table               Write summary stats table for project samples.
+    report              Create browsable HTML report of project results.
+    destroy             Remove output files of the project.
+    check               Check flag status of current runs.
+    clean               Run clean scripts of already processed jobs.
+    inspect             Print information about a project.
+    init                Initialize looper dotfile.
 
 optional arguments:
   -h, --help            show this help message and exit
-  -V, --version         show program's version number and exit
+  --version             show program's version number and exit
   --logfile LOGFILE     Optional output file for looper logs (default: None)
   --verbosity {0,1,2,3,4}
                         Choose level of verbosity (default: None)
   --dbg                 Turn on debug mode (default: False)
-  --env ENV             Environment variable that points to the DIVCFG file.
-                        (default: DIVCFG)
 
 For subcommand-specific options, type: 'looper <subcommand> -h'
 https://github.com/pepkit/looper
 ```
 
 ## `looper run --help`
-
 ```console
-version: 0.11.0
-usage: looper run [-h] [--ignore-flags] [-t TIME_DELAY]
-                  [--allow-duplicate-names] [--compute COMPUTE]
-                  [--resources RESOURCES] [--limit LIMIT] [--lump LUMP]
-                  [--lumpn LUMPN] [--file-checks] [-d]
-                  [--selector-attribute SELECTOR_ATTRIBUTE]
-                  [--selector-exclude [SELECTOR_EXCLUDE [SELECTOR_EXCLUDE ...]]
-                  | --selector-include
-                  [SELECTOR_INCLUDE [SELECTOR_INCLUDE ...]]] [--sp SUBPROJECT]
-                  config_file
+usage: looper run [-h] [-i] [-d] [-t S] [-l N] [-x S] [-y S] [-f] [--divvy DIVCFG] [-p P]
+                  [-s S] [-c K [K ...]] [-u X] [-n N] [-g K] [--sel-attr ATTR]
+                  [--sel-excl [E [E ...]] | --sel-incl [I [I ...]]] [-a A [A ...]]
+                  [config_file]
 
-Main Looper function: Submit jobs for samples.
+Run or submit sample jobs.
 
 positional arguments:
-  config_file           Project configuration file (YAML).
+  config_file                        Project configuration file (YAML)
 
 optional arguments:
-  -h, --help            show this help message and exit
-  --ignore-flags        Ignore run status flags? Default: False. By default,
-                        pipelines will not be submitted if a pypiper flag file
-                        exists marking the run (e.g. as 'running' or
-                        'failed'). Set this option to ignore flags and submit
-                        the runs anyway. Default=False
-  -t TIME_DELAY, --time-delay TIME_DELAY
-                        Time delay in seconds between job submissions.
-  --allow-duplicate-names
-                        Allow duplicate names? Default: False. By default,
-                        pipelines will not be submitted if a sample name is
-                        duplicated, since samples names should be unique. Set
-                        this option to override this setting. Default=False
-  --compute COMPUTE     YAML file with looper environment compute settings.
-  --resources RESOURCES
-                        Specification of individual computing resource
-                        settings; separate setting name/key from value with
-                        equals sign, and separate key-value pairs from each
-                        other by comma; e.g., --resources k1=v1,k2=v2
-  --limit LIMIT         Limit to n samples.
-  --lump LUMP           Maximum total input file size for a lump/batch of
-                        commands in a single job (in GB)
-  --lumpn LUMPN         Number of individual scripts grouped into single
-                        submission
-  --file-checks         Perform input file checks. Default=True.
-  -d, --dry-run         Don't actually submit the project/subproject.
-                        Default=False
-  --sp SUBPROJECT       Name of subproject to use, as designated in the
-                        project's configuration file
+  -h, --help                         show this help message and exit
+  -i, --ignore-flags                 Ignore run status flags? Default=False
+  -d, --dry-run                      Don't actually submit the jobs. Default=False
+  -t S, --time-delay S               Time delay in seconds between job submissions
+  -l N, --limit N                    Limit to n samples
+  -x S, --command-extra S            String to append to every command
+  -y S, --command-extra-override S   Same as command-extra, but overrides values in PEP
+  -f, --skip-file-checks             Do not perform input file checks
+  -u X, --lump X                     Total input file size (GB) to batch into one job
+  -n N, --lumpn N                    Number of commands to batch into one job
+  -a A [A ...], --amend A [A ...]    List of amendments to activate
 
-select samples:
-  This group of arguments lets you specify samples to use by exclusion OR
-  inclusion of the samples attribute values.
+divvy arguments:
+  Configure divvy to change computing settings
 
-  --selector-attribute SELECTOR_ATTRIBUTE
-                        Specify the attribute for samples exclusion OR
-                        inclusion
-  --selector-exclude [SELECTOR_EXCLUDE [SELECTOR_EXCLUDE ...]]
-                        Operate only on samples that either lack this
-                        attribute value or for which this value is not in this
-                        collection.
-  --selector-include [SELECTOR_INCLUDE [SELECTOR_INCLUDE ...]]
-                        Operate only on samples associated with these
-                        attribute values; if not provided, all samples are
-                        used.
+  --divvy DIVCFG                     Path to divvy configuration file. Default=$DIVCFG env
+                                     variable. Currently: /Users/mstolarczyk/Uczelnia/UVA/
+                                     code//divcfg/uva_rivanna.yaml
+  -p P, --package P                  Name of computing resource package to use
+  -s S, --settings S                 Path to a YAML settings file with compute settings
+  -c K [K ...], --compute K [K ...]  List of key-value pairs (k1=v1)
+
+sample selection arguments:
+  Specify samples to include or exclude based on sample attribute values
+
+  -g K, --toggle-key K               Sample attribute specifying toggle. Default: toggle
+  --sel-attr ATTR                    Attribute for sample exclusion OR inclusion
+  --sel-excl [E [E ...]]             Exclude samples with these values
+  --sel-incl [I [I ...]]             Include only samples with these values
 ```
 
-## `looper summarize --help`
-
+## `looper runp --help`
 ```console
-version: 0.11.0
-usage: looper summarize [-h] [--file-checks] [-d]
-                        [--selector-attribute SELECTOR_ATTRIBUTE]
-                        [--selector-exclude [SELECTOR_EXCLUDE [SELECTOR_EXCLUDE ...]]
-                        | --selector-include
-                        [SELECTOR_INCLUDE [SELECTOR_INCLUDE ...]]]
-                        [--sp SUBPROJECT]
-                        config_file
+usage: looper runp [-h] [-i] [-d] [-t S] [-l N] [-x S] [-y S] [-f] [--divvy DIVCFG] [-p P]
+                   [-s S] [-c K [K ...]] [-g K] [--sel-attr ATTR] [--sel-excl [E [E ...]]
+                   | --sel-incl [I [I ...]]] [-a A [A ...]]
+                   [config_file]
 
-Summarize statistics of project samples.
+Run or submit project jobs.
 
 positional arguments:
-  config_file           Project configuration file (YAML).
+  config_file                        Project configuration file (YAML)
 
 optional arguments:
-  -h, --help            show this help message and exit
-  --file-checks         Perform input file checks. Default=True.
-  -d, --dry-run         Don't actually submit the project/subproject.
-                        Default=False
-  --sp SUBPROJECT       Name of subproject to use, as designated in the
-                        project's configuration file
+  -h, --help                         show this help message and exit
+  -i, --ignore-flags                 Ignore run status flags? Default=False
+  -d, --dry-run                      Don't actually submit the jobs. Default=False
+  -t S, --time-delay S               Time delay in seconds between job submissions
+  -l N, --limit N                    Limit to n samples
+  -x S, --command-extra S            String to append to every command
+  -y S, --command-extra-override S   Same as command-extra, but overrides values in PEP
+  -f, --skip-file-checks             Do not perform input file checks
+  -a A [A ...], --amend A [A ...]    List of amendments to activate
 
-select samples:
-  This group of arguments lets you specify samples to use by exclusion OR
-  inclusion of the samples attribute values.
+divvy arguments:
+  Configure divvy to change computing settings
 
-  --selector-attribute SELECTOR_ATTRIBUTE
-                        Specify the attribute for samples exclusion OR
-                        inclusion
-  --selector-exclude [SELECTOR_EXCLUDE [SELECTOR_EXCLUDE ...]]
-                        Operate only on samples that either lack this
-                        attribute value or for which this value is not in this
-                        collection.
-  --selector-include [SELECTOR_INCLUDE [SELECTOR_INCLUDE ...]]
-                        Operate only on samples associated with these
-                        attribute values; if not provided, all samples are
-                        used.
-```
+  --divvy DIVCFG                     Path to divvy configuration file. Default=$DIVCFG env
+                                     variable. Currently: /Users/mstolarczyk/Uczelnia/UVA/
+                                     code//divcfg/uva_rivanna.yaml
+  -p P, --package P                  Name of computing resource package to use
+  -s S, --settings S                 Path to a YAML settings file with compute settings
+  -c K [K ...], --compute K [K ...]  List of key-value pairs (k1=v1)
 
-## `looper destroy --help`
+sample selection arguments:
+  Specify samples to include or exclude based on sample attribute values
 
-```console
-version: 0.11.0
-usage: looper destroy [-h] [--force-yes] [--file-checks] [-d]
-                      [--selector-attribute SELECTOR_ATTRIBUTE]
-                      [--selector-exclude [SELECTOR_EXCLUDE [SELECTOR_EXCLUDE ...]]
-                      | --selector-include
-                      [SELECTOR_INCLUDE [SELECTOR_INCLUDE ...]]]
-                      [--sp SUBPROJECT]
-                      config_file
-
-Remove all files of the project.
-
-positional arguments:
-  config_file           Project configuration file (YAML).
-
-optional arguments:
-  -h, --help            show this help message and exit
-  --force-yes           Provide upfront confirmation of destruction intent, to
-                        skip console query. Default=False
-  --file-checks         Perform input file checks. Default=True.
-  -d, --dry-run         Don't actually submit the project/subproject.
-                        Default=False
-  --sp SUBPROJECT       Name of subproject to use, as designated in the
-                        project's configuration file
-
-select samples:
-  This group of arguments lets you specify samples to use by exclusion OR
-  inclusion of the samples attribute values.
-
-  --selector-attribute SELECTOR_ATTRIBUTE
-                        Specify the attribute for samples exclusion OR
-                        inclusion
-  --selector-exclude [SELECTOR_EXCLUDE [SELECTOR_EXCLUDE ...]]
-                        Operate only on samples that either lack this
-                        attribute value or for which this value is not in this
-                        collection.
-  --selector-include [SELECTOR_INCLUDE [SELECTOR_INCLUDE ...]]
-                        Operate only on samples associated with these
-                        attribute values; if not provided, all samples are
-                        used.
-```
-
-## `looper check --help`
-
-```console
-version: 0.11.0
-usage: looper check [-h] [-A] [-F [FLAGS [FLAGS ...]]] [--file-checks] [-d]
-                    [--selector-attribute SELECTOR_ATTRIBUTE]
-                    [--selector-exclude [SELECTOR_EXCLUDE [SELECTOR_EXCLUDE ...]]
-                    | --selector-include
-                    [SELECTOR_INCLUDE [SELECTOR_INCLUDE ...]]]
-                    [--sp SUBPROJECT]
-                    config_file
-
-Checks flag status of current runs.
-
-positional arguments:
-  config_file           Project configuration file (YAML).
-
-optional arguments:
-  -h, --help            show this help message and exit
-  -A, --all-folders     Check status for all project's output folders, not
-                        just those for samples specified in the config file
-                        used. Default=False
-  -F [FLAGS [FLAGS ...]], --flags [FLAGS [FLAGS ...]]
-                        Check on only these flags/status values.
-  --file-checks         Perform input file checks. Default=True.
-  -d, --dry-run         Don't actually submit the project/subproject.
-                        Default=False
-  --sp SUBPROJECT       Name of subproject to use, as designated in the
-                        project's configuration file
-
-select samples:
-  This group of arguments lets you specify samples to use by exclusion OR
-  inclusion of the samples attribute values.
-
-  --selector-attribute SELECTOR_ATTRIBUTE
-                        Specify the attribute for samples exclusion OR
-                        inclusion
-  --selector-exclude [SELECTOR_EXCLUDE [SELECTOR_EXCLUDE ...]]
-                        Operate only on samples that either lack this
-                        attribute value or for which this value is not in this
-                        collection.
-  --selector-include [SELECTOR_INCLUDE [SELECTOR_INCLUDE ...]]
-                        Operate only on samples associated with these
-                        attribute values; if not provided, all samples are
-                        used.
-```
-
-## `looper clean --help`
-
-```console
-version: 0.11.0
-usage: looper clean [-h] [--force-yes] [--file-checks] [-d]
-                    [--selector-attribute SELECTOR_ATTRIBUTE]
-                    [--selector-exclude [SELECTOR_EXCLUDE [SELECTOR_EXCLUDE ...]]
-                    | --selector-include
-                    [SELECTOR_INCLUDE [SELECTOR_INCLUDE ...]]]
-                    [--sp SUBPROJECT]
-                    config_file
-
-Runs clean scripts to remove intermediate files of already processed jobs.
-
-positional arguments:
-  config_file           Project configuration file (YAML).
-
-optional arguments:
-  -h, --help            show this help message and exit
-  --force-yes           Provide upfront confirmation of cleaning intent, to
-                        skip console query. Default=False
-  --file-checks         Perform input file checks. Default=True.
-  -d, --dry-run         Don't actually submit the project/subproject.
-                        Default=False
-  --sp SUBPROJECT       Name of subproject to use, as designated in the
-                        project's configuration file
-
-select samples:
-  This group of arguments lets you specify samples to use by exclusion OR
-  inclusion of the samples attribute values.
-
-  --selector-attribute SELECTOR_ATTRIBUTE
-                        Specify the attribute for samples exclusion OR
-                        inclusion
-  --selector-exclude [SELECTOR_EXCLUDE [SELECTOR_EXCLUDE ...]]
-                        Operate only on samples that either lack this
-                        attribute value or for which this value is not in this
-                        collection.
-  --selector-include [SELECTOR_INCLUDE [SELECTOR_INCLUDE ...]]
-                        Operate only on samples associated with these
-                        attribute values; if not provided, all samples are
-                        used.
+  -g K, --toggle-key K               Sample attribute specifying toggle. Default: toggle
+  --sel-attr ATTR                    Attribute for sample exclusion OR inclusion
+  --sel-excl [E [E ...]]             Exclude samples with these values
+  --sel-incl [I [I ...]]             Include only samples with these values
 ```
 
 ## `looper rerun --help`
-
 ```console
-version: 0.11.0
-usage: looper rerun [-h] [--ignore-flags] [-t TIME_DELAY]
-                    [--allow-duplicate-names] [--compute COMPUTE]
-                    [--resources RESOURCES] [--limit LIMIT] [--lump LUMP]
-                    [--lumpn LUMPN] [--file-checks] [-d]
-                    [--selector-attribute SELECTOR_ATTRIBUTE]
-                    [--selector-exclude [SELECTOR_EXCLUDE [SELECTOR_EXCLUDE ...]]
-                    | --selector-include
-                    [SELECTOR_INCLUDE [SELECTOR_INCLUDE ...]]]
-                    [--sp SUBPROJECT]
-                    config_file
+usage: looper rerun [-h] [-i] [-d] [-t S] [-l N] [-x S] [-y S] [-f] [--divvy DIVCFG]
+                    [-p P] [-s S] [-c K [K ...]] [-u X] [-n N] [-g K] [--sel-attr ATTR]
+                    [--sel-excl [E [E ...]] | --sel-incl [I [I ...]]] [-a A [A ...]]
+                    [config_file]
 
-Resubmit jobs with failed flags.
+Resubmit sample jobs with failed flags.
 
 positional arguments:
-  config_file           Project configuration file (YAML).
+  config_file                        Project configuration file (YAML)
 
 optional arguments:
-  -h, --help            show this help message and exit
-  --ignore-flags        Ignore run status flags? Default: False. By default,
-                        pipelines will not be submitted if a pypiper flag file
-                        exists marking the run (e.g. as 'running' or
-                        'failed'). Set this option to ignore flags and submit
-                        the runs anyway. Default=False
-  -t TIME_DELAY, --time-delay TIME_DELAY
-                        Time delay in seconds between job submissions.
-  --allow-duplicate-names
-                        Allow duplicate names? Default: False. By default,
-                        pipelines will not be submitted if a sample name is
-                        duplicated, since samples names should be unique. Set
-                        this option to override this setting. Default=False
-  --compute COMPUTE     YAML file with looper environment compute settings.
-  --resources RESOURCES
-                        Specification of individual computing resource
-                        settings; separate setting name/key from value with
-                        equals sign, and separate key-value pairs from each
-                        other by comma; e.g., --resources k1=v1,k2=v2
-  --limit LIMIT         Limit to n samples.
-  --lump LUMP           Maximum total input file size for a lump/batch of
-                        commands in a single job (in GB)
-  --lumpn LUMPN         Number of individual scripts grouped into single
-                        submission
-  --file-checks         Perform input file checks. Default=True.
-  -d, --dry-run         Don't actually submit the project/subproject.
-                        Default=False
-  --sp SUBPROJECT       Name of subproject to use, as designated in the
-                        project's configuration file
+  -h, --help                         show this help message and exit
+  -i, --ignore-flags                 Ignore run status flags? Default=False
+  -d, --dry-run                      Don't actually submit the jobs. Default=False
+  -t S, --time-delay S               Time delay in seconds between job submissions
+  -l N, --limit N                    Limit to n samples
+  -x S, --command-extra S            String to append to every command
+  -y S, --command-extra-override S   Same as command-extra, but overrides values in PEP
+  -f, --skip-file-checks             Do not perform input file checks
+  -u X, --lump X                     Total input file size (GB) to batch into one job
+  -n N, --lumpn N                    Number of commands to batch into one job
+  -a A [A ...], --amend A [A ...]    List of amendments to activate
 
-select samples:
-  This group of arguments lets you specify samples to use by exclusion OR
-  inclusion of the samples attribute values.
+divvy arguments:
+  Configure divvy to change computing settings
 
-  --selector-attribute SELECTOR_ATTRIBUTE
-                        Specify the attribute for samples exclusion OR
-                        inclusion
-  --selector-exclude [SELECTOR_EXCLUDE [SELECTOR_EXCLUDE ...]]
-                        Operate only on samples that either lack this
-                        attribute value or for which this value is not in this
-                        collection.
-  --selector-include [SELECTOR_INCLUDE [SELECTOR_INCLUDE ...]]
-                        Operate only on samples associated with these
-                        attribute values; if not provided, all samples are
-                        used.
+  --divvy DIVCFG                     Path to divvy configuration file. Default=$DIVCFG env
+                                     variable. Currently: /Users/mstolarczyk/Uczelnia/UVA/
+                                     code//divcfg/uva_rivanna.yaml
+  -p P, --package P                  Name of computing resource package to use
+  -s S, --settings S                 Path to a YAML settings file with compute settings
+  -c K [K ...], --compute K [K ...]  List of key-value pairs (k1=v1)
+
+sample selection arguments:
+  Specify samples to include or exclude based on sample attribute values
+
+  -g K, --toggle-key K               Sample attribute specifying toggle. Default: toggle
+  --sel-attr ATTR                    Attribute for sample exclusion OR inclusion
+  --sel-excl [E [E ...]]             Exclude samples with these values
+  --sel-incl [I [I ...]]             Include only samples with these values
+```
+
+## `looper report --help`
+```console
+usage: looper report [-h] [-g K] [--sel-attr ATTR] [--sel-excl [E [E ...]] | --sel-incl
+                     [I [I ...]]] [-a A [A ...]]
+                     [config_file]
+
+Create browsable HTML report of project results.
+
+positional arguments:
+  config_file                      Project configuration file (YAML)
+
+optional arguments:
+  -h, --help                       show this help message and exit
+  -a A [A ...], --amend A [A ...]  List of amendments to activate
+
+sample selection arguments:
+  Specify samples to include or exclude based on sample attribute values
+
+  -g K, --toggle-key K             Sample attribute specifying toggle. Default: toggle
+  --sel-attr ATTR                  Attribute for sample exclusion OR inclusion
+  --sel-excl [E [E ...]]           Exclude samples with these values
+  --sel-incl [I [I ...]]           Include only samples with these values
+```
+
+## `looper table --help`
+```console
+usage: looper table [-h] [-g K] [--sel-attr ATTR] [--sel-excl [E [E ...]] | --sel-incl
+                    [I [I ...]]] [-a A [A ...]]
+                    [config_file]
+
+Write summary stats table for project samples.
+
+positional arguments:
+  config_file                      Project configuration file (YAML)
+
+optional arguments:
+  -h, --help                       show this help message and exit
+  -a A [A ...], --amend A [A ...]  List of amendments to activate
+
+sample selection arguments:
+  Specify samples to include or exclude based on sample attribute values
+
+  -g K, --toggle-key K             Sample attribute specifying toggle. Default: toggle
+  --sel-attr ATTR                  Attribute for sample exclusion OR inclusion
+  --sel-excl [E [E ...]]           Exclude samples with these values
+  --sel-incl [I [I ...]]           Include only samples with these values
+```
+
+## `looper inspect --help`
+```console
+usage: looper inspect [-h] [-n S [S ...]] [-l L] [-g K] [--sel-attr ATTR]
+                      [--sel-excl [E [E ...]] | --sel-incl [I [I ...]]] [-a A [A ...]]
+                      [config_file]
+
+Print information about a project.
+
+positional arguments:
+  config_file                       Project configuration file (YAML)
+
+optional arguments:
+  -h, --help                        show this help message and exit
+  -n S [S ...], --snames S [S ...]  Name of the samples to inspect
+  -l L, --attr-limit L              Number of sample attributes to display
+  -a A [A ...], --amend A [A ...]   List of amendments to activate
+
+sample selection arguments:
+  Specify samples to include or exclude based on sample attribute values
+
+  -g K, --toggle-key K              Sample attribute specifying toggle. Default: toggle
+  --sel-attr ATTR                   Attribute for sample exclusion OR inclusion
+  --sel-excl [E [E ...]]            Exclude samples with these values
+  --sel-incl [I [I ...]]            Include only samples with these values
+```
+
+## `looper init --help`
+```console
+usage: looper init [-h] [-f] config_file
+
+Initialize looper dotfile.
+
+positional arguments:
+  config_file  Project configuration file (YAML)
+
+optional arguments:
+  -h, --help   show this help message and exit
+  -f, --force  Force overwrite
+```
+
+## `looper destroy --help`
+```console
+usage: looper destroy [-h] [-d] [--force-yes] [-g K] [--sel-attr ATTR]
+                      [--sel-excl [E [E ...]] | --sel-incl [I [I ...]]] [-a A [A ...]]
+                      [config_file]
+
+Remove output files of the project.
+
+positional arguments:
+  config_file                      Project configuration file (YAML)
+
+optional arguments:
+  -h, --help                       show this help message and exit
+  -d, --dry-run                    Don't actually submit the jobs. Default=False
+  --force-yes                      Provide upfront confirmation of destruction intent, to
+                                   skip console query. Default=False
+  -a A [A ...], --amend A [A ...]  List of amendments to activate
+
+sample selection arguments:
+  Specify samples to include or exclude based on sample attribute values
+
+  -g K, --toggle-key K             Sample attribute specifying toggle. Default: toggle
+  --sel-attr ATTR                  Attribute for sample exclusion OR inclusion
+  --sel-excl [E [E ...]]           Exclude samples with these values
+  --sel-incl [I [I ...]]           Include only samples with these values
+```
+
+## `looper check --help`
+```console
+usage: looper check [-h] [-A] [-f [F [F ...]]] [-g K] [--sel-attr ATTR]
+                    [--sel-excl [E [E ...]] | --sel-incl [I [I ...]]] [-a A [A ...]]
+                    [config_file]
+
+Check flag status of current runs.
+
+positional arguments:
+  config_file                        Project configuration file (YAML)
+
+optional arguments:
+  -h, --help                         show this help message and exit
+  -A, --all-folders                  Check status for all output folders, not just for
+                                     samples specified in the config. Default=False
+  -f [F [F ...]], --flags [F [F ...]]
+                                     Check on only these flags/status values
+  -a A [A ...], --amend A [A ...]    List of amendments to activate
+
+sample selection arguments:
+  Specify samples to include or exclude based on sample attribute values
+
+  -g K, --toggle-key K               Sample attribute specifying toggle. Default: toggle
+  --sel-attr ATTR                    Attribute for sample exclusion OR inclusion
+  --sel-excl [E [E ...]]             Exclude samples with these values
+  --sel-incl [I [I ...]]             Include only samples with these values
+```
+
+## `looper clean --help`
+```console
+usage: looper clean [-h] [-d] [--force-yes] [-g K] [--sel-attr ATTR]
+                    [--sel-excl [E [E ...]] | --sel-incl [I [I ...]]] [-a A [A ...]]
+                    [config_file]
+
+Run clean scripts of already processed jobs.
+
+positional arguments:
+  config_file                      Project configuration file (YAML)
+
+optional arguments:
+  -h, --help                       show this help message and exit
+  -d, --dry-run                    Don't actually submit the jobs. Default=False
+  --force-yes                      Provide upfront confirmation of destruction intent, to
+                                   skip console query. Default=False
+  -a A [A ...], --amend A [A ...]  List of amendments to activate
+
+sample selection arguments:
+  Specify samples to include or exclude based on sample attribute values
+
+  -g K, --toggle-key K             Sample attribute specifying toggle. Default: toggle
+  --sel-attr ATTR                  Attribute for sample exclusion OR inclusion
+  --sel-excl [E [E ...]]           Exclude samples with these values
+  --sel-incl [I [I ...]]           Include only samples with these values
 ```
 

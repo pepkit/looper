@@ -2,7 +2,34 @@
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format. 
 
+## [1.2.0] - 2020-05-26
+
+**This version introduced backwards-incompatible changes.**
+
+### Added
+- Commands:
+    - `init`; initializes `.looper.yaml` file
+    - `inspect`; inspects `Project` or `Sample` objects
+    - `table`; writes summary stats table
+    - `runp`; runs project level pipelines
+- Input schemas and output schemas
+- `--settings` argument to specify compute resources as a YAML file
+- Option to preset CLI options in a dotfile
+- `--command-extra` and `--command-extra-override` arguments that append specified string to pipeline commands
+- Option to specify destination of sample YAML in pipeline interface
+- `--pipeline_interfaces` argument that allows pipeline interface specification via CLI
+
+### Changed
+- `looper summarize` to `looper report`
+- Pipeline interface format changed drastically
+- The PyPi name changed from 'loopercli' to 'looper'
+- resources section in pipeline interface replaced with `size_dependent_attributes` or `dynamic_variables_command_template`.
+- `--compute` can be used to specify arguments other than resources
+- `all_input_files` and `required_input_files` keys in pipeline interface moved to the input schema and renamed to `files` and `required_files`
+- pipeline interface specification
+
 ## [0.12.6] -- 2020-02-21
+
 ### Added
 - possibility to execute library module as a script: `python -m looper ...`
 

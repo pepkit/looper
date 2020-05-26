@@ -8,13 +8,14 @@ local level, but this will at least provide a foundation.
 """
 
 import argparse
+import os
 import logging
 from .conductor import SubmissionConductor
 from .pipeline_interface import PipelineInterface
 from .project import Project
-from .sample import Sample
 from ._version import __version__
 from .parser_types import *
+from .const import *
 
 from ubiquerg import VersionInHelpParser
 from divvy import DEFAULT_COMPUTE_RESOURCES_NAME, NEW_COMPUTE_KEY as COMPUTE_KEY
@@ -22,15 +23,8 @@ from divvy import DEFAULT_COMPUTE_RESOURCES_NAME, NEW_COMPUTE_KEY as COMPUTE_KEY
 # looper, so that other modules within this package need not worry about
 # the locations of some of the peppy declarations. Effectively, concentrate
 # the connection between peppy and looper here, to the extent possible.
-from peppy import \
-    FLAGS, IMPLICATIONS_DECLARATION, SAMPLE_INDEPENDENT_PROJECT_SECTIONS, \
-    SAMPLE_NAME_COLNAME
 
-__all__ = ["Project", "PipelineInterface", "Sample", "SubmissionConductor"]
-
-
-GENERIC_PROTOCOL_KEY = "*"
-LOGGING_LEVEL = "INFO"
+__all__ = ["Project", "PipelineInterface", "SubmissionConductor"]
 
 # Descending by severity for correspondence with logic inversion.
 # That is, greater verbosity setting corresponds to lower logging level.
@@ -40,11 +34,13 @@ _LEVEL_BY_VERBOSITY = [logging.ERROR, logging.CRITICAL, logging.WARN,
 
 class _StoreBoolActionType(argparse.Action):
     """
-    Enables the storage of a boolean const and custom type definition needed for systematic html interface generation.
-    To get the _StoreTrueAction output use default=False in the add_argument function
+    Enables the storage of a boolean const and custom type definition needed
+    for systematic html interface generation. To get the _StoreTrueAction
+    output use default=False in the add_argument function
     and default=True to get _StoreFalseAction output.
     """
-    def __init__(self, option_strings, dest, type, default, required=False, help=None):
+    def __init__(self, option_strings, dest, type, default,
+                 required=False, help=None):
         super(_StoreBoolActionType, self).__init__(
             option_strings=option_strings,
             dest=dest,
@@ -65,157 +61,211 @@ def build_parser():
 
     :return argparse.ArgumentParser
     """
-
     # Main looper program help text messages
-    banner = "%(prog)s - Loop through samples and submit pipelines."
-    additional_description = "For subcommand-specific options, type: '%(prog)s <subcommand> -h'"
+    banner = "%(prog)s - A project job submission engine and project manager."
+    additional_description = "For subcommand-specific options, " \
+                             "type: '%(prog)s <subcommand> -h'"
     additional_description += "\nhttps://github.com/pepkit/looper"
 
-    parser = VersionInHelpParser(prog="looper", description=banner, epilog=additional_description, version=__version__)
+    parser = VersionInHelpParser(
+        prog="looper", description=banner, epilog=additional_description,
+        version=__version__)
 
-    # Logging control
-    parser.add_argument(
-            "--logfile", dest="logfile",
-            help="Optional output file for looper logs (default: %(default)s)")
-    parser.add_argument(
-            "--verbosity", dest="verbosity",
-            type=int, choices=range(len(_LEVEL_BY_VERBOSITY)),
-            help="Choose level of verbosity (default: %(default)s)")
-    parser.add_argument(
-            "--logging-level", dest="logging_level",
-            help=argparse.SUPPRESS)
-    parser.add_argument(
-            "--dbg", dest="dbg", action="store_true",
-            help="Turn on debug mode (default: %(default)s)")
-    parser.add_argument(
-            "--env", dest="env",
-            default=None,
-            help="Environment variable that points to the DIVCFG file. (default: DIVCFG)")
+    aux_parser = VersionInHelpParser(
+        prog="looper", description=banner, epilog=additional_description,
+        version=__version__)
+    result = []
+    for parser in [parser, aux_parser]:
+        # Logging control
+        parser.add_argument(
+                "--logfile", help="Optional output file for looper logs "
+                                  "(default: %(default)s)")
+        parser.add_argument(
+                "--verbosity", type=int, choices=range(len(_LEVEL_BY_VERBOSITY)),
+                help="Choose level of verbosity (default: %(default)s)")
+        parser.add_argument(
+                "--logging-level", help=argparse.SUPPRESS)
+        parser.add_argument(
+                "--dbg", action="store_true",
+                help="Turn on debug mode (default: %(default)s)")
+        # Individual subcommands
+        msg_by_cmd = {
+                "run": "Run or submit sample jobs.",
+                "rerun": "Resubmit sample jobs with failed flags.",
+                "runp": "Run or submit project jobs.",
+                "table": "Write summary stats table for project samples.",
+                "report": "Create browsable HTML report of project results.",
+                "destroy": "Remove output files of the project.",
+                "check": "Check flag status of current runs.",
+                "clean": "Run clean scripts of already processed jobs.",
+                "inspect": "Print information about a project.",
+                "init": "Initialize looper dotfile."
+        }
 
-    # Individual subcommands
-    msg_by_cmd = {
-            "run": "Main Looper function: Submit jobs for samples.",
-            "rerun": "Resubmit jobs with failed flags.",
-            "summarize": "Summarize statistics of project samples.",
-            "destroy": "Remove all files of the project.",
-            "check": "Checks flag status of current runs.",
-            "clean": "Runs clean scripts to remove intermediate "
-                     "files of already processed jobs."}
+        subparsers = parser.add_subparsers(dest="command")
 
-    subparsers = parser.add_subparsers(dest="command")
+        def add_subparser(cmd):
+            message = msg_by_cmd[cmd]
+            return subparsers.add_parser(cmd, description=message, help=message,
+                formatter_class=lambda prog: argparse.HelpFormatter(
+                    prog, max_help_position=37, width=90))
 
-    def add_subparser(cmd):
-        message = msg_by_cmd[cmd]
-        return subparsers.add_parser(cmd, description=message, help=message)
+        # Run and rerun command
+        run_subparser = add_subparser("run")
+        rerun_subparser = add_subparser("rerun")
+        collate_subparser = add_subparser("runp")
+        table_subparser = add_subparser("table")
+        report_subparser = add_subparser("report")
+        destroy_subparser = add_subparser("destroy")
+        check_subparser = add_subparser("check")
+        clean_subparser = add_subparser("clean")
+        inspect_subparser = add_subparser("inspect")
+        init_subparser = add_subparser("init")
 
-    # Run and rerun command
-    run_subparser = add_subparser("run")
-    rerun_subparser = add_subparser("rerun")
-    for subparser in [run_subparser, rerun_subparser]:
-        subparser.add_argument(
-                "--ignore-flags", dest="ignore_flags", default=False,
-                action=_StoreBoolActionType, type=html_checkbox(checked=False),
-                help="Ignore run status flags? Default: False. "
-                     "By default, pipelines will not be submitted if a pypiper "
-                     "flag file exists marking the run (e.g. as "
-                     "'running' or 'failed'). Set this option to ignore flags "
-                     "and submit the runs anyway. Default=False")
-        subparser.add_argument(
-                "-t", "--time-delay", dest="time_delay",
-                type=html_range(min_val=0, max_val=30, value=0), default=0,
-                help="Time delay in seconds between job submissions.")
-        subparser.add_argument(
-                "--allow-duplicate-names", default=False,
-                action=_StoreBoolActionType, type=html_checkbox(checked=False),
-                help="Allow duplicate names? Default: False. "
-                     "By default, pipelines will not be submitted if a sample name"
-                     " is duplicated, since samples names should be unique.  "
-                     " Set this option to override this setting. Default=False")
-        subparser.add_argument(
-                "--compute-package", dest=COMPUTE_KEY,
-                default=DEFAULT_COMPUTE_RESOURCES_NAME,
-                help="Name of computing resource package to use")
-        subparser.add_argument(
-                "--resources",
-                help="Specification of individual computing resource settings; "
-                     "separate setting name/key from value with equals sign, "
-                     "and separate key-value pairs from each other by comma; "
-                     "e.g., --resources k1=v1,k2=v2")
-        subparser.add_argument(
-                "--limit", dest="limit", default=None,
-                type=html_range(min_val=1, max_val="num_samples", value="num_samples"),
-                help="Limit to n samples.")
-        # Note that defaults for otherwise numeric lump parameters are set to
-        # null by default so that the logic that parses their values may
-        # distinguish between explicit 0 and lack of specification.
-        subparser.add_argument(
-                "--lump", default=None,
-                type=html_range(min_val=0, max_val=100, step=0.1, value=0),
-                help="Maximum total input file size for a lump/batch of commands "
-                     "in a single job (in GB)")
-        subparser.add_argument(
-                "--lumpn", default=None,
-                type=html_range(min_val=1, max_val="num_samples", value=1),
-                help="Number of individual scripts grouped into single submission")
+        # Flag arguments
+        ####################################################################
+        for subparser in [run_subparser, rerun_subparser, collate_subparser]:
+            subparser.add_argument(
+                    "-i", "--ignore-flags", default=False,
+                    action=_StoreBoolActionType, type=html_checkbox(checked=False),
+                    help="Ignore run status flags? Default=False")
 
-    # Other commands
-    summarize_subparser = add_subparser("summarize")
-    destroy_subparser = add_subparser("destroy")
-    check_subparser = add_subparser("check")
-    clean_subparser = add_subparser("clean")
+        for subparser in [run_subparser, rerun_subparser, destroy_subparser,
+                          clean_subparser, collate_subparser]:
+            subparser.add_argument(
+                    "-d", "--dry-run",
+                    action=_StoreBoolActionType, default=False,
+                    type=html_checkbox(checked=False),
+                    help="Don't actually submit the jobs.  Default=False")
 
-    check_subparser.add_argument(
-            "-A", "--all-folders", action=_StoreBoolActionType, default=False, type=html_checkbox(checked=False),
-            help="Check status for all project's output folders, not just "
-                 "those for samples specified in the config file used. Default=False")
-    check_subparser.add_argument(
-            "-F", "--flags", nargs='*', default=FLAGS, type=html_select(choices=FLAGS),
-            help="Check on only these flags/status values.")
+        # Parameter arguments
+        ####################################################################
+        for subparser in [run_subparser, rerun_subparser, collate_subparser]:
+            subparser.add_argument(
+                    "-t", "--time-delay", metavar="S",
+                    type=html_range(min_val=0, max_val=30, value=0), default=0,
+                    help="Time delay in seconds between job submissions")
+            subparser.add_argument(
+                    "-l", "--limit", default=None, metavar="N",
+                    type=html_range(min_val=1, max_val="num_samples",
+                                    value="num_samples"),
+                    help="Limit to n samples")
+            subparser.add_argument(
+                    "-x", "--command-extra", default="",
+                    metavar="S", help="String to append to every command")
+            subparser.add_argument(
+                    "-y", "--command-extra-override", metavar="S", default="",
+                    help="Same as command-extra, but overrides values in PEP")
+            subparser.add_argument(
+                    "-f", "--skip-file-checks",
+                    action=_StoreBoolActionType, default=False,
+                    type=html_checkbox(checked=False),
+                    help="Do not perform input file checks")
 
-    destroy_subparser.add_argument(
-            "--force-yes", action=_StoreBoolActionType, default=False, type=html_checkbox(checked=False),
-            help="Provide upfront confirmation of destruction intent, "
-                 "to skip console query.  Default=False")
+            divvy_group = \
+                subparser.add_argument_group(
+                    "divvy arguments",
+                    "Configure divvy to change computing settings")
+            divvy_group.add_argument(
+                "--divvy", default=None, metavar="DIVCFG",
+                help="Path to divvy configuration file. Default=$DIVCFG env "
+                     "variable. Currently: {}".format(os.getenv('DIVCFG', None)
+                                                      or "not set"))
+            divvy_group.add_argument(
+                    "-p", "--package", metavar="P",
+                    help="Name of computing resource package to use")
+            divvy_group.add_argument(
+                    "-s", "--settings", default="", metavar="S",
+                    help="Path to a YAML settings file with compute settings")
+            divvy_group.add_argument(
+                    "-c", "--compute", metavar="K", nargs="+",
+                    help="List of key-value pairs (k1=v1)")
 
-    clean_subparser.add_argument(
-            "--force-yes", action=_StoreBoolActionType, default=False, type=html_checkbox(checked=False),
-            help="Provide upfront confirmation of cleaning intent, "
-                 "to skip console query.  Default=False")
+        for subparser in [run_subparser, rerun_subparser]:
+            subparser.add_argument(
+                    "-u", "--lump", default=None, metavar="X",
+                    type=html_range(min_val=0, max_val=100, step=0.1, value=0),
+                    help="Total input file size (GB) to batch into one job")
+            subparser.add_argument(
+                    "-n", "--lumpn", default=None, metavar="N",
+                    type=html_range(min_val=1, max_val="num_samples", value=1),
+                    help="Number of commands to batch into one job")
 
-    # Common arguments
-    for subparser in [run_subparser, rerun_subparser, summarize_subparser,
-                      destroy_subparser, check_subparser, clean_subparser]:
-        subparser.add_argument(
-                "config_file",
-                help="Project configuration file (YAML).")
-        subparser.add_argument(
-                "--file-checks", dest="file_checks",
-                action=_StoreBoolActionType, default=True, type=html_checkbox(checked=True),
-                help="Perform input file checks. Default=True.")
-        subparser.add_argument(
-                "-d", "--dry-run", dest="dry_run",
-                action=_StoreBoolActionType, default=False, type=html_checkbox(checked=False),
-                help="Don't actually submit the project/subproject.  Default=False")
+        inspect_subparser.add_argument(
+            "-n", "--snames", required=False, nargs="+", metavar="S",
+            help="Name of the samples to inspect")
+        inspect_subparser.add_argument(
+            "-l", "--attr-limit", required=False, type=int, default=10,
+            metavar="L", help="Number of sample attributes to display")
 
-        fetch_samples_group = \
-            subparser.add_argument_group("select samples",
-                                         "This group of arguments lets you specify samples to use by "
-                                         "exclusion OR inclusion of the samples attribute values.")
-        fetch_samples_group.add_argument("--selector-attribute", dest="selector_attribute",
-                                         help="Specify the attribute for samples exclusion OR inclusion",
-                                         default="protocol")
-        protocols = fetch_samples_group.add_mutually_exclusive_group()
-        protocols.add_argument(
-                "--selector-exclude", nargs='*', dest="selector_exclude",
-                help="Operate only on samples that either lack this attribute value or "
-                     "for which this value is not in this collection.")
-        protocols.add_argument(
-                "--selector-include", nargs='*', dest="selector_include",
-                help="Operate only on samples associated with these attribute values;"
-                     " if not provided, all samples are used.")
-        subparser.add_argument(
-                "--sp", dest="subproject",
-                help="Name of subproject to use, as designated in the "
-                     "project's configuration file")
+        check_subparser.add_argument(
+                "-A", "--all-folders", action=_StoreBoolActionType,
+                default=False, type=html_checkbox(checked=False),
+                help="Check status for all  output folders, not just for "
+                     "samples specified in the config. Default=False")
+        check_subparser.add_argument(
+                "-f", "--flags", nargs='*', default=FLAGS,
+                type=html_select(choices=FLAGS), metavar="F",
+                help="Check on only these flags/status values")
 
-    return parser
+        for subparser in [destroy_subparser, clean_subparser]:
+            subparser.add_argument(
+                    "--force-yes", action=_StoreBoolActionType, default=False,
+                    type=html_checkbox(checked=False),
+                    help="Provide upfront confirmation of destruction intent, "
+                         "to skip console query.  Default=False")
+
+        init_subparser.add_argument("config_file", help="Project configuration "
+                                                        "file (YAML)")
+
+        init_subparser.add_argument("-f", "--force", help="Force overwrite",
+            action="store_true", default=False)
+
+        # Common arguments
+        for subparser in [run_subparser, rerun_subparser, table_subparser,
+                          report_subparser, destroy_subparser, check_subparser,
+                          clean_subparser, collate_subparser, inspect_subparser]:
+            subparser.add_argument("config_file", nargs="?", default=None,
+                                   help="Project configuration file (YAML)")
+            # help="Path to the output directory"
+            subparser.add_argument("-o", "--output-dir", metavar="DIR",
+                                   help=argparse.SUPPRESS)
+            # "Submission subdirectory name"
+            subparser.add_argument("--submission-subdir", metavar="DIR",
+                                   help=argparse.SUPPRESS)
+            # "Results subdirectory name"
+            subparser.add_argument("--results-subdir", metavar="DIR",
+                                   help=argparse.SUPPRESS)
+            # "Sample attribute for pipeline interface sources"
+            subparser.add_argument("--pipeline-interfaces-key", metavar="K",
+                                   help=argparse.SUPPRESS)
+            # "Paths to pipeline interface files"
+            subparser.add_argument("--pipeline-interfaces", metavar="P",
+                                   nargs="+", action="append",
+                                   help=argparse.SUPPRESS)
+
+        for subparser in [run_subparser, rerun_subparser, table_subparser,
+                          report_subparser, destroy_subparser, check_subparser,
+                          clean_subparser, collate_subparser, inspect_subparser]:
+            fetch_samples_group = \
+                subparser.add_argument_group(
+                    "sample selection arguments",
+                    "Specify samples to include or exclude based on sample attribute values")
+            fetch_samples_group.add_argument(
+                "-g", "--toggle-key", metavar="K",
+                help="Sample attribute specifying toggle. Default: toggle")
+            fetch_samples_group.add_argument(
+                "--sel-attr", default="toggle", metavar="ATTR",
+                help="Attribute for sample exclusion OR inclusion")
+            protocols = fetch_samples_group.add_mutually_exclusive_group()
+            protocols.add_argument(
+                    "--sel-excl", nargs='*', metavar="E",
+                    help="Exclude samples with these values")
+            protocols.add_argument(
+                    "--sel-incl", nargs='*', metavar="I",
+                    help="Include only samples with these values")
+            subparser.add_argument(
+                    "-a", "--amend", nargs="+", metavar="A",
+                    help="List of amendments to activate")
+        result.append(parser)
+    return result

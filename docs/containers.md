@@ -2,7 +2,7 @@
 
 Because `looper` uses `divvy` for computing configuration, running jobs in containers is easy! `Divvy` can use the same template system to do either cluster computing or to run jobs in linux containers (for example, using `docker` or `singularity`). You can even run jobs in a container *on a cluster*.
 
-All you need to do is follow the same instructions as in [running jobs on a cluster](cluster-computing.md), but use templates that run those jobs in containers. To see examples of how to do this, refer to the [divvy docs on running containers](http://code.databio.org/divvy/containers/).
+All you need to do is follow the same instructions as in [running jobs on a cluster](running-on-a-cluster.md), but use templates that run those jobs in containers. To see examples of how to do this, refer to the [divvy docs on running containers](http://divvy.databio.org/en/latest/containers/).
 
 
 ## Overview 
@@ -61,4 +61,4 @@ srun singularity exec instance://{JOBNAME}_image {CODE}
 singularity instance.stop {JOBNAME}_image
 ```
 
-Notice how these values will be used to populate a template that will run the pipeline in a container. Now, to use singularity, you just need to activate this compute package in the usual way, which is using the `compute` argument: ``looper run --compute singularity_slurm``. 
+Notice how these values will be used to populate a template that will run the pipeline in a container. Now, to use singularity, you just need to activate this compute package in the usual way, which is using the `package` argument: ``looper run --package singularity_slurm``. 

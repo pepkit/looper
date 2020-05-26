@@ -1,0 +1,37 @@
+description: project pipeline interface schema
+
+properties:
+  pipeline_name:
+    type: string
+    pattern: "^\\S*$"
+    description: "name of the pipeline with no whitespaces"
+  pipeline_type:
+    type: string
+    const: "project"
+    description: "type of the pipeline, must be 'project'"
+  command_template:
+    type: string
+    description: "Jinja2-like template to construct the command to run"
+  path:
+    type: string
+    description: "path to the pipeline program. Relative to pipeline interface file or absolute."
+  compute:
+    type: object
+    description: "Section that defines compute environment settings"
+    properties:
+      dynamic_variables_command_template:
+        type: string
+        description: "Jinja2-like template to construct the command that returns a JSON object used to populate compute environment settings"
+      size_dependent_variables:
+        type: string
+        description: "Path to the TSV-formatted file with compute environment settings"
+      bulker_crate:
+        type: string
+        description: "Bulker registry path idendifying the crate to use"
+      docker_image:
+        type: string
+        description: "Docker image identifier"
+      singularity_image:
+        type: string
+        description: "Singularity image identifier"
+required: [pipeline_name, pipeline_type, command_template]

@@ -13,7 +13,7 @@ You can add that location to your path by appending it (`export PATH=$PATH:~/.lo
 
 ## How can I run my jobs on a cluster?
 	
-Looper uses the external package [divvy](http://code.databio.org/divvy) for cluster computing, making it flexible enough to use with any cluster resource environment. Please see the [tutorial on cluster computing with looper and divvy](cluster-computing.md).
+Looper uses the external package [divvy](http://code.databio.org/divvy) for cluster computing, making it flexible enough to use with any cluster resource environment. Please see the [tutorial on cluster computing with looper and divvy](running-on-a-cluster.md).
 
 
 ## What's the difference between `looper` and `pypiper`?
@@ -36,7 +36,7 @@ As of version `0.11`, you can use `looper rerun` to submit only jobs with a `fai
 	
 You may notice that the compute config file does not specify resources to request (like memory, CPUs, or time). Yet, these are required in order to submit a job to a cluster. **Resources are not handled by the divcfg file** because they not relative to a particular computing environment; instead they vary by pipeline and sample. As such, these items should be defined at other stages. 
 
-Resources defined in the `pipeline_interface.yaml` file (`pipelines` section) that connects looper to a pipeline. The reason for this is that the pipeline developer is the most likely to know what sort of resources her pipeline requires, so she is in the best position to define the resources requested. For more information on how to adjust resources, see the `pipelines` section of the [pipeline interface page](pipeline-interface.md).  If all the different configuration files seem confusing, now is a good time to review [who's who in configuration files](config-files.md).
+Resources defined in the `pipeline_interface.yaml` file that connects looper to a pipeline. The reason for this is that pipeline developers are the most likely to know what sort of resources their pipeline requires, so they are in the best position to define the resources requested. For more information on how to adjust resources, see the `compute` section of the [pipeline interface page](pipeline-interface-specification.md).  If all the different configuration files seem confusing, now is a good time to review [who's who in configuration files](config-files.md).
 
 ## Which configuration file has which settings?
 	

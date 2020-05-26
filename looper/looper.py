@@ -5,7 +5,6 @@ Looper: a pipeline submission engine. https://github.com/pepkit/looper
 
 import abc
 import csv
-from collections import defaultdict
 import glob
 import logging
 import os
@@ -16,35 +15,34 @@ if sys.version_info < (3, 3):
 else:
     from collections.abc import Mapping
 import yaml
+import pandas as _pd
 
+from collections import defaultdict
 # Need specific sequence of actions for colorama imports?
 from colorama import init
 init()
 from colorama import Fore, Style
 from shutil import rmtree
-import pandas as _pd
+from jsonschema import ValidationError
+from copy import copy
 
-from . import FLAGS, GENERIC_PROTOCOL_KEY, LOGGING_LEVEL, __version__, \
-    build_parser, _LEVEL_BY_VERBOSITY
+from . import __version__, build_parser, _LEVEL_BY_VERBOSITY
 from .conductor import SubmissionConductor
 from .const import *
-from .exceptions import JobSubmissionException
-from .html_reports import HTMLReportBuilder, get_index_html_path, get_reports_dir
-from .pipeline_interface import RESOURCES_KEY
-from .project import Project
-from .utils import determine_config_path, fetch_flag_files, sample_folder
+from .exceptions import JobSubmissionException, MisconfigurationException
+from .html_reports import HTMLReportBuilder
+from .project import Project, ProjectContext
+from .utils import *
+from .looper_config import *
 
-from divvy import DEFAULT_COMPUTE_RESOURCES_NAME, NEW_COMPUTE_KEY as COMPUTE_KEY
+from divvy import DEFAULT_COMPUTE_RESOURCES_NAME, select_divvy_config
 from logmuse import init_logger
-from peppy import ProjectContext, METADATA_KEY, SAMPLE_EXECUTION_TOGGLE
+from peppy.const import *
+from eido import validate_sample, validate_config, inspect_project
+from ubiquerg.cli_tools import query_yes_no
+from ubiquerg.collection import uniqify
 
-from ubiquerg import query_yes_no
 
-SUBMISSION_FAILURE_MESSAGE = "Cluster resource failure"
-
-
-_FAIL_DISPLAY_PROPORTION_THRESHOLD = 0.5
-_MAX_FAIL_SAMPLE_DISPLAY = 20
 _PKGNAME = "looper"
 _LOGGER = logging.getLogger(_PKGNAME)
 
@@ -112,8 +110,9 @@ class Checker(Executor):
         for flag in flags:
             try:
                 files = files_by_flag[flag]
-            except:
-                # No files for flag.
+            except Exception as e:
+                _LOGGER.debug("No files for {} flag. Caught exception: {}".
+                              format(flags, getattr(e, 'message', repr(e))))
                 continue
             # If checking on a specific flag, do not limit the number of
             # reported filepaths, but do not report empty file lists
@@ -139,13 +138,14 @@ class Cleaner(Executor):
         :param argparse.Namespace args: command-line options and arguments
         :param bool preview_flag: whether to halt before actually removing files
         """
-        _LOGGER.info("Files to clean:")
-
         for sample in self.prj.samples:
-            _LOGGER.info(self.counter.show(sample.sample_name, sample.protocol))
+            _LOGGER.info(self.counter.show(sample.sample_name))
             sample_output_folder = sample_folder(self.prj, sample)
             cleanup_files = glob.glob(os.path.join(sample_output_folder,
                                                    "*_cleanup.sh"))
+            if not cleanup_files:
+                _LOGGER.info("Nothing to clean.")
+                continue
             if preview_flag:
                 # Preview: Don't actually clean, just show what will be cleaned.
                 _LOGGER.info("Files to clean: %s", ", ".join(cleanup_files))
@@ -153,22 +153,18 @@ class Cleaner(Executor):
                 for f in cleanup_files:
                     _LOGGER.info(f)
                     subprocess.call(["sh", f])
-
         if not preview_flag:
             _LOGGER.info("Clean complete.")
             return 0
-
         if args.dry_run:
             _LOGGER.info("Dry run. No files cleaned.")
             return 0
-
-        if not args.force_yes and not query_yes_no("Are you sure you want to permanently delete all "
-                            "intermediate pipeline results for this project?"):
+        if not args.force_yes and not \
+                query_yes_no("Are you sure you want to permanently delete all "
+                             "intermediate pipeline results for this project?"):
             _LOGGER.info("Clean action aborted by user.")
             return 1
-
         self.counter.reset()
-
         return self(args, preview_flag=False)
 
 
@@ -185,7 +181,7 @@ class Destroyer(Executor):
 
         _LOGGER.info("Removing results:")
         for sample in self.prj.samples:
-            _LOGGER.info(self.counter.show(sample.sample_name, sample.protocol))
+            _LOGGER.info(self.counter.show(sample.sample_name))
             sample_output_folder = sample_folder(self.prj, sample)
             if preview_flag:
                 # Preview: Don't actually delete, just show files.
@@ -204,8 +200,9 @@ class Destroyer(Executor):
             _LOGGER.info("Dry run. No files destroyed.")
             return 0
 
-        if not args.force_yes and not query_yes_no("Are you sure you want to permanently delete all pipeline "
-                                                   "results for this project?"):
+        if not args.force_yes and not query_yes_no(
+                "Are you sure you want to permanently delete all pipeline "
+                "results for this project?"):
             _LOGGER.info("Destroy action aborted by user.")
             return 1
 
@@ -215,72 +212,68 @@ class Destroyer(Executor):
         return self(args, preview_flag=False)
 
 
-def process_protocols(prj, protocols, resource_setting_kwargs=None, **kwargs):
-    """
-    Create submission conductors and collect by protocol the mapped pipelines.
+class Collator(Executor):
+    """" Submitter for project-level pipelines """
+    def __init__(self, prj):
+        """
+        Initializes an instance
 
-    :param looper.Project prj: project definition
-    :param Iterable[str] protocols: names of protocols mapped to pipelines
-        for which conductors are to be created
-    :param Mapping resource_setting_kwargs: key-value pairs collection storing
-        specific compute resource settings
-    :return Mapping[str, looper.conductor.SubmissionConductor], Mapping[str, list[str]]:
-        mapping from pipeline key to submission conductor, and mapping from
-        protocol name to collection of keys for pipelines for that protocol
-    :raise TypeError: if the project's computing configuration instance isn't
-        a mapping
-    """
-    # Job submissions are managed on a per-pipeline basis so that
-    # individual commands (samples) may be lumped into a single job.
-    submission_conductors = {}
-    pipe_keys_by_protocol = defaultdict(list)
+        :param Project prj: Project with which to work/operate on
+        """
+        super(Executor, self).__init__()
+        self.prj = prj
 
-    if resource_setting_kwargs:
-        if not isinstance(resource_setting_kwargs, Mapping):
-            raise TypeError(
-                "Resource settings argument must be mapping; got {} ({})".
-                    format(resource_setting_kwargs, type(resource_setting_kwargs)))
-    else:
-        resource_setting_kwargs = {}
+    def __call__(self, args, **compute_kwargs):
+        """
+        Matches collators by protocols, creates submission scripts
+        and submits them
 
-    try:
-        comp_vars = prj.dcc[COMPUTE_KEY].to_map()
-    except AttributeError:
-        if not isinstance(prj.dcc[COMPUTE_KEY], Mapping):
-            raise TypeError("Project's computing config isn't a mapping: {} ({})".
-                            format(prj.dcc[COMPUTE_KEY], type(prj.dcc[COMPUTE_KEY])))
-        from copy import deepcopy
-        comp_vars = deepcopy(prj.dcc[COMPUTE_KEY])
-    comp_vars.update(resource_setting_kwargs or {})
-
-    _LOGGER.info("Known protocols: {}".format(
-        ", ".join(prj.interfaces.protocols)))
-
-    for proto in set(protocols) | {GENERIC_PROTOCOL_KEY}:
-        _LOGGER.debug("Determining sample type, script, and flags for "
-                      "pipeline(s) associated with protocol: %s", proto)
-        submission_bundles = prj.build_submission_bundles(proto)
-        if not submission_bundles:
-            if proto != GENERIC_PROTOCOL_KEY:
+        :param argparse.Namespace args: parsed command-line options and
+            arguments, recognized by looper
+        """
+        jobs = 0
+        project_pifaces = self.prj.project_pipeline_interface_sources
+        if not project_pifaces:
+            raise MisconfigurationException(
+                "Looper requires a pointer to at least one project pipeline. "
+                "Please refer to the documentation on linking project to a "
+                "pipeline: "
+                "http://looper.databio.org/en/latest/defining-a-project")
+        self.counter = LooperCounter(len(project_pifaces))
+        for project_piface in project_pifaces:
+            try:
+                project_piface_object = \
+                    PipelineInterface(project_piface, pipeline_type="project")
+            except (IOError, ValidationError) as e:
                 _LOGGER.warning(
-                    "No valid pipelines for protocol '{}'".format(proto))
-            continue
-        for pl_iface, sample_subtype, pl_key, script_with_flags in \
-                submission_bundles:
-            _LOGGER.debug("%s: %s", pl_key, sample_subtype.__name__)
+                    "Ignoring invalid pipeline interface source: {}. "
+                    "Caught exception: {}".
+                        format(project_piface, getattr(e, 'message', repr(e))))
+                continue
+            _LOGGER.info(self.counter.show(
+                name=self.prj.name, type="project",
+                pipeline_name=project_piface_object.pipeline_name))
             conductor = SubmissionConductor(
-                pl_key, pl_iface, script_with_flags, prj,
-                sample_subtype=sample_subtype,
-                compute_variables=comp_vars, **kwargs)
-            submission_conductors[pl_key] = conductor
-            pipe_keys_by_protocol[proto].append(pl_key)
-    return submission_conductors, pipe_keys_by_protocol
+                pipeline_interface=project_piface_object,
+                prj=self.prj,
+                compute_variables=compute_kwargs,
+                delay=args.time_delay,
+                extra_args=args.command_extra,
+                extra_args_override=args.command_extra_override,
+                ignore_flags=args.ignore_flags,
+                collate=True
+            )
+            conductor._pool = [None]
+            conductor.submit()
+            jobs += conductor.num_job_submissions
+        _LOGGER.info("\nLooper finished")
+        _LOGGER.info("Jobs submitted: {}".format(jobs))
 
 
 class Runner(Executor):
     """ The true submitter of pipelines """
 
-    def __call__(self, args, remaining_args, rerun=False, **compute_kwargs):
+    def __call__(self, args, rerun=False, **compute_kwargs):
         """
         Do the Sample submission.
 
@@ -291,147 +284,106 @@ class Runner(Executor):
         :param bool rerun: whether the given sample is being rerun rather than
             run for the first time
         """
-
-        if not self.prj.interfaces:
-            pipe_locs = getattr(self.prj[METADATA_KEY], PIPELINE_INTERFACES_KEY, [])
-            # TODO: should these cases be handled as equally exceptional?
-            # That is, should they either both raise errors, or both log errors?
-            if len(pipe_locs) == 0:
-                raise AttributeError(
-                    "Looper requires at least one pointer to pipeline(s), set "
-                    "with the pipeline_interfaces key in the metadata section "
-                    "of a project config file")
-            else:
-                _LOGGER.error("No protocols found; does the PEP point to at "
-                              "least one pipeline interface that exists? "
-                              " Pipeline  interfaces: {}".
-                              format(", ".format(pipe_locs)))
-                return
-
-        protocols = {s.protocol for s in self.prj.samples
-                     if hasattr(s, "protocol")}
+        max_cmds = sum(list(map(len, self.prj._samples_by_interface.values())))
+        self.counter.total = max_cmds
         failures = defaultdict(list)  # Collect problems by sample.
         processed_samples = set()  # Enforce one-time processing.
-
-        _LOGGER.info("Finding pipelines for protocol(s): {}".
-                     format(", ".join(self.prj.protocols)))
-
-        submission_conductors, pipe_keys_by_protocol = process_protocols(
-            self.prj, protocols, compute_kwargs, dry_run=args.dry_run,
-            delay=args.time_delay, extra_args=remaining_args,
-            ignore_flags=args.ignore_flags,
-            max_cmds=args.lumpn, max_size=args.lump)
-        mapped_protos = set(pipe_keys_by_protocol.keys())
+        submission_conductors = {}
+        try:
+            comp_vars = self.prj.dcc[COMPUTE_KEY].to_map()
+        except AttributeError:
+            if not isinstance(self.prj.dcc[COMPUTE_KEY], Mapping):
+                raise TypeError("Project's computing config isn't a mapping: {}"
+                                " ({})".format(self.prj.dcc[COMPUTE_KEY],
+                                               type(self.prj.dcc[COMPUTE_KEY])))
+            from copy import deepcopy
+            comp_vars = deepcopy(self.prj.dcc[COMPUTE_KEY])
+        comp_vars.update(compute_kwargs or {})
 
         # Determine number of samples eligible for processing.
         num_samples = len(self.prj.samples)
         if args.limit is None:
             upper_sample_bound = num_samples
         elif args.limit < 0:
-            raise ValueError(
-                "Invalid number of samples to run: {}".format(args.limit))
+            raise ValueError("Invalid number of samples to run: {}".format(args.limit))
         else:
             upper_sample_bound = min(args.limit, num_samples)
-        _LOGGER.debug("Limiting to %d of %d samples",
-                      upper_sample_bound, num_samples)
+        _LOGGER.debug("Limiting to {} of {} samples".
+                      format(upper_sample_bound, num_samples))
 
         num_commands_possible = 0
         failed_submission_scripts = []
 
+        # config validation (samples excluded) against all schemas defined
+        # for every pipeline matched for this project
+        [validate_config(self.prj, schema_file, True)
+         for schema_file in self.prj.get_schemas(self.prj.pipeline_interfaces)]
+
+        for piface in self.prj.pipeline_interfaces:
+            conductor = SubmissionConductor(
+                pipeline_interface=piface,
+                prj=self.prj,
+                compute_variables=comp_vars,
+                delay=args.time_delay,
+                extra_args=args.command_extra,
+                extra_args_override=args.command_extra_override,
+                ignore_flags=args.ignore_flags,
+                max_cmds=args.lumpn,
+                max_size=args.lump
+            )
+            submission_conductors[piface.pipe_iface_file] = conductor
+
         for sample in self.prj.samples[:upper_sample_bound]:
-            # First, step through the samples and determine whether any
-            # should be skipped entirely, based on sample attributes alone
-            # and independent of anything about any of its pipelines.
-
-            # Start by displaying the sample index and a fresh collection
-            # of sample-skipping reasons.
-            _LOGGER.info(self.counter.show(
-                    sample.sample_name, sample.protocol))
+            pl_fails = []
             skip_reasons = []
-
-            # Don't submit samples with duplicate names unless suppressed.
-            if sample.sample_name in processed_samples:
-                if args.allow_duplicate_names:
-                    _LOGGER.warning("Duplicate name detected, but submitting anyway")
-                else:
-                    skip_reasons.append("Duplicate sample name")
-
-            # Check if sample should be run.
-            if sample.is_dormant():
-                skip_reasons.append(
-                        "Inactive status (via '{}' column/attribute)".
-                        format(SAMPLE_EXECUTION_TOGGLE))
-
-            # Get the base protocol-to-pipeline mappings.
-            try:
-                protocol = sample.protocol
-            except AttributeError:
-                skip_reasons.append("Sample has no protocol")
-            else:
-                if protocol not in mapped_protos and \
-                        GENERIC_PROTOCOL_KEY not in mapped_protos:
-                    skip_reasons.append("No pipeline for protocol")
+            sample_pifaces = self.prj.get_sample_piface(sample[SAMPLE_NAME_ATTR])
+            if not sample_pifaces:
+                skip_reasons.append("No pipeline interfaces defined")
 
             if skip_reasons:
-                _LOGGER.warning(
-                    "> Not submitted: {}".format(", ".join(skip_reasons)))
-                failures[sample.name] = skip_reasons
+                _LOGGER.warning(NOT_SUB_MSG.format(", ".join(skip_reasons)))
+                failures[sample.sample_name] = skip_reasons
                 continue
 
-            # Processing preconditions have been met.
-            # Add this sample to the processed collection.
-            processed_samples.add(sample.sample_name)
+            # single sample validation against a single schema
+            # (from sample's piface)
+            [validate_sample(self.prj, sample.sample_name, schema_file, True)
+             for schema_file in self.prj.get_schemas(sample_pifaces)]
 
-            # At this point, we have a generic Sample; write that to disk
-            # for reuse in case of many jobs (pipelines) using base Sample.
-            # Do a single overwrite here, then any subsequent Sample can be sure
-            # that the file is fresh, with respect to this run of looper.
-            sample.to_yaml(subs_folder_path=self.prj.submission_folder)
+            processed_samples.add(sample[SAMPLE_NAME_ATTR])
 
-            pipe_keys = pipe_keys_by_protocol.get(sample.protocol) \
-                or pipe_keys_by_protocol.get(GENERIC_PROTOCOL_KEY)
-            _LOGGER.debug("Considering {} pipeline(s): {}".
-                          format(len(pipe_keys), ", ".join(pipe_keys)))
-
-            pl_fails = []
-            for pl_key in pipe_keys:
+            for sample_piface in sample_pifaces:
+                _LOGGER.info(
+                    self.counter.show(name=sample.sample_name,
+                                      pipeline_name=sample_piface.pipeline_name)
+                )
                 num_commands_possible += 1
-                # TODO: of interest to track failures by pipeline?
-                conductor = submission_conductors[pl_key]
-                # TODO: check return value from add() to determine whether
-                # TODO (cont.) to grow the failures list.
+                cndtr = submission_conductors[sample_piface.pipe_iface_file]
                 try:
-                    curr_pl_fails = conductor.add_sample(sample, rerun=rerun)
+                    curr_pl_fails = cndtr.add_sample(sample, rerun=rerun)
                 except JobSubmissionException as e:
                     failed_submission_scripts.append(e.script)
                 else:
                     pl_fails.extend(curr_pl_fails)
             if pl_fails:
-                failures[sample.name].extend(pl_fails)
+                failures[sample.sample_name].extend(pl_fails)
 
         job_sub_total = 0
         cmd_sub_total = 0
-        for conductor in submission_conductors.values():
+
+        for piface, conductor in submission_conductors.items():
             conductor.submit(force=True)
             job_sub_total += conductor.num_job_submissions
             cmd_sub_total += conductor.num_cmd_submissions
-            skipped_sample_scripts = conductor.write_skipped_sample_scripts()
-            if skipped_sample_scripts:
-                _LOGGER.debug(
-                    "{} script(s) for skipped samples:\n{}".
-                    format(len(skipped_sample_scripts),
-                           "\n".join(skipped_sample_scripts)))
+            conductor.write_skipped_sample_scripts()
 
         # Report what went down.
-        max_samples = min(len(self.prj.samples), args.limit or float("inf"))
         _LOGGER.info("\nLooper finished")
-        _LOGGER.info("Samples valid for job generation: %d of %d",
-                     len(processed_samples), max_samples)
-        _LOGGER.info("Successful samples: %d of %d",
-                     max_samples - len(failures), max_samples)
-        _LOGGER.info("Commands submitted: %d of %d",
-                     cmd_sub_total, num_commands_possible)
-        _LOGGER.info("Jobs submitted: %d", job_sub_total)
+        _LOGGER.info("Samples valid for job generation: {} of {}".
+                     format(len(processed_samples), num_samples))
+        _LOGGER.info("Commands submitted: {} of {}".
+                     format(cmd_sub_total, max_cmds))
+        _LOGGER.info("Jobs submitted: {}".format(job_sub_total))
         if args.dry_run:
             _LOGGER.info("Dry run. No jobs were actually submitted.")
 
@@ -442,20 +394,18 @@ class Runner(Executor):
             for f in failures:
                 samples_by_reason[f].add(sample)
         # Collect samples by pipeline with submission failure.
-        failed_samples_by_pipeline = defaultdict(set)
-        for pl_key, conductor in submission_conductors.items():
+        for piface, conductor in submission_conductors.items():
             # Don't add failure key if there are no samples that failed for
             # that reason.
             if conductor.failed_samples:
                 fails = set(conductor.failed_samples)
                 samples_by_reason[SUBMISSION_FAILURE_MESSAGE] |= fails
-                failed_samples_by_pipeline[pl_key] |= fails
 
         failed_sub_samples = samples_by_reason.get(SUBMISSION_FAILURE_MESSAGE)
         if failed_sub_samples:
-            _LOGGER.info("\n{} samples with at least one failed job submission: {}".
-                         format(len(failed_sub_samples),
-                                ", ".join(failed_sub_samples)))
+            _LOGGER.info("\n{} samples with at least one failed job submission:"
+                         " {}".format(len(failed_sub_samples),
+                                      ", ".join(failed_sub_samples)))
 
         # If failure keys are only added when there's at least one sample that
         # failed for that reason, we can display information conditionally,
@@ -463,66 +413,47 @@ class Runner(Executor):
         if samples_by_reason:
             _LOGGER.info("\n{} unique reasons for submission failure: {}".format(
                 len(samples_by_reason), ", ".join(samples_by_reason.keys())))
-            full_fail_msgs = [create_failure_message(reason, samples)
+            full_fail_msgs = [_create_failure_message(reason, samples)
                               for reason, samples in samples_by_reason.items()]
             _LOGGER.info("\nSummary of failures:\n{}".
                          format("\n".join(full_fail_msgs)))
 
 
-class Summarizer(Executor):
-    """ Project/Sample output summarizer """
-    def __init__(self, prj):
-        # call the inherited initialization
-        super(Summarizer, self).__init__(prj)
-        # pull together all the fits and stats from each sample into project-combined spreadsheets.
-        self.stats, self.columns = _create_stats_summary(self.prj, self.counter)
-        self.objs = _create_obj_summary(self.prj, self.counter)
-
-    def __call__(self):
-        """ Do the summarization. """
-        run_custom_summarizers(self.prj)
+class Report(Executor):
+    """ Combine project outputs into a browsable HTML report """
+    def __call__(self, args):
         # initialize the report builder
         report_builder = HTMLReportBuilder(self.prj)
+
+        # Do the stats and object summarization.
+        table = Table(self.prj)()
         # run the report builder. a set of HTML pages is produced
-        report_path = report_builder(self.objs, self.stats, uniqify(self.columns))
-        _LOGGER.info("HTML Report (n=" + str(len(self.stats)) + "): " + report_path)
+        report_path = report_builder(table.objs, table.stats,
+                                     uniqify(table.columns))
+
+        _LOGGER.info("HTML Report (n=" + str(len(table.stats)) + "): "
+                     + report_path)
 
 
-def run_custom_summarizers(project):
-    """
-    Run custom summarizers if any are defined
+class Table(Executor):
+    """ Project/Sample statistics and table output generator """
+    def __init__(self, prj):
+        # call the inherited initialization
+        super(Table, self).__init__(prj)
+        self.prj = prj
 
-    :param looper.Project project: the project to be summarized
-    """
-    summarizers_to_run = set()
-    pipelines = []
-    all_protocols = [sample.protocol for sample in project.samples]
-    for protocol in set(all_protocols):
-        try:
-            ifaces = project.get_interfaces(protocol)
-        except KeyError:
-            _LOGGER.warning("No interface for protocol '{}', skipping summary".format(protocol))
-            continue
-        for iface in ifaces:
-            pl = iface.fetch_pipelines(protocol)
-            pipelines.append(pl)
-    if pipelines is not None:
-        for pl in set(pipelines):
-            pl_summarizers = iface.get_attribute(pl, "summarizers")
-            if pl_summarizers is not None:
-                for summarizer in pl_summarizers:
-                    if not os.path.isabs(summarizer):
-                        summarizer = os.path.join(os.path.dirname(iface.pipe_iface_file), summarizer)
-                    try:
-                        _LOGGER.debug("Running custom summarizer: {}".format(summarizer))
-                        subprocess.call([summarizer, project.config_file])
-                    except OSError:
-                        _LOGGER.warning("Summarizer was unable to run: " + str(summarizer))
+    def __call__(self):
+        # pull together all the fits and stats from each sample into
+        # project-combined spreadsheets.
+        self.stats, self.columns = _create_stats_summary(self.prj, self.counter)
+        self.objs = _create_obj_summary(self.prj, self.counter)
+        return self
 
 
 def _create_stats_summary(project, counter):
     """
-    Create stats spreadsheet and columns to be considered in the report, save the spreadsheet to file
+    Create stats spreadsheet and columns to be considered in the report, save
+    the spreadsheet to file
 
     :param looper.Project project: the project to be summarized
     :param looper.LooperCounter counter: a counter object
@@ -531,7 +462,7 @@ def _create_stats_summary(project, counter):
     columns = []
     stats = []
     project_samples = project.samples
-    missing_files = 0
+    missing_files = []
     _LOGGER.info("Creating stats summary...")
     for sample in project_samples:
         _LOGGER.info(counter.show(sample.sample_name, sample.protocol))
@@ -543,9 +474,10 @@ def _create_stats_summary(project, counter):
         # Version 0.3 standardized all stats into a single file
         stats_file = os.path.join(sample_output_folder, "stats.tsv")
         if not os.path.isfile(stats_file):
-            missing_files += 1
+            missing_files.append(stats_file)
             continue
-        t = _pd.read_csv(stats_file, sep="\t", header=None, names=['key', 'value', 'pl'])
+        t = _pd.read_csv(stats_file, sep="\t", header=None,
+                         names=['key', 'value', 'pl'])
         t.drop_duplicates(subset=['key', 'pl'], keep='last', inplace=True)
         t.loc[:, 'plkey'] = t['pl'] + ":" + t['key']
         dupes = t.duplicated(subset=['key'], keep=False)
@@ -553,16 +485,19 @@ def _create_stats_summary(project, counter):
         sample_stats.update(t.set_index('key')['value'].to_dict())
         stats.append(sample_stats)
         columns.extend(t.key.tolist())
+    if missing_files:
+        _LOGGER.warning("Stats files missing for {} samples: {}".
+                        format(len(missing_files),missing_files))
     tsv_outfile_path = get_file_for_project(project, 'stats_summary.tsv')
-    if missing_files > 0:
-        _LOGGER.warning("Stats files missing for {} samples".format(missing_files))
     tsv_outfile = open(tsv_outfile_path, 'w')
-    tsv_writer = csv.DictWriter(tsv_outfile, fieldnames=uniqify(columns), delimiter='\t', extrasaction='ignore')
+    tsv_writer = csv.DictWriter(tsv_outfile, fieldnames=uniqify(columns),
+                                delimiter='\t', extrasaction='ignore')
     tsv_writer.writeheader()
     for row in stats:
         tsv_writer.writerow(row)
     tsv_outfile.close()
-    _LOGGER.info("Summary (n=" + str(len(stats)) + "): " + tsv_outfile_path)
+    _LOGGER.info("Statistics summary (n=" + str(len(stats)) + "): " +
+                 tsv_outfile_path)
     counter.reset()
     return stats, uniqify(columns)
 
@@ -578,58 +513,33 @@ def _create_obj_summary(project, counter):
     _LOGGER.info("Creating objects summary...")
     objs = _pd.DataFrame()
     # Create objects summary file
-    missing_files = 0
+    missing_files = []
     for sample in project.samples:
         # Process any reported objects
         _LOGGER.info(counter.show(sample.sample_name, sample.protocol))
         sample_output_folder = sample_folder(project, sample)
         objs_file = os.path.join(sample_output_folder, "objects.tsv")
         if not os.path.isfile(objs_file):
-            missing_files += 1
+            missing_files.append(objs_file)
             continue
         t = _pd.read_csv(objs_file, sep="\t", header=None,
-                         names=['key', 'filename', 'anchor_text', 'anchor_image', 'annotation'])
-        t['sample_name'] = sample.name
+                         names=['key', 'filename', 'anchor_text',
+                                'anchor_image', 'annotation'])
+        t['sample_name'] = sample.sample_name
         objs = objs.append(t, ignore_index=True)
-    if missing_files > 0:
-        _LOGGER.warning("Object files missing for {} samples".format(missing_files))
+    if missing_files:
+        _LOGGER.warning("Object files missing for {} samples: {}".
+                        format(len(missing_files), missing_files))
     # create the path to save the objects file in
-    objs.to_csv(get_file_for_project(project, 'objs_summary.tsv'), sep="\t")
+    objs_file = get_file_for_project(project, 'objs_summary.tsv')
+    objs.to_csv(objs_file, sep="\t")
+    _LOGGER.info("Objects summary (n=" +
+                 str(len(project.samples) - len(missing_files)) + "): " +
+                 objs_file)
     return objs
 
 
-def get_file_for_project(prj, appendix):
-    """
-    Create a path to the file for the current project. Takes the possibility of subproject being activated at the time
-    :param looper.Project prj: project object
-    :param str appendix: the appendix of the file to create the path for, like 'objs_summary.tsv' for objects summary file
-    :return str: path to the file
-    """
-    fp = os.path.join(prj.metadata.output_dir, prj.name)
-    if hasattr(prj, "subproject") and prj.subproject:
-        fp += '_' + prj.subproject
-    fp += '_' + appendix
-    return fp
-
-
-def aggregate_exec_skip_reasons(skip_reasons_sample_pairs):
-    """
-    Collect the reasons for skipping submission/execution of each sample
-
-    :param Iterable[(Iterable[str], str)] skip_reasons_sample_pairs: pairs of
-        collection of reasons for which a sample was skipped for submission,
-        and the name of the sample itself
-    :return Mapping[str, Iterable[str]]: mapping from explanation to
-        collection of names of samples to which it pertains
-    """
-    samples_by_skip_reason = defaultdict(list)
-    for skip_reasons, sample in skip_reasons_sample_pairs:
-        for reason in set(skip_reasons):
-            samples_by_skip_reason[reason].append(sample)
-    return samples_by_skip_reason
-
-
-def create_failure_message(reason, samples):
+def _create_failure_message(reason, samples):
     """ Explain lack of submission for a single reason, 1 or more samples. """
     color = Fore.LIGHTRED_EX
     reason_text = color + reason + Style.RESET_ALL
@@ -639,10 +549,12 @@ def create_failure_message(reason, samples):
 
 def _remove_or_dry_run(paths, dry_run=False):
     """
-    Remove file or directory or just inform what would be removed in case of dry run
+    Remove file or directory or just inform what would be removed in
+    case of dry run
 
     :param list|str paths: list of paths to files/dirs to be removed
-    :param bool dry_run: logical indicating whether the files should remain untouched and massage printed
+    :param bool dry_run: logical indicating whether the files should remain
+        untouched and massage printed
     """
     paths = paths if isinstance(paths, list) else [paths]
     for path in paths:
@@ -654,7 +566,7 @@ def _remove_or_dry_run(paths, dry_run=False):
                 if os.path.isfile(path):
                     os.remove(path)
                 else:
-                    rmtree(path)
+                    rmtree(path, ignore_errors=True)
         else:
             _LOGGER.info(path + " does not exist.")
 
@@ -663,18 +575,10 @@ def destroy_summary(prj, dry_run=False):
     """
     Delete the summary files if not in dry run mode
     """
-    _remove_or_dry_run([get_index_html_path(prj), get_file_for_project(prj, 'stats_summary.tsv'),
-                        get_file_for_project(prj, 'objs_summary.tsv'), get_reports_dir(prj)], dry_run)
-
-
-def uniqify(seq):
-    """
-    Fast way to uniqify while preserving input order.
-    """
-    # http://stackoverflow.com/questions/480214/
-    seen = set()
-    seen_add = seen.add
-    return [x for x in seq if not (x in seen or seen_add(x))]
+    _remove_or_dry_run([get_file_for_project(prj, "summary.html"),
+                        get_file_for_project(prj, 'stats_summary.tsv'),
+                        get_file_for_project(prj, 'objs_summary.tsv'),
+                        get_file_for_project(prj, "reports")], dry_run)
 
 
 class LooperCounter(object):
@@ -689,7 +593,7 @@ class LooperCounter(object):
         self.count = 0
         self.total = total
 
-    def show(self, name, protocol):
+    def show(self, name, type="sample", pipeline_name=None):
         """
         Display sample counts status for a particular protocol type.
 
@@ -697,13 +601,14 @@ class LooperCounter(object):
         and as a side-effect of the call, the running count is incremented.
 
         :param str name: name of the sample
-        :param str protocol: name of the protocol
+        :param str pipeline_name: name of the pipeline
         :return str: message suitable for logging a status update
         """
         self.count += 1
-        return _submission_status_text(
-            curr=self.count, total=self.total, sample_name=name,
-            sample_protocol=protocol, color=Fore.CYAN)
+        return _submission_status_text(type=type,
+            curr=self.count, total=self.total, name=name,
+            pipeline_name=pipeline_name, color=Fore.CYAN
+        )
 
     def reset(self):
         self.count = 0
@@ -712,52 +617,80 @@ class LooperCounter(object):
         return "LooperCounter of size {}".format(self.total)
 
 
-def _submission_status_text(curr, total, sample_name, sample_protocol, color):
-    return color + \
-           "## [{n} of {N}] {sample} ({protocol})".format(
-               n=curr, N=total, sample=sample_name, protocol=sample_protocol) + \
-           Style.RESET_ALL
+def _submission_status_text(curr, total, name, pipeline_name=None,
+                            type="sample", color=Fore.CYAN):
+    """ Generate submission sample text for run or collate """
+    txt = color + "## [{n} of {t}] {type}: {name}".\
+        format(n=curr, t=total, type=type, name=name)
+    if pipeline_name:
+        txt += "; pipeline: {}".format(pipeline_name)
+    return txt + Style.RESET_ALL
 
 
-def _proc_resources_spec(spec):
+def _proc_resources_spec(args):
     """
-    Process CLI-specified itemized compute resource setting specification.
+    Process CLI-sources compute setting specification. There are two sources
+    of compute settings in the CLI alone:
+        * YAML file (--settings argument)
+        * itemized compute settings (--compute argument)
 
-    :param str | NoneType spec: itemized resource specification from CLI
+    The itemized compute specification is given priority
+
+    :param argparse.Namespace: arguments namespace
     :return Mapping[str, str]: binding between resource setting name and value
     :raise ValueError: if interpretation of the given specification as encoding
         of key-value pairs fails
     """
+    spec = getattr(args, "compute", None)
+    try:
+        settings_data = read_yaml_file(args.settings) or {}
+    except yaml.YAMLError:
+        _LOGGER.warning("Settings file ({}) does not follow YAML format,"
+                        " disregarding".format(args.settings))
+        settings_data = {}
     if not spec:
-        return {}
-    kvs = spec.strip().split(",")
-    pairs = [(kv, kv.split("=")) for kv in kvs]
-    bads, data = [], {}
+        return settings_data
+    pairs = [(kv, kv.split("=")) for kv in spec]
+    bads = []
     for orig, pair in pairs:
         try:
             k, v = pair
         except ValueError:
             bads.append(orig)
         else:
-            data[k] = v
+            settings_data[k] = v
     if bads:
-        raise ValueError("Could not completely parse itemized resource "
-                         "specification; these failed as key-value pairs; "
-                         "please check usage: {}".format(", ".join(bads)))
-    return data
+        raise ValueError(
+            "Could not correctly parse itemized compute specification. "
+            "Correct format: " + EXAMPLE_COMPUTE_SPEC_FMT)
+    return settings_data
 
 
 def main():
     """ Primary workflow """
-
-    parser = build_parser()
+    global _LOGGER
+    parsers = build_parser()
+    parser = parsers[0]
+    aux_parser = parsers[1]
+    aux_parser.suppress_defaults()
     args, remaining_args = parser.parse_known_args()
-
-    try:
-        conf_file = args.config_file
-    except AttributeError:
+    if args.command is None:
         parser.print_help(sys.stderr)
         sys.exit(1)
+    if args.config_file is None:
+        m = "No project config defined"
+        try:
+            setattr(args, "config_file", read_cfg_from_dotfile())
+        except OSError:
+            print(m + " and dotfile does not exist: {}".format(dotfile_path()))
+            parser.print_help(sys.stderr)
+            sys.exit(1)
+        else:
+            print(m + ", using: {}. Read from dotfile ({}).".
+                  format(read_cfg_from_dotfile(), dotfile_path()))
+    if args.command == "init":
+        sys.exit(int(not init_dotfile(dotfile_path(), args.config_file, args.force)))
+    args = enrich_args_via_cfg(args, aux_parser)
 
     # Set the logging level.
     if args.dbg:
@@ -771,68 +704,80 @@ def main():
         level = LOGGING_LEVEL
 
     # Establish the project-root logger and attach one for this module.
-    logger_kwargs = {"level": level, "logfile": args.logfile, "devmode": args.dbg}
+    logger_kwargs = {"level": level,
+                     "logfile": args.logfile,
+                     "devmode": args.dbg}
     init_logger(name="peppy", **logger_kwargs)
-    global _LOGGER
+    init_logger(name="divvy", **logger_kwargs)
+    init_logger(name="eido", **logger_kwargs)
     _LOGGER = init_logger(name=_PKGNAME, **logger_kwargs)
 
+    # lc = LooperConfig(select_looper_config(filename=args.looper_config))
+    # _LOGGER.debug("Determined genome config: {}".format(lc))
+
+    _LOGGER.info("Looper version: {}\nCommand: {}".
+                 format(__version__, args.command))
+
     if len(remaining_args) > 0:
-        _LOGGER.debug("Remaining arguments passed to pipelines: {}".
+        _LOGGER.warning("Unrecognized arguments: {}".
                       format(" ".join([str(x) for x in remaining_args])))
 
-    _LOGGER.info("Command: {} (Looper version: {})".
-                 format(args.command, __version__))
-    # Initialize project
+    divcfg = select_divvy_config(filepath=args.divvy) \
+        if hasattr(args, "divvy") else None
 
-    # Although the value of args.env might be None, the actual env variable used will be DIVCFG or PEPENV
-    # (checked in this very order), which is implemented in divvy, the underlying package for
-    # computing environment configuration
-    if getattr(args, 'env', None) is None:
-        _LOGGER.debug("compute_env_file: DIVCFG or PEPENV")
-    else:
-        _LOGGER.debug("compute_env_file: " + str(getattr(args, 'env', None)))
+    # Initialize project
     _LOGGER.debug("Building Project")
     try:
-        prj = Project(
-            determine_config_path(conf_file), subproject=args.subproject,
-            file_checks=args.file_checks, compute_env_file=getattr(args, 'env', None))
+        p = Project(config_file=args.config_file,
+                    amendments=args.amend,
+                    divcfg_path=divcfg,
+                    runp=args.command == "runp",
+                    **{attr: getattr(args, attr) for attr in CLI_PROJ_ATTRS if attr in args})
     except yaml.parser.ParserError as e:
         _LOGGER.error("Project config parse failed -- {}".format(e))
         sys.exit(1)
 
-    compute_cli_spec = getattr(args, COMPUTE_KEY, None)
-    if compute_cli_spec and compute_cli_spec != DEFAULT_COMPUTE_RESOURCES_NAME:
-        prj.dcc.activate_package(compute_cli_spec)
+    selected_compute_pkg = p.selected_compute_package \
+                           or DEFAULT_COMPUTE_RESOURCES_NAME
+    if p.dcc is not None and not p.dcc.activate_package(selected_compute_pkg):
+        _LOGGER.info("Failed to activate '{}' computing package. "
+                     "Using the default one".format(selected_compute_pkg))
 
-    _LOGGER.debug("Results subdir: " + prj.results_folder)
-
-    with ProjectContext(prj,
-            selector_attribute=args.selector_attribute,
-            selector_include=args.selector_include,
-            selector_exclude=args.selector_exclude) as prj:
+    with ProjectContext(prj=p,
+                        selector_attribute=args.sel_attr,
+                        selector_include=args.sel_incl,
+                        selector_exclude=args.sel_excl) as prj:
 
         if args.command in ["run", "rerun"]:
             run = Runner(prj)
             try:
-                compute_kwargs = _proc_resources_spec(
-                    getattr(args, RESOURCES_KEY, ""))
-                run(args, remaining_args,
-                    rerun=(args.command == "rerun"), **compute_kwargs)
+                compute_kwargs = _proc_resources_spec(args)
+                run(args, rerun=(args.command == "rerun"), **compute_kwargs)
             except IOError:
-                _LOGGER.error("{} pipeline_interfaces: '{}'".format(
-                        prj.__class__.__name__, prj.metadata.pipeline_interfaces))
+                _LOGGER.error("{} pipeline_interfaces: '{}'".
+                              format(prj.__class__.__name__,
+                                     prj.pipeline_interface_sources))
                 raise
+
+        if args.command == "runp":
+            compute_kwargs = _proc_resources_spec(args)
+            collate = Collator(prj)
+            collate(args, **compute_kwargs)
 
         if args.command == "destroy":
             return Destroyer(prj)(args)
 
-        if args.command == "summarize":
-            Summarizer(prj)()
+        if args.command == "table":
+            Table(prj)()
+        
+        if args.command == "report":
+            Report(prj)(args)
 
         if args.command == "check":
-            # TODO: hook in fixed samples once protocol differentiation is
-            # TODO (continued) figured out (related to #175).
             Checker(prj)(flags=args.flags)
 
         if args.command == "clean":
             return Cleaner(prj)(args)
+
+        if args.command == "inspect":
+            inspect_project(p, args.snames, args.attr_limit)

@@ -3,6 +3,8 @@ python:
   - "2.7"
   - "3.5"
   - "3.6"
+  - "3.7"
+  - "3.8"
 os:
   - linux
 install:
@@ -10,7 +12,9 @@ install:
   - pip install .
   - pip install -r requirements/requirements-dev.txt
   - pip install -r requirements/requirements-test.txt
-script: pytest --cov=looper
+script: pytest tests -x -vv --cov=looper
+after_success:
+  - coveralls
 branches:
   only:
     - dev

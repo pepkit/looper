@@ -10,16 +10,20 @@ nav:
     - Features at-a-glance: features.md
     - Hello world: hello-world.md
   - How-to guides:    
-    - Defining a project: define-your-project.md
-    - Defining looper config sections: project-config-looper.md
-    - Linking a project to a pipeline: linking-a-pipeline.md
-    - Linking to multiple pipelines: linking-multiple-pipelines.md
+    - Defining a project: defining-a-project.md
+    - Running a pipeline: running-a-pipeline.md
+    - Initializing a repository: initialize.md
+    - Parameterizing pipelines: parameterizing-pipelines.md
+    - Running on a cluster: running-on-a-cluster.md
     - Grouping many jobs into one: grouping-jobs.md
-    - Writing a pipeline interface: pipeline-interface.md
-    - Running on a cluster: cluster-computing.md
     - Running jobs in containers: containers.md
     - Handling multiple input files: how-to-merge-inputs.md
+    - Writing a pipeline interface: writing-a-pipeline-interface.md
   - Reference:
+    - Pipeline interface specification: pipeline-interface-specification.md
+    - Pipeline tiers: pipeline-tiers.md
+    - Looper variable namespaces: variable-namespaces.md
+    - Concentric templates: concentric-templates.md
     - Usage: usage.md
     - Configuration files: config-files.md
     - API: autodoc_build/looper.md
