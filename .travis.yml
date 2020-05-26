@@ -8,7 +8,6 @@ python:
 os:
   - linux
 before_install:
-  - pip install git+https://github.com/pepkit/peppy.git@dev
   - pip install git+https://github.com/pepkit/eido.git@dev
 install:
   - pip install --upgrade six
