@@ -63,7 +63,7 @@ except(IOError, ImportError, OSError):
     long_description = open('README.md').read()
 
 setup(
-    name="loopercli",
+    name="looper",
     packages=["looper"],
     version=version,
     description="A pipeline submission engine that parses sample inputs and submits pipelines for each sample.",
@@ -89,7 +89,7 @@ setup(
     scripts=scripts,
     package_data={'looper': ['submit_templates/*']},
     include_package_data=True,
-    test_suite="oldtests",
+    test_suite="tests",
     tests_require=(["mock", "pytest"]),
     setup_requires=(["pytest-runner"] if {"test", "pytest", "ptr"} & set(sys.argv) else []),
     **extra
