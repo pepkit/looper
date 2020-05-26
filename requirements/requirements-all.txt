@@ -8,4 +8,4 @@ peppy>=0.30.1
 ubiquerg>=0.5.2
 ngstk>=0.0.1rc1
 jinja2
-eido>=0.0.7-dev
+eido>=0.1.0

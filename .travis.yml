@@ -7,8 +7,6 @@ python:
   - "3.8"
 os:
   - linux
-before_install:
-  - pip install git+https://github.com/pepkit/eido.git@dev
 install:
   - pip install --upgrade six
   - pip install .
