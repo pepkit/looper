@@ -425,7 +425,8 @@ class SubmissionConductor(object):
         if self.collate:
             _LOGGER.debug("samples namespace:\n{}".format(self.prj.samples))
         else:
-            _LOGGER.debug("sample namespace:\n{}".format(sample.__str__(max_attr=len(list(sample.keys()))))
+            _LOGGER.debug("sample namespace:\n{}".format(
+                sample.__str__(max_attr=len(list(sample.keys())))))
         _LOGGER.debug("project namespace:\n{}".format(self.prj[CONFIG_KEY]))
         _LOGGER.debug("pipeline namespace:\n{}".format(self.pl_iface))
         _LOGGER.debug("compute namespace:\n{}".format(self.prj.dcc.compute))
