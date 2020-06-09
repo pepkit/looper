@@ -89,7 +89,7 @@ The input schema formally specifies the *input processed by this pipeline*. The 
 
 2. **Description**. The input schema is also useful to describe the inputs, including both required and optional inputs, thereby providing a standard way to describe a pipeline's inputs. In the schema, the pipeline author can describe exactly what the inputs mean, making it easier for users to learn how to structure a project for the pipeline.
 
-Details for how to write a schema in in [writing a schema](http://eido.databio.org/en/master/writing-a-schema/). The input schema format is an extended [PEP JSON-schema validation framework](http://pep.databio.org/en/latest/howto_validate/), which adds several capabilities, including 
+Details for how to write a schema in in [writing a schema](http://eido.databio.org/en/latest/writing-a-schema/). The input schema format is an extended [PEP JSON-schema validation framework](http://pep.databio.org/en/latest/howto_validate/), which adds several capabilities, including 
 
 - `required` (optional): A list of sample attributes (columns in the sample table) that **must be defined**
 - `required_files` (optional): A list of sample attributes that point to **input files that must exist**.
