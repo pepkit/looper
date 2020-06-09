@@ -18,12 +18,13 @@ nav:
     - Grouping many jobs into one: grouping-jobs.md
     - Running jobs in containers: containers.md
     - Handling multiple input files: how-to-merge-inputs.md
+    - Running multiple pipelines: multiple-pipelines.md
     - Writing a pipeline interface: writing-a-pipeline-interface.md
   - Reference:
     - Pipeline interface specification: pipeline-interface-specification.md
     - Pipeline tiers: pipeline-tiers.md
-    - Looper variable namespaces: variable-namespaces.md
     - Concentric templates: concentric-templates.md
+    - Looper variable namespaces: variable-namespaces.md
     - Usage: usage.md
     - Configuration files: config-files.md
     - API: autodoc_build/looper.md
