@@ -8,6 +8,7 @@ from jinja2.exceptions import UndefinedError
 
 from attmap import AttMap
 from eido import read_schema, validate_inputs
+from ubiquerg import expandpath
 from peppy.const import CONFIG_KEY, SAMPLE_YAML_EXT, SAMPLE_NAME_ATTR
 
 from .processed_project import populate_sample_paths
@@ -288,7 +289,7 @@ class SubmissionConductor(object):
         namespaces = {"sample": sample,
                       "project": self.prj.prj[CONFIG_KEY],
                       "pipeline": self.pl_iface}
-        path = jinja_render_cmd_strictly(pth_templ, namespaces)
+        path = expandpath(jinja_render_cmd_strictly(pth_templ, namespaces))
         return path if os.path.isabs(path) \
             else os.path.join(self.prj.output_dir, path)
 
@@ -424,7 +425,7 @@ class SubmissionConductor(object):
         if self.collate:
             _LOGGER.debug("samples namespace:\n{}".format(self.prj.samples))
         else:
-            _LOGGER.debug("sample namespace:\n{}".format(sample))
+            _LOGGER.debug("sample namespace:\n{}".format(sample.__str__(max_attr=len(list(sample.keys()))))
         _LOGGER.debug("project namespace:\n{}".format(self.prj[CONFIG_KEY]))
         _LOGGER.debug("pipeline namespace:\n{}".format(self.pl_iface))
         _LOGGER.debug("compute namespace:\n{}".format(self.prj.dcc.compute))
