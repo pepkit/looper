@@ -237,7 +237,7 @@ class Project(peppyProject):
 
         :return list[str]: collection of valid pipeline interface sources:
         """
-        return [expandpath(src) for src in self.cli_pifaces] \
+        return [self._resolve_path_with_cfg(src) for src in self.cli_pifaces] \
             if self.cli_pifaces is not None else []
 
     @property
@@ -448,6 +448,20 @@ class Project(peppyProject):
         """
         return super(Project, self)._omit_from_repr(k, cls) or k == "interfaces"
 
+    def _resolve_path_with_cfg(self, pth):
+        """
+        Expand provided path and make it absolute using project config path
+
+        :param str pth: path, possibly including env vars and/or relative
+        :return str: absolute path
+        """
+        pth = expandpath(pth)
+        if not os.path.isabs(pth):
+            pth = os.path.realpath(
+                os.path.join(os.path.dirname(self.config_file), pth))
+            _LOGGER.debug("Relative path made absolute: {}".format(pth))
+        return pth
+
     def _samples_by_piface(self, piface_key):
         """
         Create a collection of all samples with valid pipeline interfaces
@@ -457,21 +471,6 @@ class Project(peppyProject):
         :return list[str]: a collection of samples keyed by pipeline interface
             source
         """
-        def _resolve_path(pth):
-            """
-            Expand provided path to the pipeline interface and make it absolute
-            using project config path
-
-            :param str pth: path, possibly including env vars and/or relative
-            :return str: absolute path
-            """
-            pth = expandpath(pth)
-            if not os.path.isabs(pth):
-                pth = os.path.realpath(os.path.join(os.path.dirname(
-                    self.config_file), pth))
-                _LOGGER.debug("Relative path to pipeline interface source made "
-                              "absolute: {}".format(pth))
-            return pth
         samples_by_piface = {}
         msgs = set()
         for sample in self.samples:
@@ -480,7 +479,7 @@ class Project(peppyProject):
                 if isinstance(piface_srcs, str):
                     piface_srcs = [piface_srcs]
                 for source in piface_srcs:
-                    source = _resolve_path(source)
+                    source = self._resolve_path_with_cfg(source)
                     try:
                         PipelineInterface(source, pipeline_type="sample")
                     except (ValidationError, IOError) as e:
