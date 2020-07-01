@@ -176,7 +176,7 @@ class SubmissionConductor(object):
         if self.prj.toggle_key in sample \
                 and int(sample[self.prj.toggle_key]) == 0:
             _LOGGER.warning(
-                "> Skiping sample ({}: {})".
+                "> Skipping sample ({}: {})".
                     format(self.prj.toggle_key, sample[self.prj.toggle_key])
             )
             use_this_sample = False
