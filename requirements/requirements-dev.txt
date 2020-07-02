@@ -1,5 +1,1 @@
-jinja2
-mock>=2.0.0
-pytest>=3.0.7
-ubiquerg>=0.0.3
-veracitools
+git+git://github.com/pepkit/peppy@dev#peppy
