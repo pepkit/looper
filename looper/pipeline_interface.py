@@ -108,7 +108,7 @@ class PipelineInterface(PXAM):
                 msg += " in interface {}".format(self.pipe_iface_file)
             _LOGGER.debug(msg)
 
-        def _load_fluid_attrs(pipeline):
+        def _load_dynamic_vars(pipeline):
             """
             Render command string (jinja2 template), execute it in a subprocess
             and return its result (JSON object) as a dict
@@ -178,7 +178,7 @@ class PipelineInterface(PXAM):
                                          "package for negative file size: {}".
                                          format(file_size))
 
-        fluid_resources = _load_fluid_attrs(self)
+        fluid_resources = _load_dynamic_vars(self)
         if fluid_resources is not None:
             return fluid_resources
         resources_df = _load_size_dep_vars(self)

@@ -289,16 +289,7 @@ class Runner(Executor):
         failures = defaultdict(list)  # Collect problems by sample.
         processed_samples = set()  # Enforce one-time processing.
         submission_conductors = {}
-        try:
-            comp_vars = self.prj.dcc[COMPUTE_KEY].to_map()
-        except AttributeError:
-            if not isinstance(self.prj.dcc[COMPUTE_KEY], Mapping):
-                raise TypeError("Project's computing config isn't a mapping: {}"
-                                " ({})".format(self.prj.dcc[COMPUTE_KEY],
-                                               type(self.prj.dcc[COMPUTE_KEY])))
-            from copy import deepcopy
-            comp_vars = deepcopy(self.prj.dcc[COMPUTE_KEY])
-        comp_vars.update(compute_kwargs or {})
+        comp_vars = compute_kwargs or {}
 
         # Determine number of samples eligible for processing.
         num_samples = len(self.prj.samples)
