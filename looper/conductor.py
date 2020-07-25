@@ -247,7 +247,7 @@ class SubmissionConductor(object):
                 # Capture submission command return value so that we can
                 # intercept and report basic submission failures; #167
                 try:
-                    subprocess.check_call(submission_command, shell=True)
+                    subprocess.check_call(submission_command, shell=True, executable="/bin/bash")
                 except subprocess.CalledProcessError:
                     fails = "" if self.collate \
                         else [s.sample_name for s in self._samples]
