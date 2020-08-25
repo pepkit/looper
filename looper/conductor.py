@@ -232,9 +232,47 @@ class SubmissionConductor(object):
                 for s in self._pool:
                     schemas = self.prj.get_schemas(self.prj.get_sample_piface(
                         s[SAMPLE_NAME_ATTR]), OUTPUT_SCHEMA_KEY)
-                    [populate_sample_paths(s, read_schema(schema))
-                     for schema in schemas]
-                    s.to_yaml(self._get_sample_yaml_path(s))
+
+                    for schema in schemas:
+                        populate_sample_paths(s, read_schema(schema))
+
+                    # from copy import deepcopy
+                    # why can't I deepcopy(s) ?
+                    # scopy = deepcopy(s)
+                    scopy = s
+                    # If we had to get the schemas, they'd be input schemas, not
+                    # output schemas like above. But actually these are already
+                    # populated into the sample yaml object at this point, so we
+                    # don't need to re-parse them.
+
+                    # To be compatible as a CWL job input, we need to handle the
+                    # File and Directory object types directly.
+
+                    if "files" in scopy:
+                        for file_attr in scopy["files"]:
+                            _LOGGER.debug("CWL-ing file attribute: {}".format(file_attr))
+                            file_attr_value = scopy[file_attr]
+                            # file paths are assumed relative to the sample table;
+                            # but CWL assumes they are relative to the yaml output file,
+                            # so we convert here.
+                            file_attr_rel = os.path.relpath(file_attr_value,
+                                os.path.dirname(self._get_sample_yaml_path(scopy)))
+                            scopy[file_attr] = {"class": "File",
+                                                "path":  file_attr_rel}
+
+                    if "directories" in scopy:
+                        for dir_attr in scopy["directories"]:
+                            _LOGGER.debug("CWL-ing directory attribute: {}".format(dir_attr))
+                            dir_attr_value = scopy[dir_attr]
+                            # file paths are assumed relative to the sample table;
+                            # but CWL assumes they are relative to the yaml output file,
+                            # so we convert here.
+                            file_attr_rel = os.path.relpath(dir_attr_value,
+                                os.path.dirname(self._get_sample_yaml_path(scopy)))
+                            scopy[dir_attr] = {"class": "Directory",
+                                                "path":  dir_attr_value}
+
+                    scopy.to_yaml(self._get_sample_yaml_path(scopy))
             script = self.write_script(self._pool, self._curr_size)
             # Determine whether to actually do the submission.
             _LOGGER.info("Job script (n={0}; {1:.2f}Gb): {2}".
