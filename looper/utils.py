@@ -210,7 +210,7 @@ def enrich_args_via_cfg(parser_args, aux_parser):
             if dest in cli_args:
                 x = getattr(cli_args, dest)
                 r = convert_value(x) if isinstance(x, str) else x
-            elif dest in cfg_args_all:
+            elif cfg_args_all is not None and dest in cfg_args_all:
                 if isinstance(cfg_args_all[dest], list):
                     r = [convert_value(i) for i in cfg_args_all[dest]]
                 else:
