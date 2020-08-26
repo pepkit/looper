@@ -49,7 +49,8 @@ class PipelineInterface(PXAM):
             config = load_yaml(config)
         self.update(config)
         self._validate(PIFACE_SCHEMA_SRC, flavor=pipeline_type)
-        self._expand_pipeline_paths()
+        self._expand_paths(["path"])
+        self._expand_paths(["compute", "dynamic_variables_script_path"])
 
     def get_pipeline_schemas(self, schema_key=INPUT_SCHEMA_KEY):
         """
@@ -107,7 +108,7 @@ class PipelineInterface(PXAM):
                 msg += " in interface {}".format(self.pipe_iface_file)
             _LOGGER.debug(msg)
 
-        def _load_fluid_attrs(pipeline):
+        def _load_dynamic_vars(pipeline):
             """
             Render command string (jinja2 template), execute it in a subprocess
             and return its result (JSON object) as a dict
@@ -177,7 +178,7 @@ class PipelineInterface(PXAM):
                                          "package for negative file size: {}".
                                          format(file_size))
 
-        fluid_resources = _load_fluid_attrs(self)
+        fluid_resources = _load_dynamic_vars(self)
         if fluid_resources is not None:
             return fluid_resources
         resources_df = _load_size_dep_vars(self)
@@ -219,21 +220,54 @@ class PipelineInterface(PXAM):
                 update(project[LOOPER_KEY][COMPUTE_KEY][RESOURCES_KEY])
         return resources_data
 
-    def _expand_pipeline_paths(self):
+    def _expand_paths(self, keys):
         """
-        Expand path to each pipeline in pipelines and collators subsection
-        of pipeline interface
+        Expand paths defined in the pipeline interface file
+
+        :param list keys: list of keys resembling the nested structure to get
+            to the pipeline interface attributre to expand
         """
-        try:
-            raw_path = self["path"]
-        except KeyError:
+        def _get_from_dict(map, attrs):
+            """
+            Get value from a possibly nested mapping using a list of its attributes
+
+            :param collections.Mapping map: mapping to retrieve values from
+            :param Iterable[str] attrs: a list of attributes
+            :return: value found in the the requested attribute or
+                None if one of the keys does not exist
+            """
+            for a in attrs:
+                try:
+                    map = map[a]
+                except KeyError:
+                    return
+            return map
+
+        def _set_in_dict(map, attrs, val):
+            """
+            Set value in a mapping, creating a possibly nested struvture
+
+            :param collections.Mapping map: mapping to retrieve values from
+            :param Iterable[str] attrs: a list of attributes
+            :param val: value to set
+            :return: value found in the the requested attribute or
+                None if one of the keys does not exist
+            """
+            for a in attrs:
+                if a == attrs[-1]:
+                    map[a] = val
+                    break
+                map.setdefault(a, PXAM())
+                map = map[a]
+
+        raw_path = _get_from_dict(self, keys)
+        if not raw_path:
             return
         split_path = raw_path.split(" ")
         if len(split_path) > 1:
             _LOGGER.warning(
-                "Pipeline path ({}) contains spaces. Use command_template "
-                "section to construct the pipeline command. Using the first"
-                " part as path: {}".format(raw_path, split_path[0]))
+                "Path ({}) contains spaces. Using the first part as path: {}".
+                    format(raw_path, split_path[0]))
         path = split_path[0]
         pipe_path = expandpath(path)
         if not os.path.isabs(pipe_path) and self.pipe_iface_file:
@@ -241,12 +275,12 @@ class PipelineInterface(PXAM):
                 self.pipe_iface_file), pipe_path)
             if os.path.exists(abs):
                 _LOGGER.debug(
-                    "Pipeline path relative to pipeline interface"
-                    " made absolute: {}".format(abs))
-                self["path"] = abs
+                    "Path relative to pipeline interface made absolute: {}".
+                        format(abs))
+                _set_in_dict(self, keys, abs)
                 return
             _LOGGER.debug("Expanded path: {}".format(pipe_path))
-            self["path"] = pipe_path
+            _set_in_dict(self, keys, pipe_path)
 
     def _validate(self, schema_src, exclude_case=False, flavor=None):
         """

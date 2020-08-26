@@ -199,13 +199,20 @@ compute:
 
 ### sample_yaml_path
 
-Looper produces a yaml file that represents the sample. By default the file is saved in submission directory in `{sample.sample_name}.yaml`. You can override the default by specifying a `sample_yaml_path` attribute in the pipeline interface:
+Looper produces a yaml file that represents the sample. By default the file is saved in submission directory in `{sample.sample_name}.yaml`. You can override the default by specifying a `sample_yaml_path` attribute in the pipeline interface. This attribute, like the `command_template`, has access to any of the looper namespaces, in case you want to use them in the names of your sample yaml files. 
+The result of the rendered template is considered relative to the `looper.output_dir` path, unless it is an absolute path. For example, to save the file in the output directory under a custom name use:
 
 ```
-sample_yaml_path: {sample.sample_name}.yaml
+sample_yaml_path: {sample.genome}_sample.yaml
 ```
 
-This attribute, like the `command_template`, has access to any of the looper namespaces, in case you want to use them in the names of your sample yaml files.
+To save the file elsewhere specify an absolute path:
+
+```
+sample_yaml_path: $HOME/results/{sample.genome}_sample.yaml
+```
+
+
 
 ## Validating a pipeline interface
 

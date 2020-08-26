@@ -2,6 +2,16 @@
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format. 
 
+## [1.2.1] - 2020-08-26
+
+### Added
+- Environment variables expansion in custom sample YAML paths; [Issue 273](https://github.com/pepkit/looper/issues/273)
+- `dynamic_variables_script_path` key in the pipeline interface. Path, absolute or relative to the pipeline interface file; [Issue 276](https://github.com/pepkit/looper/issues/276)
+### Changed
+- Resolve project pipeline interface path by making it relative to the config not current directory; [Issue 268](https://github.com/pepkit/looper/issues/268)
+### Fixed
+- Unclear error when `output_dir` was not provided in a config `looper` section; [Issue 286](https://github.com/pepkit/looper/issues/286)
+
 ## [1.2.0] - 2020-05-26
 
 **This version introduced backwards-incompatible changes.**

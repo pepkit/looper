@@ -2,7 +2,7 @@
 
 ## Populating the templates
 
-Loper creates job scripts using [concentric templates](concentric-templates.md) consisting of a *command template* and a *submission template*. This layered design allows us to decouple the computing environment from the pipeline, which improves portability. The task of running jobs can be thought of as simply populating the templates with variables. To do this, Looper pools variables from several sources: 
+Looper creates job scripts using [concentric templates](concentric-templates.md) consisting of a *command template* and a *submission template*. This layered design allows us to decouple the computing environment from the pipeline, which improves portability. The task of running jobs can be thought of as simply populating the templates with variables. These variables are pooled from several sources: 
 
 1. the command line, where the user provides any on-the-fly variables for a particular run.
 2. the PEP, which provides information on the project and samples.
