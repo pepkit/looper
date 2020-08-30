@@ -49,7 +49,9 @@ class PipelineInterface(PXAM):
             config = load_yaml(config)
         self.update(config)
         self._validate(PIFACE_SCHEMA_SRC, flavor=pipeline_type)
-        self._expand_paths(["path"])
+        if "paths" in self:
+            for k, _ in self["paths"].items():
+                self._expand_paths(["paths", k])
         self._expand_paths(["compute", "dynamic_variables_script_path"])
 
     def get_pipeline_schemas(self, schema_key=INPUT_SCHEMA_KEY):
@@ -245,7 +247,7 @@ class PipelineInterface(PXAM):
 
         def _set_in_dict(map, attrs, val):
             """
-            Set value in a mapping, creating a possibly nested struvture
+            Set value in a mapping, creating a possibly nested structure
 
             :param collections.Mapping map: mapping to retrieve values from
             :param Iterable[str] attrs: a list of attributes
