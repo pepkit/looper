@@ -19,6 +19,46 @@ from .utils import grab_project_data, fetch_sample_flags, \
 
 _LOGGER = logging.getLogger(__name__)
 
+
+def write_sample_yaml_basic(namespaces):
+    """
+    Generate path to the sample YAML target location and update namesapces.
+
+    Render path template defined in the pipeline section
+    (relative to the pipeline output directory).
+    If no template defined, output to the submission directory.
+
+    :param dict namespaces: variable namespaces dict
+    :return dict: updated variable namespaces dict
+    """
+    sample = namespaces["sample"]
+    compute = namespaces["compute"]
+    looper = namespaces["looper"]
+    pipeline = namespaces["pipeline"]
+    project = namespaces["project"]
+
+    if SAMPLE_YAML_PATH_KEY not in pipeline:
+        final_path = os.path.join(
+            looper[OUTDIR_KEY],
+            "submission",
+            "{}{}".format(sample[SAMPLE_NAME_ATTR], SAMPLE_YAML_EXT[0])
+        )
+    else:
+        path = expandpath(jinja_render_cmd_strictly(
+            pipeline[SAMPLE_YAML_PATH_KEY], namespaces))
+        final_path = path if os.path.isabs(path) \
+            else os.path.join(looper[OUTDIR_KEY], path)
+    sample.to_yaml(final_path)
+    return_value = {
+        "sample": sample,
+        "compute": compute,
+        "looper": looper,
+        "pipeline": pipeline,
+        "project": project
+    }
+    return return_value
+
+
 def add_basic_yaml(sample, subcon=None):
     """
     Produce a complete, basic yaml representation of the sample
@@ -299,14 +339,14 @@ class SubmissionConductor(object):
                     # don't need to re-parse them.
 
                     # Process pre_submit hooks, in the form "module.function".
-                    import importlib
-                    if "pre_submit" in self.pl_iface:
-                        for hook in self.pl_iface["pre_submit"]:
-                            pkgstr, funcstr = os.path.splitext(hook)
-                            pkg = importlib.import_module(pkgstr)
-                            func = getattr(pkg, funcstr[1:])
-                            _LOGGER.info("Calling pre-submit function: {}".format(func))
-                            s = func(s, self)
+                    # import importlib
+                    # if "pre_submit" in self.pl_iface:
+                    #     for hook in self.pl_iface["pre_submit"]:
+                    #         pkgstr, funcstr = os.path.splitext(hook)
+                    #         pkg = importlib.import_module(pkgstr)
+                    #         func = getattr(pkg, funcstr[1:])
+                    #         _LOGGER.info("Calling pre-submit function: {}".format(func))
+                    #         s = func(s, self)
 
                     # Printing the yaml file is now handled by the plugins
                     # scopy.to_yaml(self._get_sample_yaml_path(scopy))
@@ -457,6 +497,12 @@ class SubmissionConductor(object):
         :param float size: cumulative size of the given pool
         :return str: Path to the job submission script created.
         """
+
+        def _log_raise_latest(cmd):
+            """ Log error info and raise latest handled exception """
+            _LOGGER.error("Could not retrieve JSON via command: '{}'".format(cmd))
+            raise
+
         # looper settings determination
         if self.collate:
             pool = [None]
@@ -482,6 +528,47 @@ class SubmissionConductor(object):
             res_pkg.update(cli)
             self.prj.dcc.compute.update(res_pkg)  # divcfg
             namespaces.update({"compute": self.prj.dcc.compute})
+
+            # pre_submit hook namespace updates
+
+            import importlib
+            from subprocess import check_output, CalledProcessError
+            from json import loads
+            PRE_SUBMIT_HOOK_KEY = "pre_submit"
+            PRE_SUBMIT_PY_FUN_KEY = "python_function"
+            PRE_SUBMIT_CMD_KEY = "command_template"
+            if PRE_SUBMIT_HOOK_KEY in self.pl_iface:
+                pre_submit = self.pl_iface[PRE_SUBMIT_HOOK_KEY]
+                if PRE_SUBMIT_PY_FUN_KEY in pre_submit:
+                    for py_fun in pre_submit[PRE_SUBMIT_PY_FUN_KEY]:
+                        pkgstr, funcstr = os.path.splitext(py_fun)
+                        pkg = importlib.import_module(pkgstr)
+                        func = getattr(pkg, funcstr[1:])
+                        _LOGGER.info("Calling pre-submit function: {}.{}".
+                                     format(pkgstr, func.__name__))
+                        namespaces = func(namespaces)
+                if PRE_SUBMIT_CMD_KEY in pre_submit:
+                    for cmd_template in pre_submit[PRE_SUBMIT_CMD_KEY]:
+                        _LOGGER.debug("Rendering pre-submit command template: {}"
+                                     .format(cmd_template))
+                        try:
+                            cmd = jinja_render_cmd_strictly(
+                                cmd_template=cmd_template, namespaces=namespaces)
+                            _LOGGER.info("Executing pre-submit command: {}".
+                                         format(cmd))
+                            json = loads(check_output(cmd, shell=True))
+                        except CalledProcessError as e:
+                            print(e.output)
+                            _log_raise_latest(cmd)
+                        except Exception:
+                            _log_raise_latest(cmd)
+                        else:
+                            for namespace, mapping in json.items():
+                                for attr, val in mapping.items():
+                                    setattr(namespaces[namespace], attr, val)
+                            _LOGGER.debug("Updated namespaces with JSON:\n{}".
+                                          format(json))
+
             self._rendered_ok = False
             try:
                 argstring = jinja_render_cmd_strictly(cmd_template=templ,
@@ -512,7 +599,7 @@ class SubmissionConductor(object):
 
     def write_skipped_sample_scripts(self):
         """
-        For any sample skipped during initial processingwrite submission script
+        For any sample skipped during initial processing write submission script
         """
         if self._curr_skip_pool:
             # move any hanging samples from current skip pool to the main pool

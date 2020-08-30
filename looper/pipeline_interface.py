@@ -213,7 +213,6 @@ class PipelineInterface(PXAM):
 
         if COMPUTE_KEY in self:
             resources_data.update(self[COMPUTE_KEY])
-
         project = namespaces["project"]
         if LOOPER_KEY in project and COMPUTE_KEY in project[LOOPER_KEY] \
                 and RESOURCES_KEY in project[LOOPER_KEY][COMPUTE_KEY]:
