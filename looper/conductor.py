@@ -37,18 +37,22 @@ def write_sample_yaml_basic(namespaces):
     pipeline = namespaces["pipeline"]
     project = namespaces["project"]
 
-    if SAMPLE_YAML_PATH_KEY not in pipeline:
-        final_path = os.path.join(
-            looper[OUTDIR_KEY],
-            "submission",
-            "{}{}".format(sample[SAMPLE_NAME_ATTR], SAMPLE_YAML_EXT[0])
-        )
-    else:
-        path = expandpath(jinja_render_cmd_strictly(
-            pipeline[SAMPLE_YAML_PATH_KEY], namespaces))
-        final_path = path if os.path.isabs(path) \
-            else os.path.join(looper[OUTDIR_KEY], path)
-    sample.to_yaml(final_path)
+    # if SAMPLE_YAML_PATH_KEY not in pipeline:
+    #     final_path = os.path.join(
+    #         looper[OUTDIR_KEY],
+    #         "submission",
+    #         "{}{}".format(sample[SAMPLE_NAME_ATTR], SAMPLE_YAML_EXT[0])
+    #     )
+    # else:
+    #     path = expandpath(jinja_render_cmd_strictly(
+    #         pipeline[SAMPLE_YAML_PATH_KEY], namespaces))
+    #     final_path = path if os.path.isabs(path) \
+    #         else os.path.join(looper[OUTDIR_KEY], path)
+
+    sample.yaml_file = get_sample_yaml_path(namespaces)
+
+    sample.to_yaml(sample.yaml_file)
+
     return_value = {
         "sample": sample,
         "compute": compute,
@@ -56,21 +60,27 @@ def write_sample_yaml_basic(namespaces):
         "pipeline": pipeline,
         "project": project
     }
-    return return_value
+    return {"sample" : sample }
 
 
-def add_basic_yaml(sample, subcon=None):
-    """
-    Produce a complete, basic yaml representation of the sample
-    
-    :param peppy.Sample sample: A sample object
-    """    
-    _LOGGER.info("Calling add_basic_yaml plugin.")
-    sample.to_yaml(subcon._get_sample_yaml_path(sample))
-    return(sample)
 
+def get_sample_yaml_path(namespaces):
 
-def add_cwl_yaml(sample, subcon=None):
+    if SAMPLE_YAML_PATH_KEY not in namespaces["pipeline"]:
+        final_path = os.path.join(
+            namespaces["looper"][OUTDIR_KEY],
+            "submission",
+            "{}{}".format(namespaces["sample"][SAMPLE_NAME_ATTR], SAMPLE_YAML_EXT[0])
+        )
+    else:
+        path = expandpath(jinja_render_cmd_strictly(
+            namespaces["pipeline"][SAMPLE_YAML_PATH_KEY], namespaces))
+        final_path = path if os.path.isabs(path) \
+            else os.path.join(namespaces["looper"][OUTDIR_KEY], path)
+
+    return final_path
+
+def write_cwl_yaml(namespaces):
     """
     Produce a cwl-compatible yaml representation of the sample
 
@@ -82,8 +92,13 @@ def add_cwl_yaml(sample, subcon=None):
 
     # To be compatible as a CWL job input, we need to handle the
     # File and Directory object types directly.
+    sample = namespaces["sample"]
 
-    _LOGGER.info("Calling add_cwl_yaml plugin.")
+    sample.cwl_yaml = get_sample_yaml_path(namespaces)
+    _LOGGER.info("Calling write_cwl_yaml plugin.")
+
+
+
     if "files" in sample:
         for file_attr in sample["files"]:
             _LOGGER.debug("CWL-ing file attribute: {}".format(file_attr))
@@ -92,7 +107,7 @@ def add_cwl_yaml(sample, subcon=None):
             # but CWL assumes they are relative to the yaml output file,
             # so we convert here.
             file_attr_rel = os.path.relpath(file_attr_value,
-                os.path.dirname(subcon._get_sample_yaml_path(sample)))
+                os.path.dirname(get_sample_yaml_path(namespaces)))
             sample[file_attr] = {"class": "File",
                                 "path":  file_attr_rel}
 
@@ -104,13 +119,13 @@ def add_cwl_yaml(sample, subcon=None):
             # but CWL assumes they are relative to the yaml output file,
             # so we convert here.
             file_attr_rel = os.path.relpath(dir_attr_value,
-                os.path.dirname(subcon._get_sample_yaml_path(sample)))
+                os.path.dirname(get_sample_yaml_path(namespaces)))
             sample[dir_attr] = {"class": "Directory",
                                 "path":  dir_attr_value}
 
-    sample.cwl_yaml = subcon._get_sample_yaml_path(sample)
     sample.to_yaml(sample.cwl_yaml)
-    return(sample)
+
+    return {"sample" : sample }
 
 
 class SubmissionConductor(object):
