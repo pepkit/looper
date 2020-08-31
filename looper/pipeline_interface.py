@@ -52,6 +52,13 @@ class PipelineInterface(PXAM):
         if "paths" in self:
             for k, _ in self["paths"].items():
                 self._expand_paths(["paths", k])
+        if "path" in self:
+            from warnings import warn
+            warn(message="'path' specification as a top-level pipeline "
+                         "interface key is deprecated and will be removed with "
+                         "the next release. Please use 'paths' section "
+                         "from now on.", category=DeprecationWarning)
+            self._expand_paths("path")
         self._expand_paths(["compute", "dynamic_variables_script_path"])
 
     def get_pipeline_schemas(self, schema_key=INPUT_SCHEMA_KEY):
@@ -128,9 +135,15 @@ class PipelineInterface(PXAM):
             json = None
             if COMPUTE_KEY in pipeline \
                     and DYN_VARS_KEY in pipeline[COMPUTE_KEY]:
+                from warnings import warn
                 from subprocess import check_output, CalledProcessError
                 from json import loads
                 from .utils import jinja_render_cmd_strictly
+                warn(message="'dynamic_variables_command_template' feature is "
+                             "deprecated and will be removed with the next "
+                             "release. Please use 'pre_submit' feature from "
+                             "now on.",
+                     category=DeprecationWarning)
                 try:
                     cmd = jinja_render_cmd_strictly(
                         cmd_template=pipeline[COMPUTE_KEY][DYN_VARS_KEY],
