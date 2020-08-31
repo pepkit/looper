@@ -19,7 +19,8 @@ __all__ = [
     "PROFILE_COLNAMES", "SAMPLE_TOGGLE_ATTR", "TOGGLE_KEY_SELECTOR",
     "LOOPER_DOTFILE_NAME", "POSITIONAL", "EXTRA_PROJECT_CMD_TEMPLATE",
     "EXTRA_SAMPLE_CMD_TEMPLATE", "SELECTED_COMPUTE_PKG", "CLI_PROJ_ATTRS",
-    "DOTFILE_CFG_PTH_KEY", "DRY_RUN_KEY", "FILE_CHECKS_KEY", "CLI_KEY"
+    "DOTFILE_CFG_PTH_KEY", "DRY_RUN_KEY", "FILE_CHECKS_KEY", "CLI_KEY",
+    "PRE_SUBMIT_HOOK_KEY", "PRE_SUBMIT_PY_FUN_KEY", "PRE_SUBMIT_CMD_KEY"
 ]
 
 FLAGS = ["completed", "running", "failed", "waiting", "partial"]
@@ -64,6 +65,10 @@ def _get_apperance_dict(type, templ=APPEARANCE_BY_FLAG):
             ret[flag][key] = ret[flag][key].format(type=type)
     return ret
 
+
+PRE_SUBMIT_HOOK_KEY = "pre_submit"
+PRE_SUBMIT_PY_FUN_KEY = "python_function"
+PRE_SUBMIT_CMD_KEY = "command_template"
 
 LOGGING_LEVEL = "INFO"
 CFG_ENV_VARS = ["LOOPER"]

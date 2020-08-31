@@ -4,7 +4,11 @@ import logging
 import os
 import subprocess
 import time
+import importlib
+
 from jinja2.exceptions import UndefinedError
+from subprocess import check_output, CalledProcessError
+from json import loads
 
 from attmap import AttMap
 from eido import read_schema, validate_inputs
@@ -24,48 +28,21 @@ def write_sample_yaml_basic(namespaces):
     """
     Generate path to the sample YAML target location and update namesapces.
 
-    Render path template defined in the pipeline section
-    (relative to the pipeline output directory).
-    If no template defined, output to the submission directory.
-
     :param dict namespaces: variable namespaces dict
     :return dict: updated variable namespaces dict
     """
     sample = namespaces["sample"]
-    compute = namespaces["compute"]
-    looper = namespaces["looper"]
-    pipeline = namespaces["pipeline"]
-    project = namespaces["project"]
-
-    # if SAMPLE_YAML_PATH_KEY not in pipeline:
-    #     final_path = os.path.join(
-    #         looper[OUTDIR_KEY],
-    #         "submission",
-    #         "{}{}".format(sample[SAMPLE_NAME_ATTR], SAMPLE_YAML_EXT[0])
-    #     )
-    # else:
-    #     path = expandpath(jinja_render_cmd_strictly(
-    #         pipeline[SAMPLE_YAML_PATH_KEY], namespaces))
-    #     final_path = path if os.path.isabs(path) \
-    #         else os.path.join(looper[OUTDIR_KEY], path)
-
-    sample.yaml_file = get_sample_yaml_path(namespaces)
-
-    sample.to_yaml(sample.yaml_file)
-
-    return_value = {
-        "sample": sample,
-        "compute": compute,
-        "looper": looper,
-        "pipeline": pipeline,
-        "project": project
-    }
-    return {"sample" : sample }
-
+    sample.to_yaml(get_sample_yaml_path(namespaces))
+    return {"sample": sample}
 
 
 def get_sample_yaml_path(namespaces):
+    """
+    Get a path to the sample YAML file
 
+    :param dict[dict]] namespaces: namespaces mapping
+    :return str: sample YAML file path
+    """
     if SAMPLE_YAML_PATH_KEY not in namespaces["pipeline"]:
         final_path = os.path.join(
             namespaces["looper"][OUTDIR_KEY],
@@ -77,8 +54,8 @@ def get_sample_yaml_path(namespaces):
             namespaces["pipeline"][SAMPLE_YAML_PATH_KEY], namespaces))
         final_path = path if os.path.isabs(path) \
             else os.path.join(namespaces["looper"][OUTDIR_KEY], path)
-
     return final_path
+
 
 def write_cwl_yaml(namespaces):
     """
@@ -96,8 +73,6 @@ def write_cwl_yaml(namespaces):
 
     sample.cwl_yaml = get_sample_yaml_path(namespaces)
     _LOGGER.info("Calling write_cwl_yaml plugin.")
-
-
 
     if "files" in sample:
         for file_attr in sample["files"]:
@@ -122,10 +97,8 @@ def write_cwl_yaml(namespaces):
                 os.path.dirname(get_sample_yaml_path(namespaces)))
             sample[dir_attr] = {"class": "Directory",
                                 "path":  dir_attr_value}
-
     sample.to_yaml(sample.cwl_yaml)
-
-    return {"sample" : sample }
+    return {"sample": sample}
 
 
 class SubmissionConductor(object):
@@ -512,12 +485,6 @@ class SubmissionConductor(object):
         :param float size: cumulative size of the given pool
         :return str: Path to the job submission script created.
         """
-
-        def _log_raise_latest(cmd):
-            """ Log error info and raise latest handled exception """
-            _LOGGER.error("Could not retrieve JSON via command: '{}'".format(cmd))
-            raise
-
         # looper settings determination
         if self.collate:
             pool = [None]
@@ -543,47 +510,8 @@ class SubmissionConductor(object):
             res_pkg.update(cli)
             self.prj.dcc.compute.update(res_pkg)  # divcfg
             namespaces.update({"compute": self.prj.dcc.compute})
-
             # pre_submit hook namespace updates
-
-            import importlib
-            from subprocess import check_output, CalledProcessError
-            from json import loads
-            PRE_SUBMIT_HOOK_KEY = "pre_submit"
-            PRE_SUBMIT_PY_FUN_KEY = "python_function"
-            PRE_SUBMIT_CMD_KEY = "command_template"
-            if PRE_SUBMIT_HOOK_KEY in self.pl_iface:
-                pre_submit = self.pl_iface[PRE_SUBMIT_HOOK_KEY]
-                if PRE_SUBMIT_PY_FUN_KEY in pre_submit:
-                    for py_fun in pre_submit[PRE_SUBMIT_PY_FUN_KEY]:
-                        pkgstr, funcstr = os.path.splitext(py_fun)
-                        pkg = importlib.import_module(pkgstr)
-                        func = getattr(pkg, funcstr[1:])
-                        _LOGGER.info("Calling pre-submit function: {}.{}".
-                                     format(pkgstr, func.__name__))
-                        namespaces = func(namespaces)
-                if PRE_SUBMIT_CMD_KEY in pre_submit:
-                    for cmd_template in pre_submit[PRE_SUBMIT_CMD_KEY]:
-                        _LOGGER.debug("Rendering pre-submit command template: {}"
-                                     .format(cmd_template))
-                        try:
-                            cmd = jinja_render_cmd_strictly(
-                                cmd_template=cmd_template, namespaces=namespaces)
-                            _LOGGER.info("Executing pre-submit command: {}".
-                                         format(cmd))
-                            json = loads(check_output(cmd, shell=True))
-                        except CalledProcessError as e:
-                            print(e.output)
-                            _log_raise_latest(cmd)
-                        except Exception:
-                            _log_raise_latest(cmd)
-                        else:
-                            for namespace, mapping in json.items():
-                                for attr, val in mapping.items():
-                                    setattr(namespaces[namespace], attr, val)
-                            _LOGGER.debug("Updated namespaces with JSON:\n{}".
-                                          format(json))
-
+            namespaces = _exec_pre_submit(self.pl_iface, namespaces)
             self._rendered_ok = False
             try:
                 argstring = jinja_render_cmd_strictly(cmd_template=templ,
@@ -639,3 +567,60 @@ class SubmissionConductor(object):
 
 def _use_sample(flag, skips):
     return flag and not skips
+
+
+def _exec_pre_submit(piface, namespaces):
+    """
+    Execute pre submission hooks defined in the pipeline interface
+
+    :param PipelineInterface piface: piface, a source of pre_submit hooks to execute
+    :param dict[dict[]] namespaces: namspaces mapping
+    :return dict[dict[]]: updated namspaces mapping
+    """
+
+    def _log_raise_latest(cmd):
+        """ Log error info and raise latest handled exception """
+        _LOGGER.error("Could not retrieve JSON via command: '{}'".format(cmd))
+        raise
+
+    def _update_namespaces(x, y):
+        """
+        Update namespaces mapping with a dictionary of the same structure,
+        that includes just the values that need to be updated.
+
+        :param dict[dict] x: namespaces mapping
+        :param dict[dict] y: mapping to update namespaces with
+        """
+        _LOGGER.debug("Updating namespaces with:\n{}".format(y))
+        for namespace, mapping in y.items():
+            for attr, val in mapping.items():
+                setattr(x[namespace], attr, val)
+
+    if PRE_SUBMIT_HOOK_KEY in piface:
+        pre_submit = piface[PRE_SUBMIT_HOOK_KEY]
+        if PRE_SUBMIT_PY_FUN_KEY in pre_submit:
+            for py_fun in pre_submit[PRE_SUBMIT_PY_FUN_KEY]:
+                pkgstr, funcstr = os.path.splitext(py_fun)
+                pkg = importlib.import_module(pkgstr)
+                func = getattr(pkg, funcstr[1:])
+                _LOGGER.info("Calling pre-submit function: {}.{}".format(
+                    pkgstr, func.__name__))
+                _update_namespaces(namespaces, func(namespaces))
+        if PRE_SUBMIT_CMD_KEY in pre_submit:
+            for cmd_template in pre_submit[PRE_SUBMIT_CMD_KEY]:
+                _LOGGER.debug(
+                    "Rendering pre-submit command template: {}".format(
+                        cmd_template))
+                try:
+                    cmd = jinja_render_cmd_strictly(
+                        cmd_template=cmd_template, namespaces=namespaces)
+                    _LOGGER.info("Executing pre-submit command: {}".format(cmd))
+                    json = loads(check_output(cmd, shell=True))
+                except CalledProcessError as e:
+                    print(e.output)
+                    _log_raise_latest(cmd)
+                except Exception:
+                    _log_raise_latest(cmd)
+                else:
+                    _update_namespaces(namespaces, json)
+    return namespaces
