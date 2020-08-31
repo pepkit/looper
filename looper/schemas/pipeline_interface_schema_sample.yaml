@@ -12,9 +12,9 @@ properties:
   command_template:
     type: string
     description: "Jinja2-like template to construct the command to run"
-  path:
-    type: string
-    description: "path to the pipeline program. Relative to pipeline interface file or absolute."
+  paths:
+    type: object
+    description: "Paths section; relative to pipeline interface file or absolute."
   compute:
     type: object
     description: "Section that defines compute environment settings"
@@ -27,7 +27,7 @@ properties:
         description: "Path to the TSV-formatted file with compute environment settings"
       bulker_crate:
         type: string
-        description: "Bulker registry path idendifying the crate to use"
+        description: "Bulker registry path identifying the crate to use"
       docker_image:
         type: string
         description: "Docker image identifier"
