@@ -24,31 +24,24 @@ from .utils import grab_project_data, fetch_sample_flags, \
 _LOGGER = logging.getLogger(__name__)
 
 
-def write_sample_yaml_basic(namespaces):
-    """
-    Generate path to the sample YAML target location and update namesapces.
-
-    :param dict namespaces: variable namespaces dict
-    :return dict: updated variable namespaces dict
-    """
-    sample = namespaces["sample"]
-    sample.to_yaml(get_sample_yaml_path(namespaces))
-    return {"sample": sample}
-
-
-def get_sample_yaml_path(namespaces):
+def get_sample_yaml_path(namespaces, filename=None):
     """
     Get a path to the sample YAML file
 
+    :param str filename: A filename without folders. If not provided, a
+        default name of sample_name.yaml will be used.
     :param dict[dict]] namespaces: namespaces mapping
     :return str: sample YAML file path
     """
+    if not filename:
+        # Default file name
+        filename = "{}{}".format(namespaces["sample"][SAMPLE_NAME_ATTR], SAMPLE_YAML_EXT[0])
+
     if SAMPLE_YAML_PATH_KEY not in namespaces["pipeline"]:
         final_path = os.path.join(
             namespaces["looper"][OUTDIR_KEY],
             "submission",
-            "{}{}".format(namespaces["sample"][SAMPLE_NAME_ATTR], SAMPLE_YAML_EXT[0])
-        )
+            filename)
     else:
         path = expandpath(jinja_render_cmd_strictly(
             namespaces["pipeline"][SAMPLE_YAML_PATH_KEY], namespaces))
@@ -57,22 +50,39 @@ def get_sample_yaml_path(namespaces):
     return final_path
 
 
-def write_cwl_yaml(namespaces):
+def write_sample_yaml(namespaces):
+    """
+    Generate path to the sample YAML target location and update namespaces.
+
+    Also adds the 'sample_yaml' attribute
+
+    :param dict namespaces: variable namespaces dict
+    :return dict: updated variable namespaces dict
+    """
+    sample = namespaces["sample"]
+    sample.sample_yaml = get_sample_yaml_path(namespaces)
+    sample.to_yaml(sample.sample_yaml)
+    return {"sample": sample}
+
+
+def write_sample_yaml_cwl(namespaces):
     """
     Produce a cwl-compatible yaml representation of the sample
 
     Also adds the 'cwl_yaml' attribute to sample objects, which points
     to the file produced.
 
-    :param peppy.Sample sample: A sample object
+    :param dict namespaces: variable namespaces dict
+    :return dict: updated variable namespaces dict
     """
+    filename = "{}_cwl{}".format(namespaces["sample"][SAMPLE_NAME_ATTR], SAMPLE_YAML_EXT[0])
 
     # To be compatible as a CWL job input, we need to handle the
     # File and Directory object types directly.
     sample = namespaces["sample"]
 
-    sample.cwl_yaml = get_sample_yaml_path(namespaces)
-    _LOGGER.info("Calling write_cwl_yaml plugin.")
+    sample.sample_yaml_cwl = get_sample_yaml_path(namespaces, filename)
+    _LOGGER.info("Writing sample yaml cwl.")
 
     if "files" in sample:
         for file_attr in sample["files"]:
@@ -82,7 +92,7 @@ def write_cwl_yaml(namespaces):
             # but CWL assumes they are relative to the yaml output file,
             # so we convert here.
             file_attr_rel = os.path.relpath(file_attr_value,
-                os.path.dirname(get_sample_yaml_path(namespaces)))
+                os.path.dirname(sample.sample_yaml_cwl))
             sample[file_attr] = {"class": "File",
                                 "path":  file_attr_rel}
 
@@ -94,10 +104,11 @@ def write_cwl_yaml(namespaces):
             # but CWL assumes they are relative to the yaml output file,
             # so we convert here.
             file_attr_rel = os.path.relpath(dir_attr_value,
-                os.path.dirname(get_sample_yaml_path(namespaces)))
+                os.path.dirname(sample.sample_yaml_cwl))
             sample[dir_attr] = {"class": "Directory",
                                 "path":  dir_attr_value}
-    sample.to_yaml(sample.cwl_yaml)
+    
+    sample.to_yaml(sample.sample_yaml_cwl)
     return {"sample": sample}
 
 
