@@ -25,7 +25,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Input schemas and output schemas
 - `--settings` argument to specify compute resources as a YAML file
 - Option to preset CLI options in a dotfile
-- `--command-extra` and `--command-extra-override` arguments that append specified string to pipeline commands
+- `--command-extra` and `--command-extra-override` arguments that append specified string to pipeline commands. These functions supercede the previous `pipeline_config` and `pipeline_args` sections, which are now deprecated. The new method is more universal, and can accomplish the same functionality but more simply, using the built-in PEP machinery to selectively apply commands to samples.
 - Option to specify destination of sample YAML in pipeline interface
 - `--pipeline_interfaces` argument that allows pipeline interface specification via CLI
 
