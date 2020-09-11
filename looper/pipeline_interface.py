@@ -56,7 +56,7 @@ class PipelineInterface(PXAM):
                          "interface key is deprecated and will be removed with "
                          "the next release. Please use 'paths' section "
                          "from now on.", category=DeprecationWarning)
-            self._expand_paths("path")
+            self._expand_paths(["path"])
         self._expand_paths(["compute", "dynamic_variables_script_path"])
 
     def render_paths(self, namespaces):
