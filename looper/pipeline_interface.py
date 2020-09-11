@@ -14,6 +14,7 @@ from ubiquerg import expandpath, is_url
 from yacman import load_yaml
 
 from .const import *
+from .utils import jinja_render_template_strictly
 from .exceptions import InvalidResourceSpecificationException
 
 __author__ = "Michal Stolarczyk"
@@ -49,9 +50,6 @@ class PipelineInterface(PXAM):
             config = load_yaml(config)
         self.update(config)
         self._validate(PIFACE_SCHEMA_SRC, flavor=pipeline_type)
-        if "paths" in self:
-            for k, _ in self["paths"].items():
-                self._expand_paths(["paths", k])
         if "path" in self:
             from warnings import warn
             warn(message="'path' specification as a top-level pipeline "
@@ -60,6 +58,20 @@ class PipelineInterface(PXAM):
                          "from now on.", category=DeprecationWarning)
             self._expand_paths("path")
         self._expand_paths(["compute", "dynamic_variables_script_path"])
+
+    def render_paths(self, namespaces):
+        """
+        Render path templates under 'paths' in this pipeline interface.
+
+        :param dict namespaces: namespaces to use for rendering
+        """
+        if PATHS_KEY in self:
+            for k, v in self[PATHS_KEY].items():
+                setattr(self[PATHS_KEY], k,
+                        jinja_render_template_strictly(v, namespaces))
+        else:
+            raise AttributeError(f"'{PATHS_KEY}' section not found in the "
+                                 f"{self.__class__.__name__} object.")
 
     def get_pipeline_schemas(self, schema_key=INPUT_SCHEMA_KEY):
         """
@@ -138,15 +150,15 @@ class PipelineInterface(PXAM):
                 from warnings import warn
                 from subprocess import check_output, CalledProcessError
                 from json import loads
-                from .utils import jinja_render_cmd_strictly
+                from .utils import jinja_render_template_strictly
                 warn(message="'dynamic_variables_command_template' feature is "
                              "deprecated and will be removed with the next "
                              "release. Please use 'pre_submit' feature from "
                              "now on.",
                      category=DeprecationWarning)
                 try:
-                    cmd = jinja_render_cmd_strictly(
-                        cmd_template=pipeline[COMPUTE_KEY][DYN_VARS_KEY],
+                    cmd = jinja_render_template_strictly(
+                        template=pipeline[COMPUTE_KEY][DYN_VARS_KEY],
                         namespaces=namespaces
                     )
                     json = loads(check_output(cmd, shell=True))

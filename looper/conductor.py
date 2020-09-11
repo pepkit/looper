@@ -19,7 +19,7 @@ from .processed_project import populate_sample_paths
 from .const import *
 from .exceptions import JobSubmissionException
 from .utils import grab_project_data, fetch_sample_flags, \
-    jinja_render_cmd_strictly
+    jinja_render_template_strictly
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -43,7 +43,7 @@ def get_sample_yaml_path(namespaces, filename=None):
             "submission",
             filename)
     else:
-        path = expandpath(jinja_render_cmd_strictly(
+        path = expandpath(jinja_render_template_strictly(
             namespaces["pipeline"][SAMPLE_YAML_PATH_KEY], namespaces))
         final_path = path if os.path.isabs(path) \
             else os.path.join(namespaces["looper"][OUTDIR_KEY], path)
@@ -403,7 +403,7 @@ class SubmissionConductor(object):
         namespaces = {"sample": sample,
                       "project": self.prj.prj[CONFIG_KEY],
                       "pipeline": self.pl_iface}
-        path = expandpath(jinja_render_cmd_strictly(pth_templ, namespaces))
+        path = expandpath(jinja_render_template_strictly(pth_templ, namespaces))
         return path if os.path.isabs(path) \
             else os.path.join(self.prj.output_dir, path)
 
@@ -475,6 +475,7 @@ class SubmissionConductor(object):
         settings.total_input_size = size
         settings.log_file = \
             os.path.join(self.prj.submission_folder, settings.job_name) + ".log"
+        settings.piface_dir = os.path.dirname(self.pl_iface.pipe_iface_file)
         if hasattr(self.prj, "pipeline_config"):
             # Make sure it's a file (it could be provided as null.)
             pl_config_file = self.prj.pipeline_config
@@ -503,7 +504,8 @@ class SubmissionConductor(object):
         commands = []
         namespaces = dict(project=self.prj[CONFIG_KEY],
                           looper=looper,
-                          pipeline=self.pl_iface)
+                          pipeline=self.pl_iface,
+                          compute=self.prj.dcc.compute)
         templ = self.pl_iface["command_template"]
         if not self.override_extra:
             extras_template = EXTRA_PROJECT_CMD_TEMPLATE if self.collate \
@@ -520,13 +522,15 @@ class SubmissionConductor(object):
             res_pkg = self.pl_iface.choose_resource_package(namespaces, size or 0)  # config
             res_pkg.update(cli)
             self.prj.dcc.compute.update(res_pkg)  # divcfg
-            namespaces.update({"compute": self.prj.dcc.compute})
+            namespaces["compute"].update(res_pkg)
+            self.pl_iface.render_paths(namespaces=namespaces)
+            namespaces["pipeline"] = self.pl_iface
             # pre_submit hook namespace updates
             namespaces = _exec_pre_submit(self.pl_iface, namespaces)
             self._rendered_ok = False
             try:
-                argstring = jinja_render_cmd_strictly(cmd_template=templ,
-                                                      namespaces=namespaces)
+                argstring = jinja_render_template_strictly(template=templ,
+                                                           namespaces=namespaces)
             except UndefinedError as jinja_exception:
                 _LOGGER.warning(NOT_SUB_MSG.format(str(jinja_exception)))
             except KeyError as e:
@@ -623,8 +627,8 @@ def _exec_pre_submit(piface, namespaces):
                     "Rendering pre-submit command template: {}".format(
                         cmd_template))
                 try:
-                    cmd = jinja_render_cmd_strictly(
-                        cmd_template=cmd_template, namespaces=namespaces)
+                    cmd = jinja_render_template_strictly(template=cmd_template,
+                                                         namespaces=namespaces)
                     _LOGGER.info("Executing pre-submit command: {}".format(cmd))
                     json = loads(check_output(cmd, shell=True))
                 except CalledProcessError as e:
