@@ -2,6 +2,9 @@ pipeline_name: OTHER_PIPELINE2
 pipeline_type: sample
 path: pipelines/other_pipeline2.py
 output_schema: output_schema.yaml
+pre_submit:
+    python_function:
+      - looper.write_sample_yaml
 command_template: >
   {pipeline.path} --sample-name {sample.sample_name} --req-attr {sample.attr}
 compute:
