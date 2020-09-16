@@ -70,12 +70,8 @@ class PipelineInterface(PXAM):
                 setattr(self[PATHS_KEY], k,
                         jinja_render_template_strictly(v, namespaces))
         else:
-            # TODO: do raise the AttributeError in the next release
-            if "path" not in self:
-                raise AttributeError(f"'{PATHS_KEY}' section not found in the "
-                                     f"{self.__class__.__name__} object.")
-            _LOGGER.warning(f"'{PATHS_KEY}' section not found in the "
-                            f"{self.__class__.__name__} object.")
+            _LOGGER.debug(f"'{PATHS_KEY}' section not found in the "
+                          f"{self.__class__.__name__} object.")
 
     def get_pipeline_schemas(self, schema_key=INPUT_SCHEMA_KEY):
         """
