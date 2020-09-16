@@ -606,6 +606,10 @@ def _exec_pre_submit(piface, namespaces):
         :param dict[dict] x: namespaces mapping
         :param dict[dict] y: mapping to update namespaces with
         """
+        assert isinstance(y, dict), \
+            TypeError(f"Object returned by {PRE_SUBMIT_HOOK_KEY}."
+                      f"{PRE_SUBMIT_CMD_KEY} must return a dictionary when "
+                      f"processed with json.loads(), not {y.__class__.__name__}")
         _LOGGER.debug("Updating namespaces with:\n{}".format(y))
         for namespace, mapping in y.items():
             for attr, val in mapping.items():
