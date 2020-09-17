@@ -276,7 +276,8 @@ class SubmissionConductor(object):
             use_this_sample = False
 
         skip_reasons = []
-        sample.setdefault(INPUT_FILE_SIZE_KEY, 0)
+        validation = {}
+        validation.setdefault(INPUT_FILE_SIZE_KEY, 0)
         # Check for any missing requirements before submitting.
         _LOGGER.debug("Determining missing requirements")
         schema_source = self.pl_iface.get_pipeline_schemas()
