@@ -7,4 +7,4 @@ divvy>=0.5.0
 peppy>=0.30.2
 ubiquerg>=0.5.2
 jinja2
-eido>=0.1.0
+# eido>=0.1.3

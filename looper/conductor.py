@@ -12,6 +12,7 @@ from json import loads
 
 from attmap import AttMap
 from eido import read_schema, validate_inputs
+from eido.const import MISSING_KEY, INPUT_FILE_SIZE_KEY
 from ubiquerg import expandpath
 from peppy.const import CONFIG_KEY, SAMPLE_YAML_EXT, SAMPLE_NAME_ATTR
 
@@ -273,27 +274,25 @@ class SubmissionConductor(object):
             )
             use_this_sample = False
 
-        sample.prj = grab_project_data(self.prj)
-
         skip_reasons = []
-        sample.setdefault("input_file_size", 0)
+        sample.setdefault(INPUT_FILE_SIZE_KEY, 0)
         # Check for any missing requirements before submitting.
         _LOGGER.debug("Determining missing requirements")
         schema_source = self.pl_iface.get_pipeline_schemas()
         if schema_source and self.prj.file_checks:
-            missing = validate_inputs(sample, read_schema(schema_source))
-            if missing:
-                missing_reqs_msg = "{}: {}".format("Missing files", missing)
+            validation = validate_inputs(sample, read_schema(schema_source))
+            if validation[MISSING_KEY]:
+                missing_reqs_msg = f"Missing files: {validation[MISSING_KEY]}"
                 _LOGGER.warning(NOT_SUB_MSG.format(missing_reqs_msg))
                 use_this_sample and skip_reasons.append("Missing files")
 
         if _use_sample(use_this_sample, skip_reasons):
             self._pool.append(sample)
-            self._curr_size += float(sample.input_file_size)
+            self._curr_size += float(validation[INPUT_FILE_SIZE_KEY])
             if self.automatic and self._is_full(self._pool, self._curr_size):
                 self.submit()
         else:
-            self._curr_skip_size += float(sample.input_file_size)
+            self._curr_skip_size += float(validation[INPUT_FILE_SIZE_KEY])
             self._curr_skip_pool.append(sample)
             if self._is_full(self._curr_skip_pool, self._curr_skip_size):
                 self._skipped_sample_pools.append((self._curr_skip_pool,
