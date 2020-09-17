@@ -23,7 +23,7 @@ A pipeline interface may contain the following keys:
 - `pipeline_name` (REQUIRED) - A string identifying the pipeline,
 - `pipeline_type` (REQUIRED) - A string indicating a pipeline type: "sample" (for `run`) or "project" (for `runp`),
 - `command_template` (REQUIRED) - A [Jinja2](https://jinja.palletsprojects.com/en/2.11.x/) template used to construct a pipeline command command to run.
-- `path` (RECOMMENDED) - The path to the pipeline script, relative to the pipeline interface. 
+- `paths` (RECOMMENDED) - A mapping of paths to pipeline scripts, relative to the pipeline interface (formerly `path`). 
 - `input_schema` (RECOMMENDED) - A [PEP Schema](http://eido.databio.org) formally defining *required inputs* for the pipeline
 - `output_schema` (RECOMMENDED) - A schema describing the *outputs* of the pipeline
 - `compute` (RECOMMENDED) - Settings for computing resources
