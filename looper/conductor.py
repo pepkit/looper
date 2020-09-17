@@ -75,7 +75,8 @@ def write_sample_yaml_cwl(namespaces):
     :param dict namespaces: variable namespaces dict
     :return dict: updated variable namespaces dict
     """
-    filename = "{}_cwl{}".format(namespaces["sample"][SAMPLE_NAME_ATTR], SAMPLE_YAML_EXT[0])
+    filename = "{}_cwl{}".format(
+        namespaces["sample"][SAMPLE_NAME_ATTR], SAMPLE_YAML_EXT[0])
 
     # To be compatible as a CWL job input, we need to handle the
     # File and Directory object types directly.
