@@ -163,13 +163,13 @@ def jinja_render_template_strictly(template, namespaces):
                              variable_start_string="{",
                              variable_end_string="}",
                              finalize=_finfun)
-    template = env.from_string(template)
+    templ_obj = env.from_string(template)
     try:
-        rendered = template.render(**namespaces)
+        rendered = templ_obj.render(**namespaces)
     except jinja2.exceptions.UndefinedError:
-        _LOGGER.error("Missing sample, project or pipeline attributes"
-                      " required by command template: '{}'"
-                      .format(template))
+        _LOGGER.error(f"Attributes in namespaces "
+                      f"({', '.join(list(namespaces.keys()))}) missing for "
+                      f"the following template: '{template}'")
         raise
     _LOGGER.debug("rendered arg str: {}".format(rendered))
     return rendered
