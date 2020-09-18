@@ -53,16 +53,25 @@ def get_sample_yaml_path(namespaces, filename=None):
 
 def write_sample_yaml(namespaces):
     """
-    Generate path to the sample YAML target location and update namespaces.
-
-    Also adds the 'sample_yaml' attribute
+    Save sample representation to YAML.
 
     :param dict namespaces: variable namespaces dict
-    :return dict: updated variable namespaces dict
+    :return dict: sample namespace dict
     """
     sample = namespaces["sample"]
-    sample.sample_yaml = get_sample_yaml_path(namespaces)
-    sample.to_yaml(sample.sample_yaml)
+    sample.to_yaml(get_sample_yaml_path(namespaces), add_prj_ref=False)
+    return {"sample": sample}
+
+
+def write_sample_yaml_prj(namespaces):
+    """
+    Save sample representation and project reference to YAML.
+
+    :param dict namespaces: variable namespaces dict
+    :return dict: sample namespace dict
+    """
+    sample = namespaces["sample"]
+    sample.to_yaml(get_sample_yaml_path(namespaces), add_prj_ref=True)
     return {"sample": sample}
 
 
