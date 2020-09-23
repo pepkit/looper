@@ -67,8 +67,8 @@ def _get_apperance_dict(type, templ=APPEARANCE_BY_FLAG):
 
 
 PRE_SUBMIT_HOOK_KEY = "pre_submit"
-PRE_SUBMIT_PY_FUN_KEY = "python_function"
-PRE_SUBMIT_CMD_KEY = "command_template"
+PRE_SUBMIT_PY_FUN_KEY = "python_functions"
+PRE_SUBMIT_CMD_KEY = "command_templates"
 
 LOGGING_LEVEL = "INFO"
 CFG_ENV_VARS = ["LOOPER"]
@@ -99,7 +99,8 @@ DYN_VARS_KEY = "dynamic_variables_command_template"
 TEMPLATES_DIRNAME = "jinja_templates"
 NOT_SUB_MSG = "> Not submitted: {}"
 IMAGE_EXTS = ('.png', '.jpg', '.jpeg', '.svg', '.gif')
-PROFILE_COLNAMES = ['pid', 'hash', 'cid', 'runtime', 'mem', 'cmd', 'lock']  # this strongly depends on pypiper's profile.tsv format
+# this strongly depends on pypiper's profile.tsv format
+PROFILE_COLNAMES = ['pid', 'hash', 'cid', 'runtime', 'mem', 'cmd', 'lock']
 
 PIPE_ARGS_SECTION = "pipeline_args"
 CLI_KEY = "cli"
@@ -124,4 +125,5 @@ CLI_PROJ_ATTRS = [OUTDIR_KEY, TOGGLE_KEY_SELECTOR, SUBMISSION_SUBDIR_KEY, PIPELI
 ID_COLNAME = "id"
 FILE_SIZE_COLNAME = "max_file_size"
 IMAGE_EXTS = ('.png', '.jpg', '.jpeg', '.svg', '.gif')
-PROFILE_COLNAMES = ['pid', 'hash', 'cid', 'runtime', 'mem', 'cmd', 'lock']  # this strongly depends on pypiper's profile.tsv format
+# this strongly depends on pypiper's profile.tsv format
+PROFILE_COLNAMES = ['pid', 'hash', 'cid', 'runtime', 'mem', 'cmd', 'lock']
