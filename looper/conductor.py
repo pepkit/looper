@@ -62,6 +62,27 @@ def write_sample_yaml(namespaces):
     sample.to_yaml(get_sample_yaml_path(namespaces), add_prj_ref=False)
     return {"sample": sample}
 
+def write_namespaces(namespaces):
+    """
+    Save all namespaces to YAML.
+
+    :param dict namespaces: variable namespaces dict
+    :return dict: sample namespace dict
+    """
+
+    import yaml
+
+  
+    my_namespaces = {}
+    for namespace in namespaces:
+        dic = {}
+        for k in namespaces[namespace]:
+            dic.update({str(k):str(namespaces[namespace][k])})
+        my_namespaces.update({str(namespace):dic})
+    with open(get_sample_yaml_path(namespaces),'w') as yamlfile:
+        yaml.safe_dump(my_namespaces, yamlfile)
+
+    return {}
 
 def write_sample_yaml_prj(namespaces):
     """
