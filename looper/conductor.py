@@ -69,18 +69,20 @@ def write_namespaces(namespaces):
     :param dict namespaces: variable namespaces dict
     :return dict: sample namespace dict
     """
-
     import yaml
-
-  
+    # my_namespaces = namespaces["sample"].to_dict()
+    path = get_sample_yaml_path(namespaces)
     my_namespaces = {}
-    for namespace in namespaces:
-        dic = {}
-        for k in namespaces[namespace]:
-            dic.update({str(k):str(namespaces[namespace][k])})
-        my_namespaces.update({str(namespace):dic})
-    with open(get_sample_yaml_path(namespaces),'w') as yamlfile:
-        yaml.safe_dump(my_namespaces, yamlfile)
+    for namespace, values in namespaces.items():
+        if namespace == "sample":
+            values.to_yaml(path)
+            my_namespaces.update({str(namespace):yaml.load(open(path))})
+        else:
+            my_namespaces.update({str(namespace):values.to_dict()})
+    
+    # print(my_namespaces)
+    with open(path,'w') as yamlfile:
+        yaml.dump(my_namespaces, yamlfile)
 
     return {}
 
