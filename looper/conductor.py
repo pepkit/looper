@@ -62,29 +62,6 @@ def write_sample_yaml(namespaces):
     sample.to_yaml(get_sample_yaml_path(namespaces), add_prj_ref=False)
     return {"sample": sample}
 
-def write_namespaces(namespaces):
-    """
-    Save all namespaces to YAML.
-
-    :param dict namespaces: variable namespaces dict
-    :return dict: sample namespace dict
-    """
-    import yaml
-    # my_namespaces = namespaces["sample"].to_dict()
-    path = get_sample_yaml_path(namespaces)
-    my_namespaces = {}
-    for namespace, values in namespaces.items():
-        if namespace == "sample":
-            values.to_yaml(path)
-            my_namespaces.update({str(namespace):yaml.load(open(path))})
-        else:
-            my_namespaces.update({str(namespace):values.to_dict()})
-    
-    # print(my_namespaces)
-    with open(path,'w') as yamlfile:
-        yaml.dump(my_namespaces, yamlfile)
-
-    return {}
 
 def write_sample_yaml_prj(namespaces):
     """
@@ -144,6 +121,51 @@ def write_sample_yaml_cwl(namespaces):
     
     sample.to_yaml(sample.sample_yaml_cwl)
     return {"sample": sample}
+
+def get_submission_yaml_path(namespaces, filename=None):
+    """
+    Get a path to the submission YAML file
+
+    :param str filename: A filename without folders. If not provided, a
+        default name of sample_name_submission.yaml will be used.
+    :param dict[dict]] namespaces: namespaces mapping
+    :return str: submission YAML file path
+    """
+    if not filename:
+        # Default file name
+        filename = "{}{}{}".format(namespaces["sample"][SAMPLE_NAME_ATTR], "_submission", SAMPLE_YAML_EXT[0])
+
+    if SUBMISSION_YAML_PATH_KEY not in namespaces["pipeline"]:
+        final_path = os.path.join(
+            namespaces["looper"][OUTDIR_KEY],
+            "submission",
+            filename)
+    else:
+        path = expandpath(jinja_render_template_strictly(
+            namespaces["pipeline"][SUBMISSION_YAML_PATH_KEY], namespaces))
+        final_path = path if os.path.isabs(path) \
+            else os.path.join(namespaces["looper"][OUTDIR_KEY], path)
+    return final_path
+
+def write_submission_yaml(namespaces):
+    """
+    Save all namespaces to YAML.
+
+    :param dict namespaces: variable namespaces dict
+    :return dict: sample namespace dict
+    """
+    import yaml
+    # my_namespaces = namespaces["sample"].to_dict()
+    path = get_submission_yaml_path(namespaces)
+    my_namespaces = {}
+    for namespace, values in namespaces.items():
+        my_namespaces.update({str(namespace):values.to_dict()})
+    
+    # print(my_namespaces)
+    with open(path,'w') as yamlfile:
+        yaml.dump(my_namespaces, yamlfile)
+
+    return {}
 
 
 class SubmissionConductor(object):

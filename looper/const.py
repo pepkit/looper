@@ -20,7 +20,8 @@ __all__ = [
     "LOOPER_DOTFILE_NAME", "POSITIONAL", "EXTRA_PROJECT_CMD_TEMPLATE",
     "EXTRA_SAMPLE_CMD_TEMPLATE", "SELECTED_COMPUTE_PKG", "CLI_PROJ_ATTRS",
     "DOTFILE_CFG_PTH_KEY", "DRY_RUN_KEY", "FILE_CHECKS_KEY", "CLI_KEY",
-    "PRE_SUBMIT_HOOK_KEY", "PRE_SUBMIT_PY_FUN_KEY", "PRE_SUBMIT_CMD_KEY"
+    "PRE_SUBMIT_HOOK_KEY", "PRE_SUBMIT_PY_FUN_KEY", "PRE_SUBMIT_CMD_KEY",
+    "SUBMISSION_YAML_PATH_KEY"
 ]
 
 FLAGS = ["completed", "running", "failed", "waiting", "partial"]
@@ -88,6 +89,7 @@ DOTFILE_CFG_PTH_KEY = "config_file_path"
 INPUT_SCHEMA_KEY = "input_schema"
 OUTPUT_SCHEMA_KEY = "output_schema"
 SAMPLE_YAML_PATH_KEY = "sample_yaml_path"
+SUBMISSION_YAML_PATH_KEY = "submission_yaml_path"
 TOGGLE_KEY_SELECTOR = "toggle_key"
 SAMPLE_TOGGLE_ATTR = "toggle"
 OUTKEY = "outputs"
