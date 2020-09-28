@@ -59,18 +59,18 @@ class PipelineInterface(PXAM):
             self._expand_paths(["path"])
         self._expand_paths(["compute", "dynamic_variables_script_path"])
 
-    def render_paths(self, namespaces):
+    def render_var_templates(self, namespaces):
         """
-        Render path templates under 'paths' in this pipeline interface.
+        Render path templates under 'var_templates' in this pipeline interface.
 
         :param dict namespaces: namespaces to use for rendering
         """
-        if PATHS_KEY in self:
-            for k, v in self[PATHS_KEY].items():
-                setattr(self[PATHS_KEY], k,
+        if VAR_TEMPL_KEY in self:
+            for k, v in self[VAR_TEMPL_KEY].items():
+                setattr(self[VAR_TEMPL_KEY], k,
                         jinja_render_template_strictly(v, namespaces))
         else:
-            _LOGGER.debug(f"'{PATHS_KEY}' section not found in the "
+            _LOGGER.debug(f"'{VAR_TEMPL_KEY}' section not found in the "
                           f"{self.__class__.__name__} object.")
 
     def get_pipeline_schemas(self, schema_key=INPUT_SCHEMA_KEY):

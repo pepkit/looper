@@ -533,7 +533,7 @@ class SubmissionConductor(object):
             res_pkg.update(cli)
             self.prj.dcc.compute.update(res_pkg)  # divcfg
             namespaces["compute"].update(res_pkg)
-            self.pl_iface.render_paths(namespaces=namespaces)
+            self.pl_iface.render_var_templates(namespaces=namespaces)
             namespaces["pipeline"] = self.pl_iface
             # pre_submit hook namespace updates
             namespaces = _exec_pre_submit(self.pl_iface, namespaces)
