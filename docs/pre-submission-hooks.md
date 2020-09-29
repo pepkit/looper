@@ -156,7 +156,7 @@ pre_submit:
   command_templates: 
     - "{pipeline.var_templates.compute_script} --genome {sample.genome} --log-file {looper.output_dir}/log.txt"    
 command_template: >
-  {pipeline.var_templates.pipeline_path} ...x
+  {pipeline.var_templates.pipeline_path} ...
 ```
 
 **Script example:**

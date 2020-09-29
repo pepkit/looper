@@ -19,8 +19,7 @@ from peppy.const import CONFIG_KEY, SAMPLE_YAML_EXT, SAMPLE_NAME_ATTR
 from .processed_project import populate_sample_paths
 from .const import *
 from .exceptions import JobSubmissionException
-from .utils import grab_project_data, fetch_sample_flags, \
-    jinja_render_template_strictly
+from .utils import fetch_sample_flags, jinja_render_template_strictly
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -50,8 +49,10 @@ def _get_sample_yaml_path(namespaces, filename=None):
             else os.path.join(namespaces["looper"][OUTDIR_KEY], path)
     else:
         # default YAML location
-        final_path = os.path.join(namespaces["looper"][OUTDIR_KEY],
-                                  "submission", filename)
+        default = os.path.join(namespaces["looper"][OUTDIR_KEY], "submission")
+        final_path = os.path.join(default, filename)
+        if not os.path.exists(default):
+            os.makedirs(default, exist_ok=True)
     return final_path
 
 
