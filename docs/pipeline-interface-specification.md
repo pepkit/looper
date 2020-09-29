@@ -27,6 +27,7 @@ A pipeline interface may contain the following keys:
 - `output_schema` (RECOMMENDED) - A schema describing the *outputs* of the pipeline
 - `compute` (RECOMMENDED) - Settings for computing resources
 - `var_templates` (RECOMMENDED) - A mapping of [Jinja2](https://jinja.palletsprojects.com/en/2.11.x/) templates and corresponding names, typically used to encode submission-specific paths that can be submission-specific
+- `pre_submit` (OPTIONAL) - A mapping that defines the pre-submission tasks to be executed
 
 The pipeline interface should define either a sample pipeline or a project pipeline. Here's a simple example:
 
@@ -104,7 +105,7 @@ The output schema formally specifies the *output produced by this pipeline*. It 
 
 The attributes added under the *Project properties* section are assumed to be project-level outputs, whereas attributes under the `samples` object are sample-level outputs. Here is an example output schema:
 
-```
+```yaml
 description: objects produced by PEPPRO pipeline.
 properties:
   samples:
@@ -180,6 +181,10 @@ This final line in the resources `tsv` must include `NaN` in the `max_file_size`
 #### var_templates
 
 This section can consist of multiple variable templates that are rendered and can be reused. The namespaces available to the templates are listed in [variable namespaces](variable-namespaces.md) section. Please note that the variables defined here (even if they are paths) are arbitrary and are *not* subject to be made relative. Therefore, the pipeline interface author needs take care of making them portable (the `{looper.piface_dir}` value comes in handy!).
+
+#### pre_submit
+
+This section can consist of two subsections: `python_funcions` and/or `command_templates`, which specify the pre-submission tasks to be run before the main pipeline command is submitted. Please refer to the [pre-submission hooks system](pre-submission-hooks.md) section for a detailed explanation of this feature and syntax.
 
 ## Validating a pipeline interface
 

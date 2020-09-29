@@ -20,7 +20,7 @@ pre_submit:
 
 ## Execution order
 
-The state of variable namespaces used as and input for any of the hooks depends on the resulting state (output) of the previous one. Therefore, the execution order is crucial for complex system designs. There are two rules to rememer:
+The state of variable namespaces used as an input for any of the hooks depends on the resulting state of the previous one (output). Therefore, the execution order is crucial for complex system designs. There are two rules to remember:
 
  - the execution order is preserved within the subsections of `pre_submit` block (YAML lists order)
  - plugins listed under `python_functions` are *always* executed before `command_templates`
@@ -46,7 +46,7 @@ compute:
 ...
 ``` 
 
-Result:
+Returned data:
 ```yaml
 sample:
     size: 1000
@@ -54,7 +54,7 @@ looper:
     log_file: /home/michal/Desktop/new_log.txt
 ```
 
-Output:
+Result (input + returned data):
 ```yaml
 sample:
     name: test
@@ -86,7 +86,7 @@ Plugin authors may require users to specify any attributes within any namespace 
 #### `command_templates`
 
 **Input:**
- - NA (the command can be supplied with choice of [looper variable namespaces](variable-namespaces.md))
+ - NA (since it is a template, the command can be supplied with choice of [looper variable namespaces](variable-namespaces.md))
  
 **Output:**
  - JSON-formatted string (`str`), that is processed with [json.loads](https://docs.python.org/3/library/json.html#json.loads) and [subprocess.check_output](https://docs.python.org/3/library/subprocess.html#subprocess.check_output) as follows: `json.loads(subprocess.check_output(str))` 
@@ -156,7 +156,7 @@ pre_submit:
   command_templates: 
     - "{pipeline.var_templates.compute_script} --genome {sample.genome} --log-file {looper.output_dir}/log.txt"    
 command_template: >
-  {pipeline.var_templates.pipeline_path} ...
+  {pipeline.var_templates.pipeline_path} ...x
 ```
 
 **Script example:**
