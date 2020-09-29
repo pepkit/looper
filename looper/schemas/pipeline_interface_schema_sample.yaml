@@ -12,9 +12,9 @@ properties:
   command_template:
     type: string
     description: "Jinja2-like template to construct the command to run"
-  paths:
+  var_templates:
     type: object
-    description: "Paths section; relative to pipeline interface file or absolute."
+    description: "Jinja2-like templates to construct submission variables"
   pre_submit:
     type: object
     description: "Section that defines pre submission hooks"
