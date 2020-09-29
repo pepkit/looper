@@ -32,4 +32,4 @@ jobs:
       run: python -m pip install .
 
     - name: Run pytest tests
-      run: pytest tests --remote-data
+      run: pytest tests -x -vv --remote-data
