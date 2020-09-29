@@ -44,6 +44,7 @@ def get_sample_yaml_path(namespaces, filename=None):
             "submission",
             filename)
     else:
+        # TODO: deprecate or remove?
         path = expandpath(jinja_render_template_strictly(
             namespaces["pipeline"][SAMPLE_YAML_PATH_KEY], namespaces))
         final_path = path if os.path.isabs(path) \
