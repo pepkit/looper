@@ -72,6 +72,8 @@ compute:
 ### Input and output formats
 
 Plugin authors may require users to specify any attributes within any namespace to parametrize them. For example, a plugin that increases the compute wall time by an arbitrary amount of time may require `extra_time` attribute in the `pipeline` namespace. The plugins need to handle incomplete parametrization, either by providing defaults or by raising exceptions.
+
+[`pipeline.template_vars`](pipeline-interface-specification.md#var_templates) section is particularly useful and recommended to parametrize plugin functions.
  
 #### `python_functions`
 
@@ -89,22 +91,22 @@ Plugin authors may require users to specify any attributes within any namespace 
 **Output:**
  - JSON-formatted string (`str`), that is processed with [json.loads](https://docs.python.org/3/library/json.html#json.loads) and [subprocess.check_output](https://docs.python.org/3/library/subprocess.html#subprocess.check_output) as follows: `json.loads(subprocess.check_output(str))` 
  
- 
- 
-## Example uses
+## Built-in `pre_submit.python_functions`
 
-Below we provide couple of use examples of the pre-submission hooks system
+### `looper.write_sample_yaml`
 
-### Sample namespace serialization
+Saves the sample to YAML file. This plugin can be parametrized with a custom YAML directory (see "parameters" below). If the parameter is not provided, the file will be saved in `{looper.output_dir}/submission`.
 
-A built-in plugin, that saves the sample to YAML file.
+**Parameters:**
+   - (optional) `pipeline.var_templates.sample_yaml_path`: a complete and absolute path to the *directory* where sample YAML representation is to be stored.
 
-**Required parameters:** None
+**Usage:**
 
 ```yaml
 pipeline_type: sample
 var_templates:
   main: "{looper.piface_dir}/pipelines/pipeline1.py"
+  sample_yaml_path: "{looper.output_dir}/custom_sample_yamls"
 pre_submit:
   python_functions:
     - looper.write_sample_yaml
@@ -112,31 +114,38 @@ command_template: >
   {pipeline.var_templates.main} ...
 ```
 
-### Entire submission serialization
+### `looper.write_sample_yaml_prj`
 
-A built-in plugin, that saves the submission namespace to YAML file.
+Saves the sample to YAML file with project reference.  This plugin can be parametrized with a custom YAML directory (see "parameters" below). If the parameter is not provided, the file will be saved in `{looper.output_dir}/submission`.
 
-**Required parameters:**
-- input1
-- input2
-- input3
+**Parameters:**
+   - (optional) `pipeline.var_templates.sample_yaml_path`: a complete and absolute path to the *directory* where sample YAML representation is to be stored.
+
+**Usage:**
 
 ```yaml
 pipeline_type: sample
 var_templates:
   main: "{looper.piface_dir}/pipelines/pipeline1.py"
+  sample_yaml_path: "{looper.output_dir}/custom_sample_yamls"
 pre_submit:
   python_functions:
-    - looper.write_submission_yaml
+    - looper.write_sample_yaml_prj
 command_template: >
   {pipeline.var_templates.main} ...
 ```
+
+### `looper.write_submission_yaml`
+
+...
+
+## Example uses of `pre_submit.command_templates`
 
 ### Dynamic compute parameters 
 
 The size-dependent variables is a convenient system to modulate computing variables based on file size, but it is not flexible enough to allow modulated compute variables on the basis of other sample attributes. For a more flexible version, you can use the pre submission hooks system. The `pre_submit.command_templates` specifies a list of Jinja2 templates to construct a system command run in a subprocess. This command template has available all of the namespaces in the primary command template. The command should return a JSON object, which is then used to populate the namespaces. This allows you to specify computing variables that depend on any attributes of a project, sample, or pipeline, which can be used for ultimate flexibility in computing.
 
-Example:
+**Usage**:
 
 ```yaml
 pipeline_type: sample
@@ -148,4 +157,30 @@ pre_submit:
     - "{pipeline.var_templates.compute_script} --sample-size {sample.input_size} --genome {sample.genome}"    
 command_template: >
   {pipeline.var_templates.pipeline_path} ...
+```
+
+**Script example:**
+
+```python
+#!/usr/bin/env python3
+
+import json
+from argparse import ArgumentParser
+
+parser = ArgumentParser(description="Test script")
+
+parser.add_argument("-s", "--size", help="max size", required=True)
+parser.add_argument("-g", "--genome", type=str, help="genome", required=True)
+parser.add_argument("-m", "--log-file", type=str, help="log_file", required=True)
+parser.add_argument("-c", "--custom-cores", type=str, help="Force number of cores to use", required=False)
+args = parser.parse_args()
+
+y = json.dumps({
+    "cores": args.custom_cores or "4",
+    "mem": "10000",
+    "time": "00-11:00:00",
+    "logfile": args.log_file
+})
+
+print(y)
 ```
