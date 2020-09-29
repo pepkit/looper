@@ -154,7 +154,7 @@ var_templates:
   compute_script: "{looper.piface_dir}/hooks/script.py"
 pre_submit:
   command_templates: 
-    - "{pipeline.var_templates.compute_script} --sample-size {sample.input_size} --genome {sample.genome}"    
+    - "{pipeline.var_templates.compute_script} --genome {sample.genome} --log-file {looper.output_dir}/log.txt"    
 command_template: >
   {pipeline.var_templates.pipeline_path} ...
 ```
@@ -169,15 +169,15 @@ from argparse import ArgumentParser
 
 parser = ArgumentParser(description="Test script")
 
-parser.add_argument("-s", "--size", help="max size", required=True)
-parser.add_argument("-g", "--genome", type=str, help="genome", required=True)
-parser.add_argument("-m", "--log-file", type=str, help="log_file", required=True)
+parser.add_argument("-s", "--sample-size", help="Sample size", required=False)
+parser.add_argument("-g", "--genome", type=str, help="Genome", required=True)
+parser.add_argument("-m", "--log-file", type=str, help="Log file path", required=True)
 parser.add_argument("-c", "--custom-cores", type=str, help="Force number of cores to use", required=False)
 args = parser.parse_args()
 
 y = json.dumps({
     "cores": args.custom_cores or "4",
-    "mem": "10000",
+    "mem": "10000" if args.genome == "hg38" else "20000",
     "time": "00-11:00:00",
     "logfile": args.log_file
 })
