@@ -137,25 +137,26 @@ def write_sample_yaml_cwl(namespaces):
     sample.to_yaml(sample.sample_yaml_cwl)
     return {"sample": sample}
 
-def get_submission_yaml_path(namespaces):
+def _get_submission_yaml_path(namespaces, filename=None):
     """
     Get a path to the submission YAML file
 
+
+    :param str filename: A filename without folders. If not provided, a
+        default name of sample_name.yaml will be used.
     :param dict[dict]] namespaces: namespaces mapping
     :return str: submission YAML file path
     """
     # default file name
-    filename = "{}{}{}".format(namespaces["sample"][SAMPLE_NAME_ATTR], "_submission", SAMPLE_YAML_EXT[0])
+    filename = filename or "{}{}{}".format(namespaces["sample"][SAMPLE_NAME_ATTR], "_submission", SAMPLE_YAML_EXT[0])
 
     if VAR_TEMPL_KEY in namespaces["pipeline"] and \
             SUBMISSION_YAML_PATH_KEY in namespaces["pipeline"][VAR_TEMPL_KEY]:
-        if namespaces["pipeline"][VAR_TEMPL_KEY][SUBMISSION_YAML_PATH_KEY].endswith(tuple(SAMPLE_YAML_EXT)):
-            final_path = expandpath(jinja_render_template_strictly(
-            namespaces["pipeline"][SUBMISSION_YAML_PATH_KEY], namespaces))
-        else:
-            path = expandpath(jinja_render_template_strictly(
-            namespaces["pipeline"][SUBMISSION_YAML_PATH_KEY], namespaces))
-            final_path = os.path.join(path, filename)
+        path = expandpath(jinja_render_template_strictly(
+        namespaces["pipeline"][VAR_TEMPL_KEY][SUBMISSION_YAML_PATH_KEY], namespaces))
+        if not os.path.exists(path):
+            os.makedirs(path, exist_ok=True)
+        final_path = os.path.join(path, filename)
     else:
         # default YAML location
         default = os.path.join(namespaces["looper"][OUTDIR_KEY], "submission")
@@ -174,13 +175,12 @@ def write_submission_yaml(namespaces):
     :return dict: sample namespace dict
     """
     import yaml
-    # my_namespaces = namespaces["sample"].to_dict()
-    path = get_submission_yaml_path(namespaces)
+
+    path = _get_submission_yaml_path(namespaces)
     my_namespaces = {}
     for namespace, values in namespaces.items():
         my_namespaces.update({str(namespace):values.to_dict()})
     
-    # print(my_namespaces)
     with open(path,'w') as yamlfile:
         yaml.dump(my_namespaces, yamlfile)
 
