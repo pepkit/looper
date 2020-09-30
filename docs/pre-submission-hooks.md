@@ -148,7 +148,7 @@ Saves all five namespaces of pre-submission to YAML file.  This plugin can be pa
 pipeline_type: sample
 var_templates:
   main: "{looper.piface_dir}/pipelines/pipeline1.py"
-  submission_yaml_path: "{looper.output_dir}/custom_path/custom_submission_file.yaml"
+  submission_yaml_path: "{looper.output_dir}/custom_path/{sample.sample_name}_submission.yaml"
 pre_submit:
   python_functions:
     - looper.write_submission_yaml
