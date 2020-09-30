@@ -6,7 +6,7 @@ __author__ = "Databio lab"
 __email__ = "nathan@code.databio.org"
 
 __all__ = [
-    "BUTTON_APPEARANCE_BY_FLAG", "TABLE_APPEARANCE_BY_FLAG", "PATHS_KEY",
+    "BUTTON_APPEARANCE_BY_FLAG", "TABLE_APPEARANCE_BY_FLAG", "VAR_TEMPL_KEY",
     "ID_COLNAME", "NO_DATA_PLACEHOLDER", "OUTKEY", "ALL_SUBCMD_KEY",
     "OUTDIR_KEY", "LOOPER_KEY", "COMPUTE_KEY", "PIPELINE_INTERFACES_KEY",
     "SIZE_DEP_VARS_KEY", "FLAGS", "DYN_VARS_KEY", "SAMPLE_YAML_PATH_KEY",
@@ -93,7 +93,7 @@ SUBMISSION_YAML_PATH_KEY = "submission_yaml_path"
 TOGGLE_KEY_SELECTOR = "toggle_key"
 SAMPLE_TOGGLE_ATTR = "toggle"
 OUTKEY = "outputs"
-PATHS_KEY = "paths"
+VAR_TEMPL_KEY = "var_templates"
 COMPUTE_KEY = "compute"
 COMPUTE_PACKAGE_KEY = "package"
 SIZE_DEP_VARS_KEY = "size_dependent_variables"

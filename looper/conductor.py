@@ -19,59 +19,74 @@ from peppy.const import CONFIG_KEY, SAMPLE_YAML_EXT, SAMPLE_NAME_ATTR
 from .processed_project import populate_sample_paths
 from .const import *
 from .exceptions import JobSubmissionException
-from .utils import grab_project_data, fetch_sample_flags, \
-    jinja_render_template_strictly
+from .utils import fetch_sample_flags, jinja_render_template_strictly
 
 _LOGGER = logging.getLogger(__name__)
 
 
-def get_sample_yaml_path(namespaces, filename=None):
+def _get_sample_yaml_path(namespaces, filename=None):
     """
-    Get a path to the sample YAML file
+    Get a path to the sample YAML file.
 
     :param str filename: A filename without folders. If not provided, a
         default name of sample_name.yaml will be used.
     :param dict[dict]] namespaces: namespaces mapping
     :return str: sample YAML file path
     """
-    if not filename:
-        # Default file name
-        filename = "{}{}".format(namespaces["sample"][SAMPLE_NAME_ATTR], SAMPLE_YAML_EXT[0])
+    filename = filename or "{}{}".format(
+        namespaces["sample"][SAMPLE_NAME_ATTR], SAMPLE_YAML_EXT[0])
 
-    if SAMPLE_YAML_PATH_KEY not in namespaces["pipeline"]:
-        final_path = os.path.join(
-            namespaces["looper"][OUTDIR_KEY],
-            "submission",
-            filename)
-    else:
+    if VAR_TEMPL_KEY in namespaces["pipeline"] and \
+            SAMPLE_YAML_PATH_KEY in namespaces["pipeline"][VAR_TEMPL_KEY]:
+        path = expandpath(jinja_render_template_strictly(
+            namespaces["pipeline"][SAMPLE_YAML_PATH_KEY], namespaces))
+        final_path = os.path.join(path, filename)
+    elif SAMPLE_YAML_PATH_KEY in namespaces["pipeline"]:
+        # TODO: deprecate or remove?
         path = expandpath(jinja_render_template_strictly(
             namespaces["pipeline"][SAMPLE_YAML_PATH_KEY], namespaces))
         final_path = path if os.path.isabs(path) \
             else os.path.join(namespaces["looper"][OUTDIR_KEY], path)
+    else:
+        # default YAML location
+        default = os.path.join(namespaces["looper"][OUTDIR_KEY], "submission")
+        final_path = os.path.join(default, filename)
+        if not os.path.exists(default):
+            os.makedirs(default, exist_ok=True)
     return final_path
 
 
 def write_sample_yaml(namespaces):
     """
-    Save sample representation to YAML.
+    Plugin: saves sample representation to YAML.
+
+    This plugin can be parametrized by providing the path value/template in
+    'pipeline.var_templates.sample_yaml_path'. This needs to be a complete and
+    absolute path to the directory where sample YAML representation is to be
+    stored.
 
     :param dict namespaces: variable namespaces dict
     :return dict: sample namespace dict
     """
     sample = namespaces["sample"]
-    sample.to_yaml(get_sample_yaml_path(namespaces), add_prj_ref=False)
+    sample.to_yaml(_get_sample_yaml_path(namespaces), add_prj_ref=False)
     return {"sample": sample}
 
 
 def write_sample_yaml_prj(namespaces):
     """
-    Save sample representation and project reference to YAML.
+    Plugin: saves sample representation with project reference to YAML.
+
+    This plugin can be parametrized by providing the path value/template in
+    'pipeline.var_templates.sample_yaml_path'. This needs to be a complete and
+    absolute path to the directory where sample YAML representation is to be
+    stored.
 
     :param dict namespaces: variable namespaces dict
     :return dict: sample namespace dict
     """
     sample = namespaces["sample"]
-    sample.to_yaml(get_sample_yaml_path(namespaces), add_prj_ref=True)
+    sample.to_yaml(_get_sample_yaml_path(namespaces), add_prj_ref=True)
     return {"sample": sample}
 
 
@@ -92,7 +107,7 @@ def write_sample_yaml_cwl(namespaces):
     # File and Directory object types directly.
     sample = namespaces["sample"]
 
-    sample.sample_yaml_cwl = get_sample_yaml_path(namespaces, filename)
+    sample.sample_yaml_cwl = _get_sample_yaml_path(namespaces, filename)
     _LOGGER.info("Writing sample yaml cwl.")
 
     if "files" in sample:
@@ -578,7 +593,7 @@ class SubmissionConductor(object):
             res_pkg.update(cli)
             self.prj.dcc.compute.update(res_pkg)  # divcfg
             namespaces["compute"].update(res_pkg)
-            self.pl_iface.render_paths(namespaces=namespaces)
+            self.pl_iface.render_var_templates(namespaces=namespaces)
             namespaces["pipeline"] = self.pl_iface
             # pre_submit hook namespace updates
             namespaces = _exec_pre_submit(self.pl_iface, namespaces)
