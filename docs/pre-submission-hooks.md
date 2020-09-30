@@ -140,7 +140,7 @@ command_template: >
 Saves all five namespaces of pre-submission to YAML file.  This plugin can be parametrized with a custom YAML directory (see "parameters" below). If the parameter is not provided, the file will be saved in `{looper.output_dir}/submission`.
 
 **Parameters:**
-   - (optional) `pipeline.var_templates.submission_yaml_path`: a complete and absolute path to the *directory* or the output *file* where submission YAML representation is to be stored.
+   - (optional) `pipeline.var_templates.submission_yaml_path`: a complete and absolute path to the *directory* where submission YAML representation is to be stored.
 
 **Usage:**
 
@@ -148,7 +148,7 @@ Saves all five namespaces of pre-submission to YAML file.  This plugin can be pa
 pipeline_type: sample
 var_templates:
   main: "{looper.piface_dir}/pipelines/pipeline1.py"
-  submission_yaml_path: "{looper.output_dir}/custom_path/{sample.sample_name}_submission.yaml"
+  submission_yaml_path: "{looper.output_dir}/custom_path"
 pre_submit:
   python_functions:
     - looper.write_submission_yaml
