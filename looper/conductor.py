@@ -106,9 +106,7 @@ def write_sample_yaml_cwl(namespaces):
     # To be compatible as a CWL job input, we need to handle the
     # File and Directory object types directly.
     sample = namespaces["sample"]
-
     sample.sample_yaml_cwl = _get_sample_yaml_path(namespaces, filename)
-    _LOGGER.info("Writing sample yaml cwl.")
 
     if "files" in sample:
         for file_attr in sample["files"]:
@@ -117,10 +115,10 @@ def write_sample_yaml_cwl(namespaces):
             # file paths are assumed relative to the sample table;
             # but CWL assumes they are relative to the yaml output file,
             # so we convert here.
-            file_attr_rel = os.path.relpath(file_attr_value,
-                os.path.dirname(sample.sample_yaml_cwl))
+            file_attr_rel = os.path.relpath(
+                file_attr_value, os.path.dirname(sample.sample_yaml_cwl))
             sample[file_attr] = {"class": "File",
-                                "path":  file_attr_rel}
+                                 "path":  file_attr_rel}
 
     if "directories" in sample:
         for dir_attr in sample["directories"]:
@@ -129,8 +127,6 @@ def write_sample_yaml_cwl(namespaces):
             # file paths are assumed relative to the sample table;
             # but CWL assumes they are relative to the yaml output file,
             # so we convert here.
-            file_attr_rel = os.path.relpath(dir_attr_value,
-                os.path.dirname(sample.sample_yaml_cwl))
             sample[dir_attr] = {"class": "Directory",
                                 "path":  dir_attr_value}
     
@@ -149,7 +145,6 @@ class SubmissionConductor(object):
     be either total input file size or the number of individual commands.
 
     """
-
     def __init__(self, pipeline_interface, prj, delay=0, extra_args=None,
                  extra_args_override=None, ignore_flags=False,
                  compute_variables=None, max_cmds=None, max_size=None,
@@ -190,7 +185,6 @@ class SubmissionConductor(object):
         :param bool collate: Whether a collate job is to be submitted (runs on
             the project level, rather that on the sample level)
         """
-
         super(SubmissionConductor, self).__init__()
         self.collate = collate
         self.section_key = PROJECT_PL_KEY if self.collate else SAMPLE_PL_KEY
@@ -353,27 +347,6 @@ class SubmissionConductor(object):
                     for schema in schemas:
                         populate_sample_paths(s, read_schema(schema))
 
-                    # from copy import deepcopy
-                    # why can't I deepcopy(s) ?
-                    # scopy = deepcopy(s)
-                    scopy = s
-                    # If we had to get the schemas, they'd be input schemas, not
-                    # output schemas like above. But actually these are already
-                    # populated into the sample yaml object at this point, so we
-                    # don't need to re-parse them.
-
-                    # Process pre_submit hooks, in the form "module.function".
-                    # import importlib
-                    # if "pre_submit" in self.pl_iface:
-                    #     for hook in self.pl_iface["pre_submit"]:
-                    #         pkgstr, funcstr = os.path.splitext(hook)
-                    #         pkg = importlib.import_module(pkgstr)
-                    #         func = getattr(pkg, funcstr[1:])
-                    #         _LOGGER.info("Calling pre-submit function: {}".format(func))
-                    #         s = func(s, self)
-
-                    # Printing the yaml file is now handled by the plugins
-                    # scopy.to_yaml(self._get_sample_yaml_path(scopy))
             script = self.write_script(self._pool, self._curr_size)
             # Determine whether to actually do the submission.
             _LOGGER.info("Job script (n={0}; {1:.2f}Gb): {2}".
@@ -408,29 +381,6 @@ class SubmissionConductor(object):
             # submitted = False
 
         return submitted
-
-    def _get_sample_yaml_path(self, sample):
-        """
-        Generate path to the sample YAML target location.
-
-        Render path template defined in the pipeline section
-        (relative to the pipeline output directory).
-        If no template defined, output to the submission directory.
-
-        :param peppy.Sample sample: sample to generate yaml path for
-        :return str: path to yaml file
-        """
-        if SAMPLE_YAML_PATH_KEY not in self.pl_iface:
-            return os.path.join(self.prj.submission_folder,
-                                "{}{}".format(sample.sample_name,
-                                              SAMPLE_YAML_EXT[0]))
-        pth_templ = self.pl_iface[SAMPLE_YAML_PATH_KEY]
-        namespaces = {"sample": sample,
-                      "project": self.prj.prj[CONFIG_KEY],
-                      "pipeline": self.pl_iface}
-        path = expandpath(jinja_render_template_strictly(pth_templ, namespaces))
-        return path if os.path.isabs(path) \
-            else os.path.join(self.prj.output_dir, path)
 
     def _is_full(self, pool, size):
         """
