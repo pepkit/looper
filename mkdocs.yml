@@ -20,6 +20,7 @@ nav:
     - Handling multiple input files: how-to-merge-inputs.md
     - Running multiple pipelines: multiple-pipelines.md
     - Writing a pipeline interface: writing-a-pipeline-interface.md
+    - Using geofetch: using-geofetch.md
   - Reference:
     - Pipeline interface specification: pipeline-interface-specification.md
     - Pipeline tiers: pipeline-tiers.md
