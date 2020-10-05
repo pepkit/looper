@@ -2,6 +2,7 @@ import pytest
 from tests.smoketests.conftest import *
 from peppy.const import *
 from looper.const import *
+from looper.project import Project
 from yaml import dump
 
 CMD_STRS = ["string", " --string", " --sjhsjd 212", "7867#$@#$cc@@"]
@@ -394,6 +395,26 @@ class LooperRunSubmissionScriptTests:
         assert os.path.isdir(sd)
         assert sum([f.endswith(".sub") for f in os.listdir(sd)]) == 4, subm_err
         assert sum([f.endswith(".yaml") for f in os.listdir(sd)]) == 2, subm_err
+
+    def test_looper_submission_plugin(self, prep_temp_pep):
+        tp = prep_temp_pep
+        for path in {piface["pipe_iface_file"]
+                     for piface in Project(tp).pipeline_interfaces}:
+            with mod_yaml_data(path) as piface_data:
+                piface_data[PRE_SUBMIT_HOOK_KEY][PRE_SUBMIT_PY_FUN_KEY] = \
+                    ["looper.write_submission_yaml"]
+        stdout, stderr, rc = subp_exec(tp, "run")
+        sd = os.path.join(get_outdir(tp), "submission")
+        subm_err = \
+            IOError(f"Not found in submission directory ({sd}): 6 submission "
+                    f"scripts (3 per pipeline) and 3 sample YAML "
+                    f"representations. Listdir: \n{os.listdir(sd)}")
+        print(stderr)
+        assert rc == 0
+        assert os.path.isdir(sd)
+        assert sum([f.endswith(".sub") for f in os.listdir(sd)]) == 6, subm_err
+        assert sum([f.endswith("submission.yaml")
+                    for f in os.listdir(sd)]) == 3, subm_err
 
 
 class LooperComputeTests:
