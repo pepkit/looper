@@ -7,7 +7,7 @@ Sometimes there is a need to perform some job/submission related tasks *before* 
 
 ## How to specify pre-submission tasks in the pipeline interface
 
-The pre-submission tasks to be executed are listed in the [pipeline interface](pipeline-interface-specification.md) file under the top-level `pre_submit` key. The `pre_submit` section is divided into two subsections corresponding to two types of hooks: `python_functions` and `command_templates`. The `python_functions` key specifies a list of strings corresponding to python functions to run. The `command_templates` key is more generic, specifying shell command templates to be executed in a subprocess. Here is an example:
+The pre-submission tasks to be executed are listed in the [pipeline interface](pipeline-interface-specification.md) file under the top-level `pre_submit` key. The `pre_submit` section is divided into two subsections corresponding to two types of hooks: `python_functions` and `command_templates`. The `python_functions` key specifies a list of strings corresponding to Python functions to run. The `command_templates` key is more generic, specifying shell command templates to be executed in a subprocess. Here is an example:
 
 ```yaml
 pre_submit:
@@ -28,7 +28,7 @@ Looper ships with several included plugins that you can use as pre-submission fu
 
 ### Included plugin: `looper.write_sample_yaml`
 
-Saves all sample metadata as a YAML file. The output file path can be customized using `var_templates.sample_yaml_path`. If this parameter is not provided, the file will be saved as `{looper.output_dir}/submission/{sample.name}.yaml`.
+Saves all sample metadata as a YAML file. The output file path can be customized using `var_templates.sample_yaml_path`. If this parameter is not provided, the file will be saved as `{looper.output_dir}/submission/{sample.sample_name}_sample.yaml`.
 
 **Parameters:**
   
@@ -50,7 +50,7 @@ command_template: >
 
 ### Included plugin: `looper.write_sample_yaml_cwl`
 
-This plugin writes a sample yaml file compatible as a job input file for a CWL pipeline. This plugin allows looper to be used as a scatterer to run an independent CWL workflow for each sample in your PEP sample table. You can parametrize the plugin with a custom output file name using `sample_yaml_cwl`. If the parameter is not provided, the file will be saved in `{looper.output_dir}/submission/{sample.name}_cwl.yaml`.
+This plugin writes a sample yaml file compatible as a job input file for a CWL pipeline. This plugin allows looper to be used as a scatterer to run an independent CWL workflow for each sample in your PEP sample table. You can parametrize the plugin with a custom output file name using `sample_yaml_cwl_path`. If the parameter is not provided, the file will be saved in `{looper.output_dir}/submission/{sample.sample_name}_sample_cwl.yaml`.
 
 **Parameters:**
 
@@ -62,7 +62,7 @@ This plugin writes a sample yaml file compatible as a job input file for a CWL p
 pipeline_type: sample
 var_templates:
   main: "{looper.piface_dir}/pipelines/pipeline1.py"
-  sample_yaml_cwl: "{looper.output_dir}/custom_sample_yamls/custom_{sample.name}.yaml"
+  sample_yaml_cwl_path: "{looper.output_dir}/custom_sample_yamls/custom_{sample.name}.yaml"
 pre_submit:
   python_functions:
     - looper.write_sample_yaml_cwl
@@ -73,11 +73,11 @@ command_template: >
 
 ### Included plugin: `looper.write_sample_yaml_prj`
 
-Saves the sample to YAML file with project reference.  This plugin can be parametrized with a custom YAML directory (see "parameters" below). If the parameter is not provided, the file will be saved in `{looper.output_dir}/submission`.
+Saves the sample to YAML file with project reference.  This plugin can be parametrized with a custom YAML directory (see "parameters" below). If the parameter is not provided, the file will be saved in `{looper.output_dir}/submission/{sample.sample_name}_sample_prj.yaml`.
 
 **Parameters:**
   
-  - `pipeline.var_templates.sample_yaml_path` (optional): absolute path to file where YAML is to be stored.
+  - `pipeline.var_templates.sample_yaml_prj_path` (optional): absolute path to file where YAML is to be stored.
 
 **Usage:**
 
@@ -85,7 +85,7 @@ Saves the sample to YAML file with project reference.  This plugin can be parame
 pipeline_type: sample
 var_templates:
   main: "{looper.piface_dir}/pipelines/pipeline1.py"
-  sample_yaml_path: "{looper.output_dir}/custom_sample_yamls"
+  sample_yaml_prj_path: "{looper.output_dir}/custom_sample_yamls"
 pre_submit:
   python_functions:
     - looper.write_sample_yaml_prj
@@ -95,7 +95,7 @@ command_template: >
 
 ### Included plugin: `looper.write_submission_yaml`
 
-Saves all five namespaces of pre-submission to YAML file.  This plugin can be parametrized with a custom YAML directory (see "parameters" below). If the parameter is not provided, the file will be saved in `{looper.output_dir}/submission`.
+Saves all five namespaces of pre-submission to YAML file.  This plugin can be parametrized with a custom YAML directory (see "parameters" below). If the parameter is not provided, the file will be saved in `{looper.output_dir}/submission/{sample.sample_name}_submission.yaml`.
 
 **Parameters:**
   
@@ -121,9 +121,9 @@ Pre-submission tasks can be written as a Python function or a shell commands. We
 
 ### Python functions
 
-Python plugin functions have access *all of the metadata variables looper has access to to construct the primary command template*. The python function must obey the following rules:
+Python plugin functions have access *all of the metadata variables looper has access to to construct the primary command template*. The Python function must obey the following rules:
 
-1. The python function *must* take as input a `namespaces` object, which is a Python [`dict`](https://docs.python.org/3/tutorial/datastructures.html#dictionaries) of [looper variable namespaces](variable-namespaces.md). 
+1. The Python function *must* take as input a `namespaces` object, which is a Python [`dict`](https://docs.python.org/3/tutorial/datastructures.html#dictionaries) of [looper variable namespaces](variable-namespaces.md). 
 
 2. The function *should* return any updated namespace variables; or can potentially return `None` if no changes are made, which may the case if the function is only used for its side effect.
 
@@ -185,7 +185,7 @@ compute:
 
 ### Shell command plugins
 
-In case you need more flexibility than a python function, you can also execute arbitrary commands as a pre-submission task. You define exactly what command you want to run, like this:
+In case you need more flexibility than a Python function, you can also execute arbitrary commands as a pre-submission task. You define exactly what command you want to run, like this:
 
 ```yaml
 var_templates:
