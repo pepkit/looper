@@ -185,16 +185,25 @@ compute:
 
 ### Shell command plugins
 
-**Input:**
- - NA (since it is a template, the command can be supplied with choice of [looper variable namespaces](variable-namespaces.md))
+In case you need more flexibility than a python function, you can also execute arbitrary commands as a pre-submission task. You define exactly what command you want to run, like this:
+
+```yaml
+var_templates:
+  compute_script: "{looper.piface_dir}/hooks/script.py"
+pre_submit:
+  command_templates: 
+    - "{pipeline.var_templates.compute_script} --genome {sample.genome} --log-file {looper.output_dir}/log.txt" 
+```
+
+This `command_templates` section specifies a list with one or more entries. Each entry specifies a command. The commands are themselves templates, just like the primary `command_template`, so you have access to the looper variable namespaces to put together the appropriate command. In fact, really, the other difference between these `pre_submit.command_templates` and the primary `command_template` is that the final one has access to the changes introduce in the variables by the `pre_submit` commands. The inputs to the script are completely user-defined -- you choose what information and how you want to pass it to your script.
  
-**Output:**
- - JSON-formatted string (`str`), that is processed with [json.loads](https://docs.python.org/3/library/json.html#json.loads) and [subprocess.check_output](https://docs.python.org/3/library/subprocess.html#subprocess.check_output) as follows: `json.loads(subprocess.check_output(str))` 
- 
+**Output:** The output of your command should be a JSON-formatted string (`str`), that is processed with [json.loads](https://docs.python.org/3/library/json.html#json.loads) and [subprocess.check_output](https://docs.python.org/3/library/subprocess.html#subprocess.check_output) as follows: `json.loads(subprocess.check_output(str))`. This JSON object will be used to update the looper variable namespaces. 
 
 #### Example: Dynamic compute parameters 
 
-The size-dependent variables is a convenient system to modulate computing variables based on file size, but it is not flexible enough to allow modulated compute variables on the basis of other sample attributes. For a more flexible version, you can use the pre submission hooks system. The `pre_submit.command_templates` specifies a list of Jinja2 templates to construct a system command run in a subprocess. This command template has available all of the namespaces in the primary command template. The command should return a JSON object, which is then used to populate the namespaces. This allows you to specify computing variables that depend on any attributes of a project, sample, or pipeline, which can be used for ultimate flexibility in computing.
+In the `compute` section of the pipeline interface, looper allows you to specify a `size_dependent_variables` section, which  lets you specify variables with values that are modulated based on the total input file size for the run. This is typically used to add variables for memory, CPU, and clock time to request, if they depend on the input file size. This a good example  of modulating computing variables based on file size, but it is not flexible enough to allow modulated compute variables on the basis of other sample attributes. For a more flexible version, you can use a pre-submission hook.
+
+The `pre_submit.command_templates` specifies a list of Jinja2 templates to construct a system command run in a subprocess. This command template has available all of the namespaces in the primary command template. The command should return a JSON object, which is then used to populate the namespaces. This allows you to specify computing variables that depend on any attributes of a project, sample, or pipeline, which can be used for ultimate flexibility in computing.
 
 **Usage**:
 
