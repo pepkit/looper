@@ -87,16 +87,12 @@ class LooperRunBehaviorTests:
 
     def test_looper_single_pipeline(self, prep_temp_pep):
         tp = prep_temp_pep
-        with open(tp, 'r') as conf_file:
-            config_data = safe_load(conf_file)
-        print("\nconfig_data: \n{}\n".format(config_data))
-        pifaces = \
-            config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][PIPELINE_INTERFACES_KEY]
-        config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][PIPELINE_INTERFACES_KEY] = \
-            pifaces[1]
-        print("\nconfig_data: \n{}\n".format(config_data))
-        with open(tp, 'w') as conf_file:
-            dump(config_data, conf_file)
+        with mod_yaml_data(tp) as config_data:
+            pifaces = config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][
+                PIPELINE_INTERFACES_KEY]
+            config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][
+                PIPELINE_INTERFACES_KEY] = pifaces[1]
+
         stdout, stderr, rc = subp_exec(tp, "run")
         print(stderr)
         assert rc == 0
@@ -118,13 +114,8 @@ class LooperRunBehaviorTests:
         valid pifaces defined
         """
         tp = prep_temp_pep
-        with open(tp, 'r') as conf_file:
-            config_data = safe_load(conf_file)
-        print("\nconfig_data: \n{}\n".format(config_data))
-        del config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][PIPELINE_INTERFACES_KEY]
-        print("\nconfig_data: \n{}\n".format(config_data))
-        with open(tp, 'w') as conf_file:
-            dump(config_data, conf_file)
+        with mod_yaml_data(tp) as config_data:
+            del config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][PIPELINE_INTERFACES_KEY]
         stdout, stderr, rc = subp_exec(tp, "run")
         print(stderr)
         assert rc == 0
@@ -136,14 +127,8 @@ class LooperRunBehaviorTests:
         Piface is ignored when when it does not exist
         """
         tp = prep_temp_pep
-        with open(tp, 'r') as conf_file:
-            config_data = safe_load(conf_file)
-        print("\nconfig_data: \n{}\n".format(config_data))
-        config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][PIPELINE_INTERFACES_KEY] = \
-            ["bogus"]
-        print("\nconfig_data: \n{}\n".format(config_data))
-        with open(tp, 'w') as conf_file:
-            dump(config_data, conf_file)
+        with mod_yaml_data(tp) as config_data:
+            config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][PIPELINE_INTERFACES_KEY] = ["bogus"]
         stdout, stderr, rc = subp_exec(tp, "run")
         print(stderr)
         assert rc == 0
@@ -156,22 +141,13 @@ class LooperRunBehaviorTests:
         agianst a schema
         """
         tp = prep_temp_pep
-        with open(tp, 'r') as conf_file:
-            config_data = safe_load(conf_file)
-        print("\nconfig_data: \n{}\n".format(config_data))
-        pifaces = config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][
-            PIPELINE_INTERFACES_KEY]
-        config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][PIPELINE_INTERFACES_KEY] = \
-            pifaces[1]
-        print("\nconfig_data: \n{}\n".format(config_data))
-        with open(tp, 'w') as conf_file:
-            dump(config_data, conf_file)
+        with mod_yaml_data(tp) as config_data:
+            pifaces = config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][PIPELINE_INTERFACES_KEY]
+            config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][PIPELINE_INTERFACES_KEY] = \
+                pifaces[1]
         piface_path = os.path.join(os.path.dirname(tp), pifaces[1])
-        with open(piface_path, 'r') as piface_file:
-            piface_data = safe_load(piface_file)
-        del piface_data["pipeline_name"]
-        with open(piface_path, 'w') as piface_file:
-            dump(piface_data, piface_file)
+        with mod_yaml_data(piface_path) as piface_data:
+            del piface_data["pipeline_name"]
         stdout, stderr, rc = subp_exec(tp, "run")
         print(stderr)
         assert rc == 0
@@ -184,13 +160,8 @@ class LooperRunBehaviorTests:
         Piface is ignored when when it does not exist
         """
         tp = prep_temp_pep
-        with open(tp, 'r') as conf_file:
-            config_data = safe_load(conf_file)
-        print("\nconfig_data: \n{}\n".format(config_data))
-        del config_data[SAMPLE_MODS_KEY][CONSTANT_KEY]["attr"]
-        print("\nconfig_data: \n{}\n".format(config_data))
-        with open(tp, 'w') as conf_file:
-            dump(config_data, conf_file)
+        with mod_yaml_data(tp) as config_data:
+            del config_data[SAMPLE_MODS_KEY][CONSTANT_KEY]["attr"]
         stdout, stderr, rc = subp_exec(tp, "run")
         print(stderr)
         assert rc == 0
@@ -204,13 +175,8 @@ class LooperRunBehaviorTests:
         imply_whitespace = \
             [{IMPLIED_IF_KEY: {'sample_name': 'sample1'},
               IMPLIED_THEN_KEY: {'sample_name': 'sample whitespace'}}]
-        with open(tp, 'r') as conf_file:
-            config_data = safe_load(conf_file)
-        print("\nconfig_data: \n{}\n".format(config_data))
-        config_data[SAMPLE_MODS_KEY][IMPLIED_KEY] = imply_whitespace
-        print("\nconfig_data: \n{}\n".format(config_data))
-        with open(tp, 'w') as conf_file:
-            dump(config_data, conf_file)
+        with mod_yaml_data(tp) as config_data:
+            config_data[SAMPLE_MODS_KEY][IMPLIED_KEY] = imply_whitespace
         stdout, stderr, rc = subp_exec(tp, "run")
         print(stderr)
         assert rc != 0
@@ -220,13 +186,8 @@ class LooperRunBehaviorTests:
         If all samples have tooggle attr set to 0, no jobs are submitted
         """
         tp = prep_temp_pep
-        with open(tp, 'r') as conf_file:
-            config_data = safe_load(conf_file)
-        print("\nconfig_data: \n{}\n".format(config_data))
-        config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][SAMPLE_TOGGLE_ATTR] = 0
-        print("\nconfig_data: \n{}\n".format(config_data))
-        with open(tp, 'w') as conf_file:
-            dump(config_data, conf_file)
+        with mod_yaml_data(tp) as config_data:
+            config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][SAMPLE_TOGGLE_ATTR] = 0
         stdout, stderr, rc = subp_exec(tp, "run")
         print(stderr)
         assert rc == 0
@@ -239,13 +200,8 @@ class LooperRunBehaviorTests:
         appended to the pipelinecommand
         """
         tp = prep_temp_pep
-        with open(tp, 'r') as conf_file:
-            config_data = safe_load(conf_file)
-        print("\nconfig_data: \n{}\n".format(config_data))
-        config_data[SAMPLE_MODS_KEY][CONSTANT_KEY]["command_extra"] = arg
-        print("\nconfig_data: \n{}\n".format(config_data))
-        with open(tp, 'w') as conf_file:
-            dump(config_data, conf_file)
+        with mod_yaml_data(tp) as config_data:
+            config_data[SAMPLE_MODS_KEY][CONSTANT_KEY]["command_extra"] = arg
         stdout, stderr, rc = subp_exec(tp, "run")
         sd = os.path.join(get_outdir(tp), "submission")
         print(stderr)
@@ -262,13 +218,8 @@ class LooperRunBehaviorTests:
         pipeline command
         """
         tp = prep_temp_pep
-        with open(tp, 'r') as conf_file:
-            config_data = safe_load(conf_file)
-        print("\nconfig_data: \n{}\n".format(config_data))
-        config_data[SAMPLE_MODS_KEY][CONSTANT_KEY]["command_extra"] = arg
-        print("\nconfig_data: \n{}\n".format(config_data))
-        with open(tp, 'w') as conf_file:
-            dump(config_data, conf_file)
+        with mod_yaml_data(tp) as config_data:
+            config_data[SAMPLE_MODS_KEY][CONSTANT_KEY]["command_extra"] = arg
         stdout, stderr, rc = \
             subp_exec(tp, "run", ["--command-extra-override='different'"])
         sd = os.path.join(get_outdir(tp), "submission")
@@ -294,15 +245,10 @@ class LooperRunpBehaviorTests:
 
     def test_looper_single_pipeline(self, prep_temp_pep):
         tp = prep_temp_pep
-        with open(tp, 'r') as conf_file:
-            config_data = safe_load(conf_file)
-        print("\nconfig_data: \n{}\n".format(config_data))
-        piface_path = os.path.join(os.path.dirname(tp), PIP.format("1"))
-        config_data[LOOPER_KEY][CLI_KEY]["runp"][PIPELINE_INTERFACES_KEY] = \
-            piface_path
-        print("\nconfig_data: \n{}\n".format(config_data))
-        with open(tp, 'w') as conf_file:
-            dump(config_data, conf_file)
+        with mod_yaml_data(tp) as config_data:
+            piface_path = os.path.join(os.path.dirname(tp), PIP.format("1"))
+            config_data[LOOPER_KEY][CLI_KEY]["runp"][PIPELINE_INTERFACES_KEY] = \
+                piface_path
         stdout, stderr, rc = subp_exec(tp, "runp")
         print(stderr)
         assert rc == 0
@@ -314,13 +260,8 @@ class LooperRunpBehaviorTests:
         """
         """
         tp = prep_temp_pep
-        with open(tp, 'r') as conf_file:
-            config_data = safe_load(conf_file)
-        print("\nconfig_data: \n{}\n".format(config_data))
-        config_data[LOOPER_KEY]["command_extra"] = arg
-        print("\nconfig_data: \n{}\n".format(config_data))
-        with open(tp, 'w') as conf_file:
-            dump(config_data, conf_file)
+        with mod_yaml_data(tp) as config_data:
+            config_data[LOOPER_KEY]["command_extra"] = arg
         stdout, stderr, rc = subp_exec(tp, "runp")
         sd = os.path.join(get_outdir(tp), "submission")
         print(stderr)
