@@ -272,11 +272,8 @@ class LooperRunpBehaviorTests:
 class LooperRunPreSubmissionHooksTests:
     def test_looper_sample_plugin(self, prep_temp_pep):
         tp = prep_temp_pep
-        with open(tp, 'r') as conf_file:
-            config_data = safe_load(conf_file)
-        outdir = config_data[LOOPER_KEY][OUTDIR_KEY]
         stdout, stderr, rc = subp_exec(tp, "run")
-        sd = os.path.join(outdir, "submission")
+        sd = os.path.join(get_outdir(tp), "submission")
         print(stderr)
         assert rc == 0
         verify_filecount_in_dir(sd, ".yaml", 3)

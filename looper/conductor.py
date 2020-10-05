@@ -25,33 +25,39 @@ from .utils import fetch_sample_flags, jinja_render_template_strictly
 _LOGGER = logging.getLogger(__name__)
 
 
-def _get_sample_yaml_path(namespaces, filename=None):
+def _get_yaml_path(namespaces, template_key, default_name_appendix="",
+                   filename=None):
     """
-    Get a path to the sample YAML file.
+    Get a path to the a YAML file.
 
+    :param dict[dict]] namespaces: namespaces mapping
+    :param str template_key: the name of the key in 'var_templates' piface
+        section that points to a template to render to get the
+        user-provided target YAML path
+    :param str default_name_appendix: a string to append to insert in target
+        YAML file name: '{sample.sample_name}<>.yaml'
     :param str filename: A filename without folders. If not provided, a
         default name of sample_name.yaml will be used.
-    :param dict[dict]] namespaces: namespaces mapping
     :return str: sample YAML file path
     """
-    filename = filename or "{}{}".format(
-        namespaces["sample"][SAMPLE_NAME_ATTR], SAMPLE_YAML_EXT[0])
-
     if VAR_TEMPL_KEY in namespaces["pipeline"] and \
-            SAMPLE_YAML_PATH_KEY in namespaces["pipeline"][VAR_TEMPL_KEY]:
+            template_key in namespaces["pipeline"][VAR_TEMPL_KEY]:
         path = expandpath(jinja_render_template_strictly(
-            namespaces["pipeline"][SAMPLE_YAML_PATH_KEY], namespaces))
-        final_path = os.path.join(path, filename)
-    elif SAMPLE_YAML_PATH_KEY in namespaces["pipeline"]:
-        # TODO: deprecate or remove?
-        path = expandpath(jinja_render_template_strictly(
-            namespaces["pipeline"][SAMPLE_YAML_PATH_KEY], namespaces))
-        final_path = path if os.path.isabs(path) \
-            else os.path.join(namespaces["looper"][OUTDIR_KEY], path)
+            namespaces["pipeline"][template_key], namespaces))
+        if not path.endswith(SAMPLE_YAML_EXT) and not filename:
+            raise ValueError(
+                f"{template_key} is not a valid target YAML file path. "
+                f"It needs to end with: {' or '.join(SAMPLE_YAML_EXT)}")
+        final_path = os.path.join(path, filename) if filename else path
+        if not os.path.exists(os.path.dirname(final_path)):
+            os.makedirs(os.path.dirname(final_path), exist_ok=True)
     else:
         # default YAML location
+        f = filename or f"{namespaces['sample'][SAMPLE_NAME_ATTR]}" \
+                        f"{default_name_appendix}" \
+                        f"{SAMPLE_YAML_EXT[0]}"
         default = os.path.join(namespaces["looper"][OUTDIR_KEY], "submission")
-        final_path = os.path.join(default, filename)
+        final_path = os.path.join(default, f)
         if not os.path.exists(default):
             os.makedirs(default, exist_ok=True)
     return final_path
@@ -70,7 +76,8 @@ def write_sample_yaml(namespaces):
     :return dict: sample namespace dict
     """
     sample = namespaces["sample"]
-    sample.to_yaml(_get_sample_yaml_path(namespaces), add_prj_ref=False)
+    sample.to_yaml(_get_yaml_path(namespaces, SAMPLE_YAML_PATH_KEY),
+                   add_prj_ref=False)
     return {"sample": sample}
 
 
@@ -87,7 +94,8 @@ def write_sample_yaml_prj(namespaces):
     :return dict: sample namespace dict
     """
     sample = namespaces["sample"]
-    sample.to_yaml(_get_sample_yaml_path(namespaces), add_prj_ref=True)
+    sample.to_yaml(_get_yaml_path(namespaces, SAMPLE_YAML_PATH_KEY),
+                   add_prj_ref=True)
     return {"sample": sample}
 
 
@@ -101,13 +109,10 @@ def write_sample_yaml_cwl(namespaces):
     :param dict namespaces: variable namespaces dict
     :return dict: updated variable namespaces dict
     """
-    filename = "{}_cwl{}".format(
-        namespaces["sample"][SAMPLE_NAME_ATTR], SAMPLE_YAML_EXT[0])
-
     # To be compatible as a CWL job input, we need to handle the
     # File and Directory object types directly.
     sample = namespaces["sample"]
-    sample.sample_yaml_cwl = _get_sample_yaml_path(namespaces, filename)
+    sample.sample_yaml_cwl = _get_yaml_path(namespaces, SAMPLE_CWL_YAML_PATH_KEY, "_cwl")
 
     from eido import read_schema
     s = read_schema(namespaces["pipeline"]["input_schema"])
@@ -142,39 +147,9 @@ def write_sample_yaml_cwl(namespaces):
         sample[dir_attr] = {"class": "Directory",
                             "path":  dir_attr_value}
     print("Writing sample yaml to {}".format(sample.sample_yaml_cwl))
+
     sample.to_yaml(sample.sample_yaml_cwl)
     return {"sample": sample}
-
-
-def _get_submission_yaml_path(namespaces, filename=None):
-    """
-    Get a path to the submission YAML file
-
-    :param str filename: A filename without folders. If not provided, a
-        default name of sample_name.yaml will be used.
-    :param dict[dict]] namespaces: namespaces mapping
-    :return str: submission YAML file path
-    """
-    # default file name
-    filename = filename or \
-               "{}{}{}".format(namespaces["sample"][SAMPLE_NAME_ATTR],
-                               "_submission", SAMPLE_YAML_EXT[0])
-
-    if VAR_TEMPL_KEY in namespaces["pipeline"] and \
-            SUBMISSION_YAML_PATH_KEY in namespaces["pipeline"][VAR_TEMPL_KEY]:
-        path = expandpath(jinja_render_template_strictly(
-            namespaces["pipeline"][VAR_TEMPL_KEY][SUBMISSION_YAML_PATH_KEY],
-            namespaces))
-        if not os.path.exists(path):
-            os.makedirs(path, exist_ok=True)
-        final_path = os.path.join(path, filename)
-    else:
-        # default YAML location
-        default = os.path.join(namespaces["looper"][OUTDIR_KEY], "submission")
-        final_path = os.path.join(default, filename)
-        if not os.path.exists(default):
-            os.makedirs(default, exist_ok=True)
-    return final_path
 
 
 def write_submission_yaml(namespaces):
@@ -184,7 +159,7 @@ def write_submission_yaml(namespaces):
     :param dict namespaces: variable namespaces dict
     :return dict: sample namespace dict
     """
-    path = _get_submission_yaml_path(namespaces)
+    path = _get_yaml_path(namespaces, SAMPLE_CWL_YAML_PATH_KEY, "_submission")
     my_namespaces = {}
     for namespace, values in namespaces.items():
         my_namespaces.update({str(namespace): values.to_dict()})
