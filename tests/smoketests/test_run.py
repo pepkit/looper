@@ -257,8 +257,6 @@ class LooperRunpBehaviorTests:
 
     @pytest.mark.parametrize("arg", CMD_STRS)
     def test_cmd_extra_project(self, prep_temp_pep, arg):
-        """
-        """
         tp = prep_temp_pep
         with mod_yaml_data(tp) as config_data:
             config_data[LOOPER_KEY]["command_extra"] = arg
@@ -271,91 +269,59 @@ class LooperRunpBehaviorTests:
         is_in_file(subs_list, arg)
 
 
+class LooperRunPreSubmissionHooksTests:
+    def test_looper_sample_plugin(self, prep_temp_pep):
+        tp = prep_temp_pep
+        with open(tp, 'r') as conf_file:
+            config_data = safe_load(conf_file)
+        outdir = config_data[LOOPER_KEY][OUTDIR_KEY]
+        stdout, stderr, rc = subp_exec(tp, "run")
+        sd = os.path.join(outdir, "submission")
+        print(stderr)
+        assert rc == 0
+        verify_filecount_in_dir(sd, ".yaml", 3)
+
+    def test_looper_submission_plugin(self, prep_temp_pep):
+        tp = prep_temp_pep
+        for path in {piface["pipe_iface_file"] for piface in
+                     Project(tp).pipeline_interfaces}:
+            with mod_yaml_data(path) as piface_data:
+                piface_data[PRE_SUBMIT_HOOK_KEY][PRE_SUBMIT_PY_FUN_KEY] = [
+                    "looper.write_submission_yaml"]
+        stdout, stderr, rc = subp_exec(tp, "run")
+        sd = os.path.join(get_outdir(tp), "submission")
+        print(stderr)
+        assert rc == 0
+        verify_filecount_in_dir(sd, "submission.yaml", 3)
+
+
 class LooperRunSubmissionScriptTests:
     def test_looper_run_produces_submission_scripts(self, prep_temp_pep):
         tp = prep_temp_pep
         with open(tp, 'r') as conf_file:
             config_data = safe_load(conf_file)
-        print("\nconfig_data: \n{}\n".format(config_data))
         outdir = config_data[LOOPER_KEY][OUTDIR_KEY]
         stdout, stderr, rc = subp_exec(tp, "run")
         sd = os.path.join(outdir, "submission")
-        subm_err = \
-            IOError("Not found in submission directory ({}): 6 "
-                              "submission scripts (3 per pipeline) and 3 sample"
-                              " YAML representations".format(sd))
         print(stderr)
         assert rc == 0
-        assert os.path.isdir(sd)
-        assert len(os.listdir(sd)) == 9, subm_err
-        assert sum([f.endswith(".sub") for f in os.listdir(sd)]) == 6, subm_err
-        assert sum([f.endswith(".yaml") for f in os.listdir(sd)]) == 3, subm_err
+        verify_filecount_in_dir(sd, ".sub", 6)
 
     def test_looper_lumping(self, prep_temp_pep):
         tp = prep_temp_pep
         stdout, stderr, rc = subp_exec(tp, "run", ["--lumpn", "2"])
         sd = os.path.join(get_outdir(tp), "submission")
-        subm_err = \
-            IOError("Not found in submission directory ({}): 4 "
-                              "submission scripts (2 per pipeline) and 3 sample"
-                              " YAML representations. Listdir: \n{}".
-                    format(sd, os.listdir(sd)))
         print(stderr)
         assert rc == 0
-        assert os.path.isdir(sd)
-        assert len(os.listdir(sd)) == 7, subm_err
-        assert sum([f.endswith(".sub") for f in os.listdir(sd)]) == 4, subm_err
-        assert sum([f.endswith(".yaml") for f in os.listdir(sd)]) == 3, subm_err
-
-    def test_looper_lumping(self, prep_temp_pep):
-        tp = prep_temp_pep
-        stdout, stderr, rc = subp_exec(tp, "run", ["--lumpn", "2"])
-        sd = os.path.join(get_outdir(tp), "submission")
-        subm_err = \
-            IOError("Not found in submission directory ({}): 4 "
-                              "submission scripts (2 per pipeline) and 3 sample"
-                              " YAML representations. Listdir: \n{}".
-                    format(sd, os.listdir(sd)))
-        print(stderr)
-        assert rc == 0
-        assert os.path.isdir(sd)
-        assert sum([f.endswith(".sub") for f in os.listdir(sd)]) == 4, subm_err
-        assert sum([f.endswith(".yaml") for f in os.listdir(sd)]) == 3, subm_err
+        verify_filecount_in_dir(sd, ".sub", 4)
 
     def test_looper_limiting(self, prep_temp_pep):
         tp = prep_temp_pep
         stdout, stderr, rc = subp_exec(tp, "run", ["--limit", "2"])
         sd = os.path.join(get_outdir(tp), "submission")
-        subm_err = \
-            IOError("Not found in submission directory ({}): 4 "
-                    "submission scripts (2 per pipeline) and 2 sample "
-                    "YAML representations. Listdir: \n{}".
-                    format(sd, os.listdir(sd)))
         print(stderr)
         assert rc == 0
-        assert os.path.isdir(sd)
-        assert sum([f.endswith(".sub") for f in os.listdir(sd)]) == 4, subm_err
-        assert sum([f.endswith(".yaml") for f in os.listdir(sd)]) == 2, subm_err
-
-    def test_looper_submission_plugin(self, prep_temp_pep):
-        tp = prep_temp_pep
-        for path in {piface["pipe_iface_file"]
-                     for piface in Project(tp).pipeline_interfaces}:
-            with mod_yaml_data(path) as piface_data:
-                piface_data[PRE_SUBMIT_HOOK_KEY][PRE_SUBMIT_PY_FUN_KEY] = \
-                    ["looper.write_submission_yaml"]
-        stdout, stderr, rc = subp_exec(tp, "run")
-        sd = os.path.join(get_outdir(tp), "submission")
-        subm_err = \
-            IOError(f"Not found in submission directory ({sd}): 6 submission "
-                    f"scripts (3 per pipeline) and 3 sample YAML "
-                    f"representations. Listdir: \n{os.listdir(sd)}")
-        print(stderr)
-        assert rc == 0
-        assert os.path.isdir(sd)
-        assert sum([f.endswith(".sub") for f in os.listdir(sd)]) == 6, subm_err
-        assert sum([f.endswith("submission.yaml")
-                    for f in os.listdir(sd)]) == 3, subm_err
+        verify_filecount_in_dir(sd, ".sub", 4)
 
 
 class LooperComputeTests:

@@ -63,6 +63,23 @@ def subp_exec(pth=None, cmd=None, appendix=list(), dry=True):
     return str(stdout), str(stderr), proc.returncode
 
 
+def verify_filecount_in_dir(dirpath, pattern, count):
+    """
+    Check if the expected number of files matching specified pattern
+    exist in a directory
+
+    :param str dirpath: path to the directory to investigate
+    :param str pattern: string pattern, used in str.endswith
+    :param int count: expected number of files
+    :raise IOError: when the number of files does not meet the expectations
+    """
+    assert os.path.isdir(dirpath)
+    subm_err = IOError(f"Expected {count} files mathing '{pattern}' pattern in "
+                       f"'{dirpath}'. Listdir: \n{os.listdir(dirpath)}")
+    assert sum([f.endswith(pattern) for f in os.listdir(dirpath)]) == count, \
+        subm_err
+
+
 @contextmanager
 def mod_yaml_data(path):
     """
