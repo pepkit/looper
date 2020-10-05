@@ -4,7 +4,7 @@ output_schema: output_schema.yaml
 var_templates:
   path: "{looper.piface_dir}/pipelines/other_pipeline2.py"
 pre_submit:
-    python_function:
+    python_functions:
       - looper.write_sample_yaml
 command_template: >
   {pipeline.var_templates.path} --sample-name {sample.sample_name} --req-attr {sample.attr}
