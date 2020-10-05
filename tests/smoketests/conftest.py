@@ -4,7 +4,8 @@ import tempfile
 from shutil import copyfile as cpf, rmtree
 from looper.const import *
 from peppy.const import *
-from yaml import safe_load
+from yaml import safe_load, dump
+from contextlib import contextmanager
 import subprocess
 
 CFG = "project_config.yaml"
@@ -60,6 +61,23 @@ def subp_exec(pth=None, cmd=None, appendix=list(), dry=True):
     proc = subprocess.Popen(x, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
     stdout, stderr = proc.communicate()
     return str(stdout), str(stderr), proc.returncode
+
+
+@contextmanager
+def mod_yaml_data(path):
+    """
+    Context manager used to modify YAML formatted data
+
+    :param str path: path to the file to modify
+    """
+    # TODO: use everywhere
+    with open(path, 'r') as f:
+        yaml_data = safe_load(f)
+    print(f"\nInintial YAML data: \n{yaml_data}\n")
+    yield yaml_data
+    print(f"\nModified YAML data: \n{yaml_data}\n")
+    with open(path, 'w') as f:
+        dump(yaml_data, f)
 
 
 @pytest.fixture
