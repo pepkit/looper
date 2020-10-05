@@ -25,13 +25,19 @@ from .utils import fetch_sample_flags, jinja_render_template_strictly
 _LOGGER = logging.getLogger(__name__)
 
 
-def _get_yaml_path(namespaces, template_key, default_name_appendix="", filename=None):
+def _get_yaml_path(namespaces, template_key, default_name_appendix="",
+                   filename=None):
     """
-    Get a path to the sample YAML file.
+    Get a path to the a YAML file.
 
+    :param dict[dict]] namespaces: namespaces mapping
+    :param str template_key: the name of the key in 'var_templates' piface
+        section that points to a template to render to get the
+        user-provided target YAML path
+    :param str default_name_appendix: a string to append to insert in target
+        YAML file name: '{sample.sample_name}<>.yaml'
     :param str filename: A filename without folders. If not provided, a
         default name of sample_name.yaml will be used.
-    :param dict[dict]] namespaces: namespaces mapping
     :return str: sample YAML file path
     """
     if VAR_TEMPL_KEY in namespaces["pipeline"] and \
