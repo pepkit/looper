@@ -9,6 +9,7 @@ import importlib
 from jinja2.exceptions import UndefinedError
 from subprocess import check_output, CalledProcessError
 from json import loads
+from yaml import dump
 
 from attmap import AttMap
 from eido import read_schema, validate_inputs
@@ -120,7 +121,7 @@ def write_sample_yaml_cwl(namespaces):
             file_attr_rel = os.path.relpath(file_attr_value,
                 os.path.dirname(sample.sample_yaml_cwl))
             sample[file_attr] = {"class": "File",
-                                "path":  file_attr_rel}
+                                 "path":  file_attr_rel}
 
     if "directories" in sample:
         for dir_attr in sample["directories"]:
@@ -137,10 +138,10 @@ def write_sample_yaml_cwl(namespaces):
     sample.to_yaml(sample.sample_yaml_cwl)
     return {"sample": sample}
 
+
 def _get_submission_yaml_path(namespaces, filename=None):
     """
     Get a path to the submission YAML file
-
 
     :param str filename: A filename without folders. If not provided, a
         default name of sample_name.yaml will be used.
@@ -148,12 +149,15 @@ def _get_submission_yaml_path(namespaces, filename=None):
     :return str: submission YAML file path
     """
     # default file name
-    filename = filename or "{}{}{}".format(namespaces["sample"][SAMPLE_NAME_ATTR], "_submission", SAMPLE_YAML_EXT[0])
+    filename = filename or \
+               "{}{}{}".format(namespaces["sample"][SAMPLE_NAME_ATTR],
+                               "_submission", SAMPLE_YAML_EXT[0])
 
     if VAR_TEMPL_KEY in namespaces["pipeline"] and \
             SUBMISSION_YAML_PATH_KEY in namespaces["pipeline"][VAR_TEMPL_KEY]:
         path = expandpath(jinja_render_template_strictly(
-        namespaces["pipeline"][VAR_TEMPL_KEY][SUBMISSION_YAML_PATH_KEY], namespaces))
+            namespaces["pipeline"][VAR_TEMPL_KEY][SUBMISSION_YAML_PATH_KEY],
+            namespaces))
         if not os.path.exists(path):
             os.makedirs(path, exist_ok=True)
         final_path = os.path.join(path, filename)
@@ -163,7 +167,6 @@ def _get_submission_yaml_path(namespaces, filename=None):
         final_path = os.path.join(default, filename)
         if not os.path.exists(default):
             os.makedirs(default, exist_ok=True)
-
     return final_path
 
 
@@ -174,17 +177,13 @@ def write_submission_yaml(namespaces):
     :param dict namespaces: variable namespaces dict
     :return dict: sample namespace dict
     """
-    import yaml
-
     path = _get_submission_yaml_path(namespaces)
     my_namespaces = {}
     for namespace, values in namespaces.items():
-        my_namespaces.update({str(namespace):values.to_dict()})
-    
-    with open(path,'w') as yamlfile:
-        yaml.dump(my_namespaces, yamlfile)
-
-    return {}
+        my_namespaces.update({str(namespace): values.to_dict()})
+    with open(path, 'w') as yamlfile:
+        dump(my_namespaces, yamlfile)
+    return my_namespaces
 
 
 class SubmissionConductor(object):
