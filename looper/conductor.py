@@ -109,28 +109,39 @@ def write_sample_yaml_cwl(namespaces):
     sample = namespaces["sample"]
     sample.sample_yaml_cwl = _get_sample_yaml_path(namespaces, filename)
 
-    if "files" in sample:
-        for file_attr in sample["files"]:
-            _LOGGER.debug("CWL-ing file attribute: {}".format(file_attr))
-            file_attr_value = sample[file_attr]
-            # file paths are assumed relative to the sample table;
-            # but CWL assumes they are relative to the yaml output file,
-            # so we convert here.
-            file_attr_rel = os.path.relpath(
-                file_attr_value, os.path.dirname(sample.sample_yaml_cwl))
-            sample[file_attr] = {"class": "File",
-                                 "path":  file_attr_rel}
+    from eido import read_schema
+    s = read_schema(namespaces["pipeline"]["input_schema"])
 
-    if "directories" in sample:
-        for dir_attr in sample["directories"]:
-            _LOGGER.debug("CWL-ing directory attribute: {}".format(dir_attr))
-            dir_attr_value = sample[dir_attr]
-            # file paths are assumed relative to the sample table;
-            # but CWL assumes they are relative to the yaml output file,
-            # so we convert here.
-            sample[dir_attr] = {"class": "Directory",
-                                "path":  dir_attr_value}
-    
+    file_list = []
+    for ischema in read_schema(namespaces["pipeline"]["input_schema"]):
+        if "files" in ischema["properties"]["samples"]["items"]:
+            file_list.extend(ischema["properties"]["samples"]["items"]["files"])
+
+    for file_attr in file_list:
+        _LOGGER.debug("CWL-ing file attribute: {}".format(file_attr))
+        file_attr_value = sample[file_attr]
+        # file paths are assumed relative to the sample table;
+        # but CWL assumes they are relative to the yaml output file,
+        # so we convert here.
+        file_attr_rel = os.path.relpath(
+            file_attr_value, os.path.dirname(sample.sample_yaml_cwl))
+        sample[file_attr] = {"class": "File",
+                             "path":  file_attr_rel}
+
+    directory_list = []
+    for ischema in read_schema(namespaces["pipeline"]["input_schema"]):
+        if "directories" in ischema["properties"]["samples"]["items"]:
+            directory_list.extend(ischema["properties"]["samples"]["items"]["files"])
+
+    for dir_attr in directory_list:
+        _LOGGER.debug("CWL-ing directory attribute: {}".format(dir_attr))
+        dir_attr_value = sample[dir_attr]
+        # file paths are assumed relative to the sample table;
+        # but CWL assumes they are relative to the yaml output file,
+        # so we convert here.
+        sample[dir_attr] = {"class": "Directory",
+                            "path":  dir_attr_value}
+    print("Writing sample yaml to {}".format(sample.sample_yaml_cwl))
     sample.to_yaml(sample.sample_yaml_cwl)
     return {"sample": sample}
 
