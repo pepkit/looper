@@ -2,21 +2,32 @@
 
 ## Purpose
 
-Sometimes there is a need to perform some job/submission related tasks *before* the main pipeline submission, particularly ones that depend on the submission settings as a whole. For this purpose we've designed the **pre-submission hooks** system, which allows to run arbitrary commands or Python plugin functions before submitting the actual pipeline. These hooks can use and modify the job submission settings (for their composition please refer to [looper variable namespaces](variable-namespaces.md) section).
+Sometimes there is a need to perform some job/submission related tasks *before* the main pipeline submission. FOr example, we may need to generate a particular representation of the sample metadata to be consumed by a pipeline run. Some of these pre-submission tasks may depend on the information outside of the sample, such as the compute settings. For this purpose looper provides **pre-submission hooks**, which allows users to run arbitrary commands or Python functions before submitting the actual pipeline. These hooks have access to all of the job submission settings. They can be used in two ways: 1) to simply run required tasks, producing required output before the pipeline is run; and 2) to modify the job submission settings, which can then be used in the actual submission template.
 
 ## Syntax
 
-The pre-submission tasks to be executed are listed in the [pipeline interface](pipeline-interface-specification.md) file under `pre_submit` top-level key. Since there are two classes of hooks that can be executed the section is divided into `python_functions` and `command_templates`, which both are YAML lists of strings that specify source of the plugin functions and commands to be executed in a subprocess, respectively.
+The pre-submission tasks to be executed are listed in the [pipeline interface](pipeline-interface-specification.md) file under `pre_submit` top-level key. The `pre_submit` section is divided into two subsections corresponding to there  two types of hooks: `python_functions` and `command_templates`. The `python_functions` key specifies a list of strings corresponding to python functions to run. The `command_templates` key is more generic, specifying shell commands to be executed in a subprocess. Here is an example:
 
 ```yaml
 pre_submit:
   python_functions: 
-    - package_name.function_name
-    - package_name1.function_name
+    - "package_name.function_name"
+    - "package_name1.function_name"
   command_templates: 
-    - tool.sh --param {sample.attribute}
-    - tool1.sh --param {sample.attribute1}
+    - "tool.sh --param {sample.attribute}"
+    - "tool1.sh --param {sample.attribute1}"
 ```
+
+
+
+
+
+
+
+
+
+
+ (for their composition please refer to [looper variable namespaces](variable-namespaces.md) section).
 
 ## Execution order
 
@@ -91,11 +102,15 @@ Plugin authors may require users to specify any attributes within any namespace 
 **Output:**
  - JSON-formatted string (`str`), that is processed with [json.loads](https://docs.python.org/3/library/json.html#json.loads) and [subprocess.check_output](https://docs.python.org/3/library/subprocess.html#subprocess.check_output) as follows: `json.loads(subprocess.check_output(str))` 
  
+
 ## Built-in `pre_submit.python_functions`
+
+Looper ships with several included plugins that you can use as pre-submission functions without installing additional software. These plugins produce various representations of the sample metadata, which can be useful for different types of pipelines. The included plugins are described blow
+
 
 ### `looper.write_sample_yaml`
 
-Saves the sample to YAML file. This plugin can be parametrized with a custom YAML directory (see "parameters" below). If the parameter is not provided, the file will be saved in `{looper.output_dir}/submission`.
+Saves the sample to YAML file. This plugin can be parametrized with a custom output directory using `sample_yaml_path`. If the parameter is not provided, the file will be saved in `{looper.output_dir}/submission`.
 
 **Parameters:**
    - (optional) `pipeline.var_templates.sample_yaml_path`: a complete and absolute path to the *directory* where sample YAML representation is to be stored.
