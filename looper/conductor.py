@@ -119,9 +119,20 @@ def write_sample_yaml_cwl(namespaces):
     sample = namespaces["sample"]
     sample.sample_yaml_cwl = _get_yaml_path(
         namespaces, SAMPLE_CWL_YAML_PATH_KEY, "_sample_cwl")
+    namespaces["looper"]["piface_dir"]
 
+    def get_schema_source(schema_source, piface_dir=namespaces["looper"]["piface_dir"]):
+        # Stolen from piface object; should be a better way to do this...
+        from ubiquerg import is_url
+        if is_url(schema_source):
+            return schema_source
+        elif not os.path.isabs(schema_source):
+            schema_source = os.path.join(piface_dir, schema_source)
+        return schema_source
+
+    schema_path = get_schema_source(namespaces["pipeline"]["input_schema"])
     from eido import read_schema
-    s = read_schema(namespaces["pipeline"]["input_schema"])
+    s = read_schema(schema_path)
 
     file_list = []
     for ischema in read_schema(namespaces["pipeline"]["input_schema"]):
