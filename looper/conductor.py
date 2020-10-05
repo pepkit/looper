@@ -69,14 +69,14 @@ def write_sample_yaml(namespaces):
 
     This plugin can be parametrized by providing the path value/template in
     'pipeline.var_templates.sample_yaml_path'. This needs to be a complete and
-    absolute path to the directory where sample YAML representation is to be
+    absolute path to the file where sample YAML representation is to be
     stored.
 
     :param dict namespaces: variable namespaces dict
     :return dict: sample namespace dict
     """
     sample = namespaces["sample"]
-    sample.to_yaml(_get_yaml_path(namespaces, SAMPLE_YAML_PATH_KEY),
+    sample.to_yaml(_get_yaml_path(namespaces, SAMPLE_YAML_PATH_KEY, "_sample"),
                    add_prj_ref=False)
     return {"sample": sample}
 
@@ -86,16 +86,16 @@ def write_sample_yaml_prj(namespaces):
     Plugin: saves sample representation with project reference to YAML.
 
     This plugin can be parametrized by providing the path value/template in
-    'pipeline.var_templates.sample_yaml_path'. This needs to be a complete and
-    absolute path to the directory where sample YAML representation is to be
+    'pipeline.var_templates.sample_yaml_prj_path'. This needs to be a complete and
+    absolute path to the file where sample YAML representation is to be
     stored.
 
     :param dict namespaces: variable namespaces dict
     :return dict: sample namespace dict
     """
     sample = namespaces["sample"]
-    sample.to_yaml(_get_yaml_path(namespaces, SAMPLE_YAML_PATH_KEY),
-                   add_prj_ref=True)
+    sample.to_yaml(_get_yaml_path(
+        namespaces, SAMPLE_YAML_PRJ_PATH_KEY, "_sample_prj"), add_prj_ref=True)
     return {"sample": sample}
 
 
@@ -106,13 +106,19 @@ def write_sample_yaml_cwl(namespaces):
     Also adds the 'cwl_yaml' attribute to sample objects, which points
     to the file produced.
 
+    This plugin can be parametrized by providing the path value/template in
+    'pipeline.var_templates.sample_cwl_yaml_path'. This needs to be a complete and
+    absolute path to the file where sample YAML representation is to be
+    stored.
+
     :param dict namespaces: variable namespaces dict
     :return dict: updated variable namespaces dict
     """
     # To be compatible as a CWL job input, we need to handle the
     # File and Directory object types directly.
     sample = namespaces["sample"]
-    sample.sample_yaml_cwl = _get_yaml_path(namespaces, SAMPLE_CWL_YAML_PATH_KEY, "_cwl")
+    sample.sample_yaml_cwl = _get_yaml_path(
+        namespaces, SAMPLE_CWL_YAML_PATH_KEY, "_sample_cwl")
 
     from eido import read_schema
     s = read_schema(namespaces["pipeline"]["input_schema"])
