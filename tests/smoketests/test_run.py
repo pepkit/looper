@@ -294,6 +294,21 @@ class LooperRunPreSubmissionHooksTests:
         assert rc == 0
         verify_filecount_in_dir(sd, appendix, 3)
 
+    @pytest.mark.parametrize("cmd",
+                             ["touch {looper.output_dir}/submission/{sample.sample_name}_test.txt; "
+                              "{%raw%}echo {}{%endraw%}"])
+    def test_looper_command_templates_hooks(self, prep_temp_pep, cmd):
+        tp = prep_temp_pep
+        for path in {piface["pipe_iface_file"] for piface in
+                     Project(tp).pipeline_interfaces}:
+            with mod_yaml_data(path) as piface_data:
+                piface_data[PRE_SUBMIT_HOOK_KEY][PRE_SUBMIT_CMD_KEY] = [cmd]
+        stdout, stderr, rc = subp_exec(tp, "run")
+        sd = os.path.join(get_outdir(tp), "submission")
+        print(stderr)
+        assert rc == 0
+        verify_filecount_in_dir(sd, "test.txt", 3)
+
 
 class LooperRunSubmissionScriptTests:
     def test_looper_run_produces_submission_scripts(self, prep_temp_pep):
