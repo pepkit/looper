@@ -625,23 +625,29 @@ def _exec_pre_submit(piface, namespaces):
         _LOGGER.error("Could not retrieve JSON via command: '{}'".format(cmd))
         raise
 
-    def _update_namespaces(x, y):
+    def _update_namespaces(x, y, cmd=False):
         """
         Update namespaces mapping with a dictionary of the same structure,
         that includes just the values that need to be updated.
 
         :param dict[dict] x: namespaces mapping
         :param dict[dict] y: mapping to update namespaces with
+        :param bool cmd: whether the mapping to upodate with comes from the
+            command template, used for messaging
         """
-        assert isinstance(y, dict), \
-            TypeError(f"Object returned by {PRE_SUBMIT_HOOK_KEY}."
-                      f"{PRE_SUBMIT_CMD_KEY} must return a dictionary when "
-                      f"processed with json.loads(), not {y.__class__.__name__}")
+        if not isinstance(y, dict):
+            if cmd:
+                raise TypeError(
+                    f"Object returned by {PRE_SUBMIT_HOOK_KEY}."
+                    f"{PRE_SUBMIT_CMD_KEY} must return a dictionary when "
+                    f"processed with json.loads(), not {y.__class__.__name__}")
+            raise TypeError(f"Object returned by {PRE_SUBMIT_HOOK_KEY}."
+                            f"{PRE_SUBMIT_PY_FUN_KEY} must return a dictionary,"
+                            f" not {y.__class__.__name__}")
         _LOGGER.debug("Updating namespaces with:\n{}".format(y))
         for namespace, mapping in y.items():
             for attr, val in mapping.items():
                 setattr(x[namespace], attr, val)
-
     if PRE_SUBMIT_HOOK_KEY in piface:
         pre_submit = piface[PRE_SUBMIT_HOOK_KEY]
         if PRE_SUBMIT_PY_FUN_KEY in pre_submit:
@@ -666,7 +672,7 @@ def _exec_pre_submit(piface, namespaces):
                     print(e.output)
                     _log_raise_latest(cmd)
                 except Exception:
-                    _log_raise_latest(cmd)
+                    _log_raise_latest(cmd_template)
                 else:
-                    _update_namespaces(namespaces, json)
+                    _update_namespaces(namespaces, json, cmd=True)
     return namespaces
