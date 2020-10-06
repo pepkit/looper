@@ -270,7 +270,7 @@ class LooperRunpBehaviorTests:
 
 
 class LooperRunPreSubmissionHooksTests:
-    def test_looper_sample_plugin(self, prep_temp_pep):
+    def test_looper_basic_plugin(self, prep_temp_pep):
         tp = prep_temp_pep
         stdout, stderr, rc = subp_exec(tp, "run")
         sd = os.path.join(get_outdir(tp), "submission")
@@ -278,18 +278,21 @@ class LooperRunPreSubmissionHooksTests:
         assert rc == 0
         verify_filecount_in_dir(sd, ".yaml", 3)
 
-    def test_looper_submission_plugin(self, prep_temp_pep):
+    @pytest.mark.parametrize("plugin,appendix",
+                             [("looper.write_submission_yaml", "submission.yaml"),
+                              ("looper.write_sample_yaml_prj", "prj.yaml"),
+                              ("looper.write_sample_yaml_cwl", "cwl.yaml")])
+    def test_looper_other_plugins(self, prep_temp_pep, plugin, appendix):
         tp = prep_temp_pep
         for path in {piface["pipe_iface_file"] for piface in
                      Project(tp).pipeline_interfaces}:
             with mod_yaml_data(path) as piface_data:
-                piface_data[PRE_SUBMIT_HOOK_KEY][PRE_SUBMIT_PY_FUN_KEY] = [
-                    "looper.write_submission_yaml"]
+                piface_data[PRE_SUBMIT_HOOK_KEY][PRE_SUBMIT_PY_FUN_KEY] = [plugin]
         stdout, stderr, rc = subp_exec(tp, "run")
         sd = os.path.join(get_outdir(tp), "submission")
         print(stderr)
         assert rc == 0
-        verify_filecount_in_dir(sd, "submission.yaml", 3)
+        verify_filecount_in_dir(sd, appendix, 3)
 
 
 class LooperRunSubmissionScriptTests:
