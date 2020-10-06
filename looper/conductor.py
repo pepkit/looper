@@ -132,10 +132,9 @@ def write_sample_yaml_cwl(namespaces):
 
     schema_path = get_schema_source(namespaces["pipeline"]["input_schema"])
     from eido import read_schema
-    s = read_schema(schema_path)
 
     file_list = []
-    for ischema in read_schema(namespaces["pipeline"]["input_schema"]):
+    for ischema in read_schema(schema_path):
         if "files" in ischema["properties"]["samples"]["items"]:
             file_list.extend(ischema["properties"]["samples"]["items"]["files"])
 
@@ -151,7 +150,7 @@ def write_sample_yaml_cwl(namespaces):
                              "path":  file_attr_rel}
 
     directory_list = []
-    for ischema in read_schema(namespaces["pipeline"]["input_schema"]):
+    for ischema in read_schema(schema_path):
         if "directories" in ischema["properties"]["samples"]["items"]:
             directory_list.extend(ischema["properties"]["samples"]["items"]["files"])
 
