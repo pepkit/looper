@@ -114,56 +114,58 @@ def write_sample_yaml_cwl(namespaces):
     :param dict namespaces: variable namespaces dict
     :return dict: updated variable namespaces dict
     """
-    # To be compatible as a CWL job input, we need to handle the
-    # File and Directory object types directly.
-    sample = namespaces["sample"]
-    sample.sample_yaml_cwl = _get_yaml_path(
-        namespaces, SAMPLE_CWL_YAML_PATH_KEY, "_sample_cwl")
-    namespaces["looper"]["piface_dir"]
+    from eido import read_schema
+    from ubiquerg import is_url
 
-    def get_schema_source(schema_source, piface_dir=namespaces["looper"]["piface_dir"]):
+    def _get_schema_source(schema_source, piface_dir=namespaces["looper"]["piface_dir"]):
         # Stolen from piface object; should be a better way to do this...
-        from ubiquerg import is_url
         if is_url(schema_source):
             return schema_source
         elif not os.path.isabs(schema_source):
             schema_source = os.path.join(piface_dir, schema_source)
         return schema_source
 
-    schema_path = get_schema_source(namespaces["pipeline"]["input_schema"])
-    from eido import read_schema
+    # To be compatible as a CWL job input, we need to handle the
+    # File and Directory object types directly.
+    sample = namespaces["sample"]
+    sample.sample_yaml_cwl = _get_yaml_path(
+        namespaces, SAMPLE_CWL_YAML_PATH_KEY, "_sample_cwl")
 
-    file_list = []
-    for ischema in read_schema(schema_path):
-        if "files" in ischema["properties"]["samples"]["items"]:
-            file_list.extend(ischema["properties"]["samples"]["items"]["files"])
+    if "input_schema" in namespaces["pipeline"]:
+        schema_path = _get_schema_source(namespaces["pipeline"]["input_schema"])
+        file_list = []
+        for ischema in read_schema(schema_path):
+            if "files" in ischema["properties"]["samples"]["items"]:
+                file_list.extend(ischema["properties"]["samples"]["items"]["files"])
 
-    for file_attr in file_list:
-        _LOGGER.debug("CWL-ing file attribute: {}".format(file_attr))
-        file_attr_value = sample[file_attr]
-        # file paths are assumed relative to the sample table;
-        # but CWL assumes they are relative to the yaml output file,
-        # so we convert here.
-        file_attr_rel = os.path.relpath(
-            file_attr_value, os.path.dirname(sample.sample_yaml_cwl))
-        sample[file_attr] = {"class": "File",
-                             "path":  file_attr_rel}
+        for file_attr in file_list:
+            _LOGGER.debug("CWL-ing file attribute: {}".format(file_attr))
+            file_attr_value = sample[file_attr]
+            # file paths are assumed relative to the sample table;
+            # but CWL assumes they are relative to the yaml output file,
+            # so we convert here.
+            file_attr_rel = os.path.relpath(
+                file_attr_value, os.path.dirname(sample.sample_yaml_cwl))
+            sample[file_attr] = {"class": "File",
+                                 "path":  file_attr_rel}
 
-    directory_list = []
-    for ischema in read_schema(schema_path):
-        if "directories" in ischema["properties"]["samples"]["items"]:
-            directory_list.extend(ischema["properties"]["samples"]["items"]["files"])
+        directory_list = []
+        for ischema in read_schema(schema_path):
+            if "directories" in ischema["properties"]["samples"]["items"]:
+                directory_list.extend(ischema["properties"]["samples"]["items"]["files"])
 
-    for dir_attr in directory_list:
-        _LOGGER.debug("CWL-ing directory attribute: {}".format(dir_attr))
-        dir_attr_value = sample[dir_attr]
-        # file paths are assumed relative to the sample table;
-        # but CWL assumes they are relative to the yaml output file,
-        # so we convert here.
-        sample[dir_attr] = {"class": "Directory",
-                            "path":  dir_attr_value}
-    print("Writing sample yaml to {}".format(sample.sample_yaml_cwl))
-
+        for dir_attr in directory_list:
+            _LOGGER.debug("CWL-ing directory attribute: {}".format(dir_attr))
+            dir_attr_value = sample[dir_attr]
+            # file paths are assumed relative to the sample table;
+            # but CWL assumes they are relative to the yaml output file,
+            # so we convert here.
+            sample[dir_attr] = {"class": "Directory",
+                                "path":  dir_attr_value}
+    else:
+        _LOGGER.warning("No 'input_schema' defined, producing a regular "
+                        "sample YAML representation")
+    _LOGGER.info("Writing sample yaml to {}".format(sample.sample_yaml_cwl))
     sample.to_yaml(sample.sample_yaml_cwl)
     return {"sample": sample}
 
