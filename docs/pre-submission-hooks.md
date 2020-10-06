@@ -131,12 +131,25 @@ Python plugin functions have access *all of the metadata variables looper has ac
 
 How can you parameterize your plugin function? Since the function will have access to all the looper variable namespaces, this means that plugin authors may require users to specify any attributes within any namespace to parametrize them. For example, a plugin that increases the compute wall time by an arbitrary amount of time may require `extra_time` attribute in the `pipeline` namespace. Users would specify this parameter like this:
 
-```
-pipeline:
-  extra_time: "3"
+```{yaml}
+pipeline_name: my_pipeline
+pipeline_type: sample
+extra_time: 3
 ```
 
-The plugins need to handle incomplete parametrization, either by providing defaults or by raising exceptions. We recommend using the [`pipeline.template_vars`](pipeline-interface-specification.md#var_templates) section to parametrize plugin functions.
+This variable would be accessible in your python function as `namespaces["pipeline"]["extra_time"]`. This works, but we recommend keeping things clean by putting all required pipeline parameters into the [`pipeline.template_vars`](pipeline-interface-specification.md#var_templates) section. This not only keeps things tidy in a particular section, but also adds additional functionality of making these templates that can themselves refer to namespace variables, which can be very convenient. For example, a better approach would be:
+
+```{yaml}
+pipeline_name: my_pipeline
+pipeline_type: sample
+var_templates:
+  extra_time: 3
+  plugin_path: "{looper.piface_dir}/plugin_results"
+```
+
+In this example you'd use `namespaces["pipeline"]["var_templates"]["extra_time"]` to access the user-provided parameter. Notice we included another example, `plugin_path`, which can refer to the `{looper.piface_dir}` variable. Because this variable is included under `var_templates`, it will be populated with any namespace variables. 
+
+The plugins need to handle incomplete parametrization, either by providing defaults or by raising exceptions. 
 
 #### Function output: updating submission metadata via return value
 
