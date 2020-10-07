@@ -2,16 +2,20 @@
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format. 
 
-## [1.3.0] -- Unreleased
+## [1.3.0] -- 2020-10-07
 
 ### Added
-- New plugin system for presubmission hooks
-- Included plugin functions: sample_yaml, sample_yaml_cwl, submission, ...
-- New `var_templates` for defining variables in the pipeline interface
+- New plugin system for pre-submission hooks
+- Included plugin functions: `write_sample_yaml`, `write_sample_yaml_prj`, `write_sample_yaml_cwl` and `write_submission_yaml`
+- New `var_templates` section for defining variables in the pipeline interface
 
 ### Changed
-- Pipeline interface specification was updated to accomodate new variable templates and presubmission hooks
-- Removed support for dynamic compute variable templates, which can now be more simply accomplished with a presubmission hook.
+- Pipeline interface specification was updated to accommodate new `var_templates` section and pre-submission hooks
+
+### Deprecated
+- pipeline interface sections:
+    - `dynamic_variables_command_template`, which can now be more simply accomplished with a pre-submission hook
+    - `path`, which is replaced by a more generic `var_templates` section
 
 ## [1.2.1] - 2020-08-26
 
