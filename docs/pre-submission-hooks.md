@@ -125,7 +125,7 @@ Python plugin functions have access *all of the metadata variables looper has ac
 
 1. The Python function *must* take as input a `namespaces` object, which is a Python [`dict`](https://docs.python.org/3/tutorial/datastructures.html#dictionaries) of [looper variable namespaces](variable-namespaces.md). 
 
-2. The function *should* return any updated namespace variables; or can potentially return `None` if no changes are made, which may the case if the function is only used for its side effect.
+2. The function *should* return any updated namespace variables; or can potentially return an empty `dict` (`{}`) if no changes are intended, which may the case if the function is only used for its side effect.
 
 #### Custom function input parameters
 
