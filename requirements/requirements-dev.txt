@@ -1,2 +1,0 @@
--e git+git://github.com/pepkit/eido@dev#egg=eido
--e git+git://github.com/pepkit/peppy@dev#egg=peppy
