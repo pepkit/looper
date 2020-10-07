@@ -6,6 +6,7 @@ import pandas as pd
 
 from collections import Mapping
 from logging import getLogger
+from warnings import warn
 
 from attmap import PathExAttMap as PXAM
 from eido import read_schema
@@ -14,6 +15,7 @@ from ubiquerg import expandpath, is_url
 from yacman import load_yaml
 
 from .const import *
+from .utils import jinja_render_template_strictly
 from .exceptions import InvalidResourceSpecificationException
 
 __author__ = "Michal Stolarczyk"
@@ -49,8 +51,27 @@ class PipelineInterface(PXAM):
             config = load_yaml(config)
         self.update(config)
         self._validate(PIFACE_SCHEMA_SRC, flavor=pipeline_type)
-        self._expand_paths(["path"])
+        if "path" in self:
+            warn(message="'path' specification as a top-level pipeline "
+                         "interface key is deprecated and will be removed with "
+                         "the next release. Please use 'paths' section "
+                         "from now on.", category=DeprecationWarning)
+            self._expand_paths(["path"])
         self._expand_paths(["compute", "dynamic_variables_script_path"])
+
+    def render_var_templates(self, namespaces):
+        """
+        Render path templates under 'var_templates' in this pipeline interface.
+
+        :param dict namespaces: namespaces to use for rendering
+        """
+        if VAR_TEMPL_KEY in self:
+            for k, v in self[VAR_TEMPL_KEY].items():
+                setattr(self[VAR_TEMPL_KEY], k,
+                        jinja_render_template_strictly(v, namespaces))
+        else:
+            _LOGGER.debug(f"'{VAR_TEMPL_KEY}' section not found in the "
+                          f"{self.__class__.__name__} object.")
 
     def get_pipeline_schemas(self, schema_key=INPUT_SCHEMA_KEY):
         """
@@ -126,12 +147,18 @@ class PipelineInterface(PXAM):
             json = None
             if COMPUTE_KEY in pipeline \
                     and DYN_VARS_KEY in pipeline[COMPUTE_KEY]:
+                from warnings import warn
                 from subprocess import check_output, CalledProcessError
                 from json import loads
-                from .utils import jinja_render_cmd_strictly
+                from .utils import jinja_render_template_strictly
+                warn(message="'dynamic_variables_command_template' feature is "
+                             "deprecated and will be removed with the next "
+                             "release. Please use 'pre_submit' feature from "
+                             "now on.",
+                     category=DeprecationWarning)
                 try:
-                    cmd = jinja_render_cmd_strictly(
-                        cmd_template=pipeline[COMPUTE_KEY][DYN_VARS_KEY],
+                    cmd = jinja_render_template_strictly(
+                        template=pipeline[COMPUTE_KEY][DYN_VARS_KEY],
                         namespaces=namespaces
                     )
                     json = loads(check_output(cmd, shell=True))
@@ -211,7 +238,6 @@ class PipelineInterface(PXAM):
 
         if COMPUTE_KEY in self:
             resources_data.update(self[COMPUTE_KEY])
-
         project = namespaces["project"]
         if LOOPER_KEY in project and COMPUTE_KEY in project[LOOPER_KEY] \
                 and RESOURCES_KEY in project[LOOPER_KEY][COMPUTE_KEY]:
@@ -245,7 +271,7 @@ class PipelineInterface(PXAM):
 
         def _set_in_dict(map, attrs, val):
             """
-            Set value in a mapping, creating a possibly nested struvture
+            Set value in a mapping, creating a possibly nested structure
 
             :param collections.Mapping map: mapping to retrieve values from
             :param Iterable[str] attrs: a list of attributes

@@ -46,7 +46,6 @@ from ubiquerg.collection import uniqify
 _PKGNAME = "looper"
 _LOGGER = logging.getLogger(_PKGNAME)
 
-
 class Executor(object):
     """ Base class that ensures the program's Sample counter starts.
 

@@ -1,21 +1,14 @@
 # How to pass extra command-line arguments
 
-Occasionally, a particular project needs to run a particular flavor of a pipeline. We'd like to just adjust the arguments passed for just this project. 
-We may be passing a completely separate config file to the pipeline, or just tweaking a command-line argument. Either way, we treat things the same way.
+Occasionally, a particular project needs to run a particular flavor of a pipeline. How can you  adjust pipeline arguments for just this project? You can use looper *command extras* to solve this problem. Command extras let you pass any string on to the pipeline, which will be appended to the command. 
 
-Looper provides a feature called *command extras* to solve this problem. Command extras provide a way to pass arbitrary commands through looper on to the pipeline. This *extra* information can be specified on the command line, or at the sample or project level, depending on the pipeline.
+There are 2 ways to use command extras: for sample pipelines, or for project pipelines:
 
-## Sample-level command extras
+## 1. Sample pipeline command extras
 
-For sample pipelines, there are two possibilities: 1) command line argument  for `run` subcommand and 2) setting sample attribute using general PEP sample modifiers to add a `command_extra` attribute to any samples, however you wish. 
+### Adding sample command extras via sample attributes
 
-You can pass extra arguments using `--command-extra` like this:
-
-```
-looper run project_config.yaml --command-extra="--flavor-flag"
-```
-
-For the PEP-based approach, for example, if your extras are the same for all samples you could just use an `append` modifier:
+Looper uses a reserved sample attribute called `command_extras`, which you can set using general PEP sample modifiers however you wish. For example, if your extras are the same for all samples you could use an `append` modifier:
 
 
 ```yaml
@@ -24,8 +17,7 @@ sample_modifiers:
     command_extra: "--flavor-flag"
 ```
 
-Or, if you need to modulate on the basis of some other attribute value, you could use an imply modifier:
-
+This will add `--flavor-flag` the end of the command looper constructs. If you need to modulate the extras depending on another attribute value, you could use an imply modifier:
 
 ```yaml
 sample_modifiers:
@@ -36,7 +28,15 @@ sample_modifiers:
         command_extra: "-C flavor.yaml --epilog"
 ```
 
-## Project-level command extras
+### Adding sample command extras via the command line
+
+You can also pass extra arguments using `--command-extra` like this:
+
+```
+looper run project_config.yaml --command-extra="--flavor-flag"
+```
+
+## 2. Project pipeline command extras
 
 For *project pipelines*, you can specify command extras in the `looper` section of the PEP config:
 

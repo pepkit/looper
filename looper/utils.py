@@ -138,14 +138,14 @@ def get_file_for_project(prj, appendix):
     return fp
 
 
-def jinja_render_cmd_strictly(cmd_template, namespaces):
+def jinja_render_template_strictly(template, namespaces):
     """
     Render a command string in the provided namespaces context.
 
     Strictly, which means that all the requested attributes must be
     available in the namespaces
 
-    :param str cmd_template: command template do be filled in with the
+    :param str template: command template do be filled in with the
         variables in the provided namespaces. For example:
         "prog.py --name {project.name} --len {sample.len}"
     :param Mapping[Mapping[str] namespaces: context for command rendering.
@@ -163,13 +163,13 @@ def jinja_render_cmd_strictly(cmd_template, namespaces):
                              variable_start_string="{",
                              variable_end_string="}",
                              finalize=_finfun)
-    template = env.from_string(cmd_template)
+    templ_obj = env.from_string(template)
     try:
-        rendered = template.render(**namespaces)
+        rendered = templ_obj.render(**namespaces)
     except jinja2.exceptions.UndefinedError:
-        _LOGGER.error("Missing sample, project or pipeline attributes"
-                      " required by command template: '{}'"
-                      .format(cmd_template))
+        _LOGGER.error(f"Attributes in namespaces "
+                      f"({', '.join(list(namespaces.keys()))}) missing for "
+                      f"the following template: '{template}'")
         raise
     _LOGGER.debug("rendered arg str: {}".format(rendered))
     return rendered

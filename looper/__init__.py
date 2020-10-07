@@ -17,6 +17,9 @@ from ._version import __version__
 from .parser_types import *
 from .const import *
 
+from .conductor import write_sample_yaml_cwl, write_sample_yaml, \
+    write_sample_yaml_prj, write_submission_yaml
+
 from ubiquerg import VersionInHelpParser
 from divvy import DEFAULT_COMPUTE_RESOURCES_NAME, NEW_COMPUTE_KEY as COMPUTE_KEY
 # Not used here, but make this the main import interface between peppy and

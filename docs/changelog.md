@@ -2,6 +2,21 @@
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format. 
 
+## [1.3.0] -- 2020-10-07
+
+### Added
+- New plugin system for pre-submission hooks
+- Included plugin functions: `write_sample_yaml`, `write_sample_yaml_prj`, `write_sample_yaml_cwl` and `write_submission_yaml`
+- New `var_templates` section for defining variables in the pipeline interface
+
+### Changed
+- Pipeline interface specification was updated to accommodate new `var_templates` section and pre-submission hooks
+
+### Deprecated
+- pipeline interface sections:
+    - `dynamic_variables_command_template`, which can now be more simply accomplished with a pre-submission hook
+    - `path`, which is replaced by a more generic `var_templates` section
+
 ## [1.2.1] - 2020-08-26
 
 ### Added
@@ -25,7 +40,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Input schemas and output schemas
 - `--settings` argument to specify compute resources as a YAML file
 - Option to preset CLI options in a dotfile
-- `--command-extra` and `--command-extra-override` arguments that append specified string to pipeline commands
+- `--command-extra` and `--command-extra-override` arguments that append specified string to pipeline commands. These functions supercede the previous `pipeline_config` and `pipeline_args` sections, which are now deprecated. The new method is more universal, and can accomplish the same functionality but more simply, using the built-in PEP machinery to selectively apply commands to samples.
 - Option to specify destination of sample YAML in pipeline interface
 - `--pipeline_interfaces` argument that allows pipeline interface specification via CLI
 

@@ -24,6 +24,7 @@ nav:
     - Pipeline interface specification: pipeline-interface-specification.md
     - Pipeline tiers: pipeline-tiers.md
     - Concentric templates: concentric-templates.md
+    - Pre-submission hooks system: pre-submission-hooks.md
     - Looper variable namespaces: variable-namespaces.md
     - Usage: usage.md
     - Configuration files: config-files.md
