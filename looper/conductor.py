@@ -152,7 +152,7 @@ def write_sample_yaml_cwl(namespaces):
         directory_list = []
         for ischema in read_schema(schema_path):
             if "directories" in ischema["properties"]["samples"]["items"]:
-                directory_list.extend(ischema["properties"]["samples"]["items"]["files"])
+                directory_list.extend(ischema["properties"]["samples"]["items"]["directories"])
 
         for dir_attr in directory_list:
             _LOGGER.debug("CWL-ing directory attribute: {}".format(dir_attr))
