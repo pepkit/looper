@@ -161,7 +161,7 @@ def write_sample_yaml_cwl(namespaces):
             # but CWL assumes they are relative to the yaml output file,
             # so we convert here.
             sample[dir_attr] = {"class": "Directory",
-                                "path":  dir_attr_value}
+                                "location":  dir_attr_value}
     else:
         _LOGGER.warning("No 'input_schema' defined, producing a regular "
                         "sample YAML representation")
