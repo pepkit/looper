@@ -332,7 +332,7 @@ class SubmissionConductor(object):
                 else:
                     use_this_sample = False
             if not use_this_sample:
-                msg = "> Skipping sample because no failed flag found"
+                msg = "> Skipping sample because flag found"
                 if flag_files:
                     msg += ". Flags found: {}".format(flag_files)
                 _LOGGER.info(msg)
