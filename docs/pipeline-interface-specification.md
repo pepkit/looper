@@ -38,7 +38,7 @@ var_templates:
   pipeline: "{looper.piface_dir}/pipelines/pipeline1.py"
   sample_info: "{looper.piface_dir}/{sample.name}/info.txt"
 input_schema: path/to/rrbs_schema.yaml
-command_template: {pipeline.var_templates.path} --input {sample.data_path} --info {pipeline.sample_info.path}
+command_template: {pipeline.var_templates.pipeline} --input {sample.data_path} --info {pipeline.sample_info.path}
 ```
 
 Pretty simple. The `pipeline_name` is arbitrary. It's used for messaging and identification. Ideally, it's unique to each pipeline. In this example, we define a single sample-level pipeline. 
@@ -49,7 +49,7 @@ Pretty simple. The `pipeline_name` is arbitrary. It's used for messaging and ide
 
 The pipeline name is arbitrary. It should be unique for each pipeline. Looper uses it for a few things:
 
-1. to construct the `job_name` variable (accessible via `{ looper.job_name }`). See [variable namespaces](variable-namespaces.md) for more details.
+1. to construct the `job_name` variable (accessible via `{looper.job_name}`). See [variable namespaces](variable-namespaces.md) for more details.
 
 2. to check for flags. For pipelines that produce flags, looper will be aware of them and not re-submit running jobs.
 
@@ -65,7 +65,7 @@ Because it's based on Jinja2, command templates are extremely flexible. For exam
 
 ```
 command_template: >
-  {pipeline.path}
+  {pipeline.var_templates.path}
   --sample-name {sample.sample_name}
   --genome {sample.genome}
   --input {sample.read1}
@@ -184,7 +184,7 @@ This section can consist of multiple variable templates that are rendered and ca
 
 #### pre_submit
 
-This section can consist of two subsections: `python_funcions` and/or `command_templates`, which specify the pre-submission tasks to be run before the main pipeline command is submitted. Please refer to the [pre-submission hooks system](pre-submission-hooks.md) section for a detailed explanation of this feature and syntax.
+This section can consist of two subsections: `python_functions` and/or `command_templates`, which specify the pre-submission tasks to be run before the main pipeline command is submitted. Please refer to the [pre-submission hooks system](pre-submission-hooks.md) section for a detailed explanation of this feature and syntax.
 
 ## Validating a pipeline interface
 
