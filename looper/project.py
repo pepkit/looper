@@ -12,6 +12,7 @@ from peppy import SAMPLE_NAME_ATTR, OUTDIR_KEY, CONFIG_KEY, \
 from eido import read_schema, PathAttrNotFoundError
 from divvy import ComputingConfiguration
 from ubiquerg import is_command_callable, expandpath
+from pipestat import PipestatManager, PipestatError
 
 from .processed_project import populate_sample_paths, populate_project_paths
 from .const import *
@@ -278,35 +279,6 @@ class Project(peppyProject):
         """
         return self._samples_by_interface.keys()
 
-    # def _overwrite_sample_pifaces_with_cli(self, pifaces):
-    #     """
-    #     Overwrite sample pipeline interface sources with the provided ones
-    #
-    #     :param Iterable[str] | str | NoneType pifaces: collection of pipeline
-    #         interface sources
-    #     """
-    #     _LOGGER.debug("CLI-specified pifaces: {}".format(pifaces))
-    #     valid_pi = []
-    #     if not pifaces:
-    #         # No CLI-specified pipeline interface sources
-    #         return
-    #     if isinstance(pifaces, str):
-    #         pifaces = [pifaces]
-    #     for piface in pifaces:
-    #         pi = expandpath(piface)
-    #         try:
-    #             PipelineInterface(pi, pipeline_type="sample")
-    #         except Exception as e:
-    #             _LOGGER.warning("Provided pipeline interface source ({}) is "
-    #                             "invalid. Caught exception: {}".
-    #                             format(pi, getattr(e, 'message', repr(e))))
-    #         else:
-    #             valid_pi.append(pi)
-    #     [setattr(s, self.piface_key, valid_pi) for s in self.samples]
-    #     if valid_pi:
-    #         _LOGGER.info("Provided valid pipeline interface sources ({}) "
-    #                      "set in all samples".format(", ".join(valid_pi)))
-
     def get_sample_piface(self, sample_name):
         """
         Get a list of pipeline interfaces associated with the specified sample.
@@ -402,6 +374,54 @@ class Project(peppyProject):
                 schema_set.update([schema_file])
         return list(schema_set)
 
+    def get_sample_pipestat_managers(self, sample_name):
+        """
+        Get a collection of pipestat managers for the selected sample.
+
+        The number of pipestat managers corresponds to the number of unique
+        output schemas in the pipeline interfaces specified by the sample.
+
+        :param str sample_name: sample name to get pipestat managers for
+        :return dict[str, pipestat.PipestatManager]: a mapping of pipestat
+            managers by pipeline interface for the selected sample
+        """
+        ret = {}
+        if CONFIG_KEY in self and LOOPER_KEY in self[CONFIG_KEY] and \
+                PIPESTAT_KEY in self[CONFIG_KEY][LOOPER_KEY]:
+            if NAMESPACE_ATTR_KEY in self[CONFIG_KEY][LOOPER_KEY][PIPESTAT_KEY]:
+                namespace = getattr(
+                    self.get_sample(sample_name),
+                    self[CONFIG_KEY][LOOPER_KEY][PIPESTAT_KEY][NAMESPACE_ATTR_KEY]
+                )
+            else:
+                namespace = getattr(self.get_sample(sample_name),
+                                    "pipestat_namespace")
+            cfg_pth = None
+            if "config" in self[CONFIG_KEY][LOOPER_KEY][PIPESTAT_KEY]:
+                cfg_pth = expandpath(
+                    self[CONFIG_KEY][LOOPER_KEY][PIPESTAT_KEY]["config"])
+                if not os.path.exists(cfg_pth):
+                    raise PipestatError(
+                        f"Pipestat configuration file not found: {cfg_pth}")
+            results_file_path = None
+            if "results_file_path" in self[CONFIG_KEY][LOOPER_KEY][PIPESTAT_KEY]:
+                results_file_path = expandpath(
+                    self[CONFIG_KEY][LOOPER_KEY][PIPESTAT_KEY]["results_file_path"])
+            pifaces = self._interfaces_by_sample[sample_name]
+            for piface in pifaces:
+                ret[piface.source] = PipestatManager(
+                    name=namespace,
+                    config=cfg_pth,
+                    results_file_path=results_file_path,
+                    record_identifier=namespace,
+                    schema_path=piface.get_pipeline_schemas(OUTPUT_SCHEMA_KEY)
+                )
+            return ret
+        raise PipestatError(
+            f"{PIPESTAT_KEY} not found in {LOOPER_KEY} section of the "
+            f"project configuration file."
+        )
+
     def populate_pipeline_outputs(self, check_exist=False):
         """
         Populate project and sample output attributes based on output schemas
@@ -428,8 +448,8 @@ class Project(peppyProject):
         """
         Create a mapping of all defined interfaces in this Project by samples.
 
-        :return list[str]: a collection of pipeline interfaces keyed by
-        sample name
+        :return dict[str, list[PipelineInterface]]: a collection of pipeline
+            interfaces keyed by sample name
         """
         pifaces_by_sample = {}
         for source, sample_names in self._samples_by_interface.items():
