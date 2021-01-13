@@ -22,7 +22,7 @@ __all__ = [
     "DOTFILE_CFG_PTH_KEY", "DRY_RUN_KEY", "FILE_CHECKS_KEY", "CLI_KEY",
     "PRE_SUBMIT_HOOK_KEY", "PRE_SUBMIT_PY_FUN_KEY", "PRE_SUBMIT_CMD_KEY",
     "SUBMISSION_YAML_PATH_KEY", "SAMPLE_YAML_PRJ_PATH_KEY",
-    "SAMPLE_CWL_YAML_PATH_KEY",
+    "SAMPLE_CWL_YAML_PATH_KEY", "PIPESTAT_KEY", "NAMESPACE_ATTR_KEY"
 ]
 
 FLAGS = ["completed", "running", "failed", "waiting", "partial"]
@@ -110,6 +110,8 @@ PROFILE_COLNAMES = ['pid', 'hash', 'cid', 'runtime', 'mem', 'cmd', 'lock']
 PIPE_ARGS_SECTION = "pipeline_args"
 CLI_KEY = "cli"
 LOOPER_KEY = "looper"
+PIPESTAT_KEY = "pipestat"
+NAMESPACE_ATTR_KEY = "namespace_attribute"
 OUTDIR_KEY = "output_dir"
 RESULTS_SUBDIR_KEY = "results_subdir"
 SUBMISSION_SUBDIR_KEY = "submission_subdir"
