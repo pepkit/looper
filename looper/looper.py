@@ -409,14 +409,14 @@ class Runner(Executor):
                          format("\n".join(full_fail_msgs)))
 
 
-class Report(Executor):
+class Reporter(Executor):
     """ Combine project outputs into a browsable HTML report """
     def __call__(self, args):
         # initialize the report builder
         report_builder = HTMLReportBuilder(self.prj)
 
         # Do the stats and object summarization.
-        table = Table(self.prj)()
+        table = Tabulator(self.prj)()
         # run the report builder. a set of HTML pages is produced
         report_path = report_builder(table.objs, table.stats,
                                      uniqify(table.columns))
@@ -425,11 +425,11 @@ class Report(Executor):
                      + report_path)
 
 
-class Table(Executor):
+class Tabulator(Executor):
     """ Project/Sample statistics and table output generator """
     def __init__(self, prj):
         # call the inherited initialization
-        super(Table, self).__init__(prj)
+        super(Tabulator, self).__init__(prj)
         self.prj = prj
 
     def __call__(self):
@@ -758,10 +758,10 @@ def main():
             return Destroyer(prj)(args)
 
         if args.command == "table":
-            Table(prj)()
+            Tabulator(prj)()
         
         if args.command == "report":
-            Report(prj)(args)
+            Reporter(prj)(args)
 
         if args.command == "check":
             Checker(prj)(flags=args.flags)
