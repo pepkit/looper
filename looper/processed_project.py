@@ -4,12 +4,16 @@ Will be moved to a separate package
 """
 import os
 from logging import getLogger
+from copy import copy
+from collections.abc import Mapping
 
 from eido.const import *
 from eido.exceptions import *
 
 from peppy.sample import Sample
 from peppy.project import Project
+
+from pipestat import SCHEMA_TYPE_KEY, SchemaError
 
 __author__ = "Michal Stolarczyk"
 __email__ = "michal@virginia.edu"
@@ -20,7 +24,7 @@ THUMB_PATH_KEY = "thumbnail_path"
 PATH_LIKE = [PATH_KEY, THUMB_PATH_KEY]
 
 
-def _get_path_sect_keys(mapping, keys=[PATH_KEY]):
+def _get_path_sect_keys(mapping, keys=[PATH_KEY, THUMB_PATH_KEY]):
     """
     Get names of subsections in a mapping that contain collection of keys
 
@@ -31,7 +35,7 @@ def _get_path_sect_keys(mapping, keys=[PATH_KEY]):
     return [k for k, v in mapping.items() if bool(set(keys) & set(mapping[k]))]
 
 
-def _populate_paths(object, schema, check_exist):
+def _populate_paths_in_schema(object, schema):
     """
     Populate path-like object attributes with other object attributes
     based on a defined template, e.g. '/Users/x/test_{name}/{genome}_file.txt'
@@ -39,33 +43,44 @@ def _populate_paths(object, schema, check_exist):
     :param Mapping object: object with attributes to populate path template with
     :param dict schema: schema with path attributes defined, e.g.
         output of read_schema function
-    :param bool check_exist: whether the paths should be check for existence
     :return Mapping: object with path templates populated
     """
-    if PROP_KEY not in schema:
-        raise EidoSchemaInvalidError("Schema is missing properties section.")
-    missing = []
-    s = schema[PROP_KEY]
-    path_sects = _get_path_sect_keys(s)
-    for ps in path_sects:
-        templ = s[ps][PATH_KEY]
-        try:
-            populated = templ.format(**dict(object.items()))
-        except Exception as e:
-            _LOGGER.warning("Caught exception: {}.\n"
-                            "Could not populate path: {}".
-                            format(getattr(e, 'message', repr(e)), templ))
-        else:
-            setattr(object, ps, populated)
-            _LOGGER.debug("Path set to: {}".format(object[ps]))
-            if check_exist and not os.path.exists(object[ps]):
-                missing.append(object[ps])
-    if missing:
-        raise PathAttrNotFoundError("Path attributes not found:\n- {}".
-                                    format("\n- ".join(missing)))
+    def _recurse_and_populate(mapping, object):
+        """
+        Recursively populate paths and thumbnail_paths templates in a mapping
+
+        :param any mapping: a potential mapping with paths to populate
+        :param Mapping object: object with attributes to populate path
+            template with
+        :return any: potentially populated object
+        """
+        if isinstance(mapping, Mapping):
+            for k, v in mapping.items():
+                if isinstance(v, Mapping):
+                    _recurse_and_populate(v, object)
+                elif k in ["path", "thumbnail_path"]:
+                    try:
+                        mapping[k] = v.format(**dict(object.items()))
+                    except Exception as e:
+                        _LOGGER.warning(
+                            f"Caught exception: {getattr(e, 'message', repr(e))}."
+                            f"\nCould not populate template in schema: {v}"
+                        )
+                    else:
+                        _LOGGER.info(f"Populated: {mapping[k]}")
+        return mapping
+
+    for k, v in schema.items():
+        if "value" not in v:
+            continue
+        if SCHEMA_TYPE_KEY not in v:
+            raise SchemaError(f"'{SCHEMA_TYPE_KEY}' not found in '{k}' section "
+                              f"of the output schema")
+        schema[k] = _recurse_and_populate(v, object)
+    return schema
 
 
-def populate_sample_paths(sample, schema, check_exist=False):
+def populate_sample_paths(sample, schema):
     """
     Populate path-like Sample attributes with other object attributes
     based on a defined template, e.g. '/Users/x/test_{name}/{genome}_file.txt'
@@ -73,18 +88,18 @@ def populate_sample_paths(sample, schema, check_exist=False):
     :param peppy.Sample sample: sample to populate paths in
     :param Iterable[dict] schema: schema with path attributes defined, e.g.
         output of read_schema function
-    :param bool check_exist: whether the paths should be check for existence
     :return Mapping: Sample with path templates populated
     """
+    # TODO: merge this and 'populate_project_paths' into one?
     if not isinstance(sample, Sample):
         raise TypeError("Can only populate paths in peppy.Sample objects")
-    # schema = schema[-1]  # use only first schema, in case there are imports
-    if PROP_KEY in schema and "samples" in schema[PROP_KEY]:
-        _populate_paths(sample, schema[PROP_KEY]["samples"]["items"],
-                        check_exist)
+    for k, v in _populate_paths_in_schema(sample, copy(schema)).items():
+        if "value" in v:
+            setattr(sample, k, v["value"])
+    return sample
 
 
-def populate_project_paths(project, schema, check_exist=False):
+def populate_project_paths(project, schema):
     """
     Populate path-like Project attributes with other object attributes
     based on a defined template, e.g. '/Users/x/test_{name}/{genome}_file.txt'
@@ -92,12 +107,14 @@ def populate_project_paths(project, schema, check_exist=False):
     :param peppy.Project project: project to populate paths in
     :param dict schema: schema with path attributes defined, e.g.
         output of read_schema function
-    :param bool check_exist: whether the paths should be check for existence
     :return Mapping: Project with path templates populated
     """
     if not isinstance(project, Project):
         raise TypeError("Can only populate paths in peppy.Project objects")
-    _populate_paths(project, schema, check_exist)
+    for k, v in _populate_paths_in_schema(project.config, copy(schema)).items():
+        if "value" in v:
+            setattr(project, k, v["value"])
+    return project
 
 
 def get_project_outputs(project, schema):

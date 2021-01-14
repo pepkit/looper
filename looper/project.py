@@ -383,6 +383,8 @@ class Project(peppyProject):
         output schemas in the pipeline interfaces specified by the sample.
 
         :param str sample_name: sample name to get pipestat managers for
+        :param bool project_level: whether the project PipestatManagers
+            should be returned
         :return dict[str, pipestat.PipestatManager]: a mapping of pipestat
             managers by pipeline interface for the selected sample
         """
@@ -431,27 +433,25 @@ class Project(peppyProject):
             f"project configuration file."
         )
 
-    def populate_pipeline_outputs(self, check_exist=False):
+    def populate_pipeline_outputs(self):
         """
         Populate project and sample output attributes based on output schemas
-        that pipeline interfaces point to. Additionally, if requested,  check
-        for the constructed paths existence on disk
+        that pipeline interfaces point to.
         """
+        # eido.read_schema always returns a list of schemas since it supports
+        # imports in schemas. The output schemas can't have the import section,
+        # hence it's safe to select the fist element after read_schema() call.
         for sample in self.samples:
             sample_piface = self.get_sample_piface(sample[SAMPLE_NAME_ATTR])
             if sample_piface:
                 paths = self.get_schemas(sample_piface, OUTPUT_SCHEMA_KEY)
                 for path in paths:
-                    schema = read_schema(path)[-1]
-                    try:
-                        populate_project_paths(self, schema, check_exist)
-                        populate_sample_paths(sample, schema, check_exist)
-                    except PathAttrNotFoundError:
-                        _LOGGER.error(
-                            "Missing outputs of pipelines matched by protocol: "
-                            "{}".format(sample.protocol)
-                        )
-                        raise
+                    schema = read_schema(path)[0]
+                    populate_sample_paths(sample, schema)
+        schemas = self.get_schemas(
+            self.project_pipeline_interfaces, OUTPUT_SCHEMA_KEY)
+        for schema in schemas:
+            populate_project_paths(self, read_schema(schema)[0])
 
     def _piface_by_samples(self):
         """
