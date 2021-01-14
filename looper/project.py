@@ -446,8 +446,7 @@ class Project(peppyProject):
             if sample_piface:
                 paths = self.get_schemas(sample_piface, OUTPUT_SCHEMA_KEY)
                 for path in paths:
-                    schema = read_schema(path)[0]
-                    populate_sample_paths(sample, schema)
+                    populate_sample_paths(sample, read_schema(path)[0])
         schemas = self.get_schemas(
             self.project_pipeline_interfaces, OUTPUT_SCHEMA_KEY)
         for schema in schemas:

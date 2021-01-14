@@ -397,7 +397,7 @@ class SubmissionConductor(object):
                         s[SAMPLE_NAME_ATTR]), OUTPUT_SCHEMA_KEY)
 
                     for schema in schemas:
-                        populate_sample_paths(s, read_schema(schema))
+                        populate_sample_paths(s, read_schema(schema)[0])
 
             script = self.write_script(self._pool, self._curr_size)
             # Determine whether to actually do the submission.
