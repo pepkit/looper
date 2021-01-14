@@ -95,49 +95,53 @@ If no `input_schema` is included in the pipeline interface, looper will not be a
 
 ### output_schema
 
-The output schema formally specifies the *output produced by this pipeline*. It is used by downstream tools to that need to be aware of the products of the pipeline for further visualization or analysis. Like the input schema, it is based on the extended [PEP JSON-schema validation framework](http://pep.databio.org/en/latest/howto_schema/), but adds looper-specific capabilities. The base schema has two *properties* sections, one that pertains to the project, and one that pertains to the samples. The *properties* sections for both sample and project will recognize these attributes: 
-
-- `title`, following the base JSON-schema spec.
-- `description`, following the base JSON-schema spec.
-- `path`, used to specify a relative path to an output file. The value in the `path` attribute is a template for a path that will be populated by sample variables. Sample variables can be used in the template using brace notation, like `{sample_attribute}`.
-- `thumbnail_path`, templates similar to the `path` attribute, but used to specify a thumbnail output version.
-- `type`, the data type of this output. Can be one of: link, image, file.
-
-The attributes added under the *Project properties* section are assumed to be project-level outputs, whereas attributes under the `samples` object are sample-level outputs. Here is an example output schema:
+The output schema formally specifies the *output produced by this pipeline*. It is used by downstream tools to that need to be aware of the products of the pipeline for further visualization or analysis. Like the input schema, it is based on JSON-schema, but *must* follow the [pipestat schema specification](http://pipestat.databio.org/en/latest/pipestat_specification/#pipestat-schema).
+ 
+Here is an example output schema:
 
 ```yaml
-description: objects produced by PEPPRO pipeline.
-properties:
-  samples:
-    type: array
-    items:
-      type: object
-      properties:
-        smooth_bw: 
-          path: "aligned_{genome}/{sample_name}_smooth.bw"
-          type: string
-          description: "A smooth bigwig file"
-        aligned_bam: 
-          path: "aligned_{genome}/{sample_name}_sort.bam"
-          type: string
-          description: "A sorted, aligned BAM file"
-        peaks_bed: 
-          path: "peak_calling_{genome}/{sample_name}_peaks.bed"
-          type: string
-          description: "Peaks in BED format"
-  tss_file:
-    title: "TSS enrichment file"
-    description: "Plots TSS scores for each sample."
-    thumbnail_path: "summary/{name}_TSSEnrichment.png"
-    path: "summary/{name}_TSSEnrichment.pdf"
-    type: image
-  counts_table:
-    title: "Project peak coverage file"
-    description: "Project peak coverages: chr_start_end X sample"
-    path: "summary/{name}_peaks_coverage.tsv"
-    type: link
+number_of_things:
+  type: integer
+  multipleOf: 10
+  minimum: 20
+  description: "Number of things, min 20, multiple of 10"
+smooth_bw:
+  type: file
+  value:
+    path: "aligned_{genome}/{sample_name}_smooth.bw"
+    title: "A smooth bigwig file"
+  description: "This stores a bigwig file path"
+peaks_bed: 
+  type: file
+  value:
+    path: "peak_calling_{genome}/{sample_name}_peaks.bed"
+    title: "Peaks in BED format"
+  description: "This stores a BED file path"
+collection_of_things:
+  type: array
+  items:
+    type: string
+  description: "This stores collection of strings"
+output_object:
+  type: object
+  properties:
+    GC_content_plot:
+      type: image
+    genomic_regions_plot:
+      type: image
+  value:
+    GC_content_plot:
+      path: "gc_content_{sample_name}.pdf"
+      thumbnail_path: "gc_content_{sample_name}.png"
+      title: "Plot of GC content"
+    genomic_regions_plot:
+      path: "genomic_regions_{sample_name}.pdf"
+      thumbnail_path: "genomic_regions_{sample_name}.png"
+      title: "Plot of genomic regions"
+  required:
+    - GC_content
+  description: "Object output with plots, the GC content plot is required"
 ```
-
 Looper uses the output schema in its `report` function, which produces a browsable HTML report summarizing the pipeline results. The output schema provides the relative locations to sample-level and project-level outputs produced by the pipeline, which looper can then integrate into the output results. If the output schema is not included, the `looper report` will be unable to locate and integrate the files produced by the pipeline and will therefore be limited to simple statistics.
 
 ### compute
