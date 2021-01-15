@@ -388,6 +388,12 @@ class Project(peppyProject):
         :return dict[str, pipestat.PipestatManager]: a mapping of pipestat
             managers by pipeline interface for the selected sample
         """
+
+        def _get_val_from_attr(pipestat_sect, object, attr_name, default):
+            if attr_name in pipestat_sect:
+                return getattr(object, pipestat_sect[attr_name])
+            return getattr(object, default)
+
         ret = {}
         if not project_level and sample_name is None:
             raise ValueError("Must provide the sample_name to determine the "
@@ -396,32 +402,34 @@ class Project(peppyProject):
         if CONFIG_KEY in self and LOOPER_KEY in self[CONFIG_KEY] and \
                 PIPESTAT_KEY in self[CONFIG_KEY][LOOPER_KEY] and \
                 key in self[CONFIG_KEY][LOOPER_KEY][PIPESTAT_KEY]:
-            cfg_pipestat_key = self[CONFIG_KEY][LOOPER_KEY][PIPESTAT_KEY][key]
-            if NAMESPACE_ATTR_KEY in cfg_pipestat_key:
-                namespace = getattr(
-                    self.config if project_level else self.get_sample(sample_name),
-                    cfg_pipestat_key[NAMESPACE_ATTR_KEY]
-                )
-            else:
-                namespace = getattr(
-                    self.config if project_level else self.get_sample(sample_name),
-                    "pipestat_namespace"
-                )
-            cfg_pth = None
-            if "config" in cfg_pipestat_key:
-                cfg_pth = expandpath(cfg_pipestat_key["config"])
-                if not os.path.exists(cfg_pth):
-                    raise PipestatError(
-                        f"Pipestat configuration file not found: {cfg_pth}")
-            results_file_path = None
-            if "results_file_path" in cfg_pipestat_key:
-                results_file_path = expandpath(
-                    cfg_pipestat_key["results_file_path"])
+            namespace = _get_val_from_attr(
+                self[CONFIG_KEY][LOOPER_KEY][PIPESTAT_KEY][key],
+                self.config if project_level else self.get_sample(sample_name),
+                NAMESPACE_ATTR_KEY,
+                "pipestat_namespace"
+            )
+            cfg_pth = _get_val_from_attr(
+                self[CONFIG_KEY][LOOPER_KEY][PIPESTAT_KEY][key],
+                self.config if project_level else self.get_sample(sample_name),
+                "config_attribute",
+                "pipestat_config"
+            )
+            cfg_pth = self._resolve_path_with_cfg(pth=cfg_pth)
+            results_file_path = _get_val_from_attr(
+                self[CONFIG_KEY][LOOPER_KEY][PIPESTAT_KEY][key],
+                self.config if project_level else self.get_sample(sample_name),
+                "results_file_attribute",
+                "pipestat_results_file"
+            )
+            results_file_path = expandpath(results_file_path)
+            if not os.path.isabs(results_file_path):
+                results_file_path = os.path.join(
+                    self.output_dir, results_file_path)
             pifaces = self.project_pipeline_interfaces if project_level \
                 else self._interfaces_by_sample[sample_name]
             for piface in pifaces:
                 ret[piface.source] = PipestatManager(
-                    name=namespace,
+                    namespace=namespace,
                     config=cfg_pth,
                     results_file_path=results_file_path,
                     record_identifier=namespace,

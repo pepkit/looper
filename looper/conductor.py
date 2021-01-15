@@ -16,6 +16,7 @@ from eido import read_schema, validate_inputs
 from eido.const import MISSING_KEY, INPUT_FILE_SIZE_KEY
 from ubiquerg import expandpath
 from peppy.const import CONFIG_KEY, SAMPLE_YAML_EXT, SAMPLE_NAME_ATTR
+from pipestat import PipestatError
 
 from .processed_project import populate_sample_paths
 from .const import *
@@ -483,13 +484,13 @@ class SubmissionConductor(object):
 
     def _set_looper_namespace(self, pool, size):
         """
-        Compile a dictionary of looper/submission related settings for use in
+        Compile a mapping of looper/submission related settings for use in
         the command templates and in submission script creation
         in divvy (via adapters). Accessible via: {looper.attrname}
 
         :param Iterable[peppy.Sample] pool: collection of sample instances
         :param float size: cumulative size of the given pool
-        :return dict: looper/submission related settings
+        :return attmap.AttMap: looper/submission related settings
         """
         settings = AttMap()
         settings.pep_config = self.prj.config_file
@@ -515,6 +516,34 @@ class SubmissionConductor(object):
                 # Append arg for config file if found
                 settings.pipeline_config = pl_config_file
         return settings
+
+    def _set_pipestat_namespace(self, sample_name=None):
+        """
+        Compile a mapping of pipestat-related settings for use in
+        the command templates. Accessible via: {pipestat.attrname}
+
+        :param str sample_name: name of the sample to get the pipestat
+            namespace for. If not provided the pipestat namespace will
+            be determined based on the Project
+        :return attmap.AttMap: pipestat namespace
+        """
+        try:
+            psm = self.prj.get_pipestat_managers(sample_name=sample_name)[self.pl_iface.pipe_iface_file] \
+                if sample_name else self.prj.get_pipestat_managers(project_level=True)
+        except PipestatError as e:
+            # pipestat section faulty or not found in project.looper
+            _LOGGER.warning(
+                f"Could not determine pipestat namespace. Caught exception: "
+                f"{getattr(e, 'message', repr(e))}")
+            # return an empty mapping
+            return AttMap()
+        else:
+            return AttMap({
+                        "schema": psm.schema_path, "results_file": psm.file,
+                        "record_id": psm.record_identifier,
+                        "namespace": psm.namespace,
+                        "config": psm.config_path
+                    })
 
     def write_script(self, pool, size):
         """
@@ -546,6 +575,9 @@ class SubmissionConductor(object):
                 namespaces.update({"sample": sample})
             else:
                 namespaces.update({"samples": self.prj.samples})
+            pipestat_namespace = self._set_pipestat_namespace(
+                sample_name=sample.sample_name if sample else None)
+            namespaces.update({"pipestat": pipestat_namespace})
             res_pkg = self.pl_iface.choose_resource_package(namespaces, size or 0)  # config
             res_pkg.update(cli)
             self.prj.dcc.compute.update(res_pkg)  # divcfg
