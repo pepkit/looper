@@ -33,7 +33,7 @@ from .exceptions import JobSubmissionException, MisconfigurationException
 from .html_reports import HTMLReportBuilder
 from .project import Project, ProjectContext
 from .utils import *
-from .looper_config import *
+from .pipeline_interface import PipelineInterface
 
 from divvy import DEFAULT_COMPUTE_RESOURCES_NAME, select_divvy_config
 from logmuse import init_logger
@@ -45,6 +45,7 @@ from ubiquerg.collection import uniqify
 
 _PKGNAME = "looper"
 _LOGGER = logging.getLogger(_PKGNAME)
+
 
 class Executor(object):
     """ Base class that ensures the program's Sample counter starts.
@@ -694,16 +695,10 @@ def main():
         level = LOGGING_LEVEL
 
     # Establish the project-root logger and attach one for this module.
-    logger_kwargs = {"level": level,
-                     "logfile": args.logfile,
-                     "devmode": args.dbg}
-    init_logger(name="peppy", **logger_kwargs)
-    init_logger(name="divvy", **logger_kwargs)
-    init_logger(name="eido", **logger_kwargs)
-    _LOGGER = init_logger(name=_PKGNAME, **logger_kwargs)
-
-    # lc = LooperConfig(select_looper_config(filename=args.looper_config))
-    # _LOGGER.debug("Determined genome config: {}".format(lc))
+    log_kwargs = {"level": level, "logfile": args.logfile, "devmode": args.dbg}
+    for dep in ["peppy", "divvy", "eido", "pipestat"]:
+        init_logger(name=dep, **log_kwargs)
+    _LOGGER = init_logger(name=_PKGNAME, **log_kwargs)
 
     _LOGGER.info("Looper version: {}\nCommand: {}".
                  format(__version__, args.command))
@@ -716,7 +711,6 @@ def main():
         if hasattr(args, "divvy") else None
 
     # Initialize project
-    _LOGGER.debug("Building Project")
     try:
         p = Project(config_file=args.config_file,
                     amendments=args.amend,
