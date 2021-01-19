@@ -15,6 +15,8 @@ from peppy.project import Project
 
 from pipestat import SCHEMA_TYPE_KEY, SchemaError
 
+from ubiquerg import expandpath
+
 __author__ = "Michal Stolarczyk"
 __email__ = "michal@virginia.edu"
 
@@ -22,17 +24,6 @@ _LOGGER = getLogger(__name__)
 PATH_KEY = "path"
 THUMB_PATH_KEY = "thumbnail_path"
 PATH_LIKE = [PATH_KEY, THUMB_PATH_KEY]
-
-
-def _get_path_sect_keys(mapping, keys=[PATH_KEY, THUMB_PATH_KEY]):
-    """
-    Get names of subsections in a mapping that contain collection of keys
-
-    :param Mapping mapping: schema subsection to search for paths
-    :param  Iterable[str] keys: collection of keys to check for
-    :return Iterable[str]: collection of keys to path-like sections
-    """
-    return [k for k, v in mapping.items() if bool(set(keys) & set(mapping[k]))]
 
 
 def _populate_paths_in_schema(object, schema):
@@ -58,9 +49,10 @@ def _populate_paths_in_schema(object, schema):
             for k, v in mapping.items():
                 if isinstance(v, Mapping):
                     _recurse_and_populate(v, object)
-                elif k in ["path", "thumbnail_path"]:
+                elif k in PATH_LIKE:
                     try:
-                        mapping[k] = v.format(**dict(object.items()))
+                        mapping[k] = expandpath(
+                            v.format(**dict(object.items())))
                     except Exception as e:
                         _LOGGER.warning(
                             f"Caught exception: {getattr(e, 'message', repr(e))}."
@@ -115,34 +107,3 @@ def populate_project_paths(project, schema):
         if "value" in v:
             setattr(project, k, v["value"])
     return project
-
-
-def get_project_outputs(project, schema):
-    """
-    Get project level outputs with path-like attributes populated with
-    project attributes
-
-    :param peppy.Project project:
-    :param Iterable[dict] schema:
-    :return attmap.PathExAttMap: mapping with populated path-like attributes
-    """
-    from attmap import PathExAttMap
-    # if not any([isinstance(project, Project),
-    #             issubclass(type(project), Project)]):
-    #     raise TypeError("Can only populate paths in peppy.Project "
-    #                     "objects or it subclasses")
-    schema = schema[-1]  # use only first schema, in case there are imports
-    if PROP_KEY not in schema:
-        raise EidoSchemaInvalidError("Schema is missing properties section.")
-    res = {}
-    s = schema[PROP_KEY]
-    path_sects = _get_path_sect_keys(s, keys=PATH_LIKE)
-    for ps in path_sects:
-        res[ps] = s[ps]
-        for p in PATH_LIKE:
-            try:
-                res[ps][p] = s[ps][p].format(**dict(project.items()))
-            except Exception as e:
-                _LOGGER.debug("Caught exception: {}.\n Could not populate {} "
-                              "path".format(p, str(e)))
-    return PathExAttMap(res)
