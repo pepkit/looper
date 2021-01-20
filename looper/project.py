@@ -429,7 +429,7 @@ class Project(peppyProject):
             pifaces = self.project_pipeline_interfaces if project_level \
                 else self._interfaces_by_sample[sample_name]
             for piface in pifaces:
-                ret[piface.source] = PipestatManager(
+                ret[piface.pipeline_name] = PipestatManager(
                     namespace=namespace,
                     config=cfg_pth,
                     results_file_path=results_file_path,

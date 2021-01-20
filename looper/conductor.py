@@ -528,7 +528,7 @@ class SubmissionConductor(object):
         :return attmap.AttMap: pipestat namespace
         """
         try:
-            psm = self.prj.get_pipestat_managers(sample_name=sample_name)[self.pl_iface.pipe_iface_file] \
+            psm = self.prj.get_pipestat_managers(sample_name=sample_name)[self.pl_iface.pipeline_name] \
                 if sample_name else self.prj.get_pipestat_managers(project_level=True)
         except PipestatError as e:
             # pipestat section faulty or not found in project.looper
