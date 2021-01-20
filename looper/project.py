@@ -433,7 +433,7 @@ class Project(peppyProject):
                     namespace=namespace,
                     config=cfg_pth,
                     results_file_path=results_file_path,
-                    record_identifier=namespace,
+                    record_identifier=piface.pipeline_name,
                     schema_path=piface.get_pipeline_schemas(OUTPUT_SCHEMA_KEY)
                 )
             return ret
