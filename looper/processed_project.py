@@ -59,7 +59,7 @@ def _populate_paths_in_schema(object, schema):
                             f"\nCould not populate template in schema: {v}"
                         )
                     else:
-                        _LOGGER.info(f"Populated: {mapping[k]}")
+                        _LOGGER.debug(f"Populated: {mapping[k]}")
         return mapping
 
     for k, v in schema.items():
@@ -107,3 +107,18 @@ def populate_project_paths(project, schema):
         if "value" in v:
             setattr(project, k, v["value"])
     return project
+
+
+def get_project_outputs(project, schema):
+    """
+    Get project level outputs, where the path-like attributes are populated with
+    project attributes
+
+    :param peppy.Project project: project o get the set of outputs for
+    :param Iterable[dict] schema: pipestat schema to source the outputs for
+    :return attmap.PathExAttMap: mapping with populated path-like attributes
+    """
+    from attmap import PathExAttMap
+    schema = schema[-1]  # use only first schema, in case there are imports
+    populated = populate_project_paths(project, schema)
+    return PathExAttMap({k: getattr(populated, k) for k in schema.keys()})
