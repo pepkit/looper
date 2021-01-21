@@ -528,10 +528,11 @@ class SubmissionConductor(object):
         :return attmap.AttMap: pipestat namespace
         """
         try:
-            psm = self.prj.get_pipestat_managers(sample_name=sample_name)[self.pl_iface.pipeline_name] \
-                if sample_name else self.prj.get_pipestat_managers(project_level=True)
-        except PipestatError as e:
-            # pipestat section faulty or not found in project.looper
+            psm = self.prj.get_pipestat_managers(sample_name)[self.pl_iface.pipeline_name] if sample_name \
+                else self.prj.get_pipestat_managers(project_level=True)
+        except (PipestatError, AttributeError) as e:
+            # pipestat section faulty or not found in project.looper or sample
+            # or project is missing required pipestat attributes
             _LOGGER.warning(
                 f"Could not determine pipestat namespace. Caught exception: "
                 f"{getattr(e, 'message', repr(e))}")
