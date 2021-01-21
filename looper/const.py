@@ -21,8 +21,11 @@ __all__ = [
     "EXTRA_SAMPLE_CMD_TEMPLATE", "SELECTED_COMPUTE_PKG", "CLI_PROJ_ATTRS",
     "DOTFILE_CFG_PTH_KEY", "DRY_RUN_KEY", "FILE_CHECKS_KEY", "CLI_KEY",
     "PRE_SUBMIT_HOOK_KEY", "PRE_SUBMIT_PY_FUN_KEY", "PRE_SUBMIT_CMD_KEY",
-    "SUBMISSION_YAML_PATH_KEY", "SAMPLE_YAML_PRJ_PATH_KEY",
-    "SAMPLE_CWL_YAML_PATH_KEY", "PIPESTAT_KEY", "NAMESPACE_ATTR_KEY"
+    "SUBMISSION_YAML_PATH_KEY", "SAMPLE_YAML_PRJ_PATH_KEY", "OBJECT_TYPES",
+    "SAMPLE_CWL_YAML_PATH_KEY", "PIPESTAT_KEY", "NAMESPACE_ATTR_KEY",
+    "DEFAULT_PIPESTAT_NAMESPACE_ATTR", "DEFAULT_PIPESTAT_CONFIG_ATTR",
+    "DEFAULT_PIPESTAT_RESULTS_FILE_ATTR", "PIPESTAT_NAMESPACE_ATTR_KEY",
+    "PIPESTAT_CONFIG_ATTR_KEY", "PIPESTAT_RESULTS_FILE_ATTR_KEY"
 ]
 
 FLAGS = ["completed", "running", "failed", "waiting", "partial"]
@@ -89,6 +92,7 @@ EXTRA_PROJECT_CMD_TEMPLATE = "{%- if project.looper.command_extra is defined %} 
 DOTFILE_CFG_PTH_KEY = "config_file_path"
 INPUT_SCHEMA_KEY = "input_schema"
 OUTPUT_SCHEMA_KEY = "output_schema"
+OBJECT_TYPES = ["object", "file", "image", "array"]
 SAMPLE_YAML_PATH_KEY = "sample_yaml_path"
 SAMPLE_YAML_PRJ_PATH_KEY = "sample_yaml_prj_path"
 SUBMISSION_YAML_PATH_KEY = "submission_yaml_path"
@@ -106,6 +110,14 @@ NOT_SUB_MSG = "> Not submitted: {}"
 IMAGE_EXTS = ('.png', '.jpg', '.jpeg', '.svg', '.gif')
 # this strongly depends on pypiper's profile.tsv format
 PROFILE_COLNAMES = ['pid', 'hash', 'cid', 'runtime', 'mem', 'cmd', 'lock']
+
+# pipestat configuration keys
+DEFAULT_PIPESTAT_NAMESPACE_ATTR = "pipestat_namespace"
+DEFAULT_PIPESTAT_CONFIG_ATTR = "pipestat_config"
+DEFAULT_PIPESTAT_RESULTS_FILE_ATTR = "pipestat_results_file"
+PIPESTAT_NAMESPACE_ATTR_KEY = "namespace_attribute"
+PIPESTAT_CONFIG_ATTR_KEY = "config_attribute"
+PIPESTAT_RESULTS_FILE_ATTR_KEY = "results_file_attribute"
 
 PIPE_ARGS_SECTION = "pipeline_args"
 CLI_KEY = "cli"
