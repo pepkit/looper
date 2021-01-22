@@ -419,9 +419,8 @@ class Reporter(Executor):
         tabulator = Tabulator(prj=self.prj)
         for piface_source in p._samples_by_piface(p.piface_key).keys():
             # Do the stats and object summarization.
-            pipeline_name = PipelineInterface(config=piface_source).pipeline_name
+            pipeline_name = PipelineInterface(piface_source).pipeline_name
             table = tabulator(pipeline_name=pipeline_name)
-            report_path = ""
             # run the report builder. a set of HTML pages is produced
             report_path = html_report_builder(
                 objs=table.objs,
@@ -447,8 +446,8 @@ class Tabulator(Executor):
         return self
 
 
-def _fetch_pipeline_results(project, pipeline_name, sample_name=None,
-                            inclusion_fun=None):
+def fetch_pipeline_results(project, pipeline_name, sample_name=None,
+                           inclusion_fun=None):
     """
     Get the specific pipeline results for sample based on inclusion function
 
@@ -494,7 +493,7 @@ def _create_stats_summary(project, pipeline_name, counter):
         sn = sample.sample_name
         _LOGGER.info(counter.show(sn, sample.protocol))
         reported_stats = {SAMPLE_NAME_ATTR: sn}
-        results = _fetch_pipeline_results(
+        results = fetch_pipeline_results(
             project=project,
             pipeline_name=pipeline_name,
             sample_name=sn,
@@ -530,14 +529,14 @@ def _create_obj_summary(project, pipeline_name, counter):
     for sample in project.samples:
         sn = sample.sample_name
         _LOGGER.info(counter.show(sn, pipeline_name))
-        res = _fetch_pipeline_results(
+        res = fetch_pipeline_results(
             project=project,
             pipeline_name=pipeline_name,
             sample_name=sn,
             inclusion_fun=lambda x: x in OBJECT_TYPES
         )
         # need to cast to a dict, since other mapping-like objects might
-        # cause issues when wrinting to the collective yaml file below
+        # cause issues when writing to the collective yaml file below
         sample_reported_objects = {k: dict(v) for k, v in res.items()}
         reported_objects[sn] = sample_reported_objects
     objs_yaml_path = get_file_for_project(
@@ -616,9 +615,9 @@ class LooperCounter(object):
         :return str: message suitable for logging a status update
         """
         self.count += 1
-        return _submission_status_text(type=type,
-            curr=self.count, total=self.total, name=name,
-            pipeline_name=pipeline_name, color=Fore.CYAN
+        return _submission_status_text(
+            type=type, curr=self.count, total=self.total,
+            name=name, pipeline_name=pipeline_name, color=Fore.CYAN
         )
 
     def reset(self):
@@ -631,10 +630,9 @@ class LooperCounter(object):
 def _submission_status_text(curr, total, name, pipeline_name=None,
                             type="sample", color=Fore.CYAN):
     """ Generate submission sample text for run or collate """
-    txt = color + "## [{n} of {t}] {type}: {name}".\
-        format(n=curr, t=total, type=type, name=name)
+    txt = color + f"## [{curr} of {total}] {type}: {name}"
     if pipeline_name:
-        txt += "; pipeline: {}".format(pipeline_name)
+        txt += f"; pipeline: {pipeline_name}"
     return txt + Style.RESET_ALL
 
 
