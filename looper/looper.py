@@ -417,18 +417,17 @@ class Reporter(Executor):
         p = self.prj
         html_report_builder = HTMLReportBuilder(prj=p)
         tabulator = Tabulator(prj=self.prj)
-        p._samples_by_piface(p.piface_key).keys()
         for piface_source in p._samples_by_piface(p.piface_key).keys():
             # Do the stats and object summarization.
             pipeline_name = PipelineInterface(config=piface_source).pipeline_name
             table = tabulator(pipeline_name=pipeline_name)
             report_path = ""
             # run the report builder. a set of HTML pages is produced
-            # report_path = html_report_builder(
-            #     objs=table.objs,
-            #     stats=table.stats,
-            #     pipeline_name=piface.pieline_name
-            # )
+            report_path = html_report_builder(
+                objs=table.objs,
+                stats=table.stats,
+                pipeline_name=pipeline_name
+            )
             _LOGGER.info(
                 f"'{pipeline_name}' pipeline HTML Report: {report_path}")
 
@@ -448,6 +447,37 @@ class Tabulator(Executor):
         return self
 
 
+def _fetch_pipeline_results(project, pipeline_name, sample_name=None,
+                            inclusion_fun=None):
+    """
+    Get the specific pipeline results for sample based on inclusion function
+
+    :param looper.Project project: project to get the results for
+    :param str pipeline_name: pipeline ID
+    :param str sample_name: sample ID
+    :param callable(str) inclusion_fun: a function that determines whether the
+        result should be returned based on it's type. Example input that the
+        function will be fed with is: 'image' or 'integer'
+    :return dict: selected pipeline results
+    """
+    psms = project.get_pipestat_managers(
+        sample_name=sample_name,
+        project_level=sample_name is None
+    )
+    if pipeline_name not in psms:
+        _LOGGER.warning(
+            f"Pipeline name '{pipeline_name}' not found in "
+            f"{list(psms.keys())}. This pipeline was not run for"
+            f" sample: {sample_name}"
+        )
+        return
+    psm = psms[pipeline_name]
+    # exclude object-like results from the stats results mapping
+    rep_data = psm.data[psm.namespace][psm.record_identifier].items()
+    results = {k: v for k, v in rep_data if inclusion_fun(psm.schema[k]["type"])}
+    return results
+
+
 def _create_stats_summary(project, pipeline_name, counter):
     """
     Create stats spreadsheet and columns to be considered in the report, save
@@ -463,20 +493,13 @@ def _create_stats_summary(project, pipeline_name, counter):
     for sample in project.samples:
         sn = sample.sample_name
         _LOGGER.info(counter.show(sn, sample.protocol))
-        psms = project.get_pipestat_managers(sample_name=sn)
-        if pipeline_name not in psms:
-            _LOGGER.warning(
-                f"Pipeline name '{pipeline_name}' not found in "
-                f"{list(psms.keys())}. This pipeline was not run for"
-                f" sample: {sample.sample_name}"
-            )
-            continue
-        psm = psms[pipeline_name]
-        # exclude object-like results from the stats results mapping
-        rep_data = psm.data[sn][pipeline_name].items()
         reported_stats = {SAMPLE_NAME_ATTR: sn}
-        results = {k: v for k, v in rep_data
-                   if psm.schema[k]["type"] not in OBJECT_TYPES}
+        results = _fetch_pipeline_results(
+            project=project,
+            pipeline_name=pipeline_name,
+            sample_name=sn,
+            inclusion_fun=lambda x: x not in OBJECT_TYPES
+        )
         reported_stats.update(results)
         stats.append(reported_stats)
         columns |= set(reported_stats.keys())
@@ -490,6 +513,7 @@ def _create_stats_summary(project, pipeline_name, counter):
     for row in stats:
         tsv_writer.writerow(row)
     tsv_outfile.close()
+    counter.reset()
     return stats
 
 
@@ -506,18 +530,15 @@ def _create_obj_summary(project, pipeline_name, counter):
     for sample in project.samples:
         sn = sample.sample_name
         _LOGGER.info(counter.show(sn, pipeline_name))
-        psms = project.get_pipestat_managers(sample_name=sn)
-        if pipeline_name not in psms:
-            _LOGGER.warning(
-                f"Pipeline name '{pipeline_name}' not found in "
-                f"{list(psms.keys())}. This pipeline was not run for"
-                f" sample: {sample.sample_name}"
-            )
-            continue
-        psm = psms[pipeline_name]
-        rep_data = psm.data[sn][pipeline_name].items()
-        sample_reported_objects = \
-            {k: dict(v) for k, v in rep_data if psm.schema[k]["type"] in OBJECT_TYPES}
+        res = _fetch_pipeline_results(
+            project=project,
+            pipeline_name=pipeline_name,
+            sample_name=sn,
+            inclusion_fun=lambda x: x in OBJECT_TYPES
+        )
+        # need to cast to a dict, since other mapping-like objects might
+        # cause issues when wrinting to the collective yaml file below
+        sample_reported_objects = {k: dict(v) for k, v in res.items()}
         reported_objects[sn] = sample_reported_objects
     objs_yaml_path = get_file_for_project(
         project, f'{pipeline_name}_objs_summary.yaml')
@@ -751,7 +772,12 @@ def main():
             return Destroyer(prj)(args)
 
         if args.command == "table":
-            Tabulator(prj)()
+            tabulator = Tabulator(prj)
+            for piface_source in prj._samples_by_piface(p.piface_key).keys():
+                # Do the stats and object summarization.
+                pipeline_name = PipelineInterface(
+                    config=piface_source).pipeline_name
+                tabulator(pipeline_name=pipeline_name)
         
         if args.command == "report":
             Reporter(prj)(args)
