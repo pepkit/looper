@@ -540,12 +540,13 @@ class SubmissionConductor(object):
             # return an empty mapping
             return AttMap()
         else:
-            return AttMap({
-                        "schema": psm.schema_path, "results_file": psm.file,
-                        "record_id": psm.record_identifier,
-                        "namespace": psm.namespace,
-                        "config": psm.config_path
-                    })
+            full_namespace = {
+                "schema": psm.schema_path, "results_file": psm.file,
+                "record_id": psm.record_identifier, "namespace": psm.namespace,
+                "config": psm.config_path
+            }
+            filtered_namespace = {k: v for k, v in full_namespace.items() if v}
+            return AttMap(filtered_namespace)
 
     def write_script(self, pool, size):
         """
@@ -612,6 +613,7 @@ class SubmissionConductor(object):
         _LOGGER.debug("pipeline namespace:\n{}".format(self.pl_iface))
         _LOGGER.debug("compute namespace:\n{}".format(self.prj.dcc.compute))
         _LOGGER.debug("looper namespace:\n{}".format(looper))
+        _LOGGER.debug("pipestat namespace:\n{}".format(pipestat_namespace))
         subm_base = os.path.join(self.prj.submission_folder, looper.job_name)
         return self.prj.dcc.write_script(output_path=subm_base + ".sub",
                                          extra_vars=[{"looper": looper}])

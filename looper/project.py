@@ -389,7 +389,8 @@ class Project(peppyProject):
         :return dict[str, pipestat.PipestatManager]: a mapping of pipestat
             managers by pipeline interface for the selected sample
         """
-        def _get_val_from_attr(pipestat_sect, object, attr_name, default):
+        def _get_val_from_attr(
+                pipestat_sect, object, attr_name, default, use_cfg=False):
             """
             Get configuration value from an object's attribute or return default
 
@@ -402,7 +403,11 @@ class Project(peppyProject):
             """
             if pipestat_sect is not None and attr_name in pipestat_sect:
                 return getattr(object, pipestat_sect[attr_name])
-            return getattr(object, default)
+            try:
+                return getattr(object, default)
+            except AttributeError:
+                if use_cfg:
+                    return None
 
         ret = {}
         if not project_level and sample_name is None:
@@ -419,12 +424,6 @@ class Project(peppyProject):
                 f"project configuration file. Using defaults."
             )
             pipestat_section = None
-        namespace = _get_val_from_attr(
-            pipestat_section,
-            self.config if project_level else self.get_sample(sample_name),
-            PIPESTAT_NAMESPACE_ATTR_KEY,
-            DEFAULT_PIPESTAT_NAMESPACE_ATTR
-        )
         cfg_pth = _get_val_from_attr(
             pipestat_section,
             self.config if project_level else self.get_sample(sample_name),
@@ -432,15 +431,25 @@ class Project(peppyProject):
             DEFAULT_PIPESTAT_CONFIG_ATTR
         )
         cfg_pth = self._resolve_path_with_cfg(pth=cfg_pth)
+        namespace = _get_val_from_attr(
+            pipestat_section,
+            self.config if project_level else self.get_sample(sample_name),
+            PIPESTAT_NAMESPACE_ATTR_KEY,
+            DEFAULT_PIPESTAT_NAMESPACE_ATTR,
+            os.path.exists(cfg_pth)
+        )
         results_file_path = _get_val_from_attr(
             pipestat_section,
             self.config if project_level else self.get_sample(sample_name),
             PIPESTAT_RESULTS_FILE_ATTR_KEY,
-            DEFAULT_PIPESTAT_RESULTS_FILE_ATTR
+            DEFAULT_PIPESTAT_RESULTS_FILE_ATTR,
+            os.path.exists(cfg_pth)
         )
-        results_file_path = expandpath(results_file_path)
-        if not os.path.isabs(results_file_path):
-            results_file_path = os.path.join(self.output_dir, results_file_path)
+        if results_file_path is not None:
+            results_file_path = expandpath(results_file_path)
+            if not os.path.isabs(results_file_path):
+                results_file_path = os.path.join(
+                    self.output_dir, results_file_path)
         pifaces = self.project_pipeline_interfaces if project_level \
             else self._interfaces_by_sample[sample_name]
         for piface in pifaces:
