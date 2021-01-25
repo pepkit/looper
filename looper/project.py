@@ -408,6 +408,7 @@ class Project(peppyProject):
             except AttributeError:
                 if use_cfg:
                     return None
+                raise
 
         ret = {}
         if not project_level and sample_name is None:
@@ -424,26 +425,26 @@ class Project(peppyProject):
                 f"project configuration file. Using defaults."
             )
             pipestat_section = None
-        cfg_pth = _get_val_from_attr(
+        pipestat_config = _get_val_from_attr(
             pipestat_section,
             self.config if project_level else self.get_sample(sample_name),
             PIPESTAT_CONFIG_ATTR_KEY,
             DEFAULT_PIPESTAT_CONFIG_ATTR
         )
-        cfg_pth = self._resolve_path_with_cfg(pth=cfg_pth)
+        pipestat_config = self._resolve_path_with_cfg(pth=pipestat_config)
         namespace = _get_val_from_attr(
             pipestat_section,
             self.config if project_level else self.get_sample(sample_name),
             PIPESTAT_NAMESPACE_ATTR_KEY,
             DEFAULT_PIPESTAT_NAMESPACE_ATTR,
-            os.path.exists(cfg_pth)
+            os.path.exists(pipestat_config)
         )
         results_file_path = _get_val_from_attr(
             pipestat_section,
             self.config if project_level else self.get_sample(sample_name),
             PIPESTAT_RESULTS_FILE_ATTR_KEY,
             DEFAULT_PIPESTAT_RESULTS_FILE_ATTR,
-            os.path.exists(cfg_pth)
+            os.path.exists(pipestat_config)
         )
         if results_file_path is not None:
             results_file_path = expandpath(results_file_path)
@@ -455,7 +456,7 @@ class Project(peppyProject):
         for piface in pifaces:
             ret[piface.pipeline_name] = PipestatManager(
                 namespace=namespace,
-                config=cfg_pth,
+                config=pipestat_config,
                 results_file_path=results_file_path,
                 record_identifier=piface.pipeline_name,
                 schema_path=piface.get_pipeline_schemas(OUTPUT_SCHEMA_KEY)
