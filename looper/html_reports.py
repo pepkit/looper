@@ -702,34 +702,6 @@ def _read_csv_encodings(path, encodings=["utf-8", "ascii"], **kwargs):
     _LOGGER.warning("Could not read the log file '{p}' with encodings '{enc}'".format(p=path, enc=encodings))
 
 
-def _get_from_log(log_path, regex):
-    """
-    Get the value for the matched key from log file
-
-    :param str log_path: path to the log file
-    :param str regex: matching str. Should be formatted as follows: r'(phrase to match)'
-    :return str: matched and striped string
-    :raises IOError: when the file is not found in the provided path
-    """
-    if not os.path.exists(log_path):
-        raise IOError("Can't read the log file '{}'. Not found".format(log_path))
-    log = _read_csv_encodings(log_path, header=None, names=['data'])
-    if log is None:
-        _LOGGER.warning("'{r}' was not read from log".format(r=regex))
-        return None
-    # match regex, get row(s) that matched the regex
-    log_row = log.iloc[:, 0].str.extractall(regex)
-    # not matches? return None
-    if log_row.empty:
-        return None
-    if log_row.size > 1:
-        _LOGGER.warning("When parsing '{lp}', more than one values matched with: {r}. Returning first.".format(lp=log_path, r=regex))
-    # split the matched line by first colon return stripped data.
-    # This way both mem values (e.g 1.1GB) and time values (e.g 1:10:10) will work.
-    val = log.iloc[log_row.index[0][0]].str.split(":", 1, expand=True)[1][0].strip()
-    return val
-
-
 def _read_tsv_to_json(path):
     """
     Read a tsv file to a JSON formatted string
@@ -744,7 +716,7 @@ def _read_tsv_to_json(path):
 
 
 def fetch_pipeline_results(project, pipeline_name, sample_name=None,
-                           inclusion_fun=None):
+                           inclusion_fun=None, casting_fun=None):
     """
     Get the specific pipeline results for sample based on inclusion function
 
@@ -754,6 +726,8 @@ def fetch_pipeline_results(project, pipeline_name, sample_name=None,
     :param callable(str) inclusion_fun: a function that determines whether the
         result should be returned based on it's type. Example input that the
         function will be fed with is: 'image' or 'integer'
+    :param callable(str) casting_fun: a function that will be used to cast the
+        each of the results to a proper type before returning, e.g int, str
     :return dict: selected pipeline results
     """
     psms = project.get_pipestat_managers(
@@ -767,10 +741,14 @@ def fetch_pipeline_results(project, pipeline_name, sample_name=None,
             f" sample: {sample_name}"
         )
         return
+    # set defaults to arg functions
+    pass_all_fun = lambda x: x
+    inclusion_fun = inclusion_fun or pass_all_fun
+    casting_fun = casting_fun or pass_all_fun
     psm = psms[pipeline_name]
     # exclude object-like results from the stats results mapping
     rep_data = psm.data[psm.namespace][psm.record_identifier].items()
-    results = {k: v for k, v in rep_data
+    results = {k: casting_fun(v) for k, v in rep_data
                if k in psm.schema and inclusion_fun(psm.schema[k]["type"])}
     return results
 
