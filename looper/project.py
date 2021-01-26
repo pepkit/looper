@@ -436,7 +436,7 @@ class Project(peppyProject):
             pipestat_section,
             self.config if project_level else self.get_sample(sample_name),
             PIPESTAT_NAMESPACE_ATTR_KEY,
-            DEFAULT_PIPESTAT_NAMESPACE_ATTR,
+            "name" if project_level else "sample_name",
             os.path.exists(pipestat_config)
         )
         results_file_path = _get_val_from_attr(

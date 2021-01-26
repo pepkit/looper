@@ -743,6 +743,38 @@ def _read_tsv_to_json(path):
     return df.to_json()
 
 
+def fetch_pipeline_results(project, pipeline_name, sample_name=None,
+                           inclusion_fun=None):
+    """
+    Get the specific pipeline results for sample based on inclusion function
+
+    :param looper.Project project: project to get the results for
+    :param str pipeline_name: pipeline ID
+    :param str sample_name: sample ID
+    :param callable(str) inclusion_fun: a function that determines whether the
+        result should be returned based on it's type. Example input that the
+        function will be fed with is: 'image' or 'integer'
+    :return dict: selected pipeline results
+    """
+    psms = project.get_pipestat_managers(
+        sample_name=sample_name,
+        project_level=sample_name is None
+    )
+    if pipeline_name not in psms:
+        _LOGGER.warning(
+            f"Pipeline name '{pipeline_name}' not found in "
+            f"{list(psms.keys())}. This pipeline was not run for"
+            f" sample: {sample_name}"
+        )
+        return
+    psm = psms[pipeline_name]
+    # exclude object-like results from the stats results mapping
+    rep_data = psm.data[psm.namespace][psm.record_identifier].items()
+    results = {k: v for k, v in rep_data
+               if k in psm.schema and inclusion_fun(psm.schema[k]["type"])}
+    return results
+
+
 def uniqify(seq):
     """ Fast way to uniqify while preserving input order. """
     # http://stackoverflow.com/questions/480214/
