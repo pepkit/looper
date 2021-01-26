@@ -21,10 +21,10 @@ looper:
 
 Additionally, you may configure pipestat, the tool used to manage pipeline results. Pipestat provides lots of flexibility, so there are multiple configuration options that you can provide in `looper.pipestat.sample` or `looper.pipestat.project`, depending on the pipeline level you intend to run. 
 
-Please note that all the configuration options listed below *do not* specify the values passed to pipestat *per se*, but rather `Project` or `Sample` atribute names that hold these values. This way the pipestat configuration can change with pipeline submitted for every `Sample` if the PEP `sample_modifiers` are used.  
+Please note that all the configuration options listed below *do not* specify the values passed to pipestat *per se*, but rather `Project` or `Sample` attribute names that hold these values. This way the pipestat configuration can change with pipeline submitted for every `Sample` if the PEP `sample_modifiers` are used.  
 
 - `results_file_attribute`: name of the `Sample` or `Project` attribute that indicates the path to the YAML results file that will be used to report results into. Default value: `pipestat_results_file`, so the path will be sourced from either `Sample.pipestat_results_file` or `Project.pipestat_results_file`. If the path provided this way is not absolute, looper will make it relative to `{looper.output_dir}`.
-- `namespace_attribute`: name of the `Sample` or `Project` attribute that indicates the namespace to report into. Default value: `pipestat_namespace`, so the path will be sourced from either `Sample.pipestat_namespace` or `Project.pipestat_namespace`.
+- `namespace_attribute`: name of the `Sample` or `Project` attribute that indicates the namespace to report into. Default values: `sample_name` for sample-level pipelines `name` for project-level pipelines , so the path will be sourced from either `Sample.sample_name` or `Project.name`.
 - `config_attribute`: name of the `Sample` or `Project` attribute that indicates the path to the pipestat configuration file. It's not needed in case the intended pipestat backend is the YAML results file mentioned above. It's required if the intended pipestat backend is a PostgreSQL database, since this is the only way to provide the database login credentials. Default value: `pipestat_config`, so the path will be sourced from either `Sample.pipestat_config` or `Project.pipestat_config`.
 
 Non-configurable pipestat options:
@@ -34,20 +34,18 @@ Non-configurable pipestat options:
 
 
 ```yaml
+name: "test123"
 pipestat_results_file: "project_pipestat_results.yaml"
 pipestat_config: "/path/to/project_pipestat_config.yaml"
-pipestat_namespace: "my_pipeline"
 
 sample_modifiers:
   append: 
     pipestat_config: "/path/to/pipestat_config.yaml"
     pipestat_results_file: "RESULTS_FILE_PLACEHOLDER"
-    pipestat_namespace: "NAMESPACE_PLACEHOLDER"
   derive:
-    attributes: ["pipestat_results_file", "pipestat_namespace"]
+    attributes: ["pipestat_results_file"]
     sources:
       RESULTS_FILE_PLACEHOLDER: "{sample_name}/pipestat_results.yaml"
-      NAMESPACE_PLACEHOLDER: "{sample_name}"
 
 looper:
   output_dir: "/path/to/output_dir"
@@ -57,11 +55,11 @@ looper:
     sample:
       results_file_attribute: "pipestat_results_file"
       config_attribute: "pipestat_config"
-      namespace_attribute: "pipestat_namespace"
+      namespace_attribute: "sample_name"
     project:
       results_file_attribute: "pipestat_results_file"
       config_attribute: "pipestat_config"
-      namespace_attribute: "pipestat_namespace"
+      namespace_attribute: "name"
 ```
 ## 3. Link a pipeline to your project
 
