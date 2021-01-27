@@ -280,7 +280,7 @@ class HTMLReportBuilder(object):
                 command_name, sample_name, self.prj.results_folder, self.reports_dir)
             log_file_path = _get_relpath_to_file(
                 log_name, sample_name, self.prj.results_folder, self.reports_dir)
-            flag = _get_flags(sample_dir)
+            flag = _get_flags(sample_dir, self.pipeline_name)
             if not flag:
                 button_class = "btn btn-secondary"
                 flag = "Missing"
@@ -495,7 +495,7 @@ class HTMLReportBuilder(object):
         # Complete and close HTML file
         template_vars = dict(
             navbar=navbar, stats_file_path=stats_file_path,
-            columns=list(sample_stat_results.keys()),
+            columns=[SAMPLE_NAME_ATTR] + list(sample_stat_results.keys()),
             table_row_data=table_row_data, project_name=self.prj.name,
             stats_json=_read_tsv_to_json(stats_file_name), footer=footer
         )
@@ -548,21 +548,25 @@ def get_jinja_env(templates_dirname=None):
     return jinja2.Environment(loader=jinja2.FileSystemLoader(templates_dirname))
 
 
-def _get_flags(sample_dir):
+def _get_flags(sample_dir, pipeline_name):
     """
     Get the flag(s) present in the directory
 
     :param str sample_dir: path to the directory to be searched for flags
     :return list: flags found in the dir
     """
-    assert os.path.exists(sample_dir), "The provided path ('{}') does not exist".format(sample_dir)
-    flag_files = glob.glob(os.path.join(sample_dir, '*.flag'))
-    if len(flag_files) > 1:
-        _LOGGER.warning("Multiple flag files ({files_count}) found in sample dir '{sample_dir}'".
-                        format(files_count=len(flag_files), sample_dir=sample_dir))
-    if len(flag_files) == 0:
-        _LOGGER.warning("No flag files found in sample dir '{sample_dir}'".format(sample_dir=sample_dir))
-    return [re.search(r'\_([a-z]+)\.flag$', os.path.basename(f)).groups()[0] for f in flag_files]
+    assert os.path.exists(sample_dir), \
+        f"The provided path ('{sample_dir}') does not exist"
+    template = os.path.join(sample_dir, f'{pipeline_name}_{{}}.flag')
+    flag_paths_by_flag = {f: template.format(f) for f in FLAGS}
+    existing_flags = [k for k, v in flag_paths_by_flag.items()
+                      if os.path.exists(v)]
+    if len(existing_flags) > 1:
+        _LOGGER.warning(
+            f"Multiple flag files ({len(existing_flags)}) found in: {sample_dir}")
+    if len(existing_flags) == 0:
+        _LOGGER.warning(f"No flag files found in sample dir '{sample_dir}'")
+    return existing_flags
 
 
 def _match_file_for_sample(sample_name, appendix, location, full_path=False):
@@ -755,7 +759,7 @@ def create_status_table(prj, pipeline_name, final=True):
         # Confirm sample directory exists, then build page
         if os.path.exists(sample_dir):
             # Grab the status flag for the current sample
-            flag = _get_flags(sample_dir)
+            flag = _get_flags(sample_dir, pipeline_name)
             if not flag:
                 button_class = "table-secondary"
                 flag = "Missing"
@@ -784,7 +788,7 @@ def create_status_table(prj, pipeline_name, final=True):
             # get second column data (status/flag)
             flags.append(flag)
             # get third column data (log file/link)
-            log_name = _match_file_for_sample(sample_name, "log.md",
+            log_name = _match_file_for_sample(sample_name, f"{pipeline_name}_log.md",
                                               prj.results_folder)
             log_file_link = \
                 _get_relpath_to_file(log_name, sample_name, prj.results_folder,

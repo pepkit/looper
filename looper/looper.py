@@ -420,7 +420,6 @@ class Reporter(Executor):
         for piface_source in p._samples_by_piface(p.piface_key).keys():
             # Do the stats and object summarization.
             pipeline_name = PipelineInterface(piface_source).pipeline_name
-            _LOGGER.info(f"PI source: {piface_source}; Pipeline name: {pipeline_name}")
             table = tabulator(pipeline_name=pipeline_name)
             # run the report builder. a set of HTML pages is produced
             report_path = html_report_builder(
