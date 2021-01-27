@@ -625,11 +625,13 @@ def _get_navbar_dropdown_data_objects(objs, wd, context, reports_dir):
     if objs is None or len(objs) == 0:
         return None, None
     relpaths = []
+    displayable_ids = []
     for obj_id in objs:
+        displayable_ids.append(obj_id.replace('_', ' '))
         page_name = os.path.join(
             reports_dir, (obj_id + ".html").replace(' ', '_').lower())
         relpaths.append(_make_relpath(page_name, wd, context))
-    return relpaths, objs
+    return relpaths, displayable_ids
 
 
 def _get_navbar_dropdown_data_samples(stats, wd, context, reports_dir):

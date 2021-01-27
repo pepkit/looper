@@ -43,7 +43,7 @@
             </div>
             <hr>
             <div class='container-fluid'>
-    	      	<h3>Looper stats summary</h3>
+    	      	<h3>Reported statistics</code></h3>
     	        <div class="table-responsive-sm">
     				<table class="table table-sm table-hover table-bordered table-condensed" style="white-space: nowrap; width: 1%;">             
     					<tbody>
@@ -64,7 +64,7 @@
             <div class='container-fluid'>
             	{% if links[0] is defined or figures[0] is defined %}
             		<hr>
-            		<h3><code>{{ sample_name }}</code> objects</h3>
+            		<h3>Reported objects</h3>
             	{% endif %}
             	<!-- Expects a 2 lists of lists: figures and links -->
             	{% if links[0] is defined %}
