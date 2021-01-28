@@ -416,17 +416,13 @@ class Reporter(Executor):
         # initialize the report builder
         p = self.prj
         html_report_builder = HTMLReportBuilder(prj=p)
-        tabulator = Tabulator(prj=p)
+        # tabulator = Tabulator(prj=p)
         for piface_source in p._samples_by_piface(p.piface_key).keys():
             # Do the stats and object summarization.
             pipeline_name = PipelineInterface(piface_source).pipeline_name
-            table = tabulator(pipeline_name=pipeline_name)
+            # table = tabulator(pipeline_name=pipeline_name)
             # run the report builder. a set of HTML pages is produced
-            report_path = html_report_builder(
-                objs=table.objs,
-                stats=table.stats,
-                pipeline_name=pipeline_name
-            )
+            report_path = html_report_builder(pipeline_name=pipeline_name)
             _LOGGER.info(
                 f"'{pipeline_name}' pipeline HTML Report: {report_path}")
 
@@ -460,7 +456,7 @@ def _create_stats_summary(project, pipeline_name, counter):
     _LOGGER.info("Creating stats summary...")
     for sample in project.samples:
         sn = sample.sample_name
-        _LOGGER.info(counter.show(sn, sample.protocol))
+        _LOGGER.info(counter.show(sn, pipeline_name))
         reported_stats = {SAMPLE_NAME_ATTR: sn}
         results = fetch_pipeline_results(
             project=project,
