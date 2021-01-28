@@ -33,8 +33,6 @@ class HTMLReportBuilder(object):
         self.prj = prj
         self.j_env = get_jinja_env()
         self.reports_dir = get_file_for_project(self.prj, "reports")
-        self.index_html_path = get_file_for_project(self.prj, "summary.html")
-        self.index_html_filename = os.path.basename(self.index_html_path)
         self._outdir = self.prj.output_dir
         _LOGGER.debug(f"Reports dir: {self.reports_dir}")
 
@@ -42,6 +40,9 @@ class HTMLReportBuilder(object):
         """ Do the work of the subcommand/program. """
         # Generate HTML report
         self.pipeline_name = pipeline_name
+        self.index_html_path = get_file_for_project(
+            self.prj, f"{self.pipeline_name}_summary.html")
+        self.index_html_filename = os.path.basename(self.index_html_path)
         selected_pipeline_pifaces = \
             [piface for piface in self.prj.pipeline_interfaces
              if piface.pipeline_name == self.pipeline_name]
@@ -53,8 +54,8 @@ class HTMLReportBuilder(object):
             self.index_html_filename
         )
         navbar_reports = self.create_navbar(
-            self.create_navbar_links(wd=self.reports_dir),
-            os.path.join(os.pardir, self.index_html_filename)
+            navbar_links=self.create_navbar_links(wd=os.path.join(self.reports_dir, self.pipeline_name)),
+            index_html_relpath=os.path.join(os.pardir, os.pardir, self.index_html_filename)
         )
         index_html_path = self.create_index_html(
             navbar, self.create_footer(), navbar_reports)
@@ -82,7 +83,8 @@ class HTMLReportBuilder(object):
             labels.append(f"<b>{key.replace('_', ' ')}</b>: {desc}")
             page_path = os.path.join(
                 self.reports_dir, self.pipeline_name, f"{key}.html".lower())
-            pages.append(os.path.relpath(page_path, self.reports_dir))
+            pages.append(os.path.relpath(
+                page_path, os.path.join(self.reports_dir, self.pipeline_name)))
 
         template_vars = dict(
             navbar=navbar, footer=footer, labels=labels,
@@ -113,12 +115,12 @@ class HTMLReportBuilder(object):
 
             # Confirm sample directory exists, then build page
             if os.path.exists(sample_dir):
-                page_name = sample_name + ".html"
                 page_path = os.path.join(
                     self.reports_dir, self.pipeline_name,
                     f"{sample_name}.html".replace(' ', '_').lower()
                 )
-                page_relpath = os.path.relpath(page_path, self.reports_dir)
+                page_relpath = os.path.relpath(
+                    page_path, os.path.dirname(sample_parent_path))
                 pages.append(page_relpath)
                 labels.append(sample_name)
 
@@ -173,7 +175,6 @@ class HTMLReportBuilder(object):
                           if self.schema[k]["type"] in OBJECT_TYPES}
         dropdown_keys_objects = None
         dropdown_relpaths_objects = None
-        dropdown_relpaths_samples = None
         sample_names = None
         if len(obj_result_ids) > 0:
             # If the number of objects is 20 or less, use a drop-down menu
@@ -239,7 +240,7 @@ class HTMLReportBuilder(object):
 
         for image_result in image_results:
             html_page_path = os.path.join(
-                self.reports_dir, f"{image_result}.html".lower())
+                self.reports_dir, self.pipeline_name, f"{image_result}.html".lower())
             for sample in self.prj.samples:
                 sample_result = fetch_pipeline_results(
                     project=self.prj,
@@ -284,13 +285,21 @@ class HTMLReportBuilder(object):
             stats_name = "stats.tsv"
             # get links to the files
             stats_file_path = _get_relpath_to_file(
-                stats_name, sample_name, self.prj.results_folder, self.reports_dir)
+                stats_name, sample_name, self.prj.results_folder,
+                os.path.join(self.reports_dir, self.pipeline_name)
+            )
             profile_file_path = _get_relpath_to_file(
-                profile_name, sample_name, self.prj.results_folder, self.reports_dir)
+                profile_name, sample_name, self.prj.results_folder,
+                os.path.join(self.reports_dir, self.pipeline_name)
+            )
             commands_file_path = _get_relpath_to_file(
-                command_name, sample_name, self.prj.results_folder, self.reports_dir)
+                command_name, sample_name, self.prj.results_folder,
+                os.path.join(self.reports_dir, self.pipeline_name)
+            )
             log_file_path = _get_relpath_to_file(
-                log_name, sample_name, self.prj.results_folder, self.reports_dir)
+                log_name, sample_name, self.prj.results_folder,
+                os.path.join(self.reports_dir, self.pipeline_name)
+            )
             flag = _get_flags(sample_dir, self.pipeline_name)
             if not flag:
                 button_class = "btn btn-secondary"
@@ -448,9 +457,6 @@ class HTMLReportBuilder(object):
         _LOGGER.info(f"Building index page for pipeline: {self.pipeline_name}")
         if navbar_reports is None:
             navbar_reports = navbar
-        # Generate parent index.html page path
-        index_html_path = get_file_for_project(
-            self.prj, f"{self.pipeline_name}_summary.html")
 
         # Add stats_summary.tsv button link
         stats_file_name = os.path.join(self._outdir, self.prj.name)
@@ -511,9 +517,9 @@ class HTMLReportBuilder(object):
             stats_json=self._stats_to_json_str(project_level=False),
             footer=footer, pipeline_name=self.pipeline_name
         )
-        save_html(index_html_path, render_jinja_template(
+        save_html(self.index_html_path, render_jinja_template(
             "index.html", self.j_env, template_vars))
-        return index_html_path
+        return self.index_html_path
 
     def _stats_to_json_str(self, project_level=False):
         results = {}
@@ -786,7 +792,7 @@ def create_status_table(prj, pipeline_name, final=True):
     for sample in prj.samples:
         sample_name = str(sample.sample_name)
         sample_dir = os.path.join(
-            prj.results_folder, sample_name)
+            prj.results_folder, sample.sample_name)
 
         # Confirm sample directory exists, then build page
         if os.path.exists(sample_dir):
@@ -813,7 +819,7 @@ def create_status_table(prj, pipeline_name, final=True):
             page_name = sample_name + ".html"
             page_path = os.path.join(
                 get_file_for_project(prj, "reports"), pipeline_name, page_name.replace(' ', '_').lower())
-            page_relpath = os.path.relpath(page_path, get_file_for_project(prj, "reports"))
+            page_relpath = os.path.relpath(page_path, os.path.join(get_file_for_project(prj, "reports"), pipeline_name))
             sample_paths.append(page_relpath)
             sample_link_names.append(sample_name)
             # get second column data (status/flag)
@@ -822,7 +828,9 @@ def create_status_table(prj, pipeline_name, final=True):
             log_name = _get_file_for_sample(
                 sample_name, f"{pipeline_name}_log.md", prj.results_folder)
             log_file_link = _get_relpath_to_file(
-                log_name, sample_name, prj.results_folder, get_file_for_project(prj, "reports"))
+                log_name, sample_name, prj.results_folder,
+                os.path.join(get_file_for_project(prj, "reports"), pipeline_name)
+            )
             log_link_names.append(log_name)
             log_paths.append(log_file_link)
             # get fourth column data (runtime) and fifth column data (memory)
