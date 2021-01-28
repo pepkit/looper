@@ -503,10 +503,12 @@ class HTMLReportBuilder(object):
         # Add project level objects
         # project_objects = self.create_project_objects()
         # Complete and close HTML file
+        columns = [SAMPLE_NAME_ATTR] + list(sample_stat_results.keys())
         template_vars = dict(
             navbar=navbar, stats_file_path=stats_file_path,
-            columns=[SAMPLE_NAME_ATTR] + list(sample_stat_results.keys()),
+            columns=columns, columns_json=dumps(columns),
             table_row_data=table_row_data, project_name=self.prj.name,
+            stats_json=self._stats_to_json_str(project_level=False),
             footer=footer, pipeline_name=self.pipeline_name
         )
         save_html(index_html_path, render_jinja_template(
@@ -519,7 +521,8 @@ class HTMLReportBuilder(object):
             results[self.prj.name] = fetch_pipeline_results(
                 project=self.prj,
                 pipeline_name=self.pipeline_name,
-                inclusion_fun=lambda x: x not in OBJECT_TYPES
+                inclusion_fun=lambda x: x not in OBJECT_TYPES,
+                casting_fun=str
             )
         else:
             for sample in self.prj.samples:
@@ -527,7 +530,8 @@ class HTMLReportBuilder(object):
                     project=self.prj,
                     sample_name=sample.sample_name,
                     pipeline_name=self.pipeline_name,
-                    inclusion_fun=lambda x: x not in OBJECT_TYPES
+                    inclusion_fun=lambda x: x not in OBJECT_TYPES,
+                    casting_fun=str
                 )
         return dumps(results)
 
@@ -882,4 +886,3 @@ def _get_runtime(profile_df):
     unique_df = profile_df[~profile_df.duplicated('cid', keep='last').values]
     return str(timedelta(seconds=sum(unique_df['runtime'].apply(
         lambda x: x.total_seconds())))).split(".")[0]
-

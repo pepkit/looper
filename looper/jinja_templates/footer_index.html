@@ -2,52 +2,31 @@
 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 <script type="text/javascript">
     var plotDict = {}; // variable containing column values (col_name:string -> col_values:list)
-    var nameDict = {} // variable sample names (col_name:string -> sample_names:string)
     var statsTable = {{ stats_json }}; // Jinja template variable
-    // make a list of the first column values, which are the names of the samples
-    var all_names = [];
-    var j = 1;
-    while(typeof(statsTable[0][j]) !== "undefined"){
-        all_names.push(statsTable[0][j]);
-        j++;
+    var columns = {{ columns_json }}; // Jinja template variable
+    const sampleNames = Object.keys(statsTable);
+
+    for (var i in columns){
+        column = columns[i]
+        if (column === "sample_name") { continue; }
+        plotDict[column] = []
+        for (var j in sampleNames){
+            plotDict[column].push(parseFloat(statsTable[sampleNames[j]][column]))
+        }
     }
-    // populate the values of each column
-    var i = 1; // denotes the column number
-    var re = /:/g;
-    while(typeof(statsTable[i]) !== "undefined"){
-        var currCol = statsTable[i];
-        if(isNaN(parseFloat(currCol[1]))){ // change so that if the first column is missing values, it will look in the other rows
-            i++;
-            continue;
-        }
-        var colName = currCol[0];
-        var colValues = [];
-        var sample_names = [];
-        var arrayLength = Object.keys(currCol).length;
-        for (var j = 1; j < arrayLength; j++) {
-            if ((typeof(currCol[j]) !== "undefined" && currCol[j] !== null && !Array.isArray(currCol[j].match(re)))){
-                colValues.push(parseFloat(currCol[j]));
-                sample_names.push(all_names[j-1]);
-            }
-        }
-        console.log("colValues: " + colValues)
-        if(colValues.length > 0){
-            console.log("skipped")
-            plotDict[colName] = colValues;
-            nameDict[colName] = sample_names;
-        }
-        i++;
-    }
+
+    console.log(plotDict);
 
     function graphCol(colname){
       /* Creates a graph using Plotly.js */
       var data = [{
-        x: nameDict[colname],
-        y: plotDict[colname],
-        type: 'bar',
+          y: plotDict[colname],
+          x: sampleNames,
+          type: 'bar'
       }];
+      var title = colname.replace("_", " ");
       var layout = {
-        title: colname
+          title: title
       };
       chart = document.getElementById('charts');
       Plotly.newPlot(chart, data, layout);
