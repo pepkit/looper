@@ -184,7 +184,7 @@ class HTMLReportBuilder(object):
                         objs=obj_result_ids, wd=wd, context=context)
             else:
                 dropdown_relpaths_objects = objects_relpath
-        if len(self.prj.samples) >= 20:
+        if len(self.prj.samples) <= 20:
             dropdown_relpaths_samples, sample_names = \
                 self._get_navbar_dropdown_data_samples(wd=wd, context=context)
         else:
@@ -463,7 +463,8 @@ class HTMLReportBuilder(object):
         if hasattr(self.prj, "amendments") and self.prj.amendments:
             stats_file_name += '_' + self.prj.amendments
         stats_file_name += f'_{self.pipeline_name}_stats_summary.tsv'
-        stats_file_path = os.path.relpath(stats_file_name, self._outdir)
+        stats_file_path = os.path.relpath(stats_file_name, self._outdir) if \
+            os.path.exists(stats_file_name) else None
 
         # Add stats summary table to index page and produce individual
         # sample pages
