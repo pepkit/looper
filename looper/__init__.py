@@ -270,5 +270,10 @@ def build_parser():
             subparser.add_argument(
                     "-a", "--amend", nargs="+", metavar="A",
                     help="List of amendments to activate")
+        for subparser in [report_subparser, table_subparser]:
+            subparser.add_argument(
+                "--project", help="Process only project-level pipelines",
+                action="store_true", default=False
+            )
         result.append(parser)
     return result

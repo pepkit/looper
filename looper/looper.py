@@ -415,16 +415,29 @@ class Reporter(Executor):
     def __call__(self, args):
         # initialize the report builder
         p = self.prj
-        html_report_builder = HTMLReportBuilder(prj=p)
-        # tabulator = Tabulator(prj=p)
-        for piface_source in p._samples_by_piface(p.piface_key).keys():
-            # Do the stats and object summarization.
-            pipeline_name = PipelineInterface(piface_source).pipeline_name
-            # table = tabulator(pipeline_name=pipeline_name)
-            # run the report builder. a set of HTML pages is produced
-            report_path = html_report_builder(pipeline_name=pipeline_name)
-            _LOGGER.info(
-                f"'{pipeline_name}' pipeline HTML Report: {report_path}")
+        project_level = args.project
+        html_report_builder = HTMLReportBuilder(
+            prj=p, project_level=project_level)
+        if project_level:
+            self.counter = LooperCounter(
+                len(p.project_pipeline_interfaces))
+            for piface in p.project_pipeline_interfaces:
+                # Do the stats and object summarization.
+                pipeline_name = piface.pipeline_name
+                # run the report builder. a set of HTML pages is produced
+                report_path = html_report_builder(pipeline_name=pipeline_name)
+                _LOGGER.info(
+                    f"Project-level '{pipeline_name}' pipeline HTML report: "
+                    f"{report_path}")
+        else:
+            for piface_source in p._samples_by_piface(p.piface_key).keys():
+                # Do the stats and object summarization.
+                pipeline_name = PipelineInterface(piface_source).pipeline_name
+                # run the report builder. a set of HTML pages is produced
+                report_path = html_report_builder(pipeline_name=pipeline_name)
+                _LOGGER.info(
+                    f"Sample-level '{pipeline_name}' pipeline HTML report: "
+                    f"{report_path}")
 
 
 class Tabulator(Executor):
@@ -434,39 +447,77 @@ class Tabulator(Executor):
         super(Tabulator, self).__init__(prj)
         self.prj = prj
 
-    def __call__(self, pipeline_name):
-        # pull together all the fits and stats from each sample into
-        # project-combined spreadsheets.
-        self.stats = _create_stats_summary(self.prj, pipeline_name, self.counter)
-        self.objs = _create_obj_summary(self.prj, pipeline_name, self.counter)
+    def __call__(self, args):
+        p = self.prj
+        project_level = args.project
+        if project_level:
+            self.counter = LooperCounter(
+                len(p.project_pipeline_interfaces))
+            for piface in p.project_pipeline_interfaces:
+                # Do the stats and object summarization.
+                pipeline_name = piface.pipeline_name
+                # pull together all the fits and stats from each sample into
+                # project-combined spreadsheets.
+                self.stats = _create_stats_summary(
+                    p, pipeline_name, project_level, self.counter)
+                self.objs = _create_obj_summary(
+                    p, pipeline_name,  project_level, self.counter)
+        else:
+            for piface_source in p._samples_by_piface(p.piface_key).keys():
+                # Do the stats and object summarization.
+                pipeline_name = PipelineInterface(
+                    config=piface_source).pipeline_name
+                # pull together all the fits and stats from each sample into
+                # project-combined spreadsheets.
+                self.stats = _create_stats_summary(
+                    p, pipeline_name, project_level, self.counter)
+                self.objs = _create_obj_summary(
+                    p, pipeline_name, project_level, self.counter)
         return self
 
 
-def _create_stats_summary(project, pipeline_name, counter):
+def _create_stats_summary(project, pipeline_name, project_level, counter):
     """
     Create stats spreadsheet and columns to be considered in the report, save
     the spreadsheet to file
 
     :param looper.Project project: the project to be summarized
+    :param str pipeline_name: name of the pipeline to tabulate results for
+    :param bool project_level: whether the project-level pipeline resutlts
+        should be tabulated
     :param looper.LooperCounter counter: a counter object
     """
     # Create stats_summary file
     columns = set()
     stats = []
-    _LOGGER.info("Creating stats summary...")
-    for sample in project.samples:
-        sn = sample.sample_name
-        _LOGGER.info(counter.show(sn, pipeline_name))
-        reported_stats = {SAMPLE_NAME_ATTR: sn}
+    _LOGGER.info("Creating stats summary")
+    if project_level:
+        _LOGGER.info(counter.show(
+            name=project.name, type="project", pipeline_name=pipeline_name))
+        reported_stats = {"project_name": project.name}
         results = fetch_pipeline_results(
             project=project,
             pipeline_name=pipeline_name,
-            sample_name=sn,
             inclusion_fun=lambda x: x not in OBJECT_TYPES
         )
         reported_stats.update(results)
         stats.append(reported_stats)
         columns |= set(reported_stats.keys())
+
+    else:
+        for sample in project.samples:
+            sn = sample.sample_name
+            _LOGGER.info(counter.show(sn, pipeline_name))
+            reported_stats = {SAMPLE_NAME_ATTR: sn}
+            results = fetch_pipeline_results(
+                project=project,
+                pipeline_name=pipeline_name,
+                sample_name=sn,
+                inclusion_fun=lambda x: x not in OBJECT_TYPES
+            )
+            reported_stats.update(results)
+            stats.append(reported_stats)
+            columns |= set(reported_stats.keys())
 
     tsv_outfile_path = get_file_for_project(
         project, f'{pipeline_name}_stats_summary.tsv')
@@ -483,29 +534,44 @@ def _create_stats_summary(project, pipeline_name, counter):
     return stats
 
 
-def _create_obj_summary(project, pipeline_name, counter):
+def _create_obj_summary(project, pipeline_name, project_level, counter):
     """
     Read sample specific objects files and save to a data frame
 
     :param looper.Project project: the project to be summarized
+    :param str pipeline_name: name of the pipeline to tabulate results for
     :param looper.LooperCounter counter: a counter object
-    :return pandas.DataFrame: objects spreadsheet
+    :param bool project_level: whether the project-level pipeline resutlts
+        should be tabulated
     """
-    _LOGGER.info("Creating objects summary...")
+    _LOGGER.info("Creating objects summary")
     reported_objects = {}
-    for sample in project.samples:
-        sn = sample.sample_name
-        _LOGGER.info(counter.show(sn, pipeline_name))
+    if project_level:
+        _LOGGER.info(counter.show(
+            name=project.name, type="project", pipeline_name=pipeline_name))
         res = fetch_pipeline_results(
             project=project,
             pipeline_name=pipeline_name,
-            sample_name=sn,
             inclusion_fun=lambda x: x in OBJECT_TYPES
         )
         # need to cast to a dict, since other mapping-like objects might
         # cause issues when writing to the collective yaml file below
-        sample_reported_objects = {k: dict(v) for k, v in res.items()}
-        reported_objects[sn] = sample_reported_objects
+        project_reported_objects = {k: dict(v) for k, v in res.items()}
+        reported_objects[project.name] = project_reported_objects
+    else:
+        for sample in project.samples:
+            sn = sample.sample_name
+            _LOGGER.info(counter.show(sn, pipeline_name))
+            res = fetch_pipeline_results(
+                project=project,
+                pipeline_name=pipeline_name,
+                sample_name=sn,
+                inclusion_fun=lambda x: x in OBJECT_TYPES
+            )
+            # need to cast to a dict, since other mapping-like objects might
+            # cause issues when writing to the collective yaml file below
+            sample_reported_objects = {k: dict(v) for k, v in res.items()}
+            reported_objects[sn] = sample_reported_objects
     objs_yaml_path = get_file_for_project(
         project, f'{pipeline_name}_objs_summary.yaml')
     with open(objs_yaml_path, 'w') as outfile:
@@ -737,13 +803,8 @@ def main():
             return Destroyer(prj)(args)
 
         if args.command == "table":
-            tabulator = Tabulator(prj)
-            for piface_source in prj._samples_by_piface(p.piface_key).keys():
-                # Do the stats and object summarization.
-                pipeline_name = PipelineInterface(
-                    config=piface_source).pipeline_name
-                tabulator(pipeline_name=pipeline_name)
-        
+            Tabulator(prj)(args)
+
         if args.command == "report":
             Reporter(prj)(args)
 
