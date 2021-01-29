@@ -461,7 +461,7 @@ class SubmissionConductor(object):
     def _sample_lump_name(self, pool):
         """ Determine how to refer to the 'sample' for this submission. """
         if self.collate:
-            return "collate"
+            return self.prj.name
         if 1 == self.max_cmds:
             assert 1 == len(pool), \
                 "If there's a single-command limit on job submission, jobname" \
