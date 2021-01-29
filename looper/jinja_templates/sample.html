@@ -14,31 +14,30 @@
     <body>
     	<div class="container">
             <div class="container-fluid">
-        	   <h3>Sample name: <code>{{ sample_name }}</code></h3>
+        	   <h3>{{ report_class }} name: <code>{{ sample_name }}</code>; Pipeline name: <code>{{ pipeline_name }}</code></h3>
             </div>
             <div class="container-fluid">
                 <p class="text-left">
                 <button type="button" class='{{ button_class }}' disabled>STATUS: {{ flag }}</button>
-                {% if log_file_path is none %}
-                    <a class="btn btn-outline-dark ml-2 disabled" href='{{ log_file_path }}' role="button">Log file</a>
-                {% else %}
-                    <a class="btn btn-outline-dark ml-2" href='{{ log_file_path }}' role="button">Log file</a>
-                {% endif %}
-                {% if profile_file_path is none %}
-                    <a class="btn btn-outline-dark ml-2 disabled" href='{{ profile_file_path }}' role="button">Pipeline profile</a>
-                {% else %}
-                    <a class="btn btn-outline-dark ml-2" href='{{ profile_file_path }}' role="button">Pipeline profile</a>
-                {% endif %}
-                {% if commands_file_path is none %}
-                    <a class="btn btn-outline-dark ml-2 disabled" href='{{ commands_file_path }}' role="button">Pipeline commands</a>
-                {% else %}
-                    <a class="btn btn-outline-dark ml-2" href='{{ commands_file_path }}' role="button">Pipeline commands</a>
-                {% endif %}
-                {% if stats_file_path is none %}
-                    <a class="btn btn-outline-dark ml-2 disabled" href='{{ stats_file_path }}' role="button">Stats summary file</a>
-                {% else %}
-                    <a class="btn btn-outline-dark ml-2" href='{{ stats_file_path }}' role="button">Stats summary file</a>
-                {% endif %}
+                <a class="btn btn-outline-dark ml-2 {{'disabled' if log_file_path is none}}" href='{{ log_file_path }}' role="button">Log file</a>
+                <a class="btn btn-outline-dark ml-2 {{'disabled' if profile_file_path is none}}" href='{{ profile_file_path }}' role="button">Pipeline profile</a>
+                <a class="btn btn-outline-dark ml-2 {{'disabled' if commands_file_path is none}}" href='{{ commands_file_path }}' role="button">Pipeline commands</a>
+                <a class="btn btn-outline-dark ml-2 {{'disabled' if stats_file_path is none}}" href='{{ stats_file_path }}' role="button">Stats file path</a>
+<!--                {% if profile_file_path is none %}-->
+<!--                    <a class="btn btn-outline-dark ml-2 disabled" href='{{ profile_file_path }}' role="button">Pipeline profile</a>-->
+<!--                {% else %}-->
+<!--                    <a class="btn btn-outline-dark ml-2" href='{{ profile_file_path }}' role="button">Pipeline profile</a>-->
+<!--                {% endif %}-->
+<!--                {% if commands_file_path is none %}-->
+<!--                    <a class="btn btn-outline-dark ml-2 disabled" href='{{ commands_file_path }}' role="button">Pipeline commands</a>-->
+<!--                {% else %}-->
+<!--                    <a class="btn btn-outline-dark ml-2" href='{{ commands_file_path }}' role="button">Pipeline commands</a>-->
+<!--                {% endif %}-->
+<!--                {% if stats_file_path is none %}-->
+<!--                    <a class="btn btn-outline-dark ml-2 disabled" href='{{ stats_file_path }}' role="button">Stats summary file</a>-->
+<!--                {% else %}-->
+<!--                    <a class="btn btn-outline-dark ml-2" href='{{ stats_file_path }}' role="button">Stats summary file</a>-->
+<!--                {% endif %}-->
                 </p>
             </div>
             <hr>

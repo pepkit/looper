@@ -6,16 +6,10 @@
               {% endif %}
               {% if dropdown_keys_objects is none %}
               <!-- there is more than 20 objects or 0 -->
-                {% if objects_html_page is none %}
-                <!-- no objects at all -->
-                  <li class="nav-item">
-                    <!-- intentionally no href attribute, inactive link -->
-                    <a class="nav-link disabled">{{objects_page_name}}</a>
-                  </li> 
-                {% else %}
+                {% if objects_html_page is not none %}
                   <li class="nav-item active">
                     <a class="nav-link" href="{{objects_html_page}}">{{objects_page_name}}</a>
-                  </li>  
+                  </li>
                 {% endif %}
               {% else %}
                <!-- there is less than 20 objects -->
@@ -35,13 +29,7 @@
               {% endif %}
               {% if sample_names is none %}
                 <!-- there is more than 20 samples or 0 -->
-                {% if samples_html_page is none %}
-                  <!-- no objects at all -->
-                  <li class="nav-item">
-                    <!-- intentionally no href attribute, inactive link -->
-                    <a class="nav-link disabled">{{samples_page_name}}</a>
-                  </li>
-                {% else %}
+                {% if samples_html_page is not none %}
                   <li class="nav-item active">
                     <a class="nav-link" href="{{samples_html_page}}">{{samples_page_name}}</a>
                   </li>

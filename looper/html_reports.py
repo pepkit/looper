@@ -23,29 +23,38 @@ _LOGGER = logging.getLogger("looper")
 class HTMLReportBuilder(object):
     """ Generate HTML summary report for project/samples """
 
-    def __init__(self, prj):
+    def __init__(self, prj, project_level):
         """
         The Project defines the instance.
 
-        :param Project prj: Project with which to work/operate on
+        :param looper.Project prj: Project with which to work/operate on
+        :param bool project_level: whether to generate a project-level
+            pipeline report
         """
         super(HTMLReportBuilder, self).__init__()
         self.prj = prj
+        self.project_level = project_level
         self.j_env = get_jinja_env()
         self.reports_dir = get_file_for_project(self.prj, "reports")
         self._outdir = self.prj.output_dir
         _LOGGER.debug(f"Reports dir: {self.reports_dir}")
 
     def __call__(self, pipeline_name):
-        """ Do the work of the subcommand/program. """
+        """
+        Generate HTML report.
+
+        :param str pipeline_name: ID of the pipeline to generate the report for
+        :return str: path to the index page of the generated HTML report
+        """
         # Generate HTML report
         self.pipeline_name = pipeline_name
         self.index_html_path = get_file_for_project(
             self.prj, f"{self.pipeline_name}_summary.html")
         self.index_html_filename = os.path.basename(self.index_html_path)
+        pifaces = self.prj.project_pipeline_interfaces \
+            if self.project_level else self.prj.pipeline_interfaces
         selected_pipeline_pifaces = \
-            [piface for piface in self.prj.pipeline_interfaces
-             if piface.pipeline_name == self.pipeline_name]
+            [p for p in pifaces if p.pipeline_name == self.pipeline_name]
         schema_path = self.prj.get_schemas(
             selected_pipeline_pifaces, OUTPUT_SCHEMA_KEY)[0]
         self.schema = read_schema(schema_path)[0]
@@ -54,7 +63,10 @@ class HTMLReportBuilder(object):
             self.index_html_filename
         )
         navbar_reports = self.create_navbar(
-            navbar_links=self.create_navbar_links(wd=os.path.join(self.reports_dir, self.pipeline_name)),
+            navbar_links=self.create_navbar_links(
+                wd=os.path.join(self.reports_dir, self.pipeline_name),
+                include_status=not self.project_level
+            ),
             index_html_relpath=os.path.join(os.pardir, os.pardir, self.index_html_filename)
         )
         index_html_path = self.create_index_html(
@@ -90,6 +102,8 @@ class HTMLReportBuilder(object):
             navbar=navbar, footer=footer, labels=labels,
             pages=pages, header="Objects"
         )
+        _LOGGER.debug(f"object navbar_list_parent.html | template_vars:"
+                      f"\n{template_vars}")
         return render_jinja_template(
             "navbar_list_parent.html", self.j_env, template_vars)
 
@@ -124,8 +138,14 @@ class HTMLReportBuilder(object):
                 pages.append(page_relpath)
                 labels.append(sample_name)
 
-        template_vars = dict(navbar=navbar, footer=footer, labels=labels, pages=pages, header="Samples")
-        return render_jinja_template("navbar_list_parent.html", self.j_env, template_vars)
+        template_vars = dict(
+            navbar=navbar, footer=footer, labels=labels, pages=pages,
+            header="Samples"
+        )
+        _LOGGER.debug(f"sample navbar_list_parent.html | template_vars:"
+                      f"\n{template_vars}")
+        return render_jinja_template(
+            "navbar_list_parent.html", self.j_env, template_vars)
 
     def create_navbar(self, navbar_links, index_html_relpath):
         """
@@ -134,7 +154,10 @@ class HTMLReportBuilder(object):
         :param str navbar_links: HTML list of links to be inserted into a navbar
         :return str: navbar HTML
         """
-        template_vars = dict(navbar_links=navbar_links, index_html=index_html_relpath)
+        template_vars = dict(
+            navbar_links=navbar_links, index_html=index_html_relpath,
+            project_level=self.project_level
+        )
         return render_jinja_template("navbar.html", self.j_env, template_vars)
 
     def create_footer(self):
@@ -149,14 +172,16 @@ class HTMLReportBuilder(object):
         """
         Return a string containing the navbar prebuilt html.
 
-        Generates links to each page relative to the directory of interest (wd arg) or uses the provided context to
-        create the paths (context arg)
+        Generates links to each page relative to the directory of interest
+        (wd arg) or uses the provided context to create the paths (context arg)
 
-        :param path wd: the working directory of the current HTML page being generated, enables navbar links
-            relative to page
+        :param path wd: the working directory of the current HTML page being
+            generated, enables navbar links relative to page
         :param list[str] context: the context the links will be used in.
-            The sequence of directories to be prepended to the HTML file in the resulting navbar
-        :param bool include_status: whether the status link should be included in the links set
+            The sequence of directories to be prepended to the HTML file in
+            the resulting navbar
+        :param bool include_status: whether the status link should be included
+            in the links set
         :return str: navbar links as HTML-formatted string
         """
         # determine paths
@@ -164,32 +189,38 @@ class HTMLReportBuilder(object):
             raise ValueError(
                 "Either 'wd' (path the links should be relative to) or "
                 "'context' (the context for the links) has to be provided.")
-        status_relpath = _make_relpath(file_name=os.path.join(
-            self.reports_dir, self.pipeline_name, "status.html"), wd=wd, context=context)
-        objects_relpath = _make_relpath(file_name=os.path.join(
-            self.reports_dir, self.pipeline_name, "objects.html"), wd=wd, context=context)
-        samples_relpath = _make_relpath(file_name=os.path.join(
-            self.reports_dir, self.pipeline_name, "samples.html"), wd=wd, context=context)
+        status_relpath = _make_relpath(
+            file_name=os.path.join(self.reports_dir, self.pipeline_name, "status.html"),
+            wd=wd, context=context)
+        objects_relpath = _make_relpath(
+            file_name=os.path.join(self.reports_dir, self.pipeline_name, "objects.html"),
+            wd=wd, context=context)
+        samples_relpath = _make_relpath(
+            file_name=os.path.join(self.reports_dir, self.pipeline_name, "samples.html"),
+            wd=wd, context=context)
         # determine the outputs IDs by type
         obj_result_ids = {k: v for k, v in self.schema.items()
                           if self.schema[k]["type"] in OBJECT_TYPES}
         dropdown_keys_objects = None
         dropdown_relpaths_objects = None
         sample_names = None
-        if len(obj_result_ids) > 0:
-            # If the number of objects is 20 or less, use a drop-down menu
-            if len(obj_result_ids) <= 20:
-                dropdown_relpaths_objects, dropdown_keys_objects = \
-                    self._get_navbar_dropdown_data_objects(
-                        objs=obj_result_ids, wd=wd, context=context)
+        dropdown_relpaths_samples = None
+        if not self.project_level:
+            if len(obj_result_ids) > 0:
+                # If the number of objects is 20 or less, use a drop-down menu
+                if len(obj_result_ids) <= 20:
+                    dropdown_relpaths_objects, dropdown_keys_objects = \
+                        self._get_navbar_dropdown_data_objects(
+                            objs=obj_result_ids, wd=wd, context=context)
             else:
                 dropdown_relpaths_objects = objects_relpath
-        if len(self.prj.samples) <= 20:
-            dropdown_relpaths_samples, sample_names = \
-                self._get_navbar_dropdown_data_samples(wd=wd, context=context)
-        else:
-            # Create a menu link to the samples parent page
-            dropdown_relpaths_samples = samples_relpath
+            if len(self.prj.samples) <= 20:
+                dropdown_relpaths_samples, sample_names = \
+                    self._get_navbar_dropdown_data_samples(
+                        wd=wd, context=context)
+            else:
+                # Create a menu link to the samples parent page
+                dropdown_relpaths_samples = samples_relpath
         status_page_name = "Status" if include_status else None
         template_vars = dict(
             status_html_page=status_relpath, status_page_name=status_page_name,
@@ -197,8 +228,9 @@ class HTMLReportBuilder(object):
             samples_page_name="Samples", objects_html_page=dropdown_relpaths_objects,
             samples_html_page=dropdown_relpaths_samples, menu_name_objects="Objects",
             menu_name_samples="Samples", sample_names=sample_names, all_samples=samples_relpath,
-            all_objects=objects_relpath
+            all_objects=objects_relpath, pipeline_name=self.pipeline_name
         )
+        _LOGGER.debug(f"navbar_links.html | template_vars:\n{template_vars}")
         return render_jinja_template("navbar_links.html", self.j_env, template_vars)
 
     def create_object_htmls(self, navbar, footer):
@@ -254,10 +286,11 @@ class HTMLReportBuilder(object):
                 navbar=navbar, footer=footer, name=sample_result["title"],
                 figures=figures, links=[], desc=img_desc
             )
+            _LOGGER.debug(f"object.html | template_vars:\n{template_vars}")
             save_html(html_page_path, render_jinja_template(
                 "object.html", self.j_env, args=template_vars))
 
-    def create_sample_html(self, sample_name, sample_stats, navbar, footer):
+    def create_sample_html(self, sample_stats, navbar, footer, sample_name=None):
         """
         Produce an HTML page containing all of a sample's objects
         and the sample summary statistics
@@ -270,6 +303,12 @@ class HTMLReportBuilder(object):
         """
         if not os.path.exists(self.reports_dir):
             os.makedirs(self.reports_dir)
+        if not self.project_level and sample_name is None:
+            raise ValueError(
+                "You must provide a sample name to create the HTML page "
+                "for if run in no project-level mode"
+            )
+        sample_name = sample_name or self.prj.name
         html_page = os.path.join(
             self.reports_dir, self.pipeline_name, f"{sample_name}.html".lower())
 
@@ -321,7 +360,7 @@ class HTMLReportBuilder(object):
         file_results = fetch_pipeline_results(
             project=self.prj,
             pipeline_name=self.pipeline_name,
-            sample_name=sample_name,
+            sample_name=sample_name if not self.project_level else None,
             inclusion_fun=lambda x: x == "file"
         )
         for result_id, result in file_results.items():
@@ -331,23 +370,28 @@ class HTMLReportBuilder(object):
         image_results = fetch_pipeline_results(
             project=self.prj,
             pipeline_name=self.pipeline_name,
-            sample_name=sample_name,
+            sample_name=sample_name if not self.project_level else None,
             inclusion_fun=lambda x: x == "image"
         )
         figures = []
         for result_id, result in image_results.items():
-            figures.append([result["path"], result["title"], result["thumbnail_path"]])
+            figures.append(
+                [result["path"], result["title"], result["thumbnail_path"]])
 
         template_vars = dict(
+            report_class="Project" if self.project_level else "Sample",
             navbar=navbar, footer=footer, sample_name=sample_name,
             stats_file_path=stats_file_path, links=links,
             profile_file_path=profile_file_path,  figures=figures,
             commands_file_path=commands_file_path, log_file_path=log_file_path,
-            button_class=button_class, sample_stats=sample_stats, flag=flag
+            button_class=button_class, sample_stats=sample_stats, flag=flag,
+            pipeline_name=self.pipeline_name
         )
+        _LOGGER.debug(f"sample.html | template_vars:\n{template_vars}")
         save_html(html_page, render_jinja_template(
             "sample.html", self.j_env, template_vars))
-        return os.path.relpath(html_page, self._outdir)
+        return html_page if self.project_level \
+            else os.path.relpath(html_page, self._outdir)
 
     def create_status_html(self, status_table, navbar, footer):
         """
@@ -361,6 +405,7 @@ class HTMLReportBuilder(object):
         _LOGGER.debug("Building status page...")
         template_vars = dict(status_table=status_table, navbar=navbar,
                              footer=footer)
+        _LOGGER.debug(f"status.html | template_vars:\n{template_vars}")
         return render_jinja_template("status.html", self.j_env, template_vars)
 
     def create_project_objects(self):
@@ -432,8 +477,6 @@ class HTMLReportBuilder(object):
         if warnings:
             _LOGGER.warning("Not found: {}".
                             format([str(x) for x in warnings]))
-        _LOGGER.debug("collected project-level figures: {}".format(figures))
-        _LOGGER.debug("collected project-level links: {}".format(links))
         template_vars = dict(figures=figures, links=links)
         return render_jinja_template("project_object.html", self.j_env,
                                      template_vars)
@@ -466,31 +509,50 @@ class HTMLReportBuilder(object):
         stats_file_path = os.path.relpath(stats_file_name, self._outdir) if \
             os.path.exists(stats_file_name) else None
 
+        # Add objects_summary.yaml button link
+        objs_file_name = os.path.join(self._outdir, self.prj.name)
+        if hasattr(self.prj, "amendments") and self.prj.amendments:
+            objs_file_name += '_' + self.prj.amendments
+        objs_file_name += f'_{self.pipeline_name}_objs_summary.yaml'
+        objs_file_path = os.path.relpath(objs_file_name, self._outdir) if \
+            os.path.exists(objs_file_name) else None
+
         # Add stats summary table to index page and produce individual
         # sample pages
         # Produce table rows
         table_row_data = []
-        _LOGGER.info(" * Creating sample pages")
-        for sample in self.prj.samples:
-            sample_stat_results = fetch_pipeline_results(
+        if not self.project_level:
+            _LOGGER.info(" * Creating sample pages")
+            for sample in self.prj.samples:
+                sample_stat_results = fetch_pipeline_results(
+                    project=self.prj,
+                    pipeline_name=self.pipeline_name,
+                    sample_name=sample.sample_name,
+                    inclusion_fun=lambda x: x not in OBJECT_TYPES,
+                    casting_fun=str
+                )
+                sample_page = self.create_sample_html(
+                    sample_stat_results, navbar_reports, footer, sample.sample_name)
+                # treat sample_name column differently - will need to provide
+                # a link to the sample page
+                table_cell_data = [[sample_page, sample.sample_name]]
+                table_cell_data += list(sample_stat_results.values())
+                table_row_data.append(table_cell_data)
+            # Create parent samples page with links to each sample
+            save_html(
+                path=os.path.join(self.reports_dir, self.pipeline_name, "samples.html"),
+                template=self.create_sample_parent_html(navbar_reports, footer)
+            )
+        else:
+            project_stat_results = fetch_pipeline_results(
                 project=self.prj,
                 pipeline_name=self.pipeline_name,
-                sample_name=sample.sample_name,
                 inclusion_fun=lambda x: x not in OBJECT_TYPES,
                 casting_fun=str
             )
-            sample_page = self.create_sample_html(
-                sample.sample_name, sample_stat_results, navbar_reports, footer)
-            # treat sample_name column differently - will need to provide
-            # a link to the sample page
-            table_cell_data = [[sample_page, sample.sample_name]]
-            table_cell_data += list(sample_stat_results.values())
-            table_row_data.append(table_cell_data)
-        # Create parent samples page with links to each sample
-        save_html(
-            path=os.path.join(self.reports_dir, self.pipeline_name, "samples.html"),
-            template=self.create_sample_parent_html(navbar_reports, footer)
-        )
+            project_page = self.create_sample_html(
+                    project_stat_results, navbar_reports, footer)
+            return project_page
         _LOGGER.info(" * Creating object pages")
         # Create objects pages
         self.create_object_htmls(navbar_reports, footer)
@@ -500,24 +562,28 @@ class HTMLReportBuilder(object):
             path=os.path.join(self.reports_dir, self.pipeline_name, "objects.html"),
             template=self.create_object_parent_html(navbar_reports, footer)
         )
-        # Create status page with each sample's status listed
-        status_tab = create_status_table(
-            prj=self.prj, final=True, pipeline_name=self.pipeline_name)
-        save_html(
-            path=os.path.join(self.reports_dir, self.pipeline_name, "status.html"),
-            template=self.create_status_html(status_tab, navbar_reports, footer)
-        )
+        if not self.project_level:
+            # Create status page with each sample's status listed
+            status_tab = create_status_table(
+                prj=self.prj, final=True, pipeline_name=self.pipeline_name,
+                project_level=self.project_level)
+            save_html(
+                path=os.path.join(self.reports_dir, self.pipeline_name, "status.html"),
+                template=self.create_status_html(status_tab, navbar_reports, footer)
+            )
         # Add project level objects
         # project_objects = self.create_project_objects()
         # Complete and close HTML file
         columns = [SAMPLE_NAME_ATTR] + list(sample_stat_results.keys())
         template_vars = dict(
             navbar=navbar, stats_file_path=stats_file_path,
-            columns=columns, columns_json=dumps(columns),
-            table_row_data=table_row_data, project_name=self.prj.name,
+            objs_file_path=objs_file_path, columns=columns,
+            columns_json=dumps(columns), table_row_data=table_row_data,
+            project_name=self.prj.name, pipeline_name=self.pipeline_name,
             stats_json=self._stats_to_json_str(project_level=False),
-            footer=footer, pipeline_name=self.pipeline_name
+            footer=footer
         )
+        _LOGGER.debug(f"index.html | template_vars:\n{template_vars}")
         save_html(self.index_html_path, render_jinja_template(
             "index.html", self.j_env, template_vars))
         return self.index_html_path
@@ -614,24 +680,24 @@ def get_jinja_env(templates_dirname=None):
     return jinja2.Environment(loader=jinja2.FileSystemLoader(templates_dirname))
 
 
-def _get_flags(sample_dir, pipeline_name):
+def _get_flags(directory, pipeline_name):
     """
     Get the flag(s) present in the directory
 
-    :param str sample_dir: path to the directory to be searched for flags
+    :param str directory: path to the directory to be searched for flags
     :return list: flags found in the dir
     """
-    assert os.path.exists(sample_dir), \
-        f"The provided path ({sample_dir}) does not exist"
-    template = os.path.join(sample_dir, f'{pipeline_name}_{{}}.flag')
+    assert os.path.exists(directory), \
+        f"The provided path ({directory}) does not exist"
+    template = os.path.join(directory, f'{pipeline_name}_{{}}.flag')
     flag_paths_by_flag = {f: template.format(f) for f in FLAGS}
     existing_flags = [k for k, v in flag_paths_by_flag.items()
                       if os.path.exists(v)]
     if len(existing_flags) > 1:
         _LOGGER.warning(
-            f"Multiple flag files ({len(existing_flags)}) found in: {sample_dir}")
+            f"Multiple flag files ({len(existing_flags)}) found in: {directory}")
     if len(existing_flags) == 0:
-        _LOGGER.warning(f"No flag files found in sample dir '{sample_dir}'")
+        _LOGGER.warning(f"No flag files found in directory '{directory}'")
     return existing_flags
 
 
@@ -721,6 +787,7 @@ def _read_tsv_to_json(path):
     df = _pd.read_csv(path, sep="\t", index_col=False, header=None)
     return df.to_json()
 
+
 def fetch_pipeline_results(project, pipeline_name, sample_name=None,
                            inclusion_fun=None, casting_fun=None):
     """
@@ -767,7 +834,7 @@ def uniqify(seq):
     return [x for x in seq if not (x in seen or seen_add(x))]
 
 
-def create_status_table(prj, pipeline_name, final=True):
+def create_status_table(prj, pipeline_name, project_level, final=True):
     """
     Creates status table, the core of the status page.
     It is abstracted into a function so that it can be used in other software
@@ -792,8 +859,7 @@ def create_status_table(prj, pipeline_name, final=True):
     mems = []
     for sample in prj.samples:
         sample_name = str(sample.sample_name)
-        sample_dir = os.path.join(
-            prj.results_folder, sample.sample_name)
+        sample_dir = os.path.join(prj.results_folder, sample_name)
 
         # Confirm sample directory exists, then build page
         if os.path.exists(sample_dir):
@@ -835,9 +901,9 @@ def create_status_table(prj, pipeline_name, final=True):
             log_link_names.append(log_name)
             log_paths.append(log_file_link)
             # get fourth column data (runtime) and fifth column data (memory)
-            profile_file_path = \
-                _get_file_for_sample(sample.sample_name, f'{pipeline_name}_profile.tsv',
-                                     prj.results_folder, full_path=True)
+            profile_file_path = _get_file_for_sample(
+                sample_name, f'{pipeline_name}_profile.tsv',
+                prj.results_folder, full_path=True)
             if os.path.exists(profile_file_path):
                 df = _pd.read_csv(profile_file_path, sep="\t", comment="#",
                                   names=PROFILE_COLNAMES)
@@ -845,7 +911,7 @@ def create_status_table(prj, pipeline_name, final=True):
                 times.append(_get_runtime(df))
                 mems.append(_get_maxmem(df))
             else:
-                _LOGGER.warning("'{}' does not exist".format(profile_file_path))
+                _LOGGER.warning(f"'{profile_file_path}' does not exist")
                 times.append(NO_DATA_PLACEHOLDER)
                 mems.append(NO_DATA_PLACEHOLDER)
         else:
@@ -869,6 +935,7 @@ def create_status_table(prj, pipeline_name, final=True):
         template_vars.update(dict(sample_paths=sample_paths,
                                   log_link_names=log_link_names,
                                   log_paths=log_paths))
+    _LOGGER.debug(f"status_table.html | template_vars:\n{template_vars}")
     return render_jinja_template(template_name, get_jinja_env(), template_vars)
 
 
