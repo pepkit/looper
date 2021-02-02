@@ -121,21 +121,25 @@ def sample_folder(prj, sample):
                         sample[SAMPLE_NAME_ATTR])
 
 
-def get_file_for_project(prj, appendix):
+def get_file_for_project(prj, pipeline_name, appendix=None, directory=None):
     """
     Create a path to the file for the current project.
     Takes the possibility of amendment being activated at the time
 
+    Format of the output path:
+    {output_dir}/{directory}/{p.name}_{pipeline_name}_{active_amendments}_{appendix}
+
     :param looper.Project prj: project object
+    :param str pipeline_name: name of the pipeline to get the file for
     :param str appendix: the appendix of the file to create the path for,
         like 'objs_summary.tsv' for objects summary file
     :return str: path to the file
     """
-    # TODO: might need to add pipeline_name as an arg here
-    fp = os.path.join(prj.output_dir, prj[NAME_KEY])
+    fp = os.path.join(
+        prj.output_dir, directory or "", f"{prj[NAME_KEY]}_{pipeline_name}")
     if hasattr(prj, AMENDMENTS_KEY) and getattr(prj, AMENDMENTS_KEY):
-        fp += '_' + '_'.join(getattr(prj, AMENDMENTS_KEY))
-    fp += '_' + appendix
+        fp += f"_{'_'.join(getattr(prj, AMENDMENTS_KEY))}"
+    fp += f"_{appendix}"
     return fp
 
 

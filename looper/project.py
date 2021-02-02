@@ -76,7 +76,7 @@ class Project(peppyProject):
     """
     Looper-specific Project.
 
-    :param str config_file: path to configuration file with data from
+    :param str cfg: path to configuration file with data from
         which Project is to be built
     :param Iterable[str] amendments: name indicating amendment to use, optional
     :param str divcfg_path: path to an environment configuration YAML file
@@ -86,9 +86,9 @@ class Project(peppyProject):
     :param str compute_env_file: Environment configuration YAML file specifying
         compute settings.
     """
-    def __init__(self, config_file, amendments=None, divcfg_path=None,
+    def __init__(self, cfg, amendments=None, divcfg_path=None,
                  runp=False, **kwargs):
-        super(Project, self).__init__(config_file, amendments=amendments)
+        super(Project, self).__init__(cfg=cfg, amendments=amendments)
         setattr(self, EXTRA_KEY, dict())
         for attr_name in CLI_PROJ_ATTRS:
             if attr_name in kwargs:
@@ -454,11 +454,13 @@ class Project(peppyProject):
         pifaces = self.project_pipeline_interfaces if project_level \
             else self._interfaces_by_sample[sample_name]
         for piface in pifaces:
+            rec_id = piface.pipeline_name if self.amendments is None \
+                else f"{piface.pipeline_name}_{'_'.join(self.amendments)}"
             ret[piface.pipeline_name] = PipestatManager(
                 namespace=namespace,
                 config=pipestat_config,
                 results_file_path=results_file_path,
-                record_identifier=piface.pipeline_name,
+                record_identifier=rec_id,
                 schema_path=piface.get_pipeline_schemas(OUTPUT_SCHEMA_KEY)
             )
         return ret

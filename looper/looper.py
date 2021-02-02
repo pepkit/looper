@@ -763,7 +763,7 @@ def main():
 
     # Initialize project
     try:
-        p = Project(config_file=args.config_file,
+        p = Project(cfg=args.config_file,
                     amendments=args.amend,
                     divcfg_path=divcfg,
                     runp=args.command == "runp",
