@@ -9,6 +9,7 @@ from logging import getLogger
 
 from peppy import SAMPLE_NAME_ATTR, OUTDIR_KEY, CONFIG_KEY, \
     Project as peppyProject
+from peppy.utils import make_abs_via_cfg
 from eido import read_schema, PathAttrNotFoundError
 from divvy import ComputingConfiguration
 from ubiquerg import is_command_callable, expandpath
@@ -93,10 +94,10 @@ class Project(peppyProject):
         for attr_name in CLI_PROJ_ATTRS:
             if attr_name in kwargs:
                 setattr(self[EXTRA_KEY], attr_name, kwargs[attr_name])
-        if not runp:
-            self._samples_by_interface = \
-                self._samples_by_piface(self.piface_key)
-            self._interfaces_by_sample = self._piface_by_samples()
+        self._samples_by_interface = \
+            self._samples_by_piface(self.piface_key)
+        self._interfaces_by_sample = self._piface_by_samples()
+        self.linked_sample_interfaces = self._get_linked_pifaces()
         if FILE_CHECKS_KEY in self[EXTRA_KEY]:
             setattr(self, "file_checks", not self[EXTRA_KEY][FILE_CHECKS_KEY])
         if DRY_RUN_KEY in self[EXTRA_KEY]:
@@ -483,6 +484,36 @@ class Project(peppyProject):
             self.project_pipeline_interfaces, OUTPUT_SCHEMA_KEY)
         for schema in schemas:
             populate_project_paths(self, read_schema(schema)[0])
+
+    def _get_linked_pifaces(self):
+        """
+        Get linked sample pipeline interfaces by project pipeline interface.
+
+        These are indicated in project pipeline interface by
+        'linked_pipeline_interfaces' key. If a project pipeline interface
+         does not have such key defined, an empty list is returned for that
+         pipeline interface.
+
+        :return dict[list[str]]: mapping of sample pipeline interfaces
+            by project pipeline interfaces
+        """
+
+        def _process_linked_piface(p, piface, prj_piface):
+            piface = make_abs_via_cfg(piface, prj_piface)
+            if piface not in p.pipeline_interface_sources:
+                raise PipelineInterfaceConfigError(
+                    "Linked sample pipeline interface was not assigned "
+                    f"to any sample in this project: {piface}")
+            return piface
+
+        linked_pifaces = {}
+        for prj_piface in self.project_pipeline_interfaces:
+            pifaces = prj_piface.linked_pipeline_interfaces if \
+                hasattr(prj_piface, "linked_pipeline_interfaces") else []
+            linked_pifaces[prj_piface.source] = \
+                list({_process_linked_piface(self, piface, prj_piface.source)
+                      for piface in pifaces})
+        return linked_pifaces
 
     def _piface_by_samples(self):
         """
