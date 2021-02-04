@@ -4,7 +4,8 @@ logmuse>=0.2.0
 pandas>=0.20.2
 pyyaml>=3.12
 divvy>=0.5.0
-peppy>=0.31.0
+# peppy>=0.31.1
+# pipestat>=0.0.2
 ubiquerg>=0.5.2
 jinja2
 eido>=0.1.3
