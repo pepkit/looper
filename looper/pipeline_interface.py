@@ -50,7 +50,7 @@ class PipelineInterface(PXAM):
             self.source = config
             config = load_yaml(config)
         self.update(config)
-        self._validate(PIFACE_SCHEMA_SRC, flavor=pipeline_type)
+        self._validate(schema_src=PIFACE_SCHEMA_SRC)
         if "path" in self:
             warn(message="'path' specification as a top-level pipeline "
                          "interface key is deprecated and will be removed with "
@@ -308,22 +308,23 @@ class PipelineInterface(PXAM):
             _LOGGER.debug("Expanded path: {}".format(pipe_path))
             _set_in_dict(self, keys, pipe_path)
 
-    def _validate(self, schema_src, exclude_case=False, flavor=None):
+    def _validate(self, schema_src, exclude_case=False, flavor="generic"):
         """
-        Generic function to validate object against a schema
+        Generic function to validate the object against a schema
 
         :param str schema_src: schema source to validate against, URL or path
         :param bool exclude_case: whether to exclude validated objects
             from the error. Useful when used ith large projects
         :param str flavor: type of the pipeline schema to use
         """
-        schema_source = schema_src.format(flavor if flavor else "generic")
-        schemas = read_schema(schema_source)
-        for schema in schemas:
+        schema_source = schema_src.format(flavor)
+        for schema in read_schema(schema_source):
             try:
                 jsonschema.validate(self, schema)
-                _LOGGER.debug("Successfully validated {} against schema: {}".
-                              format(self.__class__.__name__, schema_source))
+                _LOGGER.debug(
+                    f"Successfully validated {self.__class__.__name__} "
+                    f"against schema: {schema_source}"
+                )
             except jsonschema.exceptions.ValidationError as e:
                 if not exclude_case:
                     raise e
