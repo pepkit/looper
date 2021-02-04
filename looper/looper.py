@@ -31,6 +31,7 @@ from .conductor import SubmissionConductor
 from .const import *
 from .exceptions import JobSubmissionException, MisconfigurationException
 from .html_reports import HTMLReportBuilder, fetch_pipeline_results
+from .html_reports_project import HTMLReportBuilderProject
 from .project import Project, ProjectContext
 from .utils import *
 from .pipeline_interface import PipelineInterface
@@ -415,64 +416,42 @@ class Reporter(Executor):
     def __call__(self, args):
         # initialize the report builder
         p = self.prj
-        project_level = args.project
-        html_report_builder = HTMLReportBuilder(
-            prj=p, project_level=project_level)
-        if project_level:
-            self.counter = LooperCounter(
-                len(p.project_pipeline_interfaces))
-            for piface in p.project_pipeline_interfaces:
-                # Do the stats and object summarization.
-                pipeline_name = piface.pipeline_name
-                # run the report builder. a set of HTML pages is produced
-                report_path = html_report_builder(pipeline_name=pipeline_name)
-                _LOGGER.info(
-                    f"Project-level '{pipeline_name}' pipeline HTML report: "
-                    f"{report_path}")
-        else:
-            for piface_source in p._samples_by_piface(p.piface_key).keys():
-                # Do the stats and object summarization.
-                pipeline_name = PipelineInterface(piface_source).pipeline_name
-                # run the report builder. a set of HTML pages is produced
-                report_path = html_report_builder(pipeline_name=pipeline_name)
-                _LOGGER.info(
-                    f"Sample-level '{pipeline_name}' pipeline HTML report: "
-                    f"{report_path}")
-
+        html_report_builder_project = HTMLReportBuilderProject(prj=p)
+        self.counter = LooperCounter(
+            len(p.project_pipeline_interfaces))
+        for piface in p.project_pipeline_interface_sources:
+            # Do the stats and object summarization.
+            # run the report builder. a set of HTML pages is produced
+            report_path = html_report_builder_project(piface_source=piface)
+            _LOGGER.info(f"Project-level pipeline HTML report: {report_path}")
 
 class Tabulator(Executor):
     """ Project/Sample statistics and table output generator """
-    def __init__(self, prj):
-        # call the inherited initialization
-        super(Tabulator, self).__init__(prj)
-        self.prj = prj
-
     def __call__(self, args):
-        p = self.prj
         project_level = args.project
         if project_level:
             self.counter = LooperCounter(
-                len(p.project_pipeline_interfaces))
-            for piface in p.project_pipeline_interfaces:
+                len(self.prj.project_pipeline_interfaces))
+            for piface in self.prj.project_pipeline_interfaces:
                 # Do the stats and object summarization.
                 pipeline_name = piface.pipeline_name
                 # pull together all the fits and stats from each sample into
                 # project-combined spreadsheets.
                 self.stats = _create_stats_summary(
-                    p, pipeline_name, project_level, self.counter)
+                    self.prj, pipeline_name, project_level, self.counter)
                 self.objs = _create_obj_summary(
-                    p, pipeline_name,  project_level, self.counter)
+                    self.prj, pipeline_name,  project_level, self.counter)
         else:
-            for piface_source in p._samples_by_piface(p.piface_key).keys():
+            for piface_source in self.prj._samples_by_piface(self.prj.piface_key).keys():
                 # Do the stats and object summarization.
                 pipeline_name = PipelineInterface(
                     config=piface_source).pipeline_name
                 # pull together all the fits and stats from each sample into
                 # project-combined spreadsheets.
                 self.stats = _create_stats_summary(
-                    p, pipeline_name, project_level, self.counter)
+                    self.prj, pipeline_name, project_level, self.counter)
                 self.objs = _create_obj_summary(
-                    p, pipeline_name, project_level, self.counter)
+                    self.prj, pipeline_name, project_level, self.counter)
         return self
 
 
@@ -520,7 +499,7 @@ def _create_stats_summary(project, pipeline_name, project_level, counter):
             columns |= set(reported_stats.keys())
 
     tsv_outfile_path = get_file_for_project(
-        project, f'{pipeline_name}_stats_summary.tsv')
+        project, pipeline_name, 'stats_summary.tsv')
     tsv_outfile = open(tsv_outfile_path, 'w')
     tsv_writer = csv.DictWriter(
         tsv_outfile, fieldnames=list(columns), delimiter='\t', extrasaction='ignore')
@@ -573,7 +552,7 @@ def _create_obj_summary(project, pipeline_name, project_level, counter):
             sample_reported_objects = {k: dict(v) for k, v in res.items()}
             reported_objects[sn] = sample_reported_objects
     objs_yaml_path = get_file_for_project(
-        project, f'{pipeline_name}_objs_summary.yaml')
+        project, pipeline_name, 'objs_summary.yaml')
     with open(objs_yaml_path, 'w') as outfile:
         yaml.dump(reported_objects, outfile)
     _LOGGER.info(f"'{pipeline_name}' pipeline objects summary "
@@ -618,6 +597,7 @@ def destroy_summary(prj, dry_run=False):
     """
     Delete the summary files if not in dry run mode
     """
+    # TODO: update after get_file_for_project signature change
     _remove_or_dry_run([get_file_for_project(prj, "summary.html"),
                         get_file_for_project(prj, 'stats_summary.tsv'),
                         get_file_for_project(prj, 'objs_summary.tsv'),
