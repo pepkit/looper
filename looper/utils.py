@@ -137,8 +137,8 @@ def get_file_for_project(prj, pipeline_name, appendix=None, directory=None):
     """
     fp = os.path.join(
         prj.output_dir, directory or "", f"{prj[NAME_KEY]}_{pipeline_name}")
-    if hasattr(prj, AMENDMENTS_KEY) and getattr(prj, AMENDMENTS_KEY):
-        fp += f"_{'_'.join(getattr(prj, AMENDMENTS_KEY))}"
+    if hasattr(prj, "amendments") and getattr(prj, "amendments"):
+        fp += f"_{'_'.join(prj.amendments)}"
     fp += f"_{appendix}"
     return fp
 

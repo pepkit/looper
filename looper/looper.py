@@ -416,14 +416,31 @@ class Reporter(Executor):
     def __call__(self, args):
         # initialize the report builder
         p = self.prj
-        html_report_builder_project = HTMLReportBuilderProject(prj=p)
-        self.counter = LooperCounter(
-            len(p.project_pipeline_interfaces))
-        for piface in p.project_pipeline_interface_sources:
-            # Do the stats and object summarization.
-            # run the report builder. a set of HTML pages is produced
-            report_path = html_report_builder_project(piface_source=piface)
-            _LOGGER.info(f"Project-level pipeline HTML report: {report_path}")
+        project_level = args.project
+        if project_level:
+            html_report_builder_project = HTMLReportBuilderProject(prj=p)
+            self.counter = LooperCounter(
+                len(p.project_pipeline_interfaces))
+            for piface in p.project_pipeline_interface_sources:
+                pn = PipelineInterface(piface).pipeline_name
+                _LOGGER.info(self.counter.show(
+                    name=p.name, type="project", pipeline_name=pn))
+                # Do the stats and object summarization.
+                # run the report builder. a set of HTML pages is produced
+                report_path = html_report_builder_project(piface_source=piface)
+                _LOGGER.info(
+                    f"Project-level pipeline '{pn}' HTML report: {report_path}")
+        else:
+            html_report_builder = HTMLReportBuilder(
+                prj=self.prj, project_level=False)
+            for sample_piface_source in self.prj.pipeline_interface_sources:
+                # Do the stats and object summarization.
+                pn = PipelineInterface(sample_piface_source).pipeline_name
+                # run the report builder. a set of HTML pages is produced
+                report_path = html_report_builder(pipeline_name=pn)
+                _LOGGER.info(
+                    f"Sample-level pipeline '{pn}' HTML report: {report_path}")
+
 
 class Tabulator(Executor):
     """ Project/Sample statistics and table output generator """

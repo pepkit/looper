@@ -222,11 +222,14 @@
   			<div class="row" style="margin-top: 20px; margin-bottom: 25px;">
 					<div class="col-9">
 						<h3 style="margin-bottom: 0px;">Looper <code>{{ project_name }}</code> summary for <code>{{pipeline_name}}</code> pipeline</h3>
+						{% if amendments is not none %}
+							<h4 style="margin-bottom: 0px;">Amendments: <code>{{ amendments|join(', ') }}</code></h4>
+						{% endif %}
 					</div>
-				<div class="col-3">
-					<a class="btn btn-outline-dark {{ 'disabled' if stats_file_path is none }}" href='{{ stats_file_path }}' role="button">Stats summary file</a>
-					<a class="btn btn-outline-dark {{ 'disabled' if objs_file_path is none }}" href='{{ objs_file_path }}' role="button">Objects summary file</a>
-				</div>
+					<div class="col-3">
+						<a class="btn btn-outline-dark {{ 'disabled' if stats_file_path is none }}" href='{{ stats_file_path }}' role="button">Stats summary file</a>
+						<a class="btn btn-outline-dark {{ 'disabled' if objs_file_path is none }}" href='{{ objs_file_path }}' role="button">Objects summary file</a>
+					</div>
 				</div>
 			<div class="row">
 				<div class="col-12">

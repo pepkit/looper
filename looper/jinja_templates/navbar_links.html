@@ -1,3 +1,13 @@
+              {% if project_report is not none %}
+                  <li class="nav-item active">
+                    <a class="nav-link" href="{{project_report}}">Linked Project report</a>
+                  </li>
+              {% endif %}
+              {% if sample_reports_parent is not none %}
+                  <li class="nav-item active">
+                    <a class="nav-link" href="{{sample_reports_parent}}">Linked sample reports</a>
+                  </li>
+              {% endif %}
               {% if status_page_name is not none %}
               <!-- if the status_page_name is not defined, the status page link is omitted -->
                   <li class="nav-item active">
