@@ -26,21 +26,6 @@
                 <a class="btn btn-outline-dark ml-2 {{'disabled' if profile_file_path is none}}" href='{{ profile_file_path }}' role="button">Pipeline profile</a>
                 <a class="btn btn-outline-dark ml-2 {{'disabled' if commands_file_path is none}}" href='{{ commands_file_path }}' role="button">Pipeline commands</a>
                 <a class="btn btn-outline-dark ml-2 {{'disabled' if stats_file_path is none}}" href='{{ stats_file_path }}' role="button">Stats file path</a>
-<!--                {% if profile_file_path is none %}-->
-<!--                    <a class="btn btn-outline-dark ml-2 disabled" href='{{ profile_file_path }}' role="button">Pipeline profile</a>-->
-<!--                {% else %}-->
-<!--                    <a class="btn btn-outline-dark ml-2" href='{{ profile_file_path }}' role="button">Pipeline profile</a>-->
-<!--                {% endif %}-->
-<!--                {% if commands_file_path is none %}-->
-<!--                    <a class="btn btn-outline-dark ml-2 disabled" href='{{ commands_file_path }}' role="button">Pipeline commands</a>-->
-<!--                {% else %}-->
-<!--                    <a class="btn btn-outline-dark ml-2" href='{{ commands_file_path }}' role="button">Pipeline commands</a>-->
-<!--                {% endif %}-->
-<!--                {% if stats_file_path is none %}-->
-<!--                    <a class="btn btn-outline-dark ml-2 disabled" href='{{ stats_file_path }}' role="button">Stats summary file</a>-->
-<!--                {% else %}-->
-<!--                    <a class="btn btn-outline-dark ml-2" href='{{ stats_file_path }}' role="button">Stats summary file</a>-->
-<!--                {% endif %}-->
                 </p>
             </div>
             <hr>
@@ -70,11 +55,13 @@
             	{% endif %}
             	<!-- Expects a 2 lists of lists: figures and links -->
             	{% if links[0] is defined %}
-                    <h5>Links</h5>
-                    <div class="list-group">
-	        		{% for link in links %}
-			    		<a href='{{ link[1] }}' class="list-group-item">{{ link[0] }}</a>
-	        		{% endfor %}
+                <h5>Links</h5>
+                <ul class="list-group">
+                  <li class="list-group-item list-group-item-dark" aria-current="true">Get a reported object for sample</li>
+                {% for link in links %}
+                  <a class="list-group-item list-group-item-action" href='{{ link[1] }}'>{{ link[0] }}</a>
+                {% endfor %}
+                </ul>
 	        		</div>
             	{% endif %}
             	{% if figures[0] is defined %}

@@ -34,7 +34,9 @@
     
     function displayPlottableColumns(){
         for(var col in plotDict){
-            $("#plot-cols").append("<a class='list-group-item list-group-item-action' href='#' onclick='graphCol(\"" + col + "\");return false;'>" + col+ "</a>");
+            displayCol = col.replace("_", " ")
+            $("#plot-cols").append(
+                "<a class='list-group-item list-group-item-action' href='#' onclick='graphCol(\"" + col + "\");return false;'>" + displayCol + "</a>");
         }
     }
 

@@ -15,11 +15,12 @@
 			{% endif %}
 			<!-- Expects a 2 lists of lists: figures and links -->
 			{% if links[0] is defined %}
-				<div class="list-group">
+				<ul class="list-group">
+					<li class="list-group-item list-group-item-dark" aria-current="true">Get a reported object for sample</li>
 				{% for link in links %}
-					<a href='{{ link[1] }}' class="list-group-item">{{ link[0] }}</a>
+					<a class="list-group-item list-group-item-action" href='{{ link[1] }}'>{{ link[0] }}</a>
 				{% endfor %}
-				</div>
+				</ul>
 			{% endif %}
 			{% if figures[0] is defined %}
 				<div class='container-fluid'>
