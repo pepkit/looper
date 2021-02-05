@@ -1,39 +1,67 @@
 <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/vega@5"></script>
+<script src="https://cdn.jsdelivr.net/npm/vega-lite@4"></script>
+<script src="https://cdn.jsdelivr.net/npm/vega-embed@6"></script>
 <script type="text/javascript">
     var plotDict = {}; // variable containing column values (col_name:string -> col_values:list)
+    var plotArray = [];
     var statsTable = {{ stats_json }}; // Jinja template variable
     var columns = {{ columns_json }}; // Jinja template variable
     const sampleNames = Object.keys(statsTable);
 
+    console.log("plotDict: ", plotDict);
+
     for (var i in columns){
         column = columns[i]
         if (column === "sample_name") { continue; }
-        plotDict[column] = []
+        plotArray[column] = []
         for (var j in sampleNames){
-            plotDict[column].push(parseFloat(statsTable[sampleNames[j]][column]))
+            plotArray[column][j] = {}
+            plotArray[column][j]["sample_name"] = sampleNames[j]
+            plotArray[column][j][column] = parseFloat(statsTable[sampleNames[j]][column])
         }
     }
-
-    console.log(plotDict);
+    console.log("plotArray: ", plotArray);
 
     function graphCol(colname){
-      /* Creates a graph using Plotly.js */
-      var data = [{
-          y: plotDict[colname],
-          x: sampleNames,
-          type: 'bar'
-      }];
-      var title = colname.replace("_", " ");
-      var layout = {
-          title: title
+      var dispColName = colname.replace("_", " ")
+      var vegaLiteSpec = {
+          $schema: 'https://vega.github.io/schema/vega-lite/v4.json',
+          title: {
+              text: dispColName + " across samples",
+              fontSize: 15,
+              interactive: true
+              },
+          description: 'A bar chart of one column values across samples.',
+          data: {values: plotArray[colname]},
+          width: 600,
+          height: 300,
+          mark: 'bar',
+          encoding: {
+            x: {
+                field: 'sample_name',
+                type: 'ordinal',
+                axis: {labelFontSize: 15, titleFontSize: 15},
+                title: "sample name"
+            },
+            y: {
+                field: colname,
+                type: 'quantitative',
+                axis: {labelFontSize: 15, titleFontSize: 15},
+                title: dispColName
+            },
+            tooltip: [
+                {field: "sample_name", type: "nominal", title: "sample name"},
+                {field: colname, type: "quantitative", title: dispColName}
+                ]
+            }
       };
-      chart = document.getElementById('charts');
-      Plotly.newPlot(chart, data, layout);
+      vegaEmbed('#vegaCharts', vegaLiteSpec);
     }
     
     function displayPlottableColumns(){
-        for(var col in plotDict){
+        for(var col in plotArray){
             displayCol = col.replace("_", " ")
             $("#plot-cols").append(
                 "<a class='list-group-item list-group-item-action' href='#' onclick='graphCol(\"" + col + "\");return false;'>" + displayCol + "</a>");
