@@ -1,13 +1,6 @@
 import os
 import glob
-import pandas as _pd
 import logging
-import jinja2
-import re
-import sys
-from warnings import warn
-from datetime import timedelta
-from json import dumps
 from ._version import __version__ as v
 from .const import *
 from .pipeline_interface import PipelineInterface
@@ -15,11 +8,8 @@ from .exceptions import PipelineInterfaceConfigError
 from .html_reports import HTMLReportBuilder, render_jinja_template, \
     get_jinja_env, save_html, fetch_pipeline_results, \
     _get_file_for_sample, _get_flags
-from .processed_project import get_project_outputs
-from .utils import get_file_for_project
 from peppy.const import *
 from eido import read_schema
-from copy import copy as cp
 _LOGGER = logging.getLogger("looper")
 
 
@@ -178,19 +168,6 @@ class HTMLReportBuilderProject(object):
 
         sample_dir = os.path.join(self.prj.results_folder, sample_name)
         if os.path.exists(sample_dir):
-            log_path = _get_file_for_sample(
-                self.prj, sample_name, "log.md", self.prj_piface.pipeline_name)
-            profile_path = _get_file_for_sample(
-                self.prj, sample_name, "profile.tsv", self.prj_piface.pipeline_name)
-            commands_path = _get_file_for_sample(
-                self.prj, sample_name, "commands.sh", self.prj_piface.pipeline_name)
-            stats_path = _get_file_for_sample(
-                self.prj, sample_name, "stats.tsv")
-            # get links to the files
-            stats_file_path = os.path.relpath(stats_path, self.pipeline_reports)
-            profile_file_path = os.path.relpath(profile_path, self.pipeline_reports)
-            commands_file_path = os.path.relpath(commands_path, self.pipeline_reports)
-            log_file_path = os.path.relpath(log_path, self.pipeline_reports)
             flag = _get_flags(sample_dir, self.prj_piface.pipeline_name)
             if not flag:
                 button_class = "btn btn-secondary"
@@ -208,6 +185,19 @@ class HTMLReportBuilderProject(object):
                 else:
                     button_class = flag_dict["button_class"]
                     flag = flag_dict["flag"]
+
+        highlighted_results = fetch_pipeline_results(
+            project=self.prj,
+            pipeline_name=self.prj_piface.pipeline_name,
+            sample_name=None,
+            inclusion_fun=lambda x: x == "file",
+            highlighted=True
+        )
+
+        for k in highlighted_results.keys():
+            highlighted_results[k]["path"] = os.path.relpath(
+                highlighted_results[k]["path"], self.pipeline_reports)
+
         links = []
         file_results = fetch_pipeline_results(
             project=self.prj,
@@ -233,9 +223,7 @@ class HTMLReportBuilderProject(object):
         template_vars = dict(
             report_class="Project",
             navbar=navbar, footer=footer, sample_name=sample_name,
-            stats_file_path=stats_file_path, links=links,
-            profile_file_path=profile_file_path,  figures=figures,
-            commands_file_path=commands_file_path, log_file_path=log_file_path,
+            links=links, figures=figures, highlighted_results=highlighted_results,
             button_class=button_class, sample_stats=sample_stats, flag=flag,
             pipeline_name=self.prj_piface.pipeline_name, amendments=self.prj.amendments
         )

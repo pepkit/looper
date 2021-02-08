@@ -431,8 +431,7 @@ class Reporter(Executor):
                 _LOGGER.info(
                     f"Project-level pipeline '{pn}' HTML report: {report_path}")
         else:
-            html_report_builder = HTMLReportBuilder(
-                prj=self.prj, project_level=False)
+            html_report_builder = HTMLReportBuilder(prj=self.prj)
             for sample_piface_source in self.prj.pipeline_interface_sources:
                 # Do the stats and object summarization.
                 pn = PipelineInterface(sample_piface_source).pipeline_name

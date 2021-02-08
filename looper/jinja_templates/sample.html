@@ -22,10 +22,9 @@
             <div class="container-fluid">
                 <p class="text-left">
                 <button type="button" class='{{ button_class }}' disabled>STATUS: {{ flag }}</button>
-                <a class="btn btn-outline-dark ml-2 {{'disabled' if log_file_path is none}}" href='{{ log_file_path }}' role="button">Log file</a>
-                <a class="btn btn-outline-dark ml-2 {{'disabled' if profile_file_path is none}}" href='{{ profile_file_path }}' role="button">Pipeline profile</a>
-                <a class="btn btn-outline-dark ml-2 {{'disabled' if commands_file_path is none}}" href='{{ commands_file_path }}' role="button">Pipeline commands</a>
-                <a class="btn btn-outline-dark ml-2 {{'disabled' if stats_file_path is none}}" href='{{ stats_file_path }}' role="button">Stats file path</a>
+                    {% for hr_id, hr in highlighted_results.items() %}
+                        <a class="btn btn-outline-dark ml-2" href='{{ hr["path"] }}' role="button">{{ hr["title"] }}</a>
+                    {% endfor %}
                 </p>
             </div>
             <hr>

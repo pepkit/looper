@@ -86,8 +86,7 @@ class HTMLReportBuilder(object):
             os.makedirs(self.pipeline_reports)
         pages = list()
         labels = list()
-        obj_result_ids = [k for k, _ in self.schema.items()
-                          if self.schema[k]["type"] in OBJECT_TYPES]
+        obj_result_ids = self.get_nonhighlighted_results(OBJECT_TYPES)
 
         for key in obj_result_ids:
             desc = self.schema[key]["description"] \
@@ -191,8 +190,7 @@ class HTMLReportBuilder(object):
             file_name=os.path.join(self.pipeline_reports, "samples.html"),
             wd=wd, context=context)
         # determine the outputs IDs by type
-        obj_result_ids = {k: v for k, v in self.schema.items()
-                          if self.schema[k]["type"] in OBJECT_TYPES}
+        obj_result_ids = self.get_nonhighlighted_results(OBJECT_TYPES)
         dropdown_keys_objects = None
         dropdown_relpaths_objects = None
         sample_names = None
@@ -231,10 +229,9 @@ class HTMLReportBuilder(object):
         :param str navbar: HTML to be included as the navbar in the main summary page
         :param str footer: HTML to be included as the footer
         """
-        file_results = [k for k, v in self.schema.items()
-                        if self.schema[k]["type"] == "file"]
-        image_results = [k for k, v in self.schema.items()
-                         if self.schema[k]["type"] == "image"]
+        file_results = self.get_nonhighlighted_results(["file"])
+        image_results = self.get_nonhighlighted_results(["image"])
+
         if not os.path.exists(self.pipeline_reports):
             os.makedirs(self.pipeline_reports)
         links = []
@@ -247,16 +244,20 @@ class HTMLReportBuilder(object):
                     project=self.prj,
                     pipeline_name=self.pipeline_name,
                     sample_name=sample.sample_name
-                )[file_result]
+                )
+                if file_result not in sample_result:
+                    break
+                sample_result = sample_result[file_result]
                 links.append([sample.sample_name, sample_result["path"]])
-            link_desc = self.schema[file_result]["description"] \
-                if "description" in self.schema[file_result] else "No description in schema"
-            template_vars = dict(
-                navbar=navbar, footer=footer, name=sample_result["title"],
-                figures=[], links=links, desc=link_desc
-            )
-            save_html(html_page_path, render_jinja_template(
-                "object.html", self.j_env, args=template_vars))
+            else:
+                link_desc = self.schema[file_result]["description"] \
+                    if "description" in self.schema[file_result] else "No description in schema"
+                template_vars = dict(
+                    navbar=navbar, footer=footer, name=sample_result["title"],
+                    figures=[], links=links, desc=link_desc
+                )
+                save_html(html_page_path, render_jinja_template(
+                    "object.html", self.j_env, args=template_vars))
 
         for image_result in image_results:
             html_page_path = os.path.join(
@@ -266,17 +267,21 @@ class HTMLReportBuilder(object):
                     project=self.prj,
                     pipeline_name=self.pipeline_name,
                     sample_name=sample.sample_name
-                )[image_result]
+                )
+                if image_result not in sample_result:
+                    break
+                sample_result = sample_result[image_result]
                 figures.append([sample_result["path"], sample.sample_name, sample_result["thumbnail_path"]])
-            img_desc = self.schema[image_result]["description"] \
-                if "description" in self.schema[image_result] else "No description in schema"
-            template_vars = dict(
-                navbar=navbar, footer=footer, name=sample_result["title"],
-                figures=figures, links=[], desc=img_desc
-            )
-            _LOGGER.debug(f"object.html | template_vars:\n{template_vars}")
-            save_html(html_page_path, render_jinja_template(
-                "object.html", self.j_env, args=template_vars))
+            else:
+                img_desc = self.schema[image_result]["description"] \
+                    if "description" in self.schema[image_result] else "No description in schema"
+                template_vars = dict(
+                    navbar=navbar, footer=footer, name=sample_result["title"],
+                    figures=figures, links=[], desc=img_desc
+                )
+                _LOGGER.debug(f"object.html | template_vars:\n{template_vars}")
+                save_html(html_page_path, render_jinja_template(
+                    "object.html", self.j_env, args=template_vars))
 
     def create_sample_html(self, sample_stats, navbar, footer, sample_name):
         """
@@ -296,19 +301,6 @@ class HTMLReportBuilder(object):
 
         sample_dir = os.path.join(self.prj.results_folder, sample_name)
         if os.path.exists(sample_dir):
-            log_path = _get_file_for_sample(
-                self.prj, sample_name, "log.md", self.pipeline_name)
-            profile_path = _get_file_for_sample(
-                self.prj, sample_name, "profile.tsv", self.pipeline_name)
-            commands_path = _get_file_for_sample(
-                self.prj, sample_name, "commands.sh", self.pipeline_name)
-            stats_path = _get_file_for_sample(
-                self.prj, sample_name, "stats.tsv")
-            # get links to the files
-            stats_file_path = os.path.relpath(stats_path, self.pipeline_reports)
-            profile_file_path = os.path.relpath(profile_path, self.pipeline_reports)
-            commands_file_path = os.path.relpath(commands_path, self.pipeline_reports)
-            log_file_path = os.path.relpath(log_path, self.pipeline_reports)
             flag = _get_flags(sample_dir, self.pipeline_name)
             if not flag:
                 button_class = "btn btn-secondary"
@@ -326,6 +318,18 @@ class HTMLReportBuilder(object):
                 else:
                     button_class = flag_dict["button_class"]
                     flag = flag_dict["flag"]
+        highlighted_results = fetch_pipeline_results(
+            project=self.prj,
+            pipeline_name=self.pipeline_name,
+            sample_name=sample_name,
+            inclusion_fun=lambda x: x == "file",
+            highlighted=True
+        )
+
+        for k in highlighted_results.keys():
+            highlighted_results[k]["path"] = os.path.relpath(
+                highlighted_results[k]["path"], self.pipeline_reports)
+
         links = []
         file_results = fetch_pipeline_results(
             project=self.prj,
@@ -351,10 +355,8 @@ class HTMLReportBuilder(object):
         template_vars = dict(
             report_class="Sample",
             navbar=navbar, footer=footer, sample_name=sample_name,
-            stats_file_path=stats_file_path, links=links,
-            profile_file_path=profile_file_path,  figures=figures,
-            commands_file_path=commands_file_path, log_file_path=log_file_path,
-            button_class=button_class, sample_stats=sample_stats, flag=flag,
+            links=links, figures=figures, button_class=button_class,
+            sample_stats=sample_stats, flag=flag, highlighted_results=highlighted_results,
             pipeline_name=self.pipeline_name, amendments=self.prj.amendments
         )
         _LOGGER.debug(f"sample.html | template_vars:\n{template_vars}")
@@ -376,79 +378,6 @@ class HTMLReportBuilder(object):
                              footer=footer)
         _LOGGER.debug(f"status.html | template_vars:\n{template_vars}")
         return render_jinja_template("status.html", self.j_env, template_vars)
-
-    def create_project_objects(self):
-        """
-        Render available project level outputs defined in the
-        pipeline output schemas
-        """
-        # TODO: since a separate report is created from the
-        #  project-level pipeline (?), some parts of sample.html creation
-        #  can be abstracted and used here is is possible to treat project
-        #  level pipeline results as a single sample?
-
-        _LOGGER.debug("Building project objects section...")
-        figures = []
-        links = []
-        warnings = []
-        # For each protocol report the project summarizers' results
-        self.prj.populate_pipeline_outputs()
-        ifaces = self.prj.project_pipeline_interfaces
-        # Check the interface files for summarizers
-        for iface in ifaces:
-            schema_paths = \
-                iface.get_pipeline_schemas(OUTPUT_SCHEMA_KEY)
-            if schema_paths is not None:
-                if isinstance(schema_paths, str):
-                    schema_paths = [schema_paths]
-                for output_schema_path in schema_paths:
-                    results = get_project_outputs(
-                        self.prj, read_schema(output_schema_path))
-                    for name, result in results.items():
-                        title = str(result.setdefault('title', "No caption"))
-                        result_type = str(result['type'])
-                        result_file = str(result['path'])
-                        result_img = \
-                            str(result.setdefault('thumbnail_path', None))
-                        if result_img and not os.path.isabs(result_file):
-                            result_img = os.path.join(
-                                self.output_dir, result_img)
-                        if not os.path.isabs(result_file):
-                            result_file = os.path.join(
-                                self.output_dir, result_file)
-                        _LOGGER.debug("Looking for project file: {}".
-                                      format(result_file))
-                        # Confirm the file itself was produced
-                        if glob.glob(result_file):
-                            file_path = str(glob.glob(result_file)[0])
-                            file_relpath = \
-                                os.path.relpath(file_path, self.output_dir)
-                            if result_type == "image":
-                                # Add as a figure, find thumbnail
-                                search = os.path.join(self.output_dir, result_img)
-                                if glob.glob(search):
-                                    img_path = str(glob.glob(search)[0])
-                                    img_relpath = \
-                                        os.path.relpath(img_path, self.output_dir)
-                                    figures.append(
-                                        [file_relpath, title, img_relpath])
-                            # add as a link otherwise
-                            # TODO: add more fine-grained type support?
-                            #  not just image and link
-                            else:
-                                links.append([title, file_relpath])
-                        else:
-                            warnings.append("{} ({})".format(title,
-                                                             result_file))
-            else:
-                _LOGGER.debug("No project-level outputs defined in "
-                              "schema: {}".format(schema_paths))
-        if warnings:
-            _LOGGER.warning("Not found: {}".
-                            format([str(x) for x in warnings]))
-        template_vars = dict(figures=figures, links=links)
-        return render_jinja_template("project_object.html", self.j_env,
-                                     template_vars)
 
     def create_index_html(self, navbar, footer):
         """
@@ -519,8 +448,6 @@ class HTMLReportBuilder(object):
             path=os.path.join(self.pipeline_reports, "status.html"),
             template=self.create_status_html(status_tab, navbar, footer)
         )
-        # Add project level objects
-        # project_objects = self.create_project_objects()
         # Complete and close HTML file
         columns = [SAMPLE_NAME_ATTR] + list(sample_stat_results.keys())
         template_vars = dict(
@@ -534,6 +461,24 @@ class HTMLReportBuilder(object):
         _LOGGER.debug(f"index.html | template_vars:\n{template_vars}")
         save_html(self.index_html_path, render_jinja_template(
             "index.html", self.j_env, template_vars))
+
+    def get_nonhighlighted_results(self, types):
+        """
+        Get a list of non-highlighted results in the schema
+
+        :param list[str] types: types to narrow down the results
+        :return list[str]: result ID that are of the requested type and
+            are not highlighted
+        """
+        results = []
+        for k, v in self.schema.items():
+            if self.schema[k]["type"] in types:
+                if "highlight" not in self.schema[k].keys():
+                    results.append(k)
+                # intentionally "== False" to exclude "falsy" values
+                elif self.schema[k]["highlight"] == False:
+                    results.append(k)
+        return results
 
     def _stats_to_json_str(self):
         results = {}
@@ -733,8 +678,9 @@ def _read_tsv_to_json(path):
     return df.to_json()
 
 
-def fetch_pipeline_results(project, pipeline_name, sample_name=None,
-                           inclusion_fun=None, casting_fun=None):
+def fetch_pipeline_results(
+        project, pipeline_name, sample_name=None, inclusion_fun=None,
+        casting_fun=None, highlighted=False):
     """
     Get the specific pipeline results for sample based on inclusion function
 
@@ -746,6 +692,7 @@ def fetch_pipeline_results(project, pipeline_name, sample_name=None,
         function will be fed with is: 'image' or 'integer'
     :param callable(str) casting_fun: a function that will be used to cast the
         each of the results to a proper type before returning, e.g int, str
+    :param bool highlighted: return the highlighted or regular results
     :return dict: selected pipeline results
     """
     psms = project.get_pipestat_managers(
@@ -768,7 +715,9 @@ def fetch_pipeline_results(project, pipeline_name, sample_name=None,
     rep_data = psm.data[psm.namespace][psm.record_identifier].items()
     results = {k: casting_fun(v) for k, v in rep_data
                if k in psm.schema and inclusion_fun(psm.schema[k]["type"])}
-    return results
+    if highlighted:
+        return {k: v for k, v in results.items() if k in psm.highlighted_results}
+    return {k: v for k, v in results.items() if k not in psm.highlighted_results}
 
 
 def uniqify(seq):
