@@ -210,6 +210,14 @@ def build_parser():
                 "-f", "--flags", nargs='*', default=FLAGS,
                 type=html_select(choices=FLAGS), metavar="F",
                 help="Check on only these flags/status values")
+        check_subparser.add_argument(
+                "--project", help="Process only project-level pipelines",
+                action="store_true", default=False
+            )
+        check_subparser.add_argument(
+            "--describe-codes", help="Print status codes description",
+            action="store_true", default=False
+        )
 
         for subparser in [destroy_subparser, clean_subparser]:
             subparser.add_argument(

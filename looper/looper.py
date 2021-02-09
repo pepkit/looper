@@ -25,6 +25,8 @@ from colorama import Fore, Style
 from shutil import rmtree
 from jsonschema import ValidationError
 from copy import copy
+from rich.console import Console
+from rich.table import Table
 
 from . import __version__, build_parser, _LEVEL_BY_VERBOSITY
 from .conductor import SubmissionConductor
@@ -77,56 +79,69 @@ class Executor(object):
 
 class Checker(Executor):
 
-    def __call__(self, flags=None, all_folders=False, max_file_count=30):
+    def __call__(self, args):
         """
-        Check Project status, based on flag files.
+        Check Project status, using pipestat.
 
-        :param Iterable[str] | str flags: Names of flags to check, optional;
-            if unspecified, all known flags will be checked.
-        :param bool all_folders: Whether to check flags in all folders, not
-            just those for samples in the config file from which the Project
-            was created.
-        :param int max_file_count: Maximum number of filepaths to display for a
-            given flag.
+        :param argparse.Namespace: arguments provided to the command
         """
+        from rich.color import Color
 
-        # Handle single or multiple flags, and alphabetize.
-        flags = sorted([flags] if isinstance(flags, str)
-                       else list(flags or FLAGS))
-        flag_text = ", ".join(flags)
-
-        # Collect the files by flag and sort by flag name.
-        _LOGGER.debug("Checking project folders for flags: %s", flag_text)
-        if all_folders:
-            files_by_flag = fetch_flag_files(
-                results_folder=self.prj.results_folder, flags=flags)
+        # aggregate pipeline status data
+        status = {}
+        if args.project:
+            psms = self.prj.get_pipestat_managers(project_level=True)
+            for pipeline_name, psm in psms.items():
+                s = psm.get_status() or "unknown"
+                status.setdefault(pipeline_name, {})
+                status[pipeline_name][self.prj.name] = s
+                _LOGGER.debug(f"{self.prj.name} ({pipeline_name}): {s}")
         else:
-            files_by_flag = fetch_flag_files(prj=self.prj, flags=flags)
+            for sample in self.prj.samples:
+                psms = self.prj.get_pipestat_managers(
+                    sample_name=sample.sample_name)
+                for pipeline_name, psm in psms.items():
+                    s = psm.get_status()
+                    status.setdefault(pipeline_name, {})
+                    status[pipeline_name][sample.sample_name] = s
+                    _LOGGER.debug(f"{sample.sample_name} ({pipeline_name}): {s}")
 
-        # For each flag, output occurrence count.
-        for flag in flags:
-            _LOGGER.info("%s: %d", flag.upper(), len(files_by_flag[flag]))
+        console = Console()
 
-        # For each flag, output filepath(s) if not overly verbose.
-        for flag in flags:
-            try:
-                files = files_by_flag[flag]
-            except Exception as e:
-                _LOGGER.debug("No files for {} flag. Caught exception: {}".
-                              format(flags, getattr(e, 'message', repr(e))))
-                continue
-            # If checking on a specific flag, do not limit the number of
-            # reported filepaths, but do not report empty file lists
-            if len(flags) == 1 and len(files) > 0:
-                _LOGGER.info("%s (%d):\n%s", flag.upper(),
-                             len(files), "\n".join(files))
-            # Regardless of whether 0-count flags are previously reported,
-            # don't report an empty file list for a flag that's absent.
-            # If the flag-to-files mapping is defaultdict, absent flag (key)
-            # will fetch an empty collection, so check for length of 0.
-            if 0 < len(files) <= max_file_count:
-                _LOGGER.info("%s (%d):\n%s", flag.upper(),
-                             len(files), "\n".join(files))
+        for pipeline_name, pipeline_status in status.items():
+            table_title = f"Pipeline: '{pipeline_name}'"
+            table = Table(
+                show_header=True,
+                header_style="bold magenta",
+                title=table_title,
+                width=len(table_title) + 10
+            )
+            table.add_column(f"{'Project' if args.project else 'Sample'} name")
+            table.add_column("Status")
+            for name, status in pipeline_status.items():
+                try:
+                    color = Color.from_rgb(*psm.status_schema[status]["color"]).name
+                except KeyError:
+                    color = "#bcbcbc"
+                table.add_row(name, f"[{color}]{status}[/{color}]")
+            console.print(table)
+        if args.describe_codes:
+            table = Table(
+                show_header=True,
+                header_style="bold magenta",
+                title=f"Status codes description",
+                width=len(psm.status_schema_source) + 20,
+                caption=f"Descriptions source: {psm.status_schema_source}"
+            )
+            table.add_column("Status code")
+            table.add_column("Description")
+            for status, status_obj in psm.status_schema.items():
+                if "description" in status_obj:
+                    desc = status_obj["description"]
+                else:
+                    desc = ""
+                table.add_row(status, desc)
+            console.print(table)
 
 
 class Cleaner(Executor):
@@ -805,7 +820,7 @@ def main():
             Reporter(prj)(args)
 
         if args.command == "check":
-            Checker(prj)(flags=args.flags)
+            Checker(prj)(args)
 
         if args.command == "clean":
             return Cleaner(prj)(args)
