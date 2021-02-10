@@ -108,41 +108,43 @@ class Checker(Executor):
 
         console = Console()
 
-        # if there is a 'completed' status defined, count its occurrences
-        # for a brief summary
-        if 'completed' in psm.status_schema:
-            table_title = f"Number of jobs completed per pipeline"
+        for pipeline_name, pipeline_status in status.items():
+            table_title = f"'{pipeline_name}' pipeline status summary"
             table = Table(
                 show_header=True,
                 header_style="bold magenta",
                 title=table_title,
                 width=len(table_title) + 10
             )
-            table.add_column(f"Pipeline name")
-            table.add_column("Completed / total", justify="center")
-            for pipeline_name, pipeline_status in status.items():
+            table.add_column(f"Status", justify="center")
+            table.add_column("Jobs count/total jobs", justify="center")
+            for status_id in psm.status_schema.keys():
                 status_list = list(pipeline_status.values())
-                completed = status_list.count('completed')
-                table.add_row(pipeline_name, f"{completed} / {len(status_list)}")
+                if status_id in status_list:
+                    status_count = status_list.count(status_id)
+                    table.add_row(status_id, f"{status_count}/{len(status_list)}")
             console.print(table)
 
-        for pipeline_name, pipeline_status in status.items():
-            table_title = f"Pipeline: '{pipeline_name}'"
-            table = Table(
-                show_header=True,
-                header_style="bold magenta",
-                title=table_title,
-                width=len(table_title) + 10
-            )
-            table.add_column(f"{'Project' if args.project else 'Sample'} name")
-            table.add_column("Status", justify="center")
-            for name, status in pipeline_status.items():
-                try:
-                    color = Color.from_rgb(*psm.status_schema[status]["color"]).name
-                except KeyError:
-                    color = "#bcbcbc"
-                table.add_row(name, f"[{color}]{status}[/{color}]")
-            console.print(table)
+        if args.itemized:
+            for pipeline_name, pipeline_status in status.items():
+                table_title = f"Pipeline: '{pipeline_name}'"
+                table = Table(
+                    show_header=True,
+                    header_style="bold magenta",
+                    title=table_title,
+                    width=len(table_title) + 10
+                )
+                table.add_column(f"{'Project' if args.project else 'Sample'} name", justify="center")
+                table.add_column("Status", justify="center")
+                for name, status_id in pipeline_status.items():
+                    try:
+                        color = Color.from_rgb(*psm.status_schema[status_id]["color"]).name
+                    except KeyError:
+                        color = "#bcbcbc"
+                        status_id = "unknown"
+                    table.add_row(name, f"[{color}]{status_id}[/{color}]")
+                console.print(table)
+
         if args.describe_codes:
             table = Table(
                 show_header=True,
@@ -151,8 +153,8 @@ class Checker(Executor):
                 width=len(psm.status_schema_source) + 20,
                 caption=f"Descriptions source: {psm.status_schema_source}"
             )
-            table.add_column("Status code")
-            table.add_column("Description")
+            table.add_column("Status code", justify="center")
+            table.add_column("Description", justify="left")
             for status, status_obj in psm.status_schema.items():
                 if "description" in status_obj:
                     desc = status_obj["description"]

@@ -194,28 +194,17 @@ def build_parser():
                     type=html_range(min_val=1, max_val="num_samples", value=1),
                     help="Number of commands to batch into one job")
 
-        inspect_subparser.add_argument(
-            "-n", "--snames", required=False, nargs="+", metavar="S",
-            help="Name of the samples to inspect")
-        inspect_subparser.add_argument(
-            "-l", "--attr-limit", required=False, type=int, default=10,
-            metavar="L", help="Number of sample attributes to display")
-
-        check_subparser.add_argument(
-                "-A", "--all-folders", action=_StoreBoolActionType,
-                default=False, type=html_checkbox(checked=False),
-                help="Check status for all  output folders, not just for "
-                     "samples specified in the config. Default=False")
-        check_subparser.add_argument(
-                "-f", "--flags", nargs='*', default=FLAGS,
-                type=html_select(choices=FLAGS), metavar="F",
-                help="Check on only these flags/status values")
         check_subparser.add_argument(
                 "--project", help="Process only project-level pipelines",
                 action="store_true", default=False
-            )
+        )
         check_subparser.add_argument(
-            "--describe-codes", help="Print status codes description",
+            "--describe-codes", help="Show status codes description",
+            action="store_true", default=False
+        )
+
+        check_subparser.add_argument(
+            "--itemized", help="Show a detailed, by sample statuses",
             action="store_true", default=False
         )
 
