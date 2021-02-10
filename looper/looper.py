@@ -108,6 +108,24 @@ class Checker(Executor):
 
         console = Console()
 
+        # if there is a 'completed' status defined, count its occurrences
+        # for a brief summary
+        if 'completed' in psm.status_schema:
+            table_title = f"Number of jobs completed per pipeline"
+            table = Table(
+                show_header=True,
+                header_style="bold magenta",
+                title=table_title,
+                width=len(table_title) + 10
+            )
+            table.add_column(f"Pipeline name")
+            table.add_column("Completed / total", justify="center")
+            for pipeline_name, pipeline_status in status.items():
+                status_list = list(pipeline_status.values())
+                completed = status_list.count('completed')
+                table.add_row(pipeline_name, f"{completed} / {len(status_list)}")
+            console.print(table)
+
         for pipeline_name, pipeline_status in status.items():
             table_title = f"Pipeline: '{pipeline_name}'"
             table = Table(
@@ -117,7 +135,7 @@ class Checker(Executor):
                 width=len(table_title) + 10
             )
             table.add_column(f"{'Project' if args.project else 'Sample'} name")
-            table.add_column("Status")
+            table.add_column("Status", justify="center")
             for name, status in pipeline_status.items():
                 try:
                     color = Color.from_rgb(*psm.status_schema[status]["color"]).name
