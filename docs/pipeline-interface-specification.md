@@ -23,6 +23,7 @@ A pipeline interface may contain the following keys:
 - `pipeline_name` (REQUIRED) - A string identifying the pipeline,
 - `pipeline_type` (REQUIRED) - A string indicating a pipeline type: "sample" (for `run`) or "project" (for `runp`),
 - `command_template` (REQUIRED) - A [Jinja2](https://jinja.palletsprojects.com/en/2.11.x/) template used to construct a pipeline command command to run.
+- `linked_pipeline_interfaces` (OPTIONAL) - A collection of paths to sample pipeline interfaces related to this pipeline interface (used only in project pipeline interfaces for `looper report` purposes). 
 - `input_schema` (RECOMMENDED) - A [PEP Schema](http://eido.databio.org) formally defining *required inputs* for the pipeline
 - `output_schema` (RECOMMENDED) - A schema describing the *outputs* of the pipeline
 - `compute` (RECOMMENDED) - Settings for computing resources
@@ -76,6 +77,21 @@ command_template: >
 ```
 
 Arguments wrapped in Jinja2 conditionals will only be added *if the specified attribute exists for the sample*.
+
+### linked_pipeline_interfaces
+
+*Only project pipeline interfaces will respect this attribute*
+
+Since the sample and project pipeline interfaces are completely separate this is the only way to link them together. This attribute is used by `looper report` to organize the produced HTML reports into groups, i.e. project-level report will list linked sample-level reports. 
+
+```
+linked_pipeline_interfaces:
+  - ../pipeline_interface.yaml
+  - /home/john/test/pipeline_interface1.yaml
+```
+
+The paths listed in `linked_pipeline_interfaces` are considered relative to the pipeline interface, unless they are absolute.
+
 
 ### input_schema
 
