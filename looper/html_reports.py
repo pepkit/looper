@@ -443,7 +443,7 @@ class HTMLReportBuilder(object):
             template=self.create_object_parent_html(navbar, footer)
         )
         # Create status page with each sample's status listed
-        status_tab = create_status_table(report_builder=self, final=True)
+        status_tab = create_status_table(pipeline_name=self.pipeline_name, project=self.prj, pipeline_reports_dir=self.pipeline_reports)
         save_html(
             path=os.path.join(self.pipeline_reports, "status.html"),
             template=self.create_status_html(status_tab, navbar, footer)
@@ -728,106 +728,81 @@ def uniqify(seq):
     return [x for x in seq if not (x in seen or seen_add(x))]
 
 
-def create_status_table(report_builder, final=True):
+def create_status_table(project, pipeline_name, pipeline_reports_dir):
     """
     Creates status table, the core of the status page.
-    It is abstracted into a function so that it can be used in other software
-    packages. It can produce a table of two types. With links to the
-    samples/log files and without. The one without can be used to render HTMLs
-     for on-th-fly job status inspection.
 
-    :param bool final: if the status table is created for a finalized looper
-        run. In such a case, links to samples and log files will be provided
     :return str: rendered status HTML file
     """
-    rb = report_builder
-    status_warning = False
-    sample_warning = []
+
+    def _rgb2hex(r, g, b):
+        return "#{:02x}{:02x}{:02x}".format(r, g, b)
+
+    def _warn(what, e, sn):
+        _LOGGER.warning(
+            f"Caught exception: {e}\n"
+            f"Could not determine {what} for sample: {sn}. "
+            f"Not reported or pipestat status schema is faulty.")
+
     log_paths = []
     log_link_names = []
     sample_paths = []
-    sample_link_names = []
-    flags = []
-    row_classes = []
+    sample_names = []
+    statuses = []
+    status_styles = []
     times = []
     mems = []
-    for sample in rb.prj.samples:
-        sample_name = str(sample.sample_name)
-        sample_dir = os.path.join(rb.prj.results_folder, sample_name)
+    status_descs = []
+    for sample in project.samples:
+        psms = project.get_pipestat_managers(
+            sample_name=sample.sample_name
+        )
+        psm = psms[pipeline_name]
+        sample_names.append(sample.sample_name)
+        # status and status style
+        try:
+            status = psm.get_status()
+            statuses.append(status)
+            status_metadata = psm.status_schema[status]
+            status_styles.append(_rgb2hex(*status_metadata["color"]))
+            status_descs.append(status_metadata["description"])
+        except Exception as e:
+            _warn("status", e, sample.sample_name)
+            statuses.append(NO_DATA_PLACEHOLDER)
+            status_styles.append(NO_DATA_PLACEHOLDER)
+            status_descs.append(NO_DATA_PLACEHOLDER)
+        sample_paths.append(f"{sample.sample_name}.html".replace(' ', '_').lower())
+        # log file path
+        try:
+            log = psm.retrieve(result_identifier="log")["path"]
+            assert os.path.exists(log), FileNotFoundError(f"Not found: {log}")
+            log_link_names.append(os.path.basename(log))
+            log_paths.append(os.path.relpath(log, pipeline_reports_dir))
+        except Exception as e:
+            _warn("log", e, sample.sample_name)
+            log_link_names.append(NO_DATA_PLACEHOLDER)
+            log_paths.append("")
+        # runtime and peak mem
+        try:
+            profile = psm.retrieve(result_identifier="profile")["path"]
+            assert os.path.exists(profile), FileNotFoundError(f"Not found: {profile}")
+            df = _pd.read_csv(
+                profile, sep="\t", comment="#", names=PROFILE_COLNAMES)
+            df['runtime'] = _pd.to_timedelta(df['runtime'])
+            times.append(_get_runtime(df))
+            mems.append(_get_maxmem(df))
+        except Exception as e:
+            _warn("profile", e, sample.sample_name)
+            times.append(NO_DATA_PLACEHOLDER)
+            mems.append(NO_DATA_PLACEHOLDER)
 
-        # Confirm sample directory exists, then build page
-        if os.path.exists(sample_dir):
-            # Grab the status flag for the current sample
-            flag = _get_flags(sample_dir, rb.pipeline_name)
-            if not flag:
-                button_class = "table-secondary"
-                flag = "Missing"
-            elif len(flag) > 1:
-                button_class = "table-secondary"
-                flag = "Multiple"
-            else:
-                flag = flag[0]
-                try:
-                    flag_dict = TABLE_APPEARANCE_BY_FLAG[flag]
-                except KeyError:
-                    button_class = "table-secondary"
-                    flag = "Unknown"
-                else:
-                    button_class = flag_dict["button_class"]
-                    flag = flag_dict["flag"]
-            row_classes.append(button_class)
-            # get first column data (sample name/link)
-            page_path = os.path.join(
-                rb.pipeline_reports,
-                f"{sample_name}.html".replace(' ', '_').lower()
-            )
-            page_relpath = os.path.relpath(page_path, rb.pipeline_reports)
-            sample_paths.append(page_relpath)
-            sample_link_names.append(sample_name)
-            # get second column data (status/flag)
-            flags.append(flag)
-            # get third column data (log file/link)
-            log_path = _get_file_for_sample(
-                rb.prj, sample_name, "log.md", rb.pipeline_name)
-            log_relpath = os.path.relpath(log_path, rb.pipeline_reports)
-            log_link_names.append(os.path.basename(log_path))
-            log_paths.append(log_relpath)
-            # get fourth column data (runtime) and fifth column data (memory)
-            profile_file_path = _get_file_for_sample(
-                rb.prj, sample_name, "profile.tsv", rb.pipeline_name)
-            if os.path.exists(profile_file_path):
-                df = _pd.read_csv(profile_file_path, sep="\t", comment="#",
-                                  names=PROFILE_COLNAMES)
-                df['runtime'] = _pd.to_timedelta(df['runtime'])
-                times.append(_get_runtime(df))
-                mems.append(_get_maxmem(df))
-            else:
-                _LOGGER.warning(f"'{profile_file_path}' does not exist")
-                times.append(NO_DATA_PLACEHOLDER)
-                mems.append(NO_DATA_PLACEHOLDER)
-        else:
-            # Sample was not run through the pipeline
-            sample_warning.append(sample_name)
-
-    # Alert the user to any warnings generated
-    if status_warning:
-        _LOGGER.warning("The stats table is incomplete, likely because one or "
-                        "more jobs either failed or is still running.")
-    if sample_warning:
-        _LOGGER.warning("{} samples not present in {}: {}".format(
-            len(sample_warning), rb.prj.results_folder,
-            str([sample for sample in sample_warning])))
-    template_vars = dict(sample_link_names=sample_link_names,
-                         row_classes=row_classes, flags=flags, times=times,
-                         mems=mems)
-    template_name = "status_table_no_links.html"
-    if final:
-        template_name = "status_table.html"
-        template_vars.update(dict(sample_paths=sample_paths,
-                                  log_link_names=log_link_names,
-                                  log_paths=log_paths))
+    template_vars = dict(
+        sample_names=sample_names, log_paths=log_paths,
+        status_styles=status_styles, statuses=statuses, times=times, mems=mems,
+        sample_paths=sample_paths, log_link_names=log_link_names, status_descs=status_descs
+    )
     _LOGGER.debug(f"status_table.html | template_vars:\n{template_vars}")
-    return render_jinja_template(template_name, get_jinja_env(), template_vars)
+    return render_jinja_template("status_table.html", get_jinja_env(), template_vars)
 
 
 def _get_maxmem(profile):
