@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        {% include "head.html" %}
+        <script>
+            $.noConflict();
+            jQuery(function ($) {
+                $('[data-toggle="popover"]').popover();
+            });
+        </script>
+        <title>Looper: {{ sample_name }}</title>
+    </head>
+    {{ navbar }} 
+    <body>
+    	<div class="container">
+            <div class="container-fluid">
+        	   <h3>Sample name: <code>{{ sample_name }}</code></h3>
+            </div>
+            <div class="container-fluid">
+                <p class="text-left">
+                <button type="button" class='{{ button_class }}' disabled>STATUS: {{ flag }}</button>
+                {% if log_file_path is none %}
+                    <a class="btn btn-outline-dark ml-2 disabled" href='{{ log_file_path }}' role="button">Log file</a>
+                {% else %}
+                    <a class="btn btn-outline-dark ml-2" href='{{ log_file_path }}' role="button">Log file</a>
+                {% endif %}
+                {% if profile_file_path is none %}
+                    <a class="btn btn-outline-dark ml-2 disabled" href='{{ profile_file_path }}' role="button">Pipeline profile</a>
+                {% else %}
+                    <a class="btn btn-outline-dark ml-2" href='{{ profile_file_path }}' role="button">Pipeline profile</a>
+                {% endif %}
+                {% if commands_file_path is none %}
+                    <a class="btn btn-outline-dark ml-2 disabled" href='{{ commands_file_path }}' role="button">Pipeline commands</a>
+                {% else %}
+                    <a class="btn btn-outline-dark ml-2" href='{{ commands_file_path }}' role="button">Pipeline commands</a>
+                {% endif %}
+                {% if stats_file_path is none %}
+                    <a class="btn btn-outline-dark ml-2 disabled" href='{{ stats_file_path }}' role="button">Stats summary file</a>
+                {% else %}
+                    <a class="btn btn-outline-dark ml-2" href='{{ stats_file_path }}' role="button">Stats summary file</a>
+                {% endif %}
+                </p>
+            </div>
+            <hr>
+            <div class='container-fluid'>
+    	      	<h3>Looper stats summary</h3>
+    	        <div class="table-responsive-sm">
+    				<table class="table table-sm table-hover table-bordered table-condensed" style="white-space: nowrap; width: 1%;">             
+    					<tbody>
+    						{% for row_name, row_value in sample_stats.items() %}
+    							<tr>
+    								<th>{{ row_name }}</th>
+                                    {% if row_value|length > 60 %}
+    								    <td class="text">{{ row_value|truncate(60,True) }} <a data-html="true" data-toggle="popover" data-placement="top" data-trigger="click" data-content="{{ row_value }}" href="javascript:void(0)"><i class="fa fa-caret-square-o-right" aria-hidden="true"></i></a></td>
+                                    {% else %}
+                                        <td class="text">{{ row_value }}</td>
+                                    {% endif %}
+    							</tr>
+    						{% endfor %}
+    					</tbody>
+    				</table>
+    		    </div>
+            </div>
+            <div class='container-fluid'>
+            	{% if links[0] is defined or figures[0] is defined %}
+            		<hr>
+            		<h3><code>{{ sample_name }}</code> objects</h3>
+            	{% endif %}
+            	<!-- Expects a 2 lists of lists: figures and links -->
+            	{% if links[0] is defined %}
+                    <h5>Links</h5>
+                    <div class="list-group">
+	        		{% for link in links %}
+			    		<a href='{{ link[1] }}' class="list-group-item">{{ link[0] }}</a>
+	        		{% endfor %}
+	        		</div>
+            	{% endif %}
+            	{% if figures[0] is defined %}
+                    <h5>Figures</h5>
+            		{% for figure in figures %}
+                        {% set i = loop.index - 1 %}
+    		            <figure class="figure">
+    		                <a href='{{ figure[0] }}'>
+    		                	<img id="fig" src='{{ figure[2] }}' class="figure-img img-fluid rounded" alt="">
+    		                </a>
+    		                <a href='{{ figure[0] }}'>
+                                <figcaption class="figure-caption text-center"><b>Fig.{{ i }} </b><i>{{ figure[1] }}</i></figcaption>
+    		                </a>
+    		            </figure>
+            		{% endfor %}
+            	{% endif %}
+        	</div>
+        </div>
+    </body>
+    <hr class="featurette-divider">
+    <footer class="text-muted">
+        {{ footer }}
+    </footer>
+</html>

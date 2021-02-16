@@ -689,6 +689,7 @@ class TableOld(Executor):
         self.prj = prj
 
     def __call__(self):
+
         def _create_stats_summary_old(project, counter):
             """
             Create stats spreadsheet and columns to be considered in the report, save
@@ -726,7 +727,7 @@ class TableOld(Executor):
             if missing_files:
                 _LOGGER.warning("Stats files missing for {} samples: {}".
                                 format(len(missing_files), missing_files))
-            tsv_outfile_path = get_file_for_project(project, 'stats_summary.tsv')
+            tsv_outfile_path = get_file_for_project_old(project, 'stats_summary.tsv')
             tsv_outfile = open(tsv_outfile_path, 'w')
             tsv_writer = csv.DictWriter(tsv_outfile, fieldnames=uniqify(columns),
                                         delimiter='\t', extrasaction='ignore')
@@ -767,7 +768,7 @@ class TableOld(Executor):
                 _LOGGER.warning("Object files missing for {} samples: {}".
                                 format(len(missing_files), missing_files))
             # create the path to save the objects file in
-            objs_file = get_file_for_project(project, 'objs_summary.tsv')
+            objs_file = get_file_for_project_old(project, 'objs_summary.tsv')
             objs.to_csv(objs_file, sep="\t")
             _LOGGER.info("Objects summary (n=" +
                          str(len(project.samples) - len(missing_files)) + "): " +

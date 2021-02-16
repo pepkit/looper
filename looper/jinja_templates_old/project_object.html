@@ -1,0 +1,49 @@
+			{% if links[0] is defined or figures[0] is defined %}
+				<div class="row">
+					<div class="col-12">
+						<h3>Looper project objects</h3>
+					</div>
+				</div>
+			{% endif %}
+			{% if figures[0] is defined %}
+				<div class="row">
+					<div class="col-12">
+        				<h5>Figures</h5>
+					</div>
+				</div>
+				<div class="row">
+					<div class="col-12">
+						<!-- figures go here -->
+						<div class='row justify-content-start'>
+							{% for figure in figures %}
+								{% set i = loop.index - 1 %}
+								<figure class="figure">
+									<a href='{{ figure[0] }}'>
+										<img id="fig" src='{{ figure[2] }}' class="figure-img img-fluid rounded" alt="">
+									</a>
+									<a href='{{ figure[0] }}'>
+										<figcaption class="figure-caption text-center"><b>Fig.{{ i }} </b><i>{{ figure[1] }}</i></figcaption>
+									</a>
+								</figure>
+							{% endfor %}
+						</div>
+					</div>
+				</div>
+        	{% endif %}
+        	{% if links[0] is defined %}
+				<div class="row">
+					<div class="col-12">
+						<h5>Links</h5>
+					</div>
+				</div>
+				<div class="row">
+					<div class="col-12">
+						<!-- the list of links goes here -->
+						<div class="list-group" style="display:inline-block">
+							{% for link in links %}
+								<a href='{{ link[1] }}' class="list-group-item">{{ link[0] }}</a>
+							{% endfor %}
+						</div>
+					</div>
+				</div>
+        	{% endif %}

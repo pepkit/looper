@@ -143,6 +143,23 @@ def get_file_for_project(prj, pipeline_name, appendix=None, directory=None):
     return fp
 
 
+def get_file_for_project_old(prj, appendix):
+    """
+    Create a path to the file for the current project.
+    Takes the possibility of amendment being activated at the time
+
+    :param looper.Project prj: project object
+    :param str appendix: the appendix of the file to create the path for,
+        like 'objs_summary.tsv' for objects summary file
+    :return str: path to the file
+    """
+    fp = os.path.join(prj.output_dir, prj[NAME_KEY])
+    if hasattr(prj, AMENDMENTS_KEY) and getattr(prj, AMENDMENTS_KEY):
+        fp += '_' + '_'.join(getattr(prj, AMENDMENTS_KEY))
+    fp += '_' + appendix
+    return fp
+
+
 def jinja_render_template_strictly(template, namespaces):
     """
     Render a command string in the provided namespaces context.
