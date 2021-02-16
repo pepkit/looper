@@ -5,7 +5,7 @@ from ._version import __version__ as v
 from .const import *
 from .pipeline_interface import PipelineInterface
 from .exceptions import PipelineInterfaceConfigError
-from .html_reports import HTMLReportBuilder, render_jinja_template, \
+from .html_reports_pipestat import HTMLReportBuilder, render_jinja_template, \
     get_jinja_env, save_html, fetch_pipeline_results, \
     _get_file_for_sample, _get_flags
 from peppy.const import *

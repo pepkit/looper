@@ -32,8 +32,9 @@ from . import __version__, build_parser, _LEVEL_BY_VERBOSITY
 from .conductor import SubmissionConductor
 from .const import *
 from .exceptions import JobSubmissionException, MisconfigurationException
-from .html_reports import HTMLReportBuilder, fetch_pipeline_results
-from .html_reports_project import HTMLReportBuilderProject
+from .html_reports_pipestat import HTMLReportBuilder, fetch_pipeline_results
+from .html_reports_project_pipestat import HTMLReportBuilderProject
+from .html_reports import HTMLReportBuilderOld
 from .project import Project, ProjectContext
 from .utils import *
 from .pipeline_interface import PipelineInterface
@@ -163,6 +164,58 @@ class Checker(Executor):
                 table.add_row(status, desc)
             console.print(table)
 
+
+class CheckerOld(Executor):
+    def __call__(self, flags=None, all_folders=False, max_file_count=30):
+        """
+        Check Project status, based on flag files.
+
+        :param Iterable[str] | str flags: Names of flags to check, optional;
+            if unspecified, all known flags will be checked.
+        :param bool all_folders: Whether to check flags in all folders, not
+            just those for samples in the config file from which the Project
+            was created.
+        :param int max_file_count: Maximum number of filepaths to display for a
+            given flag.
+        """
+
+        # Handle single or multiple flags, and alphabetize.
+        flags = sorted([flags] if isinstance(flags, str)
+                       else list(flags or FLAGS))
+        flag_text = ", ".join(flags)
+
+        # Collect the files by flag and sort by flag name.
+        _LOGGER.debug("Checking project folders for flags: %s", flag_text)
+        if all_folders:
+            files_by_flag = fetch_flag_files(
+                results_folder=self.prj.results_folder, flags=flags)
+        else:
+            files_by_flag = fetch_flag_files(prj=self.prj, flags=flags)
+
+        # For each flag, output occurrence count.
+        for flag in flags:
+            _LOGGER.info("%s: %d", flag.upper(), len(files_by_flag[flag]))
+
+        # For each flag, output filepath(s) if not overly verbose.
+        for flag in flags:
+            try:
+                files = files_by_flag[flag]
+            except Exception as e:
+                _LOGGER.debug("No files for {} flag. Caught exception: {}".
+                              format(flags, getattr(e, 'message', repr(e))))
+                continue
+            # If checking on a specific flag, do not limit the number of
+            # reported filepaths, but do not report empty file lists
+            if len(flags) == 1 and len(files) > 0:
+                _LOGGER.info("%s (%d):\n%s", flag.upper(),
+                             len(files), "\n".join(files))
+            # Regardless of whether 0-count flags are previously reported,
+            # don't report an empty file list for a flag that's absent.
+            # If the flag-to-files mapping is defaultdict, absent flag (key)
+            # will fetch an empty collection, so check for length of 0.
+            if 0 < len(files) <= max_file_count:
+                _LOGGER.info("%s (%d):\n%s", flag.upper(),
+                             len(files), "\n".join(files))
 
 class Cleaner(Executor):
     """ Remove all intermediate files (defined by pypiper clean scripts). """
@@ -612,12 +665,124 @@ def _create_obj_summary(project, pipeline_name, project_level, counter):
     return reported_objects
 
 
+class ReportOld(Executor):
+    """ Combine project outputs into a browsable HTML report """
+    def __call__(self, args):
+        # initialize the report builder
+        report_builder = HTMLReportBuilderOld(self.prj)
+
+        # Do the stats and object summarization.
+        table = TableOld(self.prj)()
+        # run the report builder. a set of HTML pages is produced
+        report_path = report_builder(table.objs, table.stats,
+                                     uniqify(table.columns))
+
+        _LOGGER.info("HTML Report (n=" + str(len(table.stats)) + "): "
+                     + report_path)
+
+
+class TableOld(Executor):
+    """ Project/Sample statistics and table output generator """
+    def __init__(self, prj):
+        # call the inherited initialization
+        super(TableOld, self).__init__(prj)
+        self.prj = prj
+
+    def __call__(self):
+        def _create_stats_summary_old(project, counter):
+            """
+            Create stats spreadsheet and columns to be considered in the report, save
+            the spreadsheet to file
+            :param looper.Project project: the project to be summarized
+            :param looper.LooperCounter counter: a counter object
+            """
+            # Create stats_summary file
+            columns = []
+            stats = []
+            project_samples = project.samples
+            missing_files = []
+            _LOGGER.info("Creating stats summary...")
+            for sample in project_samples:
+                _LOGGER.info(counter.show(sample.sample_name, sample.protocol))
+                sample_output_folder = sample_folder(project, sample)
+                # Grab the basic info from the annotation sheet for this sample.
+                # This will correspond to a row in the output.
+                sample_stats = sample.get_sheet_dict()
+                columns.extend(sample_stats.keys())
+                # Version 0.3 standardized all stats into a single file
+                stats_file = os.path.join(sample_output_folder, "stats.tsv")
+                if not os.path.isfile(stats_file):
+                    missing_files.append(stats_file)
+                    continue
+                t = _pd.read_csv(stats_file, sep="\t", header=None,
+                                 names=['key', 'value', 'pl'])
+                t.drop_duplicates(subset=['key', 'pl'], keep='last', inplace=True)
+                t.loc[:, 'plkey'] = t['pl'] + ":" + t['key']
+                dupes = t.duplicated(subset=['key'], keep=False)
+                t.loc[dupes, 'key'] = t.loc[dupes, 'plkey']
+                sample_stats.update(t.set_index('key')['value'].to_dict())
+                stats.append(sample_stats)
+                columns.extend(t.key.tolist())
+            if missing_files:
+                _LOGGER.warning("Stats files missing for {} samples: {}".
+                                format(len(missing_files), missing_files))
+            tsv_outfile_path = get_file_for_project(project, 'stats_summary.tsv')
+            tsv_outfile = open(tsv_outfile_path, 'w')
+            tsv_writer = csv.DictWriter(tsv_outfile, fieldnames=uniqify(columns),
+                                        delimiter='\t', extrasaction='ignore')
+            tsv_writer.writeheader()
+            for row in stats:
+                tsv_writer.writerow(row)
+            tsv_outfile.close()
+            _LOGGER.info("Statistics summary (n=" + str(len(stats)) + "): " +
+                         tsv_outfile_path)
+            counter.reset()
+            return stats, uniqify(columns)
+
+        def _create_obj_summary_old(project, counter):
+            """
+            Read sample specific objects files and save to a data frame
+            :param looper.Project project: the project to be summarized
+            :param looper.LooperCounter counter: a counter object
+            :return pandas.DataFrame: objects spreadsheet
+            """
+            _LOGGER.info("Creating objects summary...")
+            objs = _pd.DataFrame()
+            # Create objects summary file
+            missing_files = []
+            for sample in project.samples:
+                # Process any reported objects
+                _LOGGER.info(counter.show(sample.sample_name, sample.protocol))
+                sample_output_folder = sample_folder(project, sample)
+                objs_file = os.path.join(sample_output_folder, "objects.tsv")
+                if not os.path.isfile(objs_file):
+                    missing_files.append(objs_file)
+                    continue
+                t = _pd.read_csv(objs_file, sep="\t", header=None,
+                                 names=['key', 'filename', 'anchor_text',
+                                        'anchor_image', 'annotation'])
+                t['sample_name'] = sample.sample_name
+                objs = objs.append(t, ignore_index=True)
+            if missing_files:
+                _LOGGER.warning("Object files missing for {} samples: {}".
+                                format(len(missing_files), missing_files))
+            # create the path to save the objects file in
+            objs_file = get_file_for_project(project, 'objs_summary.tsv')
+            objs.to_csv(objs_file, sep="\t")
+            _LOGGER.info("Objects summary (n=" +
+                         str(len(project.samples) - len(missing_files)) + "): " +
+                         objs_file)
+            return objs
+        # pull together all the fits and stats from each sample into
+        # project-combined spreadsheets.
+        self.stats, self.columns = _create_stats_summary_old(self.prj, self.counter)
+        self.objs = _create_obj_summary_old(self.prj, self.counter)
+        return self
+
+
 def _create_failure_message(reason, samples):
     """ Explain lack of submission for a single reason, 1 or more samples. """
-    color = Fore.LIGHTRED_EX
-    reason_text = color + reason + Style.RESET_ALL
-    samples_text = ", ".join(samples)
-    return "{}: {}".format(reason_text, samples_text)
+    return f"{Fore.LIGHTRED_EX + reason + Style.RESET_ALL}: {', '.join(samples)}"
 
 
 def _remove_or_dry_run(paths, dry_run=False):
@@ -755,12 +920,12 @@ def main():
         try:
             setattr(args, "config_file", read_cfg_from_dotfile())
         except OSError:
-            print(m + " and dotfile does not exist: {}".format(dotfile_path()))
+            print(m + f" and dotfile does not exist: {dotfile_path()}")
             parser.print_help(sys.stderr)
             sys.exit(1)
         else:
-            print(m + ", using: {}. Read from dotfile ({}).".
-                  format(read_cfg_from_dotfile(), dotfile_path()))
+            print(m + f", using: {read_cfg_from_dotfile()}. "
+                      f"Read from dotfile ({dotfile_path()}).")
     if args.command == "init":
         sys.exit(int(not init_dotfile(dotfile_path(), args.config_file, args.force)))
     args = enrich_args_via_cfg(args, aux_parser)
@@ -833,14 +998,27 @@ def main():
         if args.command == "destroy":
             return Destroyer(prj)(args)
 
+        # pipestat support introduces breaking changes and pipelines run
+        # with no pipestat reporting would not be compatible with
+        # commands: table, report and check. Therefore we plan maintain
+        # the old implementations for a couple of releases.
         if args.command == "table":
-            Tabulator(prj)(args)
+            if args.use_pipestat:
+                Tabulator(prj)(args)
+            else:
+                TableOld(prj)()
 
         if args.command == "report":
-            Reporter(prj)(args)
+            if args.use_pipestat:
+                Reporter(prj)(args)
+            else:
+                ReportOld(prj)(args)
 
         if args.command == "check":
-            Checker(prj)(args)
+            if args.use_pipestat:
+                Checker(prj)(args)
+            else:
+                CheckerOld(prj)(flags=args.flags)
 
         if args.command == "clean":
             return Cleaner(prj)(args)

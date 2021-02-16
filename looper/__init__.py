@@ -195,10 +195,6 @@ def build_parser():
                     help="Number of commands to batch into one job")
 
         check_subparser.add_argument(
-                "--project", help="Process only project-level pipelines",
-                action="store_true", default=False
-        )
-        check_subparser.add_argument(
             "--describe-codes", help="Show status codes description",
             action="store_true", default=False
         )
@@ -206,6 +202,12 @@ def build_parser():
         check_subparser.add_argument(
             "--itemized", help="Show a detailed, by sample statuses",
             action="store_true", default=False
+        )
+
+        check_subparser.add_argument(
+            "-f", "--flags", nargs='*', default=FLAGS,
+            type=html_select(choices=FLAGS), metavar="F",
+            help="Check on only these flags/status values"
         )
 
         for subparser in [destroy_subparser, clean_subparser]:
@@ -267,9 +269,13 @@ def build_parser():
             subparser.add_argument(
                     "-a", "--amend", nargs="+", metavar="A",
                     help="List of amendments to activate")
-        for subparser in [report_subparser, table_subparser]:
+        for subparser in [report_subparser, table_subparser, check_subparser]:
             subparser.add_argument(
                 "--project", help="Process only project-level pipelines",
+                action="store_true", default=False
+            )
+            subparser.add_argument(
+                "--use-pipestat", help="Use pipestat reported statistics/statuses",
                 action="store_true", default=False
             )
         result.append(parser)
