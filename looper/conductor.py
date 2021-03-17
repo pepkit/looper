@@ -4,20 +4,187 @@ import logging
 import os
 import subprocess
 import time
+import importlib
+
 from jinja2.exceptions import UndefinedError
+from subprocess import check_output, CalledProcessError
+from json import loads
+from yaml import dump
 
 from attmap import AttMap
 from eido import read_schema, validate_inputs
+from eido.const import MISSING_KEY, INPUT_FILE_SIZE_KEY
 from ubiquerg import expandpath
 from peppy.const import CONFIG_KEY, SAMPLE_YAML_EXT, SAMPLE_NAME_ATTR
+from pipestat import PipestatError
 
 from .processed_project import populate_sample_paths
 from .const import *
 from .exceptions import JobSubmissionException
-from .utils import grab_project_data, fetch_sample_flags, \
-    jinja_render_cmd_strictly
+from .utils import fetch_sample_flags, jinja_render_template_strictly
 
 _LOGGER = logging.getLogger(__name__)
+
+
+def _get_yaml_path(namespaces, template_key, default_name_appendix="",
+                   filename=None):
+    """
+    Get a path to the a YAML file.
+
+    :param dict[dict]] namespaces: namespaces mapping
+    :param str template_key: the name of the key in 'var_templates' piface
+        section that points to a template to render to get the
+        user-provided target YAML path
+    :param str default_name_appendix: a string to append to insert in target
+        YAML file name: '{sample.sample_name}<>.yaml'
+    :param str filename: A filename without folders. If not provided, a
+        default name of sample_name.yaml will be used.
+    :return str: sample YAML file path
+    """
+    if VAR_TEMPL_KEY in namespaces["pipeline"] and \
+            template_key in namespaces["pipeline"][VAR_TEMPL_KEY]:
+        path = expandpath(jinja_render_template_strictly(
+            namespaces["pipeline"][template_key], namespaces))
+        if not path.endswith(SAMPLE_YAML_EXT) and not filename:
+            raise ValueError(
+                f"{template_key} is not a valid target YAML file path. "
+                f"It needs to end with: {' or '.join(SAMPLE_YAML_EXT)}")
+        final_path = os.path.join(path, filename) if filename else path
+        if not os.path.exists(os.path.dirname(final_path)):
+            os.makedirs(os.path.dirname(final_path), exist_ok=True)
+    else:
+        # default YAML location
+        f = filename or f"{namespaces['sample'][SAMPLE_NAME_ATTR]}" \
+                        f"{default_name_appendix}" \
+                        f"{SAMPLE_YAML_EXT[0]}"
+        default = os.path.join(namespaces["looper"][OUTDIR_KEY], "submission")
+        final_path = os.path.join(default, f)
+        if not os.path.exists(default):
+            os.makedirs(default, exist_ok=True)
+    return final_path
+
+
+def write_sample_yaml(namespaces):
+    """
+    Plugin: saves sample representation to YAML.
+
+    This plugin can be parametrized by providing the path value/template in
+    'pipeline.var_templates.sample_yaml_path'. This needs to be a complete and
+    absolute path to the file where sample YAML representation is to be
+    stored.
+
+    :param dict namespaces: variable namespaces dict
+    :return dict: sample namespace dict
+    """
+    sample = namespaces["sample"]
+    sample.to_yaml(_get_yaml_path(namespaces, SAMPLE_YAML_PATH_KEY, "_sample"),
+                   add_prj_ref=False)
+    return {"sample": sample}
+
+
+def write_sample_yaml_prj(namespaces):
+    """
+    Plugin: saves sample representation with project reference to YAML.
+
+    This plugin can be parametrized by providing the path value/template in
+    'pipeline.var_templates.sample_yaml_prj_path'. This needs to be a complete and
+    absolute path to the file where sample YAML representation is to be
+    stored.
+
+    :param dict namespaces: variable namespaces dict
+    :return dict: sample namespace dict
+    """
+    sample = namespaces["sample"]
+    sample.to_yaml(_get_yaml_path(
+        namespaces, SAMPLE_YAML_PRJ_PATH_KEY, "_sample_prj"), add_prj_ref=True)
+    return {"sample": sample}
+
+
+def write_sample_yaml_cwl(namespaces):
+    """
+    Produce a cwl-compatible yaml representation of the sample
+
+    Also adds the 'cwl_yaml' attribute to sample objects, which points
+    to the file produced.
+
+    This plugin can be parametrized by providing the path value/template in
+    'pipeline.var_templates.sample_cwl_yaml_path'. This needs to be a complete and
+    absolute path to the file where sample YAML representation is to be
+    stored.
+
+    :param dict namespaces: variable namespaces dict
+    :return dict: updated variable namespaces dict
+    """
+    from eido import read_schema
+    from ubiquerg import is_url
+
+    def _get_schema_source(schema_source, piface_dir=namespaces["looper"]["piface_dir"]):
+        # Stolen from piface object; should be a better way to do this...
+        if is_url(schema_source):
+            return schema_source
+        elif not os.path.isabs(schema_source):
+            schema_source = os.path.join(piface_dir, schema_source)
+        return schema_source
+
+    # To be compatible as a CWL job input, we need to handle the
+    # File and Directory object types directly.
+    sample = namespaces["sample"]
+    sample.sample_yaml_cwl = _get_yaml_path(
+        namespaces, SAMPLE_CWL_YAML_PATH_KEY, "_sample_cwl")
+
+    if "input_schema" in namespaces["pipeline"]:
+        schema_path = _get_schema_source(namespaces["pipeline"]["input_schema"])
+        file_list = []
+        for ischema in read_schema(schema_path):
+            if "files" in ischema["properties"]["samples"]["items"]:
+                file_list.extend(ischema["properties"]["samples"]["items"]["files"])
+
+        for file_attr in file_list:
+            _LOGGER.debug("CWL-ing file attribute: {}".format(file_attr))
+            file_attr_value = sample[file_attr]
+            # file paths are assumed relative to the sample table;
+            # but CWL assumes they are relative to the yaml output file,
+            # so we convert here.
+            file_attr_rel = os.path.relpath(
+                file_attr_value, os.path.dirname(sample.sample_yaml_cwl))
+            sample[file_attr] = {"class": "File",
+                                 "path":  file_attr_rel}
+
+        directory_list = []
+        for ischema in read_schema(schema_path):
+            if "directories" in ischema["properties"]["samples"]["items"]:
+                directory_list.extend(ischema["properties"]["samples"]["items"]["directories"])
+
+        for dir_attr in directory_list:
+            _LOGGER.debug("CWL-ing directory attribute: {}".format(dir_attr))
+            dir_attr_value = sample[dir_attr]
+            # file paths are assumed relative to the sample table;
+            # but CWL assumes they are relative to the yaml output file,
+            # so we convert here.
+            sample[dir_attr] = {"class": "Directory",
+                                "location":  dir_attr_value}
+    else:
+        _LOGGER.warning("No 'input_schema' defined, producing a regular "
+                        "sample YAML representation")
+    _LOGGER.info("Writing sample yaml to {}".format(sample.sample_yaml_cwl))
+    sample.to_yaml(sample.sample_yaml_cwl)
+    return {"sample": sample}
+
+
+def write_submission_yaml(namespaces):
+    """
+    Save all namespaces to YAML.
+
+    :param dict namespaces: variable namespaces dict
+    :return dict: sample namespace dict
+    """
+    path = _get_yaml_path(namespaces, SAMPLE_CWL_YAML_PATH_KEY, "_submission")
+    my_namespaces = {}
+    for namespace, values in namespaces.items():
+        my_namespaces.update({str(namespace): values.to_dict()})
+    with open(path, 'w') as yamlfile:
+        dump(my_namespaces, yamlfile)
+    return my_namespaces
 
 
 class SubmissionConductor(object):
@@ -31,7 +198,6 @@ class SubmissionConductor(object):
     be either total input file size or the number of individual commands.
 
     """
-
     def __init__(self, pipeline_interface, prj, delay=0, extra_args=None,
                  extra_args_override=None, ignore_flags=False,
                  compute_variables=None, max_cmds=None, max_size=None,
@@ -72,7 +238,6 @@ class SubmissionConductor(object):
         :param bool collate: Whether a collate job is to be submitted (runs on
             the project level, rather that on the sample level)
         """
-
         super(SubmissionConductor, self).__init__()
         self.collate = collate
         self.section_key = PROJECT_PL_KEY if self.collate else SAMPLE_PL_KEY
@@ -168,7 +333,7 @@ class SubmissionConductor(object):
                 else:
                     use_this_sample = False
             if not use_this_sample:
-                msg = "> Skipping sample because no failed flag found"
+                msg = "> Skipping sample because flag found"
                 if flag_files:
                     msg += ". Flags found: {}".format(flag_files)
                 _LOGGER.info(msg)
@@ -181,27 +346,26 @@ class SubmissionConductor(object):
             )
             use_this_sample = False
 
-        sample.prj = grab_project_data(self.prj)
-
         skip_reasons = []
-        sample.setdefault("input_file_size", 0)
+        validation = {}
+        validation.setdefault(INPUT_FILE_SIZE_KEY, 0)
         # Check for any missing requirements before submitting.
         _LOGGER.debug("Determining missing requirements")
         schema_source = self.pl_iface.get_pipeline_schemas()
         if schema_source and self.prj.file_checks:
-            missing = validate_inputs(sample, read_schema(schema_source))
-            if missing:
-                missing_reqs_msg = "{}: {}".format("Missing files", missing)
+            validation = validate_inputs(sample, read_schema(schema_source))
+            if validation[MISSING_KEY]:
+                missing_reqs_msg = f"Missing files: {validation[MISSING_KEY]}"
                 _LOGGER.warning(NOT_SUB_MSG.format(missing_reqs_msg))
                 use_this_sample and skip_reasons.append("Missing files")
 
         if _use_sample(use_this_sample, skip_reasons):
             self._pool.append(sample)
-            self._curr_size += float(sample.input_file_size)
+            self._curr_size += float(validation[INPUT_FILE_SIZE_KEY])
             if self.automatic and self._is_full(self._pool, self._curr_size):
                 self.submit()
         else:
-            self._curr_skip_size += float(sample.input_file_size)
+            self._curr_skip_size += float(validation[INPUT_FILE_SIZE_KEY])
             self._curr_skip_pool.append(sample)
             if self._is_full(self._curr_skip_pool, self._curr_skip_size):
                 self._skipped_sample_pools.append((self._curr_skip_pool,
@@ -232,9 +396,10 @@ class SubmissionConductor(object):
                 for s in self._pool:
                     schemas = self.prj.get_schemas(self.prj.get_sample_piface(
                         s[SAMPLE_NAME_ATTR]), OUTPUT_SCHEMA_KEY)
-                    [populate_sample_paths(s, read_schema(schema))
-                     for schema in schemas]
-                    s.to_yaml(self._get_sample_yaml_path(s))
+
+                    for schema in schemas:
+                        populate_sample_paths(s, read_schema(schema)[0])
+
             script = self.write_script(self._pool, self._curr_size)
             # Determine whether to actually do the submission.
             _LOGGER.info("Job script (n={0}; {1:.2f}Gb): {2}".
@@ -270,29 +435,6 @@ class SubmissionConductor(object):
 
         return submitted
 
-    def _get_sample_yaml_path(self, sample):
-        """
-        Generate path to the sample YAML target location.
-
-        Render path template defined in the pipeline section
-        (relative to the pipeline output directory).
-        If no template defined, output to the submission directory.
-
-        :param peppy.Sample sample: sample to generate yaml path for
-        :return str: path to yaml file
-        """
-        if SAMPLE_YAML_PATH_KEY not in self.pl_iface:
-            return os.path.join(self.prj.submission_folder,
-                                "{}{}".format(sample.sample_name,
-                                              SAMPLE_YAML_EXT[0]))
-        pth_templ = self.pl_iface[SAMPLE_YAML_PATH_KEY]
-        namespaces = {"sample": sample,
-                      "project": self.prj.prj[CONFIG_KEY],
-                      "pipeline": self.pl_iface}
-        path = expandpath(jinja_render_cmd_strictly(pth_templ, namespaces))
-        return path if os.path.isabs(path) \
-            else os.path.join(self.prj.output_dir, path)
-
     def _is_full(self, pool, size):
         """
         Determine whether it's time to submit a job for the pool of commands.
@@ -319,7 +461,7 @@ class SubmissionConductor(object):
     def _sample_lump_name(self, pool):
         """ Determine how to refer to the 'sample' for this submission. """
         if self.collate:
-            return "collate"
+            return self.prj.name
         if 1 == self.max_cmds:
             assert 1 == len(pool), \
                 "If there's a single-command limit on job submission, jobname" \
@@ -342,13 +484,13 @@ class SubmissionConductor(object):
 
     def _set_looper_namespace(self, pool, size):
         """
-        Compile a dictionary of looper/submission related settings for use in
+        Compile a mapping of looper/submission related settings for use in
         the command templates and in submission script creation
         in divvy (via adapters). Accessible via: {looper.attrname}
 
         :param Iterable[peppy.Sample] pool: collection of sample instances
         :param float size: cumulative size of the given pool
-        :return dict: looper/submission related settings
+        :return attmap.AttMap: looper/submission related settings
         """
         settings = AttMap()
         settings.pep_config = self.prj.config_file
@@ -361,6 +503,7 @@ class SubmissionConductor(object):
         settings.total_input_size = size
         settings.log_file = \
             os.path.join(self.prj.submission_folder, settings.job_name) + ".log"
+        settings.piface_dir = os.path.dirname(self.pl_iface.pipe_iface_file)
         if hasattr(self.prj, "pipeline_config"):
             # Make sure it's a file (it could be provided as null.)
             pl_config_file = self.prj.pipeline_config
@@ -373,6 +516,37 @@ class SubmissionConductor(object):
                 # Append arg for config file if found
                 settings.pipeline_config = pl_config_file
         return settings
+
+    def _set_pipestat_namespace(self, sample_name=None):
+        """
+        Compile a mapping of pipestat-related settings for use in
+        the command templates. Accessible via: {pipestat.attrname}
+
+        :param str sample_name: name of the sample to get the pipestat
+            namespace for. If not provided the pipestat namespace will
+            be determined based on the Project
+        :return attmap.AttMap: pipestat namespace
+        """
+        try:
+            psms = self.prj.get_pipestat_managers(sample_name) if sample_name \
+                else self.prj.get_pipestat_managers(project_level=True)
+            psm = psms[self.pl_iface.pipeline_name]
+        except (PipestatError, AttributeError) as e:
+            # pipestat section faulty or not found in project.looper or sample
+            # or project is missing required pipestat attributes
+            _LOGGER.warning(
+                f"Could not determine pipestat namespace. Caught exception: "
+                f"{getattr(e, 'message', repr(e))}")
+            # return an empty mapping
+            return AttMap()
+        else:
+            full_namespace = {
+                "schema": psm.schema_path, "results_file": psm.file,
+                "record_id": psm.record_identifier, "namespace": psm.namespace,
+                "config": psm.config_path
+            }
+            filtered_namespace = {k: v for k, v in full_namespace.items() if v}
+            return AttMap(filtered_namespace)
 
     def write_script(self, pool, size):
         """
@@ -389,7 +563,8 @@ class SubmissionConductor(object):
         commands = []
         namespaces = dict(project=self.prj[CONFIG_KEY],
                           looper=looper,
-                          pipeline=self.pl_iface)
+                          pipeline=self.pl_iface,
+                          compute=self.prj.dcc.compute)
         templ = self.pl_iface["command_template"]
         if not self.override_extra:
             extras_template = EXTRA_PROJECT_CMD_TEMPLATE if self.collate \
@@ -403,14 +578,21 @@ class SubmissionConductor(object):
                 namespaces.update({"sample": sample})
             else:
                 namespaces.update({"samples": self.prj.samples})
+            pipestat_namespace = self._set_pipestat_namespace(
+                sample_name=sample.sample_name if sample else None)
+            namespaces.update({"pipestat": pipestat_namespace})
             res_pkg = self.pl_iface.choose_resource_package(namespaces, size or 0)  # config
             res_pkg.update(cli)
             self.prj.dcc.compute.update(res_pkg)  # divcfg
-            namespaces.update({"compute": self.prj.dcc.compute})
+            namespaces["compute"].update(res_pkg)
+            self.pl_iface.render_var_templates(namespaces=namespaces)
+            namespaces["pipeline"] = self.pl_iface
+            # pre_submit hook namespace updates
+            namespaces = _exec_pre_submit(self.pl_iface, namespaces)
             self._rendered_ok = False
             try:
-                argstring = jinja_render_cmd_strictly(cmd_template=templ,
-                                                      namespaces=namespaces)
+                argstring = jinja_render_template_strictly(template=templ,
+                                                           namespaces=namespaces)
             except UndefinedError as jinja_exception:
                 _LOGGER.warning(NOT_SUB_MSG.format(str(jinja_exception)))
             except KeyError as e:
@@ -431,13 +613,14 @@ class SubmissionConductor(object):
         _LOGGER.debug("pipeline namespace:\n{}".format(self.pl_iface))
         _LOGGER.debug("compute namespace:\n{}".format(self.prj.dcc.compute))
         _LOGGER.debug("looper namespace:\n{}".format(looper))
+        _LOGGER.debug("pipestat namespace:\n{}".format(pipestat_namespace))
         subm_base = os.path.join(self.prj.submission_folder, looper.job_name)
         return self.prj.dcc.write_script(output_path=subm_base + ".sub",
                                          extra_vars=[{"looper": looper}])
 
     def write_skipped_sample_scripts(self):
         """
-        For any sample skipped during initial processingwrite submission script
+        For any sample skipped during initial processing write submission script
         """
         if self._curr_skip_pool:
             # move any hanging samples from current skip pool to the main pool
@@ -462,3 +645,70 @@ class SubmissionConductor(object):
 
 def _use_sample(flag, skips):
     return flag and not skips
+
+
+def _exec_pre_submit(piface, namespaces):
+    """
+    Execute pre submission hooks defined in the pipeline interface
+
+    :param PipelineInterface piface: piface, a source of pre_submit hooks to execute
+    :param dict[dict[]] namespaces: namspaces mapping
+    :return dict[dict[]]: updated namspaces mapping
+    """
+
+    def _log_raise_latest(cmd):
+        """ Log error info and raise latest handled exception """
+        _LOGGER.error("Could not retrieve JSON via command: '{}'".format(cmd))
+        raise
+
+    def _update_namespaces(x, y, cmd=False):
+        """
+        Update namespaces mapping with a dictionary of the same structure,
+        that includes just the values that need to be updated.
+
+        :param dict[dict] x: namespaces mapping
+        :param dict[dict] y: mapping to update namespaces with
+        :param bool cmd: whether the mapping to upodate with comes from the
+            command template, used for messaging
+        """
+        if not isinstance(y, dict):
+            if cmd:
+                raise TypeError(
+                    f"Object returned by {PRE_SUBMIT_HOOK_KEY}."
+                    f"{PRE_SUBMIT_CMD_KEY} must return a dictionary when "
+                    f"processed with json.loads(), not {y.__class__.__name__}")
+            raise TypeError(f"Object returned by {PRE_SUBMIT_HOOK_KEY}."
+                            f"{PRE_SUBMIT_PY_FUN_KEY} must return a dictionary,"
+                            f" not {y.__class__.__name__}")
+        _LOGGER.debug("Updating namespaces with:\n{}".format(y))
+        for namespace, mapping in y.items():
+            for attr, val in mapping.items():
+                setattr(x[namespace], attr, val)
+    if PRE_SUBMIT_HOOK_KEY in piface:
+        pre_submit = piface[PRE_SUBMIT_HOOK_KEY]
+        if PRE_SUBMIT_PY_FUN_KEY in pre_submit:
+            for py_fun in pre_submit[PRE_SUBMIT_PY_FUN_KEY]:
+                pkgstr, funcstr = os.path.splitext(py_fun)
+                pkg = importlib.import_module(pkgstr)
+                func = getattr(pkg, funcstr[1:])
+                _LOGGER.info("Calling pre-submit function: {}.{}".format(
+                    pkgstr, func.__name__))
+                _update_namespaces(namespaces, func(namespaces))
+        if PRE_SUBMIT_CMD_KEY in pre_submit:
+            for cmd_template in pre_submit[PRE_SUBMIT_CMD_KEY]:
+                _LOGGER.debug(
+                    "Rendering pre-submit command template: {}".format(
+                        cmd_template))
+                try:
+                    cmd = jinja_render_template_strictly(template=cmd_template,
+                                                         namespaces=namespaces)
+                    _LOGGER.info("Executing pre-submit command: {}".format(cmd))
+                    json = loads(check_output(cmd, shell=True))
+                except CalledProcessError as e:
+                    print(e.output)
+                    _log_raise_latest(cmd)
+                except Exception:
+                    _log_raise_latest(cmd_template)
+                else:
+                    _update_namespaces(namespaces, json, cmd=True)
+    return namespaces

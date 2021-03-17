@@ -6,24 +6,32 @@
                     <tr>
                         <th class="text-nowrap text-center">Sample name</th>
                         <th class="text-nowrap text-center">Status</th>
+                    {% if not basic %}
                         <th class="text-nowrap text-center">Log file</th>
                         <th class="text-nowrap text-center">Runtime</th>
                         <th class="text-nowrap text-center">Peak memory use</th>
+                    {% endif %}
                     </tr>
                 </thead>
                     <tbody>
                         {% for element in sample_paths %}
                             {% set i = loop.index - 1 %}
                             <tr>
-                                <td>
-                                    <a href="{{ sample_paths[i] }}" target="_top">{{ sample_names[i] }}</a>
+                                <td style="cursor:pointer" onclick="location.href='{{ sample_paths[i] }}'">
+                                    <a href="{{ sample_paths[i] }}" target="_top">{{ sample_link_names[i] }}</a>
                                 </td>
-                                <td style="background-color: {{status_styles[i]}} !important;" data-trigger="hover" data-toggle="popover" data-placement="top" data-content="{{status_descs[i]}}">
-                                    {{ statuses[i] }}
+                                <td class='{{ row_classes[i] }}'>
+                                    {{ flags[i] }}
                                 </td>
-                                <td>
-                                    <a href="{{ log_paths[i] }}" target="_top">{{ log_link_names[i] }}</a>
-                                </td>
+                                {% if log_paths[i] is none %}
+                                    <td>
+                                        NA
+                                    </td>
+                                {% else %}
+                                    <td style="cursor:pointer" onclick="location.href='{{ log_paths[i] }}'">
+                                        <a href="{{ log_paths[i] }}" target="_top">{{ log_link_names[i] }}</a>
+                                    </td>
+                                {% endif %}
                                 <td>
                                     {{ times[i] }}
                                 </td>
@@ -43,8 +51,3 @@
     <link href="https://unpkg.com/bootstrap-table@1.15.3/dist/extensions/fixed-columns/bootstrap-table-fixed-columns.css" rel="stylesheet">
     <script src="https://unpkg.com/bootstrap-table@1.15.3/dist/bootstrap-table.min.js"></script>
     <script src="https://unpkg.com/bootstrap-table@1.15.3/dist/extensions/fixed-columns/bootstrap-table-fixed-columns.js"></script>
-    <script>
-        $(function () {
-            $('[data-toggle="popover"]').popover()
-        })
-    </script>

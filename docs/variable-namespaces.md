@@ -38,6 +38,7 @@ The `looper` namespace consists of automatic variables created by looper:
 - `output_dir` -- parent output directory provided in `project.looper.output_dir` in the project configuration file
 - `results_subdir` -- the path to the results directory. It is a sub directory of `output_dir` called `project.looper.results_subdir` or "results_pipeline" by default
 - `sample_output_folder` -- a sample-specific output folder (`results_subdir`/`sample.sample_name`)
+- `piface_dir` -- directory the pipeline interface has been read from
 
 **others:**
 
@@ -56,7 +57,7 @@ The `compute` namespace consists of a group of variables relevant for computing 
 
 1. Looper CLI (`--compute` or `--settings` for on-the-fly settings)
 2. PEP config, `project.looper.compute` section
-3. Pipeline interface, `pipeline.compute` section
+3. Pipeline interface, `compute` section
 4. Activated divvy compute package (`--package` CLI argument)
 
 So, the compute namespace is first populated with any variables from the selected divvy compute package. It then updates this with settings given in the `compute` section of the pipeline interface. It then updates from the PEP `project.looper.compute`, and then finally anything passed to `--compute` on the looper CLI. This provides a way to modulate looper behavior at the level of a computing environment, a pipeline, a project, or a run, in that order.

@@ -34,4 +34,14 @@ properties:
       singularity_image:
         type: string
         description: "Singularity image identifier"
+if:
+  properties:
+    pipeline_type:
+      const: "project"
+then:
+  properties:
+    linked_pipeline_interfaces:
+      type: array
+      items:
+        type: string
 required: [pipeline_name, pipeline_type, command_template]

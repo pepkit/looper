@@ -121,7 +121,29 @@ def sample_folder(prj, sample):
                         sample[SAMPLE_NAME_ATTR])
 
 
-def get_file_for_project(prj, appendix):
+def get_file_for_project(prj, pipeline_name, appendix=None, directory=None):
+    """
+    Create a path to the file for the current project.
+    Takes the possibility of amendment being activated at the time
+
+    Format of the output path:
+    {output_dir}/{directory}/{p.name}_{pipeline_name}_{active_amendments}_{appendix}
+
+    :param looper.Project prj: project object
+    :param str pipeline_name: name of the pipeline to get the file for
+    :param str appendix: the appendix of the file to create the path for,
+        like 'objs_summary.tsv' for objects summary file
+    :return str: path to the file
+    """
+    fp = os.path.join(
+        prj.output_dir, directory or "", f"{prj[NAME_KEY]}_{pipeline_name}")
+    if hasattr(prj, "amendments") and getattr(prj, "amendments"):
+        fp += f"_{'_'.join(prj.amendments)}"
+    fp += f"_{appendix}"
+    return fp
+
+
+def get_file_for_project_old(prj, appendix):
     """
     Create a path to the file for the current project.
     Takes the possibility of amendment being activated at the time
@@ -138,14 +160,14 @@ def get_file_for_project(prj, appendix):
     return fp
 
 
-def jinja_render_cmd_strictly(cmd_template, namespaces):
+def jinja_render_template_strictly(template, namespaces):
     """
     Render a command string in the provided namespaces context.
 
     Strictly, which means that all the requested attributes must be
     available in the namespaces
 
-    :param str cmd_template: command template do be filled in with the
+    :param str template: command template do be filled in with the
         variables in the provided namespaces. For example:
         "prog.py --name {project.name} --len {sample.len}"
     :param Mapping[Mapping[str] namespaces: context for command rendering.
@@ -163,13 +185,13 @@ def jinja_render_cmd_strictly(cmd_template, namespaces):
                              variable_start_string="{",
                              variable_end_string="}",
                              finalize=_finfun)
-    template = env.from_string(cmd_template)
+    templ_obj = env.from_string(template)
     try:
-        rendered = template.render(**namespaces)
+        rendered = templ_obj.render(**namespaces)
     except jinja2.exceptions.UndefinedError:
-        _LOGGER.error("Missing sample, project or pipeline attributes"
-                      " required by command template: '{}'"
-                      .format(cmd_template))
+        _LOGGER.error(f"Attributes in namespaces "
+                      f"({', '.join(list(namespaces.keys()))}) missing for "
+                      f"the following template: '{template}'")
         raise
     _LOGGER.debug("rendered arg str: {}".format(rendered))
     return rendered
@@ -210,7 +232,7 @@ def enrich_args_via_cfg(parser_args, aux_parser):
             if dest in cli_args:
                 x = getattr(cli_args, dest)
                 r = convert_value(x) if isinstance(x, str) else x
-            elif dest in cfg_args_all:
+            elif cfg_args_all is not None and dest in cfg_args_all:
                 if isinstance(cfg_args_all[dest], list):
                     r = [convert_value(i) for i in cfg_args_all[dest]]
                 else:

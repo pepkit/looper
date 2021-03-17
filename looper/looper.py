@@ -25,15 +25,19 @@ from colorama import Fore, Style
 from shutil import rmtree
 from jsonschema import ValidationError
 from copy import copy
+from rich.console import Console
+from rich.table import Table
 
 from . import __version__, build_parser, _LEVEL_BY_VERBOSITY
 from .conductor import SubmissionConductor
 from .const import *
 from .exceptions import JobSubmissionException, MisconfigurationException
-from .html_reports import HTMLReportBuilder
+from .html_reports_pipestat import HTMLReportBuilder, fetch_pipeline_results
+from .html_reports_project_pipestat import HTMLReportBuilderProject
+from .html_reports import HTMLReportBuilderOld
 from .project import Project, ProjectContext
 from .utils import *
-from .looper_config import *
+from .pipeline_interface import PipelineInterface
 
 from divvy import DEFAULT_COMPUTE_RESOURCES_NAME, select_divvy_config
 from logmuse import init_logger
@@ -76,6 +80,92 @@ class Executor(object):
 
 class Checker(Executor):
 
+    def __call__(self, args):
+        """
+        Check Project status, using pipestat.
+
+        :param argparse.Namespace: arguments provided to the command
+        """
+        from rich.color import Color
+
+        # aggregate pipeline status data
+        status = {}
+        if args.project:
+            psms = self.prj.get_pipestat_managers(project_level=True)
+            for pipeline_name, psm in psms.items():
+                s = psm.get_status() or "unknown"
+                status.setdefault(pipeline_name, {})
+                status[pipeline_name][self.prj.name] = s
+                _LOGGER.debug(f"{self.prj.name} ({pipeline_name}): {s}")
+        else:
+            for sample in self.prj.samples:
+                psms = self.prj.get_pipestat_managers(
+                    sample_name=sample.sample_name)
+                for pipeline_name, psm in psms.items():
+                    s = psm.get_status()
+                    status.setdefault(pipeline_name, {})
+                    status[pipeline_name][sample.sample_name] = s
+                    _LOGGER.debug(f"{sample.sample_name} ({pipeline_name}): {s}")
+
+        console = Console()
+
+        for pipeline_name, pipeline_status in status.items():
+            table_title = f"'{pipeline_name}' pipeline status summary"
+            table = Table(
+                show_header=True,
+                header_style="bold magenta",
+                title=table_title,
+                width=len(table_title) + 10
+            )
+            table.add_column(f"Status", justify="center")
+            table.add_column("Jobs count/total jobs", justify="center")
+            for status_id in psm.status_schema.keys():
+                status_list = list(pipeline_status.values())
+                if status_id in status_list:
+                    status_count = status_list.count(status_id)
+                    table.add_row(status_id, f"{status_count}/{len(status_list)}")
+            console.print(table)
+
+        if args.itemized:
+            for pipeline_name, pipeline_status in status.items():
+                table_title = f"Pipeline: '{pipeline_name}'"
+                table = Table(
+                    show_header=True,
+                    header_style="bold magenta",
+                    title=table_title,
+                    width=len(table_title) + 10
+                )
+                table.add_column(f"{'Project' if args.project else 'Sample'} name", justify="center")
+                table.add_column("Status", justify="center")
+                for name, status_id in pipeline_status.items():
+                    try:
+                        color = Color.from_rgb(*psm.status_schema[status_id]["color"]).name
+                    except KeyError:
+                        color = "#bcbcbc"
+                        status_id = "unknown"
+                    table.add_row(name, f"[{color}]{status_id}[/{color}]")
+                console.print(table)
+
+        if args.describe_codes:
+            table = Table(
+                show_header=True,
+                header_style="bold magenta",
+                title=f"Status codes description",
+                width=len(psm.status_schema_source) + 20,
+                caption=f"Descriptions source: {psm.status_schema_source}"
+            )
+            table.add_column("Status code", justify="center")
+            table.add_column("Description", justify="left")
+            for status, status_obj in psm.status_schema.items():
+                if "description" in status_obj:
+                    desc = status_obj["description"]
+                else:
+                    desc = ""
+                table.add_row(status, desc)
+            console.print(table)
+
+
+class CheckerOld(Executor):
     def __call__(self, flags=None, all_folders=False, max_file_count=30):
         """
         Check Project status, based on flag files.
@@ -126,7 +216,6 @@ class Checker(Executor):
             if 0 < len(files) <= max_file_count:
                 _LOGGER.info("%s (%d):\n%s", flag.upper(),
                              len(files), "\n".join(files))
-
 
 class Cleaner(Executor):
     """ Remove all intermediate files (defined by pypiper clean scripts). """
@@ -410,14 +499,180 @@ class Runner(Executor):
                          format("\n".join(full_fail_msgs)))
 
 
-class Report(Executor):
+class Reporter(Executor):
     """ Combine project outputs into a browsable HTML report """
     def __call__(self, args):
         # initialize the report builder
-        report_builder = HTMLReportBuilder(self.prj)
+        p = self.prj
+        project_level = args.project
+        if project_level:
+            html_report_builder_project = HTMLReportBuilderProject(prj=p)
+            self.counter = LooperCounter(
+                len(p.project_pipeline_interfaces))
+            for piface in p.project_pipeline_interface_sources:
+                pn = PipelineInterface(piface).pipeline_name
+                _LOGGER.info(self.counter.show(
+                    name=p.name, type="project", pipeline_name=pn))
+                # Do the stats and object summarization.
+                # run the report builder. a set of HTML pages is produced
+                report_path = html_report_builder_project(piface_source=piface)
+                _LOGGER.info(
+                    f"Project-level pipeline '{pn}' HTML report: {report_path}")
+        else:
+            html_report_builder = HTMLReportBuilder(prj=self.prj)
+            for sample_piface_source in self.prj.pipeline_interface_sources:
+                # Do the stats and object summarization.
+                pn = PipelineInterface(sample_piface_source).pipeline_name
+                # run the report builder. a set of HTML pages is produced
+                report_path = html_report_builder(pipeline_name=pn)
+                _LOGGER.info(
+                    f"Sample-level pipeline '{pn}' HTML report: {report_path}")
+
+
+class Tabulator(Executor):
+    """ Project/Sample statistics and table output generator """
+    def __call__(self, args):
+        project_level = args.project
+        if project_level:
+            self.counter = LooperCounter(
+                len(self.prj.project_pipeline_interfaces))
+            for piface in self.prj.project_pipeline_interfaces:
+                # Do the stats and object summarization.
+                pipeline_name = piface.pipeline_name
+                # pull together all the fits and stats from each sample into
+                # project-combined spreadsheets.
+                self.stats = _create_stats_summary(
+                    self.prj, pipeline_name, project_level, self.counter)
+                self.objs = _create_obj_summary(
+                    self.prj, pipeline_name,  project_level, self.counter)
+        else:
+            for piface_source in self.prj._samples_by_piface(self.prj.piface_key).keys():
+                # Do the stats and object summarization.
+                pipeline_name = PipelineInterface(
+                    config=piface_source).pipeline_name
+                # pull together all the fits and stats from each sample into
+                # project-combined spreadsheets.
+                self.stats = _create_stats_summary(
+                    self.prj, pipeline_name, project_level, self.counter)
+                self.objs = _create_obj_summary(
+                    self.prj, pipeline_name, project_level, self.counter)
+        return self
+
+
+def _create_stats_summary(project, pipeline_name, project_level, counter):
+    """
+    Create stats spreadsheet and columns to be considered in the report, save
+    the spreadsheet to file
+
+    :param looper.Project project: the project to be summarized
+    :param str pipeline_name: name of the pipeline to tabulate results for
+    :param bool project_level: whether the project-level pipeline resutlts
+        should be tabulated
+    :param looper.LooperCounter counter: a counter object
+    """
+    # Create stats_summary file
+    columns = set()
+    stats = []
+    _LOGGER.info("Creating stats summary")
+    if project_level:
+        _LOGGER.info(counter.show(
+            name=project.name, type="project", pipeline_name=pipeline_name))
+        reported_stats = {"project_name": project.name}
+        results = fetch_pipeline_results(
+            project=project,
+            pipeline_name=pipeline_name,
+            inclusion_fun=lambda x: x not in OBJECT_TYPES
+        )
+        reported_stats.update(results)
+        stats.append(reported_stats)
+        columns |= set(reported_stats.keys())
+
+    else:
+        for sample in project.samples:
+            sn = sample.sample_name
+            _LOGGER.info(counter.show(sn, pipeline_name))
+            reported_stats = {SAMPLE_NAME_ATTR: sn}
+            results = fetch_pipeline_results(
+                project=project,
+                pipeline_name=pipeline_name,
+                sample_name=sn,
+                inclusion_fun=lambda x: x not in OBJECT_TYPES
+            )
+            reported_stats.update(results)
+            stats.append(reported_stats)
+            columns |= set(reported_stats.keys())
+
+    tsv_outfile_path = get_file_for_project(
+        project, pipeline_name, 'stats_summary.tsv')
+    tsv_outfile = open(tsv_outfile_path, 'w')
+    tsv_writer = csv.DictWriter(
+        tsv_outfile, fieldnames=list(columns), delimiter='\t', extrasaction='ignore')
+    tsv_writer.writeheader()
+    for row in stats:
+        tsv_writer.writerow(row)
+    tsv_outfile.close()
+    _LOGGER.info(f"'{pipeline_name}' pipeline stats summary (n={len(stats)}):"
+                 f" {tsv_outfile_path}")
+    counter.reset()
+    return stats
+
+
+def _create_obj_summary(project, pipeline_name, project_level, counter):
+    """
+    Read sample specific objects files and save to a data frame
+
+    :param looper.Project project: the project to be summarized
+    :param str pipeline_name: name of the pipeline to tabulate results for
+    :param looper.LooperCounter counter: a counter object
+    :param bool project_level: whether the project-level pipeline resutlts
+        should be tabulated
+    """
+    _LOGGER.info("Creating objects summary")
+    reported_objects = {}
+    if project_level:
+        _LOGGER.info(counter.show(
+            name=project.name, type="project", pipeline_name=pipeline_name))
+        res = fetch_pipeline_results(
+            project=project,
+            pipeline_name=pipeline_name,
+            inclusion_fun=lambda x: x in OBJECT_TYPES
+        )
+        # need to cast to a dict, since other mapping-like objects might
+        # cause issues when writing to the collective yaml file below
+        project_reported_objects = {k: dict(v) for k, v in res.items()}
+        reported_objects[project.name] = project_reported_objects
+    else:
+        for sample in project.samples:
+            sn = sample.sample_name
+            _LOGGER.info(counter.show(sn, pipeline_name))
+            res = fetch_pipeline_results(
+                project=project,
+                pipeline_name=pipeline_name,
+                sample_name=sn,
+                inclusion_fun=lambda x: x in OBJECT_TYPES
+            )
+            # need to cast to a dict, since other mapping-like objects might
+            # cause issues when writing to the collective yaml file below
+            sample_reported_objects = {k: dict(v) for k, v in res.items()}
+            reported_objects[sn] = sample_reported_objects
+    objs_yaml_path = get_file_for_project(
+        project, pipeline_name, 'objs_summary.yaml')
+    with open(objs_yaml_path, 'w') as outfile:
+        yaml.dump(reported_objects, outfile)
+    _LOGGER.info(f"'{pipeline_name}' pipeline objects summary "
+                 f"(n={len(reported_objects.keys())}): {objs_yaml_path}")
+    counter.reset()
+    return reported_objects
+
+
+class ReportOld(Executor):
+    """ Combine project outputs into a browsable HTML report """
+    def __call__(self, args):
+        # initialize the report builder
+        report_builder = HTMLReportBuilderOld(self.prj)
 
         # Do the stats and object summarization.
-        table = Table(self.prj)()
+        table = TableOld(self.prj)()
         # run the report builder. a set of HTML pages is produced
         report_path = report_builder(table.objs, table.stats,
                                      uniqify(table.columns))
@@ -426,116 +681,109 @@ class Report(Executor):
                      + report_path)
 
 
-class Table(Executor):
+class TableOld(Executor):
     """ Project/Sample statistics and table output generator """
     def __init__(self, prj):
         # call the inherited initialization
-        super(Table, self).__init__(prj)
+        super(TableOld, self).__init__(prj)
         self.prj = prj
 
     def __call__(self):
+
+        def _create_stats_summary_old(project, counter):
+            """
+            Create stats spreadsheet and columns to be considered in the report, save
+            the spreadsheet to file
+            :param looper.Project project: the project to be summarized
+            :param looper.LooperCounter counter: a counter object
+            """
+            # Create stats_summary file
+            columns = []
+            stats = []
+            project_samples = project.samples
+            missing_files = []
+            _LOGGER.info("Creating stats summary...")
+            for sample in project_samples:
+                _LOGGER.info(counter.show(sample.sample_name, sample.protocol))
+                sample_output_folder = sample_folder(project, sample)
+                # Grab the basic info from the annotation sheet for this sample.
+                # This will correspond to a row in the output.
+                sample_stats = sample.get_sheet_dict()
+                columns.extend(sample_stats.keys())
+                # Version 0.3 standardized all stats into a single file
+                stats_file = os.path.join(sample_output_folder, "stats.tsv")
+                if not os.path.isfile(stats_file):
+                    missing_files.append(stats_file)
+                    continue
+                t = _pd.read_csv(stats_file, sep="\t", header=None,
+                                 names=['key', 'value', 'pl'])
+                t.drop_duplicates(subset=['key', 'pl'], keep='last', inplace=True)
+                t.loc[:, 'plkey'] = t['pl'] + ":" + t['key']
+                dupes = t.duplicated(subset=['key'], keep=False)
+                t.loc[dupes, 'key'] = t.loc[dupes, 'plkey']
+                sample_stats.update(t.set_index('key')['value'].to_dict())
+                stats.append(sample_stats)
+                columns.extend(t.key.tolist())
+            if missing_files:
+                _LOGGER.warning("Stats files missing for {} samples: {}".
+                                format(len(missing_files), missing_files))
+            tsv_outfile_path = get_file_for_project_old(project, 'stats_summary.tsv')
+            tsv_outfile = open(tsv_outfile_path, 'w')
+            tsv_writer = csv.DictWriter(tsv_outfile, fieldnames=uniqify(columns),
+                                        delimiter='\t', extrasaction='ignore')
+            tsv_writer.writeheader()
+            for row in stats:
+                tsv_writer.writerow(row)
+            tsv_outfile.close()
+            _LOGGER.info("Statistics summary (n=" + str(len(stats)) + "): " +
+                         tsv_outfile_path)
+            counter.reset()
+            return stats, uniqify(columns)
+
+        def _create_obj_summary_old(project, counter):
+            """
+            Read sample specific objects files and save to a data frame
+            :param looper.Project project: the project to be summarized
+            :param looper.LooperCounter counter: a counter object
+            :return pandas.DataFrame: objects spreadsheet
+            """
+            _LOGGER.info("Creating objects summary...")
+            objs = _pd.DataFrame()
+            # Create objects summary file
+            missing_files = []
+            for sample in project.samples:
+                # Process any reported objects
+                _LOGGER.info(counter.show(sample.sample_name, sample.protocol))
+                sample_output_folder = sample_folder(project, sample)
+                objs_file = os.path.join(sample_output_folder, "objects.tsv")
+                if not os.path.isfile(objs_file):
+                    missing_files.append(objs_file)
+                    continue
+                t = _pd.read_csv(objs_file, sep="\t", header=None,
+                                 names=['key', 'filename', 'anchor_text',
+                                        'anchor_image', 'annotation'])
+                t['sample_name'] = sample.sample_name
+                objs = objs.append(t, ignore_index=True)
+            if missing_files:
+                _LOGGER.warning("Object files missing for {} samples: {}".
+                                format(len(missing_files), missing_files))
+            # create the path to save the objects file in
+            objs_file = get_file_for_project_old(project, 'objs_summary.tsv')
+            objs.to_csv(objs_file, sep="\t")
+            _LOGGER.info("Objects summary (n=" +
+                         str(len(project.samples) - len(missing_files)) + "): " +
+                         objs_file)
+            return objs
         # pull together all the fits and stats from each sample into
         # project-combined spreadsheets.
-        self.stats, self.columns = _create_stats_summary(self.prj, self.counter)
-        self.objs = _create_obj_summary(self.prj, self.counter)
+        self.stats, self.columns = _create_stats_summary_old(self.prj, self.counter)
+        self.objs = _create_obj_summary_old(self.prj, self.counter)
         return self
-
-
-def _create_stats_summary(project, counter):
-    """
-    Create stats spreadsheet and columns to be considered in the report, save
-    the spreadsheet to file
-
-    :param looper.Project project: the project to be summarized
-    :param looper.LooperCounter counter: a counter object
-    """
-    # Create stats_summary file
-    columns = []
-    stats = []
-    project_samples = project.samples
-    missing_files = []
-    _LOGGER.info("Creating stats summary...")
-    for sample in project_samples:
-        _LOGGER.info(counter.show(sample.sample_name, sample.protocol))
-        sample_output_folder = sample_folder(project, sample)
-        # Grab the basic info from the annotation sheet for this sample.
-        # This will correspond to a row in the output.
-        sample_stats = sample.get_sheet_dict()
-        columns.extend(sample_stats.keys())
-        # Version 0.3 standardized all stats into a single file
-        stats_file = os.path.join(sample_output_folder, "stats.tsv")
-        if not os.path.isfile(stats_file):
-            missing_files.append(stats_file)
-            continue
-        t = _pd.read_csv(stats_file, sep="\t", header=None,
-                         names=['key', 'value', 'pl'])
-        t.drop_duplicates(subset=['key', 'pl'], keep='last', inplace=True)
-        t.loc[:, 'plkey'] = t['pl'] + ":" + t['key']
-        dupes = t.duplicated(subset=['key'], keep=False)
-        t.loc[dupes, 'key'] = t.loc[dupes, 'plkey']
-        sample_stats.update(t.set_index('key')['value'].to_dict())
-        stats.append(sample_stats)
-        columns.extend(t.key.tolist())
-    if missing_files:
-        _LOGGER.warning("Stats files missing for {} samples: {}".
-                        format(len(missing_files),missing_files))
-    tsv_outfile_path = get_file_for_project(project, 'stats_summary.tsv')
-    tsv_outfile = open(tsv_outfile_path, 'w')
-    tsv_writer = csv.DictWriter(tsv_outfile, fieldnames=uniqify(columns),
-                                delimiter='\t', extrasaction='ignore')
-    tsv_writer.writeheader()
-    for row in stats:
-        tsv_writer.writerow(row)
-    tsv_outfile.close()
-    _LOGGER.info("Statistics summary (n=" + str(len(stats)) + "): " +
-                 tsv_outfile_path)
-    counter.reset()
-    return stats, uniqify(columns)
-
-
-def _create_obj_summary(project, counter):
-    """
-    Read sample specific objects files and save to a data frame
-
-    :param looper.Project project: the project to be summarized
-    :param looper.LooperCounter counter: a counter object
-    :return pandas.DataFrame: objects spreadsheet
-    """
-    _LOGGER.info("Creating objects summary...")
-    objs = _pd.DataFrame()
-    # Create objects summary file
-    missing_files = []
-    for sample in project.samples:
-        # Process any reported objects
-        _LOGGER.info(counter.show(sample.sample_name, sample.protocol))
-        sample_output_folder = sample_folder(project, sample)
-        objs_file = os.path.join(sample_output_folder, "objects.tsv")
-        if not os.path.isfile(objs_file):
-            missing_files.append(objs_file)
-            continue
-        t = _pd.read_csv(objs_file, sep="\t", header=None,
-                         names=['key', 'filename', 'anchor_text',
-                                'anchor_image', 'annotation'])
-        t['sample_name'] = sample.sample_name
-        objs = objs.append(t, ignore_index=True)
-    if missing_files:
-        _LOGGER.warning("Object files missing for {} samples: {}".
-                        format(len(missing_files), missing_files))
-    # create the path to save the objects file in
-    objs_file = get_file_for_project(project, 'objs_summary.tsv')
-    objs.to_csv(objs_file, sep="\t")
-    _LOGGER.info("Objects summary (n=" +
-                 str(len(project.samples) - len(missing_files)) + "): " +
-                 objs_file)
-    return objs
 
 
 def _create_failure_message(reason, samples):
     """ Explain lack of submission for a single reason, 1 or more samples. """
-    color = Fore.LIGHTRED_EX
-    reason_text = color + reason + Style.RESET_ALL
-    samples_text = ", ".join(samples)
-    return "{}: {}".format(reason_text, samples_text)
+    return f"{Fore.LIGHTRED_EX + reason + Style.RESET_ALL}: {', '.join(samples)}"
 
 
 def _remove_or_dry_run(paths, dry_run=False):
@@ -566,6 +814,7 @@ def destroy_summary(prj, dry_run=False):
     """
     Delete the summary files if not in dry run mode
     """
+    # TODO: update after get_file_for_project signature change
     _remove_or_dry_run([get_file_for_project(prj, "summary.html"),
                         get_file_for_project(prj, 'stats_summary.tsv'),
                         get_file_for_project(prj, 'objs_summary.tsv'),
@@ -596,9 +845,9 @@ class LooperCounter(object):
         :return str: message suitable for logging a status update
         """
         self.count += 1
-        return _submission_status_text(type=type,
-            curr=self.count, total=self.total, name=name,
-            pipeline_name=pipeline_name, color=Fore.CYAN
+        return _submission_status_text(
+            type=type, curr=self.count, total=self.total,
+            name=name, pipeline_name=pipeline_name, color=Fore.CYAN
         )
 
     def reset(self):
@@ -611,10 +860,9 @@ class LooperCounter(object):
 def _submission_status_text(curr, total, name, pipeline_name=None,
                             type="sample", color=Fore.CYAN):
     """ Generate submission sample text for run or collate """
-    txt = color + "## [{n} of {t}] {type}: {name}".\
-        format(n=curr, t=total, type=type, name=name)
+    txt = color + f"## [{curr} of {total}] {type}: {name}"
     if pipeline_name:
-        txt += "; pipeline: {}".format(pipeline_name)
+        txt += f"; pipeline: {pipeline_name}"
     return txt + Style.RESET_ALL
 
 
@@ -673,12 +921,12 @@ def main():
         try:
             setattr(args, "config_file", read_cfg_from_dotfile())
         except OSError:
-            print(m + " and dotfile does not exist: {}".format(dotfile_path()))
+            print(m + f" and dotfile does not exist: {dotfile_path()}")
             parser.print_help(sys.stderr)
             sys.exit(1)
         else:
-            print(m + ", using: {}. Read from dotfile ({}).".
-                  format(read_cfg_from_dotfile(), dotfile_path()))
+            print(m + f", using: {read_cfg_from_dotfile()}. "
+                      f"Read from dotfile ({dotfile_path()}).")
     if args.command == "init":
         sys.exit(int(not init_dotfile(dotfile_path(), args.config_file, args.force)))
     args = enrich_args_via_cfg(args, aux_parser)
@@ -695,16 +943,10 @@ def main():
         level = LOGGING_LEVEL
 
     # Establish the project-root logger and attach one for this module.
-    logger_kwargs = {"level": level,
-                     "logfile": args.logfile,
-                     "devmode": args.dbg}
-    init_logger(name="peppy", **logger_kwargs)
-    init_logger(name="divvy", **logger_kwargs)
-    init_logger(name="eido", **logger_kwargs)
-    _LOGGER = init_logger(name=_PKGNAME, **logger_kwargs)
-
-    # lc = LooperConfig(select_looper_config(filename=args.looper_config))
-    # _LOGGER.debug("Determined genome config: {}".format(lc))
+    log_kwargs = {"level": level, "logfile": args.logfile, "devmode": args.dbg}
+    for dep in ["peppy", "divvy", "eido", "pipestat"]:
+        init_logger(name=dep, **log_kwargs)
+    _LOGGER = init_logger(name=_PKGNAME, **log_kwargs)
 
     _LOGGER.info("Looper version: {}\nCommand: {}".
                  format(__version__, args.command))
@@ -717,9 +959,8 @@ def main():
         if hasattr(args, "divvy") else None
 
     # Initialize project
-    _LOGGER.debug("Building Project")
     try:
-        p = Project(config_file=args.config_file,
+        p = Project(cfg=args.config_file,
                     amendments=args.amend,
                     divcfg_path=divcfg,
                     runp=args.command == "runp",
@@ -758,14 +999,27 @@ def main():
         if args.command == "destroy":
             return Destroyer(prj)(args)
 
+        # pipestat support introduces breaking changes and pipelines run
+        # with no pipestat reporting would not be compatible with
+        # commands: table, report and check. Therefore we plan maintain
+        # the old implementations for a couple of releases.
         if args.command == "table":
-            Table(prj)()
-        
+            if args.use_pipestat:
+                Tabulator(prj)(args)
+            else:
+                TableOld(prj)()
+
         if args.command == "report":
-            Report(prj)(args)
+            if args.use_pipestat:
+                Reporter(prj)(args)
+            else:
+                ReportOld(prj)(args)
 
         if args.command == "check":
-            Checker(prj)(flags=args.flags)
+            if args.use_pipestat:
+                Checker(prj)(args)
+            else:
+                CheckerOld(prj)(flags=args.flags)
 
         if args.command == "clean":
             return Cleaner(prj)(args)

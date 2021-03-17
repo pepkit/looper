@@ -12,14 +12,14 @@ from datetime import timedelta
 from ._version import __version__ as v
 from .const import *
 from .processed_project import get_project_outputs
-from .utils import get_file_for_project
+from .utils import get_file_for_project_old
 from peppy.const import *
 from eido import read_schema
 from copy import copy as cp
 _LOGGER = logging.getLogger("looper")
 
 
-class HTMLReportBuilder(object):
+class HTMLReportBuilderOld(object):
     """ Generate HTML summary report for project/samples """
 
     def __init__(self, prj):
@@ -28,11 +28,11 @@ class HTMLReportBuilder(object):
 
         :param Project prj: Project with which to work/operate on
         """
-        super(HTMLReportBuilder, self).__init__()
+        super(HTMLReportBuilderOld, self).__init__()
         self.prj = prj
         self.j_env = get_jinja_env()
-        self.reports_dir = get_file_for_project(self.prj, "reports")
-        self.index_html_path = get_file_for_project(self.prj, "summary.html")
+        self.reports_dir = get_file_for_project_old(self.prj, "reports")
+        self.index_html_path = get_file_for_project_old(self.prj, "summary.html")
         self.index_html_filename = os.path.basename(self.index_html_path)
         self._outdir = self.prj.output_dir
         _LOGGER.debug("Reports dir: {}".format(self.reports_dir))
@@ -483,7 +483,7 @@ class HTMLReportBuilder(object):
         if not objs.dropna().empty:
             objs.drop_duplicates(keep='last', inplace=True)
         # Generate parent index.html page path
-        index_html_path = get_file_for_project(self.prj, "summary.html")
+        index_html_path = get_file_for_project_old(self.prj, "summary.html")
 
         # Add stats_summary.tsv button link
         stats_file_name = os.path.join(self._outdir, self.prj.name)
@@ -580,7 +580,7 @@ def get_jinja_env(templates_dirname=None):
     """
     if templates_dirname is None:
         file_dir = os.path.dirname(os.path.realpath(__file__))
-        templates_dirname = os.path.join(file_dir, TEMPLATES_DIRNAME)
+        templates_dirname = os.path.join(file_dir, f'{TEMPLATES_DIRNAME}_old')
     _LOGGER.debug("Using templates dir: " + templates_dirname)
     return jinja2.Environment(loader=jinja2.FileSystemLoader(templates_dirname))
 
@@ -802,10 +802,10 @@ def create_status_table(prj, final=True):
             row_classes.append(button_class)
             # get first column data (sample name/link)
             page_name = sample_name + ".html"
-            page_path = os.path.join(get_file_for_project(prj, "reports"),
+            page_path = os.path.join(get_file_for_project_old(prj, "reports"),
                                      page_name.replace(' ', '_').lower())
             page_relpath = os.path.relpath(page_path,
-                                           get_file_for_project(prj, "reports"))
+                                           get_file_for_project_old(prj, "reports"))
             sample_paths.append(page_relpath)
             sample_link_names.append(sample_name)
             # get second column data (status/flag)
@@ -815,7 +815,7 @@ def create_status_table(prj, final=True):
                                               prj.results_folder)
             log_file_link = \
                 _get_relpath_to_file(log_name, sample_name, prj.results_folder,
-                                     get_file_for_project(prj, "reports"))
+                                     get_file_for_project_old(prj, "reports"))
             log_link_names.append(log_name)
             log_paths.append(log_file_link)
             # get fourth column data (runtime) and fifth column data (memory)
@@ -875,4 +875,3 @@ def _get_runtime(profile_df):
     """
     unique_df = profile_df[~profile_df.duplicated('cid', keep='last').values]
     return str(timedelta(seconds=sum(unique_df['runtime'].apply(lambda x: x.total_seconds())))).split(".")[0]
-

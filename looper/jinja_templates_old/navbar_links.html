@@ -1,13 +1,3 @@
-              {% if project_report is not none %}
-                  <li class="nav-item active">
-                    <a class="nav-link" href="{{project_report}}">Linked project report</a>
-                  </li>
-              {% endif %}
-              {% if sample_reports_parent is not none %}
-                  <li class="nav-item active">
-                    <a class="nav-link" href="{{sample_reports_parent}}">Linked sample reports</a>
-                  </li>
-              {% endif %}
               {% if status_page_name is not none %}
               <!-- if the status_page_name is not defined, the status page link is omitted -->
                   <li class="nav-item active">
@@ -16,15 +6,21 @@
               {% endif %}
               {% if dropdown_keys_objects is none %}
               <!-- there is more than 20 objects or 0 -->
-                {% if objects_html_page is not none %}
+                {% if objects_html_page is none %}
+                <!-- no objects at all -->
+                  <li class="nav-item">
+                    <!-- intentionally no href attribute, inactive link -->
+                    <a class="nav-link disabled">{{objects_page_name}}</a>
+                  </li> 
+                {% else %}
                   <li class="nav-item active">
                     <a class="nav-link" href="{{objects_html_page}}">{{objects_page_name}}</a>
-                  </li>
+                  </li>  
                 {% endif %}
               {% else %}
                <!-- there is less than 20 objects -->
                 <li class="nav-item dropdown active">
-                  <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  <a class="nav-link dropdown-toggle active" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                     {{ menu_name_objects }}
                   </a>
                   <div class="dropdown-menu" aria-labelledby="navbarDropdown">
@@ -39,7 +35,13 @@
               {% endif %}
               {% if sample_names is none %}
                 <!-- there is more than 20 samples or 0 -->
-                {% if samples_html_page is not none %}
+                {% if samples_html_page is none %}
+                  <!-- no objects at all -->
+                  <li class="nav-item">
+                    <!-- intentionally no href attribute, inactive link -->
+                    <a class="nav-link disabled">{{samples_page_name}}</a>
+                  </li>
+                {% else %}
                   <li class="nav-item active">
                     <a class="nav-link" href="{{samples_html_page}}">{{samples_page_name}}</a>
                   </li>

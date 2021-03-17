@@ -23,20 +23,23 @@ A pipeline interface may contain the following keys:
 - `pipeline_name` (REQUIRED) - A string identifying the pipeline,
 - `pipeline_type` (REQUIRED) - A string indicating a pipeline type: "sample" (for `run`) or "project" (for `runp`),
 - `command_template` (REQUIRED) - A [Jinja2](https://jinja.palletsprojects.com/en/2.11.x/) template used to construct a pipeline command command to run.
-- `path` (RECOMMENDED) - The path to the pipeline script, relative to the pipeline interface. 
+- `linked_pipeline_interfaces` (OPTIONAL) - A collection of paths to sample pipeline interfaces related to this pipeline interface (used only in project pipeline interfaces for `looper report` purposes). 
 - `input_schema` (RECOMMENDED) - A [PEP Schema](http://eido.databio.org) formally defining *required inputs* for the pipeline
 - `output_schema` (RECOMMENDED) - A schema describing the *outputs* of the pipeline
 - `compute` (RECOMMENDED) - Settings for computing resources
-- `sample_yaml_path` (OPTIONAL) - Path to sample yaml files produced by looper.
+- `var_templates` (RECOMMENDED) - A mapping of [Jinja2](https://jinja.palletsprojects.com/en/2.11.x/) templates and corresponding names, typically used to encode submission-specific paths that can be submission-specific
+- `pre_submit` (OPTIONAL) - A mapping that defines the pre-submission tasks to be executed
 
 The pipeline interface should define either a sample pipeline or a project pipeline. Here's a simple example:
 
 ```yaml
 pipeline_name: RRBS
 pipeline_type: sample
-path: path/to/rrbs.py
+var_templates:
+  pipeline: "{looper.piface_dir}/pipelines/pipeline1.py"
+  sample_info: "{looper.piface_dir}/{sample.name}/info.txt"
 input_schema: path/to/rrbs_schema.yaml
-command_template: {pipeline.path} --input {sample.data_path}
+command_template: {pipeline.var_templates.path} --input {sample.data_path} --info {pipeline.sample_info.path}
 ```
 
 Pretty simple. The `pipeline_name` is arbitrary. It's used for messaging and identification. Ideally, it's unique to each pipeline. In this example, we define a single sample-level pipeline. 
@@ -75,11 +78,20 @@ command_template: >
 
 Arguments wrapped in Jinja2 conditionals will only be added *if the specified attribute exists for the sample*.
 
-### path
+### linked_pipeline_interfaces
 
-Absolute or relative path to the script or command for this pipeline. Relative paths are considered **relative to your pipeline_interface file**. We strongly recommend using relative paths where possible to keep your pipeline interface file portable. You may also use shell environment variables (like `${HOME}`) in the `path`. You can then use this variable to refer to the pipeline command to execute by using `{pipeline.path}` in the `command_template`.
+*Only project pipeline interfaces will respect this attribute*
 
-The `path` attribute is not necessary; it is possible to simply include the relative path to the pipeline inside the `command_template` directly. However, we recommend using `path` instead, and then referring to it in the command_template using `{pipeline.path}`, because this indicates more clearly what the base script of the pipeline is.
+Since the sample and project pipeline interfaces are completely separate this is the only way to link them together. This attribute is used by `looper report` to organize the produced HTML reports into groups, i.e. project-level report will list linked sample-level reports. 
+
+```
+linked_pipeline_interfaces:
+  - ../pipeline_interface.yaml
+  - /home/john/test/pipeline_interface1.yaml
+```
+
+The paths listed in `linked_pipeline_interfaces` are considered relative to the pipeline interface, unless they are absolute.
+
 
 ### input_schema
 
@@ -99,56 +111,60 @@ If no `input_schema` is included in the pipeline interface, looper will not be a
 
 ### output_schema
 
-The output schema formally specifies the *output produced by this pipeline*. It is used by downstream tools to that need to be aware of the products of the pipeline for further visualization or analysis. Like the input schema, it is based on the extended [PEP JSON-schema validation framework](http://pep.databio.org/en/latest/howto_schema/), but adds looper-specific capabilities. The base schema has two *properties* sections, one that pertains to the project, and one that pertains to the samples. The *properties* sections for both sample and project will recognize these attributes: 
+The output schema formally specifies the *output produced by this pipeline*. It is used by downstream tools to that need to be aware of the products of the pipeline for further visualization or analysis. Like the input schema, it is based on JSON-schema, but *must* follow the [pipestat schema specification](http://pipestat.databio.org/en/latest/pipestat_specification/#pipestat-schema).
+ 
+Here is an example output schema:
 
-- `title`, following the base JSON-schema spec.
-- `description`, following the base JSON-schema spec.
-- `path`, used to specify a relative path to an output file. The value in the `path` attribute is a template for a path that will be populated by sample variables. Sample variables can be used in the template using brace notation, like `{sample_attribute}`.
-- `thumbnail_path`, templates similar to the `path` attribute, but used to specify a thumbnail output version.
-- `type`, the data type of this output. Can be one of: link, image, file.
-
-The attributes added under the *Project properties* section are assumed to be project-level outputs, whereas attributes under the `samples` object are sample-level outputs. Here is an example output schema:
-
+```yaml
+number_of_things:
+  type: integer
+  multipleOf: 10
+  minimum: 20
+  description: "Number of things, min 20, multiple of 10"
+smooth_bw:
+  type: file
+  value:
+    path: "aligned_{genome}/{sample_name}_smooth.bw"
+    title: "A smooth bigwig file"
+  description: "This stores a bigwig file path"
+peaks_bed: 
+  type: file
+  value:
+    path: "peak_calling_{genome}/{sample_name}_peaks.bed"
+    title: "Peaks in BED format"
+  description: "This stores a BED file path"
+collection_of_things:
+  type: array
+  items:
+    type: string
+  description: "This stores collection of strings"
+output_object:
+  type: object
+  properties:
+    GC_content_plot:
+      type: image
+    genomic_regions_plot:
+      type: image
+  value:
+    GC_content_plot:
+      path: "gc_content_{sample_name}.pdf"
+      thumbnail_path: "gc_content_{sample_name}.png"
+      title: "Plot of GC content"
+    genomic_regions_plot:
+      path: "genomic_regions_{sample_name}.pdf"
+      thumbnail_path: "genomic_regions_{sample_name}.png"
+      title: "Plot of genomic regions"
+  required:
+    - GC_content
+  description: "Object output with plots, the GC content plot is required"
 ```
-description: objects produced by PEPPRO pipeline.
-properties:
-  samples:
-    type: array
-    items:
-      type: object
-      properties:
-        smooth_bw: 
-          path: "aligned_{genome}/{sample_name}_smooth.bw"
-          type: string
-          description: "A smooth bigwig file"
-        aligned_bam: 
-          path: "aligned_{genome}/{sample_name}_sort.bam"
-          type: string
-          description: "A sorted, aligned BAM file"
-        peaks_bed: 
-          path: "peak_calling_{genome}/{sample_name}_peaks.bed"
-          type: string
-          description: "Peaks in BED format"
-  tss_file:
-    title: "TSS enrichment file"
-    description: "Plots TSS scores for each sample."
-    thumbnail_path: "summary/{name}_TSSEnrichment.png"
-    path: "summary/{name}_TSSEnrichment.pdf"
-    type: image
-  counts_table:
-    title: "Project peak coverage file"
-    description: "Project peak coverages: chr_start_end X sample"
-    path: "summary/{name}_peaks_coverage.tsv"
-    type: link
-```
-
 Looper uses the output schema in its `report` function, which produces a browsable HTML report summarizing the pipeline results. The output schema provides the relative locations to sample-level and project-level outputs produced by the pipeline, which looper can then integrate into the output results. If the output schema is not included, the `looper report` will be unable to locate and integrate the files produced by the pipeline and will therefore be limited to simple statistics.
 
 ### compute
 
 The compute section of the pipeline interface provides a way to set compute settings at the pipeline level. These variables can then be accessed in the command template. They can also be overridden by values in the PEP config, or on the command line. See the [looper variable namespaces](variable-namespaces.md) for details. 
 
-There are two reserved attributes under  `compute` with specialized behavior: `size_dependent_variables` and `dynamic_variables_command_template`, which we'll now describe in detail.
+There is one reserved attribute under `compute` with specialized behavior -- `size_dependent_variables` which we'll now describe in detail.
 
 #### size_dependent_variables
 
@@ -158,9 +174,10 @@ The pipeline interface simply points to a `tsv` file:
 
 ```yaml
 pipeline_type: sample
-path: pipelines/pepatac.py
+var_templates:
+  path: pipelines/pepatac.py
 command_template: >
-  {pipeline.path} ...
+  {pipeline.var_templates.path} ...
 compute:
   size_dependent_variables: resources-sample.tsv
 ```
@@ -179,41 +196,16 @@ NaN 32  32000 04-00:00:00
 
 This example will add 3 variableS: `cores`, `mem`, and `time`, which can be accessed via `{compute.cores}`, `{compute.mem}`, and `{compute.time}`. Each row defines a "packages" of variable values. Think of it like a group of steps of increasing size. For a given job, looper calculates the total size of the input files (which are defined in the `input_schema`). Using this value, looper then selects the best-fit row by iterating over the rows until the calculated input file size does not exceed the `max_file_size` value in the row. This selects the largest resource package whose `max_file_size` attribute does not exceed the size of the input file. Max file sizes are specified in GB, so `5` means 5 GB.
 
-This final line in the resources `tsv` must include `NaN` in the `max_file_size` column, which serves as a catch-all for files larger than the largest specified file size. Add as many resource sets as you want. 
+This final line in the resources `tsv` must include `NaN` in the `max_file_size` column, which serves as a catch-all for files larger than the largest specified file size. Add as many resource sets as you want.
 
-#### dynamic_variables_command_template
+#### var_templates
 
-The size-dependent variables is a convenient system to modulate computing variables based on file size, but it is not flexible enough to allow modulated compute variables on the basis of other sample attributes. For a more flexible version, looper provides the `dynamic_variables_command_template`. The dynamic variables command template specifies a Jinja2 template to construct a system command run in a subprocess. This command template has available all of the namespaces in the primary command template. The command should return a JSON object, which is then used to populate submission templates. This allows you to specify computing variables that depend on any attributes of a project, sample, or pipeline, which can be used for ultimate flexibility in computing.
+This section can consist of multiple variable templates that are rendered and can be reused. The namespaces available to the templates are listed in [variable namespaces](variable-namespaces.md) section. Please note that the variables defined here (even if they are paths) are arbitrary and are *not* subject to be made relative. Therefore, the pipeline interface author needs take care of making them portable (the `{looper.piface_dir}` value comes in handy!).
 
-Example:
+#### pre_submit
 
-```
-pipeline_type: sample
-path: pipelines/pepatac.py
-command_template: >
-  {pipeline.path} ...
-compute:
-  dynamic_variables_command_template: python script.py --arg {sample.attribute}
-```
-
-
-### sample_yaml_path
-
-Looper produces a yaml file that represents the sample. By default the file is saved in submission directory in `{sample.sample_name}.yaml`. You can override the default by specifying a `sample_yaml_path` attribute in the pipeline interface. This attribute, like the `command_template`, has access to any of the looper namespaces, in case you want to use them in the names of your sample yaml files. 
-The result of the rendered template is considered relative to the `looper.output_dir` path, unless it is an absolute path. For example, to save the file in the output directory under a custom name use:
-
-```
-sample_yaml_path: {sample.genome}_sample.yaml
-```
-
-To save the file elsewhere specify an absolute path:
-
-```
-sample_yaml_path: $HOME/results/{sample.genome}_sample.yaml
-```
-
-
+This section can consist of two subsections: `python_funcions` and/or `command_templates`, which specify the pre-submission tasks to be run before the main pipeline command is submitted. Please refer to the [pre-submission hooks system](pre-submission-hooks.md) section for a detailed explanation of this feature and syntax.
 
 ## Validating a pipeline interface
 
-A pipeline interface can be validated using JSON Schema against [schema.databio.org/pipelines/pipeline_interface.yaml](http://schema.databio.org/pipelines/pipeline_interface.yaml). 
+A pipeline interface can be validated using JSON Schema against [schema.databio.org/pipelines/pipeline_interface.yaml](http://schema.databio.org/pipelines/pipeline_interface.yaml). Looper automatically validates pipeline interfaces at submission initialization stage.

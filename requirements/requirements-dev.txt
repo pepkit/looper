@@ -1,1 +1,2 @@
-git+git://github.com/pepkit/peppy@dev#peppy
+-e git+git://github.com/pepkit/pipestat@master#egg=pipestat
+-e git+git://github.com/pepkit/peppy@dev#egg=peppy

@@ -17,6 +17,9 @@ from ._version import __version__
 from .parser_types import *
 from .const import *
 
+from .conductor import write_sample_yaml_cwl, write_sample_yaml, \
+    write_sample_yaml_prj, write_submission_yaml
+
 from ubiquerg import VersionInHelpParser
 from divvy import DEFAULT_COMPUTE_RESOURCES_NAME, NEW_COMPUTE_KEY as COMPUTE_KEY
 # Not used here, but make this the main import interface between peppy and
@@ -191,22 +194,21 @@ def build_parser():
                     type=html_range(min_val=1, max_val="num_samples", value=1),
                     help="Number of commands to batch into one job")
 
-        inspect_subparser.add_argument(
-            "-n", "--snames", required=False, nargs="+", metavar="S",
-            help="Name of the samples to inspect")
-        inspect_subparser.add_argument(
-            "-l", "--attr-limit", required=False, type=int, default=10,
-            metavar="L", help="Number of sample attributes to display")
+        check_subparser.add_argument(
+            "--describe-codes", help="Show status codes description",
+            action="store_true", default=False
+        )
 
         check_subparser.add_argument(
-                "-A", "--all-folders", action=_StoreBoolActionType,
-                default=False, type=html_checkbox(checked=False),
-                help="Check status for all  output folders, not just for "
-                     "samples specified in the config. Default=False")
+            "--itemized", help="Show a detailed, by sample statuses",
+            action="store_true", default=False
+        )
+
         check_subparser.add_argument(
-                "-f", "--flags", nargs='*', default=FLAGS,
-                type=html_select(choices=FLAGS), metavar="F",
-                help="Check on only these flags/status values")
+            "-f", "--flags", nargs='*', default=FLAGS,
+            type=html_select(choices=FLAGS), metavar="F",
+            help="Check on only these flags/status values"
+        )
 
         for subparser in [destroy_subparser, clean_subparser]:
             subparser.add_argument(
@@ -267,5 +269,14 @@ def build_parser():
             subparser.add_argument(
                     "-a", "--amend", nargs="+", metavar="A",
                     help="List of amendments to activate")
+        for subparser in [report_subparser, table_subparser, check_subparser]:
+            subparser.add_argument(
+                "--project", help="Process only project-level pipelines",
+                action="store_true", default=False
+            )
+            subparser.add_argument(
+                "--use-pipestat", help="Use pipestat reported statistics/statuses",
+                action="store_true", default=False
+            )
         result.append(parser)
     return result
