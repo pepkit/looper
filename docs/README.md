@@ -4,7 +4,7 @@
 
 ## What is looper?
 
-Looper is a job submitting engine. Looper deploys arbitrary shell commands for each sample in a [standard PEP project](https://pepkit.github.io/docs/home/). You can think of looper as providing a single user interface to running, monitoring, and managing all of your sample-intensive research projects the same way, regardless of data type or pipeline used.
+Looper is a job submitting engine. Looper deploys arbitrary shell commands for each sample in a [standard PEP project](http://pep.databio.org/en/latest/). You can think of looper as providing a single user interface to running, monitoring, and managing all of your sample-intensive research projects the same way, regardless of data type or pipeline used.
 
 ## What makes looper better?
 
