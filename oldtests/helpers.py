@@ -1,11 +1,11 @@
 """ Test utilities. """
 
-from functools import partial
 import random
 import string
+from functools import partial
+
 import numpy as np
 import pytest
-
 
 __author__ = "Vince Reuter"
 __email__ = "vreuter@virginia.edu"
@@ -15,7 +15,7 @@ LETTERS_AND_DIGITS = string.ascii_letters + string.digits
 
 
 def assert_entirely_equal(observed, expected):
-    """ Accommodate equality assertion for varied data, including NaN. """
+    """Accommodate equality assertion for varied data, including NaN."""
     try:
         assert observed == expected
     except AssertionError:
@@ -33,12 +33,16 @@ def build_pipeline_iface(from_file, folder, data):
     :param Mapping data: raw PI config data
     :return looper.PipelineInterface: the new PipelineInterface instance
     """
-    import os, yaml
+    import os
+
+    import yaml
+
     from looper import PipelineInterface
+
     assert type(from_file) is bool
     if from_file:
         fp = os.path.join(folder, "pipeline_interface.yaml")
-        with open(fp, 'w') as f:
+        with open(fp, "w") as f:
             yaml.dump(data, f)
         data = fp
     return PipelineInterface(data)
@@ -55,14 +59,19 @@ def named_param(argnames, argvalues):
     :return functools.partial: Wrapped version of the call to the pytest
         test case parameterization function, for use as decorator.
     """
-    return partial(pytest.mark.parametrize(argnames, argvalues,
-                   ids=lambda arg: "{}={}".format(argnames, arg)))
+    return partial(
+        pytest.mark.parametrize(
+            argnames, argvalues, ids=lambda arg: "{}={}".format(argnames, arg)
+        )
+    )
 
 
 def process_protocols(prj, protocols, **kwargs):
-    """ Ensure dry_run is active for each conductor created """
+    """Ensure dry_run is active for each conductor created"""
     import copy
+
     from looper import looper
+
     kwds = copy.deepcopy(kwargs)
     kwds["dry_run"] = True
     return looper.process_protocols(prj, protocols, **kwds)
@@ -79,8 +88,9 @@ def randstr(pool, size):
     :raise ValueError: if size is not a positive integer
     """
     if size < 1:
-        raise ValueError("Must build string of positive integral length; got "
-                         "{}".format(size))
+        raise ValueError(
+            "Must build string of positive integral length; got " "{}".format(size)
+        )
     return "".join(random.choice(pool) for _ in range(size))
 
 
@@ -102,18 +112,21 @@ def remove_piface_requirements(data):
     :return Mapping: same as input, but with requirements keys removed
     """
     from collections import Mapping
+
     from looper.pipeline_interface import PIPELINE_REQUIREMENTS_KEY as REQS_KEY
+
     def go(m, acc):
         for k, v in m.items():
             if k == REQS_KEY:
                 continue
             acc[k] = go(v, {}) if isinstance(v, Mapping) else v
         return acc
+
     return go(data, {})
 
 
 class ReqsSpec(object):
-    """ Basically a namedtuple but with type validation. """
+    """Basically a namedtuple but with type validation."""
 
     def __init__(self, reqs, exp_valid, exp_unmet):
         """
@@ -125,14 +138,18 @@ class ReqsSpec(object):
         :param Iterable[str] exp_valid: expected satisfied requirements
         :param Iterable[str] exp_unmet: expected unmet requirements
         """
+
         def proc_exp(exp_val):
             types = (tuple, list, set)
             if not isinstance(exp_val, types):
                 raise TypeError(
-                    "Illegal type of expected value ({}); must be one of: {}".
-                    format(type(exp_val).__name__,
-                           ", ".join(map(lambda t: t.__name__, types))))
+                    "Illegal type of expected value ({}); must be one of: {}".format(
+                        type(exp_val).__name__,
+                        ", ".join(map(lambda t: t.__name__, types)),
+                    )
+                )
             return set(exp_val)
+
         self.exp_valid = proc_exp(exp_valid or [])
         self.exp_valid = proc_exp(exp_unmet or [])
         self.reqs = reqs

@@ -2,6 +2,7 @@
 
 import os
 import subprocess
+
 import pytest
 from ubiquerg import build_cli_extra
 
@@ -18,7 +19,7 @@ INCLUSION_OPTION = "--selector-include"
 @pytest.mark.remote_data
 @pytest.fixture
 def data_root(tmpdir):
-    """ Clone data repo and return path to it. """
+    """Clone data repo and return path to it."""
     tmp = tmpdir.strpath
     cmd = "git clone {}".format(REPO_URL)
     try:
@@ -32,7 +33,7 @@ def data_root(tmpdir):
 
 @pytest.fixture
 def data_conf_file(data_root):
-    """ Clone data repo and return path to project config file. """
+    """Clone data repo and return path to project config file."""
     f = os.path.join(data_root, "config", "microtest_config.yaml")
     assert os.path.isfile(f), "Contents: {}".format(os.listdir(data_root))
     return f
@@ -40,7 +41,7 @@ def data_conf_file(data_root):
 
 @pytest.fixture(scope="function")
 def temp_chdir_home(tmpdir):
-    """ Temporarily (for a test case) change home and working directories. """
+    """Temporarily (for a test case) change home and working directories."""
     key = "HOME"
     prev_home = os.environ[key]
     prev_work = os.environ["PWD"]
@@ -57,11 +58,15 @@ def temp_chdir_home(tmpdir):
 
 @pytest.mark.remote_data
 @pytest.mark.usefixtures("temp_chdir_home")
-@pytest.mark.parametrize("cli_extra",
-    [build_cli_extra(kvs) for kvs in
-     [{SAMPLE_SELECTOR_OPTION: "protocol", INCLUSION_OPTION: "ATAC-seq"}]])
+@pytest.mark.parametrize(
+    "cli_extra",
+    [
+        build_cli_extra(kvs)
+        for kvs in [{SAMPLE_SELECTOR_OPTION: "protocol", INCLUSION_OPTION: "ATAC-seq"}]
+    ],
+)
 def test_cli_microtest_smoke(cli_extra, data_conf_file):
-    """ Using microtest as project, test CLI for failure on specific cases. """
+    """Using microtest as project, test CLI for failure on specific cases."""
     cmd = "looper run -d {} {}".format(data_conf_file, cli_extra)
     try:
         subprocess.check_call(cmd, shell=True)

@@ -3,18 +3,15 @@ Processed Project manipulation functions.
 Will be moved to a separate package
 """
 import os
-from logging import getLogger
-from copy import copy
 from collections.abc import Mapping
+from copy import copy
+from logging import getLogger
 
 from eido.const import *
 from eido.exceptions import *
-
-from peppy.sample import Sample
 from peppy.project import Project
-
+from peppy.sample import Sample
 from pipestat import SCHEMA_TYPE_KEY, SchemaError
-
 from ubiquerg import expandpath
 
 __author__ = "Michal Stolarczyk"
@@ -36,6 +33,7 @@ def _populate_paths_in_schema(object, schema):
         output of read_schema function
     :return Mapping: object with path templates populated
     """
+
     def _recurse_and_populate(mapping, object):
         """
         Recursively populate paths and thumbnail_paths templates in a mapping
@@ -51,8 +49,7 @@ def _populate_paths_in_schema(object, schema):
                     _recurse_and_populate(v, object)
                 elif k in PATH_LIKE:
                     try:
-                        mapping[k] = expandpath(
-                            v.format(**dict(object.items())))
+                        mapping[k] = expandpath(v.format(**dict(object.items())))
                     except Exception as e:
                         _LOGGER.warning(
                             f"Caught exception: {getattr(e, 'message', repr(e))}."
@@ -66,8 +63,10 @@ def _populate_paths_in_schema(object, schema):
         if "value" not in v:
             continue
         if SCHEMA_TYPE_KEY not in v:
-            raise SchemaError(f"'{SCHEMA_TYPE_KEY}' not found in '{k}' section "
-                              f"of the output schema")
+            raise SchemaError(
+                f"'{SCHEMA_TYPE_KEY}' not found in '{k}' section "
+                f"of the output schema"
+            )
         schema[k] = _recurse_and_populate(v, object)
     return schema
 
@@ -119,6 +118,7 @@ def get_project_outputs(project, schema):
     :return attmap.PathExAttMap: mapping with populated path-like attributes
     """
     from attmap import PathExAttMap
+
     schema = schema[-1]  # use only first schema, in case there are imports
     populated = populate_project_paths(project, schema)
     return PathExAttMap({k: getattr(populated, k) for k in schema.keys()})

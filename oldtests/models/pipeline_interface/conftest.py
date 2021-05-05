@@ -1,20 +1,22 @@
 """ Configuration for modules with independent oldtests of models. """
 
-from collections import OrderedDict
 import copy
 import os
 import sys
+from collections import OrderedDict
+
 if sys.version_info < (3, 3):
     from collections import Iterable, Mapping
 else:
     from collections.abc import Iterable, Mapping
+
 import pandas as pd
 import pytest
 import yaml
 from divvy import DEFAULT_COMPUTE_RESOURCES_NAME
-from looper.pipeline_interface import PROTOMAP_KEY, RESOURCES_KEY
 from peppy import METADATA_KEY, NAME_TABLE_ATTR, SAMPLE_NAME_COLNAME
 
+from looper.pipeline_interface import PROTOMAP_KEY, RESOURCES_KEY
 
 __author__ = "Vince Reuter"
 __email__ = "vreuter@virginia.edu"
@@ -46,16 +48,31 @@ ENV_CONF_LINES = """compute:
 BASIC_PROTOMAP = {"ATAC": "ATACSeq.py"}
 
 # Compute resource bundles for pipeline interface configuration data
-DEFAULT_RESOURCES = {"file_size": 0, "cores": 1, "mem": 8000,
-                     "time": "0-01:00:00", "partition": "local"}
-MIDSIZE_RESOURCES = {"file_size": 10, "cores": 8, "mem": 16000,
-                     "time": "0-07:00:00", "partition": "serial"}
-HUGE_RESOURCES = {"file_size": 30, "cores": 24, "mem": 64000,
-                  "time": "30-00:00:00", "partition": "longq"}
+DEFAULT_RESOURCES = {
+    "file_size": 0,
+    "cores": 1,
+    "mem": 8000,
+    "time": "0-01:00:00",
+    "partition": "local",
+}
+MIDSIZE_RESOURCES = {
+    "file_size": 10,
+    "cores": 8,
+    "mem": 16000,
+    "time": "0-07:00:00",
+    "partition": "serial",
+}
+HUGE_RESOURCES = {
+    "file_size": 30,
+    "cores": 24,
+    "mem": 64000,
+    "time": "30-00:00:00",
+    "partition": "longq",
+}
 
 
 def pytest_generate_tests(metafunc):
-    """ Conditional customization of test cases in this directory. """
+    """Conditional customization of test cases in this directory."""
     try:
         classname = metafunc.cls.__name__
     except AttributeError:
@@ -65,9 +82,14 @@ def pytest_generate_tests(metafunc):
         if classname == "ConstructorPathParsingTests":
             # Provide test case with two PipelineInterface config bundles.
             metafunc.parametrize(
-                    argnames="config_bundles",
-                    argvalues=[(copy.deepcopy(ATACSEQ_IFACE_WITHOUT_RESOURCES),
-                                {"name": "sans-path"})])
+                argnames="config_bundles",
+                argvalues=[
+                    (
+                        copy.deepcopy(ATACSEQ_IFACE_WITHOUT_RESOURCES),
+                        {"name": "sans-path"},
+                    )
+                ],
+            )
 
 
 ATACSEQ_IFACE_WITHOUT_RESOURCES = {
@@ -81,19 +103,19 @@ ATACSEQ_IFACE_WITHOUT_RESOURCES = {
         "--genome": "genome",
         "--input": "read1",
         "--input2": "read2",
-        "--single-or-paired": "read_type"
+        "--single-or-paired": "read_type",
     },
     "optional_arguments": {
         "--frip-ref-peaks": "FRIP_ref",
         "--prealignments": "prealignments",
-        "--genome-size": "macs_genome_size"
-    }
+        "--genome-size": "macs_genome_size",
+    },
 }
 
 
 @pytest.fixture(scope="function")
 def atac_pipe_name():
-    """ Oft-used as filename for pipeline module and PipelineInterface key. """
+    """Oft-used as filename for pipeline module and PipelineInterface key."""
     return "ATACSeq.py"
 
 
@@ -127,8 +149,8 @@ def atacseq_piface_data(atac_pipe_name):
 @pytest.fixture(scope="function")
 def basic_data_raw():
     return copy.deepcopy(
-        {"PathExAttMap": {},
-         "Sample": {SAMPLE_NAME_COLNAME: "arbitrary-sample"}})
+        {"PathExAttMap": {}, "Sample": {SAMPLE_NAME_COLNAME: "arbitrary-sample"}}
+    )
 
 
 @pytest.fixture(scope="function")
@@ -144,23 +166,25 @@ def basic_instance_data(request, instance_raw_data):
     """
     # Cleanup is free with _write_config, using request's temp folder.
     transformation_by_class = {
-            "PathExAttMap": lambda data: data,
-            "PipelineInterface": lambda data: _write_config(
-                data, request, "pipeline_interface.yaml"),
-            "Sample": lambda data: pd.Series(data)}
+        "PathExAttMap": lambda data: data,
+        "PipelineInterface": lambda data: _write_config(
+            data, request, "pipeline_interface.yaml"
+        ),
+        "Sample": lambda data: pd.Series(data),
+    }
     which_class = request.getfixturevalue("class_name")
     return transformation_by_class[which_class](instance_raw_data)
 
 
 @pytest.fixture(scope="function")
 def default_resources():
-    """ Provide test case with default PipelineInterface resources section. """
+    """Provide test case with default PipelineInterface resources section."""
     return copy.deepcopy(DEFAULT_RESOURCES)
 
 
 @pytest.fixture(scope="function")
 def env_config_filepath(tmpdir):
-    """ Write default project/compute environment file for Project ctor. """
+    """Write default project/compute environment file for Project ctor."""
     conf_file = tmpdir.join(DEFAULT_COMPUTE_CONFIG_FILENAME)
     conf_file.write(ENV_CONF_LINES)
     return conf_file.strpath
@@ -168,13 +192,13 @@ def env_config_filepath(tmpdir):
 
 @pytest.fixture(scope="function")
 def huge_resources():
-    """ Provide non-default resources spec. section for PipelineInterface. """
+    """Provide non-default resources spec. section for PipelineInterface."""
     return copy.deepcopy(HUGE_RESOURCES)
 
 
 @pytest.fixture(scope="function")
 def instance_raw_data(request, basic_data_raw, atacseq_piface_data):
-    """ Supply the raw data for a basic model instance as a fixture. """
+    """Supply the raw data for a basic model instance as a fixture."""
     which_class = request.getfixturevalue("class_name")
     if which_class == "PipelineInterface":
         return copy.deepcopy(atacseq_piface_data)
@@ -184,21 +208,21 @@ def instance_raw_data(request, basic_data_raw, atacseq_piface_data):
 
 @pytest.fixture(scope="function")
 def midsize_resources():
-    """ Provide non-default resources spec. section for PipelineInterface. """
+    """Provide non-default resources spec. section for PipelineInterface."""
     return copy.deepcopy(MIDSIZE_RESOURCES)
 
 
 @pytest.fixture(scope="function")
 def minimal_project_conf_path(tmpdir):
-    """ Write minimal sample annotations and project configuration. """
+    """Write minimal sample annotations and project configuration."""
     anns_file = tmpdir.join(ANNOTATIONS_FILENAME).strpath
-    df = pd.DataFrame(OrderedDict([("sample_name", SAMPLE_NAMES),
-                                   ("data", DATA_VALUES)]))
-    with open(anns_file, 'w') as annotations:
+    df = pd.DataFrame(
+        OrderedDict([("sample_name", SAMPLE_NAMES), ("data", DATA_VALUES)])
+    )
+    with open(anns_file, "w") as annotations:
         df.to_csv(annotations, sep=",", index=False)
     conf_file = tmpdir.join(CONFIG_FILENAME)
-    config_lines = "{}:\n  {}: {}".format(
-        METADATA_KEY, NAME_TABLE_ATTR, anns_file)
+    config_lines = "{}:\n  {}: {}".format(METADATA_KEY, NAME_TABLE_ATTR, anns_file)
     conf_file.write(config_lines)
     return conf_file.strpath
 
@@ -232,28 +256,31 @@ def path_config_file(request, tmpdir, atac_pipe_name):
         # interface data bundle.
         for iface_bundle in conf_data.values():
             iface_bundle["path"] = pipe_path
-    return write_config_data(protomap={ATAC_PROTOCOL_NAME: atac_pipe_name},
-                             conf_data=conf_data, dirpath=tmpdir.strpath)
+    return write_config_data(
+        protomap={ATAC_PROTOCOL_NAME: atac_pipe_name},
+        conf_data=conf_data,
+        dirpath=tmpdir.strpath,
+    )
 
 
 @pytest.fixture(scope="function")
 def path_proj_conf_file(tmpdir, proj_conf):
-    """ Write basic project configuration data and provide filepath. """
+    """Write basic project configuration data and provide filepath."""
     conf_path = os.path.join(tmpdir.strpath, "project_config.yaml")
-    with open(conf_path, 'w') as conf:
+    with open(conf_path, "w") as conf:
         yaml.safe_dump(proj_conf, conf)
     return conf_path
 
 
 @pytest.fixture(scope="function")
 def path_anns_file(request, tmpdir, sample_sheet):
-    """ Write basic annotations, optionally using a different delimiter. """
+    """Write basic annotations, optionally using a different delimiter."""
     filepath = os.path.join(tmpdir.strpath, "annotations.csv")
     if "delimiter" in request.fixturenames:
         delimiter = request.getfixturevalue("delimiter")
     else:
         delimiter = ","
-    with open(filepath, 'w') as anns_file:
+    with open(filepath, "w") as anns_file:
         sample_sheet.to_csv(anns_file, sep=delimiter, index=False)
     return filepath
 
@@ -283,9 +310,13 @@ def piface_config_bundles(request, resources):
     else:
         raise TypeError(
             "Expected mapping or list collection of PipelineInterface data: {} "
-            "({})".format(iface_config_datas, type(iface_config_datas)))
-    resource_specification = request.getfixturevalue(RESOURCES_KEY) \
-        if RESOURCES_KEY in request.fixturenames else resources
+            "({})".format(iface_config_datas, type(iface_config_datas))
+        )
+    resource_specification = (
+        request.getfixturevalue(RESOURCES_KEY)
+        if RESOURCES_KEY in request.fixturenames
+        else resources
+    )
     for config_bundle in data_bundles:
         config_bundle.update(resource_specification)
     return iface_config_datas
@@ -293,9 +324,11 @@ def piface_config_bundles(request, resources):
 
 @pytest.fixture(scope="function")
 def resources():
-    """ Basic PipelineInterface compute resources data. """
-    return {DEFAULT_COMPUTE_RESOURCES_NAME: copy.deepcopy(DEFAULT_RESOURCES),
-            "huge": copy.copy(HUGE_RESOURCES)}
+    """Basic PipelineInterface compute resources data."""
+    return {
+        DEFAULT_COMPUTE_RESOURCES_NAME: copy.deepcopy(DEFAULT_RESOURCES),
+        "huge": copy.copy(HUGE_RESOURCES),
+    }
 
 
 def write_config_data(protomap, conf_data, dirpath):
@@ -311,7 +344,7 @@ def write_config_data(protomap, conf_data, dirpath):
     """
     full_conf_data = {PROTOMAP_KEY: protomap, "pipelines": conf_data}
     filepath = os.path.join(dirpath, "pipeline_interface.yaml")
-    with open(filepath, 'w') as conf_file:
+    with open(filepath, "w") as conf_file:
         yaml.safe_dump(full_conf_data, conf_file)
     return filepath
 
@@ -329,6 +362,6 @@ def _write_config(data, request, filename):
     # We get cleanup for free by writing to file in requests temp folder.
     dirpath = request.getfixturevalue("tmpdir").strpath
     filepath = os.path.join(dirpath, filename)
-    with open(filepath, 'w') as conf_file:
+    with open(filepath, "w") as conf_file:
         yaml.safe_dump(data, conf_file)
     return filepath

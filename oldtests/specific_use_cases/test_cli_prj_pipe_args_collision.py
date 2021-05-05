@@ -3,15 +3,17 @@
 import copy
 import itertools
 import os
+
 import pytest
 import yaml
 from divvy import DEFAULT_COMPUTE_RESOURCES_NAME as DEF_RES
-from looper import PipelineInterface, Project, SubmissionConductor
-from looper.pipeline_interface import PL_KEY, PROTOMAP_KEY
 from peppy.const import *
 from peppy.utils import count_repeats
-from oldtests.helpers import randconf
 from ubiquerg import powerset
+
+from looper import PipelineInterface, Project, SubmissionConductor
+from looper.pipeline_interface import PL_KEY, PROTOMAP_KEY
+from oldtests.helpers import randconf
 
 __author__ = "Vince Reuter"
 __email__ = "vreuter@virginia.edu"
@@ -23,7 +25,7 @@ ALL_PIPE_FLAGS = {"--random", "--arbitrary", "--does-not-matter"}
 def generate_flags_partitions(flags):
     """
     Generate all partitions of a CLI flag options.
-    
+
     Each partition will be such that each flag is either designated for CLI
     specification or for project config specification, but not both.
 
@@ -49,8 +51,9 @@ def generate_overlaps(singles, mapped):
     """
     common = set(singles) & set(mapped.keys())
     assert set() == common, "Nonempty intersection: {}".format(", ".join(common))
-    singles_update = [list(singles) + list(m) for m in
-                      powerset(mapped.keys(), min_items=1)]
+    singles_update = [
+        list(singles) + list(m) for m in powerset(mapped.keys(), min_items=1)
+    ]
     mapped_update = [{f: None for f in fs} for fs in powerset(singles, min_items=1)]
     aug_maps = []
     for mx in mapped_update:
@@ -82,25 +85,30 @@ def generate_full_flags_cover(flags):
 
 @pytest.fixture
 def prj_dat(request, tmpdir):
-    """ Project config data for a test case """
+    """Project config data for a test case"""
     prj_dat = {METADATA_KEY: {OUTDIR_KEY: tmpdir.strpath}}
     if PIPE_ARGS_SECTION in request.fixturenames:
         pipe_args = request.getfixturevalue(PIPE_ARGS_SECTION)
         if type(pipe_args) is not dict:
-            raise TypeError("Pipeline arguments must be a dictionary; got {}".
-                            format(type(pipe_args)))
+            raise TypeError(
+                "Pipeline arguments must be a dictionary; got {}".format(
+                    type(pipe_args)
+                )
+            )
         prj_dat[PIPE_ARGS_SECTION] = pipe_args
     return prj_dat
 
 
 @pytest.mark.parametrize(
-    ["cli_flags", "pipe_args_data"], generate_full_flags_cover(ALL_PIPE_FLAGS))
+    ["cli_flags", "pipe_args_data"], generate_full_flags_cover(ALL_PIPE_FLAGS)
+)
 def test_flag_like_option(tmpdir, cli_flags, pipe_args_data, prj_dat):
-    """ Collision of flag-like options adds each only once. """
+    """Collision of flag-like options adds each only once."""
 
     # Pretest
-    assert len(cli_flags) > 0 or len(pipe_args_data) > 0, \
-        "Invalid test case parameterization -- empty flags and pipeline args"
+    assert (
+        len(cli_flags) > 0 or len(pipe_args_data) > 0
+    ), "Invalid test case parameterization -- empty flags and pipeline args"
     reps = count_repeats(cli_flags)
     assert [] == reps, "Unexpected duplicate flags: {}".format(reps)
 
@@ -115,16 +123,21 @@ def test_flag_like_option(tmpdir, cli_flags, pipe_args_data, prj_dat):
     # Build the submission conductor.
     pi_data = {
         PROTOMAP_KEY: {GENERIC_PROTOCOL_KEY: pipe_key},
-        PL_KEY: {pipe_key: {DEF_RES: {
-            "file_size": "0",
-            "cores": "1",
-            "mem": "1000",
-            "time": "0-01:00:00"
-        }}}
+        PL_KEY: {
+            pipe_key: {
+                DEF_RES: {
+                    "file_size": "0",
+                    "cores": "1",
+                    "mem": "1000",
+                    "time": "0-01:00:00",
+                }
+            }
+        },
     }
     pi = PipelineInterface(pi_data)
     conductor = SubmissionConductor(
-        pipe_key, pi, cmd_base="", prj=prj, extra_args=cli_flags)
+        pipe_key, pi, cmd_base="", prj=prj, extra_args=cli_flags
+    )
     _, addl_args_text = conductor._cmd_text_extra(0)
     assert set(addl_args_text.split(" ")) == ALL_PIPE_FLAGS
 
@@ -137,6 +150,6 @@ def _write_and_build_prj(fp, d):
     :param dict d: project config data
     :return looper.Project: newly built Project instance
     """
-    with open(fp, 'w') as f:
+    with open(fp, "w") as f:
         yaml.dump(d, f)
     return Project(fp)

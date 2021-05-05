@@ -1,6 +1,7 @@
 """ Tests for Project's pipeline interface group """
 
 import pytest
+
 from looper.project_piface_group import ProjectPifaceGroup
 
 __author__ = "Vince Reuter"

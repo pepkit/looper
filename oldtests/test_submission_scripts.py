@@ -1,17 +1,24 @@
 """ Tests for submission script creation, content, etc. """
 
-from collections import OrderedDict
 import glob
 import itertools
 import os
 import random
+from collections import OrderedDict
 
 import pytest
 import yaml
 from divvy import DEFAULT_COMPUTE_RESOURCES_NAME as DEFAULT_RESOURCES_KEY
-from peppy import FLAGS, METADATA_KEY, OUTDIR_KEY
-from peppy import ASSAY_KEY, SAMPLE_ANNOTATIONS_KEY, SAMPLE_NAME_COLNAME, \
-    SAMPLE_SUBANNOTATIONS_KEY
+from peppy import (
+    ASSAY_KEY,
+    FLAGS,
+    METADATA_KEY,
+    OUTDIR_KEY,
+    SAMPLE_ANNOTATIONS_KEY,
+    SAMPLE_NAME_COLNAME,
+    SAMPLE_SUBANNOTATIONS_KEY,
+)
+
 import looper
 from looper.const import *
 from looper.looper import Project
@@ -28,22 +35,28 @@ ATAC_PIPE = "pepatac.py"
 PIPE_NAME_KEY = "name"
 PIPE_PATH_KEY = "path"
 SAMPLE_METADATA_HEADER = [SAMPLE_NAME_COLNAME, ASSAY_KEY]
-ASSAYS = ["WGBS", "WGBS",  "ATAC", "ATAC"]
+ASSAYS = ["WGBS", "WGBS", "ATAC", "ATAC"]
 SAMPLE_METADATA_RECORDS = [("sample" + str(i), p) for i, p in enumerate(ASSAYS)]
 DEFAULT_RESOURCES = {
-    "file_size": "0", "cores": "1", "mem": "4000", "time": "00-01:00:00"}
+    "file_size": "0",
+    "cores": "1",
+    "mem": "4000",
+    "time": "00-01:00:00",
+}
 ATAC_SPEC = {
-    PIPE_NAME_KEY: "PEPATAC", PIPE_PATH_KEY: ATAC_PIPE,
-    RESOURCES_KEY: {DEFAULT_RESOURCES_KEY: DEFAULT_RESOURCES}
+    PIPE_NAME_KEY: "PEPATAC",
+    PIPE_PATH_KEY: ATAC_PIPE,
+    RESOURCES_KEY: {DEFAULT_RESOURCES_KEY: DEFAULT_RESOURCES},
 }
 WGBS_SPEC = {
-    PIPE_NAME_KEY: "WGBS", PIPE_PATH_KEY: WGBS_PIPE,
-    RESOURCES_KEY: {DEFAULT_RESOURCES_KEY: DEFAULT_RESOURCES}
+    PIPE_NAME_KEY: "WGBS",
+    PIPE_PATH_KEY: WGBS_PIPE,
+    RESOURCES_KEY: {DEFAULT_RESOURCES_KEY: DEFAULT_RESOURCES},
 }
 PIPE_SPECS = {"pepatac.py": ATAC_SPEC, "wgbs.py": WGBS_SPEC}
 PLIFACE_DATA = {
     PROTOMAP_KEY: {"ATAC": ATAC_PIPE, "WGBS": WGBS_PIPE},
-    "pipelines": PIPE_SPECS
+    "pipelines": PIPE_SPECS,
 }
 
 
@@ -69,9 +82,11 @@ def sample_writer(request):
 
     def write(folder, records):
         anns = os.path.join(folder, "psa" + ext)
+
         def go(recs, fp):
-            with open(fp, 'w') as f:
+            with open(fp, "w") as f:
                 f.write(os.linesep.join(sep.join(r) for r in recs))
+
         if records[0] != SAMPLE_METADATA_HEADER:
             records = [SAMPLE_METADATA_HEADER] + records
         go(records, anns)
@@ -88,22 +103,25 @@ def sample_writer(request):
 
 @pytest.fixture(scope="function")
 def prj(request, tmpdir):
-    """ Provide requesting test case with a project instance. """
+    """Provide requesting test case with a project instance."""
 
     # Setup
     outdir = tmpdir.strpath
     anns, subanns = sample_writer(request)(outdir, SAMPLE_METADATA_RECORDS)
     conf_path = os.path.join(outdir, "prj.yaml")
     pipe_iface_path = os.path.join(outdir, "pliface.yaml")
-    with open(pipe_iface_path, 'w') as f:
+    with open(pipe_iface_path, "w") as f:
         yaml.dump(PLIFACE_DATA, f)
     _touch_pipe_files(outdir, PLIFACE_DATA)
-    metadata = {SAMPLE_ANNOTATIONS_KEY: anns,
-                OUTDIR_KEY: outdir, PIPELINE_INTERFACES_KEY: pipe_iface_path}
+    metadata = {
+        SAMPLE_ANNOTATIONS_KEY: anns,
+        OUTDIR_KEY: outdir,
+        PIPELINE_INTERFACES_KEY: pipe_iface_path,
+    }
     if subanns:
         metadata[SAMPLE_SUBANNOTATIONS_KEY] = subanns
     prjdat = {METADATA_KEY: metadata}
-    with open(conf_path, 'w') as f:
+    with open(conf_path, "w") as f:
         yaml.dump(prjdat, f)
 
     def mkdir(d):
@@ -129,8 +147,9 @@ def validate_submission_count(project, conductors):
     """
     num_exp = len(project.samples)
     num_obs = _count_submissions(conductors)
-    assert num_exp == num_obs, \
-        "Expected {} submissions but tallied {}".format(num_exp, num_obs)
+    assert num_exp == num_obs, "Expected {} submissions but tallied {}".format(
+        num_exp, num_obs
+    )
 
 
 def validate_submission_scripts(project, _):
@@ -146,42 +165,52 @@ def validate_submission_scripts(project, _):
 
 @pytest.mark.parametrize(["automatic", "max_cmds"], [(True, 1)])
 def test_single_sample_auto_conductor_new_sample_scripts(prj, automatic, max_cmds):
-    """ Validate base/ideal case of submission conduction w.r.t. scripts. """
+    """Validate base/ideal case of submission conduction w.r.t. scripts."""
     samples = prj.samples
-    conductors, pipe_keys = \
-        process_protocols(prj, {s.protocol for s in samples})
+    conductors, pipe_keys = process_protocols(prj, {s.protocol for s in samples})
     subdir = prj.submission_folder
     assert 0 == _count_files(subdir)
     for s in samples:
         pks = pipe_keys[s.protocol]
-        assert 1 == len(pks), \
-            "Multiple pipelines for sample {}: {}".format(s.name, pks)
+        assert 1 == len(pks), "Multiple pipelines for sample {}: {}".format(s.name, pks)
         conductors[pks[0]].add_sample(s)
         sub_fn_suffix = s.name + ".sub"
         contents = os.listdir(subdir)
-        assert 1 == len([f for f in contents if sub_fn_suffix in f]), \
-            "No filename containing {} in {}; contents: {}".\
-            format(sub_fn_suffix, subdir, contents)
+        assert 1 == len(
+            [f for f in contents if sub_fn_suffix in f]
+        ), "No filename containing {} in {}; contents: {}".format(
+            sub_fn_suffix, subdir, contents
+        )
 
 
 @pytest.mark.parametrize(
     "flagged_sample_names",
-    [combo for k in range(1, len(SAMPLE_METADATA_RECORDS)) for combo in
-     map(list, itertools.combinations([n for n, _ in SAMPLE_METADATA_RECORDS], k))])
+    [
+        combo
+        for k in range(1, len(SAMPLE_METADATA_RECORDS))
+        for combo in map(
+            list, itertools.combinations([n for n, _ in SAMPLE_METADATA_RECORDS], k)
+        )
+    ],
+)
 @pytest.mark.parametrize("flag_name", FLAGS)
 def test_not_ignoring_flags(prj, flag_name, flagged_sample_names):
-    """ Script creation is via separate call, and there's no submission. """
+    """Script creation is via separate call, and there's no submission."""
 
     # Setup and sanity check that we have 1 sample per sample name to flag.
     preexisting = _collect_flags(prj)
     assert {} == preexisting, "Preexisting flag(s): {}".format(preexisting)
-    flagged_samples = list(filter(
-        lambda s: s.name in flagged_sample_names, prj.samples))
-    assert len(flagged_sample_names) == len(flagged_samples), \
-        "Expected {nexp} flagged samples ({exp}) but found {obsn} ({obs})".format(
-            nexp=len(flagged_sample_names), exp=flagged_sample_names,
-            obsn=len(flagged_samples),
-            obs=", ".join(s.name for s in flagged_samples))
+    flagged_samples = list(
+        filter(lambda s: s.name in flagged_sample_names, prj.samples)
+    )
+    assert len(flagged_sample_names) == len(
+        flagged_samples
+    ), "Expected {nexp} flagged samples ({exp}) but found {obsn} ({obs})".format(
+        nexp=len(flagged_sample_names),
+        exp=flagged_sample_names,
+        obsn=len(flagged_samples),
+        obs=", ".join(s.name for s in flagged_samples),
+    )
     conductors, pipe_keys = _process_base_pliface(prj)
 
     # Collect pipeline keys and names, ensuring just one pipeline per protocol.
@@ -189,9 +218,11 @@ def test_not_ignoring_flags(prj, flag_name, flagged_sample_names):
     for s in prj.samples:
         prot = s.protocol
         ks = pipe_keys[prot]
-        assert 1 == len(ks), \
-            "Need exactly one pipeline key but got {} for protocol {}: {}". \
-                format(len(pks), s.protocol, pks)
+        assert 1 == len(
+            ks
+        ), "Need exactly one pipeline key but got {} for protocol {}: {}".format(
+            len(pks), s.protocol, pks
+        )
         key = ks[0]
         if prot in pks and pks[prot] != key:
             raise Exception("Protocol {} already mapped to {}".format(prot, pks[prot]))
@@ -206,9 +237,11 @@ def test_not_ignoring_flags(prj, flag_name, flagged_sample_names):
     for s in flagged_samples:
         flag = "{}_{}_{}".format(pns[s.protocol], s.name, flag_name)
         flag_files_made.append(_mkflag(sample=s, prj=prj, flag=flag))
-    assert all(os.path.isfile(f) for f in flag_files_made), \
-        "Missing setup flag file(s): {}".format(
-            ", ".join([f for f in flag_files_made if not os.path.isfile(f)]))
+    assert all(
+        os.path.isfile(f) for f in flag_files_made
+    ), "Missing setup flag file(s): {}".format(
+        ", ".join([f for f in flag_files_made if not os.path.isfile(f)])
+    )
 
     # Trigger the automatic submissions.
     for s in prj.samples:
@@ -217,19 +250,26 @@ def test_not_ignoring_flags(prj, flag_name, flagged_sample_names):
     # Check the submission counts.
     num_unflagged = len(prj.samples) - len(flagged_sample_names)
     num_subs_obs = _count_submissions(conductors.values())
-    assert num_unflagged == num_subs_obs, \
-        "{} unflagged sample(s) but {} command submission(s); these should " \
+    assert num_unflagged == num_subs_obs, (
+        "{} unflagged sample(s) but {} command submission(s); these should "
         "match".format(num_unflagged, num_subs_obs)
+    )
 
     def flagged_subs():
         return [f for s in flagged_samples for f in _find_subs(prj, s)]
 
     # Pretest for presence of unflagged submissions and absence of flagged submissions.
-    assert [] == flagged_subs(), "Submission script(s) for flagged " \
-        "sample(s): {}".format(", ".join(flagged_subs()))
+    assert (
+        [] == flagged_subs()
+    ), "Submission script(s) for flagged " "sample(s): {}".format(
+        ", ".join(flagged_subs())
+    )
     all_subs = _find_subs(prj)
-    assert len(all_subs) == num_unflagged, "Expected {} submission scripts " \
-        "but found {}".format(num_unflagged, len(all_subs))
+    assert (
+        len(all_subs) == num_unflagged
+    ), "Expected {} submission scripts " "but found {}".format(
+        num_unflagged, len(all_subs)
+    )
 
     # Write the skipped scripts and check their presence.
     for c in conductors.values():
@@ -238,50 +278,69 @@ def test_not_ignoring_flags(prj, flag_name, flagged_sample_names):
     assert len(prj.samples) == len(_find_subs(prj))
     # Writing skipped samples has no effect on submission count.
     num_subs_obs = _count_submissions(conductors.values())
-    assert num_unflagged == num_subs_obs, \
-        "{} unflagged sample(s) but {} command submission(s); these should " \
+    assert num_unflagged == num_subs_obs, (
+        "{} unflagged sample(s) but {} command submission(s); these should "
         "match".format(num_unflagged, num_subs_obs)
+    )
 
 
 @pytest.mark.parametrize(
     "flagged_sample_names",
-    [combo for k in range(1, len(SAMPLE_METADATA_RECORDS)) for combo in
-     map(list, itertools.combinations([n for n, _ in SAMPLE_METADATA_RECORDS], k))])
+    [
+        combo
+        for k in range(1, len(SAMPLE_METADATA_RECORDS))
+        for combo in map(
+            list, itertools.combinations([n for n, _ in SAMPLE_METADATA_RECORDS], k)
+        )
+    ],
+)
 @pytest.mark.parametrize("flag_name", [random.choice(FLAGS)])
-@pytest.mark.parametrize("validate", [validate_submission_count, validate_submission_scripts])
+@pytest.mark.parametrize(
+    "validate", [validate_submission_count, validate_submission_scripts]
+)
 def test_ignoring_flags(prj, flag_name, flagged_sample_names, validate):
-    """ Script creation is automatic, and submission is counted. """
+    """Script creation is automatic, and submission is counted."""
     preexisting = _collect_flags(prj)
     print("collected")
     assert {} == preexisting, "Preexisting flag(s): {}".format(preexisting)
-    flagged_samples = list(filter(
-        lambda s: s.name in flagged_sample_names, prj.samples))
+    flagged_samples = list(
+        filter(lambda s: s.name in flagged_sample_names, prj.samples)
+    )
     print("flagged: {}".format(flagged_sample_names))
-    assert len(flagged_sample_names) == len(flagged_samples), \
-        "Expected {expn} flagged samples ({exp}) but found {obsn} ({obs})".format(
-            expn=len(flagged_sample_names),
-            exp=", ".join(flagged_sample_names), obsn=len(flagged_samples),
-            obs=", ".join(s.name for s in flagged_samples))
+    assert len(flagged_sample_names) == len(
+        flagged_samples
+    ), "Expected {expn} flagged samples ({exp}) but found {obsn} ({obs})".format(
+        expn=len(flagged_sample_names),
+        exp=", ".join(flagged_sample_names),
+        obsn=len(flagged_samples),
+        obs=", ".join(s.name for s in flagged_samples),
+    )
     flag_files_made = [_mkflag(s, prj, flag_name) for s in flagged_samples]
     print("flag_files_made: {}".format(flag_files_made))
-    assert all(os.path.isfile(f) for f in flag_files_made), \
-        "Missing setup flag file(s): {}".format(
-            ", ".join([f for f in flag_files_made if not os.path.isfile(f)]))
+    assert all(
+        os.path.isfile(f) for f in flag_files_made
+    ), "Missing setup flag file(s): {}".format(
+        ", ".join([f for f in flag_files_made if not os.path.isfile(f)])
+    )
     preexisting = _collect_flags(prj)
     print("preexisting: {}".format(preexisting))
     assert len(flagged_sample_names) == len(preexisting)
     assert set(flag_files_made) == set(itertools.chain(*preexisting.values()))
     conductors, pipe_keys = process_protocols(
-        prj, set(PLIFACE_DATA[PROTOMAP_KEY].keys()), ignore_flags=True)
+        prj, set(PLIFACE_DATA[PROTOMAP_KEY].keys()), ignore_flags=True
+    )
     print("processed")
-    assert all(map(lambda c: c.ignore_flags, conductors.values())), \
-        "Failed to establish precondition, that flags are to be ignored"
+    assert all(
+        map(lambda c: c.ignore_flags, conductors.values())
+    ), "Failed to establish precondition, that flags are to be ignored"
     print("asserted")
     for s in prj.samples:
         pks = pipe_keys[s.protocol]
-        assert 1 == len(pks), \
-            "Need exactly one pipeline key but got {} for protocol {}: {}".\
-            format(len(pks), s.protocol, pks)
+        assert 1 == len(
+            pks
+        ), "Need exactly one pipeline key but got {} for protocol {}: {}".format(
+            len(pks), s.protocol, pks
+        )
         print("adding: {}".format(s.name))
         cond = conductors[pks[0]]
         print("cond: {}".format(cond))
@@ -292,11 +351,17 @@ def test_ignoring_flags(prj, flag_name, flagged_sample_names, validate):
 
 
 def test_convergent_protocol_mapping_keys(tmpdir):
-    """ Similarly-named protocols do not result in multiple pipelines. """
+    """Similarly-named protocols do not result in multiple pipelines."""
 
-    protomap = OrderedDict([
-        ("WGBS", WGBS_PIPE), ("wgbs", WGBS_PIPE), ("ATAC-SEQ", ATAC_PIPE),
-        ("ATACseq", ATAC_PIPE), ("ATAC-seq", ATAC_PIPE)])
+    protomap = OrderedDict(
+        [
+            ("WGBS", WGBS_PIPE),
+            ("wgbs", WGBS_PIPE),
+            ("ATAC-SEQ", ATAC_PIPE),
+            ("ATACseq", ATAC_PIPE),
+            ("ATAC-seq", ATAC_PIPE),
+        ]
+    )
     records = [("sample" + str(i), p) for i, p in enumerate(protomap)]
 
     outdir = tmpdir.strpath
@@ -304,23 +369,26 @@ def test_convergent_protocol_mapping_keys(tmpdir):
     sep, ext = "\t", ".tsv"
     anns_path = os.path.join(outdir, "anns" + ext)
     records = [SAMPLE_METADATA_HEADER] + records
-    with open(anns_path, 'w') as f:
+    with open(anns_path, "w") as f:
         f.write(os.linesep.join(sep.join(r) for r in records))
 
     pliface_data = {PROTOMAP_KEY: dict(protomap), "pipelines": PIPE_SPECS}
     pliface_filepath = os.path.join(outdir, "pipes.yaml")
 
-    with open(pliface_filepath, 'w') as f:
+    with open(pliface_filepath, "w") as f:
         yaml.dump(pliface_data, f)
 
-    metadata = {OUTDIR_KEY: outdir, SAMPLE_ANNOTATIONS_KEY: anns_path,
-                "pipeline_interfaces": pliface_filepath}
+    metadata = {
+        OUTDIR_KEY: outdir,
+        SAMPLE_ANNOTATIONS_KEY: anns_path,
+        "pipeline_interfaces": pliface_filepath,
+    }
 
     _touch_pipe_files(tmpdir.strpath, pliface_data)
 
     prjdat = {METADATA_KEY: metadata}
     pcfg = tmpdir.join("prj.yaml").strpath
-    with open(pcfg, 'w') as f:
+    with open(pcfg, "w") as f:
         yaml.dump(prjdat, f)
     prj = Project(pcfg)
 
@@ -331,8 +399,9 @@ def test_convergent_protocol_mapping_keys(tmpdir):
     # Collection of pipeline keys by protocol, not pipeline
     assert len(pipe_keys) == len(protomap)
     multi_pipes = [(p, ks) for p, ks in pipe_keys.items() if len(ks) > 1]
-    assert [] == multi_pipes, "{} protocol(s) mapped to multiple pipelines: {}".\
-        format(len(multi_pipes), multi_pipes)
+    assert [] == multi_pipes, "{} protocol(s) mapped to multiple pipelines: {}".format(
+        len(multi_pipes), multi_pipes
+    )
 
 
 def _collect_flags(project):
@@ -352,13 +421,16 @@ def _collect_flags(project):
 
 
 def _count_files(p, *preds):
-    """ Count the number of files immediately within folder that match predicate(s). """
-    return sum(1 for f in os.listdir(p)
-               if os.path.isfile(f) and all(map(lambda p: p(f), preds)))
+    """Count the number of files immediately within folder that match predicate(s)."""
+    return sum(
+        1
+        for f in os.listdir(p)
+        if os.path.isfile(f) and all(map(lambda p: p(f), preds))
+    )
 
 
 def _count_submissions(conductors):
-    """ From array of conductors, accumulate submission count. """
+    """From array of conductors, accumulate submission count."""
     return sum(c.num_cmd_submissions for c in conductors)
 
 
@@ -386,27 +458,26 @@ def _process_base_pliface(prj, **kwargs):
         mapping from pipeline key to submission conductor, and mapping from
         protocol name to collection of keys for pipelines for that protocol
     """
-    return process_protocols(
-        prj, set(PLIFACE_DATA[PROTOMAP_KEY].keys()), **kwargs)
+    return process_protocols(prj, set(PLIFACE_DATA[PROTOMAP_KEY].keys()), **kwargs)
 
 
 def _mkflag(sample, prj, flag):
-    """ Create a flag file. """
+    """Create a flag file."""
     fp = os.path.join(sample_folder(prj, sample), flag + ".flag")
     return _mkfile(fp, "Making flag for {}".format(sample.name))
 
 
 def _mkfile(f, message=None):
-    """ Create a new, empty file. """
+    """Create a new, empty file."""
     assert not os.path.exists(f), "File already exists: {}".format(f)
-    with open(f, 'w'):
+    with open(f, "w"):
         if message:
             print("{}: {}".format(message, f))
     return f
 
 
 def _touch_pipe_files(folder, pliface):
-    """ Ensure existence of files at paths designated as pipeline interfaces. """
+    """Ensure existence of files at paths designated as pipeline interfaces."""
     for pipe in pliface["pipelines"].values():
         path = os.path.join(folder, pipe["path"])
         _mkfile(path, message="Writing pipe")

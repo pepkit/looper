@@ -1,17 +1,19 @@
 """ Helpers without an obvious logical home. """
 
-from collections import defaultdict, Iterable
-from logging import getLogger
+import argparse
 import glob
 import os
-from .const import *
-from .exceptions import MisconfigurationException
-from peppy.const import *
-from peppy import Project as peppyProject
+from collections import Iterable, defaultdict
+from logging import getLogger
+
 import jinja2
 import yaml
-import argparse
+from peppy import Project as peppyProject
+from peppy.const import *
 from ubiquerg import convert_value, expandpath
+
+from .const import *
+from .exceptions import MisconfigurationException
 
 _LOGGER = getLogger(__name__)
 
@@ -76,12 +78,18 @@ def fetch_sample_flags(prj, sample, pl_name):
     """
     sfolder = sample_folder(prj=prj, sample=sample)
     if not os.path.isdir(sfolder):
-        _LOGGER.debug("Results folder ({}) doesn't exist for sample {}".
-                      format(sfolder, str(sample)))
+        _LOGGER.debug(
+            "Results folder ({}) doesn't exist for sample {}".format(
+                sfolder, str(sample)
+            )
+        )
         return []
     folder_contents = [os.path.join(sfolder, f) for f in os.listdir(sfolder)]
-    return [x for x in folder_contents if os.path.splitext(x)[1] == ".flag"
-            and os.path.basename(x).startswith(pl_name)]
+    return [
+        x
+        for x in folder_contents
+        if os.path.splitext(x)[1] == ".flag" and os.path.basename(x).startswith(pl_name)
+    ]
 
 
 def grab_project_data(prj):
@@ -117,8 +125,7 @@ def sample_folder(prj, sample):
         folder path.
     :return str: this Project's root folder for the given Sample
     """
-    return os.path.join(prj.results_folder,
-                        sample[SAMPLE_NAME_ATTR])
+    return os.path.join(prj.results_folder, sample[SAMPLE_NAME_ATTR])
 
 
 def get_file_for_project(prj, pipeline_name, appendix=None, directory=None):
@@ -136,7 +143,8 @@ def get_file_for_project(prj, pipeline_name, appendix=None, directory=None):
     :return str: path to the file
     """
     fp = os.path.join(
-        prj.output_dir, directory or "", f"{prj[NAME_KEY]}_{pipeline_name}")
+        prj.output_dir, directory or "", f"{prj[NAME_KEY]}_{pipeline_name}"
+    )
     if hasattr(prj, "amendments") and getattr(prj, "amendments"):
         fp += f"_{'_'.join(prj.amendments)}"
     fp += f"_{appendix}"
@@ -155,8 +163,8 @@ def get_file_for_project_old(prj, appendix):
     """
     fp = os.path.join(prj.output_dir, prj[NAME_KEY])
     if hasattr(prj, AMENDMENTS_KEY) and getattr(prj, AMENDMENTS_KEY):
-        fp += '_' + '_'.join(getattr(prj, AMENDMENTS_KEY))
-    fp += '_' + appendix
+        fp += "_" + "_".join(getattr(prj, AMENDMENTS_KEY))
+    fp += "_" + appendix
     return fp
 
 
@@ -174,6 +182,7 @@ def jinja_render_template_strictly(template, namespaces):
         Possible namespaces are: looper, project, sample, pipeline
     :return str: rendered command
     """
+
     def _finfun(x):
         """
         A callable that can be used to process the result of a variable
@@ -181,17 +190,21 @@ def jinja_render_template_strictly(template, namespaces):
         """
         return " ".join(x) if isinstance(x, list) else x
 
-    env = jinja2.Environment(undefined=jinja2.StrictUndefined,
-                             variable_start_string="{",
-                             variable_end_string="}",
-                             finalize=_finfun)
+    env = jinja2.Environment(
+        undefined=jinja2.StrictUndefined,
+        variable_start_string="{",
+        variable_end_string="}",
+        finalize=_finfun,
+    )
     templ_obj = env.from_string(template)
     try:
         rendered = templ_obj.render(**namespaces)
     except jinja2.exceptions.UndefinedError:
-        _LOGGER.error(f"Attributes in namespaces "
-                      f"({', '.join(list(namespaces.keys()))}) missing for "
-                      f"the following template: '{template}'")
+        _LOGGER.error(
+            f"Attributes in namespaces "
+            f"({', '.join(list(namespaces.keys()))}) missing for "
+            f"the following template: '{template}'"
+        )
         raise
     _LOGGER.debug("rendered arg str: {}".format(rendered))
     return rendered
@@ -206,7 +219,7 @@ def read_yaml_file(filepath):
     """
     data = None
     if os.path.exists(filepath):
-        with open(filepath, 'r') as f:
+        with open(filepath, "r") as f:
             data = yaml.safe_load(f)
     return data
 
@@ -222,9 +235,11 @@ def enrich_args_via_cfg(parser_args, aux_parser):
         with defaults suppressed
     :return argparse.Namespace: selected argument values
     """
-    cfg_args_all = \
-        _get_subcommand_args(parser_args) \
-            if os.path.exists(parser_args.config_file) else dict()
+    cfg_args_all = (
+        _get_subcommand_args(parser_args)
+        if os.path.exists(parser_args.config_file)
+        else dict()
+    )
     result = argparse.Namespace()
     cli_args, _ = aux_parser.parse_known_args()
     for dest in vars(parser_args):
@@ -257,21 +272,34 @@ def _get_subcommand_args(parser_args):
     :return dict: mapping of argument destinations to their values
     """
     args = dict()
-    cfg = peppyProject(parser_args.config_file,
-                       defer_samples_creation=True,
-                       amendments=parser_args.amend)
-    if CONFIG_KEY in cfg and LOOPER_KEY in cfg[CONFIG_KEY] \
-            and CLI_KEY in cfg[CONFIG_KEY][LOOPER_KEY]:
+    cfg = peppyProject(
+        parser_args.config_file,
+        defer_samples_creation=True,
+        amendments=parser_args.amend,
+    )
+    if (
+        CONFIG_KEY in cfg
+        and LOOPER_KEY in cfg[CONFIG_KEY]
+        and CLI_KEY in cfg[CONFIG_KEY][LOOPER_KEY]
+    ):
         try:
             cfg_args = cfg[CONFIG_KEY][LOOPER_KEY][CLI_KEY] or dict()
-            args = cfg_args[ALL_SUBCMD_KEY] or dict() \
-                if ALL_SUBCMD_KEY in cfg_args else dict()
-            args.update(cfg_args[parser_args.command] or dict()
-                        if parser_args.command in cfg_args else dict())
+            args = (
+                cfg_args[ALL_SUBCMD_KEY] or dict()
+                if ALL_SUBCMD_KEY in cfg_args
+                else dict()
+            )
+            args.update(
+                cfg_args[parser_args.command] or dict()
+                if parser_args.command in cfg_args
+                else dict()
+            )
         except (TypeError, KeyError, AttributeError, ValueError) as e:
             raise MisconfigurationException(
-                "Invalid '{}.{}' section in the config. Caught exception: {}".
-                    format(LOOPER_KEY, CLI_KEY, getattr(e, 'message', repr(e))))
+                "Invalid '{}.{}' section in the config. Caught exception: {}".format(
+                    LOOPER_KEY, CLI_KEY, getattr(e, "message", repr(e))
+                )
+            )
     if CONFIG_KEY in cfg and LOOPER_KEY in cfg[CONFIG_KEY]:
         try:
             if CLI_KEY in cfg[CONFIG_KEY][LOOPER_KEY]:
@@ -279,8 +307,10 @@ def _get_subcommand_args(parser_args):
             args.update(cfg[CONFIG_KEY][LOOPER_KEY])
         except (TypeError, KeyError, AttributeError, ValueError) as e:
             raise MisconfigurationException(
-                "Invalid '{}' section in the config. Caught exception: {}".
-                    format(LOOPER_KEY, getattr(e, 'message', repr(e))))
+                "Invalid '{}' section in the config. Caught exception: {}".format(
+                    LOOPER_KEY, getattr(e, "message", repr(e))
+                )
+            )
     args = {k.replace("-", "_"): v for k, v in args.items()} if args else None
     return args
 
@@ -300,12 +330,12 @@ def init_dotfile(path, cfg_path, force=False):
     cfg_path = expandpath(cfg_path)
     if not os.path.isabs(cfg_path):
         cfg_path = os.path.join(os.path.dirname(path), cfg_path)
-    assert os.path.exists(cfg_path), \
-        OSError("Provided config path is invalid. You must provide path "
-                "that is either absolute or relative to: {}".
-                format(os.path.dirname(path)))
+    assert os.path.exists(cfg_path), OSError(
+        "Provided config path is invalid. You must provide path "
+        "that is either absolute or relative to: {}".format(os.path.dirname(path))
+    )
     relpath = os.path.relpath(cfg_path, os.path.dirname(path))
-    with open(path, 'w') as dotfile:
+    with open(path, "w") as dotfile:
         yaml.dump({DOTFILE_CFG_PTH_KEY: relpath}, dotfile)
     print("Initialized looper dotfile: {}".format(path))
     return True
@@ -320,15 +350,16 @@ def read_cfg_from_dotfile():
         required key pointing to the PEP
     """
     dp = dotfile_path(must_exist=True)
-    with open(dp, 'r') as dotfile:
+    with open(dp, "r") as dotfile:
         dp_data = yaml.safe_load(dotfile)
     if DOTFILE_CFG_PTH_KEY in dp_data:
-        return os.path.join(os.path.dirname(dp),
-                            str(os.path.join(dp_data[DOTFILE_CFG_PTH_KEY])))
+        return os.path.join(
+            os.path.dirname(dp), str(os.path.join(dp_data[DOTFILE_CFG_PTH_KEY]))
+        )
     else:
         raise MisconfigurationException(
-            "Looper dotfile ({}) is missing '{}' key".
-                format(dp, DOTFILE_CFG_PTH_KEY))
+            "Looper dotfile ({}) is missing '{}' key".format(dp, DOTFILE_CFG_PTH_KEY)
+        )
 
 
 def dotfile_path(directory=os.getcwd(), must_exist=False):
@@ -352,6 +383,8 @@ def dotfile_path(directory=os.getcwd(), must_exist=False):
             return os.path.join(cur_dir, LOOPER_DOTFILE_NAME)
         if cur_dir == parent_dir:
             # root, file does not exist
-            raise OSError("Looper dotfile ({}) not found in '{}' and all "
-                          "its parents".format(LOOPER_DOTFILE_NAME, directory))
+            raise OSError(
+                "Looper dotfile ({}) not found in '{}' and all "
+                "its parents".format(LOOPER_DOTFILE_NAME, directory)
+            )
         cur_dir = parent_dir

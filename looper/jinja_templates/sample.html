@@ -10,28 +10,34 @@
         </script>
         <title>Looper: {{ sample_name }}</title>
     </head>
-    {{ navbar }} 
+    {{ navbar }}
     <body>
     	<div class="container">
             <div class="container-fluid">
-        	   <h3>{{ report_class }} name: <code>{{ sample_name }}</code>; Pipeline name: <code>{{ pipeline_name }}</code></h3>
+                <h3>{{ report_class }} name: <code>{{ sample_name }}</code></h3>
+                <h4>Pipeline name: <code>{{ pipeline_name }}</code></h4>
             {% if amendments is not none %}
               <h4 style="margin-bottom: 0px;">Amendments: <code>{{ amendments|join(', ') }}</code></h4>
             {% endif %}
             </div>
             <div class="container-fluid">
                 <p class="text-left">
-                <button type="button" class='{{ button_class }}' disabled>STATUS: {{ flag }}</button>
-                    {% for hr_id, hr in highlighted_results.items() %}
-                        <a class="btn btn-outline-dark ml-2" href='{{ hr["path"] }}' role="button">{{ hr["title"] }}</a>
-                    {% endfor %}
+                    <button type="button" class='{{ button_class }}' disabled>STATUS: {{ flag }}</button>
                 </p>
+                <ul class="list-group">
+                      <li class="list-group-item list-group-item-dark" aria-current="true">
+                          Get files produced by the pipeline run
+                      </li>
+                    {% for hr_id, hr in highlighted_results.items() %}
+                        <a class="list-group-item list-group-item-action" href='{{ hr["path"] }}' role="button">{{ hr["title"] }}</a>
+                    {% endfor %}
+                </ul>
             </div>
             <hr>
             <div class='container-fluid'>
     	      	<h3>Reported statistics</code></h3>
     	        <div class="table-responsive-sm">
-    				<table class="table table-sm table-hover table-bordered table-condensed" style="white-space: nowrap; width: 1%;">             
+    				<table class="table table-sm table-hover table-bordered table-condensed" style="white-space: nowrap; width: 1%;">
     					<tbody>
     						{% for row_name, row_value in sample_stats.items() %}
     							<tr>
@@ -61,7 +67,6 @@
                   <a class="list-group-item list-group-item-action" href='{{ link[1] }}'>{{ link[0] }}</a>
                 {% endfor %}
                 </ul>
-	        		</div>
             	{% endif %}
             	{% if figures[0] is defined %}
                     <h5>Figures</h5>

@@ -8,80 +8,85 @@ import sys
 
 import pytest
 
-from looper.pipeline_interface import _import_sample_subtype
 from looper import Sample
-
+from looper.pipeline_interface import _import_sample_subtype
 
 __author__ = "Vince Reuter"
 __email__ = "vreuter@virginia.edu"
 
 
-
 LOCATIONS_OF_SUBTYPE_RELATIVE_TO_PIPELINE = ["above", "below", "parallel"]
 
 
-
 def pytest_generate_tests(metafunc):
-    """ Customization of this module's test cases. """
+    """Customization of this module's test cases."""
     if "location" in metafunc.fixturenames:
         metafunc.parametrize(
-                argnames="location",
-                argvalues=LOCATIONS_OF_SUBTYPE_RELATIVE_TO_PIPELINE,
-                ids=lambda rel_loc:
-                " subtypes_relative_location = {} ".format(rel_loc))
+            argnames="location",
+            argvalues=LOCATIONS_OF_SUBTYPE_RELATIVE_TO_PIPELINE,
+            ids=lambda rel_loc: " subtypes_relative_location = {} ".format(rel_loc),
+        )
     if "has_internal_subtype" in metafunc.fixturenames:
         metafunc.parametrize(
-                argnames="has_internal_subtype", argvalues=[False, True],
-                ids=lambda has_sub: " internal_subtype = {} ".format(has_sub))
+            argnames="has_internal_subtype",
+            argvalues=[False, True],
+            ids=lambda has_sub: " internal_subtype = {} ".format(has_sub),
+        )
 
 
 class SampleSubtypeImportTests:
-    """ Tests for the lowest-level step in Sample subtype processing. """
+    """Tests for the lowest-level step in Sample subtype processing."""
 
     SUBTYPE_1 = "MayBeUsed"
     SUBTYPE_2 = "Unused"
 
-
     @pytest.mark.parametrize(
-            argnames="subtype_request", argvalues=[None, SUBTYPE_1],
-            ids=lambda request: " subtype_request = {} ".format(request))
+        argnames="subtype_request",
+        argvalues=[None, SUBTYPE_1],
+        ids=lambda request: " subtype_request = {} ".format(request),
+    )
     def test_single_external_subtype(
-            self, location, has_internal_subtype, subtype_request,
-            tmpdir, tmpdir_on_path):
-        """ Subtype is inferred iff exactly one's available. """
+        self, location, has_internal_subtype, subtype_request, tmpdir, tmpdir_on_path
+    ):
+        """Subtype is inferred iff exactly one's available."""
 
         external_subtype = subtype_request or self.SUBTYPE_1
 
         path_pipeline_file, path_subtypes_file = self.write_files(
-                pipeline_has_subtype=has_internal_subtype,
-                external_subtypes=[external_subtype],
-                subtype_module_relative_to_pipeline=location,
-                dirpath=tmpdir.strpath)
+            pipeline_has_subtype=has_internal_subtype,
+            external_subtypes=[external_subtype],
+            subtype_module_relative_to_pipeline=location,
+            dirpath=tmpdir.strpath,
+        )
 
         observed_subtype = _import_sample_subtype(
-                path_pipeline_file, subtype_name=subtype_request)
+            path_pipeline_file, subtype_name=subtype_request
+        )
         if has_internal_subtype and subtype_request is None:
             assert Sample is observed_subtype
         else:
             assert external_subtype == observed_subtype.__name__
 
-
     @pytest.mark.parametrize(
-            argnames="subtype_request", argvalues=[None, SUBTYPE_1, SUBTYPE_2],
-            ids=lambda sub_req: " subtype_request = {} ".format(sub_req))
+        argnames="subtype_request",
+        argvalues=[None, SUBTYPE_1, SUBTYPE_2],
+        ids=lambda sub_req: " subtype_request = {} ".format(sub_req),
+    )
     def test_multiple_external_subtypes(
-            self, location, has_internal_subtype, subtype_request,
-            tmpdir, tmpdir_on_path):
-        """ With multiple subtypes available, one must be selected. """
+        self, location, has_internal_subtype, subtype_request, tmpdir, tmpdir_on_path
+    ):
+        """With multiple subtypes available, one must be selected."""
 
         path_pipeline_file, path_subtypes_file = self.write_files(
-                pipeline_has_subtype=has_internal_subtype,
-                external_subtypes=[self.SUBTYPE_1, self.SUBTYPE_2],
-                subtype_module_relative_to_pipeline=location,
-                dirpath=tmpdir.strpath)
+            pipeline_has_subtype=has_internal_subtype,
+            external_subtypes=[self.SUBTYPE_1, self.SUBTYPE_2],
+            subtype_module_relative_to_pipeline=location,
+            dirpath=tmpdir.strpath,
+        )
 
         observed_subtype = _import_sample_subtype(
-                path_pipeline_file, subtype_name=subtype_request)
+            path_pipeline_file, subtype_name=subtype_request
+        )
 
         if subtype_request is None:
             # We get the base/generic Sample type if we can't do inference.
@@ -90,11 +95,12 @@ class SampleSubtypeImportTests:
             # Request for specific subtype that we defined is found.
             assert subtype_request == observed_subtype.__name__
 
-
     @staticmethod
     def _validate_basic_sample_reason(
-            path_log_file, universal=False,
-            criterion=lambda m: "DEBUG" in m and "subtype cannot be selected" in m):
+        path_log_file,
+        universal=False,
+        criterion=lambda m: "DEBUG" in m and "subtype cannot be selected" in m,
+    ):
         """
         Assert the reason the base/generic Sample type is being used.
 
@@ -106,18 +112,21 @@ class SampleSubtypeImportTests:
             quantification of the given criterion over the collection of
             log messages is satisfied
         """
-        with open(path_log_file, 'r') as logfile:
+        with open(path_log_file, "r") as logfile:
             messages = logfile.readlines()
         quantifier = all if universal else any
         return quantifier(map(criterion, messages))
 
-
     def write_files(
-            self, pipeline_has_subtype, external_subtypes, 
-            subtype_module_relative_to_pipeline, dirpath):
+        self,
+        pipeline_has_subtype,
+        external_subtypes,
+        subtype_module_relative_to_pipeline,
+        dirpath,
+    ):
         """
         Create files for pipeline module and external subtypes module.
-        
+
         :param bool pipeline_has_subtype: whether to also define a Sample
             subtype within the pipeline module itself
         :param Iterable[str] external_subtypes: collection of names of
@@ -133,25 +142,31 @@ class SampleSubtypeImportTests:
 
         # Randomize names to prevent collisions of imports (sys.modules).
         pipeline_name_suffix = "".join(
-                [random.choice(string.ascii_lowercase) for _ in range(15)])
+            [random.choice(string.ascii_lowercase) for _ in range(15)]
+        )
         pipeline_modname = "pipe{}".format(pipeline_name_suffix)
         subtypes_modname_suffix = "".join(
-                [random.choice(string.ascii_lowercase) for _ in range(15)])
+            [random.choice(string.ascii_lowercase) for _ in range(15)]
+        )
         subtypes_modname = "subtypes{}".format(subtypes_modname_suffix)
-
 
         # The domain over which to indicate the relative position of
         # the files is restricted to prevent unexpected behavior.
-        if subtype_module_relative_to_pipeline not in \
-                LOCATIONS_OF_SUBTYPE_RELATIVE_TO_PIPELINE:
+        if (
+            subtype_module_relative_to_pipeline
+            not in LOCATIONS_OF_SUBTYPE_RELATIVE_TO_PIPELINE
+        ):
             raise ValueError(
                 "Unexpected location for subtype module relative to "
                 "pipeline; got {}, expecting one of {}".format(
                     subtype_module_relative_to_pipeline,
-                    LOCATIONS_OF_SUBTYPE_RELATIVE_TO_PIPELINE))
+                    LOCATIONS_OF_SUBTYPE_RELATIVE_TO_PIPELINE,
+                )
+            )
 
         submodule_name = "".join(
-                [random.choice(string.ascii_lowercase) for _ in range(20)])
+            [random.choice(string.ascii_lowercase) for _ in range(20)]
+        )
         subfolder_path = os.path.join(dirpath, submodule_name)
         os.makedirs(subfolder_path)
 
@@ -167,15 +182,13 @@ class SampleSubtypeImportTests:
             # With the parent folder added to sys.path, we can refer to the
             # target package + module in this way if we designate a subpackage.
             # All we need to do is create the package initialization file.
-            with open(os.path.join(dirpath, "__init__.py"), 'w'):
+            with open(os.path.join(dirpath, "__init__.py"), "w"):
                 pass
-            with open(os.path.join(subfolder_path, "__init__.py"), 'w'):
+            with open(os.path.join(subfolder_path, "__init__.py"), "w"):
                 pass
-            import_prefix = \
-                "from {}.{}".format(submodule_name, subtypes_modname)
+            import_prefix = "from {}.{}".format(submodule_name, subtypes_modname)
             path_pipe_file = os.path.join(dirpath, name_pipeline_file)
-            path_subtypes_file = os.path.join(
-                subfolder_path, name_subtypes_file)
+            path_subtypes_file = os.path.join(subfolder_path, name_subtypes_file)
         else:
             import_prefix = "from {}".format(subtypes_modname)
             if subtype_module_relative_to_pipeline == "parallel":
@@ -184,19 +197,20 @@ class SampleSubtypeImportTests:
                 path_subtypes_file = os.path.join(dirpath, name_subtypes_file)
             else:
                 # On disk, subtypes module file is "above" pipeline module.
-                path_pipe_file = os.path.join(
-                        subfolder_path, name_pipeline_file)
+                path_pipe_file = os.path.join(subfolder_path, name_pipeline_file)
                 path_subtypes_file = os.path.join(dirpath, name_subtypes_file)
 
         # Write the subtypes module file.
-        with open(path_subtypes_file, 'w') as subtypes_file:
+        with open(path_subtypes_file, "w") as subtypes_file:
             subtypes_file.write("from looper import Sample\n\n")
             subtypes_file.write(build_subtype_lines(external_subtypes))
 
         # Write the pipeline module file.
-        imports = ["{} import {}\n".format(import_prefix, subtype_name)
-                   for subtype_name in external_subtypes]
-        with open(path_pipe_file, 'w') as pipe_file:
+        imports = [
+            "{} import {}\n".format(import_prefix, subtype_name)
+            for subtype_name in external_subtypes
+        ]
+        with open(path_pipe_file, "w") as pipe_file:
             for import_statement in imports:
                 pipe_file.write(import_statement)
             # Include a subtype definition with the pipeline itself as desired.
@@ -205,7 +219,6 @@ class SampleSubtypeImportTests:
                 pipe_file.write(build_subtype_lines("InternalPipelineSample"))
 
         return path_pipe_file, path_subtypes_file
-
 
     @pytest.fixture(scope="function")
     def tmpdir_on_path(self, request, tmpdir):
@@ -217,19 +230,20 @@ class SampleSubtypeImportTests:
         dirpath = tmpdir.strpath
         path_copy = copy.copy(sys.path)
         sys.path.append(dirpath)
+
         def restore_sys_path():
             sys.path = path_copy
-        request.addfinalizer(restore_sys_path)
 
+        request.addfinalizer(restore_sys_path)
 
     @staticmethod
     def print_file_contents(subtypes_file, pipeline_file, logfile):
-        """ When an assertion fails, get more information. """
-        with open(subtypes_file, 'r') as f:
+        """When an assertion fails, get more information."""
+        with open(subtypes_file, "r") as f:
             subtypes_contents = "".join(f.readlines())
-        with open(pipeline_file, 'r') as f:
+        with open(pipeline_file, "r") as f:
             pipeline_contents = "".join(f.readlines())
-        with open(logfile, 'r') as f:
+        with open(logfile, "r") as f:
             logfile_contents = "".join(f.readlines())
         print("")
         print("Subtypes file:")
@@ -241,7 +255,6 @@ class SampleSubtypeImportTests:
         print("Logs:")
         print(logfile_contents)
         print("")
-
 
 
 def build_subtype_lines(subtype_names):
@@ -263,7 +276,6 @@ def build_subtype_lines(subtype_names):
     return "\n\n".join(map(subtype_def_text, subtype_names))
 
 
-
 def subtype_def_text(subtype_name):
     """
     Create the definition text for a single Sample subtype.
@@ -271,7 +283,9 @@ def subtype_def_text(subtype_name):
     :param str subtype_name:
     :return str: text that would be written to define a single Sample subtype
     """
-    template = "class {sub}({sup}):\n" \
-               "\tdef __init__(self, *args, **kwargs):\n" \
-               "\t\tsuper({sub}, self).__init__(*args, **kwargs)"
+    template = (
+        "class {sub}({sup}):\n"
+        "\tdef __init__(self, *args, **kwargs):\n"
+        "\t\tsuper({sub}, self).__init__(*args, **kwargs)"
+    )
     return template.format(sub=subtype_name, sup=Sample.__name__)
