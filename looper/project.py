@@ -2,7 +2,12 @@
 
 import itertools
 import os
-from functools import cached_property
+
+try:
+    from functools import cached_property
+except ImportError:
+    # cached_property was introduced in python 3.8
+    cached_property = property
 from logging import getLogger
 
 from divvy import ComputingConfiguration
