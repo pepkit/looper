@@ -443,7 +443,6 @@ class Project(peppyProject):
         """
         A helper method determining whether pipestat configuration is complete
 
-        :param str sample_name: sample name to check pipestat config for
         :param bool project_level: whether the project pipestat config should be checked
         :return bool: whether pipestat configuration is complete
         """
@@ -510,7 +509,7 @@ class Project(peppyProject):
         ):
             pipestat_section = self[CONFIG_KEY][LOOPER_KEY][PIPESTAT_KEY][key]
         else:
-            _LOGGER.warning(
+            _LOGGER.debug(
                 f"'{PIPESTAT_KEY}' not found in '{LOOPER_KEY}' section of the "
                 f"project configuration file. Using defaults."
             )
