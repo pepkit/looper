@@ -456,13 +456,13 @@ class Project(peppyProject):
                     self._get_pipestat_configuration(sample_name=s.sample_name)
         except Exception as e:
             context = (
-                f"Project ({self.name})"
+                f"Project '{self.name}'"
                 if project_level
-                else f"Sample ({s.sample_name})"
+                else f"Sample '{s.sample_name}'"
             )
             _LOGGER.info(
                 f"Pipestat configuration incomplete for {context}; "
-                f"caught exception: {e}"
+                f"caught exception: {getattr(e, 'message', repr(e))}"
             )
             return False
         return True
@@ -483,6 +483,7 @@ class Project(peppyProject):
                 configuration values for
             :param str attr_name: attribute name with the value to retrieve
             :param str default: default attribute name
+            :param bool use_config: whether to use config-specified values
             :return str: retrieved configuration value
             """
             if pipestat_sect is not None and attr_name in pipestat_sect:

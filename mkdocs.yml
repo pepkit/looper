@@ -13,6 +13,7 @@ nav:
       - Defining a project: defining-a-project.md
       - Running a pipeline: running-a-pipeline.md
       - Initializing a repository: initialize.md
+      - Using pipestat: pipestat.md
       - Parameterizing pipelines: parameterizing-pipelines.md
       - Running on a cluster: running-on-a-cluster.md
       - Grouping many jobs into one: grouping-jobs.md
