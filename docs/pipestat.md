@@ -18,9 +18,9 @@ Pipestat environment variables are *intentionally not supported*. This design de
 
 ## Usage
 
-The `PipestatManager` constructor attributes mentioned in the previous section are sourced from either sample or project attributes, depending on the looper command executed (`looper run`, `looper runp` etc.).
+The `PipestatManager` constructor attributes mentioned in the previous section are sourced from either sample or project attributes, depending on the looper command executed (`looper run`, `looper runp` etc.). One of the attributes can be used to specify the source of [pipestat configuration file](http://pipestat.databio.org/en/latest/config/), which is the other way of configuring pipestat.
 
-The *names* of the attributes can be configured in the PEP configuration file. Let's take a pipestat namespace as an example: by default the value for the namespace is taken from `Sample.sample_name` but can be changed with `looper.pipestat.sample.namespace_attribute` in the PEP configuration file, like so:
+The *names* of the attributes can be adjusted in the PEP configuration file. Let's take a pipestat namespace as an example: by default the value for the namespace is taken from `Sample.sample_name` but can be changed with `looper.pipestat.sample.namespace_attribute` in the PEP configuration file, like so:
 
 ```yaml
 looper:
@@ -67,7 +67,7 @@ To make the pipestat configuration rules more clear let's consider the following
 
 In this case the pipestat configuration options are sourced only from the sample attributes. Namely, `pipestat_results_file` and `custom_namespace`.
 
-PEP config:
+#### PEP config
 
 ```yaml
 pep_version: 2.0.0
@@ -85,7 +85,7 @@ looper:
       namespace_attribute: "custom_namespace"
 ```
 
-PEP sample table (`sample_table.csv`):
+#### PEP sample table (`sample_table.csv`)
 
 ```csv
 sample_name,custom_namespace
@@ -98,7 +98,7 @@ In this case the pipestat configuration options are sourced from both sample att
 
 Looper sourced the value for pipestat namespace from `Sample.sample_name` and database login credentials from the pipestat configuration file.
 
-PEP config:
+#### PEP config
 
 ```yaml
 pep_version: 2.0.0
@@ -108,14 +108,14 @@ sample_modifiers:
     pipestat_config: pipestat_config.yaml
 ```
 
-PEP sample table (`sample_table.csv`):
+#### PEP sample table (`sample_table.csv`)
 
 ```csv
 sample_name
 sample1
 ```
 
-Pipestat configuration file (`pipestat_config.yaml`):
+#### Pipestat configuration file (`pipestat_config.yaml`)
 
 ```yaml
 database:
