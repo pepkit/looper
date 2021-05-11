@@ -374,7 +374,7 @@ class SubmissionConductor(object):
             if not use_this_sample:
                 msg = "> Skipping sample"
                 if sample_statuses:
-                    msg += f"; determined status: {sample_statuses}"
+                    msg += f". determined status: {', '.join(sample_statuses)}"
                 _LOGGER.info(msg)
 
         if self.prj.toggle_key in sample and int(sample[self.prj.toggle_key]) == 0:

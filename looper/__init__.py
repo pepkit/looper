@@ -409,7 +409,7 @@ def build_parser():
         for subparser in [report_subparser, table_subparser, check_subparser]:
             subparser.add_argument(
                 "--project",
-                help="Process only project-level pipelines",
+                help="Process project-level pipelines",
                 action="store_true",
                 default=False,
             )

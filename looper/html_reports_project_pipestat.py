@@ -192,7 +192,6 @@ class HTMLReportBuilderProject(object):
             button_class = "btn btn-secondary"
             flag = "Missing"
         else:
-            flag = flag[0]
             try:
                 flag_dict = BUTTON_APPEARANCE_BY_FLAG[flag]
             except KeyError:
@@ -201,7 +200,6 @@ class HTMLReportBuilderProject(object):
             else:
                 button_class = flag_dict["button_class"]
                 flag = flag_dict["flag"]
-
         highlighted_results = fetch_pipeline_results(
             project=self.prj,
             pipeline_name=self.prj_piface.pipeline_name,
