@@ -334,6 +334,20 @@ class SubmissionConductor(object):
         """
         return self._num_good_job_submissions
 
+    def is_project_submittable(self, force=False):
+        """
+        Check whether the current project has been already submitted
+
+        :param bool frorce: whether to force the project submission (ignore status/flags)
+        """
+        if self.prj.pipestat_configured_project:
+            psm = self.prj.get_pipestat_managers(project_level=True)[self.pl_name]
+            status = psm.get_status()
+            if not force and status is not None:
+                _LOGGER.info(f"> Skipping project. Determined status: {status}")
+                return False
+        return True
+
     def add_sample(self, sample, rerun=False):
         """
         Add a sample for submission to this conductor.
@@ -374,7 +388,7 @@ class SubmissionConductor(object):
             if not use_this_sample:
                 msg = "> Skipping sample"
                 if sample_statuses:
-                    msg += f". determined status: {', '.join(sample_statuses)}"
+                    msg += f". Determined status: {', '.join(sample_statuses)}"
                 _LOGGER.info(msg)
 
         if self.prj.toggle_key in sample and int(sample[self.prj.toggle_key]) == 0:
@@ -476,8 +490,7 @@ class SubmissionConductor(object):
 
         else:
             _LOGGER.debug(
-                "No submission (pool is not full and submission " "was not forced): %s",
-                self.pl_name,
+                f"No submission (pool is not full and submission was not forced): {self.pl_name}"
             )
             # submitted = False
 
@@ -729,11 +742,6 @@ def _exec_pre_submit(piface, namespaces):
     :return dict[dict[]]: updated namspaces mapping
     """
 
-    def _log_raise_latest(cmd):
-        """Log error info and raise latest handled exception"""
-        _LOGGER.error("Could not retrieve JSON via command: '{}'".format(cmd))
-        raise
-
     def _update_namespaces(x, y, cmd=False):
         """
         Update namespaces mapping with a dictionary of the same structure,
@@ -783,11 +791,13 @@ def _exec_pre_submit(piface, namespaces):
                     )
                     _LOGGER.info("Executing pre-submit command: {}".format(cmd))
                     json = loads(check_output(cmd, shell=True))
-                except CalledProcessError as e:
-                    print(e.output)
-                    _log_raise_latest(cmd)
-                except Exception:
-                    _log_raise_latest(cmd_template)
+                except Exception as e:
+                    if hasattr(e, "output"):
+                        print(e.output)
+                    _LOGGER.error(
+                        "Could not retrieve JSON via command: '{}'".format(cmd)
+                    )
+                    raise
                 else:
                     _update_namespaces(namespaces, json, cmd=True)
     return namespaces

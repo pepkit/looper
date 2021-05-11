@@ -313,7 +313,7 @@ class Destroyer(Executor):
 
 
 class Collator(Executor):
-    """ " Submitter for project-level pipelines"""
+    """Submitter for project-level pipelines"""
 
     def __init__(self, prj):
         """
@@ -372,9 +372,10 @@ class Collator(Executor):
                 ignore_flags=args.ignore_flags,
                 collate=True,
             )
-            conductor._pool = [None]
-            conductor.submit()
-            jobs += conductor.num_job_submissions
+            if conductor.is_project_submittable(force=args.ignore_flags):
+                conductor._pool = [None]
+                conductor.submit()
+                jobs += conductor.num_job_submissions
         _LOGGER.info("\nLooper finished")
         _LOGGER.info("Jobs submitted: {}".format(jobs))
 
