@@ -25,15 +25,14 @@ import yaml
 from colorama import init
 
 init()
-from copy import copy
 from shutil import rmtree
 
 from colorama import Fore, Style
 from divvy import DEFAULT_COMPUTE_RESOURCES_NAME, select_divvy_config
 from eido import inspect_project, validate_config, validate_sample
 from jsonschema import ValidationError
-from logmuse import init_logger
 from peppy.const import *
+from peppy.exceptions import RemoteYAMLError
 from rich.console import Console
 from rich.table import Table
 from ubiquerg.cli_tools import query_yes_no
@@ -418,10 +417,13 @@ class Runner(Executor):
 
         # config validation (samples excluded) against all schemas defined
         # for every pipeline matched for this project
-        [
-            validate_config(self.prj, schema_file, True)
-            for schema_file in self.prj.get_schemas(self.prj.pipeline_interfaces)
-        ]
+        for schema_file in self.prj.get_schemas(self.prj.pipeline_interfaces):
+            try:
+                validate_config(self.prj, schema_file, True)
+            except RemoteYAMLError:
+                _LOGGER.warn(
+                    "Could not read remote schema, skipping config validation."
+                )
 
         for piface in self.prj.pipeline_interfaces:
             conductor = SubmissionConductor(
@@ -451,10 +453,13 @@ class Runner(Executor):
 
             # single sample validation against a single schema
             # (from sample's piface)
-            [
-                validate_sample(self.prj, sample.sample_name, schema_file, True)
-                for schema_file in self.prj.get_schemas(sample_pifaces)
-            ]
+            for schema_file in self.prj.get_schemas(sample_pifaces):
+                try:
+                    validate_sample(self.prj, sample.sample_name, schema_file, True)
+                except RemoteYAMLError:
+                    _LOGGER.warn(
+                        f"Could not read remote schema, skipping '{sample.sample_name}' sample validation."
+                    )
 
             processed_samples.add(sample[SAMPLE_NAME_ATTR])
 

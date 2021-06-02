@@ -13,6 +13,7 @@ from eido import read_schema, validate_inputs
 from eido.const import INPUT_FILE_SIZE_KEY, MISSING_KEY
 from jinja2.exceptions import UndefinedError
 from peppy.const import CONFIG_KEY, SAMPLE_NAME_ATTR, SAMPLE_YAML_EXT
+from peppy.exceptions import RemoteYAMLError
 from pipestat import PipestatError
 from ubiquerg import expandpath
 from yaml import dump
@@ -406,11 +407,19 @@ class SubmissionConductor(object):
         _LOGGER.debug("Determining missing requirements")
         schema_source = self.pl_iface.get_pipeline_schemas()
         if schema_source and self.prj.file_checks:
-            validation = validate_inputs(sample, read_schema(schema_source))
-            if validation[MISSING_KEY]:
-                missing_reqs_msg = f"Missing files: {validation[MISSING_KEY]}"
-                _LOGGER.warning(NOT_SUB_MSG.format(missing_reqs_msg))
-                use_this_sample and skip_reasons.append("Missing files")
+            try:
+                validation = validate_inputs(sample, read_schema(schema_source))
+            except RemoteYAMLError:
+                _LOGGER.warn(
+                    "Could not read remote schema. Skipping inputs validation."
+                )
+            else:
+                if validation[MISSING_KEY]:
+                    missing_reqs_msg = (
+                        f"Missing files: {', '.join(validation[MISSING_KEY])}"
+                    )
+                    _LOGGER.warning(NOT_SUB_MSG.format(missing_reqs_msg))
+                    use_this_sample and skip_reasons.append("Missing files")
 
         if _use_sample(use_this_sample, skip_reasons):
             self._pool.append(sample)
