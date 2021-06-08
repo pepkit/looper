@@ -54,7 +54,7 @@ This plugin writes a sample yaml file compatible as a job input file for a CWL p
 
 **Parameters:**
 
-  - `pipeline.var_templates.sample_yaml_path` (optional): absolute path to file where YAML is to be stored.
+  - `pipeline.var_templates.sample_yaml_cwl_path` (optional): absolute path to file where YAML is to be stored.
 
 **Usage:**
 
