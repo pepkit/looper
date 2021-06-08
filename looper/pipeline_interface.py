@@ -68,12 +68,18 @@ class PipelineInterface(PXAM):
         :param dict namespaces: namespaces to use for rendering
         """
         if VAR_TEMPL_KEY in self:
-            for k, v in self[VAR_TEMPL_KEY].items():
-                setattr(
-                    self[VAR_TEMPL_KEY],
-                    k,
-                    jinja_render_template_strictly(v, namespaces),
-                )
+
+            var_templates = {}
+            var_templates.update(self[VAR_TEMPL_KEY])
+            for k, v in var_templates.items():
+                var_templates[k] = jinja_render_template_strictly(v, namespaces)
+                # setattr(
+                #     var_templates,
+                #     k,
+                #     jinja_render_template_strictly(v, namespaces),
+                # )
+
+            return var_templates
         else:
             _LOGGER.debug(
                 f"'{VAR_TEMPL_KEY}' section not found in the "

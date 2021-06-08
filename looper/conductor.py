@@ -17,6 +17,8 @@ from peppy.exceptions import RemoteYAMLError
 from pipestat import PipestatError
 from ubiquerg import expandpath
 from yaml import dump
+from copy import copy, deepcopy
+
 
 from .const import *
 from .exceptions import JobSubmissionException
@@ -45,9 +47,14 @@ def _get_yaml_path(namespaces, template_key, default_name_appendix="", filename=
         and template_key in namespaces["pipeline"][VAR_TEMPL_KEY]
     ):
         _LOGGER.debug(f"sample_name: {namespaces['sample']['sample_name']}")
+        _LOGGER.debug(f"Sample namespace: {namespaces['sample']}")
+        x = jinja_render_template_strictly("{sample.sample_name}", namespaces            )
+        _LOGGER.debug(f"x: {x}")
+        cpy = namespaces["pipeline"][VAR_TEMPL_KEY][template_key]
+        _LOGGER.debug(f"cpy: {cpy}")
         path = expandpath(
             jinja_render_template_strictly(
-                namespaces["pipeline"][VAR_TEMPL_KEY][template_key], namespaces
+                cpy, namespaces
             )
         )
         _LOGGER.debug(f"path: {path}")        
@@ -73,7 +80,6 @@ def _get_yaml_path(namespaces, template_key, default_name_appendix="", filename=
         if not os.path.exists(default):
             os.makedirs(default, exist_ok=True)
 
-    _LOGGER.debug(f"Sample namespace: {namespaces}")
     _LOGGER.debug(f"Writing sample yaml: {final_path}")
     return final_path
 
@@ -679,10 +685,13 @@ class SubmissionConductor(object):
             res_pkg.update(cli)
             self.prj.dcc.compute.update(res_pkg)  # divcfg
             namespaces["compute"].update(res_pkg)
-            self.pl_iface.render_var_templates(namespaces=namespaces)
-            namespaces["pipeline"] = self.pl_iface
+            # Here we make a copy of this so that each iteration gets its own template values
+            pl_iface = {}
+            pl_iface.update(self.pl_iface)
+            pl_iface[VAR_TEMPL_KEY] = self.pl_iface.render_var_templates(namespaces=namespaces)
+            _LOGGER.debug(f"namespace pipelines: { pl_iface }")
             # pre_submit hook namespace updates
-            namespaces = _exec_pre_submit(self.pl_iface, namespaces)
+            namespaces = _exec_pre_submit(pl_iface, namespaces)
             self._rendered_ok = False
             try:
                 argstring = jinja_render_template_strictly(
