@@ -103,17 +103,17 @@ def build_parser():
     result = []
     for parser in [parser, aux_parser]:
         # Logging control
-        # parser.add_argument(
-        #         "--logfile", help="Optional output file for looper logs "
-        #                           "(default: %(default)s)")
-        # parser.add_argument(
-        #         "--verbosity", type=int, choices=range(len(_LEVEL_BY_VERBOSITY)),
-        #         help="Choose level of verbosity (default: %(default)s)")
-        # parser.add_argument(
-        #         "--logging-level", help=argparse.SUPPRESS)
-        # parser.add_argument(
-        #         "--dbg", action="store_true",
-        #         help="Turn on debug mode (default: %(default)s)")
+        parser.add_argument(
+                "--logfile", help="Optional output file for looper logs "
+                                  "(default: %(default)s)")
+        parser.add_argument(
+                "--verbosity", type=int, choices=range(len(_LEVEL_BY_VERBOSITY)),
+                help="Choose level of verbosity (default: %(default)s)")
+        parser.add_argument(
+                "--logging-level", help=argparse.SUPPRESS)
+        parser.add_argument(
+                "--dbg", action="store_true",
+                help="Turn on debug mode (default: %(default)s)")
         # Individual subcommands
         msg_by_cmd = {
             "run": "Run or submit sample jobs.",
