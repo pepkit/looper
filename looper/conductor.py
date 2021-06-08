@@ -44,11 +44,14 @@ def _get_yaml_path(namespaces, template_key, default_name_appendix="", filename=
         VAR_TEMPL_KEY in namespaces["pipeline"]
         and template_key in namespaces["pipeline"][VAR_TEMPL_KEY]
     ):
+        _LOGGER.debug(f"sample_name: {namespaces['sample']['sample_name']}")
         path = expandpath(
             jinja_render_template_strictly(
-                namespaces["pipeline"][template_key], namespaces
+                namespaces["pipeline"][VAR_TEMPL_KEY][template_key], namespaces
             )
         )
+        _LOGGER.debug(f"path: {path}")        
+
         if not path.endswith(SAMPLE_YAML_EXT) and not filename:
             raise ValueError(
                 f"{template_key} is not a valid target YAML file path. "
@@ -69,6 +72,9 @@ def _get_yaml_path(namespaces, template_key, default_name_appendix="", filename=
         final_path = os.path.join(default, f)
         if not os.path.exists(default):
             os.makedirs(default, exist_ok=True)
+
+    _LOGGER.debug(f"Sample namespace: {namespaces}")
+    _LOGGER.debug(f"Writing sample yaml: {final_path}")
     return final_path
 
 
