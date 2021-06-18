@@ -1,8 +1,11 @@
 # Pipestat
 
-Starting with version 1.4.0, looper natively supports pipestat, a tool that standardizes reporting of pipeline results. It provides 1) a standard specification for how pipeline outputs should be stored; and 2) an implementation to easily write results to that format from within Python or from the command line. The user configures results to be stored either in a YAML-formatted file or a relational database.
+Starting with version 1.4.0, looper supports additional functionality for [pipestat](http://pipestat.databio.org/)-compatible pipelines. Pipestat-compatible pipelines will allow you to use looper to do 2 things:
 
-We recommend  browsing the [pipestat documentation](http://pipestat.databio.org/) to learn more about it.
+1. monitor the status of pipeline runs
+2. summarize the results of pipelines
+
+For non-pipestat-compatible pipelines, you can still use looper to run pipelines, but you won't be able to use `looper report` or `looper status` to manage their output.
 
 ## Pipestat configuration overview
 
@@ -12,13 +15,11 @@ Generally, pipestat configuration comes from 3 sources, with the following prior
 2. Pipestat configuration file
 3. Environment variables
 
-In looper only configuration sources 1. and 2. are available and can be specified via the project or sample attributes.
-
-Pipestat environment variables are *intentionally not supported*. This design decision was dictated by looper runs reproducibility -- jobs configured in one computing environment could lead to totally different configuration and errors in other environments.
+In looper, only 1 and 2 are available, and can be specified via the project or sample attributes. Pipestat environment variables are *intentionally not supported* to ensure looper runs are reproducible -- otherwise, jobs configured in one computing environment could lead to totally different configuration and errors in other environments.
 
 ## Usage
 
-The `PipestatManager` constructor attributes mentioned in the previous section are sourced from either sample or project attributes, depending on the looper command executed (`looper run`, `looper runp` etc.). One of the attributes can be used to specify the source of [pipestat configuration file](http://pipestat.databio.org/en/latest/config/), which is the other way of configuring pipestat.
+The `PipestatManager` constructor attributes mentioned in the previous section are sourced from either sample attributes (for `looper run`) or project attributes ( for`looper runp`). One of the attributes can be used to specify the [pipestat configuration file](http://pipestat.databio.org/en/latest/config/), which is the other way of configuring pipestat.
 
 The *names* of the attributes can be adjusted in the PEP configuration file. Let's take a pipestat namespace as an example: by default the value for the namespace is taken from `Sample.sample_name` but can be changed with `looper.pipestat.sample.namespace_attribute` in the PEP configuration file, like so:
 
@@ -42,7 +43,7 @@ looper:
 
 Now the value for the pipestat namespace will be sourced from `Project.custom_attribute` rather than `Project.name`.
 
-Natuarally, this configuration procedure can be applied to other pipestat options. The only exception is pipestat results schema, which is never specified here, since it's sourced from the `output_schema` attribute of the pipeline interface.
+Naturally, this configuration procedure can be applied to other pipestat options. The only exception is pipestat results schema, which is never specified here, since it's sourced from the `output_schema` attribute of the pipeline interface.
 
 ```yaml
 looper:
