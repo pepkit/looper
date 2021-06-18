@@ -199,13 +199,11 @@ def jinja_render_template_strictly(template, namespaces):
     templ_obj = env.from_string(template)
     try:
         rendered = templ_obj.render(**namespaces)
-    except jinja2.exceptions.UndefinedError:
-        _LOGGER.error(
-            f"Attributes in namespaces "
-            f"({', '.join(list(namespaces.keys()))}) missing for "
-            f"the following template: '{template}'"
-        )
-        raise
+    except jinja2.exceptions.UndefinedError as e:
+        _LOGGER.error("Error populating command template: " + str(e))
+        _LOGGER.debug(f"({', '.join(list(namespaces.keys()))}) missing for ")
+        _LOGGER.debug(f"Template: '{template}'")
+        raise e
     _LOGGER.debug("rendered arg str: {}".format(rendered))
     return rendered
 

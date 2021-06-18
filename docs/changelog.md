@@ -5,7 +5,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ## [1.4.0] -- unreleased
 
 ### Added
-- support for pipestat.
+- support for [pipestat](http://pipestat.databio.org).
 
 ### Changed
 - If remote schemas are not accessbile, the job submission doesn't fail anymore
