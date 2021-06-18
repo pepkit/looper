@@ -48,16 +48,12 @@ def _get_yaml_path(namespaces, template_key, default_name_appendix="", filename=
     ):
         _LOGGER.debug(f"sample_name: {namespaces['sample']['sample_name']}")
         _LOGGER.debug(f"Sample namespace: {namespaces['sample']}")
-        x = jinja_render_template_strictly("{sample.sample_name}", namespaces            )
+        x = jinja_render_template_strictly("{sample.sample_name}", namespaces)
         _LOGGER.debug(f"x: {x}")
         cpy = namespaces["pipeline"][VAR_TEMPL_KEY][template_key]
         _LOGGER.debug(f"cpy: {cpy}")
-        path = expandpath(
-            jinja_render_template_strictly(
-                cpy, namespaces
-            )
-        )
-        _LOGGER.debug(f"path: {path}")        
+        path = expandpath(jinja_render_template_strictly(cpy, namespaces))
+        _LOGGER.debug(f"path: {path}")
 
         if not path.endswith(SAMPLE_YAML_EXT) and not filename:
             raise ValueError(
@@ -688,7 +684,9 @@ class SubmissionConductor(object):
             # Here we make a copy of this so that each iteration gets its own template values
             pl_iface = {}
             pl_iface.update(self.pl_iface)
-            pl_iface[VAR_TEMPL_KEY] = self.pl_iface.render_var_templates(namespaces=namespaces)
+            pl_iface[VAR_TEMPL_KEY] = self.pl_iface.render_var_templates(
+                namespaces=namespaces
+            )
             _LOGGER.debug(f"namespace pipelines: { pl_iface }")
             # pre_submit hook namespace updates
             namespaces = _exec_pre_submit(pl_iface, namespaces)
