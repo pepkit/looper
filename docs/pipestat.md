@@ -1,6 +1,6 @@
 # Pipestat
 
-Starting with version 1.3.1, looper natively supports pipestat, a tool that standardizes reporting of pipeline results. It provides 1) a standard specification for how pipeline outputs should be stored; and 2) an implementation to easily write results to that format from within Python or from the command line. The user configures results to be stored either in a YAML-formatted file or a relational database.
+Starting with version 1.4.0, looper natively supports pipestat, a tool that standardizes reporting of pipeline results. It provides 1) a standard specification for how pipeline outputs should be stored; and 2) an implementation to easily write results to that format from within Python or from the command line. The user configures results to be stored either in a YAML-formatted file or a relational database.
 
 We recommend  browsing the [pipestat documentation](http://pipestat.databio.org/) to learn more about it.
 
