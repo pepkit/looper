@@ -133,7 +133,9 @@ def write_custom_template(namespaces):
         t = jinja2.Template(x)
         return t
 
-    err_msg = "Custom template plugin requires a template in var_templates.custom_template"
+    err_msg = (
+        "Custom template plugin requires a template in var_templates.custom_template"
+    )
     if not "var_templates" in namespaces["pipeline"].keys():
         _LOGGER.error(err_msg)
         return None
@@ -141,7 +143,7 @@ def write_custom_template(namespaces):
     if not "custom_template" in namespaces["pipeline"]["var_templates"].keys():
         _LOGGER.error(err_msg)
         return None
-        
+
     import jinja2
 
     tpl = load_template(namespaces["pipeline"])
