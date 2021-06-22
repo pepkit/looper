@@ -30,7 +30,7 @@ _LOGGER = logging.getLogger(__name__)
 
 def _get_yaml_path(namespaces, template_key, default_name_appendix="", filename=None):
     """
-    Get a path to the a YAML file.
+    Get a path to a YAML file for the sample.
 
     :param dict[dict]] namespaces: namespaces mapping
     :param str template_key: the name of the key in 'var_templates' piface
@@ -93,9 +93,10 @@ def write_sample_yaml(namespaces):
     :return dict: sample namespace dict
     """
     sample = namespaces["sample"]
-    sample.to_yaml(
-        _get_yaml_path(namespaces, SAMPLE_YAML_PATH_KEY, "_sample"), add_prj_ref=False
+    sample["sample_yaml_path"] = _get_yaml_path(
+        namespaces, SAMPLE_YAML_PATH_KEY, "_sample"
     )
+    sample.to_yaml(sample["sample_yaml_path"], add_prj_ref=False)
     return {"sample": sample}
 
 
@@ -119,9 +120,44 @@ def write_sample_yaml_prj(namespaces):
     return {"sample": sample}
 
 
+def write_custom_template(namespaces):
+    """
+    Plugin: Populates a user-provided jinja template
+
+    Parameterize by providing pipeline.var_templates.custom_template
+    """
+
+    def load_template(pipeline):
+        with open(namespaces["pipeline"]["var_templates"]["custom_template"], "r") as f:
+            x = f.read()
+        t = jinja2.Template(x)
+        return t
+
+    err_msg = "Custom template plugin requires a template in var_templates.custom_template"
+    if not "var_templates" in namespaces["pipeline"].keys():
+        _LOGGER.error(err_msg)
+        return None
+
+    if not "custom_template" in namespaces["pipeline"]["var_templates"].keys():
+        _LOGGER.error(err_msg)
+        return None
+        
+    import jinja2
+
+    tpl = load_template(namespaces["pipeline"])
+    content = tpl.render(namespaces)
+    pth = _get_yaml_path(namespaces, "custom_template_output", "_config")
+    namespaces["sample"]["custom_template_output"] = pth
+    with open(pth, "wb") as fh:
+        # print(content)
+        fh.write(content.encode())
+
+    return {"sample": namespaces["sample"]}
+
+
 def write_sample_yaml_cwl(namespaces):
     """
-    Produce a cwl-compatible yaml representation of the sample
+    Plugin: Produce a cwl-compatible yaml representation of the sample
 
     Also adds the 'cwl_yaml' attribute to sample objects, which points
     to the file produced.
@@ -771,9 +807,11 @@ def _exec_pre_submit(piface, namespaces):
 
         :param dict[dict] x: namespaces mapping
         :param dict[dict] y: mapping to update namespaces with
-        :param bool cmd: whether the mapping to upodate with comes from the
+        :param bool cmd: whether the mapping to update with comes from the
             command template, used for messaging
         """
+        if not y:
+            return
         if not isinstance(y, dict):
             if cmd:
                 raise TypeError(
