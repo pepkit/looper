@@ -418,5 +418,17 @@ def build_parser():
                 action="store_true",
                 default=False,
             )
+        inspect_subparser.add_argument(
+            "--sample-names",
+            help="Names of the samples to inspect",
+            nargs="*",
+            default=None,
+        )
+
+        inspect_subparser.add_argument(
+            "--attr-limit",
+            help="Number of attributes to display",
+            type=int,
+        )
         result.append(parser)
     return result

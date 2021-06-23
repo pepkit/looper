@@ -1133,4 +1133,10 @@ def main():
             return Cleaner(prj)(args)
 
         if args.command == "inspect":
-            inspect_project(p, args.snames, args.attr_limit)
+            inspect_project(p, args.sample_names, args.attr_limit)
+            from warnings import warn
+
+            warn(
+                "The inspect feature has moved to eido and will be removed in the future release of looper. "
+                "Use `eido inspect` from now on.",
+            )
