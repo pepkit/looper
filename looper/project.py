@@ -472,9 +472,7 @@ class Project(peppyProject):
         Get all required pipestat configuration variables
         """
 
-        def _get_val_from_attr(
-            pipestat_sect, object, attr_name, default, use_cfg=False
-        ):
+        def _get_val_from_attr(pipestat_sect, object, attr_name, default, no_err=False):
             """
             Get configuration value from an object's attribute or return default
 
@@ -483,7 +481,8 @@ class Project(peppyProject):
                 configuration values for
             :param str attr_name: attribute name with the value to retrieve
             :param str default: default attribute name
-            :param bool use_config: whether to use config-specified values
+            :param bool no_err: do not raise error in case the attribute is missing,
+                in order to use the values specified in a different way, e.g. in pipestat config
             :return str: retrieved configuration value
             """
             if pipestat_sect is not None and attr_name in pipestat_sect:
@@ -491,7 +490,7 @@ class Project(peppyProject):
             try:
                 return getattr(object, default)
             except AttributeError:
-                if use_cfg:
+                if no_err:
                     return None
                 raise AttributeError(f"'{default}' attribute is missing")
 
@@ -520,21 +519,22 @@ class Project(peppyProject):
             self.config if project_level else self.get_sample(sample_name),
             PIPESTAT_CONFIG_ATTR_KEY,
             DEFAULT_PIPESTAT_CONFIG_ATTR,
+            True,  # allow for missing pipestat cfg attr, the settings may be provided as Project/Sample attrs
         )
         pipestat_config = self._resolve_path_with_cfg(pth=pipestat_config)
         namespace = _get_val_from_attr(
             pipestat_section,
             self.config if project_level else self.get_sample(sample_name),
             PIPESTAT_NAMESPACE_ATTR_KEY,
-            "name" if project_level else "sample_name",
-            os.path.exists(pipestat_config),
+            "name" if project_level else self.sample_name_colname,
+            pipestat_config and os.path.exists(pipestat_config),
         )
         results_file_path = _get_val_from_attr(
             pipestat_section,
             self.config if project_level else self.get_sample(sample_name),
             PIPESTAT_RESULTS_FILE_ATTR_KEY,
             DEFAULT_PIPESTAT_RESULTS_FILE_ATTR,
-            os.path.exists(pipestat_config),
+            pipestat_config and os.path.exists(pipestat_config),
         )
         if results_file_path is not None:
             results_file_path = expandpath(results_file_path)
@@ -647,6 +647,8 @@ class Project(peppyProject):
         :param str pth: path, possibly including env vars and/or relative
         :return str: absolute path
         """
+        if pth is None:
+            return
         pth = expandpath(pth)
         if not os.path.isabs(pth):
             pth = os.path.realpath(os.path.join(os.path.dirname(self.config_file), pth))
