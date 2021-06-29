@@ -85,12 +85,14 @@ class HTMLReportBuilderProject(object):
                     f"Duplicate pipeline_names found in pipeline interfaces "
                     f"defined for samples in this project: {pipeline_name}"
                 )
-            linked_sample_reports[pipeline_name] = report_path
+            linked_sample_reports[pipeline_name] = os.path.relpath(
+                report_path, self.pipeline_reports
+            )
             _LOGGER.info(
                 f"Sample-level '{pipeline_name}' pipeline HTML report: "
                 f"{report_path}"
             )
-
+        print(f"{linked_sample_reports=}")
         sample_reps_parent = os.path.join(self.pipeline_reports, "sample_reports.html")
         sample_reports_parent_relpath = os.path.relpath(
             sample_reps_parent, self.pipeline_reports

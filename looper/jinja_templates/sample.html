@@ -79,13 +79,12 @@
             {% if figures[0] is defined %}
             <h5>Figures</h5>
             {% for figure in figures %}
-            {% set i = loop.index - 1 %}
             <figure class="figure">
                 <a href='{{ figure[0] }}'>
                     <img id="fig" src='{{ figure[2] }}' class="figure-img img-fluid rounded" alt="">
                 </a>
                 <a href='{{ figure[0] }}'>
-                    <figcaption class="figure-caption text-center"><b>Fig.{{ i }} </b><i>{{ figure[1] }}</i>
+                    <figcaption class="figure-caption text-center"><b>Fig.{{ loop.index }} </b><i>{{ figure[1] }}</i>
                     </figcaption>
                 </a>
             </figure>
