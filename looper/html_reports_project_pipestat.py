@@ -10,7 +10,6 @@ from .const import *
 from .exceptions import PipelineInterfaceConfigError
 from .html_reports_pipestat import (
     HTMLReportBuilder,
-    _get_file_for_sample,
     fetch_pipeline_results,
     get_jinja_env,
     render_jinja_template,
@@ -226,7 +225,12 @@ class HTMLReportBuilderProject(object):
                 if "description" in self.schema[result_id]
                 else ""
             )
-            links.append([f"<b>{result['title']}</b>: {desc}", result["path"]])
+            links.append(
+                [
+                    f"<b>{result['title']}</b>: {desc}",
+                    os.path.relpath(result["path"], self.pipeline_reports),
+                ]
+            )
         image_results = fetch_pipeline_results(
             project=self.prj,
             pipeline_name=self.prj_piface.pipeline_name,
@@ -235,7 +239,13 @@ class HTMLReportBuilderProject(object):
         )
         figures = []
         for result_id, result in image_results.items():
-            figures.append([result["path"], result["title"], result["thumbnail_path"]])
+            figures.append(
+                [
+                    os.path.relpath(result["path"], self.pipeline_reports),
+                    result["title"],
+                    os.path.relpath(result["thumbnail_path"], self.pipeline_reports),
+                ]
+            )
 
         template_vars = dict(
             report_class="Project",

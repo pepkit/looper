@@ -520,21 +520,23 @@ class Project(peppyProject):
             self.config if project_level else self.get_sample(sample_name),
             PIPESTAT_CONFIG_ATTR_KEY,
             DEFAULT_PIPESTAT_CONFIG_ATTR,
+            use_cfg=True,
         )
+       
         pipestat_config = self._resolve_path_with_cfg(pth=pipestat_config)
         namespace = _get_val_from_attr(
             pipestat_section,
             self.config if project_level else self.get_sample(sample_name),
             PIPESTAT_NAMESPACE_ATTR_KEY,
-            "name" if project_level else "sample_name",
-            os.path.exists(pipestat_config),
+            "name" if project_level else self.sample_name_colname,
+            pipestat_config and os.path.exists(pipestat_config),
         )
         results_file_path = _get_val_from_attr(
             pipestat_section,
             self.config if project_level else self.get_sample(sample_name),
             PIPESTAT_RESULTS_FILE_ATTR_KEY,
             DEFAULT_PIPESTAT_RESULTS_FILE_ATTR,
-            os.path.exists(pipestat_config),
+            pipestat_config and os.path.exists(pipestat_config),
         )
         if results_file_path is not None:
             results_file_path = expandpath(results_file_path)
@@ -647,6 +649,8 @@ class Project(peppyProject):
         :param str pth: path, possibly including env vars and/or relative
         :return str: absolute path
         """
+        if pth is None:
+            return
         pth = expandpath(pth)
         if not os.path.isabs(pth):
             pth = os.path.realpath(os.path.join(os.path.dirname(self.config_file), pth))

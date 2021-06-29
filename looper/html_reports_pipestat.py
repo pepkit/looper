@@ -265,9 +265,8 @@ class HTMLReportBuilder(object):
 
         if not os.path.exists(self.pipeline_reports):
             os.makedirs(self.pipeline_reports)
-        links = []
-        figures = []
         for file_result in file_results:
+            links = []
             html_page_path = os.path.join(
                 self.pipeline_reports, f"{file_result}.html".lower()
             )
@@ -280,7 +279,12 @@ class HTMLReportBuilder(object):
                 if file_result not in sample_result:
                     break
                 sample_result = sample_result[file_result]
-                links.append([sample.sample_name, sample_result["path"]])
+                links.append(
+                    [
+                        sample.sample_name,
+                        os.path.relpath(sample_result["path"], self.pipeline_reports),
+                    ]
+                )
             else:
                 link_desc = (
                     self.schema[file_result]["description"]
@@ -306,6 +310,7 @@ class HTMLReportBuilder(object):
             html_page_path = os.path.join(
                 self.pipeline_reports, f"{image_result}.html".lower()
             )
+            figures = []
             for sample in self.prj.samples:
                 sample_result = fetch_pipeline_results(
                     project=self.prj,
@@ -317,9 +322,11 @@ class HTMLReportBuilder(object):
                 sample_result = sample_result[image_result]
                 figures.append(
                     [
-                        sample_result["path"],
+                        os.path.relpath(sample_result["path"], self.pipeline_reports),
                         sample.sample_name,
-                        sample_result["thumbnail_path"],
+                        os.path.relpath(
+                            sample_result["thumbnail_path"], self.pipeline_reports
+                        ),
                     ]
                 )
             else:
@@ -400,7 +407,12 @@ class HTMLReportBuilder(object):
                 if "description" in self.schema[result_id]
                 else ""
             )
-            links.append([f"<b>{result['title']}</b>: {desc}", result["path"]])
+            links.append(
+                [
+                    f"<b>{result['title']}</b>: {desc}",
+                    os.path.relpath(result["path"], self.pipeline_reports),
+                ]
+            )
         image_results = fetch_pipeline_results(
             project=self.prj,
             pipeline_name=self.pipeline_name,
@@ -409,7 +421,13 @@ class HTMLReportBuilder(object):
         )
         figures = []
         for result_id, result in image_results.items():
-            figures.append([result["path"], result["title"], result["thumbnail_path"]])
+            figures.append(
+                [
+                    os.path.relpath(result["path"], self.pipeline_reports),
+                    result["title"],
+                    os.path.relpath(result["thumbnail_path"], self.pipeline_reports),
+                ]
+            )
 
         template_vars = dict(
             report_class="Sample",
