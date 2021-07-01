@@ -6,7 +6,7 @@ title: Pipeline interface specification
 
 ## Introduction
 
-If you want to use looper to run samples in a PEP through an arbitrary shell command, you will need to write a pipeline interface. Here is a basic walkthrough to write a simple interface file. Once you've been through this, you can consult the formal [pipeline interface format specification](pipeline-interface-specification.md) for further details and reference. 
+If you want to use looper to run samples in a PEP through an arbitrary shell command, you will need to write a pipeline interface. Here is a basic walkthrough to write a simple interface file. Once you've been through this, you can consult the formal [pipeline interface format specification](pipeline-interface-specification.md) for further details and reference.
 
 ## Example
 
@@ -19,11 +19,11 @@ path: count_lines.sh  # relative to this pipeline_interface.yaml file
 command_template: {pipeline.path} {sample.file}
 ```
 
-You can edit this to start your own interface. 
+You can edit this to start your own interface.
 
 First, think of a unique name for your pipeline and put it in  `pipeline_name`. This will be used for messaging and identification.
 
-Next, choose a `pipeline_type`, which can be either "sample" or "project". Most likely, you're writing a sample pipeline, but you can read more about [sample and project pipelines](pipeline-tiers.md) if you like. 
+Next, choose a `pipeline_type`, which can be either "sample" or "project". Most likely, you're writing a sample pipeline, but you can read more about [sample and project pipelines](pipeline-tiers.md) if you like.
 
 Next, we need to set the `path` to our script. This path is relative to the pipeline interface file, so you need to put the pipeline interface somewhere specific relative to the pipeline; perhaps in the same folder or in a parent folder.
 

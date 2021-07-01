@@ -5,6 +5,7 @@ import logging
 import os
 import subprocess
 import time
+from copy import copy, deepcopy
 from json import loads
 from subprocess import CalledProcessError, check_output
 
@@ -17,8 +18,6 @@ from peppy.exceptions import RemoteYAMLError
 from pipestat import PipestatError
 from ubiquerg import expandpath
 from yaml import dump
-from copy import copy, deepcopy
-
 
 from .const import *
 from .exceptions import JobSubmissionException
@@ -46,7 +45,6 @@ def _get_yaml_path(namespaces, template_key, default_name_appendix="", filename=
         VAR_TEMPL_KEY in namespaces["pipeline"]
         and template_key in namespaces["pipeline"][VAR_TEMPL_KEY]
     ):
-        _LOGGER.debug(f"sample_name: {namespaces['sample']['sample_name']}")
         _LOGGER.debug(f"Sample namespace: {namespaces['sample']}")
         x = jinja_render_template_strictly("{sample.sample_name}", namespaces)
         _LOGGER.debug(f"x: {x}")

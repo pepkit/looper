@@ -527,7 +527,7 @@ class Project(peppyProject):
             pipestat_section,
             self.config if project_level else self.get_sample(sample_name),
             PIPESTAT_NAMESPACE_ATTR_KEY,
-            "name" if project_level else self.sample_name_colname,
+            "name" if project_level else self.sample_table_index,
             pipestat_config and os.path.exists(pipestat_config),
         )
         results_file_path = _get_val_from_attr(

@@ -11,7 +11,7 @@ export DIVCFG="divvy_config.yaml"
 divvy init -c $DIVCFG
 ```
 
-Looper will now have access to your computing configuration. You can run `divvy list` to see what compute packages are available in this file. For example, you'll start with a package called 'slurm', which you can use with looper by calling `looper --package slurm`. For many systems (SLURM, SGE, LFS, etc), the default divvy configuration will work out of the box. If you need to tweak things, the template system is flexible and you can configure it to run in any compute environment. That's all there is to it. 
+Looper will now have access to your computing configuration. You can run `divvy list` to see what compute packages are available in this file. For example, you'll start with a package called 'slurm', which you can use with looper by calling `looper --package slurm`. For many systems (SLURM, SGE, LFS, etc), the default divvy configuration will work out of the box. If you need to tweak things, the template system is flexible and you can configure it to run in any compute environment. That's all there is to it.
 
 Complete details on how to configure divvy are described in the [divvy documentation](http://divvy.databio.org).
 
@@ -22,4 +22,3 @@ Looper will by default will look for the divvy configuration file in `$DIVCFG`, 
 ```bash
 looper --divvy /path/to/env_cfg.yaml ...
 ```
-

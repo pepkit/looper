@@ -52,7 +52,7 @@
       chart = document.getElementById('charts');
       Plotly.newPlot(chart, data, layout);
     }
-    
+
     function displayPlottableColumns(){
         for(var col in plotDict){
             $("#plot-cols").append("<li class='list-group-item'><a href='#' title='Click to visualize this column' onclick='graphCol(\"" + col +

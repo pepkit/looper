@@ -16,4 +16,3 @@ cmd="pipelines/pipeline1.py --sample-name sample1 "
 
 y=`echo "$cmd" | sed -e 's/^/srun /'`
 eval "$y"
-

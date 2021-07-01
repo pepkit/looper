@@ -425,7 +425,7 @@ class HTMLReportBuilder(object):
                 [
                     os.path.relpath(result["path"], self.pipeline_reports),
                     result["title"],
-                    os.path.relpath(result["thumbnail_path"], self.pipeline_reports),
+                    os.patrh.relpath(result["thumbnail_path"], self.pipeline_reports),
                 ]
             )
 
