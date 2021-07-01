@@ -1,7 +1,7 @@
 """ Exceptions for specific looper issues. """
 
 from abc import ABCMeta
-from collections import Iterable
+from collections.abc import Iterable
 
 __author__ = "Vince Reuter"
 __email__ = "vreuter@virginia.edu"

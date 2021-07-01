@@ -1,7 +1,7 @@
 """ Model the connection between a pipeline and a project or executor. """
 
 import os
-from collections import Mapping
+from collections.abc import Mapping
 from logging import getLogger
 from warnings import warn
 
