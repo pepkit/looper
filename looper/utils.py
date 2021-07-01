@@ -3,7 +3,7 @@
 import argparse
 import glob
 import os
-from collections.abc import defaultdict
+from collections import defaultdict
 from logging import getLogger
 
 import jinja2
