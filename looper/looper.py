@@ -719,6 +719,11 @@ def _create_obj_summary(project, pipeline_name, project_level, counter):
 class ReportOld(Executor):
     """Combine project outputs into a browsable HTML report"""
 
+    def __init__(self, prj):
+        # call the inherited initialization
+        super(ReportOld, self).__init__(prj)
+        self.prj = prj
+
     def __call__(self, args):
         # initialize the report builder
         report_builder = HTMLReportBuilderOld(self.prj)
