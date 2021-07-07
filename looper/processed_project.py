@@ -100,8 +100,6 @@ def populate_project_paths(project, schema):
         output of read_schema function
     :return Mapping: Project with path templates populated
     """
-    if not isinstance(project, Project):
-        raise TypeError("Can only populate paths in peppy.Project objects")
     for k, v in _populate_paths_in_schema(project.config, copy(schema)).items():
         if "value" in v:
             setattr(project, k, v["value"])
