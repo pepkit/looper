@@ -7,7 +7,6 @@ import re
 import sys
 from copy import copy as cp
 from datetime import timedelta
-from warnings import warn
 
 import jinja2
 import pandas as _pd
@@ -49,7 +48,7 @@ class HTMLReportBuilderOld(object):
         )
         navbar_reports = self.create_navbar(
             self.create_navbar_links(objs=objs, stats=stats, wd=self.reports_dir),
-            os.path.join("..", self.index_html_filename),
+            os.path.join(os.pardir, self.index_html_filename),
         )
         index_html_path = self.create_index_html(
             objs,

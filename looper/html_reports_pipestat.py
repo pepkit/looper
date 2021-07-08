@@ -1,14 +1,10 @@
 """ Generate HTML reports """
 
-import glob
 import logging
 import os
-import re
 import sys
-from copy import copy as cp
 from datetime import timedelta
 from json import dumps
-from warnings import warn
 
 import jinja2
 import pandas as _pd
@@ -17,7 +13,6 @@ from peppy.const import *
 
 from ._version import __version__ as v
 from .const import *
-from .processed_project import get_project_outputs
 from .utils import get_file_for_project
 
 _LOGGER = logging.getLogger("looper")

@@ -1,7 +1,12 @@
-# """
-# Processed Project manipulation functions.
-# Will be moved to a separate package
-# """
+"""
+Processed Project manipulation functions.
+These functions are used to process pipestat-compatible schema,
+but the report generation approach has changed.
+"""
+
+__author__ = "Michal Stolarczyk"
+__email__ = "michal@virginia.edu"
+
 # import os
 # from collections.abc import Mapping
 # from copy import copy
@@ -13,9 +18,6 @@
 # from peppy.sample import Sample
 # from pipestat import SCHEMA_TYPE_KEY, SchemaError
 # from ubiquerg import expandpath
-
-# __author__ = "Michal Stolarczyk"
-# __email__ = "michal@virginia.edu"
 
 # _LOGGER = getLogger(__name__)
 # PATH_KEY = "path"
@@ -121,8 +123,7 @@
 #     populated = populate_project_paths(project, schema)
 #     return PathExAttMap({k: getattr(populated, k) for k in schema.keys()})
 """
-Processed Project manipulation functions.
-Will be moved to a separate package
+Processed Project manipulation functions, required pipelines with no pipestat support (old schema)
 """
 import os
 from logging import getLogger
@@ -131,9 +132,6 @@ from eido.const import *
 from eido.exceptions import *
 from peppy.project import Project
 from peppy.sample import Sample
-
-__author__ = "Michal Stolarczyk"
-__email__ = "michal@virginia.edu"
 
 _LOGGER = getLogger(__name__)
 PATH_KEY = "path"
