@@ -133,10 +133,12 @@ class Checker(Executor):
                     show_header=True,
                     header_style="bold magenta",
                     title=table_title,
-                    width=len(table_title) + 10,
+                    min_width=len(table_title) + 10,
                 )
                 table.add_column(
-                    f"{'Project' if args.project else 'Sample'} name", justify="center"
+                    f"{'Project' if args.project else 'Sample'} name",
+                    justify="right",
+                    no_wrap=True,
                 )
                 table.add_column("Status", justify="center")
                 for name, status_id in pipeline_status.items():
