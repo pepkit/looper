@@ -75,7 +75,7 @@ setup(
     ],
     keywords="bioinformatics, sequencing, ngs",
     url="https://github.com/pepkit/looper",
-    author=u"Nathan Sheffield, Vince Reuter, Michal Stolarczyk, Johanna Klughammer, Andre Rendeiro",
+    author="Nathan Sheffield, Vince Reuter, Michal Stolarczyk, Johanna Klughammer, Andre Rendeiro",
     license="BSD2",
     entry_points={
         "console_scripts": ["looper = looper.__main__:main"],
