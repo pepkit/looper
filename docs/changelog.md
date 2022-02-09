@@ -2,10 +2,18 @@
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format.
 
+
 ## [1.4.0] -- unreleased
 
 ### Added
 - support for [pipestat](http://pipestat.databio.org).
+
+## [1.3.2] -- 2022-02-09
+
+### Changed
+- Fixed bug with use_2to3 for setuptools compatibility.
+
+## [1.3.1] -- 2021-06-18
 
 ### Changed
 - If remote schemas are not accessbile, the job submission doesn't fail anymore
