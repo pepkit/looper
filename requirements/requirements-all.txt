@@ -6,7 +6,7 @@ jinja2
 logmuse>=0.2.0
 pandas>=0.20.2
 pipestat>=0.1.0
-# peppy>=0.32.0
+peppy>=0.32.0
 pyyaml>=3.12
 rich>=9.10.0
 ubiquerg>=0.5.2
