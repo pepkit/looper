@@ -31,11 +31,6 @@ else:
 extra["install_requires"] = DEPENDENCIES
 
 
-# 2to3
-if sys.version_info >= (3,):
-    extra["use_2to3"] = True
-
-
 # Additional files to include with package
 def get_static(name, condition=None):
     static = [
@@ -59,13 +54,8 @@ scripts = None
 with open("looper/_version.py", "r") as versionfile:
     version = versionfile.readline().split()[-1].strip("\"'\n")
 
-# Handle the pypi README formatting.
-try:
-    import pypandoc
-
-    long_description = pypandoc.convert_file("README.md", "rst")
-except (IOError, ImportError, OSError):
-    long_description = open("README.md").read()
+with open("README.md") as f:
+    long_description = f.read()
 
 setup(
     name="looper",
