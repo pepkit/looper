@@ -30,6 +30,7 @@ from shutil import rmtree
 from colorama import Fore, Style
 from divvy import DEFAULT_COMPUTE_RESOURCES_NAME, select_divvy_config
 from eido import inspect_project, validate_config, validate_sample
+from eido.exceptions import EidoValidationError
 from jsonschema import ValidationError
 from peppy.const import *
 from peppy.exceptions import RemoteYAMLError
@@ -458,6 +459,9 @@ class Runner(Executor):
             for schema_file in self.prj.get_schemas(sample_pifaces):
                 try:
                     validate_sample(self.prj, sample.sample_name, schema_file, True)
+                except EidoValidationError as e:
+                    _LOGGER.error(e)
+                    return False
                 except RemoteYAMLError:
                     _LOGGER.warn(
                         f"Could not read remote schema, skipping '{sample.sample_name}' sample validation."
