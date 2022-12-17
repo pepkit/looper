@@ -460,7 +460,7 @@ class Project(peppyProject):
                 if project_level
                 else f"Sample '{s.sample_name}'"
             )
-            _LOGGER.info(
+            _LOGGER.debug(
                 f"Pipestat configuration incomplete for {context}; "
                 f"caught exception: {getattr(e, 'message', repr(e))}"
             )

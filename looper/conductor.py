@@ -617,7 +617,7 @@ class SubmissionConductor(object):
         except (PipestatError, AttributeError) as e:
             # pipestat section faulty or not found in project.looper or sample
             # or project is missing required pipestat attributes
-            _LOGGER.warning(
+            _LOGGER.debug(
                 f"Could not determine pipestat namespace. Caught exception: "
                 f"{getattr(e, 'message', repr(e))}"
             )

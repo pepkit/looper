@@ -442,6 +442,8 @@ class Runner(Executor):
             )
             submission_conductors[piface.pipe_iface_file] = conductor
 
+
+        _LOGGER.info(f"Pipestat compatible: {self.prj.pipestat_configured_project}")
         for sample in self.prj.samples[:upper_sample_bound]:
             pl_fails = []
             skip_reasons = []
