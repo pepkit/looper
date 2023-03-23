@@ -94,7 +94,7 @@ def mod_yaml_data(path):
     # TODO: use everywhere
     with open(path, "r") as f:
         yaml_data = safe_load(f)
-    print(f"\nInintial YAML data: \n{yaml_data}\n")
+    print(f"\nInitial YAML data: \n{yaml_data}\n")
     yield yaml_data
     print(f"\nModified YAML data: \n{yaml_data}\n")
     with open(path, "w") as f:

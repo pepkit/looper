@@ -145,7 +145,7 @@ class LooperRunBehaviorTests:
     def test_looper_pipeline_invalid(self, prep_temp_pep):
         """
         Pipeline is ignored when does not validate successfully
-        agianst a schema
+        against a schema
         """
         tp = prep_temp_pep
         with mod_yaml_data(tp) as config_data:
@@ -181,16 +181,16 @@ class LooperRunBehaviorTests:
         """
         Piface is ignored when it does not exist
         """
-        tp = prep_temp_pep
+        test_pep = prep_temp_pep
         imply_whitespace = [
             {
                 IMPLIED_IF_KEY: {"sample_name": "sample1"},
                 IMPLIED_THEN_KEY: {"sample_name": "sample whitespace"},
             }
         ]
-        with mod_yaml_data(tp) as config_data:
+        with mod_yaml_data(test_pep) as config_data:
             config_data[SAMPLE_MODS_KEY][IMPLIED_KEY] = imply_whitespace
-        stdout, stderr, rc = subp_exec(tp, "run")
+        stdout, stderr, rc = subp_exec(test_pep, "run")
         print(stderr)
         assert rc != 0
 
