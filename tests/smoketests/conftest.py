@@ -55,6 +55,7 @@ def subp_exec(pth=None, cmd=None, appendix=list(), dry=True):
     :param str pth: config path
     :param str cmd: looper subcommand
     :param Iterable[str] appendix: other args to pass to the cmd
+    :param bool dry: whether to append dry run flag
     :return:
     """
     x = ["looper", cmd, "-d" if dry else ""]
