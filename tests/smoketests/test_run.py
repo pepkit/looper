@@ -129,7 +129,7 @@ class LooperRunBehaviorTests:
 
     def test_looper_pipeline_not_found(self, prep_temp_pep):
         """
-        Piface is ignored when when it does not exist
+        Piface is ignored when it does not exist
         """
         tp = prep_temp_pep
         with mod_yaml_data(tp) as config_data:
@@ -167,7 +167,7 @@ class LooperRunBehaviorTests:
 
     def test_looper_sample_attr_missing(self, prep_temp_pep):
         """
-        Piface is ignored when when it does not exist
+        Piface is ignored when it does not exist
         """
         tp = prep_temp_pep
         with mod_yaml_data(tp) as config_data:
@@ -179,7 +179,7 @@ class LooperRunBehaviorTests:
 
     def test_looper_sample_name_whitespace(self, prep_temp_pep):
         """
-        Piface is ignored when when it does not exist
+        Piface is ignored when it does not exist
         """
         tp = prep_temp_pep
         imply_whitespace = [
