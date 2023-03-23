@@ -194,9 +194,9 @@ class LooperRunBehaviorTests:
         print(stderr)
         assert rc != 0
 
-    def test_looper_toogle(self, prep_temp_pep):
+    def test_looper_toggle(self, prep_temp_pep):
         """
-        If all samples have tooggle attr set to 0, no jobs are submitted
+        If all samples have toggle attr set to 0, no jobs are submitted
         """
         tp = prep_temp_pep
         with mod_yaml_data(tp) as config_data:
