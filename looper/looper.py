@@ -442,7 +442,6 @@ class Runner(Executor):
             )
             submission_conductors[piface.pipe_iface_file] = conductor
 
-
         _LOGGER.info(f"Pipestat compatible: {self.prj.pipestat_configured_project}")
         for sample in self.prj.samples[:upper_sample_bound]:
             pl_fails = []
@@ -1092,7 +1091,6 @@ def main():
         selector_include=args.sel_incl,
         selector_exclude=args.sel_excl,
     ) as prj:
-
         if args.command in ["run", "rerun"]:
             run = Runner(prj)
             try:

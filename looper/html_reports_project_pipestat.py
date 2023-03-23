@@ -130,7 +130,6 @@ class HTMLReportBuilderProject(object):
         return render_jinja_template("navbar_links.html", self.j_env, template_vars)
 
     def create_sample_reports_parent(self, linked_sample_reports, navbar, footer):
-
         template_vars = dict(
             navbar=navbar,
             footer=footer,

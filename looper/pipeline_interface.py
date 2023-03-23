@@ -68,7 +68,6 @@ class PipelineInterface(PXAM):
         :param dict namespaces: namespaces to use for rendering
         """
         if VAR_TEMPL_KEY in self:
-
             var_templates = {}
             var_templates.update(self[VAR_TEMPL_KEY])
             for k, v in var_templates.items():
