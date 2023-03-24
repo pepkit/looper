@@ -55,6 +55,7 @@ def subp_exec(pth=None, cmd=None, appendix=list(), dry=True):
     :param str pth: config path
     :param str cmd: looper subcommand
     :param Iterable[str] appendix: other args to pass to the cmd
+    :param bool dry: whether to append dry run flag
     :return:
     """
     x = ["looper", cmd, "-d" if dry else ""]
@@ -94,7 +95,7 @@ def mod_yaml_data(path):
     # TODO: use everywhere
     with open(path, "r") as f:
         yaml_data = safe_load(f)
-    print(f"\nInintial YAML data: \n{yaml_data}\n")
+    print(f"\nInitial YAML data: \n{yaml_data}\n")
     yield yaml_data
     print(f"\nModified YAML data: \n{yaml_data}\n")
     with open(path, "w") as f:

@@ -129,7 +129,7 @@ class LooperRunBehaviorTests:
 
     def test_looper_pipeline_not_found(self, prep_temp_pep):
         """
-        Piface is ignored when when it does not exist
+        Piface is ignored when it does not exist
         """
         tp = prep_temp_pep
         with mod_yaml_data(tp) as config_data:
@@ -145,7 +145,7 @@ class LooperRunBehaviorTests:
     def test_looper_pipeline_invalid(self, prep_temp_pep):
         """
         Pipeline is ignored when does not validate successfully
-        agianst a schema
+        against a schema
         """
         tp = prep_temp_pep
         with mod_yaml_data(tp) as config_data:
@@ -167,7 +167,7 @@ class LooperRunBehaviorTests:
 
     def test_looper_sample_attr_missing(self, prep_temp_pep):
         """
-        Piface is ignored when when it does not exist
+        Piface is ignored when it does not exist
         """
         tp = prep_temp_pep
         with mod_yaml_data(tp) as config_data:
@@ -179,24 +179,26 @@ class LooperRunBehaviorTests:
 
     def test_looper_sample_name_whitespace(self, prep_temp_pep):
         """
-        Piface is ignored when when it does not exist
+        Piface is ignored when it does not exist
         """
-        tp = prep_temp_pep
+        pepfile = prep_temp_pep
         imply_whitespace = [
             {
                 IMPLIED_IF_KEY: {"sample_name": "sample1"},
                 IMPLIED_THEN_KEY: {"sample_name": "sample whitespace"},
             }
         ]
-        with mod_yaml_data(tp) as config_data:
+        with mod_yaml_data(pepfile) as config_data:
             config_data[SAMPLE_MODS_KEY][IMPLIED_KEY] = imply_whitespace
-        stdout, stderr, rc = subp_exec(tp, "run")
+        stdout, stderr, rc = subp_exec(pepfile, "run")
         print(stderr)
-        assert rc != 0
+        assert rc == 0
+        expected_prefix = "Short-circuiting due to validation error"
+        assert expected_prefix in stderr
 
-    def test_looper_toogle(self, prep_temp_pep):
+    def test_looper_toggle(self, prep_temp_pep):
         """
-        If all samples have tooggle attr set to 0, no jobs are submitted
+        If all samples have toggle attr set to 0, no jobs are submitted
         """
         tp = prep_temp_pep
         with mod_yaml_data(tp) as config_data:
