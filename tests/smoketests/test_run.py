@@ -192,7 +192,9 @@ class LooperRunBehaviorTests:
             config_data[SAMPLE_MODS_KEY][IMPLIED_KEY] = imply_whitespace
         stdout, stderr, rc = subp_exec(pepfile, "run")
         print(stderr)
-        assert rc != 0
+        assert rc == 0
+        expected_prefix = "Short-circuiting due to validation error"
+        assert expected_prefix in stderr
 
     def test_looper_toggle(self, prep_temp_pep):
         """

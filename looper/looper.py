@@ -461,11 +461,12 @@ class Runner(Executor):
                 try:
                     validate_sample(self.prj, sample.sample_name, schema_file, True)
                 except EidoValidationError as e:
-                    _LOGGER.error(e)
+                    _LOGGER.error(f"Short-circuiting due to validation error: {e}")
                     return False
                 except RemoteYAMLError:
                     _LOGGER.warn(
-                        f"Could not read remote schema, skipping '{sample.sample_name}' sample validation."
+                        f"Could not read remote schema, skipping '{sample.sample_name}' "
+                        f"sample validation against {schema_file}"
                     )
 
             processed_samples.add(sample[SAMPLE_NAME_ATTR])
