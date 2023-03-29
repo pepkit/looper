@@ -2,7 +2,7 @@
 
 *Dealing with multiple input files is described in detail in the [PEP documentation](http://pep.databio.org/en/latest/specification/#project-attribute-subsample_table).*
 
-Breifly:
+Briefly:
 
 Sometimes you have multiple input files that you want to merge for one sample. For example, a common use case is a single library that was spread across multiple sequencing lanes, yielding multiple input files that need to be merged, and then run through the pipeline as one. Rather than putting multiple lines in your sample annotation sheet, which causes conceptual and analytical challenges, PEP has two ways to merge these:
 
