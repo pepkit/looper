@@ -205,6 +205,10 @@ def jinja_render_template_strictly(template, namespaces):
         _LOGGER.debug(f"Template: '{template}'")
         raise e
     _LOGGER.debug("rendered arg str: {}".format(rendered))
+    if '{' in rendered and '}' in rendered:
+        # Render again to catch a nested command
+        _LOGGER.debug("Nested Command found: {}".format(rendered))
+        rendered = jinja_render_template_strictly(rendered, namespaces)
     return rendered
 
 
