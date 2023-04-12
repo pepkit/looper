@@ -686,6 +686,7 @@ class SubmissionConductor(object):
                 namespaces=namespaces
             )
             _LOGGER.debug(f"namespace pipelines: { pl_iface }")
+            namespaces["pipeline"]["var_templates"] = pl_iface[VAR_TEMPL_KEY]
             # pre_submit hook namespace updates
             namespaces = _exec_pre_submit(pl_iface, namespaces)
             self._rendered_ok = False
