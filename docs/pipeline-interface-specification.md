@@ -36,10 +36,10 @@ The pipeline interface should define either a sample pipeline or a project pipel
 pipeline_name: RRBS
 pipeline_type: sample
 var_templates:
-  pipeline: "{looper.piface_dir}/pipelines/pipeline1.py"
+  pipeline: "{looper.piface_dir}/pipeline1.py"
   sample_info: "{looper.piface_dir}/{sample.name}/info.txt"
 input_schema: path/to/rrbs_schema.yaml
-command_template: {pipeline.var_templates.path} --input {sample.data_path} --info {pipeline.sample_info.path}
+command_template: {pipeline.var_templates.pipeline} --input {sample.data_path} --info {pipeline.sample_info.path}
 ```
 
 Pretty simple. The `pipeline_name` is arbitrary. It's used for messaging and identification. Ideally, it's unique to each pipeline. In this example, we define a single sample-level pipeline.
@@ -175,9 +175,9 @@ The pipeline interface simply points to a `tsv` file:
 ```yaml
 pipeline_type: sample
 var_templates:
-  path: pipelines/pepatac.py
+  pipeline: {looper.piface_dir}/pepatac.py
 command_template: >
-  {pipeline.var_templates.path} ...
+  {pipeline.var_templates.pipeline} ...
 compute:
   size_dependent_variables: resources-sample.tsv
 ```

@@ -8,7 +8,7 @@ sample_modifiers:
     pipeline_interfaces: "test.yaml"
 ```
 
-But if you want to submit different sampels to different pipelines, depending on a sample attribute, like `protocol`, you can use an implied attribute:
+But if you want to submit different samples to different pipelines, depending on a sample attribute, like `protocol`, you can use an implied attribute:
 
 ```
 sample_modifiers:
