@@ -39,7 +39,7 @@ from rich.table import Table
 from ubiquerg.cli_tools import query_yes_no
 from ubiquerg.collection import uniqify
 
-#from . import _LEVEL_BY_VERBOSITY, __version__, build_parser
+# from . import _LEVEL_BY_VERBOSITY, __version__, build_parser
 from . import __version__, build_parser
 from .conductor import SubmissionConductor
 from .const import *
@@ -1036,14 +1036,15 @@ def main():
     args = enrich_args_via_cfg(args, aux_parser)
 
     from logmuse import init_logger
+
     _LOGGER = logmuse.logger_via_cli(args, make_root=True)
     # Set the logging level.
     if args.dbg:
         # Debug mode takes precedence and will listen for all messages.
         level = args.logging_level or logging.DEBUG
-    #elif args.verbosity is not None:
-        # Verbosity-framed specification trumps logging_level.
-        #level = _LEVEL_BY_VERBOSITY[args.verbosity]
+    # elif args.verbosity is not None:
+    # Verbosity-framed specification trumps logging_level.
+    # level = _LEVEL_BY_VERBOSITY[args.verbosity]
     else:
         # Normally, we're not in debug mode, and there's not verbosity.
         level = LOGGING_LEVEL
