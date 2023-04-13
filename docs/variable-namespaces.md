@@ -38,15 +38,14 @@ The `looper` namespace consists of automatic variables created by looper:
 
 - `output_dir` -- parent output directory provided in `project.looper.output_dir` in the project configuration file
 - `results_subdir` -- the path to the results directory. It is a sub directory of `output_dir` called `project.looper.results_subdir` or "results_pipeline" by default
-- `sample_output_folder` -- a sample-specific output folder (`results_subdir`/`sample.sample_name`)
+- `sample_output_folder` -- a sample-specific or project-specific output folder (`results_subdir`/`sample.sample_name`)
 - `piface_dir` -- directory the pipeline interface has been read from
+- `pep_config` -- path to the project configuration file used for this looper run
+- `log_file` -- an automatically created log file path, to be stored in the looper submission subdirectory
 
 **others:**
 
 - `total_input_size` -- the sum of file sizes for all files marked as input files in the input schema
-- `pipeline_config` -- renamed from `config` to disambiguate with new `pep_config` ? Not sure what this is
-- `pep_config` -- path to the project configuration file used for this looper run
-- `log_file` -- an automatically created log file path, to be stored in the looper submission subdirectory
 - `command` -- the result of populating the command template
 - `job_name` -- job name made by concatenating the pipeline identifier and unique sample name
 
