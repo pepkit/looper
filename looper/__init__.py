@@ -41,13 +41,13 @@ __all__ = ["Project", "PipelineInterface", "SubmissionConductor"]
 
 # Descending by severity for correspondence with logic inversion.
 # That is, greater verbosity setting corresponds to lower logging level.
-_LEVEL_BY_VERBOSITY = [
-    logging.ERROR,
-    logging.CRITICAL,
-    logging.WARN,
-    logging.INFO,
-    logging.DEBUG,
-]
+# _LEVEL_BY_VERBOSITY = [
+#     logging.ERROR,
+#     logging.CRITICAL,
+#     logging.WARN,
+#     logging.INFO,
+#     logging.DEBUG,
+# ]
 
 
 class _StoreBoolActionType(argparse.Action):
@@ -107,12 +107,12 @@ def build_parser():
             "--logfile",
             help="Optional output file for looper logs " "(default: %(default)s)",
         )
-        parser.add_argument(
-            "--verbosity",
-            type=int,
-            choices=range(len(_LEVEL_BY_VERBOSITY)),
-            help="Choose level of verbosity (default: %(default)s)",
-        )
+        # parser.add_argument(
+        #     "--verbosity",
+        #     type=int,
+        #     choices=range(len(_LEVEL_BY_VERBOSITY)),
+        #     help="Choose level of verbosity (default: %(default)s)",
+        # )
         parser.add_argument("--logging-level", help=argparse.SUPPRESS)
         parser.add_argument(
             "--dbg",
@@ -132,6 +132,7 @@ def build_parser():
             "inspect": "Print information about a project.",
             "init": "Initialize looper dotfile.",
         }
+        parser = logmuse.add_logging_options(parser)
 
         subparsers = parser.add_subparsers(dest="command")
 
