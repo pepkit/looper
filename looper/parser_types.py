@@ -23,7 +23,7 @@ def html_range(caravel=False, min_val=0, max_val=10, step=1, value=0):
     else:
 
         def fun(x=None, caravel_data=caravel_data, caravel=caravel):
-            return caravel_data if caravel else int(x)
+            return caravel_data if caravel else str(x)
 
     return fun
 
