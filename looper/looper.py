@@ -236,7 +236,7 @@ class Cleaner(Executor):
         :param argparse.Namespace args: command-line options and arguments
         :param bool preview_flag: whether to halt before actually removing files
         """
-        self.counter.show()
+        self.counter.show(name=self.prj.name, type="project")
         for sample in self.prj.samples:
             _LOGGER.info(self.counter.show(sample.sample_name))
             sample_output_folder = sample_folder(self.prj, sample)
@@ -934,6 +934,8 @@ class LooperCounter(object):
         and as a side-effect of the call, the running count is incremented.
 
         :param str name: name of the sample
+        :param str type: the name of the level of entity being displayed,
+            either project or sample
         :param str pipeline_name: name of the pipeline
         :return str: message suitable for logging a status update
         """
