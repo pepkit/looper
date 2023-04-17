@@ -228,9 +228,9 @@ class Project(peppyProject):
         :param str default: if key not specified, a default to use
         :return str: path to the folder
         """
-        return os.path.join(
-            getattr(self, OUTDIR_KEY), getattr(self[EXTRA_KEY], key) or default
-        )
+        parent = getattr(self, OUTDIR_KEY)
+        child = getattr(self[EXTRA_KEY], key, default)
+        return os.path.join(parent, child)
 
     def make_project_dirs(self):
         """
