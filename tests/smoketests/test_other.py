@@ -2,7 +2,7 @@ import pytest
 from peppy import Project
 
 from looper.const import FLAGS
-from tests.smoketests.conftest import *
+from tests.conftest import *
 
 
 def _make_flags(cfg, type, count):
