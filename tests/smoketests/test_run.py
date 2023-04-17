@@ -4,7 +4,7 @@ from yaml import dump
 
 from looper.const import *
 from looper.project import Project
-from tests.smoketests.conftest import *
+from tests.conftest import *
 
 CMD_STRS = ["string", " --string", " --sjhsjd 212", "7867#$@#$cc@@"]
 
