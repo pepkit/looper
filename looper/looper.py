@@ -402,51 +402,6 @@ class Runner(Executor):
                     upper_sample_bound = int(x[1])
                     #args.limit = int(x[1])
         desired = list(range(lower_sample_bound, upper_sample_bound+1))
-        #args.limit = int(x)
-
-        # if args.skip != None and args.limit != None:
-        #     raise ValueError("Invalid commands. Cannot skip and limit!")
-        #     print("Cannot specify both skip and limit")
-        # if args.skip != None and type(args.skip) == str:
-        #     x = args.skip.split(":")
-        #     print(x)
-        #     if len(x) > 2:
-        #         raise ValueError("Improper formatting of range. Must be: n:N or n-N instead of {}".format(args.limit))
-        #     else:
-        #         if x[0] == '' or x[0] == '0':
-        #             lower_sample_bound = 1
-        #         else:
-        #             lower_sample_bound = int(x[0])
-        #         if x[1] == '':
-        #             upper_sample_bound = num_samples
-        #             args.limit = num_samples
-        #         else:
-        #             upper_sample_bound = int(x[1])
-        #             args.limit = int(x[1])
-        #     desired = list(range(1, lower_sample_bound)) + list(range(upper_sample_bound+1, num_samples + 1))
-        #     args.skip = 0
-        # elif args.limit != None and type(args.limit) == str:
-        #         if ":" in args.limit:
-        #             x = args.limit.split(":")
-        #             print(x)
-        #             if len(x) > 2:
-        #                 raise ValueError("Improper formatting of range. Must be: n:N or n-N instead of {}".format(args.limit))
-        #             else:
-        #                 if x[0] == '' or x[0] == '0':
-        #                     lower_sample_bound = 1
-        #                 else:
-        #                     lower_sample_bound = int(x[0])
-        #                 if x[1] == '':
-        #                     upper_sample_bound = num_samples
-        #                     args.limit = num_samples
-        #                 else:
-        #                     upper_sample_bound = int(x[1])
-        #                     args.limit = int(x[1])
-        #         desired = list(range(lower_sample_bound, num_samples+1))
-        #         args.limit = int(x)
-        # else:
-        #     desired = list(range(0, num_samples+1))
-        # #adding these to see if it affects pytesting
         return desired
     def __call__(self, args, rerun=False, **compute_kwargs):
         """
@@ -495,6 +450,27 @@ class Runner(Executor):
                 desired_range = self.set_desired_range(args.limit, num_samples)
                 desired_samples = [self.prj.samples[i - 1] for i in desired_range]
             #upper_sample_bound = min(int(args.limit[0]), num_samples)
+
+        if args.skip != None:
+            if isinstance(args.skip, int):
+                if args.skip < 0:
+                    raise ValueError("Invalid number of samples to run: {}".format(args.limit))
+                else:
+                    args.skip = int(args.skip)
+                    lower_sample_bound = args.skip
+                    desired_samples = self.prj.samples[lower_sample_bound:num_samples]
+            if isinstance(args.skip, str):
+                try:
+                    args.skip = int(args.skip)
+                    lower_sample_bound = args.skip
+                    desired_samples = self.prj.samples[lower_sample_bound:num_samples]
+                except:
+                    desired_range = self.set_desired_range(args.skip, num_samples)
+                    desired_range = set(desired_range)
+                    original_range = set(range(1,num_samples+1))
+                    desired_range = original_range.difference(desired_range)
+                    desired_samples = [self.prj.samples[i - 1] for i in desired_range]
+
 
         #args.limit = int(args.limit[0])
         #upper_sample_bound = min(args.limit, num_samples)
