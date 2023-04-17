@@ -314,12 +314,11 @@ def build_parser():
                 help="Limit to n samples",
             )
             subparser.add_argument(
-                "-sk",
                 "--skip",
                 default=None,
                 metavar="N",
                 type=html_range(min_val=1, max_val="num_samples", value="num_samples"),
-                help="Skip n samples",
+                help="Skip samples by numerical index",
             )
 
         init_subparser.add_argument(
