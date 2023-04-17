@@ -110,10 +110,9 @@ def grab_project_data(prj):
         return {}
 
     try:
-        data = prj[CONFIG_KEY]
+        return prj[CONFIG_KEY]
     except KeyError:
         _LOGGER.debug("Project lacks section '%s', skipping", CONFIG_KEY)
-    return data
 
 
 def sample_folder(prj, sample):
