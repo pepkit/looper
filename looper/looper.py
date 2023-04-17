@@ -401,7 +401,7 @@ class Runner(Executor):
                 else:
                     upper_sample_bound = int(x[1])
                     #args.limit = int(x[1])
-        desired = list(range(lower_sample_bound, num_samples+1))
+        desired = list(range(lower_sample_bound, upper_sample_bound+1))
         #args.limit = int(x)
 
         # if args.skip != None and args.limit != None:
