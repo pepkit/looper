@@ -39,7 +39,7 @@ from rich.table import Table
 from ubiquerg.cli_tools import query_yes_no
 from ubiquerg.collection import uniqify
 
-from . import _LEVEL_BY_VERBOSITY, __version__, build_parser
+from . import __version__, build_parser
 from .conductor import SubmissionConductor
 from .const import *
 from .exceptions import JobSubmissionException, MisconfigurationException
@@ -236,7 +236,7 @@ class Cleaner(Executor):
         :param argparse.Namespace args: command-line options and arguments
         :param bool preview_flag: whether to halt before actually removing files
         """
-        self.counter.show()
+        self.counter.show(name=self.prj.name, type="project")
         for sample in self.prj.samples:
             _LOGGER.info(self.counter.show(sample.sample_name))
             sample_output_folder = sample_folder(self.prj, sample)
@@ -1029,6 +1029,8 @@ class LooperCounter(object):
         and as a side-effect of the call, the running count is incremented.
 
         :param str name: name of the sample
+        :param str type: the name of the level of entity being displayed,
+            either project or sample
         :param str pipeline_name: name of the pipeline
         :return str: message suitable for logging a status update
         """
@@ -1131,13 +1133,12 @@ def main():
 
     from logmuse import init_logger
 
+    _LOGGER = logmuse.logger_via_cli(args, make_root=True)
+
     # Set the logging level.
     if args.dbg:
         # Debug mode takes precedence and will listen for all messages.
         level = args.logging_level or logging.DEBUG
-    elif args.verbosity is not None:
-        # Verbosity-framed specification trumps logging_level.
-        level = _LEVEL_BY_VERBOSITY[args.verbosity]
     else:
         # Normally, we're not in debug mode, and there's not verbosity.
         level = LOGGING_LEVEL

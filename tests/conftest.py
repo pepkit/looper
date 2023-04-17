@@ -104,9 +104,7 @@ def mod_yaml_data(path):
 
 @pytest.fixture
 def example_pep_piface_path():
-    return os.path.join(
-        os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data"
-    )
+    return os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 
 
 @pytest.fixture
