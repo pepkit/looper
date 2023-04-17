@@ -218,7 +218,7 @@ class Project(peppyProject):
         """
         return self._out_subdir_path(SUBMISSION_SUBDIR_KEY, default="submission")
 
-    def _out_subdir_path(self, key, default):
+    def _out_subdir_path(self, key: str, default: str) -> str:
         """
         Create a system path relative to the project output directory.
         The values for the names of the subdirectories are sourced from
@@ -229,7 +229,7 @@ class Project(peppyProject):
         :return str: path to the folder
         """
         parent = getattr(self, OUTDIR_KEY)
-        child = getattr(self[EXTRA_KEY], key, default)
+        child = getattr(self[EXTRA_KEY], key, default) or default
         return os.path.join(parent, child)
 
     def make_project_dirs(self):
