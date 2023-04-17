@@ -279,9 +279,23 @@ class Destroyer(Executor):
         :param argparse.Namespace args: command-line options and arguments
         :param bool preview_flag: whether to halt before actually removing files
         """
+        num_samples = len(self.prj.samples)
+        if args.limit == None:
+            # Set upper bound and filter appropriately
+            upper_sample_bound = num_samples
+            desired_samples = self.prj.samples[:upper_sample_bound]
+        if args.limit != None:
+            # get range and set desired samples based on that
+            limited_range = desired_samples_range_limited(args.limit, num_samples)
+            desired_samples = [self.prj.samples[i - 1] for i in limited_range]
+        if args.skip != None:
+            # get range and set desired samples based on that
+            skipped_range = desired_samples_range_skipped(args.skip, num_samples)
+            desired_samples = [self.prj.samples[i - 1] for i in skipped_range]
 
         _LOGGER.info("Removing results:")
-        for sample in self.prj.samples:
+        # for sample in self.prj.samples:
+        for sample in desired_samples:
             _LOGGER.info(self.counter.show(sample.sample_name))
             sample_output_folder = sample_folder(self.prj, sample)
             if preview_flag:
@@ -384,25 +398,31 @@ class Collator(Executor):
 
 class Runner(Executor):
     """The true submitter of pipelines"""
+
     def set_desired_range(self, arg, num_samples):
         if ":" in arg:
             x = arg.split(":")
             print(x)
             if len(x) > 2:
-                raise ValueError("Improper formatting of range. Must be: n:N or n-N instead of {}".format(arg))
+                raise ValueError(
+                    "Improper formatting of range. Must be: n:N or n-N instead of {}".format(
+                        arg
+                    )
+                )
             else:
-                if x[0] == '' or x[0] == '0':
+                if x[0] == "" or x[0] == "0":
                     lower_sample_bound = 1
                 else:
                     lower_sample_bound = int(x[0])
-                if x[1] == '':
+                if x[1] == "":
                     upper_sample_bound = num_samples
                     #
                 else:
                     upper_sample_bound = int(x[1])
-                    #args.limit = int(x[1])
-        desired = list(range(lower_sample_bound, upper_sample_bound+1))
+                    # args.limit = int(x[1])
+        desired = list(range(lower_sample_bound, upper_sample_bound + 1))
         return desired
+
     def __call__(self, args, rerun=False, **compute_kwargs):
         """
         Do the Sample submission.
@@ -423,19 +443,21 @@ class Runner(Executor):
 
         # Determine number of samples eligible for processing.
         num_samples = len(self.prj.samples)
-        #lower_sample_bound = 2
-        #Need to check if user entered some sort of range.
-        #arg.limit will be a string at this poing
+        # lower_sample_bound = 2
+        # Need to check if user entered some sort of range.
+        # arg.limit will be a string at this poing
 
-        #ORIGINAL CHECK
+        # ORIGINAL CHECK
         if args.limit is None:
             upper_sample_bound = num_samples
             desired_samples = self.prj.samples[:upper_sample_bound]
         if isinstance(args.limit, int):
             if args.limit < 0:
-                raise ValueError("Invalid number of samples to run: {}".format(args.limit))
+                raise ValueError(
+                    "Invalid number of samples to run: {}".format(args.limit)
+                )
             else:
-            #upper_sample_bound = min(int(args.limit[0]), num_samples)
+                # upper_sample_bound = min(int(args.limit[0]), num_samples)
                 upper_sample_bound = min(args.limit, num_samples)
                 desired_samples = self.prj.samples[:upper_sample_bound]
             _LOGGER.debug(
@@ -449,12 +471,14 @@ class Runner(Executor):
             except:
                 desired_range = self.set_desired_range(args.limit, num_samples)
                 desired_samples = [self.prj.samples[i - 1] for i in desired_range]
-            #upper_sample_bound = min(int(args.limit[0]), num_samples)
+            # upper_sample_bound = min(int(args.limit[0]), num_samples)
 
         if args.skip != None:
             if isinstance(args.skip, int):
                 if args.skip < 0:
-                    raise ValueError("Invalid number of samples to run: {}".format(args.limit))
+                    raise ValueError(
+                        "Invalid number of samples to run: {}".format(args.limit)
+                    )
                 else:
                     args.skip = int(args.skip)
                     lower_sample_bound = args.skip
@@ -467,15 +491,14 @@ class Runner(Executor):
                 except:
                     desired_range = self.set_desired_range(args.skip, num_samples)
                     desired_range = set(desired_range)
-                    original_range = set(range(1,num_samples+1))
+                    original_range = set(range(1, num_samples + 1))
                     desired_range = original_range.difference(desired_range)
                     desired_samples = [self.prj.samples[i - 1] for i in desired_range]
 
-
-        #args.limit = int(args.limit[0])
-        #upper_sample_bound = min(args.limit, num_samples)
-        #desired = self.set_desired_range(args, num_samples)
-        #desired_samples = [self.prj.samples[i - 1] for i in desired]
+        # args.limit = int(args.limit[0])
+        # upper_sample_bound = min(args.limit, num_samples)
+        # desired = self.set_desired_range(args, num_samples)
+        # desired_samples = [self.prj.samples[i - 1] for i in desired]
 
         num_commands_possible = 0
         failed_submission_scripts = []
@@ -503,18 +526,17 @@ class Runner(Executor):
                 max_size=args.lump,
             )
             submission_conductors[piface.pipe_iface_file] = conductor
-        #y = list(range(0,num_samples))
+        # y = list(range(0,num_samples))
         _LOGGER.info(f"Pipestat compatible: {self.prj.pipestat_configured_project}")
-        #for sample in self.prj.samples:
-        #for sample in desired_samples: #Remove filter here and simply filter above #Filter based on lower and upper bound
-        #for sample in self.prj.samples[:num_samples]:
-        #upper_sample_bound = num_samples
-        #print(f'HERE IS UPPER SAMPLE', upper_sample_bound)
-
+        # for sample in self.prj.samples:
+        # for sample in desired_samples: #Remove filter here and simply filter above #Filter based on lower and upper bound
+        # for sample in self.prj.samples[:num_samples]:
+        # upper_sample_bound = num_samples
+        # print(f'HERE IS UPPER SAMPLE', upper_sample_bound)
 
         # for sample in self.prj.samples[:upper_sample_bound]:
         for sample in desired_samples:
-        #for sample in desired_samples:
+            # for sample in desired_samples:
             pl_fails = []
             skip_reasons = []
             sample_pifaces = self.prj.get_sample_piface(sample[SAMPLE_NAME_ATTR])

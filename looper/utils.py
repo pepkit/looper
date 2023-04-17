@@ -385,3 +385,69 @@ def dotfile_path(directory=os.getcwd(), must_exist=False):
                 "its parents".format(LOOPER_DOTFILE_NAME, directory)
             )
         cur_dir = parent_dir
+
+
+def convert_range_to_bounds(arg, num_samples):
+    if ":" in arg:
+        x = arg.split(":")
+        print(x)
+        if len(x) > 2:
+            raise ValueError(
+                "Improper formatting of range. Must be: n:N or n-N instead of {}".format(
+                    arg
+                )
+            )
+        else:
+            if x[0] == "" or x[0] == "0":
+                lower_sample_bound = 1
+            else:
+                lower_sample_bound = int(x[0])
+            if x[1] == "":
+                upper_sample_bound = num_samples
+                #
+            else:
+                upper_sample_bound = int(x[1])
+    range_to_bounds = list(range(lower_sample_bound, upper_sample_bound + 1))
+    return range_to_bounds
+
+
+def desired_samples_range_limited(arg, num_samples):
+    if isinstance(arg, int):
+        if arg < 0:
+            raise ValueError("Invalid number of samples to run: {}".format(arg))
+        else:
+            upper_sample_bound = min(arg, num_samples)
+            limited_range = list(range(1, upper_sample_bound + 1))
+        _LOGGER.debug(
+            "Limiting to {} of {} samples".format(upper_sample_bound, num_samples)
+        )
+    if isinstance(arg, str):
+        try:
+            arg = int(arg)
+            upper_sample_bound = min(arg, num_samples)
+            limited_range = list(range(1, upper_sample_bound + 1))
+        except:
+            limited_range = convert_range_to_bounds(arg, num_samples)
+
+    return limited_range
+
+
+def desired_samples_range_skipped(arg, num_samples):
+    if isinstance(arg, int):
+        if arg < 0:
+            raise ValueError("Invalid number of samples to run: {}".format(arg))
+        else:
+            arg = int(arg)
+            lower_sample_bound = arg
+            skipped_range = list(range(lower_sample_bound, num_samples + 1))
+    if isinstance(arg, str):
+        try:
+            arg = int(arg)
+            lower_sample_bound = arg
+            skipped_range = list(range(lower_sample_bound, num_samples + 1))
+        except:
+            skipped_range = convert_range_to_bounds(arg, num_samples)
+            skipped_range = set(skipped_range)
+            original_range = set(range(1, num_samples + 1))
+            skipped_range = original_range.difference(skipped_range)
+    return skipped_range
