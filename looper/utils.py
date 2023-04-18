@@ -1,10 +1,12 @@
 """ Helpers without an obvious logical home. """
 
 import argparse
+from collections import defaultdict, namedtuple
 import glob
-import os
-from collections import defaultdict
 from logging import getLogger
+import os
+import sys
+from typing import List
 
 import jinja2
 import yaml
@@ -387,67 +389,83 @@ def dotfile_path(directory=os.getcwd(), must_exist=False):
         cur_dir = parent_dir
 
 
-def convert_range_to_bounds(arg, num_samples):
-    if ":" in arg:
-        x = arg.split(":")
-        print(x)
-        if len(x) > 2:
+_Endpoints1D = namedtuple("_Endpoints1D", ["lo", "hi"])
+
+
+class NonnegativeIntervalInclusiveOneBased(_Endpoints1D):
+    def __init__(self, lo: int, hi: int):
+        super().__init__(lo, hi)
+        problems = self._invalidations()
+        if problems:
             raise ValueError(
-                "Improper formatting of range. Must be: n:N or n-N instead of {}".format(
-                    arg
-                )
+                f"{len(problems)} issues with nonnegative interval: {', '.join(problems)}"
             )
-        else:
-            if x[0] == "" or x[0] == "0":
-                lower_sample_bound = 1
-            else:
-                lower_sample_bound = int(x[0])
-            if x[1] == "":
-                upper_sample_bound = num_samples
-                #
-            else:
-                upper_sample_bound = int(x[1])
-    range_to_bounds = list(range(lower_sample_bound, upper_sample_bound + 1))
-    return range_to_bounds
+
+    def _invalidations(self) -> List[str]:
+        problems = []
+        if self.lo < 0:
+            problems.append(f"Interval must be nonnegative: {self.lo}")
+        if self.hi < self.lo:
+            problems.append(
+                f"Upper bound must not be less than lower bound: {self.hi} < {self.lo}"
+            )
+        return problems
+
+    def to_range(self):
+        return range(self.lo, self.hi + 1)
+
+    @classmethod
+    def from_string(cls, s: str, upper_bound: int = sys.maxsize) -> "IntRange":
+        """
+        Create an instance from a string, e.g. command-line argument.
+
+        :param str s: The string to parse as an interval
+        :param int upper_bound: the default upper bound
+        """
+        if upper_bound < 0:
+            raise ValueError(f"Negative upper bound: {upper_bound}")
+
+        # Determine delimiter, invalidating presence of multiple occurrences.
+        delim_histo = defaultdict(int)
+        candidates = [":", "-"]
+        for c in s:
+            if c in candidates:
+                delim_histo[c] += 1
+        seps = [sep for sep, num_occ in delim_histo.items() if num_occ == 1]
+        if len(seps) != 1:
+            raise ValueError(
+                f"Did not find exactly one candidate delimiter with occurrence count of 1: {delim_histo}"
+            )
+        sep = seps[0]
+
+        # Use the determined delimiter.
+        lo, hi = s.split(sep)
+        lo = 0 if lo == "" else int(lo)
+        hi = upper_bound if hi == "" else int(hi)
+        return cls(lo, hi)
 
 
-def desired_samples_range_limited(arg, num_samples):
-    if isinstance(arg, int):
-        if arg < 0:
-            raise ValueError("Invalid number of samples to run: {}".format(arg))
-        else:
-            upper_sample_bound = min(arg, num_samples)
-            limited_range = list(range(1, upper_sample_bound + 1))
-        _LOGGER.debug(
-            "Limiting to {} of {} samples".format(upper_sample_bound, num_samples)
+def desired_samples_range_limited(arg: str, num_samples: int) -> List[int]:
+    try:
+        upper_bound = min(int(arg), num_samples)
+    except ValueError:
+        intv = NonnegativeIntervalInclusiveOneBased.from_string(arg, num_samples)
+    else:
+        _LOGGER.debug("Limiting to {} of {} samples".format(upper_bound, num_samples))
+        intv = NonnegativeIntervalInclusiveOneBased(1, upper_bound)
+    return intv.to_range()
+
+
+def desired_samples_range_skipped(arg: str, num_samples: int) -> List[int]:
+    try:
+        lower_bound = int(arg)
+    except ValueError:
+        intv = NonnegativeIntervalInclusiveOneBased.from_string(
+            arg, upper_bound=num_samples
         )
-    if isinstance(arg, str):
-        try:
-            arg = int(arg)
-            upper_sample_bound = min(arg, num_samples)
-            limited_range = list(range(1, upper_sample_bound + 1))
-        except:
-            limited_range = convert_range_to_bounds(arg, num_samples)
-
-    return limited_range
-
-
-def desired_samples_range_skipped(arg, num_samples):
-    if isinstance(arg, int):
-        if arg < 0:
-            raise ValueError("Invalid number of samples to run: {}".format(arg))
-        else:
-            arg = int(arg)
-            lower_sample_bound = arg
-            skipped_range = list(range(lower_sample_bound, num_samples + 1))
-    if isinstance(arg, str):
-        try:
-            arg = int(arg)
-            lower_sample_bound = arg
-            skipped_range = list(range(lower_sample_bound, num_samples + 1))
-        except:
-            skipped_range = convert_range_to_bounds(arg, num_samples)
-            skipped_range = set(skipped_range)
-            original_range = set(range(1, num_samples + 1))
-            skipped_range = original_range.difference(skipped_range)
-    return skipped_range
+        lower_range = range(intv.lo)
+        upper_range = range(intv.hi, num_samples + 1)
+        return list(lower_range) + list(upper_range)
+    else:
+        intv = NonnegativeIntervalInclusiveOneBased(lower_bound, num_samples)
+        return intv.to_range()

@@ -14,6 +14,7 @@ logmuse.init_logger("looper")
 import argparse
 import logging
 import os
+from typing import *
 
 from divvy import DEFAULT_COMPUTE_RESOURCES_NAME
 from divvy import NEW_COMPUTE_KEY as COMPUTE_KEY
@@ -38,6 +39,11 @@ from .project import Project
 # the connection between peppy and looper here, to the extent possible.
 
 __all__ = ["Project", "PipelineInterface", "SubmissionConductor"]
+
+
+SAMPLE_SELECTION_ATTRIBUTE_OPTNAME = "sel-attr"
+SAMPLE_EXCLUSION_OPTNAME = "sel-excl"
+SAMPLE_INCLUSION_OPTNAME = "sel-incl"
 
 
 class _StoreBoolActionType(argparse.Action):
@@ -394,20 +400,20 @@ def build_parser():
                 help="Sample attribute specifying toggle. Default: toggle",
             )
             fetch_samples_group.add_argument(
-                "--sel-attr",
+                f"--{SAMPLE_SELECTION_ATTRIBUTE_OPTNAME}",
                 default="toggle",
                 metavar="ATTR",
                 help="Attribute for sample exclusion OR inclusion",
             )
             protocols = fetch_samples_group.add_mutually_exclusive_group()
             protocols.add_argument(
-                "--sel-excl",
+                f"--{SAMPLE_EXCLUSION_OPTNAME}",
                 nargs="*",
                 metavar="E",
                 help="Exclude samples with these values",
             )
             protocols.add_argument(
-                "--sel-incl",
+                f"--{SAMPLE_INCLUSION_OPTNAME}",
                 nargs="*",
                 metavar="I",
                 help="Include only samples with these values",
@@ -440,3 +446,26 @@ def build_parser():
         )
         result.append(parser)
     return result
+
+
+def opt_attr_pair(name: str) -> Tuple[str, str]:
+    return f"--{name}", name.replace("-", "_")
+
+
+def validate_post_parse(args: argparse.Namespace) -> List[str]:
+    problems = []
+    if args.skip:
+        problems.extend(
+            f"--skip and {opt} are mutually exclusive."
+            for opt, attr in map(
+                opt_attr_pair,
+                [
+                    SAMPLE_SELECTION_ATTRIBUTE_OPTNAME,
+                    SAMPLE_EXCLUSION_OPTNAME,
+                    SAMPLE_INCLUSION_OPTNAME,
+                    "limit",
+                ],
+            )
+            if hasattr(args, att)
+        )
+    return problems

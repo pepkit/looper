@@ -280,18 +280,13 @@ class Destroyer(Executor):
         :param bool preview_flag: whether to halt before actually removing files
         """
         num_samples = len(self.prj.samples)
-        if args.limit == None:
-            # Set upper bound and filter appropriately
-            upper_sample_bound = num_samples
-            desired_samples = self.prj.samples[:upper_sample_bound]
-        if args.limit != None:
-            # get range and set desired samples based on that
-            limited_range = desired_samples_range_limited(args.limit, num_samples)
-            desired_samples = [self.prj.samples[i - 1] for i in limited_range]
-        if args.skip != None:
-            # get range and set desired samples based on that
-            skipped_range = desired_samples_range_skipped(args.skip, num_samples)
-            desired_samples = [self.prj.samples[i - 1] for i in skipped_range]
+        if args.skip is not None:
+            sel_range = desired_samples_range_skipped(args.skip, num_samples)
+        elif args.limit is not None:
+            sel_range = desired_samples_range_limited(args.limit, num_samples)
+        else:
+            sel_range = range(1, num_samples + 1)
+        desired_samples = [self.prj.samples[i - 1] for i in sel_range]
 
         _LOGGER.info("Removing results:")
         # for sample in self.prj.samples:
@@ -399,30 +394,6 @@ class Collator(Executor):
 class Runner(Executor):
     """The true submitter of pipelines"""
 
-    def set_desired_range(self, arg, num_samples):
-        if ":" in arg:
-            x = arg.split(":")
-            print(x)
-            if len(x) > 2:
-                raise ValueError(
-                    "Improper formatting of range. Must be: n:N or n-N instead of {}".format(
-                        arg
-                    )
-                )
-            else:
-                if x[0] == "" or x[0] == "0":
-                    lower_sample_bound = 1
-                else:
-                    lower_sample_bound = int(x[0])
-                if x[1] == "":
-                    upper_sample_bound = num_samples
-                    #
-                else:
-                    upper_sample_bound = int(x[1])
-                    # args.limit = int(x[1])
-        desired = list(range(lower_sample_bound, upper_sample_bound + 1))
-        return desired
-
     def __call__(self, args, rerun=False, **compute_kwargs):
         """
         Do the Sample submission.
@@ -443,62 +414,25 @@ class Runner(Executor):
 
         # Determine number of samples eligible for processing.
         num_samples = len(self.prj.samples)
-        # lower_sample_bound = 2
+
         # Need to check if user entered some sort of range.
-        # arg.limit will be a string at this poing
+        # arg.limit will be a string at this point
 
-        # ORIGINAL CHECK
-        if args.limit is None:
-            upper_sample_bound = num_samples
-            desired_samples = self.prj.samples[:upper_sample_bound]
-        if isinstance(args.limit, int):
-            if args.limit < 0:
-                raise ValueError(
-                    "Invalid number of samples to run: {}".format(args.limit)
-                )
-            else:
-                # upper_sample_bound = min(int(args.limit[0]), num_samples)
-                upper_sample_bound = min(args.limit, num_samples)
-                desired_samples = self.prj.samples[:upper_sample_bound]
-            _LOGGER.debug(
-                "Limiting to {} of {} samples".format(upper_sample_bound, num_samples)
+        if args.limit is None and args.skip is None:
+            desired_range = range(1, num_samples + 1)
+        elif args.limit is not None:
+            desired_range = desired_samples_range_limited(
+                arg=args.limit, num_samples=num_samples
             )
-        if isinstance(args.limit, str):
-            try:
-                args.limit = int(args.limit)
-                upper_sample_bound = min(args.limit, num_samples)
-                desired_samples = self.prj.samples[:upper_sample_bound]
-            except:
-                desired_range = self.set_desired_range(args.limit, num_samples)
-                desired_samples = [self.prj.samples[i - 1] for i in desired_range]
-            # upper_sample_bound = min(int(args.limit[0]), num_samples)
-
-        if args.skip != None:
-            if isinstance(args.skip, int):
-                if args.skip < 0:
-                    raise ValueError(
-                        "Invalid number of samples to run: {}".format(args.limit)
-                    )
-                else:
-                    args.skip = int(args.skip)
-                    lower_sample_bound = args.skip
-                    desired_samples = self.prj.samples[lower_sample_bound:num_samples]
-            if isinstance(args.skip, str):
-                try:
-                    args.skip = int(args.skip)
-                    lower_sample_bound = args.skip
-                    desired_samples = self.prj.samples[lower_sample_bound:num_samples]
-                except:
-                    desired_range = self.set_desired_range(args.skip, num_samples)
-                    desired_range = set(desired_range)
-                    original_range = set(range(1, num_samples + 1))
-                    desired_range = original_range.difference(desired_range)
-                    desired_samples = [self.prj.samples[i - 1] for i in desired_range]
-
-        # args.limit = int(args.limit[0])
-        # upper_sample_bound = min(args.limit, num_samples)
-        # desired = self.set_desired_range(args, num_samples)
-        # desired_samples = [self.prj.samples[i - 1] for i in desired]
+        elif args.skip is not None:
+            desired_range = desired_samples_range_skipped(
+                arg=args.skip, num_samples=num_samples
+            )
+        else:
+            raise argparse.ArgumentError(
+                "Both --limit and --skip are in use, but they should be mutually exclusive."
+            )
+        desired_samples = [self.prj.samples[i - 1] for i in desired_range]
 
         num_commands_possible = 0
         failed_submission_scripts = []
