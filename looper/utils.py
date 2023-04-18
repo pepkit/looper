@@ -450,7 +450,7 @@ class NonnegativeIntervalInclusiveOneBased(object):
 
         # Use the determined delimiter.
         lo, hi = s.split(sep)
-        lo = 0 if lo == "" else int(lo)
+        lo = 1 if lo == "" or lo == "0" else int(lo)
         hi = upper_bound if hi == "" else int(hi)
         return cls(lo, hi)
 
@@ -473,9 +473,10 @@ def desired_samples_range_skipped(arg: str, num_samples: int) -> List[int]:
         intv = NonnegativeIntervalInclusiveOneBased.from_string(
             arg, upper_bound=num_samples
         )
-        lower_range = range(intv.lo)
-        upper_range = range(intv.hi, num_samples + 1)
-        return list(lower_range) + list(upper_range)
+        skip_range = set(range(intv.lo, intv.hi + 1))
+        original_range = set(range(1, num_samples + 1))
+        skipped_range = original_range.difference(skip_range)
+        return list(skipped_range)
     else:
         intv = NonnegativeIntervalInclusiveOneBased(lower_bound, num_samples)
         return intv.to_range()
