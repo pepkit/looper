@@ -10,6 +10,7 @@ import logging
 import os
 import subprocess
 import sys
+from typing import *
 
 if sys.version_info < (3, 3):
     from collections import Mapping
@@ -269,6 +270,18 @@ class Cleaner(Executor):
         return self(args, preview_flag=False)
 
 
+def compute_sample_index(args: argparse.Namespace, num_samples: int) -> Iterable[int]:
+    if args.limit is None and args.skip is None:
+        return range(1, num_samples + 1)
+    elif args.skip is not None:
+        return desired_samples_range_skipped(args.skip, num_samples)
+    elif args.limit is not None:
+        return desired_samples_range_limited(args.limit, num_samples)
+    raise argparse.ArgumentError(
+        "Both --limit and --skip are in use, but they should be mutually exclusive."
+    )
+
+
 class Destroyer(Executor):
     """Destroyer of files and folders associated with Project's Samples"""
 
@@ -280,12 +293,7 @@ class Destroyer(Executor):
         :param bool preview_flag: whether to halt before actually removing files
         """
         num_samples = len(self.prj.samples)
-        if args.skip is not None:
-            sel_range = desired_samples_range_skipped(args.skip, num_samples)
-        elif args.limit is not None:
-            sel_range = desired_samples_range_limited(args.limit, num_samples)
-        else:
-            sel_range = range(1, num_samples + 1)
+        sel_range = compute_sample_index(args=args, num_samples=num_samples)
         desired_samples = [self.prj.samples[i - 1] for i in sel_range]
 
         _LOGGER.info("Removing results:")
@@ -418,20 +426,7 @@ class Runner(Executor):
         # Need to check if user entered some sort of range.
         # arg.limit will be a string at this point
 
-        if args.limit is None and args.skip is None:
-            desired_range = range(1, num_samples + 1)
-        elif args.limit is not None:
-            desired_range = desired_samples_range_limited(
-                arg=args.limit, num_samples=num_samples
-            )
-        elif args.skip is not None:
-            desired_range = desired_samples_range_skipped(
-                arg=args.skip, num_samples=num_samples
-            )
-        else:
-            raise argparse.ArgumentError(
-                "Both --limit and --skip are in use, but they should be mutually exclusive."
-            )
+        desired_range = compute_sample_index(args=args, num_samples=num_samples)
         desired_samples = [self.prj.samples[i - 1] for i in desired_range]
 
         num_commands_possible = 0
