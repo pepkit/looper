@@ -392,14 +392,24 @@ def dotfile_path(directory=os.getcwd(), must_exist=False):
 _Endpoints1D = namedtuple("_Endpoints1D", ["lo", "hi"])
 
 
-class NonnegativeIntervalInclusiveOneBased(_Endpoints1D):
+class NonnegativeIntervalInclusiveOneBased(object):
     def __init__(self, lo: int, hi: int):
-        super().__init__(lo, hi)
+        super().__init__()
+        self._lo = lo
+        self._hi = hi
         problems = self._invalidations()
         if problems:
             raise ValueError(
                 f"{len(problems)} issues with nonnegative interval: {', '.join(problems)}"
             )
+
+    @property
+    def lo(self):
+        return self._lo
+
+    @property
+    def hi(self):
+        return self._hi
 
     def _invalidations(self) -> List[str]:
         problems = []
