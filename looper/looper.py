@@ -460,17 +460,10 @@ class Runner(Executor):
                 max_size=args.lump,
             )
             submission_conductors[piface.pipe_iface_file] = conductor
-        # y = list(range(0,num_samples))
-        _LOGGER.info(f"Pipestat compatible: {self.prj.pipestat_configured_project}")
-        # for sample in self.prj.samples:
-        # for sample in desired_samples: #Remove filter here and simply filter above #Filter based on lower and upper bound
-        # for sample in self.prj.samples[:num_samples]:
-        # upper_sample_bound = num_samples
-        # print(f'HERE IS UPPER SAMPLE', upper_sample_bound)
 
-        # for sample in self.prj.samples[:upper_sample_bound]:
+        _LOGGER.info(f"Pipestat compatible: {self.prj.pipestat_configured_project}")
+
         for sample in desired_samples:
-            # for sample in desired_samples:
             pl_fails = []
             skip_reasons = []
             sample_pifaces = self.prj.get_sample_piface(sample[SAMPLE_NAME_ATTR])
