@@ -432,7 +432,7 @@ class NatIntervalInclusive(object):
         return range(self.lo, self.hi + 1)
 
     @classmethod
-    def from_string(cls, s: str, upper_bound: Optional[int] = None) -> "IntRange":
+    def from_string(cls, s: str, upper_bound: int) -> "IntRange":
         """
         Create an instance from a string, e.g. command-line argument.
 
@@ -481,7 +481,7 @@ def desired_samples_range_limited(arg: str, num_samples: int) -> Iterable[int]:
     try:
         upper_bound = min(int(arg), num_samples)
     except ValueError:
-        intv = NatIntervalInclusive.from_string(arg, num_samples)
+        intv = NatIntervalInclusive.from_string(arg, upper_bound=num_samples)
     else:
         _LOGGER.debug("Limiting to {} of {} samples".format(upper_bound, num_samples))
         intv = NatIntervalInclusive(1, upper_bound)
