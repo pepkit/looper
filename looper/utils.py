@@ -393,7 +393,7 @@ def dotfile_path(directory=os.getcwd(), must_exist=False):
 _Endpoints1D = namedtuple("_Endpoints1D", ["lo", "hi"])
 
 
-class NatlIntervalInclusive(object):
+class NatIntervalInclusive(object):
     def __init__(self, lo: int, hi: int):
         super().__init__()
         self._lo = lo
@@ -460,10 +460,10 @@ def desired_samples_range_limited(arg: str, num_samples: int) -> Iterable[int]:
     try:
         upper_bound = min(int(arg), num_samples)
     except ValueError:
-        intv = NatlIntervalInclusive.from_string(arg, num_samples)
+        intv = NatIntervalInclusive.from_string(arg, num_samples)
     else:
         _LOGGER.debug("Limiting to {} of {} samples".format(upper_bound, num_samples))
-        intv = NatlIntervalInclusive(1, upper_bound)
+        intv = NatIntervalInclusive(1, upper_bound)
     return intv.to_range()
 
 
@@ -471,10 +471,10 @@ def desired_samples_range_skipped(arg: str, num_samples: int) -> Iterable[int]:
     try:
         lower_bound = int(arg)
     except ValueError:
-        intv = NatlIntervalInclusive.from_string(arg, upper_bound=num_samples)
+        intv = NatIntervalInclusive.from_string(arg, upper_bound=num_samples)
         lower = range(1, intv.lo)
         upper = range(intv.hi + 1, num_samples + 1)
         return itertools.chain(lower, upper)
     else:
-        intv = NatlIntervalInclusive(lower_bound, num_samples)
+        intv = NatIntervalInclusive(lower_bound, num_samples)
         return intv.to_range()
