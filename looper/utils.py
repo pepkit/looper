@@ -451,7 +451,7 @@ class NonnegativeIntervalInclusiveOneBased(object):
         # Use the determined delimiter.
         lo, hi = s.split(sep)
         lo = 1 if lo == "" or lo == "0" else int(lo)
-        hi = upper_bound if hi == "" or int(hi) > upper_bound else int(hi)
+        hi = upper_bound if hi == "" else min(int(hi), upper_bound)
         return cls(lo, hi)
 
 
