@@ -6,7 +6,7 @@ import glob
 from logging import getLogger
 import os
 import sys
-from typing import List
+from typing import *
 
 import jinja2
 import yaml
@@ -392,7 +392,7 @@ def dotfile_path(directory=os.getcwd(), must_exist=False):
 _Endpoints1D = namedtuple("_Endpoints1D", ["lo", "hi"])
 
 
-class NonnegativeIntervalInclusiveOneBased(object):
+class NatlIntervalInclusive(object):
     def __init__(self, lo: int, hi: int):
         super().__init__()
         self._lo = lo
@@ -400,7 +400,7 @@ class NonnegativeIntervalInclusiveOneBased(object):
         problems = self._invalidations()
         if problems:
             raise ValueError(
-                f"{len(problems)} issues with nonnegative interval: {', '.join(problems)}"
+                f"{len(problems)} issues with interval on natural numbers: {', '.join(problems)}"
             )
 
     @property
@@ -411,10 +411,10 @@ class NonnegativeIntervalInclusiveOneBased(object):
     def hi(self):
         return self._hi
 
-    def _invalidations(self) -> List[str]:
+    def _invalidations(self) -> Iterable[str]:
         problems = []
-        if self.lo < 0:
-            problems.append(f"Interval must be nonnegative: {self.lo}")
+        if self.lo < 1:
+            problems.append(f"Interval must be on natural numbers: {self.lo}")
         if self.hi < self.lo:
             problems.append(
                 f"Upper bound must not be less than lower bound: {self.hi} < {self.lo}"
@@ -432,7 +432,7 @@ class NonnegativeIntervalInclusiveOneBased(object):
         :param str s: The string to parse as an interval
         :param int upper_bound: the default upper bound
         """
-        if upper_bound < 0:
+        if upper_bound < 1:
             raise ValueError(f"Negative upper bound: {upper_bound}")
 
         # Determine delimiter, invalidating presence of multiple occurrences.
@@ -450,33 +450,30 @@ class NonnegativeIntervalInclusiveOneBased(object):
 
         # Use the determined delimiter.
         lo, hi = s.split(sep)
-        lo = 1 if lo == "" or lo == "0" else int(lo)
+        lo = 1 if lo == "" else int(lo)
         hi = upper_bound if hi == "" else min(int(hi), upper_bound)
         return cls(lo, hi)
 
 
-def desired_samples_range_limited(arg: str, num_samples: int) -> List[int]:
+def desired_samples_range_limited(arg: str, num_samples: int) -> Iterable[int]:
     try:
         upper_bound = min(int(arg), num_samples)
     except ValueError:
-        intv = NonnegativeIntervalInclusiveOneBased.from_string(arg, num_samples)
+        intv = NatlIntervalInclusive.from_string(arg, num_samples)
     else:
         _LOGGER.debug("Limiting to {} of {} samples".format(upper_bound, num_samples))
-        intv = NonnegativeIntervalInclusiveOneBased(1, upper_bound)
+        intv = NatlIntervalInclusive(1, upper_bound)
     return intv.to_range()
 
 
-def desired_samples_range_skipped(arg: str, num_samples: int) -> List[int]:
+def desired_samples_range_skipped(arg: str, num_samples: int) -> Iterable[int]:
     try:
         lower_bound = int(arg)
     except ValueError:
-        intv = NonnegativeIntervalInclusiveOneBased.from_string(
-            arg, upper_bound=num_samples
-        )
-        skip_range = set(range(intv.lo, intv.hi + 1))
-        original_range = set(range(1, num_samples + 1))
-        skipped_range = original_range.difference(skip_range)
-        return list(skipped_range)
+        intv = NatlIntervalInclusive.from_string(arg, upper_bound=num_samples)
+        lower = range(1, intv.lo)
+        upper = range(intv.hi + 1, num_samples + 1)
+        return list(lower) + list(upper)
     else:
-        intv = NonnegativeIntervalInclusiveOneBased(lower_bound, num_samples)
+        intv = NatlIntervalInclusive(lower_bound, num_samples)
         return intv.to_range()
