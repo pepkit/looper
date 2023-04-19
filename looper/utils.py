@@ -396,9 +396,6 @@ class NatIntervalException(Exception):
     pass
 
 
-_Endpoints1D = namedtuple("_Endpoints1D", ["lo", "hi"])
-
-
 class NatIntervalInclusive(object):
     def __init__(self, lo: int, hi: int):
         super().__init__()
@@ -410,24 +407,27 @@ class NatIntervalInclusive(object):
                 f"{len(problems)} issues with interval on natural numbers: {', '.join(problems)}"
             )
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         return type(other) == type(self) and self.to_tuple() == other.to_tuple()
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self.to_tuple())
 
-    def __str__(self):
+    def __repr__(self) -> str:
         return f"{self.__class__.__name__}: {self.to_tuple()}"
 
-    def to_tuple(self):
+    def __str__(self) -> str:
+        return f"{self.__class__.__name__}: {self.to_tuple()}"
+
+    def to_tuple(self) -> Tuple[int, int]:
         return self.lo, self.hi
 
     @property
-    def lo(self):
+    def lo(self) -> int:
         return self._lo
 
     @property
-    def hi(self):
+    def hi(self) -> int:
         return self._hi
 
     def _invalidations(self) -> Iterable[str]:
@@ -440,7 +440,7 @@ class NatIntervalInclusive(object):
             )
         return problems
 
-    def to_range(self):
+    def to_range(self) -> Iterable[int]:
         return range(self.lo, self.hi + 1)
 
     @classmethod
