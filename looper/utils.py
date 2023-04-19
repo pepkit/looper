@@ -410,6 +410,18 @@ class NatIntervalInclusive(object):
                 f"{len(problems)} issues with interval on natural numbers: {', '.join(problems)}"
             )
 
+    def __eq__(self, other):
+        return type(other) == type(self) and self.to_tuple() == other.to_tuple()
+
+    def __hash__(self):
+        return hash(self.to_tuple())
+
+    def __str__(self):
+        return f"{self.__class__.__name__}: {self.to_tuple()}"
+
+    def to_tuple(self):
+        return self.lo, self.hi
+
     @property
     def lo(self):
         return self._lo
@@ -442,7 +454,7 @@ class NatIntervalInclusive(object):
         if upper_bound is None:
             upper_bound = sys.maxsize
         elif upper_bound < 1:
-            raise NatIntervalException(f"Negative upper bound: {upper_bound}")
+            raise NatIntervalException(f"Upper bound must be positive: {upper_bound}")
 
         # Determine delimiter, invalidating presence of multiple occurrences.
         delim_histo = defaultdict(int)
