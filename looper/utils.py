@@ -392,6 +392,7 @@ def dotfile_path(directory=os.getcwd(), must_exist=False):
 
 class NatIntervalException(Exception):
     """Subtype for errors specifically related to natural number interval"""
+
     pass
 
 
