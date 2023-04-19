@@ -322,11 +322,27 @@ def build_parser():
                 "config_file",
                 nargs="?",
                 default=None,
-                help="Project configuration file (YAML)",
+                help="Project configuration file (YAML) or pephub registry path.",
+            )
+            # help="Path to the looper config file"
+            subparser.add_argument(
+                "-L",
+                "--pipeline-config",
+                dest="pipeline_config",
+                metavar="YAML",
+                default=None,
+                type=str,
+                help="Path to looper config file"
             )
             # help="Path to the output directory"
             subparser.add_argument(
-                "-o", "--output-dir", metavar="DIR", help=argparse.SUPPRESS
+                "-o",
+                "--output-dir",
+                dest="output_dir",
+                metavar="DIR",
+                default=None,
+                type=str,
+                help=argparse.SUPPRESS,
             )
             # "Submission subdirectory name"
             subparser.add_argument(

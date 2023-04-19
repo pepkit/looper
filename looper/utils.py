@@ -5,12 +5,15 @@ import glob
 import os
 from collections import defaultdict
 from logging import getLogger
+from typing import Union
 
 import jinja2
 import yaml
 from peppy import Project as peppyProject
 from peppy.const import *
-from ubiquerg import convert_value, expandpath
+from ubiquerg import convert_value, expandpath, parse_registry_path
+from pephubclient.constants import  RegistryPath
+from pydantic.error_wrappers import ValidationError
 
 from .const import *
 from .exceptions import MisconfigurationException
@@ -385,3 +388,30 @@ def dotfile_path(directory=os.getcwd(), must_exist=False):
                 "its parents".format(LOOPER_DOTFILE_NAME, directory)
             )
         cur_dir = parent_dir
+
+
+def is_registry_path(input_string: str) -> bool:
+    """
+    Check if input is a registry path to pephub
+    :param str input_string: path to the PEP (or registry path)
+    :return bool: True if input is a registry path
+    """
+    try:
+        registry_path = RegistryPath(**parse_registry_path(input_string))
+        return True
+    except (ValidationError, TypeError):
+        return False
+
+
+def create_sample_pipeline_interface(prj_dict: dict, sample_pipeline_config: Union[str, list]) -> dict:
+    """
+    Add sample pipeline interface to the project
+    :param dict prj_dict: raw peppy dict
+    :param str|list sample_pipeline_config: looper sample modifiers (path to )
+    """
+    if "sample_modifiers" not in prj_dict["_config"]:
+        prj_dict["_config"]["sample_modifiers"] = {}
+    if "append" not in prj_dict["_config"]["sample_modifiers"]:
+        prj_dict["_config"]["sample_modifiers"]["append"] = {}
+    prj_dict["_config"]["sample_modifiers"]["append"]["pipeline_interfaces"] = sample_pipeline_config
+    return prj_dict

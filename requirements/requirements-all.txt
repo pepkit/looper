@@ -10,3 +10,4 @@ peppy>=0.35.4
 pyyaml>=3.12
 rich>=9.10.0
 ubiquerg>=0.5.2
+pephubclient

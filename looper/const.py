@@ -168,6 +168,7 @@ POSITIONAL = ["config_file", "command"]
 SELECTED_COMPUTE_PKG = "package"
 EXTRA_KEY = "_cli_extra"
 ALL_SUBCMD_KEY = "all"
+SAMPLE_PL_ARG = "pipeline_config"
 DEFAULT_CFG_PATH = os.path.join(os.getcwd(), LOOPER_DOTFILE_NAME)
 CLI_PROJ_ATTRS = [
     OUTDIR_KEY,
@@ -179,6 +180,7 @@ CLI_PROJ_ATTRS = [
     COMPUTE_PACKAGE_KEY,
     DRY_RUN_KEY,
     FILE_CHECKS_KEY,
+    SAMPLE_PL_ARG,
 ]
 
 # resource package TSV-related consts

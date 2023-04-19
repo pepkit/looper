@@ -38,6 +38,7 @@ from rich.console import Console
 from rich.table import Table
 from ubiquerg.cli_tools import query_yes_no
 from ubiquerg.collection import uniqify
+from pephubclient import PEPHubClient
 
 from . import __version__, build_parser
 from .conductor import SubmissionConductor
@@ -1068,17 +1069,31 @@ def main():
     )
 
     # Initialize project
-    try:
-        p = Project(
-            cfg=args.config_file,
-            amendments=args.amend,
-            divcfg_path=divcfg,
-            runp=args.command == "runp",
-            **{attr: getattr(args, attr) for attr in CLI_PROJ_ATTRS if attr in args},
-        )
-    except yaml.parser.ParserError as e:
-        _LOGGER.error("Project config parse failed -- {}".format(e))
-        sys.exit(1)
+    if is_registry_path(args.config_file):
+        if args.pipeline_config and args.output_dir:
+            p = Project(
+                amendments=args.amend,
+                divcfg_path=divcfg,
+                runp=args.command == "runp",
+                project_dict=PEPHubClient()._load_raw_pep(registry_path=args.config_file),
+                **{attr: getattr(args, attr) for attr in CLI_PROJ_ATTRS if attr in args},
+            )
+        else:
+            raise MisconfigurationException(
+                f"`pipeline_config` or `output_dir` is missing. Provide it in the parameters."
+            )
+    else:
+        try:
+            p = Project(
+                cfg=args.config_file,
+                amendments=args.amend,
+                divcfg_path=divcfg,
+                runp=args.command == "runp",
+                **{attr: getattr(args, attr) for attr in CLI_PROJ_ATTRS if attr in args},
+            )
+        except yaml.parser.ParserError as e:
+            _LOGGER.error("Project config parse failed -- {}".format(e))
+            sys.exit(1)
 
     selected_compute_pkg = p.selected_compute_package or DEFAULT_COMPUTE_RESOURCES_NAME
     if p.dcc is not None and not p.dcc.activate_package(selected_compute_pkg):

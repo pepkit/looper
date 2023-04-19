@@ -69,14 +69,15 @@ class PipelineInterface(PXAM):
         """
         if VAR_TEMPL_KEY in self:
             var_templates = {}
-            var_templates.update(self[VAR_TEMPL_KEY])
-            for k, v in var_templates.items():
-                var_templates[k] = jinja_render_template_strictly(v, namespaces)
-                # setattr(
-                #     var_templates,
-                #     k,
-                #     jinja_render_template_strictly(v, namespaces),
-                # )
+            if self[VAR_TEMPL_KEY]:
+                var_templates.update(self[VAR_TEMPL_KEY])
+                for k, v in var_templates.items():
+                    var_templates[k] = jinja_render_template_strictly(v, namespaces)
+                    # setattr(
+                    #     var_templates,
+                    #     k,
+                    #     jinja_render_template_strictly(v, namespaces),
+                    # )
 
             return var_templates
         else:
