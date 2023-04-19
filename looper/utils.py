@@ -457,6 +457,19 @@ class NatIntervalInclusive(object):
 
 
 def desired_samples_range_limited(arg: str, num_samples: int) -> Iterable[int]:
+    """
+    Create a contiguous interval of natural numbers. Used for _positive_ selection of samples.
+
+    Interpret given arg as upper bound (1-based) if it's a single value, but take the
+    minimum of that and the given number of samples. If arg is parseable as a range,
+    use that.
+
+    :param str arg: CLI specification of a range of samples to use, or as the greatest
+        1-based index of a sample to include
+    :param int num_samples: what to use as the upper bound on the 1-based index interval
+        if the given arg isn't a range but rather a single value.
+    :return: an iterable of 1-based indices into samples to select
+    """
     try:
         upper_bound = min(int(arg), num_samples)
     except ValueError:
@@ -468,6 +481,14 @@ def desired_samples_range_limited(arg: str, num_samples: int) -> Iterable[int]:
 
 
 def desired_samples_range_skipped(arg: str, num_samples: int) -> Iterable[int]:
+    """
+    Create a contiguous interval of natural numbers. Used for _negative_ selection of samples.
+
+    :param str arg: CLI specification of a range of samples to use, or as the lowest
+        1-based index of a sample to skip
+    :param int num_samples: highest 1-based index of samples to include
+    :return: an iterable of 1-based indices into samples to select
+    """
     try:
         lower_bound = int(arg)
     except ValueError:
