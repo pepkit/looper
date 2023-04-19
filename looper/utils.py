@@ -469,6 +469,9 @@ class NatIntervalInclusive(object):
 
         # Use the determined delimiter.
         lo, hi = s.split(sep)
+        if lo == "" and hi == "":
+            # We could do an interval like [1, upper_bound], but this is nonsensical as input.
+            raise NatIntervalException(f"Parse both lower and upper limit as empty from given arg: {s}")
         lo = 1 if lo == "" else int(lo)
         hi = upper_bound if hi == "" else min(int(hi), upper_bound)
         return cls(lo, hi)
