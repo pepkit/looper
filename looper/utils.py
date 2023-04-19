@@ -432,14 +432,16 @@ class NatIntervalInclusive(object):
         return range(self.lo, self.hi + 1)
 
     @classmethod
-    def from_string(cls, s: str, upper_bound: int = sys.maxsize) -> "IntRange":
+    def from_string(cls, s: str, upper_bound: Optional[int] = None) -> "IntRange":
         """
         Create an instance from a string, e.g. command-line argument.
 
         :param str s: The string to parse as an interval
         :param int upper_bound: the default upper bound
         """
-        if upper_bound < 1:
+        if upper_bound is None:
+            upper_bound = sys.maxsize
+        elif upper_bound < 1:
             raise NatIntervalException(f"Negative upper bound: {upper_bound}")
 
         # Determine delimiter, invalidating presence of multiple occurrences.
