@@ -3,6 +3,7 @@
 import argparse
 from collections import defaultdict, namedtuple
 import glob
+import itertools
 from logging import getLogger
 import os
 import sys
@@ -473,7 +474,7 @@ def desired_samples_range_skipped(arg: str, num_samples: int) -> Iterable[int]:
         intv = NatlIntervalInclusive.from_string(arg, upper_bound=num_samples)
         lower = range(1, intv.lo)
         upper = range(intv.hi + 1, num_samples + 1)
-        return list(lower) + list(upper)
+        return itertools.chain(lower, upper)
     else:
         intv = NatlIntervalInclusive(lower_bound, num_samples)
         return intv.to_range()
