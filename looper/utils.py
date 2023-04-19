@@ -312,6 +312,36 @@ def _get_subcommand_args(parser_args):
     return args
 
 
+def init_generic_pipeline():
+    # check for pipeline folder
+
+    try:
+        os.makedirs("pipeline")
+    except FileExistsError:
+        print("Pipeline folder already exists.")
+        pass
+
+    # Destination one level down from CWD in pipeline folder\
+    LOOPER_GENERIC_PIPELINE = "generic_pipeline_interface.yaml"
+    dest_file = os.path.join(os.getcwd(), "pipeline", LOOPER_GENERIC_PIPELINE)
+
+    # Determine Lines for Generic Pipeline Interface
+    line1 = "pipeline_name: count_lines\n"
+    line2 = "pipeline_type: sample\n"
+    line3 = "output_schema: output_schema.yaml\n"
+    line4 = "var_templates:\n"
+    line5 = "  pipeline: '{looper.piface_dir}/count_lines.sh'\n"
+    line6 = "command_template: >\n"
+    line7 = "  {pipeline.var_templates.pipeline} {sample.file} --output-parent {looper.sample_output_folder}\n"
+    yaml_body = line1 + line2 + line3 + line4 + line5 + line6 + line7
+
+    # Write file
+    with open(dest_file, mode="w") as file:
+        file.write(str(yaml_body))
+
+    return True
+
+
 def init_dotfile(path, cfg_path, force=False):
     """
     Initialize looper dotfile

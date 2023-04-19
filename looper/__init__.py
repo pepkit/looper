@@ -306,6 +306,10 @@ def build_parser():
             "-f", "--force", help="Force overwrite", action="store_true", default=False
         )
 
+        init_subparser.add_argument(
+            "-p", "--pipeline", help="Generates generic pipeline interface", action="store_true", default=False
+        )
+
         # Common arguments
         for subparser in [
             run_subparser,
