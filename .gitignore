@@ -1,5 +1,6 @@
 # ignore test results
 oldtests/test/*
+.hypothesis/
 
 # toy/experimental files
 *.pkl
