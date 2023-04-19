@@ -390,6 +390,11 @@ def dotfile_path(directory=os.getcwd(), must_exist=False):
         cur_dir = parent_dir
 
 
+class NatIntervalException(Exception):
+    """Subtype for errors specifically related to natural number interval"""
+    pass
+
+
 _Endpoints1D = namedtuple("_Endpoints1D", ["lo", "hi"])
 
 
@@ -400,7 +405,7 @@ class NatIntervalInclusive(object):
         self._hi = hi
         problems = self._invalidations()
         if problems:
-            raise ValueError(
+            raise NatIntervalException(
                 f"{len(problems)} issues with interval on natural numbers: {', '.join(problems)}"
             )
 
@@ -434,7 +439,7 @@ class NatIntervalInclusive(object):
         :param int upper_bound: the default upper bound
         """
         if upper_bound < 1:
-            raise ValueError(f"Negative upper bound: {upper_bound}")
+            raise NatIntervalException(f"Negative upper bound: {upper_bound}")
 
         # Determine delimiter, invalidating presence of multiple occurrences.
         delim_histo = defaultdict(int)
@@ -444,7 +449,7 @@ class NatIntervalInclusive(object):
                 delim_histo[c] += 1
         seps = [sep for sep, num_occ in delim_histo.items() if num_occ == 1]
         if len(seps) != 1:
-            raise ValueError(
+            raise NatIntervalException(
                 f"Did not find exactly one candidate delimiter with occurrence count of 1: {delim_histo}"
             )
         sep = seps[0]
