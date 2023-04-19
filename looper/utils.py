@@ -451,9 +451,7 @@ class NatIntervalInclusive(object):
         :param str s: The string to parse as an interval
         :param int upper_bound: the default upper bound
         """
-        if upper_bound is None:
-            upper_bound = sys.maxsize
-        elif upper_bound < 1:
+        if upper_bound < 1:
             raise NatIntervalException(f"Upper bound must be positive: {upper_bound}")
 
         # Determine delimiter, invalidating presence of multiple occurrences.
