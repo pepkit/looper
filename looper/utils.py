@@ -1,11 +1,13 @@
 """ Helpers without an obvious logical home. """
 
 import argparse
+from collections import defaultdict, namedtuple
 import glob
-import os
-from collections import defaultdict
+import itertools
 from logging import getLogger
-from typing import Union
+import os
+import sys
+from typing import *
 
 import jinja2
 import yaml
@@ -467,3 +469,143 @@ def create_project_pipeline_interface(
         prj_dict["_config"]["looper"] = {}
     prj_dict["_config"]["looper"]["pipeline_interfaces"] = project_pipeline_config
     return prj_dict
+
+
+class NatIntervalException(Exception):
+    """Subtype for errors specifically related to natural number interval"""
+
+    pass
+
+
+class NatIntervalInclusive(object):
+    def __init__(self, lo: int, hi: int):
+        super().__init__()
+        self._lo = lo
+        self._hi = hi
+        problems = self._invalidations()
+        if problems:
+            raise NatIntervalException(
+                f"{len(problems)} issues with interval on natural numbers: {', '.join(problems)}"
+            )
+
+    def __eq__(self, other) -> bool:
+        return type(other) == type(self) and self.to_tuple() == other.to_tuple()
+
+    def __hash__(self) -> int:
+        return hash(self.to_tuple())
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}: {self.to_tuple()}"
+
+    def __str__(self) -> str:
+        return f"{self.__class__.__name__}: {self.to_tuple()}"
+
+    def to_tuple(self) -> Tuple[int, int]:
+        return self.lo, self.hi
+
+    @property
+    def lo(self) -> int:
+        return self._lo
+
+    @property
+    def hi(self) -> int:
+        return self._hi
+
+    def _invalidations(self) -> Iterable[str]:
+        problems = []
+        if self.lo < 1:
+            problems.append(f"Interval must be on natural numbers: {self.lo}")
+        if self.hi < self.lo:
+            problems.append(
+                f"Upper bound must not be less than lower bound: {self.hi} < {self.lo}"
+            )
+        return problems
+
+    def to_range(self) -> Iterable[int]:
+        return range(self.lo, self.hi + 1)
+
+    @classmethod
+    def from_string(cls, s: str, upper_bound: int) -> "IntRange":
+        """
+        Create an instance from a string, e.g. command-line argument.
+
+        :param str s: The string to parse as an interval
+        :param int upper_bound: the default upper bound
+        """
+        if upper_bound < 1:
+            raise NatIntervalException(f"Upper bound must be positive: {upper_bound}")
+
+        # Determine delimiter, invalidating presence of multiple occurrences.
+        delim_histo = defaultdict(int)
+        candidates = [":", "-"]
+        for c in s:
+            if c in candidates:
+                delim_histo[c] += 1
+        seps = [sep for sep, num_occ in delim_histo.items() if num_occ == 1]
+        if len(seps) != 1:
+            raise NatIntervalException(
+                f"Did not find exactly one candidate delimiter with occurrence count of 1: {delim_histo}"
+            )
+        sep = seps[0]
+
+        # Use the determined delimiter.
+        lo, hi = s.split(sep)
+        if lo == "" and hi == "":
+            # We could do an interval like [1, upper_bound], but this is nonsensical as input.
+            raise NatIntervalException(
+                f"Parsed both lower and upper limit as empty from given arg: {s}"
+            )
+        try:
+            lo = 1 if lo == "" else int(lo)
+            hi = upper_bound if hi == "" else min(int(hi), upper_bound)
+        except ValueError as e:
+            raise NatIntervalException(str(e))
+        return cls(lo, hi)
+
+
+def desired_samples_range_limited(arg: str, num_samples: int) -> Iterable[int]:
+    """
+    Create a contiguous interval of natural numbers. Used for _positive_ selection of samples.
+
+    Interpret given arg as upper bound (1-based) if it's a single value, but take the
+    minimum of that and the given number of samples. If arg is parseable as a range,
+    use that.
+
+    :param str arg: CLI specification of a range of samples to use, or as the greatest
+        1-based index of a sample to include
+    :param int num_samples: what to use as the upper bound on the 1-based index interval
+        if the given arg isn't a range but rather a single value.
+    :return: an iterable of 1-based indices into samples to select
+    """
+    try:
+        upper_bound = min(int(arg), num_samples)
+    except ValueError:
+        intv = NatIntervalInclusive.from_string(arg, upper_bound=num_samples)
+    else:
+        _LOGGER.debug("Limiting to {} of {} samples".format(upper_bound, num_samples))
+        intv = NatIntervalInclusive(1, upper_bound)
+    return intv.to_range()
+
+
+def desired_samples_range_skipped(arg: str, num_samples: int) -> Iterable[int]:
+    """
+    Create a contiguous interval of natural numbers. Used for _negative_ selection of samples.
+
+    :param str arg: CLI specification of a range of samples to use, or as the lowest
+        1-based index of a sample to skip
+    :param int num_samples: highest 1-based index of samples to include
+    :return: an iterable of 1-based indices into samples to select
+    """
+    try:
+        lower_bound = int(arg)
+    except ValueError:
+        intv = NatIntervalInclusive.from_string(arg, upper_bound=num_samples)
+        lower = range(1, intv.lo)
+        upper = range(intv.hi + 1, num_samples + 1)
+        return itertools.chain(lower, upper)
+    else:
+        if num_samples <= lower_bound:
+            return []
+        intv = NatIntervalInclusive(lower_bound + 1, num_samples)
+        return intv.to_range()
+

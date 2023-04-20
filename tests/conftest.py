@@ -1,9 +1,9 @@
+from contextlib import contextmanager
 import os
 import subprocess
+from shutil import copyfile as cpf, rmtree
 import tempfile
-from contextlib import contextmanager
-from shutil import copyfile as cpf
-from shutil import rmtree
+from typing import *
 
 import pytest
 from peppy.const import *
@@ -19,6 +19,14 @@ OS = "output_schema.yaml"
 RES = "resources-{}.tsv"
 
 
+@pytest.fixture(scope="function")
+def dotfile_path():
+    path = os.path.join(os.getcwd(), LOOPER_DOTFILE_NAME)
+    yield path
+    if os.path.isfile(path):
+        os.remove(path)
+
+
 def get_outdir(pth):
     """
     Get output directory from a config file
@@ -31,32 +39,55 @@ def get_outdir(pth):
     return config_data[LOOPER_KEY][OUTDIR_KEY]
 
 
-def is_in_file(fs, s, reverse=False):
-    """
-    Verify if string is in files content
-
-    :param str | Iterable[str] fs: list of files
-    :param str s: string to look for
-    :param bool reverse: whether the reverse should be checked
-    """
+def _assert_content_in_files(fs: Union[str, Iterable[str]], query: str, negate: bool):
     if isinstance(fs, str):
         fs = [fs]
+    check = (lambda doc: query not in doc) if negate else (lambda doc: query in doc)
     for f in fs:
         with open(f, "r") as fh:
-            if reverse:
-                assert s not in fh.read()
-            else:
-                assert s in fh.read()
+            contents = fh.read()
+        assert check(contents)
 
 
-def subp_exec(pth=None, cmd=None, appendix=list(), dry=True):
+def assert_content_in_all_files(fs: Union[str, Iterable[str]], query: str):
+    """
+    Verify that string is in files content.
+
+    :param str | Iterable[str] fs: list of files
+    :param str query: string to look for
+    """
+    _assert_content_in_files(fs, query, negate=False)
+
+
+def assert_content_not_in_any_files(fs: Union[str, Iterable[str]], query: str):
+    """
+    Verify that string is not in files' content.
+
+    :param str | Iterable[str] fs: list of files
+    :param str query: string to look for
+    """
+    _assert_content_in_files(fs, query, negate=True)
+
+
+def print_standard_stream(text: Union[str, bytes]) -> None:
+    if isinstance(text, bytes):
+        text = text.decode("utf-8")
+    if not isinstance(text, str):
+        raise TypeError(f"Stream to print is neither str nor bytes, but {type(text)}")
+    for line in text.split("\n"):
+        print(line)
+
+
+def subp_exec(
+    pth=None, cmd=None, appendix=list(), dry=True
+) -> Tuple[bytes, bytes, int]:
     """
 
     :param str pth: config path
     :param str cmd: looper subcommand
     :param Iterable[str] appendix: other args to pass to the cmd
     :param bool dry: whether to append dry run flag
-    :return:
+    :return stdout, stderr, and return code
     """
     x = ["looper", cmd, "-d" if dry else ""]
     if pth:
@@ -64,7 +95,7 @@ def subp_exec(pth=None, cmd=None, appendix=list(), dry=True):
     x.extend(appendix)
     proc = subprocess.Popen(x, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
     stdout, stderr = proc.communicate()
-    return str(stdout), str(stderr), proc.returncode
+    return stdout, stderr, proc.returncode
 
 
 def verify_filecount_in_dir(dirpath, pattern, count):

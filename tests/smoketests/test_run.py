@@ -14,14 +14,14 @@ class TestsLooperBothRuns:
     def test_looper_cfg_invalid(self, cmd):
         """Verify looper does not accept invalid cfg paths"""
         stdout, stderr, rc = subp_exec("jdfskfds/dsjfklds/dsjklsf.yaml", cmd)
-        print(stderr)
+        print_standard_stream(stderr)
         assert rc != 0
 
     @pytest.mark.parametrize("cmd", ["run", "runp"])
     def test_looper_cfg_required(self, cmd):
         """Verify looper does not accept invalid cfg paths"""
         stdout, stderr, rc = subp_exec(pth="", cmd=cmd)
-        print(stderr)
+        print_standard_stream(stderr)
         assert rc != 0
 
     @pytest.mark.parametrize("cmd", ["run", "runp"])
@@ -44,35 +44,33 @@ class TestsLooperBothRuns:
         tp = prep_temp_pep
         stdout, stderr, rc = subp_exec(tp, cmd, arg)
         sd = os.path.join(get_outdir(tp), "submission")
-        print(stderr)
+        print_standard_stream(stderr)
         assert rc == 0
         subs_list = [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
-        is_in_file(subs_list, arg[1])
+        assert_content_in_all_files(subs_list, arg[1])
 
     @pytest.mark.parametrize("cmd", ["run", "runp"])
     def test_unrecognized_args_not_passing(self, prep_temp_pep, cmd):
         tp = prep_temp_pep
         stdout, stderr, rc = subp_exec(tp, cmd, ["--unknown-arg", "4"])
         sd = os.path.join(get_outdir(tp), "submission")
-        print(stderr)
+        print_standard_stream(stderr)
         assert rc == 0
         subs_list = [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
-        is_in_file(subs_list, "--unknown-arg", reverse=True)
+        assert_content_not_in_any_files(subs_list, "--unknown-arg")
 
     @pytest.mark.parametrize("cmd", ["run", "runp"])
-    def test_run_after_init(self, prep_temp_pep, cmd):
+    def test_run_after_init(self, prep_temp_pep, cmd, dotfile_path):
         tp = prep_temp_pep
-        dotfile_path = os.path.join(os.getcwd(), LOOPER_DOTFILE_NAME)
         stdout, stderr, rc = subp_exec(tp, "init")
-        print(stderr)
-        print(stdout)
+        print_standard_stream(stderr)
+        print_standard_stream(stdout)
         assert rc == 0
-        is_in_file(dotfile_path, tp)
+        assert_content_in_all_files(dotfile_path, tp)
         stdout, stderr, rc = subp_exec(cmd=cmd)
-        print(stderr)
-        print(stdout)
+        print_standard_stream(stderr)
+        print_standard_stream(stdout)
         assert rc == 0
-        os.remove(dotfile_path)
 
 
 class TestsLooperRunBehavior:
@@ -80,14 +78,14 @@ class TestsLooperRunBehavior:
         """Verify looper runs in a basic case and return code is 0"""
         tp = prep_temp_pep
         stdout, stderr, rc = subp_exec(tp, "run")
-        print(stderr)
+        print_standard_stream(stderr)
         assert rc == 0
 
     def test_looper_multi_pipeline(self, prep_temp_pep):
         tp = prep_temp_pep
         stdout, stderr, rc = subp_exec(tp, "run")
-        print(stderr)
-        assert "Commands submitted: 6 of 6" in stderr
+        print_standard_stream(stderr)
+        assert "Commands submitted: 6 of 6" in str(stderr)
 
     def test_looper_single_pipeline(self, prep_temp_pep):
         tp = prep_temp_pep
@@ -100,18 +98,18 @@ class TestsLooperRunBehavior:
             ] = pifaces[1]
 
         stdout, stderr, rc = subp_exec(tp, "run")
-        print(stderr)
+        print_standard_stream(stderr)
         assert rc == 0
-        assert "Commands submitted: 6 of 6" not in stderr
+        assert "Commands submitted: 6 of 6" not in str(stderr)
 
     def test_looper_cli_pipeline(self, prep_temp_pep):
         """CLI-specified pipelines overwrite ones from config"""
         tp = prep_temp_pep
         pi_pth = os.path.join(os.path.dirname(tp), PIS.format("1"))
         stdout, stderr, rc = subp_exec(tp, "run", ["--pipeline-interfaces", pi_pth])
-        print(stderr)
+        print_standard_stream(stderr)
         assert rc == 0
-        assert "Commands submitted: 3 of 3" not in stdout
+        assert "Commands submitted: 3 of 3" not in str(stdout)
 
     def test_looper_no_pipeline(self, prep_temp_pep):
         """
@@ -122,9 +120,9 @@ class TestsLooperRunBehavior:
         with mod_yaml_data(tp) as config_data:
             del config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][PIPELINE_INTERFACES_KEY]
         stdout, stderr, rc = subp_exec(tp, "run")
-        print(stderr)
+        print_standard_stream(stderr)
         assert rc == 0
-        assert "Jobs submitted: 0" in stderr
+        assert "Jobs submitted: 0" in str(stderr)
         assert "No pipeline interfaces defined"
 
     def test_looper_pipeline_not_found(self, prep_temp_pep):
@@ -137,9 +135,9 @@ class TestsLooperRunBehavior:
                 "bogus"
             ]
         stdout, stderr, rc = subp_exec(tp, "run")
-        print(stderr)
+        print_standard_stream(stderr)
         assert rc == 0
-        assert "Jobs submitted: 0" in stderr
+        assert "Jobs submitted: 0" in str(stderr)
         assert "Ignoring invalid pipeline interface source"
 
     def test_looper_pipeline_invalid(self, prep_temp_pep):
@@ -159,9 +157,9 @@ class TestsLooperRunBehavior:
         with mod_yaml_data(piface_path) as piface_data:
             del piface_data["pipeline_name"]
         stdout, stderr, rc = subp_exec(tp, "run")
-        print(stderr)
+        print_standard_stream(stderr)
         assert rc == 0
-        assert "Jobs submitted: 0" in stderr
+        assert "Jobs submitted: 0" in str(stderr)
         assert "Ignoring invalid pipeline interface source"
         assert "'pipeline_name' is a required property"
 
@@ -173,9 +171,9 @@ class TestsLooperRunBehavior:
         with mod_yaml_data(tp) as config_data:
             del config_data[SAMPLE_MODS_KEY][CONSTANT_KEY]["attr"]
         stdout, stderr, rc = subp_exec(tp, "run")
-        print(stderr)
+        print_standard_stream(stderr)
         assert rc == 0
-        assert "Jobs submitted: 0" in stderr
+        assert "Jobs submitted: 0" in str(stderr)
 
     def test_looper_sample_name_whitespace(self, prep_temp_pep):
         """
@@ -191,10 +189,10 @@ class TestsLooperRunBehavior:
         with mod_yaml_data(pepfile) as config_data:
             config_data[SAMPLE_MODS_KEY][IMPLIED_KEY] = imply_whitespace
         stdout, stderr, rc = subp_exec(pepfile, "run")
-        print(stderr)
+        print_standard_stream(stderr)
         assert rc == 0
         expected_prefix = "Short-circuiting due to validation error"
-        assert expected_prefix in stderr
+        assert expected_prefix in str(stderr)
 
     def test_looper_toggle(self, prep_temp_pep):
         """
@@ -204,9 +202,9 @@ class TestsLooperRunBehavior:
         with mod_yaml_data(tp) as config_data:
             config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][SAMPLE_TOGGLE_ATTR] = 0
         stdout, stderr, rc = subp_exec(tp, "run")
-        print(stderr)
+        print_standard_stream(stderr)
         assert rc == 0
-        assert "Jobs submitted: 0" in stderr
+        assert "Jobs submitted: 0" in str(stderr)
 
     @pytest.mark.parametrize("arg", CMD_STRS)
     def test_cmd_extra_sample(self, prep_temp_pep, arg):
@@ -219,10 +217,10 @@ class TestsLooperRunBehavior:
             config_data[SAMPLE_MODS_KEY][CONSTANT_KEY]["command_extra"] = arg
         stdout, stderr, rc = subp_exec(tp, "run")
         sd = os.path.join(get_outdir(tp), "submission")
-        print(stderr)
+        print_standard_stream(stderr)
         assert rc == 0
         subs_list = [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
-        is_in_file(subs_list, arg)
+        assert_content_in_all_files(subs_list, arg)
 
     @pytest.mark.parametrize("arg", CMD_STRS)
     def test_cmd_extra_override_sample(self, prep_temp_pep, arg):
@@ -238,10 +236,10 @@ class TestsLooperRunBehavior:
             tp, "run", ["--command-extra-override='different'"]
         )
         sd = os.path.join(get_outdir(tp), "submission")
-        print(stderr)
+        print_standard_stream(stderr)
         assert rc == 0
         subs_list = [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
-        is_in_file(subs_list, arg, reverse=True)
+        assert_content_not_in_any_files(subs_list, arg)
 
 
 class TestsLooperRunpBehavior:
@@ -249,13 +247,13 @@ class TestsLooperRunpBehavior:
         """Verify looper runps in a basic case and return code is 0"""
         tp = prep_temp_pep
         stdout, stderr, rc = subp_exec(tp, "runp")
-        print(stderr)
+        print_standard_stream(stderr)
         assert rc == 0
 
     def test_looper_multi_pipeline(self, prep_temp_pep):
         tp = prep_temp_pep
         stdout, stderr, rc = subp_exec(tp, "runp")
-        assert "Jobs submitted: 2" in stderr
+        assert "Jobs submitted: 2" in str(stderr)
 
     def test_looper_single_pipeline(self, prep_temp_pep):
         tp = prep_temp_pep
@@ -265,10 +263,10 @@ class TestsLooperRunpBehavior:
                 PIPELINE_INTERFACES_KEY
             ] = piface_path
         stdout, stderr, rc = subp_exec(tp, "runp")
-        print(stderr)
+        print_standard_stream(stderr)
         assert rc == 0
-        assert "Jobs submitted: 2" not in stderr
-        assert "Jobs submitted: 1" in stderr
+        assert "Jobs submitted: 2" not in str(stderr)
+        assert "Jobs submitted: 1" in str(stderr)
 
     @pytest.mark.parametrize("arg", CMD_STRS)
     def test_cmd_extra_project(self, prep_temp_pep, arg):
@@ -277,10 +275,10 @@ class TestsLooperRunpBehavior:
             config_data[LOOPER_KEY]["command_extra"] = arg
         stdout, stderr, rc = subp_exec(tp, "runp")
         sd = os.path.join(get_outdir(tp), "submission")
-        print(stderr)
+        print_standard_stream(stderr)
         assert rc == 0
         subs_list = [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
-        is_in_file(subs_list, arg)
+        assert_content_in_all_files(subs_list, arg)
 
 
 class TestsLooperRunPreSubmissionHooks:
@@ -288,7 +286,7 @@ class TestsLooperRunPreSubmissionHooks:
         tp = prep_temp_pep
         stdout, stderr, rc = subp_exec(tp, "run")
         sd = os.path.join(get_outdir(tp), "submission")
-        print(stderr)
+        print_standard_stream(stderr)
         assert rc == 0
         verify_filecount_in_dir(sd, ".yaml", 3)
 
@@ -309,7 +307,7 @@ class TestsLooperRunPreSubmissionHooks:
                 piface_data[PRE_SUBMIT_HOOK_KEY][PRE_SUBMIT_PY_FUN_KEY] = [plugin]
         stdout, stderr, rc = subp_exec(tp, "run")
         sd = os.path.join(get_outdir(tp), "submission")
-        print(stderr)
+        print_standard_stream(stderr)
         assert rc == 0
         verify_filecount_in_dir(sd, appendix, 3)
 
@@ -329,7 +327,7 @@ class TestsLooperRunPreSubmissionHooks:
                 piface_data[PRE_SUBMIT_HOOK_KEY][PRE_SUBMIT_CMD_KEY] = [cmd]
         stdout, stderr, rc = subp_exec(tp, "run")
         sd = os.path.join(get_outdir(tp), "submission")
-        print(stderr)
+        print_standard_stream(stderr)
         assert rc == 0
         verify_filecount_in_dir(sd, "test.txt", 3)
 
@@ -342,7 +340,7 @@ class TestsLooperRunSubmissionScript:
         outdir = config_data[LOOPER_KEY][OUTDIR_KEY]
         stdout, stderr, rc = subp_exec(tp, "run")
         sd = os.path.join(outdir, "submission")
-        print(stderr)
+        print_standard_stream(stderr)
         assert rc == 0
         verify_filecount_in_dir(sd, ".sub", 6)
 
@@ -350,7 +348,7 @@ class TestsLooperRunSubmissionScript:
         tp = prep_temp_pep
         stdout, stderr, rc = subp_exec(tp, "run", ["--lumpn", "2"])
         sd = os.path.join(get_outdir(tp), "submission")
-        print(stderr)
+        print_standard_stream(stderr)
         assert rc == 0
         verify_filecount_in_dir(sd, ".sub", 4)
 
@@ -358,7 +356,7 @@ class TestsLooperRunSubmissionScript:
         tp = prep_temp_pep
         stdout, stderr, rc = subp_exec(tp, "run", ["--limit", "2"])
         sd = os.path.join(get_outdir(tp), "submission")
-        print(stderr)
+        print_standard_stream(stderr)
         assert rc == 0
         verify_filecount_in_dir(sd, ".sub", 4)
 
@@ -369,10 +367,10 @@ class TestsLooperCompute:
         tp = prep_temp_pep
         stdout, stderr, rc = subp_exec(tp, cmd, ["--package", "local"])
         sd = os.path.join(get_outdir(tp), "submission")
-        print(stderr)
+        print_standard_stream(stderr)
         assert rc == 0
         subs_list = [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
-        is_in_file(subs_list, "#SBATCH", reverse=True)
+        assert_content_not_in_any_files(subs_list, "#SBATCH")
 
     @pytest.mark.parametrize("cmd", ["run", "runp"])
     def test_looper_uses_cli_compute_options_spec(self, prep_temp_pep, cmd):
@@ -381,10 +379,10 @@ class TestsLooperCompute:
             tp, cmd, ["--compute", "mem=12345", "--package", "slurm"]
         )
         sd = os.path.join(get_outdir(tp), "submission")
-        print(stderr)
+        print_standard_stream(stderr)
         assert rc == 0
         subs_list = [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
-        is_in_file(subs_list, "#SBATCH --mem='12345'")
+        assert_content_in_all_files(subs_list, "#SBATCH --mem='12345'")
 
     @pytest.mark.parametrize("cmd", ["run", "runp"])
     def test_cli_yaml_settings_general(self, prep_temp_pep, cmd):
@@ -394,14 +392,14 @@ class TestsLooperCompute:
         with open(settings_file_path, "w") as sf:
             dump({"mem": "testin_mem"}, sf)
         stdout, stderr, rc = subp_exec(tp, cmd, ["--settings", settings_file_path])
-        print(stderr)
+        print_standard_stream(stderr)
         assert rc == 0
 
     @pytest.mark.parametrize("cmd", ["run", "runp"])
     def test_nonexistent_yaml_settings_disregarded(self, prep_temp_pep, cmd):
         tp = prep_temp_pep
         stdout, stderr, rc = subp_exec(tp, cmd, ["--settings", "niema.yaml"])
-        print(stderr)
+        print_standard_stream(stderr)
         assert rc == 0
 
     @pytest.mark.parametrize("cmd", ["run", "runp"])
@@ -414,11 +412,11 @@ class TestsLooperCompute:
         stdout, stderr, rc = subp_exec(
             tp, cmd, ["--settings", settings_file_path, "-p", "slurm"]
         )
-        print(stderr)
+        print_standard_stream(stderr)
         assert rc == 0
         sd = os.path.join(get_outdir(tp), "submission")
         subs_list = [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
-        is_in_file(subs_list, "testin_mem")
+        assert_content_in_all_files(subs_list, "testin_mem")
 
     @pytest.mark.parametrize("cmd", ["run", "runp"])
     def test_cli_compute_overwrites_yaml_settings_spec(self, prep_temp_pep, cmd):
@@ -432,8 +430,8 @@ class TestsLooperCompute:
             cmd,
             ["--settings", settings_file_path, "--compute", "mem=10", "-p", "slurm"],
         )
-        print(stderr)
+        print_standard_stream(stderr)
         assert rc == 0
         sd = os.path.join(get_outdir(tp), "submission")
         subs_list = [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
-        is_in_file(subs_list, "testin_mem", reverse=True)
+        assert_content_not_in_any_files(subs_list, "testin_mem")
