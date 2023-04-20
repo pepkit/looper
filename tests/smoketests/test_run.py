@@ -9,7 +9,7 @@ from tests.conftest import *
 CMD_STRS = ["string", " --string", " --sjhsjd 212", "7867#$@#$cc@@"]
 
 
-class LooperBothRunsTests:
+class TestsLooperBothRuns:
     @pytest.mark.parametrize("cmd", ["run", "runp"])
     def test_looper_cfg_invalid(self, cmd):
         """Verify looper does not accept invalid cfg paths"""
@@ -75,7 +75,7 @@ class LooperBothRunsTests:
         os.remove(dotfile_path)
 
 
-class LooperRunBehaviorTests:
+class TestsLooperRunBehavior:
     def test_looper_run_basic(self, prep_temp_pep):
         """Verify looper runs in a basic case and return code is 0"""
         tp = prep_temp_pep
@@ -244,7 +244,7 @@ class LooperRunBehaviorTests:
         is_in_file(subs_list, arg, reverse=True)
 
 
-class LooperRunpBehaviorTests:
+class TestsLooperRunpBehavior:
     def test_looper_runp_basic(self, prep_temp_pep):
         """Verify looper runps in a basic case and return code is 0"""
         tp = prep_temp_pep
@@ -283,7 +283,7 @@ class LooperRunpBehaviorTests:
         is_in_file(subs_list, arg)
 
 
-class LooperRunPreSubmissionHooksTests:
+class TestsLooperRunPreSubmissionHooks:
     def test_looper_basic_plugin(self, prep_temp_pep):
         tp = prep_temp_pep
         stdout, stderr, rc = subp_exec(tp, "run")
@@ -334,7 +334,7 @@ class LooperRunPreSubmissionHooksTests:
         verify_filecount_in_dir(sd, "test.txt", 3)
 
 
-class LooperRunSubmissionScriptTests:
+class TestsLooperRunSubmissionScript:
     def test_looper_run_produces_submission_scripts(self, prep_temp_pep):
         tp = prep_temp_pep
         with open(tp, "r") as conf_file:
@@ -363,7 +363,7 @@ class LooperRunSubmissionScriptTests:
         verify_filecount_in_dir(sd, ".sub", 4)
 
 
-class LooperComputeTests:
+class TestsLooperCompute:
     @pytest.mark.parametrize("cmd", ["run", "runp"])
     def test_looper_respects_pkg_selection(self, prep_temp_pep, cmd):
         tp = prep_temp_pep
