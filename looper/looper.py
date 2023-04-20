@@ -40,7 +40,7 @@ from rich.table import Table
 from ubiquerg.cli_tools import query_yes_no
 from ubiquerg.collection import uniqify
 
-from . import __version__, build_parser
+from . import __version__, build_parser, validate_post_parse
 from .conductor import SubmissionConductor
 from .const import *
 from .exceptions import JobSubmissionException, MisconfigurationException
@@ -1031,6 +1031,12 @@ def main():
     parser, aux_parser = build_parser()
     aux_parser.suppress_defaults()
     args, remaining_args = parser.parse_known_args()
+    cli_use_errors = validate_post_parse(args)
+    if cli_use_errors:
+        parser.print_help(sys.stderr)
+        parser.error(
+            f"{len(cli_use_errors)} CLI use problem(s): {', '.join(cli_use_errors)}"
+        )
     if args.command is None:
         parser.print_help(sys.stderr)
         sys.exit(1)
