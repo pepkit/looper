@@ -456,14 +456,14 @@ def opt_attr_pair(name: str) -> Tuple[str, str]:
 def validate_post_parse(args: argparse.Namespace) -> List[str]:
     problems = []
     used_exclusives = [
-        f"--{attr}"
-        for attr in [
+        opt
+        for opt, attr in map(opt_attr_pair, [
             "skip",
             "limit",
             SAMPLE_EXCLUSION_OPTNAME,
             SAMPLE_INCLUSION_OPTNAME,
-        ]
-        if getattr(args, attr, None) is not None
+        ])
+        if getattr(args, attr, None)
     ]
     if len(used_exclusives) > 1:
         problems.append(
