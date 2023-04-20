@@ -19,6 +19,14 @@ OS = "output_schema.yaml"
 RES = "resources-{}.tsv"
 
 
+@pytest.fixture(scope="function")
+def dotfile_path():
+    path = os.path.join(os.getcwd(), LOOPER_DOTFILE_NAME)
+    yield path
+    if os.path.isfile(path):
+        os.remove(path)
+
+
 def get_outdir(pth):
     """
     Get output directory from a config file

@@ -60,9 +60,8 @@ class LooperBothRunsTests:
         assert_content_not_in_any_files(subs_list, "--unknown-arg")
 
     @pytest.mark.parametrize("cmd", ["run", "runp"])
-    def test_run_after_init(self, prep_temp_pep, cmd):
+    def test_run_after_init(self, prep_temp_pep, cmd, dotfile_path):
         tp = prep_temp_pep
-        dotfile_path = os.path.join(os.getcwd(), LOOPER_DOTFILE_NAME)
         stdout, stderr, rc = subp_exec(tp, "init")
         print_standard_stream(stderr)
         print_standard_stream(stdout)
@@ -72,7 +71,6 @@ class LooperBothRunsTests:
         print_standard_stream(stderr)
         print_standard_stream(stdout)
         assert rc == 0
-        os.remove(dotfile_path)
 
 
 class LooperRunBehaviorTests:
