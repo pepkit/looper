@@ -14,7 +14,7 @@ from divvy import ComputingConfiguration
 from eido import PathAttrNotFoundError, read_schema
 from jsonschema import ValidationError
 from pandas.core.common import flatten
-from peppy import CONFIG_KEY, OUTDIR_KEY, SAMPLE_NAME_ATTR
+from peppy import CONFIG_KEY, OUTDIR_KEY
 from peppy import Project as peppyProject
 from peppy.utils import make_abs_via_cfg
 from pipestat import PipestatError, PipestatManager
@@ -579,7 +579,7 @@ class Project(peppyProject):
         # imports in schemas. The output schemas can't have the import section,
         # hence it's safe to select the fist element after read_schema() call.
         for sample in self.samples:
-            sample_piface = self.get_sample_piface(sample[SAMPLE_NAME_ATTR])
+            sample_piface = self.get_sample_piface(sample[self.sample_table_index])
             if sample_piface:
                 paths = self.get_schemas(sample_piface, OUTPUT_SCHEMA_KEY)
                 for path in paths:
@@ -696,7 +696,7 @@ class Project(peppyProject):
                         continue
                     else:
                         samples_by_piface.setdefault(source, set())
-                        samples_by_piface[source].add(sample[SAMPLE_NAME_ATTR])
+                        samples_by_piface[source].add(sample[self.sample_table_index])
         for msg in msgs:
             _LOGGER.warning(msg)
         return samples_by_piface

@@ -542,7 +542,7 @@ class HTMLReportBuilder(object):
             template=self.create_status_html(status_tab, navbar, footer),
         )
         # Complete and close HTML file
-        columns = [SAMPLE_NAME_ATTR] + list(sample_stat_results.keys())
+        columns = [self.prj.sample_table_index] + list(sample_stat_results.keys())
         template_vars = dict(
             navbar=navbar,
             stats_file_path=stats_file_path,

@@ -447,7 +447,9 @@ class Runner(Executor):
         for sample in self.prj.samples[:upper_sample_bound]:
             pl_fails = []
             skip_reasons = []
-            sample_pifaces = self.prj.get_sample_piface(sample[SAMPLE_NAME_ATTR])
+            sample_pifaces = self.prj.get_sample_piface(
+                sample[self.prj.sample_table_index]
+            )
             if not sample_pifaces:
                 skip_reasons.append("No pipeline interfaces defined")
 
@@ -470,7 +472,7 @@ class Runner(Executor):
                         f"sample validation against {schema_file}"
                     )
 
-            processed_samples.add(sample[SAMPLE_NAME_ATTR])
+            processed_samples.add(sample[self.prj.sample_table_index])
 
             for sample_piface in sample_pifaces:
                 _LOGGER.info(
@@ -647,7 +649,7 @@ def _create_stats_summary(project, pipeline_name, project_level, counter):
         for sample in project.samples:
             sn = sample.sample_name
             _LOGGER.info(counter.show(sn, pipeline_name))
-            reported_stats = {SAMPLE_NAME_ATTR: sn}
+            reported_stats = {project.sample_table_index: sn}
             results = fetch_pipeline_results(
                 project=project,
                 pipeline_name=pipeline_name,
@@ -1034,6 +1036,8 @@ def main():
                 f"Read from dotfile ({dotfile_path()})."
             )
     if args.command == "init":
+        if args.piface == True:
+            sys.exit(int(not init_generic_pipeline()))
         sys.exit(int(not init_dotfile(dotfile_path(), args.config_file, args.force)))
     args = enrich_args_via_cfg(args, aux_parser)
 
