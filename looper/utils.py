@@ -474,8 +474,11 @@ class NatIntervalInclusive(object):
             raise NatIntervalException(
                 f"Parsed both lower and upper limit as empty from given arg: {s}"
             )
-        lo = 1 if lo == "" else int(lo)
-        hi = upper_bound if hi == "" else min(int(hi), upper_bound)
+        try:
+            lo = 1 if lo == "" else int(lo)
+            hi = upper_bound if hi == "" else min(int(hi), upper_bound)
+        except ValueError as e:
+            raise NatIntervalException(str(e))
         return cls(lo, hi)
 
 
@@ -520,5 +523,7 @@ def desired_samples_range_skipped(arg: str, num_samples: int) -> Iterable[int]:
         upper = range(intv.hi + 1, num_samples + 1)
         return itertools.chain(lower, upper)
     else:
+        if num_samples <= lower_bound:
+            return []
         intv = NatIntervalInclusive(lower_bound, num_samples)
         return intv.to_range()
