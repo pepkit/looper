@@ -70,6 +70,20 @@ class _StoreBoolActionType(argparse.Action):
         setattr(namespace, self.dest, self.const)
 
 
+MESSAGE_BY_SUBCOMMAND = {
+    "run": "Run or submit sample jobs.",
+    "rerun": "Resubmit sample jobs with failed flags.",
+    "runp": "Run or submit project jobs.",
+    "table": "Write summary stats table for project samples.",
+    "report": "Create browsable HTML report of project results.",
+    "destroy": "Remove output files of the project.",
+    "check": "Check flag status of current runs.",
+    "clean": "Run clean scripts of already processed jobs.",
+    "inspect": "Print information about a project.",
+    "init": "Initialize looper dotfile.",
+}
+
+
 def build_parser():
     """
     Building argument parser.
@@ -109,25 +123,12 @@ def build_parser():
             action="store_true",
             help="Turn on debug mode (default: %(default)s)",
         )
-        # Individual subcommands
-        msg_by_cmd = {
-            "run": "Run or submit sample jobs.",
-            "rerun": "Resubmit sample jobs with failed flags.",
-            "runp": "Run or submit project jobs.",
-            "table": "Write summary stats table for project samples.",
-            "report": "Create browsable HTML report of project results.",
-            "destroy": "Remove output files of the project.",
-            "check": "Check flag status of current runs.",
-            "clean": "Run clean scripts of already processed jobs.",
-            "inspect": "Print information about a project.",
-            "init": "Initialize looper dotfile.",
-        }
-        parser = logmuse.add_logging_options(parser)
 
+        parser = logmuse.add_logging_options(parser)
         subparsers = parser.add_subparsers(dest="command")
 
         def add_subparser(cmd):
-            message = msg_by_cmd[cmd]
+            message = MESSAGE_BY_SUBCOMMAND[cmd]
             return subparsers.add_parser(
                 cmd,
                 description=message,
@@ -454,18 +455,18 @@ def opt_attr_pair(name: str) -> Tuple[str, str]:
 
 def validate_post_parse(args: argparse.Namespace) -> List[str]:
     problems = []
-    if args.skip:
-        problems.extend(
-            f"--skip and {opt} are mutually exclusive."
-            for opt, attr in map(
-                opt_attr_pair,
-                [
-                    SAMPLE_SELECTION_ATTRIBUTE_OPTNAME,
-                    SAMPLE_EXCLUSION_OPTNAME,
-                    SAMPLE_INCLUSION_OPTNAME,
-                    "limit",
-                ],
-            )
-            if hasattr(args, att)
+    used_exclusives = [
+        f"--{attr}"
+        for attr in [
+            "skip",
+            "limit",
+            SAMPLE_EXCLUSION_OPTNAME,
+            SAMPLE_INCLUSION_OPTNAME,
+        ]
+        if hasattr(args, attr)
+    ]
+    if len(used_exclusives) > 1:
+        problems.append(
+            f"Used multiple mutually exclusive options: {', '.join(used_exclusives)}"
         )
     return problems
