@@ -127,7 +127,7 @@ def sample_folder(prj, sample):
         folder path.
     :return str: this Project's root folder for the given Sample
     """
-    return os.path.join(prj.results_folder, sample[SAMPLE_NAME_ATTR])
+    return os.path.join(prj.results_folder, sample[prj.sample_table_index])
 
 
 def get_file_for_project(prj, pipeline_name, appendix=None, directory=None):
