@@ -1,9 +1,9 @@
+from contextlib import contextmanager
 import os
 import subprocess
+from shutil import copyfile as cpf, rmtree
 import tempfile
-from contextlib import contextmanager
-from shutil import copyfile as cpf
-from shutil import rmtree
+from typing import *
 
 import pytest
 from peppy.const import *
@@ -31,22 +31,34 @@ def get_outdir(pth):
     return config_data[LOOPER_KEY][OUTDIR_KEY]
 
 
-def is_in_file(fs, s, reverse=False):
-    """
-    Verify if string is in files content
-
-    :param str | Iterable[str] fs: list of files
-    :param str s: string to look for
-    :param bool reverse: whether the reverse should be checked
-    """
+def _assert_content_in_files(fs: Union[str, Iterable[str]], query: str, negate: bool):
     if isinstance(fs, str):
         fs = [fs]
+    check = (lambda doc: query not in doc) if negate else (lambda doc: query in doc)
     for f in fs:
         with open(f, "r") as fh:
-            if reverse:
-                assert s not in fh.read()
-            else:
-                assert s in fh.read()
+            contents = fh.read()
+        assert check(contents)
+
+
+def assert_content_in_all_files(fs: Union[str, Iterable[str]], query: str):
+    """
+    Verify that string is in files content.
+
+    :param str | Iterable[str] fs: list of files
+    :param str query: string to look for
+    """
+    _assert_content_in_files(fs, query, negate=False)
+
+
+def assert_content_not_in_any_files(fs: Union[str, Iterable[str]], query: str):
+    """
+    Verify that string is not in files' content.
+
+    :param str | Iterable[str] fs: list of files
+    :param str query: string to look for
+    """
+    _assert_content_in_files(fs, query, negate=True)
 
 
 def subp_exec(pth=None, cmd=None, appendix=list(), dry=True):

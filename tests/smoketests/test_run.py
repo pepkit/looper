@@ -47,7 +47,7 @@ class LooperBothRunsTests:
         print(stderr)
         assert rc == 0
         subs_list = [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
-        is_in_file(subs_list, arg[1])
+        assert_content_in_all_files(subs_list, arg[1])
 
     @pytest.mark.parametrize("cmd", ["run", "runp"])
     def test_unrecognized_args_not_passing(self, prep_temp_pep, cmd):
@@ -57,7 +57,7 @@ class LooperBothRunsTests:
         print(stderr)
         assert rc == 0
         subs_list = [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
-        is_in_file(subs_list, "--unknown-arg", reverse=True)
+        assert_content_not_in_any_files(subs_list, "--unknown-arg")
 
     @pytest.mark.parametrize("cmd", ["run", "runp"])
     def test_run_after_init(self, prep_temp_pep, cmd):
@@ -67,7 +67,7 @@ class LooperBothRunsTests:
         print(stderr)
         print(stdout)
         assert rc == 0
-        is_in_file(dotfile_path, tp)
+        assert_content_in_all_files(dotfile_path, tp)
         stdout, stderr, rc = subp_exec(cmd=cmd)
         print(stderr)
         print(stdout)
@@ -222,7 +222,7 @@ class LooperRunBehaviorTests:
         print(stderr)
         assert rc == 0
         subs_list = [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
-        is_in_file(subs_list, arg)
+        assert_content_in_all_files(subs_list, arg)
 
     @pytest.mark.parametrize("arg", CMD_STRS)
     def test_cmd_extra_override_sample(self, prep_temp_pep, arg):
@@ -241,7 +241,7 @@ class LooperRunBehaviorTests:
         print(stderr)
         assert rc == 0
         subs_list = [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
-        is_in_file(subs_list, arg, reverse=True)
+        assert_content_not_in_any_files(subs_list, arg)
 
 
 class LooperRunpBehaviorTests:
@@ -280,7 +280,7 @@ class LooperRunpBehaviorTests:
         print(stderr)
         assert rc == 0
         subs_list = [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
-        is_in_file(subs_list, arg)
+        assert_content_in_all_files(subs_list, arg)
 
 
 class LooperRunPreSubmissionHooksTests:
@@ -372,7 +372,7 @@ class LooperComputeTests:
         print(stderr)
         assert rc == 0
         subs_list = [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
-        is_in_file(subs_list, "#SBATCH", reverse=True)
+        assert_content_not_in_any_files(subs_list, "#SBATCH")
 
     @pytest.mark.parametrize("cmd", ["run", "runp"])
     def test_looper_uses_cli_compute_options_spec(self, prep_temp_pep, cmd):
@@ -384,7 +384,7 @@ class LooperComputeTests:
         print(stderr)
         assert rc == 0
         subs_list = [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
-        is_in_file(subs_list, "#SBATCH --mem='12345'")
+        assert_content_in_all_files(subs_list, "#SBATCH --mem='12345'")
 
     @pytest.mark.parametrize("cmd", ["run", "runp"])
     def test_cli_yaml_settings_general(self, prep_temp_pep, cmd):
@@ -418,7 +418,7 @@ class LooperComputeTests:
         assert rc == 0
         sd = os.path.join(get_outdir(tp), "submission")
         subs_list = [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
-        is_in_file(subs_list, "testin_mem")
+        assert_content_in_all_files(subs_list, "testin_mem")
 
     @pytest.mark.parametrize("cmd", ["run", "runp"])
     def test_cli_compute_overwrites_yaml_settings_spec(self, prep_temp_pep, cmd):
@@ -436,4 +436,4 @@ class LooperComputeTests:
         assert rc == 0
         sd = os.path.join(get_outdir(tp), "submission")
         subs_list = [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
-        is_in_file(subs_list, "testin_mem", reverse=True)
+        assert_content_not_in_any_files(subs_list, "testin_mem")
