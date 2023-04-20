@@ -314,14 +314,13 @@ def _get_subcommand_args(parser_args):
 
 def init_generic_pipeline():
     # check for pipeline folder
-
     try:
         os.makedirs("pipeline")
     except FileExistsError:
         print("Pipeline folder already exists.")
         pass
 
-    # Destination one level down from CWD in pipeline folder\
+    # Destination one level down from CWD in pipeline folder
     LOOPER_GENERIC_PIPELINE = "generic_pipeline_interface.yaml"
     dest_file = os.path.join(os.getcwd(), "pipeline", LOOPER_GENERIC_PIPELINE)
 
@@ -336,8 +335,11 @@ def init_generic_pipeline():
     yaml_body = line1 + line2 + line3 + line4 + line5 + line6 + line7
 
     # Write file
-    with open(dest_file, mode="w") as file:
-        file.write(str(yaml_body))
+    if not os.path.exists(dest_file):
+        with open(dest_file, mode="w") as file:
+            file.write(str(yaml_body))
+    else:
+        print("Generic pipeline interface file already exists. Skipping creation.")
 
     return True
 
