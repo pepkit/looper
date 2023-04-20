@@ -270,16 +270,21 @@ class Cleaner(Executor):
         return self(args, preview_flag=False)
 
 
-def compute_sample_index(args: argparse.Namespace, num_samples: int) -> Iterable[int]:
+def select_samples(prj: Project, args: argparse.Namespace) -> Iterable[Any]:
+    """Use CLI limit/skip arguments to select subset of project's samples."""
+    # TODO: get proper element type for signature.
+    num_samples = len(prj.samples)
     if args.limit is None and args.skip is None:
-        return range(1, num_samples + 1)
+        index = range(1, num_samples + 1)
     elif args.skip is not None:
-        return desired_samples_range_skipped(args.skip, num_samples)
+        index = desired_samples_range_skipped(args.skip, num_samples)
     elif args.limit is not None:
-        return desired_samples_range_limited(args.limit, num_samples)
-    raise argparse.ArgumentError(
-        "Both --limit and --skip are in use, but they should be mutually exclusive."
-    )
+        index = desired_samples_range_limited(args.limit, num_samples)
+    else:
+        raise argparse.ArgumentError(
+            "Both --limit and --skip are in use, but they should be mutually exclusive."
+        )
+    return (prj.samples[i - 1] for i in index)
 
 
 class Destroyer(Executor):
@@ -292,13 +297,10 @@ class Destroyer(Executor):
         :param argparse.Namespace args: command-line options and arguments
         :param bool preview_flag: whether to halt before actually removing files
         """
-        num_samples = len(self.prj.samples)
-        sel_range = compute_sample_index(args=args, num_samples=num_samples)
-        desired_samples = [self.prj.samples[i - 1] for i in sel_range]
 
         _LOGGER.info("Removing results:")
-        # for sample in self.prj.samples:
-        for sample in desired_samples:
+
+        for sample in select_samples(prj=self.prj, args=args):
             _LOGGER.info(self.counter.show(sample.sample_name))
             sample_output_folder = sample_folder(self.prj, sample)
             if preview_flag:
@@ -423,12 +425,6 @@ class Runner(Executor):
         # Determine number of samples eligible for processing.
         num_samples = len(self.prj.samples)
 
-        # Need to check if user entered some sort of range.
-        # arg.limit will be a string at this point
-
-        desired_range = compute_sample_index(args=args, num_samples=num_samples)
-        desired_samples = [self.prj.samples[i - 1] for i in desired_range]
-
         num_commands_possible = 0
         failed_submission_scripts = []
 
@@ -458,7 +454,7 @@ class Runner(Executor):
 
         _LOGGER.info(f"Pipestat compatible: {self.prj.pipestat_configured_project}")
 
-        for sample in desired_samples:
+        for sample in select_samples(prj=self.prj, args=args):
             pl_fails = []
             skip_reasons = []
             sample_pifaces = self.prj.get_sample_piface(sample[SAMPLE_NAME_ATTR])
