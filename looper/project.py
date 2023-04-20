@@ -20,8 +20,6 @@ from peppy.utils import make_abs_via_cfg
 from pipestat import PipestatError, PipestatManager
 from ubiquerg import expandpath, is_command_callable
 
-from .const import *
-from .const import SAMPLE_PL_ARG
 from .exceptions import *
 from .pipeline_interface import PipelineInterface
 from .processed_project import populate_project_paths, populate_sample_paths
@@ -98,13 +96,21 @@ class Project(peppyProject):
         compute settings.
     """
 
-    def __init__(self, cfg=None, amendments=None, divcfg_path=None, runp=False, **kwargs):
+    def __init__(
+        self, cfg=None, amendments=None, divcfg_path=None, runp=False, **kwargs
+    ):
         if cfg is None and "project_dict" in kwargs.keys():
             # Init project from raw pep (dict)
             super(Project, self).__init__(cfg=None, amendments=amendments)
             prj_dict = kwargs.get("project_dict")
             if kwargs.get(SAMPLE_PL_ARG):
-                prj_dict = create_sample_pipeline_interface(prj_dict, kwargs.get(SAMPLE_PL_ARG))
+                prj_dict = create_sample_pipeline_interface(
+                    prj_dict, kwargs.get(SAMPLE_PL_ARG)
+                )
+            elif kwargs.get(PROJECT_PL_ARG):
+                prj_dict = create_project_pipeline_interface(
+                    prj_dict, kwargs.get(PROJECT_PL_ARG)
+                )
             self.from_dict(prj_dict)
         else:
             super(Project, self).__init__(cfg=cfg, amendments=amendments)

@@ -334,13 +334,24 @@ def build_parser():
             )
             # help="Path to the looper config file"
             subparser.add_argument(
-                "-L",
-                "--pipeline-config",
-                dest="pipeline_config",
+                "-S",
+                "--pipeline-sample-config",
+                dest=SAMPLE_PL_ARG,
                 metavar="YAML",
                 default=None,
+                nargs="+",
                 type=str,
-                help="Path to looper config file"
+                help="Path to looper sample config file",
+            )
+            subparser.add_argument(
+                "-P",
+                "--pipeline-project-config",
+                dest=PROJECT_PL_ARG,
+                metavar="YAML",
+                default=None,
+                nargs="+",
+                type=str,
+                help="Path to looper project config file",
             )
             # help="Path to the output directory"
             subparser.add_argument(

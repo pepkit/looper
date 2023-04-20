@@ -12,7 +12,7 @@ import yaml
 from peppy import Project as peppyProject
 from peppy.const import *
 from ubiquerg import convert_value, expandpath, parse_registry_path
-from pephubclient.constants import  RegistryPath
+from pephubclient.constants import RegistryPath
 from pydantic.error_wrappers import ValidationError
 
 from .const import *
@@ -435,15 +435,35 @@ def is_registry_path(input_string: str) -> bool:
         return False
 
 
-def create_sample_pipeline_interface(prj_dict: dict, sample_pipeline_config: Union[str, list]) -> dict:
+def create_sample_pipeline_interface(
+    prj_dict: dict, sample_pipeline_config: Union[str, list]
+) -> dict:
     """
     Add sample pipeline interface to the project
     :param dict prj_dict: raw peppy dict
-    :param str|list sample_pipeline_config: looper sample modifiers (path to )
+    :param str|list sample_pipeline_config: looper sample modifiers (path to yml looper config files)
+    :return dict: modified raw project dict
     """
     if "sample_modifiers" not in prj_dict["_config"]:
         prj_dict["_config"]["sample_modifiers"] = {}
     if "append" not in prj_dict["_config"]["sample_modifiers"]:
         prj_dict["_config"]["sample_modifiers"]["append"] = {}
-    prj_dict["_config"]["sample_modifiers"]["append"]["pipeline_interfaces"] = sample_pipeline_config
+    prj_dict["_config"]["sample_modifiers"]["append"][
+        "pipeline_interfaces"
+    ] = sample_pipeline_config
+    return prj_dict
+
+
+def create_project_pipeline_interface(
+    prj_dict: dict, project_pipeline_config: Union[str, list]
+) -> dict:
+    """
+    Add project pipeline interface to the project
+    :param dict prj_dict: raw peppy dict
+    :param str|list project_pipeline_config: looper project modifiers (path to yml looper config files)
+    :return dict: modified raw porject dict
+    """
+    if "looper" not in prj_dict["_config"]:
+        prj_dict["_config"]["looper"] = {}
+    prj_dict["_config"]["looper"]["pipeline_interfaces"] = project_pipeline_config
     return prj_dict

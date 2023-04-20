@@ -7,6 +7,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 - support for [pipestat](http://pipestat.databio.org).
+- support of PEPhub projects
 
 ## [1.3.2] -- 2022-02-09
 

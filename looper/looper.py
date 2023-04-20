@@ -1074,13 +1074,19 @@ def main():
 
     # Initialize project
     if is_registry_path(args.config_file):
-        if args.pipeline_config and args.output_dir:
+        if args.output_dir and (
+            args.pipeline_sample_config or args.pipeline_project_config
+        ):
             p = Project(
                 amendments=args.amend,
                 divcfg_path=divcfg,
                 runp=args.command == "runp",
-                project_dict=PEPHubClient()._load_raw_pep(registry_path=args.config_file),
-                **{attr: getattr(args, attr) for attr in CLI_PROJ_ATTRS if attr in args},
+                project_dict=PEPHubClient()._load_raw_pep(
+                    registry_path=args.config_file
+                ),
+                **{
+                    attr: getattr(args, attr) for attr in CLI_PROJ_ATTRS if attr in args
+                },
             )
         else:
             raise MisconfigurationException(
@@ -1093,7 +1099,9 @@ def main():
                 amendments=args.amend,
                 divcfg_path=divcfg,
                 runp=args.command == "runp",
-                **{attr: getattr(args, attr) for attr in CLI_PROJ_ATTRS if attr in args},
+                **{
+                    attr: getattr(args, attr) for attr in CLI_PROJ_ATTRS if attr in args
+                },
             )
         except yaml.parser.ParserError as e:
             _LOGGER.error("Project config parse failed -- {}".format(e))

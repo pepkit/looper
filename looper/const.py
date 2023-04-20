@@ -69,6 +69,8 @@ __all__ = [
     "PIPESTAT_CONFIG_ATTR_KEY",
     "PIPESTAT_RESULTS_FILE_ATTR_KEY",
     "LOOPER_GENERIC_PIPELINE",
+    "PROJECT_PL_ARG",
+    "SAMPLE_PL_ARG",
 ]
 
 FLAGS = ["completed", "running", "failed", "waiting", "partial"]
@@ -170,7 +172,8 @@ POSITIONAL = ["config_file", "command"]
 SELECTED_COMPUTE_PKG = "package"
 EXTRA_KEY = "_cli_extra"
 ALL_SUBCMD_KEY = "all"
-SAMPLE_PL_ARG = "pipeline_config"
+SAMPLE_PL_ARG = "pipeline_sample_config"
+PROJECT_PL_ARG = "pipeline_project_config"
 DEFAULT_CFG_PATH = os.path.join(os.getcwd(), LOOPER_DOTFILE_NAME)
 CLI_PROJ_ATTRS = [
     OUTDIR_KEY,
@@ -183,6 +186,7 @@ CLI_PROJ_ATTRS = [
     DRY_RUN_KEY,
     FILE_CHECKS_KEY,
     SAMPLE_PL_ARG,
+    PROJECT_PL_ARG,
 ]
 
 # resource package TSV-related consts
