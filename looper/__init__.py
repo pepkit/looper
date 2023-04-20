@@ -457,12 +457,15 @@ def validate_post_parse(args: argparse.Namespace) -> List[str]:
     problems = []
     used_exclusives = [
         opt
-        for opt, attr in map(opt_attr_pair, [
-            "skip",
-            "limit",
-            SAMPLE_EXCLUSION_OPTNAME,
-            SAMPLE_INCLUSION_OPTNAME,
-        ])
+        for opt, attr in map(
+            opt_attr_pair,
+            [
+                "skip",
+                "limit",
+                SAMPLE_EXCLUSION_OPTNAME,
+                SAMPLE_INCLUSION_OPTNAME,
+            ],
+        )
         if getattr(args, attr, None)
     ]
     if len(used_exclusives) > 1:

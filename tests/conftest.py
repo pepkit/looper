@@ -70,7 +70,9 @@ def print_standard_stream(text: Union[str, bytes]) -> None:
         print(line)
 
 
-def subp_exec(pth=None, cmd=None, appendix=list(), dry=True) -> Tuple[bytes, bytes, int]:
+def subp_exec(
+    pth=None, cmd=None, appendix=list(), dry=True
+) -> Tuple[bytes, bytes, int]:
     """
 
     :param str pth: config path
