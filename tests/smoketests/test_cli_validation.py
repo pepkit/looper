@@ -1,6 +1,8 @@
 """Tests for the validation of looper CLI use"""
 
 import argparse
+from typing import *
+
 import pytest
 from looper import (
     MESSAGE_BY_SUBCOMMAND,
@@ -8,7 +10,7 @@ from looper import (
     SAMPLE_EXCLUSION_OPTNAME,
     SAMPLE_INCLUSION_OPTNAME,
 )
-from tests.conftest import subp_exec
+from tests.conftest import print_standard_stream, subp_exec
 
 
 SUBCOMMANDS_WHICH_SUPPORT_SKIP_XOR_LIMIT = ["run", "destroy"]
@@ -67,14 +69,15 @@ def test_limit_and_skip_mutual_exclusivity(
     dry_run,
     extra_args,
 ):
-    _, stderr, rc = subp_exec(
+    stdout, stderr, rc = subp_exec(
         pth=prep_temp_pep,
         cmd=arbitrary_subcommand,
         appendix=extra_args,
         dry=dry_run,
     )
+    print_standard_stream(stderr)
+    print_standard_stream(stdout)
     assert rc == 2
     # Message is to stderr per the argparse docs:
     # https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.error
-    print(stderr)
-    assert "Used multiple mutually exclusive options" in stderr
+    assert "Used multiple mutually exclusive options" in str(stderr)

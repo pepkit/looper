@@ -61,14 +61,23 @@ def assert_content_not_in_any_files(fs: Union[str, Iterable[str]], query: str):
     _assert_content_in_files(fs, query, negate=True)
 
 
-def subp_exec(pth=None, cmd=None, appendix=list(), dry=True):
+def print_standard_stream(text: Union[str, bytes]) -> None:
+    if isinstance(text, bytes):
+        text = text.decode("utf-8")
+    if not isinstance(text, str):
+        raise TypeError(f"Stream to print is neither str nor bytes, but {type(text)}")
+    for line in text.split("\n"):
+        print(line)
+
+
+def subp_exec(pth=None, cmd=None, appendix=list(), dry=True) -> Tuple[bytes, bytes, int]:
     """
 
     :param str pth: config path
     :param str cmd: looper subcommand
     :param Iterable[str] appendix: other args to pass to the cmd
     :param bool dry: whether to append dry run flag
-    :return:
+    :return stdout, stderr, and return code
     """
     x = ["looper", cmd, "-d" if dry else ""]
     if pth:
@@ -76,7 +85,7 @@ def subp_exec(pth=None, cmd=None, appendix=list(), dry=True):
     x.extend(appendix)
     proc = subprocess.Popen(x, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
     stdout, stderr = proc.communicate()
-    return str(stdout), str(stderr), proc.returncode
+    return stdout, stderr, proc.returncode
 
 
 def verify_filecount_in_dir(dirpath, pattern, count):
