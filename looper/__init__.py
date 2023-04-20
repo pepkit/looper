@@ -14,6 +14,7 @@ logmuse.init_logger("looper")
 import argparse
 import logging
 import os
+from typing import *
 
 from divvy import DEFAULT_COMPUTE_RESOURCES_NAME
 from divvy import NEW_COMPUTE_KEY as COMPUTE_KEY
@@ -40,6 +41,11 @@ from .project import Project
 __all__ = ["Project", "PipelineInterface", "SubmissionConductor"]
 
 
+SAMPLE_SELECTION_ATTRIBUTE_OPTNAME = "sel-attr"
+SAMPLE_EXCLUSION_OPTNAME = "sel-excl"
+SAMPLE_INCLUSION_OPTNAME = "sel-incl"
+
+
 class _StoreBoolActionType(argparse.Action):
     """
     Enables the storage of a boolean const and custom type definition needed
@@ -62,6 +68,20 @@ class _StoreBoolActionType(argparse.Action):
 
     def __call__(self, parser, namespace, values, option_string=None):
         setattr(namespace, self.dest, self.const)
+
+
+MESSAGE_BY_SUBCOMMAND = {
+    "run": "Run or submit sample jobs.",
+    "rerun": "Resubmit sample jobs with failed flags.",
+    "runp": "Run or submit project jobs.",
+    "table": "Write summary stats table for project samples.",
+    "report": "Create browsable HTML report of project results.",
+    "destroy": "Remove output files of the project.",
+    "check": "Check flag status of current runs.",
+    "clean": "Run clean scripts of already processed jobs.",
+    "inspect": "Print information about a project.",
+    "init": "Initialize looper dotfile.",
+}
 
 
 def build_parser():
@@ -103,25 +123,12 @@ def build_parser():
             action="store_true",
             help="Turn on debug mode (default: %(default)s)",
         )
-        # Individual subcommands
-        msg_by_cmd = {
-            "run": "Run or submit sample jobs.",
-            "rerun": "Resubmit sample jobs with failed flags.",
-            "runp": "Run or submit project jobs.",
-            "table": "Write summary stats table for project samples.",
-            "report": "Create browsable HTML report of project results.",
-            "destroy": "Remove output files of the project.",
-            "check": "Check flag status of current runs.",
-            "clean": "Run clean scripts of already processed jobs.",
-            "inspect": "Print information about a project.",
-            "init": "Initialize looper dotfile.",
-        }
-        parser = logmuse.add_logging_options(parser)
 
+        parser = logmuse.add_logging_options(parser)
         subparsers = parser.add_subparsers(dest="command")
 
         def add_subparser(cmd):
-            message = msg_by_cmd[cmd]
+            message = MESSAGE_BY_SUBCOMMAND[cmd]
             return subparsers.add_parser(
                 cmd,
                 description=message,
@@ -189,6 +196,14 @@ def build_parser():
                 metavar="N",
                 type=html_range(min_val=1, max_val="num_samples", value="num_samples"),
                 help="Limit to n samples",
+            )
+            subparser.add_argument(
+                "-sk",
+                "--skip",
+                default=None,
+                metavar="N",
+                type=html_range(min_val=1, max_val="num_samples", value="num_samples"),
+                help="Skip n samples",
             )
             subparser.add_argument(
                 "-x",
@@ -297,6 +312,21 @@ def build_parser():
                 help="Provide upfront confirmation of destruction intent, "
                 "to skip console query.  Default=False",
             )
+            subparser.add_argument(
+                "-l",
+                "--limit",
+                default=None,
+                metavar="N",
+                type=html_range(min_val=1, max_val="num_samples", value="num_samples"),
+                help="Limit to n samples",
+            )
+            subparser.add_argument(
+                "--skip",
+                default=None,
+                metavar="N",
+                type=html_range(min_val=1, max_val="num_samples", value="num_samples"),
+                help="Skip samples by numerical index",
+            )
 
         init_subparser.add_argument(
             "config_file", help="Project configuration " "file (YAML)"
@@ -379,20 +409,20 @@ def build_parser():
                 help="Sample attribute specifying toggle. Default: toggle",
             )
             fetch_samples_group.add_argument(
-                "--sel-attr",
+                f"--{SAMPLE_SELECTION_ATTRIBUTE_OPTNAME}",
                 default="toggle",
                 metavar="ATTR",
                 help="Attribute for sample exclusion OR inclusion",
             )
             protocols = fetch_samples_group.add_mutually_exclusive_group()
             protocols.add_argument(
-                "--sel-excl",
+                f"--{SAMPLE_EXCLUSION_OPTNAME}",
                 nargs="*",
                 metavar="E",
                 help="Exclude samples with these values",
             )
             protocols.add_argument(
-                "--sel-incl",
+                f"--{SAMPLE_INCLUSION_OPTNAME}",
                 nargs="*",
                 metavar="I",
                 help="Include only samples with these values",
@@ -425,3 +455,29 @@ def build_parser():
         )
         result.append(parser)
     return result
+
+
+def opt_attr_pair(name: str) -> Tuple[str, str]:
+    return f"--{name}", name.replace("-", "_")
+
+
+def validate_post_parse(args: argparse.Namespace) -> List[str]:
+    problems = []
+    used_exclusives = [
+        opt
+        for opt, attr in map(
+            opt_attr_pair,
+            [
+                "skip",
+                "limit",
+                SAMPLE_EXCLUSION_OPTNAME,
+                SAMPLE_INCLUSION_OPTNAME,
+            ],
+        )
+        if getattr(args, attr, None)
+    ]
+    if len(used_exclusives) > 1:
+        problems.append(
+            f"Used multiple mutually exclusive options: {', '.join(used_exclusives)}"
+        )
+    return problems

@@ -10,6 +10,7 @@ import logging
 import os
 import subprocess
 import sys
+from typing import *
 
 if sys.version_info < (3, 3):
     from collections import Mapping
@@ -39,7 +40,7 @@ from rich.table import Table
 from ubiquerg.cli_tools import query_yes_no
 from ubiquerg.collection import uniqify
 
-from . import __version__, build_parser
+from . import __version__, build_parser, validate_post_parse
 from .conductor import SubmissionConductor
 from .const import *
 from .exceptions import JobSubmissionException, MisconfigurationException
@@ -269,6 +270,23 @@ class Cleaner(Executor):
         return self(args, preview_flag=False)
 
 
+def select_samples(prj: Project, args: argparse.Namespace) -> Iterable[Any]:
+    """Use CLI limit/skip arguments to select subset of project's samples."""
+    # TODO: get proper element type for signature.
+    num_samples = len(prj.samples)
+    if args.limit is None and args.skip is None:
+        index = range(1, num_samples + 1)
+    elif args.skip is not None:
+        index = desired_samples_range_skipped(args.skip, num_samples)
+    elif args.limit is not None:
+        index = desired_samples_range_limited(args.limit, num_samples)
+    else:
+        raise argparse.ArgumentError(
+            "Both --limit and --skip are in use, but they should be mutually exclusive."
+        )
+    return (prj.samples[i - 1] for i in index)
+
+
 class Destroyer(Executor):
     """Destroyer of files and folders associated with Project's Samples"""
 
@@ -281,7 +299,8 @@ class Destroyer(Executor):
         """
 
         _LOGGER.info("Removing results:")
-        for sample in self.prj.samples:
+
+        for sample in select_samples(prj=self.prj, args=args):
             _LOGGER.info(self.counter.show(sample.sample_name))
             sample_output_folder = sample_folder(self.prj, sample)
             if preview_flag:
@@ -405,15 +424,6 @@ class Runner(Executor):
 
         # Determine number of samples eligible for processing.
         num_samples = len(self.prj.samples)
-        if args.limit is None:
-            upper_sample_bound = num_samples
-        elif args.limit < 0:
-            raise ValueError("Invalid number of samples to run: {}".format(args.limit))
-        else:
-            upper_sample_bound = min(args.limit, num_samples)
-        _LOGGER.debug(
-            "Limiting to {} of {} samples".format(upper_sample_bound, num_samples)
-        )
 
         num_commands_possible = 0
         failed_submission_scripts = []
@@ -443,7 +453,8 @@ class Runner(Executor):
             submission_conductors[piface.pipe_iface_file] = conductor
 
         _LOGGER.info(f"Pipestat compatible: {self.prj.pipestat_configured_project}")
-        for sample in self.prj.samples[:upper_sample_bound]:
+
+        for sample in select_samples(prj=self.prj, args=args):
             pl_fails = []
             skip_reasons = []
             sample_pifaces = self.prj.get_sample_piface(
@@ -1018,6 +1029,12 @@ def main():
     parser, aux_parser = build_parser()
     aux_parser.suppress_defaults()
     args, remaining_args = parser.parse_known_args()
+    cli_use_errors = validate_post_parse(args)
+    if cli_use_errors:
+        parser.print_help(sys.stderr)
+        parser.error(
+            f"{len(cli_use_errors)} CLI use problem(s): {', '.join(cli_use_errors)}"
+        )
     if args.command is None:
         parser.print_help(sys.stderr)
         sys.exit(1)
