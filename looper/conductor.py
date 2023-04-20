@@ -13,6 +13,7 @@ from attmap import AttMap
 from eido import read_schema, validate_inputs
 from eido.const import INPUT_FILE_SIZE_KEY, MISSING_KEY
 from jinja2.exceptions import UndefinedError
+
 from peppy.const import CONFIG_KEY, SAMPLE_NAME_ATTR, SAMPLE_YAML_EXT
 from peppy.exceptions import RemoteYAMLError
 from pipestat import PipestatError
@@ -464,7 +465,7 @@ class SubmissionConductor(object):
             if not self.collate:
                 for s in self._pool:
                     schemas = self.prj.get_schemas(
-                        self.prj.get_sample_piface(s[SAMPLE_NAME_ATTR]),
+                        self.prj.get_sample_piface(s[self.prj.sample_table_index]),
                         OUTPUT_SCHEMA_KEY,
                     )
 
