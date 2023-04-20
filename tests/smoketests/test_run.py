@@ -85,7 +85,7 @@ class LooperRunBehaviorTests:
         tp = prep_temp_pep
         stdout, stderr, rc = subp_exec(tp, "run")
         print_standard_stream(stderr)
-        assert "Commands submitted: 6 of 6" in stderr
+        assert "Commands submitted: 6 of 6" in str(stderr)
 
     def test_looper_single_pipeline(self, prep_temp_pep):
         tp = prep_temp_pep
@@ -100,7 +100,7 @@ class LooperRunBehaviorTests:
         stdout, stderr, rc = subp_exec(tp, "run")
         print_standard_stream(stderr)
         assert rc == 0
-        assert "Commands submitted: 6 of 6" not in stderr
+        assert "Commands submitted: 6 of 6" not in str(stderr)
 
     def test_looper_cli_pipeline(self, prep_temp_pep):
         """CLI-specified pipelines overwrite ones from config"""
@@ -109,7 +109,7 @@ class LooperRunBehaviorTests:
         stdout, stderr, rc = subp_exec(tp, "run", ["--pipeline-interfaces", pi_pth])
         print_standard_stream(stderr)
         assert rc == 0
-        assert "Commands submitted: 3 of 3" not in stdout
+        assert "Commands submitted: 3 of 3" not in str(stdout)
 
     def test_looper_no_pipeline(self, prep_temp_pep):
         """
@@ -122,7 +122,7 @@ class LooperRunBehaviorTests:
         stdout, stderr, rc = subp_exec(tp, "run")
         print_standard_stream(stderr)
         assert rc == 0
-        assert "Jobs submitted: 0" in stderr
+        assert "Jobs submitted: 0" in str(stderr)
         assert "No pipeline interfaces defined"
 
     def test_looper_pipeline_not_found(self, prep_temp_pep):
@@ -137,7 +137,7 @@ class LooperRunBehaviorTests:
         stdout, stderr, rc = subp_exec(tp, "run")
         print_standard_stream(stderr)
         assert rc == 0
-        assert "Jobs submitted: 0" in stderr
+        assert "Jobs submitted: 0" in str(stderr)
         assert "Ignoring invalid pipeline interface source"
 
     def test_looper_pipeline_invalid(self, prep_temp_pep):
@@ -159,7 +159,7 @@ class LooperRunBehaviorTests:
         stdout, stderr, rc = subp_exec(tp, "run")
         print_standard_stream(stderr)
         assert rc == 0
-        assert "Jobs submitted: 0" in stderr
+        assert "Jobs submitted: 0" in str(stderr)
         assert "Ignoring invalid pipeline interface source"
         assert "'pipeline_name' is a required property"
 
@@ -173,7 +173,7 @@ class LooperRunBehaviorTests:
         stdout, stderr, rc = subp_exec(tp, "run")
         print_standard_stream(stderr)
         assert rc == 0
-        assert "Jobs submitted: 0" in stderr
+        assert "Jobs submitted: 0" in str(stderr)
 
     def test_looper_sample_name_whitespace(self, prep_temp_pep):
         """
@@ -192,7 +192,7 @@ class LooperRunBehaviorTests:
         print_standard_stream(stderr)
         assert rc == 0
         expected_prefix = "Short-circuiting due to validation error"
-        assert expected_prefix in stderr
+        assert expected_prefix in str(stderr)
 
     def test_looper_toggle(self, prep_temp_pep):
         """
@@ -204,7 +204,7 @@ class LooperRunBehaviorTests:
         stdout, stderr, rc = subp_exec(tp, "run")
         print_standard_stream(stderr)
         assert rc == 0
-        assert "Jobs submitted: 0" in stderr
+        assert "Jobs submitted: 0" in str(stderr)
 
     @pytest.mark.parametrize("arg", CMD_STRS)
     def test_cmd_extra_sample(self, prep_temp_pep, arg):
@@ -253,7 +253,7 @@ class LooperRunpBehaviorTests:
     def test_looper_multi_pipeline(self, prep_temp_pep):
         tp = prep_temp_pep
         stdout, stderr, rc = subp_exec(tp, "runp")
-        assert "Jobs submitted: 2" in stderr
+        assert "Jobs submitted: 2" in str(stderr)
 
     def test_looper_single_pipeline(self, prep_temp_pep):
         tp = prep_temp_pep
@@ -265,8 +265,8 @@ class LooperRunpBehaviorTests:
         stdout, stderr, rc = subp_exec(tp, "runp")
         print_standard_stream(stderr)
         assert rc == 0
-        assert "Jobs submitted: 2" not in stderr
-        assert "Jobs submitted: 1" in stderr
+        assert "Jobs submitted: 2" not in str(stderr)
+        assert "Jobs submitted: 1" in str(stderr)
 
     @pytest.mark.parametrize("arg", CMD_STRS)
     def test_cmd_extra_project(self, prep_temp_pep, arg):
