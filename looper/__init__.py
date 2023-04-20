@@ -463,7 +463,7 @@ def validate_post_parse(args: argparse.Namespace) -> List[str]:
             SAMPLE_EXCLUSION_OPTNAME,
             SAMPLE_INCLUSION_OPTNAME,
         ]
-        if hasattr(args, attr)
+        if getattr(args, attr, None) is not None
     ]
     if len(used_exclusives) > 1:
         problems.append(
