@@ -10,11 +10,6 @@ from looper.utils import (
 )
 
 
-def pytest_generate_tests(metafunc):
-    if "legit_delim" in metafunc.fixturenames:
-        metafunc.parametrize("legit_delim", [":", "-"])
-
-
 @pytest.mark.parametrize(
     "arg_and_limit",
     [
