@@ -68,6 +68,7 @@ __all__ = [
     "PIPESTAT_NAMESPACE_ATTR_KEY",
     "PIPESTAT_CONFIG_ATTR_KEY",
     "PIPESTAT_RESULTS_FILE_ATTR_KEY",
+    "LOOPER_GENERIC_PIPELINE",
 ]
 
 FLAGS = ["completed", "running", "failed", "waiting", "partial"]

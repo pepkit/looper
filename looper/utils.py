@@ -321,7 +321,6 @@ def init_generic_pipeline():
         pass
 
     # Destination one level down from CWD in pipeline folder
-    LOOPER_GENERIC_PIPELINE = "generic_pipeline_interface.yaml"
     dest_file = os.path.join(os.getcwd(), "pipeline", LOOPER_GENERIC_PIPELINE)
 
     # Determine Lines for Generic Pipeline Interface
