@@ -1,5 +1,6 @@
 # ignore test results
 oldtests/test/*
+.hypothesis/
 
 # toy/experimental files
 *.pkl
@@ -63,6 +64,7 @@ open_pipelines/
 .coverage*
 .pytest_cache
 .vscode/
+.looper.yaml
 
 # Reserved files for comparison
 *RESERVE*
