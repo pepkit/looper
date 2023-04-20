@@ -1035,6 +1035,8 @@ def main():
                 f"Read from dotfile ({dotfile_path()})."
             )
     if args.command == "init":
+        if args.piface == True:
+            sys.exit(int(not init_generic_pipeline()))
         sys.exit(int(not init_dotfile(dotfile_path(), args.config_file, args.force)))
     args = enrich_args_via_cfg(args, aux_parser)
 
