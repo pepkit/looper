@@ -525,5 +525,5 @@ def desired_samples_range_skipped(arg: str, num_samples: int) -> Iterable[int]:
     else:
         if num_samples <= lower_bound:
             return []
-        intv = NatIntervalInclusive(lower_bound, num_samples)
+        intv = NatIntervalInclusive(lower_bound + 1, num_samples)
         return intv.to_range()
