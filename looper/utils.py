@@ -337,6 +337,7 @@ def init_generic_pipeline():
     if not os.path.exists(dest_file):
         with open(dest_file, mode="w") as file:
             file.write(str(yaml_body))
+        print(f"Generic pipeline interface successfully created at: {dest_file}")
     else:
         print("Generic pipeline interface file already exists. Skipping creation.")
 

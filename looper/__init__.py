@@ -308,7 +308,7 @@ def build_parser():
 
         init_subparser.add_argument(
             "-p",
-            "--pipeline",
+            "--piface",
             help="Generates generic pipeline interface",
             action="store_true",
             default=False,
