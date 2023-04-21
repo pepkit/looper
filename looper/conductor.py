@@ -792,8 +792,8 @@ def _exec_pre_submit(piface, namespaces):
             )
         _LOGGER.debug("Updating namespaces with:\n{}".format(y))
         for namespace, mapping in y.items():
-            for attr, val in mapping.items():
-                setattr(x[namespace], attr, val)
+            for key, val in mapping.items():
+                x[namespace][key] = val
 
     if PRE_SUBMIT_HOOK_KEY in piface:
         pre_submit = piface[PRE_SUBMIT_HOOK_KEY]
