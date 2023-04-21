@@ -62,7 +62,7 @@ class PipelineInterface(YAMLConfigManager):
 
     @property
     def pipeline_name(self):
-        return self.get("pipeline_name")
+        return self["pipeline_name"]
 
     def render_var_templates(self, namespaces):
         """
