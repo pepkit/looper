@@ -292,7 +292,7 @@ class Project(peppyProject):
 
         :return list[looper.PipelineInterface]: list of pipeline interfaces
         """
-        return [i for s in self._interfaces_by_sample.values() for i in s]
+        return [pi for ifaces in self._interfaces_by_sample.values() for pi in ifaces]
 
     @cached_property
     def pipeline_interface_sources(self):
