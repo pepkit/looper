@@ -13,7 +13,10 @@ from ubiquerg import expandpath, is_url
 from yacman import load_yaml, YAMLConfigManager
 
 from .const import *
-from .exceptions import InvalidResourceSpecificationException
+from .exceptions import (
+    InvalidResourceSpecificationException,
+    PipelineInterfaceConfigError,
+)
 from .utils import jinja_render_template_strictly
 
 __author__ = "Michal Stolarczyk"
@@ -47,6 +50,10 @@ class PipelineInterface(YAMLConfigManager):
             self.pipe_iface_file = config
             self.source = config
             config = load_yaml(config)
+        if PIPELINE_INTERFACE_PIPELINE_NAME_KEY not in config:
+            raise PipelineInterfaceConfigError(
+                f"'{PIPELINE_INTERFACE_PIPELINE_NAME_KEY}' is required in pipeline interface config data."
+            )
         self.update(config)
         self._validate(schema_src=PIFACE_SCHEMA_SRC)
         if "path" in self:
@@ -62,7 +69,7 @@ class PipelineInterface(YAMLConfigManager):
 
     @property
     def pipeline_name(self):
-        return self["pipeline_name"]
+        return self[PIPELINE_INTERFACE_PIPELINE_NAME_KEY]
 
     def render_var_templates(self, namespaces):
         """
