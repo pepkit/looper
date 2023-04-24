@@ -12,6 +12,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - `limit` and `skip` are now both usable with Destroy and Run. [#367](https://github.com/pepkit/looper/pull/367)
 - ability to generate generic pipeline interface using `init -p` or `init --piface` [#368](https://github.com/pepkit/looper/pull/368)
 - Fixed ability to use custom sample index
+- Added `write_custom_template`, a built-in pre-submit plugin for writing templates
 
 ### Changed
 - looper now returns nonzero if any samples fail submission
