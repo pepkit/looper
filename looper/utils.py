@@ -432,9 +432,9 @@ def is_registry_path(input_string: str) -> bool:
     """
     try:
         registry_path = RegistryPath(**parse_registry_path(input_string))
-        return True
     except (ValidationError, TypeError):
         return False
+    return True
 
 
 def create_sample_pipeline_interface(
