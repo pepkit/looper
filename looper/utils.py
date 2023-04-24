@@ -463,7 +463,7 @@ def create_project_pipeline_interface(
     Add project pipeline interface to the project
     :param dict prj_dict: raw peppy dict
     :param str|list project_pipeline_config: looper project modifiers (path to yml looper config files)
-    :return dict: modified raw porject dict
+    :return dict: modified raw project dict
     """
     if "looper" not in prj_dict["_config"]:
         prj_dict["_config"]["looper"] = {}
