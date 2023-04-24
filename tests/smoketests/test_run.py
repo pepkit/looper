@@ -301,7 +301,7 @@ class LooperRunPreSubmissionHooksTests:
     def test_looper_other_plugins(self, prep_temp_pep, plugin, appendix):
         tp = prep_temp_pep
         for path in {
-            piface["pipe_iface_file"] for piface in Project(tp).pipeline_interfaces
+            piface.pipe_iface_file for piface in Project(tp).pipeline_interfaces
         }:
             with mod_yaml_data(path) as piface_data:
                 piface_data[PRE_SUBMIT_HOOK_KEY][PRE_SUBMIT_PY_FUN_KEY] = [plugin]
@@ -321,7 +321,7 @@ class LooperRunPreSubmissionHooksTests:
     def test_looper_command_templates_hooks(self, prep_temp_pep, cmd):
         tp = prep_temp_pep
         for path in {
-            piface["pipe_iface_file"] for piface in Project(tp).pipeline_interfaces
+            piface.pipe_iface_file for piface in Project(tp).pipeline_interfaces
         }:
             with mod_yaml_data(path) as piface_data:
                 piface_data[PRE_SUBMIT_HOOK_KEY][PRE_SUBMIT_CMD_KEY] = [cmd]

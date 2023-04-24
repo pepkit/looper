@@ -7,14 +7,16 @@ from warnings import warn
 
 import jsonschema
 import pandas as pd
-from attmap import PathExAttMap as PXAM
 from eido import read_schema
 from peppy import utils as peputil
 from ubiquerg import expandpath, is_url
-from yacman import load_yaml
+from yacman import load_yaml, YAMLConfigManager
 
 from .const import *
-from .exceptions import InvalidResourceSpecificationException
+from .exceptions import (
+    InvalidResourceSpecificationException,
+    PipelineInterfaceConfigError,
+)
 from .utils import jinja_render_template_strictly
 
 __author__ = "Michal Stolarczyk"
@@ -24,7 +26,7 @@ _LOGGER = getLogger(__name__)
 
 
 @peputil.copy
-class PipelineInterface(PXAM):
+class PipelineInterface(YAMLConfigManager):
     """
     This class parses, holds, and returns information for a yaml file that
     specifies how to interact with each individual pipeline. This
@@ -48,6 +50,10 @@ class PipelineInterface(PXAM):
             self.pipe_iface_file = config
             self.source = config
             config = load_yaml(config)
+        if PIPELINE_INTERFACE_PIPELINE_NAME_KEY not in config:
+            raise PipelineInterfaceConfigError(
+                f"'{PIPELINE_INTERFACE_PIPELINE_NAME_KEY}' is required in pipeline interface config data."
+            )
         self.update(config)
         self._validate(schema_src=PIFACE_SCHEMA_SRC)
         if "path" in self:
@@ -61,6 +67,10 @@ class PipelineInterface(PXAM):
             self._expand_paths(["path"])
         self._expand_paths(["compute", "dynamic_variables_script_path"])
 
+    @property
+    def pipeline_name(self):
+        return self[PIPELINE_INTERFACE_PIPELINE_NAME_KEY]
+
     def render_var_templates(self, namespaces):
         """
         Render path templates under 'var_templates' in this pipeline interface.
@@ -72,12 +82,6 @@ class PipelineInterface(PXAM):
             var_templates.update(self[VAR_TEMPL_KEY])
             for k, v in var_templates.items():
                 var_templates[k] = jinja_render_template_strictly(v, namespaces)
-                # setattr(
-                #     var_templates,
-                #     k,
-                #     jinja_render_template_strictly(v, namespaces),
-                # )
-
             return var_templates
         else:
             _LOGGER.debug(

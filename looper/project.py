@@ -292,7 +292,7 @@ class Project(peppyProject):
 
         :return list[looper.PipelineInterface]: list of pipeline interfaces
         """
-        return [i for s in self._interfaces_by_sample.values() for i in s]
+        return [pi for ifaces in self._interfaces_by_sample.values() for pi in ifaces]
 
     @cached_property
     def pipeline_interface_sources(self):
@@ -625,11 +625,13 @@ class Project(peppyProject):
         """
         pifaces_by_sample = {}
         for source, sample_names in self._samples_by_interface.items():
-            for sample_name in sample_names:
-                pifaces_by_sample.setdefault(sample_name, [])
-                pifaces_by_sample[sample_name].append(
-                    PipelineInterface(source, pipeline_type="sample")
-                )
+            try:
+                pi = PipelineInterface(source, pipeline_type="sample")
+            except PipelineInterfaceConfigError as e:
+                _LOGGER.debug(f"Skipping pipeline interface creation: {e}")
+            else:
+                for sample_name in sample_names:
+                    pifaces_by_sample.setdefault(sample_name, []).append(pi)
         return pifaces_by_sample
 
     def _omit_from_repr(self, k, cls):
@@ -676,7 +678,11 @@ class Project(peppyProject):
                     source = self._resolve_path_with_cfg(source)
                     try:
                         PipelineInterface(source, pipeline_type="sample")
-                    except (ValidationError, IOError) as e:
+                    except (
+                        ValidationError,
+                        IOError,
+                        PipelineInterfaceConfigError,
+                    ) as e:
                         msg = (
                             "Ignoring invalid pipeline interface source: "
                             "{}. Caught exception: {}".format(

@@ -229,9 +229,9 @@ def get_project_outputs(project, schema):
 
     :param peppy.Project project:
     :param Iterable[dict] schema:
-    :return attmap.PathExAttMap: mapping with populated path-like attributes
+    :return yacman.YAMLConfigManager: mapping with populated path-like attributes
     """
-    from attmap import PathExAttMap
+    from yacman import YAMLConfigManager
 
     # if not any([isinstance(project, Project),
     #             issubclass(type(project), Project)]):
@@ -253,4 +253,4 @@ def get_project_outputs(project, schema):
                     "Caught exception: {}.\n Could not populate {} "
                     "path".format(p, str(e))
                 )
-    return PathExAttMap(res)
+    return YAMLConfigManager(res)

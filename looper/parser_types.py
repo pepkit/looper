@@ -1,10 +1,10 @@
 """ Definitions of the parser argument types """
 
-from attmap import PathExAttMap
+from yacman import YAMLConfigManager
 
 
 def html_range(caravel=False, min_val=0, max_val=10, step=1, value=0):
-    caravel_data = PathExAttMap(
+    caravel_data = YAMLConfigManager(
         {
             "element_type": "range",
             "element_args": {
@@ -38,7 +38,7 @@ def html_checkbox(caravel=False, checked=False):
     :return callable: argument to the type parameter of an
         argparse.ArgumentParser's add_argument method.
     """
-    caravel_data = PathExAttMap({"element_type": "checkbox", "element_args": {}})
+    caravel_data = YAMLConfigManager({"element_type": "checkbox", "element_args": {}})
     if checked:
         caravel_data.add_entries({"element_args": {"checked": True}})
 
@@ -62,7 +62,7 @@ def html_select(choices, caravel=False):
         raise TypeError(
             "Argument to choices parameter must be list, got {}.".format(type(choices))
         )
-    caravel_data = PathExAttMap(
+    caravel_data = YAMLConfigManager(
         {"element_type": "select", "element_args": {"option": choices}}
     )
 
