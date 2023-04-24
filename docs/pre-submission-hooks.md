@@ -11,10 +11,10 @@ The pre-submission tasks to be executed are listed in the [pipeline interface](p
 
 ```yaml
 pre_submit:
-  python_functions: 
+  python_functions:
     - "package_name.function_name"
     - "package_name1.function_name"
-  command_templates: 
+  command_templates:
     - "tool.sh --param {sample.attribute}"
     - "tool1.sh --param {sample.attribute1}"
 ```
@@ -31,7 +31,7 @@ Looper ships with several included plugins that you can use as pre-submission fu
 Saves all sample metadata as a YAML file. The output file path can be customized using `var_templates.sample_yaml_path`. If this parameter is not provided, the file will be saved as `{looper.output_dir}/submission/{sample.sample_name}_sample.yaml`.
 
 **Parameters:**
-  
+
   - `pipeline.var_templates.sample_yaml_path` (optional): absolute path to file where YAML is to be stored.
 
 **Usage:**
@@ -54,7 +54,7 @@ This plugin writes a sample yaml file compatible as a job input file for a CWL p
 
 **Parameters:**
 
-  - `pipeline.var_templates.sample_yaml_cwl_path` (optional): absolute path to file where YAML is to be stored.
+  - `pipeline.var_templates.sample_yaml_path` (optional): absolute path to file where YAML is to be stored.
 
 **Usage:**
 
@@ -76,7 +76,7 @@ command_template: >
 Saves the sample to YAML file with project reference.  This plugin can be parametrized with a custom YAML directory (see "parameters" below). If the parameter is not provided, the file will be saved in `{looper.output_dir}/submission/{sample.sample_name}_sample_prj.yaml`.
 
 **Parameters:**
-  
+
   - `pipeline.var_templates.sample_yaml_prj_path` (optional): absolute path to file where YAML is to be stored.
 
 **Usage:**
@@ -98,7 +98,7 @@ command_template: >
 Saves all five namespaces of pre-submission to YAML file.  This plugin can be parametrized with a custom YAML directory (see "parameters" below). If the parameter is not provided, the file will be saved in `{looper.output_dir}/submission/{sample.sample_name}_submission.yaml`.
 
 **Parameters:**
-  
+
   - `pipeline.var_templates.submission_yaml_path` (optional): a complete and absolute path to the *directory* where submission YAML representation is to be stored.
 
 **Example usage:**
@@ -115,6 +115,29 @@ command_template: >
   {pipeline.var_templates.main} ...
 ```
 
+### Included plugin: `looper.write_custom_template`
+
+Populates an independent jinja template with values from all the available looper namespaces.
+
+**Parameters:**
+- `pipeline.var_templates.custom_template` (required): a jinja template to be populated for each job.
+- `pipeline.var_templates.custom_template_output` (optional): path to which the populated template file will be saved. If not provided, the populated fill will be saved in `{looper.output_dir}/submission/{sample.sample_name}_config.yaml
+
+**Example usage:**
+
+```yaml
+pipeline_type: sample
+var_templates:
+  custom_template: custom_template.jinja
+  custom_template_output: "{looper.output_dir}/submission/{sample.sample_name}_custom_config.yaml"
+pre_submit:
+  python_functions:
+    - looper.write_custom_template
+command_template: >
+  {pipeline.var_templates.main} ...
+```
+
+
 ## Writing your own pre-submission hooks
 
 Pre-submission tasks can be written as a Python function or a shell commands. We will explain each type below:
@@ -123,7 +146,7 @@ Pre-submission tasks can be written as a Python function or a shell commands. We
 
 Python plugin functions have access *all of the metadata variables looper has access to to construct the primary command template*. The Python function must obey the following rules:
 
-1. The Python function *must* take as input a `namespaces` object, which is a Python [`dict`](https://docs.python.org/3/tutorial/datastructures.html#dictionaries) of [looper variable namespaces](variable-namespaces.md). 
+1. The Python function *must* take as input a `namespaces` object, which is a Python [`dict`](https://docs.python.org/3/tutorial/datastructures.html#dictionaries) of [looper variable namespaces](variable-namespaces.md).
 
 2. The function *should* return any updated namespace variables; or can potentially return an empty `dict` (`{}`) if no changes are intended, which may the case if the function is only used for its side effect.
 
@@ -147,9 +170,9 @@ var_templates:
   plugin_path: "{looper.piface_dir}/plugin_results"
 ```
 
-In this example you'd use `namespaces["pipeline"]["var_templates"]["extra_time"]` to access the user-provided parameter. Notice we included another example, `plugin_path`, which can refer to the `{looper.piface_dir}` variable. Because this variable is included under `var_templates`, it will be populated with any namespace variables. 
+In this example you'd use `namespaces["pipeline"]["var_templates"]["extra_time"]` to access the user-provided parameter. Notice we included another example, `plugin_path`, which can refer to the `{looper.piface_dir}` variable. Because this variable is included under `var_templates`, it will be populated with any namespace variables.
 
-The plugins need to handle incomplete parametrization, either by providing defaults or by raising exceptions. 
+The plugins need to handle incomplete parametrization, either by providing defaults or by raising exceptions.
 
 #### Function output: updating submission metadata via return value
 
@@ -171,7 +194,7 @@ compute:
     submission_template: /home/michal/divvy_templates/localhost_template.sub
     submission_command: sh
 ...
-``` 
+```
 
 Say your function returned this data:
 ```yaml
@@ -204,15 +227,15 @@ In case you need more flexibility than a Python function, you can also execute a
 var_templates:
   compute_script: "{looper.piface_dir}/hooks/script.py"
 pre_submit:
-  command_templates: 
-    - "{pipeline.var_templates.compute_script} --genome {sample.genome} --log-file {looper.output_dir}/log.txt" 
+  command_templates:
+    - "{pipeline.var_templates.compute_script} --genome {sample.genome} --log-file {looper.output_dir}/log.txt"
 ```
 
 This `command_templates` section specifies a list with one or more entries. Each entry specifies a command. The commands are themselves templates, just like the primary `command_template`, so you have access to the looper variable namespaces to put together the appropriate command. In fact, really, the other difference between these `pre_submit.command_templates` and the primary `command_template` is that the final one has access to the changes introduce in the variables by the `pre_submit` commands. The inputs to the script are completely user-defined -- you choose what information and how you want to pass it to your script.
- 
-**Output:** The output of your command should be a JSON-formatted string (`str`), that is processed with [json.loads](https://docs.python.org/3/library/json.html#json.loads) and [subprocess.check_output](https://docs.python.org/3/library/subprocess.html#subprocess.check_output) as follows: `json.loads(subprocess.check_output(str))`. This JSON object will be used to update the looper variable namespaces. 
 
-#### Example: Dynamic compute parameters 
+**Output:** The output of your command should be a JSON-formatted string (`str`), that is processed with [json.loads](https://docs.python.org/3/library/json.html#json.loads) and [subprocess.check_output](https://docs.python.org/3/library/subprocess.html#subprocess.check_output) as follows: `json.loads(subprocess.check_output(str))`. This JSON object will be used to update the looper variable namespaces.
+
+#### Example: Dynamic compute parameters
 
 In the `compute` section of the pipeline interface, looper allows you to specify a `size_dependent_variables` section, which  lets you specify variables with values that are modulated based on the total input file size for the run. This is typically used to add variables for memory, CPU, and clock time to request, if they depend on the input file size. This a good example  of modulating computing variables based on file size, but it is not flexible enough to allow modulated compute variables on the basis of other sample attributes. For a more flexible version, you can use a pre-submission hook.
 
@@ -226,8 +249,8 @@ var_templates:
   pipeline_path: "{looper.piface_dir}/pipelines/pepatac.py"
   compute_script: "{looper.piface_dir}/hooks/script.py"
 pre_submit:
-  command_templates: 
-    - "{pipeline.var_templates.compute_script} --genome {sample.genome} --log-file {looper.output_dir}/log.txt"    
+  command_templates:
+    - "{pipeline.var_templates.compute_script} --genome {sample.genome} --log-file {looper.output_dir}/log.txt"
 command_template: >
   {pipeline.var_templates.pipeline_path} ...
 ```

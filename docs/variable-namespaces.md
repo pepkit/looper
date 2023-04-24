@@ -2,7 +2,7 @@
 
 ## Populating the templates
 
-Looper creates job scripts using [concentric templates](concentric-templates.md) consisting of a *command template* and a *submission template*. This layered design allows us to decouple the computing environment from the pipeline, which improves portability. The task of running jobs can be thought of as simply populating the templates with variables. These variables are pooled from several sources: 
+Looper creates job scripts using [concentric templates](concentric-templates.md) consisting of a *command template* and a *submission template*. This layered design allows us to decouple the computing environment from the pipeline, which improves portability. The task of running jobs can be thought of as simply populating the templates with variables. These variables are pooled from several sources:
 
 1. the command line, where the user provides any on-the-fly variables for a particular run.
 2. the PEP, which provides information on the project and samples.
@@ -12,9 +12,10 @@ Looper creates job scripts using [concentric templates](concentric-templates.md)
 Variables from these sources are used to populate the templates to construct the commands to run. To keep things organized, looper groups the variables into namespaces. These namespaces are used first to populate the command template, which produces a built command. This command is then treated as a variable in itself, which is pooled with the other variables to populate the submission template. Looper provides 6 variable namespaces for populating the templates:
 
 ## 1. project
+
 The `project` namespace contains all PEP config attributes. For example, if you have a config file like this:
 
-```
+```yaml
 pep_version: 2.0.0
 my_variable: 123
 ```
@@ -37,15 +38,14 @@ The `looper` namespace consists of automatic variables created by looper:
 
 - `output_dir` -- parent output directory provided in `project.looper.output_dir` in the project configuration file
 - `results_subdir` -- the path to the results directory. It is a sub directory of `output_dir` called `project.looper.results_subdir` or "results_pipeline" by default
-- `sample_output_folder` -- a sample-specific output folder (`results_subdir`/`sample.sample_name`)
+- `sample_output_folder` -- a sample-specific or project-specific output folder (`results_subdir`/`sample.sample_name`)
 - `piface_dir` -- directory the pipeline interface has been read from
+- `pep_config` -- path to the project configuration file used for this looper run
+- `log_file` -- an automatically created log file path, to be stored in the looper submission subdirectory
 
 **others:**
 
 - `total_input_size` -- the sum of file sizes for all files marked as input files in the input schema
-- `pipeline_config` -- renamed from `config` to disambiguate with new `pep_config` ? Not sure what this is
-- `pep_config` -- path to the project configuration file used for this looper run
-- `log_file` -- an automatically created log file path, to be stored in the looper submission subdirectory
 - `command` -- the result of populating the command template
 - `job_name` -- job name made by concatenating the pipeline identifier and unique sample name
 
@@ -62,6 +62,15 @@ The `compute` namespace consists of a group of variables relevant for computing 
 
 So, the compute namespace is first populated with any variables from the selected divvy compute package. It then updates this with settings given in the `compute` section of the pipeline interface. It then updates from the PEP `project.looper.compute`, and then finally anything passed to `--compute` on the looper CLI. This provides a way to modulate looper behavior at the level of a computing environment, a pipeline, a project, or a run, in that order.
 
+## 6. pipestat
+
+The `pipestat` namespace conists of a group of variables that reflect the [pipestat](http://pipestat.databio.org) configuration for a submission.
+
+1. schema (`PipestatManager.schema_path`)
+2. results_file (`PipestatManager.file`)
+3. record_id (`PipestatManager.record_identifier`)
+4. namespace (`PipestatManager.namespace`)
+5. config (`PipestatManager.config_path`)
 
 ## Mapping variables to submission templates using divvy adapters
 
@@ -69,7 +78,7 @@ One remaining issue is how to map variables from the looper variable namespaces 
 
 These variables are linked to looper namespaces via *divvy adapters*. Here are the default divvy adapters:
 
-```
+```yaml
 adapters:
   CODE: looper.command
   JOBNAME: looper.job_name
@@ -91,7 +100,7 @@ Since compute variables can be stored in several places, it can be confusing to 
 
 ### Partition or queue name
 
-Because the partition or queue name is relative to your environment, we don't usually specify this in the `resources` section, but rather, in the `pepenv` config. 
+Because the partition or queue name is relative to your environment, we don't usually specify this in the `resources` section, but rather, in the `pepenv` config.
 
 ### DIVCFG config file
 
@@ -101,7 +110,7 @@ Variables that describes settings of a **compute environment** should go in the 
 
 Variables that are **specific to a pipeline** can be defined in the `pipeline interface` file,  `compute` section.As an example of a variable pulled from the `compute` section, we defined in our `pipeline_interface.yaml` a variable pointing to the singularity or docker image that can be used to run the pipeline, like this:
 
-```
+```yaml
 compute:
   singularity_image: /absolute/path/to/images/image
 ```
@@ -111,6 +120,3 @@ Now, this variable will be available for use in a template as `{SINGULARITY_IMAG
 ### Project config
 
 Finally, project-level variables can also be populated from the `compute` section of a project config file. This would enable you to make project-specific compute changes (such as billing a particular project to a particular SLURM resource account).
-
-
-

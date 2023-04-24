@@ -1,6 +1,6 @@
 # A project with multiple pipelines
 
-In earlier versions of looper (v < 1.0), we used a `protocol_mappings` section to map samples with different `protocol` attributes to different pipelines. In the current pipeline interface (looper v > 1.0), we eliminated the `protocol_mappings`, because this can now be handled using sample modifiers, simplifying the pipeline interface. Now, each pipeline has exactly 1 pipeline interface. You link to the pipeline interface with a sample attribute. If you want the same pipeline to run on all samples, it's as easy as using an `append` modifier like this: 
+In earlier versions of looper (v < 1.0), we used a `protocol_mappings` section to map samples with different `protocol` attributes to different pipelines. In the current pipeline interface (looper v > 1.0), we eliminated the `protocol_mappings`, because this can now be handled using sample modifiers, simplifying the pipeline interface. Now, each pipeline has exactly 1 pipeline interface. You link to the pipeline interface with a sample attribute. If you want the same pipeline to run on all samples, it's as easy as using an `append` modifier like this:
 
 ```
 sample_modifiers:
@@ -8,7 +8,7 @@ sample_modifiers:
     pipeline_interfaces: "test.yaml"
 ```
 
-But if you want to submit different sampels to different pipelines, depending on a sample attribute, like `protocol`, you can use an implied attribute:
+But if you want to submit different samples to different pipelines, depending on a sample attribute, like `protocol`, you can use an implied attribute:
 
 ```
 sample_modifiers:

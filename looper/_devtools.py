@@ -1,6 +1,7 @@
 """ Utility functions for internal, developmental use """
 
 import copy
+
 from logmuse import init_logger
 
 __author__ = "Vince Reuter"
@@ -18,8 +19,11 @@ def est_log(**kwargs):
     """
     kwds = copy.copy(kwargs)
     if "name" in kwds:
-        print("Ignoring {} and setting fixed values for logging names".
-              format(kwds["name"]))
+        print(
+            "Ignoring {} and setting fixed values for logging names".format(
+                kwds["name"]
+            )
+        )
         del kwds["name"]
     init_logger(name="peppy", **kwds)
     return init_logger(name="looper", **kwds)

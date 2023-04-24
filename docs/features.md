@@ -12,9 +12,9 @@
 [modular]: img/modular.svg
 
 
-![modular][modular] **Modular approach to job handling** 
+![modular][modular] **Modular approach to job handling**
 
-Looper **completely divides job handling from pipeline processing**. This modular approach simplifies the pipeline-building process because pipelines no longer need to worry about sample metadata parsing. 
+Looper **completely divides job handling from pipeline processing**. This modular approach simplifies the pipeline-building process because pipelines no longer need to worry about sample metadata parsing.
 
 ![file_yaml][file_yaml] **The power of standard PEP format**
 
@@ -25,17 +25,17 @@ Looper **completely divides job handling from pipeline processing**. This modula
 
 Looper's sample-level parallelization applies to all pipelines, so individual pipelines do not need reinvent the wheel. By default `looper`will simply run your jobs serially, but `looper` employs [divvy](http://code.databio.org/divvy) to let you process your pipelines on any cluster resource manager (SLURM, SGE, etc.). Looper also allows you to specify compute queue/partition on-the-fly, by passing the ``--compute`` parameter to your call to ``looper run``, making flexible if you have complex resource needs. This provides a convenient interface for submitting pipelines either to local compute or to any cluster resource manager, so individual pipeline authors do not need to worry about cluster job submission.
 
-![flexible_pipelines][flexible_pipelines] **Flexible pipelines** 
+![flexible_pipelines][flexible_pipelines] **Flexible pipelines**
 
 Use looper with any pipeline, any library, in any domain. We designed it to work with [pypiper](http://code.databio.org/pypiper), but **looper has an infinitely flexible command-line argument system that will let you configure it to work with any script (pipeline) that accepts command-line arguments**. You can also configure looper to submit multiple pipelines per sample.
 
 
-![job_monitoring][job_monitoring] **Job completion monitoring**  
+![job_monitoring][job_monitoring] **Job completion monitoring**
 
 Looper is job-aware and will not submit new jobs for samples that are already running or finished, making it easy to add new samples to existing projects, or re-run failed samples.
 
 
-![resources][resources] **Flexible resources**  
+![resources][resources] **Flexible resources**
 
 Looper has an easy-to-use resource requesting scheme. With a few lines to define CPU, memory, clock time, or anything else, pipeline authors can specify different computational resources depending on the size of the input sample and pipeline to run. Or, just use a default if you don't want to mess with setup.
 
@@ -46,4 +46,3 @@ Looper uses a command-line interface so you have total power at your fingertips.
 ![html][html] **Beautiful linked result reports**
 
 Looper automatically creates an internally linked, portable HTML report highlighting all results for your pipeline, for every pipeline.
-

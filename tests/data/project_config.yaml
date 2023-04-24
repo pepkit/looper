@@ -6,7 +6,7 @@ looper:
   all:
     output_dir: ../output
 
-sample_modifiers: 
+sample_modifiers:
   append:
     attr: "val"
   derive:

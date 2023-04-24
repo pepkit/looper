@@ -1,5 +1,6 @@
-pytest-cov
-pytest
-pytest-remotedata
+hypothesis
 mock
+pytest
+pytest-cov
+pytest-remotedata
 veracitools
