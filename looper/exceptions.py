@@ -26,6 +26,7 @@ class LooperError(Exception):
 
 class SampleFailedException(LooperError):
     """An exception to be raised if any sample fails"""
+
     pass
 
 
