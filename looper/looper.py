@@ -43,7 +43,7 @@ from ubiquerg.collection import uniqify
 from . import __version__, build_parser, validate_post_parse
 from .conductor import SubmissionConductor
 from .const import *
-from .exceptions import JobSubmissionException, MisconfigurationException
+from .exceptions import JobSubmissionException, MisconfigurationException, SampleFailedException
 from .html_reports import HTMLReportBuilderOld
 from .html_reports_pipestat import HTMLReportBuilder, fetch_pipeline_results
 from .html_reports_project_pipestat import HTMLReportBuilderProject
@@ -558,6 +558,10 @@ class Runner(Executor):
                 for reason, samples in samples_by_reason.items()
             ]
             _LOGGER.info("\nSummary of failures:\n{}".format("\n".join(full_fail_msgs)))
+        
+        if failed_sub_samples:
+            _LOGGER.debug("Raising SampleFailedException")
+            raise SampleFailedException
 
 
 class Reporter(Executor):
@@ -1105,6 +1109,8 @@ def main():
             try:
                 compute_kwargs = _proc_resources_spec(args)
                 run(args, rerun=(args.command == "rerun"), **compute_kwargs)
+            except SampleFailedException:
+                sys.exit(1)
             except IOError:
                 _LOGGER.error(
                     "{} pipeline_interfaces: '{}'".format(
