@@ -115,6 +115,29 @@ command_template: >
   {pipeline.var_templates.main} ...
 ```
 
+### Included plugin: `looper.write_custom_template`
+
+Populates an independent jinja template with values from all the available looper namespaces.
+
+**Parameters:**
+- `pipeline.var_templates.custom_template` (required): a jinja template to be populated for each job.
+- `pipeline.var_templates.custom_template_output` (optional): path to which the populated template file will be saved. If not provided, the populated fill will be saved in `{looper.output_dir}/submission/{sample.sample_name}_config.yaml
+
+**Example usage:**
+
+```yaml
+pipeline_type: sample
+var_templates:
+  custom_template: custom_template.jinja
+  custom_template_output: "{looper.output_dir}/submission/{sample.sample_name}_custom_config.yaml"
+pre_submit:
+  python_functions:
+    - looper.write_custom_template
+command_template: >
+  {pipeline.var_templates.main} ...
+```
+
+
 ## Writing your own pre-submission hooks
 
 Pre-submission tasks can be written as a Python function or a shell commands. We will explain each type below:

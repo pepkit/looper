@@ -27,6 +27,7 @@ from .conductor import (
     write_sample_yaml_cwl,
     write_sample_yaml_prj,
     write_submission_yaml,
+    write_custom_template,
 )
 from .const import *
 from .parser_types import *
