@@ -7,7 +7,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 - preliminary support for [pipestat](http://pipestat.databio.org).
-- ability to skip samples using  `--sk` or `skip` [#367](https://github.com/pepkit/looper/pull/367)
+- ability to skip samples using  `-k` or `--skip` [#367](https://github.com/pepkit/looper/pull/367)
 - ability to input a range into `limit` and `skip`[#367](https://github.com/pepkit/looper/pull/367)
 - `limit` and `skip` are now both usable with Destroy and Run. [#367](https://github.com/pepkit/looper/pull/367)
 - ability to generate generic pipeline interface using `init -p` or `init --piface` [#368](https://github.com/pepkit/looper/pull/368)
