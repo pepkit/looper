@@ -1061,20 +1061,6 @@ def main():
 
     _LOGGER = logmuse.logger_via_cli(args, make_root=True)
 
-    # Set the logging level.
-    if args.dbg:
-        # Debug mode takes precedence and will listen for all messages.
-        level = args.logging_level or logging.DEBUG
-    else:
-        # Normally, we're not in debug mode, and there's not verbosity.
-        level = LOGGING_LEVEL
-
-    # Establish the project-root logger and attach one for this module.
-    log_kwargs = {"level": level, "logfile": args.logfile, "devmode": args.dbg}
-    for dep in ["peppy", "divvy", "eido", "pipestat"]:
-        init_logger(name=dep, **log_kwargs)
-    _LOGGER = init_logger(name=_PKGNAME, **log_kwargs)
-
     _LOGGER.info("Looper version: {}\nCommand: {}".format(__version__, args.command))
 
     if len(remaining_args) > 0:
