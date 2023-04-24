@@ -7,7 +7,7 @@
     var statsTable = {{ stats_json }}; // Jinja template variable
     var columns = {{ columns_json }}; // Jinja template variable
     const sampleNames = Object.keys(statsTable);
-    
+
     // populate the data container with values from the stats json
     for (let i in columns){
         const column = columns[i]

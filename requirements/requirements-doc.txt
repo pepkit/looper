@@ -1,6 +1,6 @@
-mkdocs>=1.0
-markdown-include
-pydoc-markdown
 https://github.com/databio/mkdocs-databio/archive/master.zip
--e git+git://github.com/pepkit/pipestat@master#egg=pipestat
 looper
+markdown-include
+mkdocs>=1.0
+-e git+git://github.com/pepkit/pipestat@master#egg=pipestat
+pydoc-markdown

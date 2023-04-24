@@ -2,7 +2,7 @@
 
 *Dealing with multiple input files is described in detail in the [PEP documentation](http://pep.databio.org/en/latest/specification/#project-attribute-subsample_table).*
 
-Breifly:
+Briefly:
 
 Sometimes you have multiple input files that you want to merge for one sample. For example, a common use case is a single library that was spread across multiple sequencing lanes, yielding multiple input files that need to be merged, and then run through the pipeline as one. Rather than putting multiple lines in your sample annotation sheet, which causes conceptual and analytical challenges, PEP has two ways to merge these:
 
@@ -38,7 +38,7 @@ command_template: >
 
 This results in a submission script that includes the following command:
 ```bash
---input-iter  --test-individual one  --test-individual two  --test-individual three 
+--input-iter  --test-individual one  --test-individual two  --test-individual three
 --input-single  test_val
 ```
 
@@ -46,7 +46,7 @@ This results in a submission script that includes the following command:
 
 The most common use case is just concatenating the multiple values and separate them with space -- **providing multiple input values to a single argument on the command line**. Therefore, all the multi-value sample attributes that have not been processed with Jinja2 logic are automatically concatenated. For instance, the following command template in a pipeline interface will result in the submission script presented below:
 
-Pipeline interface:	
+Pipeline interface:
 ```bash
 pipeline_name: test_concat
 pipeline_type: sample

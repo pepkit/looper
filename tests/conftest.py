@@ -1,12 +1,15 @@
-import pytest
-import os
-import tempfile
-from shutil import copyfile as cpf, rmtree
-from looper.const import *
-from peppy.const import *
-from yaml import safe_load, dump
 from contextlib import contextmanager
+import os
 import subprocess
+from shutil import copyfile as cpf, rmtree
+import tempfile
+from typing import *
+
+import pytest
+from peppy.const import *
+from yaml import dump, safe_load
+
+from looper.const import *
 
 CFG = "project_config.yaml"
 ST = "annotation_sheet.csv"
@@ -16,6 +19,14 @@ OS = "output_schema.yaml"
 RES = "resources-{}.tsv"
 
 
+@pytest.fixture(scope="function")
+def dotfile_path():
+    path = os.path.join(os.getcwd(), LOOPER_DOTFILE_NAME)
+    yield path
+    if os.path.isfile(path):
+        os.remove(path)
+
+
 def get_outdir(pth):
     """
     Get output directory from a config file
@@ -23,36 +34,60 @@ def get_outdir(pth):
     :param str pth:
     :return str: output directory
     """
-    with open(pth, 'r') as conf_file:
+    with open(pth, "r") as conf_file:
         config_data = safe_load(conf_file)
     return config_data[LOOPER_KEY][OUTDIR_KEY]
 
 
-def is_in_file(fs, s, reverse=False):
-    """
-    Verify if string is in files content
-
-    :param str | Iterable[str] fs: list of files
-    :param str s: string to look for
-    :param bool reverse: whether the reverse should be checked
-    """
+def _assert_content_in_files(fs: Union[str, Iterable[str]], query: str, negate: bool):
     if isinstance(fs, str):
         fs = [fs]
+    check = (lambda doc: query not in doc) if negate else (lambda doc: query in doc)
     for f in fs:
-        with open(f, 'r') as fh:
-            if reverse:
-                assert s not in fh.read()
-            else:
-                assert s in fh.read()
+        with open(f, "r") as fh:
+            contents = fh.read()
+        assert check(contents)
 
 
-def subp_exec(pth=None, cmd=None, appendix=list(), dry=True):
+def assert_content_in_all_files(fs: Union[str, Iterable[str]], query: str):
+    """
+    Verify that string is in files content.
+
+    :param str | Iterable[str] fs: list of files
+    :param str query: string to look for
+    """
+    _assert_content_in_files(fs, query, negate=False)
+
+
+def assert_content_not_in_any_files(fs: Union[str, Iterable[str]], query: str):
+    """
+    Verify that string is not in files' content.
+
+    :param str | Iterable[str] fs: list of files
+    :param str query: string to look for
+    """
+    _assert_content_in_files(fs, query, negate=True)
+
+
+def print_standard_stream(text: Union[str, bytes]) -> None:
+    if isinstance(text, bytes):
+        text = text.decode("utf-8")
+    if not isinstance(text, str):
+        raise TypeError(f"Stream to print is neither str nor bytes, but {type(text)}")
+    for line in text.split("\n"):
+        print(line)
+
+
+def subp_exec(
+    pth=None, cmd=None, appendix=list(), dry=True
+) -> Tuple[bytes, bytes, int]:
     """
 
     :param str pth: config path
     :param str cmd: looper subcommand
     :param Iterable[str] appendix: other args to pass to the cmd
-    :return:
+    :param bool dry: whether to append dry run flag
+    :return stdout, stderr, and return code
     """
     x = ["looper", cmd, "-d" if dry else ""]
     if pth:
@@ -60,7 +95,7 @@ def subp_exec(pth=None, cmd=None, appendix=list(), dry=True):
     x.extend(appendix)
     proc = subprocess.Popen(x, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
     stdout, stderr = proc.communicate()
-    return str(stdout), str(stderr), proc.returncode
+    return stdout, stderr, proc.returncode
 
 
 def verify_filecount_in_dir(dirpath, pattern, count):
@@ -74,10 +109,11 @@ def verify_filecount_in_dir(dirpath, pattern, count):
     :raise IOError: when the number of files does not meet the expectations
     """
     assert os.path.isdir(dirpath)
-    subm_err = IOError(f"Expected {count} files mathing '{pattern}' pattern in "
-                       f"'{dirpath}'. Listdir: \n{os.listdir(dirpath)}")
-    assert sum([f.endswith(pattern) for f in os.listdir(dirpath)]) == count, \
-        subm_err
+    subm_err = IOError(
+        f"Expected {count} files mathing '{pattern}' pattern in "
+        f"'{dirpath}'. Listdir: \n{os.listdir(dirpath)}"
+    )
+    assert sum([f.endswith(pattern) for f in os.listdir(dirpath)]) == count, subm_err
 
 
 @contextmanager
@@ -88,19 +124,18 @@ def mod_yaml_data(path):
     :param str path: path to the file to modify
     """
     # TODO: use everywhere
-    with open(path, 'r') as f:
+    with open(path, "r") as f:
         yaml_data = safe_load(f)
-    print(f"\nInintial YAML data: \n{yaml_data}\n")
+    print(f"\nInitial YAML data: \n{yaml_data}\n")
     yield yaml_data
     print(f"\nModified YAML data: \n{yaml_data}\n")
-    with open(path, 'w') as f:
+    with open(path, "w") as f:
         dump(yaml_data, f)
 
 
 @pytest.fixture
 def example_pep_piface_path():
-    return os.path.join(
-        os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data")
+    return os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 
 
 @pytest.fixture
@@ -144,16 +179,21 @@ def prep_temp_pep(example_pep_piface_path):
     cpf(res_proj_path, temp_path_res_proj)
     cpf(res_samp_path, temp_path_res_samp)
     # modififactions
-    from yaml import safe_load, dump
-    with open(temp_path_cfg, 'r') as f:
+    from yaml import dump, safe_load
+
+    with open(temp_path_cfg, "r") as f:
         piface_data = safe_load(f)
     piface_data[LOOPER_KEY][OUTDIR_KEY] = out_td
     piface_data[LOOPER_KEY][CLI_KEY] = {}
     piface_data[LOOPER_KEY][CLI_KEY]["runp"] = {}
-    piface_data[LOOPER_KEY][CLI_KEY]["runp"][PIPELINE_INTERFACES_KEY] = \
-        [temp_path_piface1p, temp_path_piface2p]
-    piface_data[SAMPLE_MODS_KEY][CONSTANT_KEY][PIPELINE_INTERFACES_KEY] = \
-        [temp_path_piface1s, temp_path_piface2s]
-    with open(temp_path_cfg, 'w') as f:
+    piface_data[LOOPER_KEY][CLI_KEY]["runp"][PIPELINE_INTERFACES_KEY] = [
+        temp_path_piface1p,
+        temp_path_piface2p,
+    ]
+    piface_data[SAMPLE_MODS_KEY][CONSTANT_KEY][PIPELINE_INTERFACES_KEY] = [
+        temp_path_piface1s,
+        temp_path_piface2s,
+    ]
+    with open(temp_path_cfg, "w") as f:
         dump(piface_data, f)
     return temp_path_cfg

@@ -1,12 +1,12 @@
-attmap>=0.12.7
 colorama>=0.3.9
+divvy>=0.5.0
+eido>=0.1.3
+jinja2
 logmuse>=0.2.0
 pandas>=0.20.2
+pipestat>=0.1.0
+peppy>=0.35.4
 pyyaml>=3.12
-divvy>=0.5.0
-# peppy>=0.31.1
-# pipestat>=0.0.2
-ubiquerg>=0.5.2
-jinja2
-eido>=0.1.3
 rich>=9.10.0
+ubiquerg>=0.5.2
+yacman>=0.9

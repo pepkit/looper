@@ -16,7 +16,7 @@ Looper **decouples job handling from the pipeline process**. In a typical pipeli
 4. running just one or two samples/jobs is simpler, and does not require a  distributed compute environment.
 
 
- 
+
 
 ## Installing
 

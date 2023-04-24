@@ -2,9 +2,9 @@
 
 ## 1. Start with a basic PEP
 
-To start, you need a project defined in the [standard Portable Encapsulated Project (PEP) format](http://pep.databio.org). Start by [creating a PEP](https://pep.databio.org/en/latest/simple_example/). 
+To start, you need a project defined in the [standard Portable Encapsulated Project (PEP) format](http://pep.databio.org). Start by [creating a PEP](https://pep.databio.org/en/latest/simple_example/).
 
-## 2. Connect the PEP to looper 
+## 2. Connect the PEP to looper
 
 ### 2.1 Specify `output_dir`
 
@@ -19,9 +19,9 @@ looper:
 
 *We recommend to read the [pipestat documentation](https://pipestat.databio.org) to learn more about the concepts described in this section*
 
-Additionally, you may configure pipestat, the tool used to manage pipeline results. Pipestat provides lots of flexibility, so there are multiple configuration options that you can provide in `looper.pipestat.sample` or `looper.pipestat.project`, depending on the pipeline level you intend to run. 
+Additionally, you may configure pipestat, the tool used to manage pipeline results. Pipestat provides lots of flexibility, so there are multiple configuration options that you can provide in `looper.pipestat.sample` or `looper.pipestat.project`, depending on the pipeline level you intend to run.
 
-Please note that all the configuration options listed below *do not* specify the values passed to pipestat *per se*, but rather `Project` or `Sample` attribute names that hold these values. This way the pipestat configuration can change with pipeline submitted for every `Sample` if the PEP `sample_modifiers` are used.  
+Please note that all the configuration options listed below *do not* specify the values passed to pipestat *per se*, but rather `Project` or `Sample` attribute names that hold these values. This way the pipestat configuration can change with pipeline submitted for every `Sample` if the PEP `sample_modifiers` are used.
 
 - `results_file_attribute`: name of the `Sample` or `Project` attribute that indicates the path to the YAML results file that will be used to report results into. Default value: `pipestat_results_file`, so the path will be sourced from either `Sample.pipestat_results_file` or `Project.pipestat_results_file`. If the path provided this way is not absolute, looper will make it relative to `{looper.output_dir}`.
 - `namespace_attribute`: name of the `Sample` or `Project` attribute that indicates the namespace to report into. Default values: `sample_name` for sample-level pipelines `name` for project-level pipelines , so the path will be sourced from either `Sample.sample_name` or `Project.name`.
@@ -39,7 +39,7 @@ pipestat_results_file: "project_pipestat_results.yaml"
 pipestat_config: "/path/to/project_pipestat_config.yaml"
 
 sample_modifiers:
-  append: 
+  append:
     pipestat_config: "/path/to/pipestat_config.yaml"
     pipestat_results_file: "RESULTS_FILE_PLACEHOLDER"
   derive:

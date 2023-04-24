@@ -3,23 +3,28 @@
 import itertools
 import os
 
-from jsonschema import ValidationError
-from pandas.core.common import flatten
+try:
+    from functools import cached_property
+except ImportError:
+    # cached_property was introduced in python 3.8
+    cached_property = property
 from logging import getLogger
 
-from peppy import SAMPLE_NAME_ATTR, OUTDIR_KEY, CONFIG_KEY, \
-    Project as peppyProject
-from peppy.utils import make_abs_via_cfg
-from eido import read_schema, PathAttrNotFoundError
 from divvy import ComputingConfiguration
-from ubiquerg import is_command_callable, expandpath
-from pipestat import PipestatManager, PipestatError
+from eido import PathAttrNotFoundError, read_schema
+from jsonschema import ValidationError
+from pandas.core.common import flatten
+from peppy import CONFIG_KEY, OUTDIR_KEY
+from peppy import Project as peppyProject
+from peppy.utils import make_abs_via_cfg
+from pipestat import PipestatError, PipestatManager
+from ubiquerg import expandpath, is_command_callable
 
-from .processed_project import populate_sample_paths, populate_project_paths
 from .const import *
 from .exceptions import *
-from .utils import *
 from .pipeline_interface import PipelineInterface
+from .processed_project import populate_project_paths, populate_sample_paths
+from .utils import *
 
 __all__ = ["Project"]
 
@@ -27,28 +32,32 @@ _LOGGER = getLogger(__name__)
 
 
 class ProjectContext(object):
-    """ Wrap a Project to provide protocol-specific Sample selection. """
+    """Wrap a Project to provide protocol-specific Sample selection."""
 
-    def __init__(self, prj, selector_attribute=None,
-                 selector_include=None, selector_exclude=None):
-        """ Project and what to include/exclude defines the context. """
+    def __init__(
+        self, prj, selector_attribute=None, selector_include=None, selector_exclude=None
+    ):
+        """Project and what to include/exclude defines the context."""
         if not isinstance(selector_attribute, str):
             raise TypeError(
                 "Name of attribute for sample selection isn't a string: {} "
-                "({})".format(selector_attribute, type(selector_attribute)))
+                "({})".format(selector_attribute, type(selector_attribute))
+            )
         self.prj = prj
         self.include = selector_include
         self.exclude = selector_exclude
         self.attribute = selector_attribute
 
     def __getattr__(self, item):
-        """ Samples are context-specific; other requests are handled
-        locally or dispatched to Project. """
+        """Samples are context-specific; other requests are handled
+        locally or dispatched to Project."""
         if item == "samples":
-            return fetch_samples(prj=self.prj,
-                                 selector_attribute=self.attribute,
-                                 selector_include=self.include,
-                                 selector_exclude=self.exclude)
+            return fetch_samples(
+                prj=self.prj,
+                selector_attribute=self.attribute,
+                selector_include=self.include,
+                selector_exclude=self.exclude,
+            )
         if item in ["prj", "include", "exclude"]:
             # Attributes requests that this context/wrapper handles
             return self.__dict__[item]
@@ -57,19 +66,19 @@ class ProjectContext(object):
             return getattr(self.prj, item)
 
     def __getitem__(self, item):
-        """ Provide the Mapping-like item access to the instance's Project. """
+        """Provide the Mapping-like item access to the instance's Project."""
         return self.prj[item]
 
     def __enter__(self):
-        """ References pass through this instance as needed, so the context
-         provided is the instance itself. """
+        """References pass through this instance as needed, so the context
+        provided is the instance itself."""
         return self
 
     def __repr__(self):
         return self.prj.__repr__()
 
     def __exit__(self, *args):
-        """ Context teardown. """
+        """Context teardown."""
         pass
 
 
@@ -87,23 +96,25 @@ class Project(peppyProject):
     :param str compute_env_file: Environment configuration YAML file specifying
         compute settings.
     """
-    def __init__(self, cfg, amendments=None, divcfg_path=None,
-                 runp=False, **kwargs):
+
+    def __init__(self, cfg, amendments=None, divcfg_path=None, runp=False, **kwargs):
         super(Project, self).__init__(cfg=cfg, amendments=amendments)
         setattr(self, EXTRA_KEY, dict())
         for attr_name in CLI_PROJ_ATTRS:
             if attr_name in kwargs:
                 setattr(self[EXTRA_KEY], attr_name, kwargs[attr_name])
-        self._samples_by_interface = \
-            self._samples_by_piface(self.piface_key)
+        self._samples_by_interface = self._samples_by_piface(self.piface_key)
         self._interfaces_by_sample = self._piface_by_samples()
         self.linked_sample_interfaces = self._get_linked_pifaces()
         if FILE_CHECKS_KEY in self[EXTRA_KEY]:
             setattr(self, "file_checks", not self[EXTRA_KEY][FILE_CHECKS_KEY])
         if DRY_RUN_KEY in self[EXTRA_KEY]:
             setattr(self, DRY_RUN_KEY, self[EXTRA_KEY][DRY_RUN_KEY])
-        self.dcc = None if divcfg_path is None else \
-            ComputingConfiguration(filepath=divcfg_path)
+        self.dcc = (
+            None
+            if divcfg_path is None
+            else ComputingConfiguration(filepath=divcfg_path)
+        )
         if hasattr(self, DRY_RUN_KEY) and not self[DRY_RUN_KEY]:
             _LOGGER.debug("Ensuring project directories exist")
             self.make_project_dirs()
@@ -115,8 +126,7 @@ class Project(peppyProject):
 
         :return str: name of the pipeline interface attribute
         """
-        return self._extra_cli_or_cfg(PIFACE_KEY_SELECTOR) \
-               or PIPELINE_INTERFACES_KEY
+        return self._extra_cli_or_cfg(PIFACE_KEY_SELECTOR) or PIPELINE_INTERFACES_KEY
 
     @property
     def toggle_key(self):
@@ -144,8 +154,11 @@ class Project(peppyProject):
         :return list[str]: collection of pipeline interface sources
         """
         x = self._extra_cli_or_cfg(self.piface_key)
-        return list(flatten([x] if not isinstance(x, list) else x)) \
-            if x is not None else None
+        return (
+            list(flatten([x] if not isinstance(x, list) else x))
+            if x is not None
+            else None
+        )
 
     @property
     def output_dir(self):
@@ -173,14 +186,18 @@ class Project(peppyProject):
         else:
             if result is not None:
                 return result
-        if CONFIG_KEY in self and LOOPER_KEY in self[CONFIG_KEY] \
-                and attr_name in self[CONFIG_KEY][LOOPER_KEY]:
+        if (
+            CONFIG_KEY in self
+            and LOOPER_KEY in self[CONFIG_KEY]
+            and attr_name in self[CONFIG_KEY][LOOPER_KEY]
+        ):
             return self[CONFIG_KEY][LOOPER_KEY][attr_name]
         else:
             if strict:
                 raise MisconfigurationException(
                     "'{}' is missing. Provide it in the '{}' section of the "
-                    "project configuration file".format(attr_name, LOOPER_KEY))
+                    "project configuration file".format(attr_name, LOOPER_KEY)
+                )
             return
 
     @property
@@ -190,8 +207,7 @@ class Project(peppyProject):
 
         :return str: path to the results folder in the output folder
         """
-        return self._out_subdir_path(RESULTS_SUBDIR_KEY,
-                                     default="results_pipeline")
+        return self._out_subdir_path(RESULTS_SUBDIR_KEY, default="results_pipeline")
 
     @property
     def submission_folder(self):
@@ -200,10 +216,9 @@ class Project(peppyProject):
 
         :return str: path to the submission in the output folder
         """
-        return self._out_subdir_path(SUBMISSION_SUBDIR_KEY,
-                                     default="submission")
+        return self._out_subdir_path(SUBMISSION_SUBDIR_KEY, default="submission")
 
-    def _out_subdir_path(self, key, default):
+    def _out_subdir_path(self, key: str, default: str) -> str:
         """
         Create a system path relative to the project output directory.
         The values for the names of the subdirectories are sourced from
@@ -213,8 +228,9 @@ class Project(peppyProject):
         :param str default: if key not specified, a default to use
         :return str: path to the folder
         """
-        return os.path.join(getattr(self, OUTDIR_KEY),
-                            getattr(self[EXTRA_KEY], key) or default)
+        parent = getattr(self, OUTDIR_KEY)
+        child = getattr(self[EXTRA_KEY], key, default) or default
+        return os.path.join(parent, child)
 
     def make_project_dirs(self):
         """
@@ -222,18 +238,19 @@ class Project(peppyProject):
         """
         for folder_key in ["results_folder", "submission_folder"]:
             folder_path = getattr(self, folder_key)
-            _LOGGER.debug("Ensuring project dir exists: '{}'".
-                          format(folder_path))
+            _LOGGER.debug("Ensuring project dir exists: '{}'".format(folder_path))
             if not os.path.exists(folder_path):
-                _LOGGER.debug("Attempting to create project folder: '{}'".
-                              format(folder_path))
+                _LOGGER.debug(
+                    "Attempting to create project folder: '{}'".format(folder_path)
+                )
                 try:
                     os.makedirs(folder_path)
                 except OSError as e:
-                    _LOGGER.warning("Could not create project folder: '{}'".
-                                    format(str(e)))
+                    _LOGGER.warning(
+                        "Could not create project folder: '{}'".format(str(e))
+                    )
 
-    @property
+    @cached_property
     def project_pipeline_interface_sources(self):
         """
         Get a list of all valid project-level pipeline interface sources
@@ -241,10 +258,13 @@ class Project(peppyProject):
 
         :return list[str]: collection of valid pipeline interface sources:
         """
-        return [self._resolve_path_with_cfg(src) for src in self.cli_pifaces] \
-            if self.cli_pifaces is not None else []
+        return (
+            [self._resolve_path_with_cfg(src) for src in self.cli_pifaces]
+            if self.cli_pifaces is not None
+            else []
+        )
 
-    @property
+    @cached_property
     def project_pipeline_interfaces(self):
         """
         Flat list of all valid project-level interface objects associated
@@ -256,10 +276,12 @@ class Project(peppyProject):
 
         :return list[looper.PipelineInterface]: list of pipeline interfaces
         """
-        return [PipelineInterface(pi, pipeline_type="project")
-                for pi in self.project_pipeline_interface_sources]
+        return [
+            PipelineInterface(pi, pipeline_type="project")
+            for pi in self.project_pipeline_interface_sources
+        ]
 
-    @property
+    @cached_property
     def pipeline_interfaces(self):
         """
         Flat list of all valid interface objects associated with this Project
@@ -270,9 +292,9 @@ class Project(peppyProject):
 
         :return list[looper.PipelineInterface]: list of pipeline interfaces
         """
-        return [i for s in self._interfaces_by_sample.values() for i in s]
+        return [pi for ifaces in self._interfaces_by_sample.values() for pi in ifaces]
 
-    @property
+    @cached_property
     def pipeline_interface_sources(self):
         """
         Get a list of all valid pipeline interface sources associated
@@ -281,6 +303,24 @@ class Project(peppyProject):
         :return list[str]: collection of valid pipeline interface sources
         """
         return self._samples_by_interface.keys()
+
+    @cached_property
+    def pipestat_configured(self):
+        """
+        Whether pipestat configuration is complete for all sample pipelines
+
+        :return bool: whether pipestat configuration is complete
+        """
+        return self._check_if_pipestat_configured()
+
+    @cached_property
+    def pipestat_configured_project(self):
+        """
+        Whether pipestat configuration is complete for all project pipelines
+
+        :return bool: whether pipestat configuration is complete
+        """
+        return self._check_if_pipestat_configured(project_level=True)
 
     def get_sample_piface(self, sample_name):
         """
@@ -325,7 +365,8 @@ class Project(peppyProject):
             raise NotImplementedError(
                 "Currently, only prioritized protocol mapping is supported "
                 "(i.e., pipeline interfaces collection is a prioritized list, "
-                "so only the first interface with a protocol match is used.)")
+                "so only the first interface with a protocol match is used.)"
+            )
 
         # Pull out the collection of interfaces (potentially one from each of
         # the locations indicated in the project configuration file) as a
@@ -334,7 +375,8 @@ class Project(peppyProject):
         pifaces = self.interfaces.get_pipeline_interface(protocol)
         if not pifaces:
             raise PipelineInterfaceConfigError(
-                "No interfaces for protocol: {}".format(protocol))
+                "No interfaces for protocol: {}".format(protocol)
+            )
 
         # coonvert to a list, in the future we might allow to match multiple
         pifaces = pifaces if isinstance(pifaces, str) else [pifaces]
@@ -342,8 +384,7 @@ class Project(peppyProject):
         job_submission_bundles = []
         new_jobs = []
 
-        _LOGGER.debug("Building pipelines matched by protocol: {}".
-                      format(protocol))
+        _LOGGER.debug("Building pipelines matched by protocol: {}".format(protocol))
 
         for pipe_iface in pifaces:
             # Determine how to reference the pipeline and where it is.
@@ -379,19 +420,59 @@ class Project(peppyProject):
 
     def get_pipestat_managers(self, sample_name=None, project_level=False):
         """
-        Get a collection of pipestat managers for the selected sample.
+        Get a collection of pipestat managers for the selected sample or project.
 
         The number of pipestat managers corresponds to the number of unique
-        output schemas in the pipeline interfaces specified by the sample.
+        output schemas in the pipeline interfaces specified by the sample or project.
 
         :param str sample_name: sample name to get pipestat managers for
         :param bool project_level: whether the project PipestatManagers
             should be returned
         :return dict[str, pipestat.PipestatManager]: a mapping of pipestat
-            managers by pipeline interface for the selected sample
+            managers by pipeline interface name
         """
-        def _get_val_from_attr(
-                pipestat_sect, object, attr_name, default, use_cfg=False):
+        pipestat_configs = self._get_pipestat_configuration(
+            sample_name=sample_name, project_level=project_level
+        )
+        return {
+            pipeline_name: PipestatManager(**pipestat_vars)
+            for pipeline_name, pipestat_vars in pipestat_configs.items()
+        }
+
+    def _check_if_pipestat_configured(self, project_level=False):
+        """
+        A helper method determining whether pipestat configuration is complete
+
+        :param bool project_level: whether the project pipestat config should be checked
+        :return bool: whether pipestat configuration is complete
+        """
+        try:
+            if project_level:
+                self._get_pipestat_configuration(
+                    sample_name=None, project_level=project_level
+                )
+            else:
+                for s in self.samples:
+                    self._get_pipestat_configuration(sample_name=s.sample_name)
+        except Exception as e:
+            context = (
+                f"Project '{self.name}'"
+                if project_level
+                else f"Sample '{s.sample_name}'"
+            )
+            _LOGGER.debug(
+                f"Pipestat configuration incomplete for {context}; "
+                f"caught exception: {getattr(e, 'message', repr(e))}"
+            )
+            return False
+        return True
+
+    def _get_pipestat_configuration(self, sample_name=None, project_level=False):
+        """
+        Get all required pipestat configuration variables
+        """
+
+        def _get_val_from_attr(pipestat_sect, object, attr_name, default, no_err=False):
             """
             Get configuration value from an object's attribute or return default
 
@@ -400,6 +481,8 @@ class Project(peppyProject):
                 configuration values for
             :param str attr_name: attribute name with the value to retrieve
             :param str default: default attribute name
+            :param bool no_err: do not raise error in case the attribute is missing,
+                in order to use the values specified in a different way, e.g. in pipestat config
             :return str: retrieved configuration value
             """
             if pipestat_sect is not None and attr_name in pipestat_sect:
@@ -407,21 +490,26 @@ class Project(peppyProject):
             try:
                 return getattr(object, default)
             except AttributeError:
-                if use_cfg:
+                if no_err:
                     return None
-                raise
+                raise AttributeError(f"'{default}' attribute is missing")
 
         ret = {}
         if not project_level and sample_name is None:
-            raise ValueError("Must provide the sample_name to determine the "
-                             "sample to get the PipestatManagers for")
+            raise ValueError(
+                "Must provide the sample_name to determine the "
+                "sample to get the PipestatManagers for"
+            )
         key = "project" if project_level else "sample"
-        if CONFIG_KEY in self and LOOPER_KEY in self[CONFIG_KEY] and \
-                PIPESTAT_KEY in self[CONFIG_KEY][LOOPER_KEY] and \
-                key in self[CONFIG_KEY][LOOPER_KEY][PIPESTAT_KEY]:
+        if (
+            CONFIG_KEY in self
+            and LOOPER_KEY in self[CONFIG_KEY]
+            and PIPESTAT_KEY in self[CONFIG_KEY][LOOPER_KEY]
+            and key in self[CONFIG_KEY][LOOPER_KEY][PIPESTAT_KEY]
+        ):
             pipestat_section = self[CONFIG_KEY][LOOPER_KEY][PIPESTAT_KEY][key]
         else:
-            _LOGGER.warning(
+            _LOGGER.debug(
                 f"'{PIPESTAT_KEY}' not found in '{LOOPER_KEY}' section of the "
                 f"project configuration file. Using defaults."
             )
@@ -430,40 +518,47 @@ class Project(peppyProject):
             pipestat_section,
             self.config if project_level else self.get_sample(sample_name),
             PIPESTAT_CONFIG_ATTR_KEY,
-            DEFAULT_PIPESTAT_CONFIG_ATTR
+            DEFAULT_PIPESTAT_CONFIG_ATTR,
+            True,  # allow for missing pipestat cfg attr, the settings may be provided as Project/Sample attrs
         )
+
         pipestat_config = self._resolve_path_with_cfg(pth=pipestat_config)
         namespace = _get_val_from_attr(
             pipestat_section,
             self.config if project_level else self.get_sample(sample_name),
             PIPESTAT_NAMESPACE_ATTR_KEY,
-            "name" if project_level else "sample_name",
-            os.path.exists(pipestat_config)
+            "name" if project_level else self.sample_table_index,
+            pipestat_config and os.path.exists(pipestat_config),
         )
         results_file_path = _get_val_from_attr(
             pipestat_section,
             self.config if project_level else self.get_sample(sample_name),
             PIPESTAT_RESULTS_FILE_ATTR_KEY,
             DEFAULT_PIPESTAT_RESULTS_FILE_ATTR,
-            os.path.exists(pipestat_config)
+            pipestat_config and os.path.exists(pipestat_config),
         )
         if results_file_path is not None:
             results_file_path = expandpath(results_file_path)
             if not os.path.isabs(results_file_path):
-                results_file_path = os.path.join(
-                    self.output_dir, results_file_path)
-        pifaces = self.project_pipeline_interfaces if project_level \
+                results_file_path = os.path.join(self.output_dir, results_file_path)
+        pifaces = (
+            self.project_pipeline_interfaces
+            if project_level
             else self._interfaces_by_sample[sample_name]
+        )
         for piface in pifaces:
-            rec_id = piface.pipeline_name if self.amendments is None \
+            rec_id = (
+                piface.pipeline_name
+                if self.amendments is None
                 else f"{piface.pipeline_name}_{'_'.join(self.amendments)}"
-            ret[piface.pipeline_name] = PipestatManager(
-                namespace=namespace,
-                config=pipestat_config,
-                results_file_path=results_file_path,
-                record_identifier=rec_id,
-                schema_path=piface.get_pipeline_schemas(OUTPUT_SCHEMA_KEY)
             )
+            ret[piface.pipeline_name] = {
+                "namespace": namespace,
+                "config": pipestat_config,
+                "results_file_path": results_file_path,
+                "record_identifier": rec_id,
+                "schema_path": piface.get_pipeline_schemas(OUTPUT_SCHEMA_KEY),
+            }
         return ret
 
     def populate_pipeline_outputs(self):
@@ -475,13 +570,12 @@ class Project(peppyProject):
         # imports in schemas. The output schemas can't have the import section,
         # hence it's safe to select the fist element after read_schema() call.
         for sample in self.samples:
-            sample_piface = self.get_sample_piface(sample[SAMPLE_NAME_ATTR])
+            sample_piface = self.get_sample_piface(sample[self.sample_table_index])
             if sample_piface:
                 paths = self.get_schemas(sample_piface, OUTPUT_SCHEMA_KEY)
                 for path in paths:
                     populate_sample_paths(sample, read_schema(path)[0])
-        schemas = self.get_schemas(
-            self.project_pipeline_interfaces, OUTPUT_SCHEMA_KEY)
+        schemas = self.get_schemas(self.project_pipeline_interfaces, OUTPUT_SCHEMA_KEY)
         for schema in schemas:
             populate_project_paths(self, read_schema(schema)[0])
 
@@ -503,16 +597,23 @@ class Project(peppyProject):
             if piface not in p.pipeline_interface_sources:
                 raise PipelineInterfaceConfigError(
                     "Linked sample pipeline interface was not assigned "
-                    f"to any sample in this project: {piface}")
+                    f"to any sample in this project: {piface}"
+                )
             return piface
 
         linked_pifaces = {}
         for prj_piface in self.project_pipeline_interfaces:
-            pifaces = prj_piface.linked_pipeline_interfaces if \
-                hasattr(prj_piface, "linked_pipeline_interfaces") else []
-            linked_pifaces[prj_piface.source] = \
-                list({_process_linked_piface(self, piface, prj_piface.source)
-                      for piface in pifaces})
+            pifaces = (
+                prj_piface.linked_pipeline_interfaces
+                if hasattr(prj_piface, "linked_pipeline_interfaces")
+                else []
+            )
+            linked_pifaces[prj_piface.source] = list(
+                {
+                    _process_linked_piface(self, piface, prj_piface.source)
+                    for piface in pifaces
+                }
+            )
         return linked_pifaces
 
     def _piface_by_samples(self):
@@ -524,10 +625,13 @@ class Project(peppyProject):
         """
         pifaces_by_sample = {}
         for source, sample_names in self._samples_by_interface.items():
-            for sample_name in sample_names:
-                pifaces_by_sample.setdefault(sample_name, [])
-                pifaces_by_sample[sample_name].\
-                    append(PipelineInterface(source, pipeline_type="sample"))
+            try:
+                pi = PipelineInterface(source, pipeline_type="sample")
+            except PipelineInterfaceConfigError as e:
+                _LOGGER.debug(f"Skipping pipeline interface creation: {e}")
+            else:
+                for sample_name in sample_names:
+                    pifaces_by_sample.setdefault(sample_name, []).append(pi)
         return pifaces_by_sample
 
     def _omit_from_repr(self, k, cls):
@@ -546,10 +650,11 @@ class Project(peppyProject):
         :param str pth: path, possibly including env vars and/or relative
         :return str: absolute path
         """
+        if pth is None:
+            return
         pth = expandpath(pth)
         if not os.path.isabs(pth):
-            pth = os.path.realpath(
-                os.path.join(os.path.dirname(self.config_file), pth))
+            pth = os.path.realpath(os.path.join(os.path.dirname(self.config_file), pth))
             _LOGGER.debug("Relative path made absolute: {}".format(pth))
         return pth
 
@@ -573,22 +678,30 @@ class Project(peppyProject):
                     source = self._resolve_path_with_cfg(source)
                     try:
                         PipelineInterface(source, pipeline_type="sample")
-                    except (ValidationError, IOError) as e:
-                        msg = "Ignoring invalid pipeline interface source: " \
-                              "{}. Caught exception: {}".\
-                            format(source, getattr(e, 'message', repr(e)))
+                    except (
+                        ValidationError,
+                        IOError,
+                        PipelineInterfaceConfigError,
+                    ) as e:
+                        msg = (
+                            "Ignoring invalid pipeline interface source: "
+                            "{}. Caught exception: {}".format(
+                                source, getattr(e, "message", repr(e))
+                            )
+                        )
                         msgs.add(msg)
                         continue
                     else:
                         samples_by_piface.setdefault(source, set())
-                        samples_by_piface[source].add(sample[SAMPLE_NAME_ATTR])
+                        samples_by_piface[source].add(sample[self.sample_table_index])
         for msg in msgs:
             _LOGGER.warning(msg)
         return samples_by_piface
 
 
-def fetch_samples(prj, selector_attribute=None, selector_include=None,
-                  selector_exclude=None):
+def fetch_samples(
+    prj, selector_attribute=None, selector_include=None, selector_exclude=None
+):
     """
     Collect samples of particular protocol(s).
 
@@ -619,8 +732,7 @@ def fetch_samples(prj, selector_attribute=None, selector_include=None,
         Python2;
         also possible if name of attribute for selection isn't a string
     """
-    if selector_attribute is None or \
-            (not selector_include and not selector_exclude):
+    if selector_attribute is None or (not selector_include and not selector_exclude):
         # Simple; keep all samples.  In this case, this function simply
         # offers a list rather than an iterator.
         return list(prj.samples)
@@ -629,21 +741,23 @@ def fetch_samples(prj, selector_attribute=None, selector_include=None,
         raise TypeError(
             "Name for attribute on which to base selection isn't string: "
             "{} "
-            "({})".format(selector_attribute, type(selector_attribute)))
+            "({})".format(selector_attribute, type(selector_attribute))
+        )
 
     # At least one of the samples has to have the specified attribute
-    if prj.samples and not any(
-            [hasattr(s, selector_attribute) for s in prj.samples]):
+    if prj.samples and not any([hasattr(s, selector_attribute) for s in prj.samples]):
         raise AttributeError(
-            "The Project samples do not have the attribute '{attr}'".
-                format(attr=selector_attribute))
+            "The Project samples do not have the attribute '{attr}'".format(
+                attr=selector_attribute
+            )
+        )
 
     # Intersection between selector_include and selector_exclude is
     # nonsense user error.
     if selector_include and selector_exclude:
         raise TypeError(
-            "Specify only selector_include or selector_exclude parameter, "
-            "not both.")
+            "Specify only selector_include or selector_exclude parameter, " "not both."
+        )
 
     # Ensure that we're working with sets.
     def make_set(items):
@@ -658,14 +772,15 @@ def fetch_samples(prj, selector_attribute=None, selector_include=None,
     if not selector_include:
         # Loose; keep all samples not in the selector_exclude.
         def keep(s):
-            return not hasattr(s, selector_attribute) \
-                   or getattr(s, selector_attribute) \
-                   not in make_set(selector_exclude)
+            return not hasattr(s, selector_attribute) or getattr(
+                s, selector_attribute
+            ) not in make_set(selector_exclude)
+
     else:
         # Strict; keep only samples in the selector_include.
         def keep(s):
-            return hasattr(s, selector_attribute) \
-                   and getattr(s, selector_attribute) \
-                   in make_set(selector_include)
+            return hasattr(s, selector_attribute) and getattr(
+                s, selector_attribute
+            ) in make_set(selector_include)
 
     return list(filter(keep, prj.samples))

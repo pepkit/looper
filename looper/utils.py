@@ -1,17 +1,22 @@
 """ Helpers without an obvious logical home. """
 
-from collections import defaultdict, Iterable
-from logging import getLogger
+import argparse
+from collections import defaultdict, namedtuple
 import glob
+import itertools
+from logging import getLogger
 import os
-from .const import *
-from .exceptions import MisconfigurationException
-from peppy.const import *
-from peppy import Project as peppyProject
+import sys
+from typing import *
+
 import jinja2
 import yaml
-import argparse
+from peppy import Project as peppyProject
+from peppy.const import *
 from ubiquerg import convert_value, expandpath
+
+from .const import *
+from .exceptions import MisconfigurationException
 
 _LOGGER = getLogger(__name__)
 
@@ -76,12 +81,18 @@ def fetch_sample_flags(prj, sample, pl_name):
     """
     sfolder = sample_folder(prj=prj, sample=sample)
     if not os.path.isdir(sfolder):
-        _LOGGER.debug("Results folder ({}) doesn't exist for sample {}".
-                      format(sfolder, str(sample)))
+        _LOGGER.debug(
+            "Results folder ({}) doesn't exist for sample {}".format(
+                sfolder, str(sample)
+            )
+        )
         return []
     folder_contents = [os.path.join(sfolder, f) for f in os.listdir(sfolder)]
-    return [x for x in folder_contents if os.path.splitext(x)[1] == ".flag"
-            and os.path.basename(x).startswith(pl_name)]
+    return [
+        x
+        for x in folder_contents
+        if os.path.splitext(x)[1] == ".flag" and os.path.basename(x).startswith(pl_name)
+    ]
 
 
 def grab_project_data(prj):
@@ -102,10 +113,9 @@ def grab_project_data(prj):
         return {}
 
     try:
-        data = prj[CONFIG_KEY]
+        return prj[CONFIG_KEY]
     except KeyError:
         _LOGGER.debug("Project lacks section '%s', skipping", CONFIG_KEY)
-    return data
 
 
 def sample_folder(prj, sample):
@@ -117,8 +127,7 @@ def sample_folder(prj, sample):
         folder path.
     :return str: this Project's root folder for the given Sample
     """
-    return os.path.join(prj.results_folder,
-                        sample[SAMPLE_NAME_ATTR])
+    return os.path.join(prj.results_folder, sample[prj.sample_table_index])
 
 
 def get_file_for_project(prj, pipeline_name, appendix=None, directory=None):
@@ -136,7 +145,8 @@ def get_file_for_project(prj, pipeline_name, appendix=None, directory=None):
     :return str: path to the file
     """
     fp = os.path.join(
-        prj.output_dir, directory or "", f"{prj[NAME_KEY]}_{pipeline_name}")
+        prj.output_dir, directory or "", f"{prj[NAME_KEY]}_{pipeline_name}"
+    )
     if hasattr(prj, "amendments") and getattr(prj, "amendments"):
         fp += f"_{'_'.join(prj.amendments)}"
     fp += f"_{appendix}"
@@ -155,8 +165,8 @@ def get_file_for_project_old(prj, appendix):
     """
     fp = os.path.join(prj.output_dir, prj[NAME_KEY])
     if hasattr(prj, AMENDMENTS_KEY) and getattr(prj, AMENDMENTS_KEY):
-        fp += '_' + '_'.join(getattr(prj, AMENDMENTS_KEY))
-    fp += '_' + appendix
+        fp += "_" + "_".join(getattr(prj, AMENDMENTS_KEY))
+    fp += "_" + appendix
     return fp
 
 
@@ -174,6 +184,7 @@ def jinja_render_template_strictly(template, namespaces):
         Possible namespaces are: looper, project, sample, pipeline
     :return str: rendered command
     """
+
     def _finfun(x):
         """
         A callable that can be used to process the result of a variable
@@ -181,18 +192,20 @@ def jinja_render_template_strictly(template, namespaces):
         """
         return " ".join(x) if isinstance(x, list) else x
 
-    env = jinja2.Environment(undefined=jinja2.StrictUndefined,
-                             variable_start_string="{",
-                             variable_end_string="}",
-                             finalize=_finfun)
+    env = jinja2.Environment(
+        undefined=jinja2.StrictUndefined,
+        variable_start_string="{",
+        variable_end_string="}",
+        finalize=_finfun,
+    )
     templ_obj = env.from_string(template)
     try:
         rendered = templ_obj.render(**namespaces)
-    except jinja2.exceptions.UndefinedError:
-        _LOGGER.error(f"Attributes in namespaces "
-                      f"({', '.join(list(namespaces.keys()))}) missing for "
-                      f"the following template: '{template}'")
-        raise
+    except jinja2.exceptions.UndefinedError as e:
+        _LOGGER.error("Error populating command template: " + str(e))
+        _LOGGER.debug(f"({', '.join(list(namespaces.keys()))}) missing for ")
+        _LOGGER.debug(f"Template: '{template}'")
+        raise e
     _LOGGER.debug("rendered arg str: {}".format(rendered))
     return rendered
 
@@ -206,7 +219,7 @@ def read_yaml_file(filepath):
     """
     data = None
     if os.path.exists(filepath):
-        with open(filepath, 'r') as f:
+        with open(filepath, "r") as f:
             data = yaml.safe_load(f)
     return data
 
@@ -222,9 +235,11 @@ def enrich_args_via_cfg(parser_args, aux_parser):
         with defaults suppressed
     :return argparse.Namespace: selected argument values
     """
-    cfg_args_all = \
-        _get_subcommand_args(parser_args) \
-            if os.path.exists(parser_args.config_file) else dict()
+    cfg_args_all = (
+        _get_subcommand_args(parser_args)
+        if os.path.exists(parser_args.config_file)
+        else dict()
+    )
     result = argparse.Namespace()
     cli_args, _ = aux_parser.parse_known_args()
     for dest in vars(parser_args):
@@ -257,21 +272,34 @@ def _get_subcommand_args(parser_args):
     :return dict: mapping of argument destinations to their values
     """
     args = dict()
-    cfg = peppyProject(parser_args.config_file,
-                       defer_samples_creation=True,
-                       amendments=parser_args.amend)
-    if CONFIG_KEY in cfg and LOOPER_KEY in cfg[CONFIG_KEY] \
-            and CLI_KEY in cfg[CONFIG_KEY][LOOPER_KEY]:
+    cfg = peppyProject(
+        parser_args.config_file,
+        defer_samples_creation=True,
+        amendments=parser_args.amend,
+    )
+    if (
+        CONFIG_KEY in cfg
+        and LOOPER_KEY in cfg[CONFIG_KEY]
+        and CLI_KEY in cfg[CONFIG_KEY][LOOPER_KEY]
+    ):
         try:
             cfg_args = cfg[CONFIG_KEY][LOOPER_KEY][CLI_KEY] or dict()
-            args = cfg_args[ALL_SUBCMD_KEY] or dict() \
-                if ALL_SUBCMD_KEY in cfg_args else dict()
-            args.update(cfg_args[parser_args.command] or dict()
-                        if parser_args.command in cfg_args else dict())
+            args = (
+                cfg_args[ALL_SUBCMD_KEY] or dict()
+                if ALL_SUBCMD_KEY in cfg_args
+                else dict()
+            )
+            args.update(
+                cfg_args[parser_args.command] or dict()
+                if parser_args.command in cfg_args
+                else dict()
+            )
         except (TypeError, KeyError, AttributeError, ValueError) as e:
             raise MisconfigurationException(
-                "Invalid '{}.{}' section in the config. Caught exception: {}".
-                    format(LOOPER_KEY, CLI_KEY, getattr(e, 'message', repr(e))))
+                "Invalid '{}.{}' section in the config. Caught exception: {}".format(
+                    LOOPER_KEY, CLI_KEY, getattr(e, "message", repr(e))
+                )
+            )
     if CONFIG_KEY in cfg and LOOPER_KEY in cfg[CONFIG_KEY]:
         try:
             if CLI_KEY in cfg[CONFIG_KEY][LOOPER_KEY]:
@@ -279,10 +307,44 @@ def _get_subcommand_args(parser_args):
             args.update(cfg[CONFIG_KEY][LOOPER_KEY])
         except (TypeError, KeyError, AttributeError, ValueError) as e:
             raise MisconfigurationException(
-                "Invalid '{}' section in the config. Caught exception: {}".
-                    format(LOOPER_KEY, getattr(e, 'message', repr(e))))
+                "Invalid '{}' section in the config. Caught exception: {}".format(
+                    LOOPER_KEY, getattr(e, "message", repr(e))
+                )
+            )
     args = {k.replace("-", "_"): v for k, v in args.items()} if args else None
     return args
+
+
+def init_generic_pipeline():
+    # check for pipeline folder
+    try:
+        os.makedirs("pipeline")
+    except FileExistsError:
+        print("Pipeline folder already exists.")
+        pass
+
+    # Destination one level down from CWD in pipeline folder
+    dest_file = os.path.join(os.getcwd(), "pipeline", LOOPER_GENERIC_PIPELINE)
+
+    # Determine Lines for Generic Pipeline Interface
+    line1 = "pipeline_name: count_lines\n"
+    line2 = "pipeline_type: sample\n"
+    line3 = "output_schema: output_schema.yaml\n"
+    line4 = "var_templates:\n"
+    line5 = "  pipeline: '{looper.piface_dir}/count_lines.sh'\n"
+    line6 = "command_template: >\n"
+    line7 = "  {pipeline.var_templates.pipeline} {sample.file} --output-parent {looper.sample_output_folder}\n"
+    yaml_body = line1 + line2 + line3 + line4 + line5 + line6 + line7
+
+    # Write file
+    if not os.path.exists(dest_file):
+        with open(dest_file, mode="w") as file:
+            file.write(str(yaml_body))
+        print(f"Generic pipeline interface successfully created at: {dest_file}")
+    else:
+        print("Generic pipeline interface file already exists. Skipping creation.")
+
+    return True
 
 
 def init_dotfile(path, cfg_path, force=False):
@@ -300,12 +362,12 @@ def init_dotfile(path, cfg_path, force=False):
     cfg_path = expandpath(cfg_path)
     if not os.path.isabs(cfg_path):
         cfg_path = os.path.join(os.path.dirname(path), cfg_path)
-    assert os.path.exists(cfg_path), \
-        OSError("Provided config path is invalid. You must provide path "
-                "that is either absolute or relative to: {}".
-                format(os.path.dirname(path)))
+    assert os.path.exists(cfg_path), OSError(
+        "Provided config path is invalid. You must provide path "
+        "that is either absolute or relative to: {}".format(os.path.dirname(path))
+    )
     relpath = os.path.relpath(cfg_path, os.path.dirname(path))
-    with open(path, 'w') as dotfile:
+    with open(path, "w") as dotfile:
         yaml.dump({DOTFILE_CFG_PTH_KEY: relpath}, dotfile)
     print("Initialized looper dotfile: {}".format(path))
     return True
@@ -320,15 +382,16 @@ def read_cfg_from_dotfile():
         required key pointing to the PEP
     """
     dp = dotfile_path(must_exist=True)
-    with open(dp, 'r') as dotfile:
+    with open(dp, "r") as dotfile:
         dp_data = yaml.safe_load(dotfile)
     if DOTFILE_CFG_PTH_KEY in dp_data:
-        return os.path.join(os.path.dirname(dp),
-                            str(os.path.join(dp_data[DOTFILE_CFG_PTH_KEY])))
+        return os.path.join(
+            os.path.dirname(dp), str(os.path.join(dp_data[DOTFILE_CFG_PTH_KEY]))
+        )
     else:
         raise MisconfigurationException(
-            "Looper dotfile ({}) is missing '{}' key".
-                format(dp, DOTFILE_CFG_PTH_KEY))
+            "Looper dotfile ({}) is missing '{}' key".format(dp, DOTFILE_CFG_PTH_KEY)
+        )
 
 
 def dotfile_path(directory=os.getcwd(), must_exist=False):
@@ -352,6 +415,147 @@ def dotfile_path(directory=os.getcwd(), must_exist=False):
             return os.path.join(cur_dir, LOOPER_DOTFILE_NAME)
         if cur_dir == parent_dir:
             # root, file does not exist
-            raise OSError("Looper dotfile ({}) not found in '{}' and all "
-                          "its parents".format(LOOPER_DOTFILE_NAME, directory))
+            raise OSError(
+                "Looper dotfile ({}) not found in '{}' and all "
+                "its parents".format(LOOPER_DOTFILE_NAME, directory)
+            )
         cur_dir = parent_dir
+
+
+class NatIntervalException(Exception):
+    """Subtype for errors specifically related to natural number interval"""
+
+    pass
+
+
+class NatIntervalInclusive(object):
+    def __init__(self, lo: int, hi: int):
+        super().__init__()
+        self._lo = lo
+        self._hi = hi
+        problems = self._invalidations()
+        if problems:
+            raise NatIntervalException(
+                f"{len(problems)} issues with interval on natural numbers: {', '.join(problems)}"
+            )
+
+    def __eq__(self, other) -> bool:
+        return type(other) == type(self) and self.to_tuple() == other.to_tuple()
+
+    def __hash__(self) -> int:
+        return hash(self.to_tuple())
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}: {self.to_tuple()}"
+
+    def __str__(self) -> str:
+        return f"{self.__class__.__name__}: {self.to_tuple()}"
+
+    def to_tuple(self) -> Tuple[int, int]:
+        return self.lo, self.hi
+
+    @property
+    def lo(self) -> int:
+        return self._lo
+
+    @property
+    def hi(self) -> int:
+        return self._hi
+
+    def _invalidations(self) -> Iterable[str]:
+        problems = []
+        if self.lo < 1:
+            problems.append(f"Interval must be on natural numbers: {self.lo}")
+        if self.hi < self.lo:
+            problems.append(
+                f"Upper bound must not be less than lower bound: {self.hi} < {self.lo}"
+            )
+        return problems
+
+    def to_range(self) -> Iterable[int]:
+        return range(self.lo, self.hi + 1)
+
+    @classmethod
+    def from_string(cls, s: str, upper_bound: int) -> "IntRange":
+        """
+        Create an instance from a string, e.g. command-line argument.
+
+        :param str s: The string to parse as an interval
+        :param int upper_bound: the default upper bound
+        """
+        if upper_bound < 1:
+            raise NatIntervalException(f"Upper bound must be positive: {upper_bound}")
+
+        # Determine delimiter, invalidating presence of multiple occurrences.
+        delim_histo = defaultdict(int)
+        candidates = [":", "-"]
+        for c in s:
+            if c in candidates:
+                delim_histo[c] += 1
+        seps = [sep for sep, num_occ in delim_histo.items() if num_occ == 1]
+        if len(seps) != 1:
+            raise NatIntervalException(
+                f"Did not find exactly one candidate delimiter with occurrence count of 1: {delim_histo}"
+            )
+        sep = seps[0]
+
+        # Use the determined delimiter.
+        lo, hi = s.split(sep)
+        if lo == "" and hi == "":
+            # We could do an interval like [1, upper_bound], but this is nonsensical as input.
+            raise NatIntervalException(
+                f"Parsed both lower and upper limit as empty from given arg: {s}"
+            )
+        try:
+            lo = 1 if lo == "" else int(lo)
+            hi = upper_bound if hi == "" else min(int(hi), upper_bound)
+        except ValueError as e:
+            raise NatIntervalException(str(e))
+        return cls(lo, hi)
+
+
+def desired_samples_range_limited(arg: str, num_samples: int) -> Iterable[int]:
+    """
+    Create a contiguous interval of natural numbers. Used for _positive_ selection of samples.
+
+    Interpret given arg as upper bound (1-based) if it's a single value, but take the
+    minimum of that and the given number of samples. If arg is parseable as a range,
+    use that.
+
+    :param str arg: CLI specification of a range of samples to use, or as the greatest
+        1-based index of a sample to include
+    :param int num_samples: what to use as the upper bound on the 1-based index interval
+        if the given arg isn't a range but rather a single value.
+    :return: an iterable of 1-based indices into samples to select
+    """
+    try:
+        upper_bound = min(int(arg), num_samples)
+    except ValueError:
+        intv = NatIntervalInclusive.from_string(arg, upper_bound=num_samples)
+    else:
+        _LOGGER.debug("Limiting to {} of {} samples".format(upper_bound, num_samples))
+        intv = NatIntervalInclusive(1, upper_bound)
+    return intv.to_range()
+
+
+def desired_samples_range_skipped(arg: str, num_samples: int) -> Iterable[int]:
+    """
+    Create a contiguous interval of natural numbers. Used for _negative_ selection of samples.
+
+    :param str arg: CLI specification of a range of samples to use, or as the lowest
+        1-based index of a sample to skip
+    :param int num_samples: highest 1-based index of samples to include
+    :return: an iterable of 1-based indices into samples to select
+    """
+    try:
+        lower_bound = int(arg)
+    except ValueError:
+        intv = NatIntervalInclusive.from_string(arg, upper_bound=num_samples)
+        lower = range(1, intv.lo)
+        upper = range(intv.hi + 1, num_samples + 1)
+        return itertools.chain(lower, upper)
+    else:
+        if num_samples <= lower_bound:
+            return []
+        intv = NatIntervalInclusive(lower_bound + 1, num_samples)
+        return intv.to_range()
