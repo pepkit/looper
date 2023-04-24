@@ -420,7 +420,6 @@ class Runner(Executor):
         self.counter.total = max_cmds
         failures = defaultdict(list)  # Collect problems by sample.
         processed_samples = set()  # Enforce one-time processing.
-        submission_conductors = {}
         comp_vars = compute_kwargs or {}
 
         # Determine number of samples eligible for processing.
@@ -439,6 +438,7 @@ class Runner(Executor):
                     "Could not read remote schema, skipping config validation."
                 )
 
+        submission_conductors = {}
         for piface in self.prj.pipeline_interfaces:
             conductor = SubmissionConductor(
                 pipeline_interface=piface,

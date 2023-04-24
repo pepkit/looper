@@ -71,6 +71,8 @@ __all__ = [
     "LOOPER_GENERIC_PIPELINE",
     "PROJECT_PL_ARG",
     "SAMPLE_PL_ARG",
+    "JOB_NAME_KEY",
+    "PIPELINE_INTERFACE_PIPELINE_NAME_KEY",
 ]
 
 FLAGS = ["completed", "running", "failed", "waiting", "partial"]
@@ -136,6 +138,7 @@ SAMPLE_CWL_YAML_PATH_KEY = "sample_cwl_yaml_path"
 TOGGLE_KEY_SELECTOR = "toggle_key"
 SAMPLE_TOGGLE_ATTR = "toggle"
 OUTKEY = "outputs"
+JOB_NAME_KEY = "job_name"
 VAR_TEMPL_KEY = "var_templates"
 COMPUTE_KEY = "compute"
 COMPUTE_PACKAGE_KEY = "package"
@@ -146,6 +149,8 @@ NOT_SUB_MSG = "> Not submitted: {}"
 IMAGE_EXTS = (".png", ".jpg", ".jpeg", ".svg", ".gif")
 # this strongly depends on pypiper's profile.tsv format
 PROFILE_COLNAMES = ["pid", "hash", "cid", "runtime", "mem", "cmd", "lock"]
+
+PIPELINE_INTERFACE_PIPELINE_NAME_KEY = "pipeline_name"
 
 # pipestat configuration keys
 DEFAULT_PIPESTAT_CONFIG_ATTR = "pipestat_config"

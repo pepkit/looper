@@ -8,8 +8,8 @@ import time
 from copy import copy, deepcopy
 from json import loads
 from subprocess import CalledProcessError, check_output
+from typing import *
 
-from attmap import AttMap
 from eido import read_schema, validate_inputs
 from eido.const import INPUT_FILE_SIZE_KEY, MISSING_KEY
 from jinja2.exceptions import UndefinedError
@@ -19,6 +19,7 @@ from peppy.exceptions import RemoteYAMLError
 from pipestat import PipestatError
 from ubiquerg import expandpath
 from yaml import dump
+from yacman import YAMLConfigManager
 
 from .const import *
 from .exceptions import JobSubmissionException
@@ -559,30 +560,31 @@ class SubmissionConductor(object):
         """Create the name for a job submission."""
         return "{}_{}".format(self.pl_iface.pipeline_name, self._sample_lump_name(pool))
 
-    def _set_looper_namespace(self, pool, size):
+    def _build_looper_namespace(self, pool, size):
         """
         Compile a mapping of looper/submission related settings for use in
         the command templates and in submission script creation
-        in divvy (via adapters). Accessible via: {looper.attrname}
+        in divvy (via adapters).
 
         :param Iterable[peppy.Sample] pool: collection of sample instances
         :param float size: cumulative size of the given pool
-        :return attmap.AttMap: looper/submission related settings
+        :return yacman.YAMLConfigManager: looper/submission related settings
         """
-        settings = AttMap()
-        settings.pep_config = self.prj.config_file
-        settings.results_subdir = self.prj.results_folder
-        settings.submission_subdir = self.prj.submission_folder
-        settings.output_dir = self.prj.output_dir
-        settings.sample_output_folder = os.path.join(
+        settings = YAMLConfigManager()
+        settings["pep_config"] = self.prj.config_file
+        settings[RESULTS_SUBDIR_KEY] = self.prj.results_folder
+        settings[SUBMISSION_SUBDIR_KEY] = self.prj.submission_folder
+        settings[OUTDIR_KEY] = self.prj.output_dir
+        # TODO: explore pulling additional constants from peppy and/or divvy.
+        settings["sample_output_folder"] = os.path.join(
             self.prj.results_folder, self._sample_lump_name(pool)
         )
-        settings.job_name = self._jobname(pool)
-        settings.total_input_size = size
-        settings.log_file = (
-            os.path.join(self.prj.submission_folder, settings.job_name) + ".log"
+        settings[JOB_NAME_KEY] = self._jobname(pool)
+        settings["total_input_size"] = size
+        settings["log_file"] = (
+            os.path.join(self.prj.submission_folder, settings[JOB_NAME_KEY]) + ".log"
         )
-        settings.piface_dir = os.path.dirname(self.pl_iface.pipe_iface_file)
+        settings["piface_dir"] = os.path.dirname(self.pl_iface.pipe_iface_file)
         if hasattr(self.prj, "pipeline_config"):
             # Make sure it's a file (it could be provided as null.)
             pl_config_file = self.prj.pipeline_config
@@ -595,10 +597,12 @@ class SubmissionConductor(object):
                     raise IOError(pl_config_file)
                 _LOGGER.info("Found config file: %s", pl_config_file)
                 # Append arg for config file if found
-                settings.pipeline_config = pl_config_file
+                settings["pipeline_config"] = pl_config_file
         return settings
 
-    def _set_pipestat_namespace(self, sample_name=None):
+    def _set_pipestat_namespace(
+        self, sample_name: Optional[str] = None
+    ) -> YAMLConfigManager:
         """
         Compile a mapping of pipestat-related settings for use in
         the command templates. Accessible via: {pipestat.attrname}
@@ -606,7 +610,7 @@ class SubmissionConductor(object):
         :param str sample_name: name of the sample to get the pipestat
             namespace for. If not provided the pipestat namespace will
             be determined based on the Project
-        :return attmap.AttMap: pipestat namespace
+        :return yacman.YAMLConfigManager: pipestat namespace
         """
         try:
             psms = (
@@ -623,7 +627,7 @@ class SubmissionConductor(object):
                 f"{getattr(e, 'message', repr(e))}"
             )
             # return an empty mapping
-            return AttMap()
+            return YAMLConfigManager()
         else:
             full_namespace = {
                 "schema": psm.schema_path,
@@ -633,7 +637,7 @@ class SubmissionConductor(object):
                 "config": psm.config_path,
             }
             filtered_namespace = {k: v for k, v in full_namespace.items() if v}
-            return AttMap(filtered_namespace)
+            return YAMLConfigManager(filtered_namespace)
 
     def write_script(self, pool, size):
         """
@@ -646,7 +650,7 @@ class SubmissionConductor(object):
         # looper settings determination
         if self.collate:
             pool = [None]
-        looper = self._set_looper_namespace(pool, size)
+        looper = self._build_looper_namespace(pool, size)
         commands = []
         namespaces = dict(
             project=self.prj[CONFIG_KEY],
@@ -705,7 +709,7 @@ class SubmissionConductor(object):
                 self._rendered_ok = True
                 self._num_good_job_submissions += 1
                 self._num_total_job_submissions += 1
-        looper.command = "\n".join(commands)
+        looper["command"] = "\n".join(commands)
         if self.collate:
             _LOGGER.debug("samples namespace:\n{}".format(self.prj.samples))
         else:
@@ -719,7 +723,7 @@ class SubmissionConductor(object):
         _LOGGER.debug("compute namespace:\n{}".format(self.prj.dcc.compute))
         _LOGGER.debug("looper namespace:\n{}".format(looper))
         _LOGGER.debug("pipestat namespace:\n{}".format(pipestat_namespace))
-        subm_base = os.path.join(self.prj.submission_folder, looper.job_name)
+        subm_base = os.path.join(self.prj.submission_folder, looper[JOB_NAME_KEY])
         return self.prj.dcc.write_script(
             output_path=subm_base + ".sub", extra_vars=[{"looper": looper}]
         )
@@ -788,8 +792,8 @@ def _exec_pre_submit(piface, namespaces):
             )
         _LOGGER.debug("Updating namespaces with:\n{}".format(y))
         for namespace, mapping in y.items():
-            for attr, val in mapping.items():
-                setattr(x[namespace], attr, val)
+            for key, val in mapping.items():
+                x[namespace][key] = val
 
     if PRE_SUBMIT_HOOK_KEY in piface:
         pre_submit = piface[PRE_SUBMIT_HOOK_KEY]
