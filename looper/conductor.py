@@ -442,10 +442,6 @@ class SubmissionConductor(object):
                 pass
             else:
                 self.write_script(self._curr_skip_pool, self._curr_skip_size)
-            if self._is_full(self._curr_skip_pool, self._curr_skip_size):
-                self._skipped_sample_pools.append(
-                    (self._curr_skip_pool, self._curr_skip_size)
-                )
                 self._reset_curr_skips()
 
         return skip_reasons
