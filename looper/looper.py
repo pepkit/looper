@@ -1050,16 +1050,19 @@ def main():
     if args.config_file is None:
         m = "No project config defined"
         try:
-            setattr(args, "config_file", read_cfg_from_dotfile())
+            looper_config_dict = read_looper_dotfile()
+            for looper_config_key, looper_config_item in looper_config_dict.items():
+                setattr(args, looper_config_key, looper_config_item)
         except OSError:
             print(m + f" and dotfile does not exist: {dotfile_path()}")
             parser.print_help(sys.stderr)
             sys.exit(1)
         else:
             print(
-                m + f", using: {read_cfg_from_dotfile()}. "
+                m + f", using: {read_looper_dotfile()}. "
                 f"Read from dotfile ({dotfile_path()})."
             )
+
     if args.command == "init":
         if args.piface == True:
             sys.exit(int(not init_generic_pipeline()))
@@ -1070,8 +1073,6 @@ def main():
     # If project pipeline interface defined in the cli, change name to: "pipeline_interface"
     if vars(args)[PROJECT_PL_ARG]:
         args.pipeline_interfaces = vars(args)[PROJECT_PL_ARG]
-
-    from logmuse import init_logger
 
     _LOGGER = logmuse.logger_via_cli(args, make_root=True)
 

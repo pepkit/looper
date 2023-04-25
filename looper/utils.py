@@ -375,9 +375,9 @@ def init_dotfile(path, cfg_path, force=False):
     return True
 
 
-def read_cfg_from_dotfile():
+def read_looper_dotfile():
     """
-    Read file path to the config file from the dotfile
+    Read looper config file
 
     :return str: path to the config file read from the dotfile
     :raise MisconfigurationException: if the dotfile does not consist of the
@@ -386,14 +386,24 @@ def read_cfg_from_dotfile():
     dp = dotfile_path(must_exist=True)
     with open(dp, "r") as dotfile:
         dp_data = yaml.safe_load(dotfile)
-    if DOTFILE_CFG_PTH_KEY in dp_data:
-        return os.path.join(
-            os.path.dirname(dp), str(os.path.join(dp_data[DOTFILE_CFG_PTH_KEY]))
-        )
-    else:
+
+    if PEP_CONFIG_KEY not in dp_data:
         raise MisconfigurationException(
-            "Looper dotfile ({}) is missing '{}' key".format(dp, DOTFILE_CFG_PTH_KEY)
+            f"Looper dotfile ({dp}) is missing '{PEP_CONFIG_KEY}' key"
         )
+    if OUTDIR_KEY not in dp_data:
+        _LOGGER.warning(f"{OUTDIR_KEY} is not defined in looper config file ({dp})")
+
+    if PIPELINE_INTERFACES_KEY not in dp_data:
+        _LOGGER.warning(f"{PIPELINE_INTERFACES_KEY} is not defined in looper config file ({dp})")
+        dp_data.setdefault(PIPELINE_INTERFACES_KEY, {})
+
+    return {
+        "config_file": dp_data[PEP_CONFIG_KEY],
+        OUTDIR_KEY: dp_data[OUTDIR_KEY],
+        SAMPLE_PL_ARG: dp_data.get(PIPELINE_INTERFACES_KEY).get("sample"),
+        PROJECT_PL_ARG: dp_data.get(PIPELINE_INTERFACES_KEY).get("project"),
+    }
 
 
 def dotfile_path(directory=os.getcwd(), must_exist=False):

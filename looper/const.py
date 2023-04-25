@@ -73,6 +73,7 @@ __all__ = [
     "SAMPLE_PL_ARG",
     "JOB_NAME_KEY",
     "PIPELINE_INTERFACE_PIPELINE_NAME_KEY",
+    "PEP_CONFIG_KEY",
 ]
 
 FLAGS = ["completed", "running", "failed", "waiting", "partial"]
@@ -165,6 +166,8 @@ LOOPER_KEY = "looper"
 PIPESTAT_KEY = "pipestat"
 NAMESPACE_ATTR_KEY = "namespace_attribute"
 OUTDIR_KEY = "output_dir"
+PEP_CONFIG_KEY = "pep_config"
+
 RESULTS_SUBDIR_KEY = "results_subdir"
 SUBMISSION_SUBDIR_KEY = "submission_subdir"
 DRY_RUN_KEY = "dry_run"
@@ -179,6 +182,7 @@ EXTRA_KEY = "_cli_extra"
 ALL_SUBCMD_KEY = "all"
 SAMPLE_PL_ARG = "sample_pipeline_interfaces"
 PROJECT_PL_ARG = "project_pipeline_interfaces"
+
 DEFAULT_CFG_PATH = os.path.join(os.getcwd(), LOOPER_DOTFILE_NAME)
 CLI_PROJ_ATTRS = [
     OUTDIR_KEY,
