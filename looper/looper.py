@@ -513,7 +513,6 @@ class Runner(Executor):
             conductor.submit(force=True)
             job_sub_total += conductor.num_job_submissions
             cmd_sub_total += conductor.num_cmd_submissions
-            conductor.write_skipped_sample_scripts()
 
         # Report what went down.
         _LOGGER.info("\nLooper finished")
