@@ -24,6 +24,12 @@ class LooperError(Exception):
     __metaclass__ = ABCMeta
 
 
+class SampleFailedException(LooperError):
+    """An exception to be raised if any sample fails"""
+
+    pass
+
+
 class MisconfigurationException(LooperError):
     """Duplication of pipeline identifier precludes unique pipeline ref."""
 
