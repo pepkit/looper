@@ -1124,7 +1124,7 @@ def main():
                 },
             )
         except yaml.parser.ParserError as e:
-            _LOGGER.error("Project config parse failed -- {}".format(e))
+            _LOGGER.error(f"Project config parse failed -- {e}")
             sys.exit(1)
 
     selected_compute_pkg = p.selected_compute_package or DEFAULT_COMPUTE_RESOURCES_NAME
