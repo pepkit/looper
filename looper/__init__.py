@@ -365,7 +365,7 @@ def build_parser():
             # help="Path to the looper config file"
             subparser.add_argument(
                 "-S",
-                "--pipeline-sample-config",
+                "--sample_pipeline_interfaces",
                 dest=SAMPLE_PL_ARG,
                 metavar="YAML",
                 default=None,
@@ -375,7 +375,7 @@ def build_parser():
             )
             subparser.add_argument(
                 "-P",
-                "--pipeline-project-config",
+                "--project_pipeline_interfaces",
                 dest=PROJECT_PL_ARG,
                 metavar="YAML",
                 default=None,

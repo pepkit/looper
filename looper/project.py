@@ -100,19 +100,19 @@ class Project(peppyProject):
         self, cfg=None, amendments=None, divcfg_path=None, runp=False, **kwargs
     ):
         super(Project, self).__init__(cfg=cfg, amendments=amendments)
-        prj_dict = kwargs.get("proiect_dict")
+        prj_dict = kwargs.get("project_dict")
+
+        # init project from pephub:
         if prj_dict is not None and cfg is None:
-            # Init project from raw pep (dict)
-            if kwargs.get(SAMPLE_PL_ARG):
-                prj_dict = create_sample_pipeline_interface(
-                    prj_dict, kwargs.get(SAMPLE_PL_ARG)
-                )
-            elif kwargs.get(PROJECT_PL_ARG):
-                prj_dict = create_project_pipeline_interface(
-                    prj_dict, kwargs.get(PROJECT_PL_ARG)
-                )
             self.from_dict(prj_dict)
+            self["_config_file"] = os.getcwd()
+
         setattr(self, EXTRA_KEY, dict())
+
+        # add sample pipeline interface to the project
+        if kwargs.get(SAMPLE_PL_ARG):
+            self.set_sample_piface(kwargs.get(SAMPLE_PL_ARG))
+
         for attr_name in CLI_PROJ_ATTRS:
             if attr_name in kwargs:
                 setattr(self[EXTRA_KEY], attr_name, kwargs[attr_name])
@@ -710,6 +710,18 @@ class Project(peppyProject):
         for msg in msgs:
             _LOGGER.warning(msg)
         return samples_by_piface
+
+    def set_sample_piface(self, sample_pifase: Union[List[str], str]) -> NoReturn:
+        """
+        Add sample pipeline interfaces variable to object
+
+        :param list | str sample_pifase: sample pipeline interface
+        """
+        self._config.setdefault("sample_modifiers", {})
+        self._config["sample_modifiers"].setdefault("append", {})
+        self.config["sample_modifiers"]["append"]["pipeline_interfaces"] = sample_pifase
+
+        self.modify_samples()
 
 
 def fetch_samples(

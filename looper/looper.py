@@ -1056,7 +1056,12 @@ def main():
         if args.piface == True:
             sys.exit(int(not init_generic_pipeline()))
         sys.exit(int(not init_dotfile(dotfile_path(), args.config_file, args.force)))
+
     args = enrich_args_via_cfg(args, aux_parser)
+
+    # If project pipeline interface defined in the cli, change name to: "pipeline_interface"
+    if vars(args)[PROJECT_PL_ARG]:
+        args.pipeline_interfaces = vars(args)[PROJECT_PL_ARG]
 
     from logmuse import init_logger
 
@@ -1091,9 +1096,7 @@ def main():
 
     # Initialize project
     if is_registry_path(args.config_file):
-        if args.output_dir and (
-            args.pipeline_sample_config or args.pipeline_project_config
-        ):
+        if vars(args)[SAMPLE_PL_ARG]:
             p = Project(
                 amendments=args.amend,
                 divcfg_path=divcfg,
@@ -1107,7 +1110,7 @@ def main():
             )
         else:
             raise MisconfigurationException(
-                f"`pipeline_config` or `output_dir` is missing. Provide it in the parameters."
+                f"`sample_pipeline_interface` is missing. Provide it in the parameters."
             )
     else:
         try:
