@@ -1,0 +1,13 @@
+# Environment configuration file for looper
+# This version describes the compute environment on lilac at SKI, MSKCC
+
+compute_packages:
+  default:
+    submission_template: templates/lsf_template.sub
+    submission_command: sh
+  local:
+    submission_template: templates/localhost_template.sub
+    submission_command: sh
+
+pipelines: [$CER/code/CER-NGStk, $CER/code/CER_scripts]
+
