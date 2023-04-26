@@ -333,6 +333,7 @@ class SubmissionConductor(object):
         self._num_cmds_submitted = 0
         self._curr_size = 0
         self._failed_sample_names = []
+        self._curr_skip_pool = []
 
         if self.extra_pipe_args:
             _LOGGER.debug(
@@ -475,10 +476,10 @@ class SubmissionConductor(object):
         else:
             self._curr_skip_size += float(validation[INPUT_FILE_SIZE_KEY])
             self._curr_skip_pool.append(sample)
-            if self._is_full(self._curr_skip_pool, self._curr_skip_size):
-                self._skipped_sample_pools.append(
-                    (self._curr_skip_pool, self._curr_skip_size)
-                )
+            if self.prj.toggle_key in sample and int(sample[self.prj.toggle_key]) == 0:
+                pass
+            else:
+                self.write_script(self._curr_skip_pool, self._curr_skip_size)
                 self._reset_curr_skips()
 
         return skip_reasons
@@ -745,8 +746,10 @@ class SubmissionConductor(object):
             else:
                 commands.append("{} {}".format(argstring, self.extra_pipe_args))
                 self._rendered_ok = True
-                self._num_good_job_submissions += 1
-                self._num_total_job_submissions += 1
+                if sample not in self._curr_skip_pool:
+                    self._num_good_job_submissions += 1
+                    self._num_total_job_submissions += 1
+
         looper["command"] = "\n".join(commands)
         if self.collate:
             _LOGGER.debug("samples namespace:\n{}".format(self.prj.samples))
@@ -765,23 +768,6 @@ class SubmissionConductor(object):
         return self.prj.dcc.write_script(
             output_path=subm_base + ".sub", extra_vars=[{"looper": looper}]
         )
-
-    def write_skipped_sample_scripts(self):
-        """
-        For any sample skipped during initial processing write submission script
-        """
-        if self._curr_skip_pool:
-            # move any hanging samples from current skip pool to the main pool
-            self._skipped_sample_pools.append(
-                (self._curr_skip_pool, self._curr_skip_size)
-            )
-        if self._skipped_sample_pools:
-            _LOGGER.info(
-                "Writing {} submission scripts for skipped samples".format(
-                    len(self._skipped_sample_pools)
-                )
-            )
-            [self.write_script(pool, size) for pool, size in self._skipped_sample_pools]
 
     def _reset_pool(self):
         """Reset the state of the pool of samples"""
