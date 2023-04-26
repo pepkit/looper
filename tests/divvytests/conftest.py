@@ -1,6 +1,6 @@
 import os
 import glob
-import divvy
+import looper.divvy as divvy
 import pytest
 
 

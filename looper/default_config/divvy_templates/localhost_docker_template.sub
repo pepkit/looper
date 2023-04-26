@@ -1,0 +1,8 @@
+#!/bin/bash
+
+echo 'Compute node:' `hostname`
+echo 'Start time:' `date +'%Y-%m-%d %T'`
+
+{
+docker run --rm -it {DOCKER_ARGS} {DOCKER_IMAGE} {CODE}
+} | tee {LOGFILE} --ignore-interrupts

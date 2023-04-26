@@ -29,7 +29,6 @@ init()
 from shutil import rmtree
 
 from colorama import Fore, Style
-from divvy import DEFAULT_COMPUTE_RESOURCES_NAME, select_divvy_config
 from eido import inspect_project, validate_config, validate_sample
 from eido.exceptions import EidoValidationError
 from jsonschema import ValidationError
@@ -43,6 +42,7 @@ from ubiquerg.collection import uniqify
 from . import __version__, build_parser, validate_post_parse
 from .conductor import SubmissionConductor
 from .const import *
+from .divvy import DEFAULT_COMPUTE_RESOURCES_NAME, select_divvy_config
 from .exceptions import JobSubmissionException, MisconfigurationException, SampleFailedException
 from .html_reports import HTMLReportBuilderOld
 from .html_reports_pipestat import HTMLReportBuilder, fetch_pipeline_results

@@ -3,8 +3,8 @@
 from copy import deepcopy
 import random
 import pytest
-from divvy import ComputingConfiguration
-from tests.helpers import get_random_key
+from looper.divvy import ComputingConfiguration
+from tests.divvytests.helpers import get_random_key
 
 __author__ = "Vince Reuter"
 __email__ = "vreuter@virginia.edu"

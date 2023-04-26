@@ -2,5 +2,7 @@ include requirements/*
 include README.md
 include logo_looper.svg
 include looper/jinja_templates/*
+include looper/default_config/*
+include looper/default_config/divvy_templates/*
 include looper/jinja_templates_old/*
 include looper/schemas/*

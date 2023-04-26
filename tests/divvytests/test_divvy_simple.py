@@ -1,4 +1,4 @@
-import divvy
+import looper.divvy as divvy
 import os
 import pytest
 from collections import OrderedDict

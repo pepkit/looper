@@ -10,7 +10,7 @@ except ImportError:
     cached_property = property
 from logging import getLogger
 
-from divvy import ComputingConfiguration
+from .divvy import ComputingConfiguration
 from eido import PathAttrNotFoundError, read_schema
 from jsonschema import ValidationError
 from pandas.core.common import flatten

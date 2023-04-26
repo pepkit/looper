@@ -5,6 +5,19 @@ import os
 __author__ = "Databio lab"
 __email__ = "nathan@code.databio.org"
 
+# Compute-related (for divvy)
+COMPUTE_SETTINGS_VARNAME = ["DIVCFG"]
+DEFAULT_COMPUTE_RESOURCES_NAME = "default"
+OLD_COMPUTE_KEY = "compute"
+NEW_COMPUTE_KEY = "compute_packages"
+DEFAULT_CONFIG_FILEPATH = os.path.join(
+    os.path.dirname(__file__), "default_config", "divvy_config.yaml"
+)
+DEFAULT_CONFIG_SCHEMA = os.path.join(
+    os.path.dirname(__file__), "schemas", "divvy_config_schema.yaml"
+)
+
+
 __all__ = [
     "BUTTON_APPEARANCE_BY_FLAG",
     "TABLE_APPEARANCE_BY_FLAG",
@@ -71,6 +84,12 @@ __all__ = [
     "LOOPER_GENERIC_PIPELINE",
     "JOB_NAME_KEY",
     "PIPELINE_INTERFACE_PIPELINE_NAME_KEY",
+    "COMPUTE_SETTINGS_VARNAME",
+    "DEFAULT_COMPUTE_RESOURCES_NAME",
+    "NEW_COMPUTE_KEY",
+    "DEFAULT_CONFIG_FILEPATH",
+    "DEFAULT_CONFIG_SCHEMA",
+    "DEFAULT_COMPUTE_RESOURCES_NAME",
 ]
 
 FLAGS = ["completed", "running", "failed", "waiting", "partial"]
