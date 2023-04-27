@@ -594,4 +594,4 @@ def write_submit_script(fp, content, data):
             os.makedirs(outdir)
         with open(fp, "w") as f:
             f.write(content)
-        return
+        return fp

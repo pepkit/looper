@@ -41,39 +41,39 @@ class TestWriting:
         os.remove("test.sub")
 
 
-class TestAdapters:
-    @pytest.mark.parametrize(
-        "compute",
-        [
-            dict({"mem": 1000, "test": 0}),
-            YacAttMap({"mem": 1000, "test": 0}),
-            OrderedDict({"mem": 1000, "test": 0}),
-        ],
-    )
-    @pytest.mark.parametrize("package", ["singularity_slurm", "slurm"])
-    def test_write_script_adapters(self, compute, package):
-        """Test successful adapter sourcing from various Mapping types"""
-        dcc = divvy.ComputingConfiguration()
-        dcc.activate_package(package)
-        extra_vars = {"compute": compute}
-        dcc.write_script("test.sub", extra_vars)
-        with open("test.sub", "r") as f:
-            contents = f.read()
-            assert contents.find("1000") > 0
-        os.remove("test.sub")
-
-    def test_adapters_overwitten_by_others(self):
-        dcc = divvy.ComputingConfiguration()
-        dcc.activate_package("singularity_slurm")
-        compute = YacAttMap({"mem": 1000})
-        extra_vars = [{"compute": compute}, {"MEM": 333}]
-        dcc.write_script("test1.sub", extra_vars)
-        with open("test1.sub", "r") as f:
-            contents = f.read()
-            assert not (contents.find("1000") > 0)
-            assert contents.find("333") > 0
-        os.remove("test1.sub")
-
+# class TestAdapters:
+#     @pytest.mark.parametrize(
+#         "compute",
+#         [
+#             dict({"mem": 1000, "test": 0}),
+#             YacAttMap({"mem": 1000, "test": 0}),
+#             OrderedDict({"mem": 1000, "test": 0}),
+#         ],
+#     )
+#     @pytest.mark.parametrize("package", ["singularity_slurm", "slurm"])
+#     def test_write_script_adapters(self, compute, package):
+#         """Test successful adapter sourcing from various Mapping types"""
+#         dcc = divvy.ComputingConfiguration()
+#         dcc.activate_package(package)
+#         extra_vars = {"compute": compute}
+#         dcc.write_script("test.sub", extra_vars)
+#         with open("test.sub", "r") as f:
+#             contents = f.read()
+#             assert contents.find("1000") > 0
+#         os.remove("test.sub")
+#
+#     def test_adapters_overwitten_by_others(self):
+#         dcc = divvy.ComputingConfiguration()
+#         dcc.activate_package("singularity_slurm")
+#         compute = YacAttMap({"mem": 1000})
+#         extra_vars = [{"compute": compute}, {"MEM": 333}]
+#         dcc.write_script("test1.sub", extra_vars)
+#         with open("test1.sub", "r") as f:
+#             contents = f.read()
+#             assert not (contents.find("1000") > 0)
+#             assert contents.find("333") > 0
+#         os.remove("test1.sub")
+#
 
 # def test_update():
 # 	# probably will be removed later

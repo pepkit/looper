@@ -1,7 +1,17 @@
 # Use this to change your cluster manager (SLURM, SGE, LFS, etc).
 # Relative paths are relative to this compute environment configuration file.
 # Compute resource parameters fill the submission_template file's fields.
-
+adapters:
+  CODE: looper.command
+  JOBNAME: looper.job_name
+  CORES: compute.cores
+  LOGFILE: looper.log_file
+  TIME: compute.time
+  MEM: compute.mem
+  DOCKER_ARGS: compute.docker_args
+  DOCKER_IMAGE: compute.docker_image
+  SINGULARITY_IMAGE: compute.singularity_image
+  SINGULARITY_ARGS: compute.singularity_args
 compute_packages:
   default:
     submission_template: divvy_templates/localhost_template.sub

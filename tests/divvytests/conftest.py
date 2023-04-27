@@ -26,5 +26,5 @@ def dcc(request):
 def mock_env_missing(monkeypatch):
     [
         monkeypatch.delenv(env_var, raising=False)
-        for env_var in divvy.const.COMPUTE_SETTINGS_VARNAME
+        for env_var in divvy.COMPUTE_SETTINGS_VARNAME
     ]

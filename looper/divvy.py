@@ -340,6 +340,7 @@ class ComputingConfiguration(yacman.YacAttMap):
         )
         if output_path:
             _LOGGER.info("Writing script to {}".format(os.path.abspath(output_path)))
+
         return write_submit_script(output_path, self.template(), variables)
 
     def _handle_missing_env_attrs(self, config_file, when_missing):

@@ -15,10 +15,9 @@ import argparse
 import logging
 import os
 from typing import *
-
+from .divvy import ComputingConfiguration, select_divvy_config
 from .divvy import DEFAULT_COMPUTE_RESOURCES_NAME
 from .divvy import NEW_COMPUTE_KEY as COMPUTE_KEY
-from .divvy import ComputingConfiguration, select_divvy_config, write_submit_script
 from ubiquerg import VersionInHelpParser
 
 from ._version import __version__
@@ -30,6 +29,7 @@ from .conductor import (
     write_submission_yaml,
 )
 from .const import *
+from .utils import write_submit_script
 from .parser_types import *
 from .pipeline_interface import PipelineInterface
 from .project import Project
@@ -38,13 +38,11 @@ from .project import Project
 # looper, so that other modules within this package need not worry about
 # the locations of some of the peppy declarations. Effectively, concentrate
 # the connection between peppy and looper here, to the extent possible.
+
 __classes__ = ["ComputingConfiguration"]
 __functions__ = ["select_divvy_config"]
-
-__all__ = ["Project", "PipelineInterface", "SubmissionConductor"]\
+__all__ = ["Project", "PipelineInterface", "SubmissionConductor"] \
           + __classes__ + __functions__ + [write_submit_script.__name__]
-
-logmuse.init_logger("divvy")
 
 
 SAMPLE_SELECTION_ATTRIBUTE_OPTNAME = "sel-attr"
