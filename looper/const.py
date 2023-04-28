@@ -74,6 +74,7 @@ __all__ = [
     "JOB_NAME_KEY",
     "PIPELINE_INTERFACE_PIPELINE_NAME_KEY",
     "PEP_CONFIG_KEY",
+    "PEP_CONFIG_FILE_KEY",
 ]
 
 FLAGS = ["completed", "running", "failed", "waiting", "partial"]
@@ -167,6 +168,7 @@ PIPESTAT_KEY = "pipestat"
 NAMESPACE_ATTR_KEY = "namespace_attribute"
 OUTDIR_KEY = "output_dir"
 PEP_CONFIG_KEY = "pep_config"
+PEP_CONFIG_FILE_KEY = "config_file"
 
 RESULTS_SUBDIR_KEY = "results_subdir"
 SUBMISSION_SUBDIR_KEY = "submission_subdir"
@@ -176,7 +178,7 @@ EXAMPLE_COMPUTE_SPEC_FMT = "k1=v1 k2=v2"
 SUBMISSION_FAILURE_MESSAGE = "Cluster resource failure"
 LOOPER_DOTFILE_NAME = "." + LOOPER_KEY + ".yaml"
 LOOPER_GENERIC_PIPELINE = "generic_pipeline_interface.yaml"
-POSITIONAL = ["config_file", "command"]
+POSITIONAL = [PEP_CONFIG_FILE_KEY, "command"]
 SELECTED_COMPUTE_PKG = "package"
 EXTRA_KEY = "_cli_extra"
 ALL_SUBCMD_KEY = "all"

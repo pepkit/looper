@@ -384,26 +384,41 @@ def read_looper_dotfile():
         required key pointing to the PEP
     """
     dp = dotfile_path(must_exist=True)
+    return_dict = {}
     with open(dp, "r") as dotfile:
         dp_data = yaml.safe_load(dotfile)
 
-    if PEP_CONFIG_KEY not in dp_data or DOTFILE_CFG_PTH_KEY not in dp_data:
+    if PEP_CONFIG_KEY in dp_data:
+        return_dict[PEP_CONFIG_FILE_KEY] = dp_data[PEP_CONFIG_KEY]
+
+    # TODO: delete it in looper 2.0
+    elif DOTFILE_CFG_PTH_KEY in dp_data:
+        return_dict[PEP_CONFIG_FILE_KEY] = dp_data[DOTFILE_CFG_PTH_KEY]
+
+    else:
         raise MisconfigurationException(
             f"Looper dotfile ({dp}) is missing '{PEP_CONFIG_KEY}' key"
         )
-    if OUTDIR_KEY not in dp_data:
+
+    if OUTDIR_KEY in dp_data:
+        return_dict[OUTDIR_KEY] = dp_data[OUTDIR_KEY]
+    else:
         _LOGGER.warning(f"{OUTDIR_KEY} is not defined in looper config file ({dp})")
 
-    if PIPELINE_INTERFACES_KEY not in dp_data:
-        _LOGGER.warning(f"{PIPELINE_INTERFACES_KEY} is not defined in looper config file ({dp})")
+    if PIPELINE_INTERFACES_KEY in dp_data:
+        dp_data.setdefault(PIPELINE_INTERFACES_KEY, {})
+        return_dict[SAMPLE_PL_ARG] = dp_data.get(PIPELINE_INTERFACES_KEY).get("sample")
+        return_dict[PROJECT_PL_ARG] = dp_data.get(PIPELINE_INTERFACES_KEY).get(
+            "project"
+        )
+
+    else:
+        _LOGGER.warning(
+            f"{PIPELINE_INTERFACES_KEY} is not defined in looper config file ({dp})"
+        )
         dp_data.setdefault(PIPELINE_INTERFACES_KEY, {})
 
-    return {
-        "config_file": dp_data[PEP_CONFIG_KEY],
-        OUTDIR_KEY: dp_data[OUTDIR_KEY],
-        SAMPLE_PL_ARG: dp_data.get(PIPELINE_INTERFACES_KEY).get("sample"),
-        PROJECT_PL_ARG: dp_data.get(PIPELINE_INTERFACES_KEY).get("project"),
-    }
+    return return_dict
 
 
 def dotfile_path(directory=os.getcwd(), must_exist=False):

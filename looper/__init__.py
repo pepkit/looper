@@ -333,6 +333,27 @@ def build_parser():
                 default=None,
                 help="Project configuration file (YAML) or pephub registry path.",
             )
+            # help="Path to the looper config file"
+            subparser.add_argument(
+                "-S",
+                "--sample_pipeline_interfaces",
+                dest=SAMPLE_PL_ARG,
+                metavar="YAML",
+                default=None,
+                nargs="+",
+                type=str,
+                help="Path to looper sample config file",
+            )
+            subparser.add_argument(
+                "-P",
+                "--project_pipeline_interfaces",
+                dest=PROJECT_PL_ARG,
+                metavar="YAML",
+                default=None,
+                nargs="+",
+                type=str,
+                help="Path to looper project config file",
+            )
             # help="Path to the output directory"
             subparser.add_argument(
                 "-o",
