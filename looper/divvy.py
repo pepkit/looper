@@ -7,7 +7,7 @@ import sys
 import shutil
 import yaml
 from yaml import SafeLoader
-from distutils.dir_util import copy_tree
+from shutil import copytree
 
 from ubiquerg import is_writable, VersionInHelpParser
 import yacman
@@ -24,7 +24,7 @@ from .utils import write_submit_script
 
 _LOGGER = logging.getLogger(__name__)
 
-# This is the compute.py submodule from divvy
+# This is the divvy.py submodule from divvy
 
 
 class ComputingConfiguration(yacman.YacAttMap):
@@ -404,7 +404,7 @@ def divvy_init(config_path, template_config_path):
         # dcc.write(config_path)
         # Init should *also* write the templates.
         dest_folder = os.path.dirname(config_path)
-        copy_tree(os.path.dirname(template_config_path), dest_folder)
+        copytree(os.path.dirname(template_config_path), dest_folder)
         template_subfolder = os.path.join(dest_folder, "divvy_templates")
         _LOGGER.info("Wrote divvy templates to folder: {}".format(template_subfolder))
         new_template = os.path.join(

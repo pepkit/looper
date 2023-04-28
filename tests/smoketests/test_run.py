@@ -361,7 +361,7 @@ class LooperRunSubmissionScriptTests:
         verify_filecount_in_dir(sd, ".sub", 4)
 
 
-class LooperComputeTests:
+class TestsLooperCompute:
     @pytest.mark.parametrize("cmd", ["run", "runp"])
     def test_looper_respects_pkg_selection(self, prep_temp_pep, cmd):
         tp = prep_temp_pep

@@ -1,0 +1,14 @@
+#!/bin/bash
+#SBATCH --job-name='count_lines_frog_2'
+#SBATCH --output='../hello_looper_results/submission/count_lines_frog_2.log'
+#SBATCH --mem='{MEM}'
+#SBATCH --cpus-per-task='{CORES}'
+#SBATCH --time='{TIME}'
+#SBATCH --partition='{PARTITION}'
+#SBATCH -m block
+#SBATCH --ntasks=1
+
+echo 'Compute node:' `hostname`
+echo 'Start time:' `date +'%Y-%m-%d %T'`
+
+/home/aaronobrien/projects/looper/hello_looper-master/pipeline/count_lines.sh data/frog2_data.txt 

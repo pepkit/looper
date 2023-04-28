@@ -1090,8 +1090,7 @@ def main():
     except yaml.parser.ParserError as e:
         _LOGGER.error("Project config parse failed -- {}".format(e))
         sys.exit(1)
-    # p.selected_compute_package or
-    selected_compute_pkg = DEFAULT_COMPUTE_RESOURCES_NAME
+    selected_compute_pkg = p.selected_compute_package or DEFAULT_COMPUTE_RESOURCES_NAME
     if p.dcc is not None and not p.dcc.activate_package(selected_compute_pkg):
         _LOGGER.info(
             "Failed to activate '{}' computing package. "
