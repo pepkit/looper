@@ -387,7 +387,7 @@ def read_looper_dotfile():
     with open(dp, "r") as dotfile:
         dp_data = yaml.safe_load(dotfile)
 
-    if PEP_CONFIG_KEY not in dp_data:
+    if PEP_CONFIG_KEY not in dp_data or DOTFILE_CFG_PTH_KEY not in dp_data:
         raise MisconfigurationException(
             f"Looper dotfile ({dp}) is missing '{PEP_CONFIG_KEY}' key"
         )
