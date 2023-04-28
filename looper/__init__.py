@@ -391,12 +391,6 @@ def build_parser():
             )
 
             fetch_samples_group.add_argument(
-                "-g",
-                "--toggle-key",
-                metavar="K",
-                help="Sample attribute specifying toggle. Default: toggle",
-            )
-            fetch_samples_group.add_argument(
                 f"--{SAMPLE_SELECTION_ATTRIBUTE_OPTNAME}",
                 default="toggle",
                 metavar="ATTR",
