@@ -401,14 +401,6 @@ class SubmissionConductor(object):
                     msg += f". Determined status: {', '.join(sample_statuses)}"
                 _LOGGER.info(msg)
 
-        if self.prj.toggle_key in sample and int(sample[self.prj.toggle_key]) == 0:
-            _LOGGER.warning(
-                "> Skipping sample ({}: {})".format(
-                    self.prj.toggle_key, sample[self.prj.toggle_key]
-                )
-            )
-            use_this_sample = False
-
         skip_reasons = []
         validation = {}
         validation.setdefault(INPUT_FILE_SIZE_KEY, 0)
@@ -438,11 +430,8 @@ class SubmissionConductor(object):
         else:
             self._curr_skip_size += float(validation[INPUT_FILE_SIZE_KEY])
             self._curr_skip_pool.append(sample)
-            if self.prj.toggle_key in sample and int(sample[self.prj.toggle_key]) == 0:
-                pass
-            else:
-                self.write_script(self._curr_skip_pool, self._curr_skip_size)
-                self._reset_curr_skips()
+            self.write_script(self._curr_skip_pool, self._curr_skip_size)
+            self._reset_curr_skips()
 
         return skip_reasons
 

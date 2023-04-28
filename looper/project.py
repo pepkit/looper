@@ -733,9 +733,17 @@ def fetch_samples(
         also possible if name of attribute for selection isn't a string
     """
     if selector_attribute is None or (not selector_include and not selector_exclude):
-        # Simple; keep all samples.  In this case, this function simply
-        # offers a list rather than an iterator.
-        return list(prj.samples)
+        # Default case where user does not use selector_include or selector exclude.
+        # Assume that user wants to exclude samples if toggle = 0.
+        if any([hasattr(s, 'toggle') for s in prj.samples]):
+            selector_exclude = [0]
+            def keep(s):
+                return not hasattr(s, selector_attribute) or getattr(
+                    s, selector_attribute
+                ) not in selector_exclude
+            return list(filter(keep, prj.samples))
+        else:
+            return list(prj.samples)
 
     if not isinstance(selector_attribute, str):
         raise TypeError(
@@ -761,8 +769,13 @@ def fetch_samples(
 
     # Ensure that we're working with sets.
     def make_set(items):
-        if isinstance(items, str):
-            items = [items]
+        try:
+            #Check if user input single integer value for inclusion/exclusion criteria
+            if len(items) == 1:
+                items = list(map(int, items)) #list(int(items[0]))
+        except:
+            if isinstance(items, str):
+                items = [items]
         return items
 
     # Use the attr check here rather than exception block in case the
