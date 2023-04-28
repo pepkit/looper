@@ -21,6 +21,7 @@ nav:
       - Handling multiple input files: how-to-merge-inputs.md
       - Running multiple pipelines: multiple-pipelines.md
       - Writing a pipeline interface: writing-a-pipeline-interface.md
+      - Create looper config file: how_to_define_looper_config.md
   - Reference:
       - Pipeline interface specification: pipeline-interface-specification.md
       - Pipeline tiers: pipeline-tiers.md
