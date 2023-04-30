@@ -20,6 +20,7 @@ from .const import (
     DEFAULT_CONFIG_SCHEMA,
 )
 from .utils import write_submit_script
+
 # from . import __version__
 
 _LOGGER = logging.getLogger(__name__)

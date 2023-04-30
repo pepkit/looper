@@ -6,8 +6,6 @@ __author__ = "Databio lab"
 __email__ = "nathan@code.databio.org"
 
 
-
-
 __all__ = [
     "BUTTON_APPEARANCE_BY_FLAG",
     "TABLE_APPEARANCE_BY_FLAG",
@@ -109,6 +107,7 @@ def _get_apperance_dict(type, templ=APPEARANCE_BY_FLAG):
         for key, app in app_dict.items():
             ret[flag][key] = ret[flag][key].format(type=type)
     return ret
+
 
 # Compute-related (for divvy)
 COMPUTE_SETTINGS_VARNAME = ["DIVCFG"]

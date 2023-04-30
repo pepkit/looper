@@ -41,8 +41,12 @@ from .project import Project
 
 __classes__ = ["ComputingConfiguration"]
 __functions__ = ["select_divvy_config"]
-__all__ = ["Project", "PipelineInterface", "SubmissionConductor"] \
-          + __classes__ + __functions__ + [write_submit_script.__name__]
+__all__ = (
+    ["Project", "PipelineInterface", "SubmissionConductor"]
+    + __classes__
+    + __functions__
+    + [write_submit_script.__name__]
+)
 
 
 SAMPLE_SELECTION_ATTRIBUTE_OPTNAME = "sel-attr"
