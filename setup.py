@@ -78,7 +78,10 @@ setup(
     author="Nathan Sheffield, Vince Reuter, Michal Stolarczyk, Johanna Klughammer, Andre Rendeiro",
     license="BSD2",
     entry_points={
-        "console_scripts": ["looper = looper.__main__:main"],
+        "console_scripts": [
+            "looper = looper.__main__:looper_main",
+            "divvy = looper.__main__:divvy_main"
+        ],
     },
     scripts=scripts,
     package_data={"looper": ["submit_templates/*"]},
