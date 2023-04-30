@@ -44,7 +44,6 @@ __all__ = [
     "IMAGE_EXTS",
     "PROFILE_COLNAMES",
     "SAMPLE_TOGGLE_ATTR",
-    "TOGGLE_KEY_SELECTOR",
     "LOOPER_DOTFILE_NAME",
     "POSITIONAL",
     "EXTRA_PROJECT_CMD_TEMPLATE",
@@ -151,7 +150,6 @@ SAMPLE_YAML_PATH_KEY = "sample_yaml_path"
 SAMPLE_YAML_PRJ_PATH_KEY = "sample_yaml_prj_path"
 SUBMISSION_YAML_PATH_KEY = "submission_yaml_path"
 SAMPLE_CWL_YAML_PATH_KEY = "sample_cwl_yaml_path"
-TOGGLE_KEY_SELECTOR = "toggle_key"
 SAMPLE_TOGGLE_ATTR = "toggle"
 OUTKEY = "outputs"
 JOB_NAME_KEY = "job_name"
@@ -196,7 +194,6 @@ ALL_SUBCMD_KEY = "all"
 DEFAULT_CFG_PATH = os.path.join(os.getcwd(), LOOPER_DOTFILE_NAME)
 CLI_PROJ_ATTRS = [
     OUTDIR_KEY,
-    TOGGLE_KEY_SELECTOR,
     SUBMISSION_SUBDIR_KEY,
     PIPELINE_INTERFACES_KEY,
     RESULTS_SUBDIR_KEY,

@@ -27,6 +27,7 @@ from .conductor import (
     write_sample_yaml_cwl,
     write_sample_yaml_prj,
     write_submission_yaml,
+    write_custom_template,
 )
 from .const import *
 from .utils import write_submit_script
@@ -197,22 +198,7 @@ def build_parser():
                 default=0,
                 help="Time delay in seconds between job submissions",
             )
-            subparser.add_argument(
-                "-l",
-                "--limit",
-                default=None,
-                metavar="N",
-                type=html_range(min_val=1, max_val="num_samples", value="num_samples"),
-                help="Limit to n samples",
-            )
-            subparser.add_argument(
-                "-sk",
-                "--skip",
-                default=None,
-                metavar="N",
-                type=html_range(min_val=1, max_val="num_samples", value="num_samples"),
-                help="Skip n samples",
-            )
+
             subparser.add_argument(
                 "-x",
                 "--command-extra",
@@ -320,21 +306,6 @@ def build_parser():
                 help="Provide upfront confirmation of destruction intent, "
                 "to skip console query.  Default=False",
             )
-            subparser.add_argument(
-                "-l",
-                "--limit",
-                default=None,
-                metavar="N",
-                type=html_range(min_val=1, max_val="num_samples", value="num_samples"),
-                help="Limit to n samples",
-            )
-            subparser.add_argument(
-                "--skip",
-                default=None,
-                metavar="N",
-                type=html_range(min_val=1, max_val="num_samples", value="num_samples"),
-                help="Skip samples by numerical index",
-            )
 
         init_subparser.add_argument(
             "config_file", help="Project configuration " "file (YAML)"
@@ -411,11 +382,22 @@ def build_parser():
                 "Specify samples to include or exclude based on sample attribute values",
             )
             fetch_samples_group.add_argument(
-                "-g",
-                "--toggle-key",
-                metavar="K",
-                help="Sample attribute specifying toggle. Default: toggle",
+                "-l",
+                "--limit",
+                default=None,
+                metavar="N",
+                type=html_range(min_val=1, max_val="num_samples", value="num_samples"),
+                help="Limit to n samples",
             )
+            fetch_samples_group.add_argument(
+                "-k",
+                "--skip",
+                default=None,
+                metavar="N",
+                type=html_range(min_val=1, max_val="num_samples", value="num_samples"),
+                help="Skip samples by numerical index",
+            )
+
             fetch_samples_group.add_argument(
                 f"--{SAMPLE_SELECTION_ATTRIBUTE_OPTNAME}",
                 default="toggle",
