@@ -42,8 +42,14 @@ from ubiquerg.collection import uniqify
 from . import __version__, build_parser, validate_post_parse
 from .conductor import SubmissionConductor
 from .const import *
+
 from .divvy import DEFAULT_COMPUTE_RESOURCES_NAME, select_divvy_config
-from .exceptions import JobSubmissionException, MisconfigurationException, SampleFailedException
+from .exceptions import (
+    JobSubmissionException,
+    MisconfigurationException,
+    SampleFailedException,
+)
+
 from .html_reports import HTMLReportBuilderOld
 from .html_reports_pipestat import HTMLReportBuilder, fetch_pipeline_results
 from .html_reports_project_pipestat import HTMLReportBuilderProject
@@ -509,7 +515,6 @@ class Runner(Executor):
             conductor.submit(force=True)
             job_sub_total += conductor.num_job_submissions
             cmd_sub_total += conductor.num_cmd_submissions
-            conductor.write_skipped_sample_scripts()
 
         # Report what went down.
         _LOGGER.info("\nLooper finished")
@@ -558,7 +563,7 @@ class Runner(Executor):
                 for reason, samples in samples_by_reason.items()
             ]
             _LOGGER.info("\nSummary of failures:\n{}".format("\n".join(full_fail_msgs)))
-        
+
         if failed_sub_samples:
             _LOGGER.debug("Raising SampleFailedException")
             raise SampleFailedException
