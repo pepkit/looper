@@ -80,7 +80,7 @@ setup(
     entry_points={
         "console_scripts": [
             "looper = looper.__main__:looper_main",
-            "divvy = looper.__main__:divvy_main"
+            "divvy = looper.__main__:divvy_main",
         ],
     },
     scripts=scripts,
