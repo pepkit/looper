@@ -20,7 +20,7 @@ pep_config: pephub::databio/looper:default
 output_dir: "$HOME/hello_looper-master/output"
 pipeline_interfaces:
   sample: ["$HOME/hello_looper-master/pipeline/pipeline_interface"]
-  project: "some[requirements-all.txt](..%2Frequirements%2Frequirements-all.txt)/project/pipeline"
+  project: "$HOME/hello_looper-master/project/pipeline"
 ```
 
 Where:

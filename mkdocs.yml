@@ -9,6 +9,7 @@ nav:
       - Introduction: README.md
       - Features at-a-glance: features.md
       - Hello world: hello-world.md
+      - Hello world PEPhub: hello-world-pephub.md
   - How-to guides:
       - Defining a project: defining-a-project.md
       - Running a pipeline: running-a-pipeline.md
