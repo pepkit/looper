@@ -30,7 +30,6 @@ from .conductor import (
     write_custom_template,
 )
 from .const import *
-# from .utils import write_submit_script
 from .parser_types import *
 from .pipeline_interface import PipelineInterface
 from .project import Project
