@@ -40,14 +40,14 @@ from .project import Project
 # the locations of some of the peppy declarations. Effectively, concentrate
 # the connection between peppy and looper here, to the extent possible.
 
-__classes__ = ["ComputingConfiguration"]
-__functions__ = ["select_divvy_config"]
-__all__ = (
-    ["Project", "PipelineInterface", "SubmissionConductor"]
-    + __classes__
-    + __functions__
-    + [write_submit_script.__name__]
-)
+__all__ = [
+    "Project",
+    "PipelineInterface",
+    "SubmissionConductor",
+    "ComputingConfiguration",
+    "select_divvy_config",
+    write_submit_script.__name__,
+]
 
 
 SAMPLE_SELECTION_ATTRIBUTE_OPTNAME = "sel-attr"

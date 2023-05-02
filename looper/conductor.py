@@ -722,7 +722,6 @@ class SubmissionConductor(object):
             namespaces["pipeline"]["var_templates"] = pl_iface[VAR_TEMPL_KEY]
             # pre_submit hook namespace updates
             namespaces = _exec_pre_submit(pl_iface, namespaces)
-            namespaces = _exec_pre_submit(pl_iface, namespaces)
             self._rendered_ok = False
             try:
                 argstring = jinja_render_template_strictly(
