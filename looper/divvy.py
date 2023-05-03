@@ -447,6 +447,7 @@ def build_argparser():
         "list": "List available compute packages",
         "write": "Write a job script",
         "submit": "Write and then submit a job script",
+        "inspect": "Inspect compute package"
     }
 
     sps = {}
@@ -456,12 +457,20 @@ def build_argparser():
         #     "config", nargs="?", default=None,
         #     help="Divvy configuration file.")
 
-    for sp in [sps["list"], sps["write"], sps["submit"]]:
+    for sp in [sps["list"], sps["write"], sps["submit"], sps["inspect"]]:
         sp.add_argument(
             "config", nargs="?", default=None, help="Divvy configuration file."
         )
 
     sps["init"].add_argument("config", default=None, help="Divvy configuration file.")
+
+    for sp in [sps["inspect"]]:
+        sp.add_argument(
+            "-p",
+            "--package",
+            default=DEFAULT_COMPUTE_RESOURCES_NAME,
+            help="Select from available compute packages",
+        )
 
     for sp in [sps["write"], sps["submit"]]:
         sp.add_argument(
@@ -530,6 +539,19 @@ def main():
         # redirect the list from stdout if desired without the header as clutter
         _LOGGER.info("Available compute packages:\n")
         print("{}".format("\n".join(dcc.list_compute_packages())))
+        sys.exit(1)
+
+    if args.command == "inspect":
+        # Output contents of selected compute package
+        _LOGGER.info("Your compute package template for: " + args.package + "\n")
+        found = False
+        for pkg_name, pkg in dcc.compute_packages.items():
+            if pkg_name == args.package:
+                found = True
+                with open(pkg.submission_template, 'r') as f:
+                    print(f.read())
+        if not found:
+            _LOGGER.info("Package not found. Use 'divvy list' to see list of packages.")
         sys.exit(1)
 
     # Any non-divvy arguments will be passed along as key-value pairs
