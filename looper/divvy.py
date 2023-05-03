@@ -550,6 +550,10 @@ def main():
                 found = True
                 with open(pkg.submission_template, "r") as f:
                     print(f.read())
+                _LOGGER.info("Submission command is: " + pkg.submission_command)
+                if pkg_name == "docker":
+                    print("Docker args are: " + pkg.docker_args)
+
         if not found:
             _LOGGER.info("Package not found. Use 'divvy list' to see list of packages.")
         sys.exit(1)
