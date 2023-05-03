@@ -447,7 +447,7 @@ def build_argparser():
         "list": "List available compute packages",
         "write": "Write a job script",
         "submit": "Write and then submit a job script",
-        "inspect": "Inspect compute package"
+        "inspect": "Inspect compute package",
     }
 
     sps = {}
@@ -548,7 +548,7 @@ def main():
         for pkg_name, pkg in dcc.compute_packages.items():
             if pkg_name == args.package:
                 found = True
-                with open(pkg.submission_template, 'r') as f:
+                with open(pkg.submission_template, "r") as f:
                     print(f.read())
         if not found:
             _LOGGER.info("Package not found. Use 'divvy list' to see list of packages.")
