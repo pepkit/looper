@@ -550,7 +550,7 @@ def main():
                 found = True
                 with open(pkg.submission_template, "r") as f:
                     print(f.read())
-                _LOGGER.info("Submission command is: " + pkg.submission_command)
+                _LOGGER.info("Submission command is: " + pkg.submission_command + "\n")
                 if pkg_name == "docker":
                     print("Docker args are: " + pkg.docker_args)
 
