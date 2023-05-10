@@ -1,22 +1,22 @@
-# <img src="img/divvy_logo.svg" class="img-header">
+# <img src="docs/img/divvy_logo.svg" class="img-header">
 
 ## What is `divvy`?
 
-<img src="img/divvy-merge.svg" style="float:right; padding-left: 25px; padding-right: 5px; width:300px">
+<img src="docs/img/divvy-merge.svg" style="float:right; padding-left: 25px; padding-right: 5px; width:300px">
 
 
 `Divvy` allows you to populate job submission scripts by integrating job-specific settings with separately configured computing environment settings. Divvy *makes software portable*, so users may easily toggle among any computing resource (laptop, cluster, cloud). 
 
 ## What makes `divvy` better?
 
-<img src="img/nodivvy.svg" style="float:left; padding-left: 5px; padding-right: 25px">
+<img src="docs/img/nodivvy.svg" style="float:left; padding-left: 5px; padding-right: 25px">
 
 
 tools require a particular compute resource setup. For example, one pipeline requires SLURM, another requires AWS, and yet another just runs directly on your laptop. This makes it difficult to transfer to different environments. For tools that can run in multiple environments, each one must be configured separately.
 
 <hr>
 
-<img src="img/divvy-connect.svg" style="float:left; padding-left: 5px; padding-right: 25px">
+<img src="docs/img/divvy-connect.svg" style="float:left; padding-left: 5px; padding-right: 25px">
 
 Instead, `divvy`-compatible tools can run on any computing resource. **Users configure their computing environment once, and all divvy-compatible tools will use this same configuration.**
 
@@ -24,13 +24,6 @@ Divvy reads a standard configuration file describing available compute resources
 
 <br clear="all"/>
 
-## Quick start
-
-Install with:
-
-```{console}
-pip install --user divvy
-```
 
 Use the default compute packages or [configure your own](configuration.md).  See what's available:
 

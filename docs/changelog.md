@@ -3,6 +3,12 @@
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format.
 
 
+## [1.5.0] -- 2023-05-12
+
+### Added
+- divvy re-integrated in looper
+- divvy inspect -p package
+
 ## [1.4.0] -- 2023-04-24
 
 ### Added

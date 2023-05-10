@@ -30,7 +30,6 @@ nav:
       - Configuring containers: containers_divvy.md
       - Configuring connection with client software: adapters_divvy.md
       - Default packages: default_packages_divvy.md
-      - API: autodoc_build/divvy.md
       - DIVCFG examples: http://github.com/pepkit/divcfg
   - Reference:
       - Pipeline interface specification: pipeline-interface-specification.md
