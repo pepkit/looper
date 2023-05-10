@@ -2,5 +2,5 @@ https://github.com/databio/mkdocs-databio/archive/master.zip
 looper
 markdown-include
 mkdocs>=1.0
--e git://github.com/pepkit/pipestat@master#egg=pipestat
+https://github.com/pepkit/pipestat/archive/refs/heads/master.zip
 pydoc-markdown
