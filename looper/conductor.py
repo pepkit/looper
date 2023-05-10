@@ -31,7 +31,7 @@ _LOGGER = logging.getLogger(__name__)
 
 def _get_yaml_path(namespaces, template_key, default_name_appendix="", filename=None):
     """
-    Get a path to the a YAML file.
+    Get a path to a YAML file for the sample.
 
     :param dict[dict]] namespaces: namespaces mapping
     :param str template_key: the name of the key in 'var_templates' piface
@@ -93,9 +93,10 @@ def write_sample_yaml(namespaces):
     :return dict: sample namespace dict
     """
     sample = namespaces["sample"]
-    sample.to_yaml(
-        _get_yaml_path(namespaces, SAMPLE_YAML_PATH_KEY, "_sample"), add_prj_ref=False
+    sample["sample_yaml_path"] = _get_yaml_path(
+        namespaces, SAMPLE_YAML_PATH_KEY, "_sample"
     )
+    sample.to_yaml(sample["sample_yaml_path"], add_prj_ref=False)
     return {"sample": sample}
 
 
@@ -119,9 +120,46 @@ def write_sample_yaml_prj(namespaces):
     return {"sample": sample}
 
 
+def write_custom_template(namespaces):
+    """
+    Plugin: Populates a user-provided jinja template
+
+    Parameterize by providing pipeline.var_templates.custom_template
+    """
+
+    def load_template(pipeline):
+        with open(namespaces["pipeline"]["var_templates"]["custom_template"], "r") as f:
+            x = f.read()
+        t = jinja2.Template(x)
+        return t
+
+    err_msg = (
+        "Custom template plugin requires a template in var_templates.custom_template"
+    )
+    if "var_templates" not in namespaces["pipeline"].keys():
+        _LOGGER.error(err_msg)
+        return None
+
+    if "custom_template" not in namespaces["pipeline"]["var_templates"].keys():
+        _LOGGER.error(err_msg)
+        return None
+
+    import jinja2
+
+    tpl = load_template(namespaces["pipeline"])
+    content = tpl.render(namespaces)
+    pth = _get_yaml_path(namespaces, "custom_template_output", "_config")
+    namespaces["sample"]["custom_template_output"] = pth
+    with open(pth, "wb") as fh:
+        # print(content)
+        fh.write(content.encode())
+
+    return {"sample": namespaces["sample"]}
+
+
 def write_sample_yaml_cwl(namespaces):
     """
-    Produce a cwl-compatible yaml representation of the sample
+    Plugin: Produce a cwl-compatible yaml representation of the sample
 
     Also adds the 'cwl_yaml' attribute to sample objects, which points
     to the file produced.
@@ -295,6 +333,7 @@ class SubmissionConductor(object):
         self._num_cmds_submitted = 0
         self._curr_size = 0
         self._failed_sample_names = []
+        self._curr_skip_pool = []
 
         if self.extra_pipe_args:
             _LOGGER.debug(
@@ -400,14 +439,6 @@ class SubmissionConductor(object):
                     msg += f". Determined status: {', '.join(sample_statuses)}"
                 _LOGGER.info(msg)
 
-        if self.prj.toggle_key in sample and int(sample[self.prj.toggle_key]) == 0:
-            _LOGGER.warning(
-                "> Skipping sample ({}: {})".format(
-                    self.prj.toggle_key, sample[self.prj.toggle_key]
-                )
-            )
-            use_this_sample = False
-
         skip_reasons = []
         validation = {}
         validation.setdefault(INPUT_FILE_SIZE_KEY, 0)
@@ -437,11 +468,8 @@ class SubmissionConductor(object):
         else:
             self._curr_skip_size += float(validation[INPUT_FILE_SIZE_KEY])
             self._curr_skip_pool.append(sample)
-            if self._is_full(self._curr_skip_pool, self._curr_skip_size):
-                self._skipped_sample_pools.append(
-                    (self._curr_skip_pool, self._curr_skip_size)
-                )
-                self._reset_curr_skips()
+            self.write_script(self._curr_skip_pool, self._curr_skip_size)
+            self._reset_curr_skips()
 
         return skip_reasons
 
@@ -707,8 +735,10 @@ class SubmissionConductor(object):
             else:
                 commands.append("{} {}".format(argstring, self.extra_pipe_args))
                 self._rendered_ok = True
-                self._num_good_job_submissions += 1
-                self._num_total_job_submissions += 1
+                if sample not in self._curr_skip_pool:
+                    self._num_good_job_submissions += 1
+                    self._num_total_job_submissions += 1
+
         looper["command"] = "\n".join(commands)
         if self.collate:
             _LOGGER.debug("samples namespace:\n{}".format(self.prj.samples))
@@ -727,23 +757,6 @@ class SubmissionConductor(object):
         return self.prj.dcc.write_script(
             output_path=subm_base + ".sub", extra_vars=[{"looper": looper}]
         )
-
-    def write_skipped_sample_scripts(self):
-        """
-        For any sample skipped during initial processing write submission script
-        """
-        if self._curr_skip_pool:
-            # move any hanging samples from current skip pool to the main pool
-            self._skipped_sample_pools.append(
-                (self._curr_skip_pool, self._curr_skip_size)
-            )
-        if self._skipped_sample_pools:
-            _LOGGER.info(
-                "Writing {} submission scripts for skipped samples".format(
-                    len(self._skipped_sample_pools)
-                )
-            )
-            [self.write_script(pool, size) for pool, size in self._skipped_sample_pools]
 
     def _reset_pool(self):
         """Reset the state of the pool of samples"""
@@ -775,9 +788,11 @@ def _exec_pre_submit(piface, namespaces):
 
         :param dict[dict] x: namespaces mapping
         :param dict[dict] y: mapping to update namespaces with
-        :param bool cmd: whether the mapping to upodate with comes from the
+        :param bool cmd: whether the mapping to update with comes from the
             command template, used for messaging
         """
+        if not y:
+            return
         if not isinstance(y, dict):
             if cmd:
                 raise TypeError(
