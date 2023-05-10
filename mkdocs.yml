@@ -22,19 +22,16 @@ nav:
       - Running multiple pipelines: multiple-pipelines.md
       - Writing a pipeline interface: writing-a-pipeline-interface.md
   - Using divvy:
-      - Getting Started:
-            - Introduction: README_divvy.md
-            - Install and configure: install_divvy.md
-      - How-to Guides:
-            - "Tutorial: divvy in python": tutorial_divvy.md
-            - "Tutorial: divvy on the command line": cli_divvy.md
-            - Configuring divvy: configuration_divvy.md
-            - Configuring containers: containers_divvy.md
-            - Configuring connection with client software: adapters_divvy.md
-      - Reference:
-            - Default packages: default_packages_divvy.md
-            - API: autodoc_build/divvy.md
-            - DIVCFG examples: http://github.com/pepkit/divcfg
+      - Introduction: README_divvy.md
+      - Install and configure: install_divvy.md
+      - "Tutorial: divvy in python": tutorial_divvy.md
+      - "Tutorial: divvy on the command line": cli_divvy.md
+      - Configuring divvy: configuration_divvy.md
+      - Configuring containers: containers_divvy.md
+      - Configuring connection with client software: adapters_divvy.md
+      - Default packages: default_packages_divvy.md
+      - API: autodoc_build/divvy.md
+      - DIVCFG examples: http://github.com/pepkit/divcfg
   - Reference:
       - Pipeline interface specification: pipeline-interface-specification.md
       - Pipeline tiers: pipeline-tiers.md
