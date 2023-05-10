@@ -1,0 +1,12 @@
+compute_packages:
+  default:
+    submission_template: templates/slurm_template.sub
+    submission_command: sbatch
+    partition: parallel
+  econ:
+    submission_template: templates/slurm_template.sub
+    submission_command: sbatch
+    partition: economy
+  local:
+    submission_template: templates/localhost_template.sub
+    submission_command: sh

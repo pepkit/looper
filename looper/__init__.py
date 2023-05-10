@@ -15,9 +15,9 @@ import argparse
 import logging
 import os
 from typing import *
-
-from divvy import DEFAULT_COMPUTE_RESOURCES_NAME
-from divvy import NEW_COMPUTE_KEY as COMPUTE_KEY
+from .divvy import ComputingConfiguration, select_divvy_config
+from .divvy import DEFAULT_COMPUTE_RESOURCES_NAME
+from .divvy import NEW_COMPUTE_KEY as COMPUTE_KEY
 from ubiquerg import VersionInHelpParser
 
 from ._version import __version__
@@ -39,7 +39,13 @@ from .project import Project
 # the locations of some of the peppy declarations. Effectively, concentrate
 # the connection between peppy and looper here, to the extent possible.
 
-__all__ = ["Project", "PipelineInterface", "SubmissionConductor"]
+__all__ = [
+    "Project",
+    "PipelineInterface",
+    "SubmissionConductor",
+    "ComputingConfiguration",
+    "select_divvy_config",
+]
 
 
 SAMPLE_SELECTION_ATTRIBUTE_OPTNAME = "sel-attr"

@@ -1,0 +1,47 @@
+# Use this to change your cluster manager (SLURM, SGE, LFS, etc).
+# Relative paths are relative to this compute environment configuration file.
+# Compute resource parameters fill the submission_template file's fields.
+adapters:
+  CODE: looper.command
+  JOBNAME: looper.job_name
+  CORES: compute.cores
+  LOGFILE: looper.log_file
+  TIME: compute.time
+  MEM: compute.mem
+  DOCKER_ARGS: compute.docker_args
+  DOCKER_IMAGE: compute.docker_image
+  SINGULARITY_IMAGE: compute.singularity_image
+  SINGULARITY_ARGS: compute.singularity_args
+compute_packages:
+  default:
+    submission_template: divvy_templates/localhost_template.sub
+    submission_command: .
+  local:
+    submission_template: divvy_templates/localhost_template.sub
+    submission_command: .
+  slurm:
+    submission_template: divvy_templates/slurm_template.sub
+    submission_command: sbatch
+  singularity:
+    submission_template: divvy_templates/localhost_singularity_template.sub
+    submission_command: .
+    singularity_args: ""
+  singularity_slurm:
+    submission_template: divvy_templates/slurm_singularity_template.sub
+    submission_command: sbatch
+    singularity_args: ""
+  bulker_local:
+    submission_template: divvy_templates/localhost_bulker_template.sub
+    submission_command: sh
+  docker:
+    submission_template: divvy_templates/localhost_docker_template.sub
+    submission_command: .
+    docker_args: |
+      --user=$(id -u):$(id -g) \
+      --env="DISPLAY" \
+      --volume="/etc/group:/etc/group:ro" \
+      --volume="/etc/passwd:/etc/passwd:ro" \
+      --volume="/etc/shadow:/etc/shadow:ro"  \
+      --volume="/etc/sudoers.d:/etc/sudoers.d:ro" \
+      --volume="/tmp/.X11-unix:/tmp/.X11-unix:rw" \
+      --workdir="`pwd`" \
