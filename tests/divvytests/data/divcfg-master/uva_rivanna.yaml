@@ -1,0 +1,52 @@
+# Environment configuration file for looper
+# This version describes the compute environment on Rivanna at UVA
+adapters:
+  CODE: looper.command
+  JOBNAME: looper.job_name
+  CORES: compute.cores
+  LOGFILE: looper.log_file
+  TIME: compute.time
+  MEM: compute.mem
+  BULKER_CRATE: compute.bulker_crate
+  DOCKER_ARGS: compute.docker_args
+  DOCKER_IMAGE: compute.docker_image
+  SINGULARITY_IMAGE: compute.singularity_image
+  SINGULARITY_ARGS: compute.singularity_args
+compute_packages:
+  default:
+    submission_template: templates/slurm_template.sub
+    submission_command: sbatch
+    partition: standard
+  sigterm:
+    submission_template: templates/slurm_sig_template.sub
+    submission_command: sbatch
+    partition: standard
+  parallel:
+    submission_template: templates/slurm_template.sub
+    submission_command: sbatch
+    partition: parallel
+  largemem:
+    submission_template: templates/slurm_template.sub
+    submission_command: sbatch
+    partition: largemem
+  local:
+    submission_template: templates/localhost_template.sub
+    submission_command: .
+  singularity_slurm:
+    submission_template: templates/slurm_singularity_template.sub
+    submission_command: sbatch
+    singularity_args: -B /sfs/lustre:/sfs/lustre,/nm/t1:/nm/t1
+  singularity_local:
+    submission_template: templates/localhost_singularity_template.sub
+    submission_command: .
+    singularity_args: -B /apps:/apps
+  bulker_slurm:
+    submission_template: templates/slurm_bulker_template.sub
+    submission_command: sbatch
+  bulker_local:
+    submission_template: templates/localhost_bulker_template.sub
+    submission_command: . 
+  
+# old idea:
+# pipelines: [$CODEBASE/pipelines, $CODEBASE/ATACseq, $CODEBASE/hichip_pipeline, $CODEBASE/open_pipelines]
+

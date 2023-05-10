@@ -5,6 +5,7 @@ import os
 __author__ = "Databio lab"
 __email__ = "nathan@code.databio.org"
 
+
 __all__ = [
     "BUTTON_APPEARANCE_BY_FLAG",
     "TABLE_APPEARANCE_BY_FLAG",
@@ -43,7 +44,6 @@ __all__ = [
     "IMAGE_EXTS",
     "PROFILE_COLNAMES",
     "SAMPLE_TOGGLE_ATTR",
-    "TOGGLE_KEY_SELECTOR",
     "LOOPER_DOTFILE_NAME",
     "POSITIONAL",
     "EXTRA_PROJECT_CMD_TEMPLATE",
@@ -75,6 +75,12 @@ __all__ = [
     "PIPELINE_INTERFACE_PIPELINE_NAME_KEY",
     "PEP_CONFIG_KEY",
     "PEP_CONFIG_FILE_KEY",
+    "COMPUTE_SETTINGS_VARNAME",
+    "DEFAULT_COMPUTE_RESOURCES_NAME",
+    "NEW_COMPUTE_KEY",
+    "DEFAULT_CONFIG_FILEPATH",
+    "DEFAULT_CONFIG_SCHEMA",
+    "DEFAULT_COMPUTE_RESOURCES_NAME",
 ]
 
 FLAGS = ["completed", "running", "failed", "waiting", "partial"]
@@ -106,6 +112,17 @@ def _get_apperance_dict(type, templ=APPEARANCE_BY_FLAG):
     return ret
 
 
+# Compute-related (for divvy)
+COMPUTE_SETTINGS_VARNAME = ["DIVCFG"]
+DEFAULT_COMPUTE_RESOURCES_NAME = "default"
+OLD_COMPUTE_KEY = "compute"
+NEW_COMPUTE_KEY = "compute_packages"
+DEFAULT_CONFIG_FILEPATH = os.path.join(
+    os.path.dirname(__file__), "default_config", "divvy_config.yaml"
+)
+DEFAULT_CONFIG_SCHEMA = os.path.join(
+    os.path.dirname(__file__), "schemas", "divvy_config_schema.yaml"
+)
 PRE_SUBMIT_HOOK_KEY = "pre_submit"
 PRE_SUBMIT_PY_FUN_KEY = "python_functions"
 PRE_SUBMIT_CMD_KEY = "command_templates"
@@ -137,7 +154,6 @@ SAMPLE_YAML_PATH_KEY = "sample_yaml_path"
 SAMPLE_YAML_PRJ_PATH_KEY = "sample_yaml_prj_path"
 SUBMISSION_YAML_PATH_KEY = "submission_yaml_path"
 SAMPLE_CWL_YAML_PATH_KEY = "sample_cwl_yaml_path"
-TOGGLE_KEY_SELECTOR = "toggle_key"
 SAMPLE_TOGGLE_ATTR = "toggle"
 OUTKEY = "outputs"
 JOB_NAME_KEY = "job_name"
@@ -188,7 +204,6 @@ PROJECT_PL_ARG = "project_pipeline_interfaces"
 DEFAULT_CFG_PATH = os.path.join(os.getcwd(), LOOPER_DOTFILE_NAME)
 CLI_PROJ_ATTRS = [
     OUTDIR_KEY,
-    TOGGLE_KEY_SELECTOR,
     SUBMISSION_SUBDIR_KEY,
     PIPELINE_INTERFACES_KEY,
     RESULTS_SUBDIR_KEY,
