@@ -314,6 +314,38 @@ def build_parser():
         )
 
         init_subparser.add_argument(
+            "-o",
+            "--output-dir",
+            dest="output_dir",
+            metavar="DIR",
+            default=None,
+            type=str,
+        )
+
+        init_subparser.add_argument(
+            "-S",
+            "--sample-pipeline-interfaces",
+            dest=SAMPLE_PL_ARG,
+            metavar="YAML",
+            default=None,
+            nargs="+",
+            type=str,
+            help="Path to looper sample config file",
+        )
+        init_subparser.add_argument(
+            "-P",
+            "--project-pipeline-interfaces",
+            dest=PROJECT_PL_ARG,
+            metavar="YAML",
+            default=None,
+            nargs="+",
+            type=str,
+            help="Path to looper project config file",
+        )
+
+        # TODO: add  ouput dir, sample, project pifaces
+
+        init_subparser.add_argument(
             "-p",
             "--piface",
             help="Generates generic pipeline interface",
@@ -342,7 +374,7 @@ def build_parser():
             # help="Path to the looper config file"
             subparser.add_argument(
                 "-S",
-                "--sample_pipeline_interfaces",
+                "--sample-pipeline-interfaces",
                 dest=SAMPLE_PL_ARG,
                 metavar="YAML",
                 default=None,
@@ -352,7 +384,7 @@ def build_parser():
             )
             subparser.add_argument(
                 "-P",
-                "--project_pipeline_interfaces",
+                "--project-pipeline-interfaces",
                 dest=PROJECT_PL_ARG,
                 metavar="YAML",
                 default=None,

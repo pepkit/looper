@@ -350,28 +350,56 @@ def init_generic_pipeline():
     return True
 
 
-def init_dotfile(path, cfg_path, force=False):
+def init_dotfile(path: str,
+                 cfg_path: str = None,
+                 output_dir: str = None,
+                 sample_pipeline_interfaces: Union[List[str], str] = None,
+                 project_pipeline_interfaces: Union[List[str], str] = None,
+                 force=False):
     """
     Initialize looper dotfile
 
     :param str path: absolute path to the file to initialize
     :param str cfg_path: path to the config file. Absolute or relative to 'path'
+    :param str output_dir: path to the output directory
+    :param str|list sample_pipeline_interfaces: path or list of paths to sample pipeline interfaces
+    :param str|list project_pipeline_interfaces: path or list of paths to project pipeline interfaces
     :param bool force: whether the existing file should be overwritten
     :return bool: whether the file was initialized
     """
     if os.path.exists(path) and not force:
         print("Can't initialize, file exists: {}".format(path))
         return False
-    cfg_path = expandpath(cfg_path)
-    if not os.path.isabs(cfg_path):
-        cfg_path = os.path.join(os.path.dirname(path), cfg_path)
-    assert os.path.exists(cfg_path), OSError(
-        "Provided config path is invalid. You must provide path "
-        "that is either absolute or relative to: {}".format(os.path.dirname(path))
-    )
-    relpath = os.path.relpath(cfg_path, os.path.dirname(path))
+    if cfg_path:
+        if is_registry_path(cfg_path):
+            pass
+        else:
+            cfg_path = expandpath(cfg_path)
+            if not os.path.isabs(cfg_path):
+                cfg_path = os.path.join(os.path.dirname(path), cfg_path)
+            assert os.path.exists(cfg_path), OSError(
+                "Provided config path is invalid. You must provide path "
+                "that is either absolute or relative to: {}".format(os.path.dirname(path))
+            )
+    else:
+        cfg_path = "example/pep/path"
+
+    if not output_dir:
+        output_dir = "."
+
+    looper_config_dict = {
+        "pep_config": cfg_path,
+        "output_dir": output_dir,
+        "pipeline_interfaces": {
+            "sample": sample_pipeline_interfaces,
+            "project": project_pipeline_interfaces,
+        }
+    }
+
+    cfg_relpath = os.path.relpath(cfg_path, os.path.dirname(path))
+
     with open(path, "w") as dotfile:
-        yaml.dump({DOTFILE_CFG_PTH_KEY: relpath}, dotfile)
+        yaml.dump(looper_config_dict, dotfile)
     print("Initialized looper dotfile: {}".format(path))
     return True
 

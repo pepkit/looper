@@ -1067,7 +1067,12 @@ def main():
     if args.command == "init":
         if args.piface == True:
             sys.exit(int(not init_generic_pipeline()))
-        sys.exit(int(not init_dotfile(dotfile_path(), args.config_file, args.force)))
+        sys.exit(int(not init_dotfile(dotfile_path(),
+                                      args.config_file,
+                                      args.output_dir,
+                                      args.sample_pipeline_interfaces,
+                                      args.project_pipeline_interfaces,
+                                      args.force)))
 
     args = enrich_args_via_cfg(args, aux_parser)
 
