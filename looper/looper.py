@@ -1066,12 +1066,18 @@ def main():
                 )
 
     if args.command == "init":
-        sys.exit(int(not init_dotfile(dotfile_path(),
-                                      args.config_file,
-                                      args.output_dir,
-                                      args.sample_pipeline_interfaces,
-                                      args.project_pipeline_interfaces,
-                                      args.force)))
+        sys.exit(
+            int(
+                not init_dotfile(
+                    dotfile_path(),
+                    args.config_file,
+                    args.output_dir,
+                    args.sample_pipeline_interfaces,
+                    args.project_pipeline_interfaces,
+                    args.force,
+                )
+            )
+        )
 
     if args.command == "init-piface":
         sys.exit(int(not init_generic_pipeline()))

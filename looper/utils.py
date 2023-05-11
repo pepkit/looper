@@ -335,12 +335,9 @@ def init_generic_pipeline():
         "pipeline_name": "count_lines",
         "pipeline_type": "sample",
         "output_schema": "output_schema.yam",
-        "var_templates": {
-            "pipeline": '{looper.piface_dir}/count_lines.sh'
-        },
+        "var_templates": {"pipeline": "{looper.piface_dir}/count_lines.sh"},
         "command_template": "{pipeline.var_templates.pipeline} {sample.file} "
-                            "--output-parent {looper.sample_output_folder}"
-
+        "--output-parent {looper.sample_output_folder}",
     }
 
     # Write file
@@ -349,17 +346,21 @@ def init_generic_pipeline():
             yaml.dump(generic_pipeline_dict, file)
         print(f"Generic pipeline interface successfully created at: {dest_file}")
     else:
-        print(f"Generic pipeline interface file already exists `{dest_file}`. Skipping creation..")
+        print(
+            f"Generic pipeline interface file already exists `{dest_file}`. Skipping creation.."
+        )
 
     return True
 
 
-def init_dotfile(path: str,
-                 cfg_path: str = None,
-                 output_dir: str = None,
-                 sample_pipeline_interfaces: Union[List[str], str] = None,
-                 project_pipeline_interfaces: Union[List[str], str] = None,
-                 force=False):
+def init_dotfile(
+    path: str,
+    cfg_path: str = None,
+    output_dir: str = None,
+    sample_pipeline_interfaces: Union[List[str], str] = None,
+    project_pipeline_interfaces: Union[List[str], str] = None,
+    force=False,
+):
     """
     Initialize looper dotfile
 
@@ -383,7 +384,9 @@ def init_dotfile(path: str,
                 cfg_path = os.path.join(os.path.dirname(path), cfg_path)
             assert os.path.exists(cfg_path), OSError(
                 "Provided config path is invalid. You must provide path "
-                "that is either absolute or relative to: {}".format(os.path.dirname(path))
+                "that is either absolute or relative to: {}".format(
+                    os.path.dirname(path)
+                )
             )
     else:
         cfg_path = "example/pep/path"
@@ -397,7 +400,7 @@ def init_dotfile(path: str,
         "pipeline_interfaces": {
             "sample": sample_pipeline_interfaces,
             "project": project_pipeline_interfaces,
-        }
+        },
     }
 
     cfg_relpath = os.path.relpath(cfg_path, os.path.dirname(path))
