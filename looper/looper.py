@@ -1048,31 +1048,33 @@ def main():
     if args.command is None:
         parser.print_help(sys.stderr)
         sys.exit(1)
-    if args.config_file is None:
-        m = "No project config defined"
-        try:
-            looper_config_dict = read_looper_dotfile()
-            for looper_config_key, looper_config_item in looper_config_dict.items():
-                setattr(args, looper_config_key, looper_config_item)
-        except OSError:
-            print(m + f" and dotfile does not exist: {dotfile_path()}")
-            parser.print_help(sys.stderr)
-            sys.exit(1)
-        else:
-            print(
-                m + f", using: {read_looper_dotfile()}. "
-                f"Read from dotfile ({dotfile_path()})."
-            )
+    if "config_file" in vars(args):
+        if args.config_file is None:
+            m = "No project config defined"
+            try:
+                looper_config_dict = read_looper_dotfile()
+                for looper_config_key, looper_config_item in looper_config_dict.items():
+                    setattr(args, looper_config_key, looper_config_item)
+            except OSError:
+                print(m + f" and dotfile does not exist: {dotfile_path()}")
+                parser.print_help(sys.stderr)
+                sys.exit(1)
+            else:
+                print(
+                    m + f", using: {read_looper_dotfile()}. "
+                    f"Read from dotfile ({dotfile_path()})."
+                )
 
     if args.command == "init":
-        if args.piface == True:
-            sys.exit(int(not init_generic_pipeline()))
         sys.exit(int(not init_dotfile(dotfile_path(),
                                       args.config_file,
                                       args.output_dir,
                                       args.sample_pipeline_interfaces,
                                       args.project_pipeline_interfaces,
                                       args.force)))
+
+    if args.command == "init-piface":
+        sys.exit(int(not init_generic_pipeline()))
 
     args = enrich_args_via_cfg(args, aux_parser)
 

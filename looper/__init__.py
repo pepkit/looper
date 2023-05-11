@@ -88,6 +88,7 @@ MESSAGE_BY_SUBCOMMAND = {
     "clean": "Run clean scripts of already processed jobs.",
     "inspect": "Print information about a project.",
     "init": "Initialize looper dotfile.",
+    "init-piface": "Initialize generic pipeline interface"
 }
 
 
@@ -156,6 +157,7 @@ def build_parser():
         clean_subparser = add_subparser("clean")
         inspect_subparser = add_subparser("inspect")
         init_subparser = add_subparser("init")
+        init_piface = add_subparser("init-piface")
 
         # Flag arguments
         ####################################################################
