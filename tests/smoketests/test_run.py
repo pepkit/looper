@@ -10,7 +10,7 @@ from looper.utils import *
 CMD_STRS = ["string", " --string", " --sjhsjd 212", "7867#$@#$cc@@"]
 
 
-class TestsLooperBothRuns:
+class TestLooperBothRuns:
     @pytest.mark.parametrize("cmd", ["run", "runp"])
     def test_looper_cfg_invalid(self, cmd):
         """Verify looper does not accept invalid cfg paths"""
@@ -61,7 +61,7 @@ class TestsLooperBothRuns:
         assert_content_not_in_any_files(subs_list, "--unknown-arg")
 
 
-class TestsLooperRunBehavior:
+class TestLooperRunBehavior:
     def test_looper_run_basic(self, prep_temp_pep):
         """Verify looper runs in a basic case and return code is 0"""
         tp = prep_temp_pep
@@ -230,7 +230,7 @@ class TestsLooperRunBehavior:
         assert_content_not_in_any_files(subs_list, arg)
 
 
-class TestsLooperRunpBehavior:
+class TestLooperRunpBehavior:
     def test_looper_runp_basic(self, prep_temp_pep):
         """Verify looper runps in a basic case and return code is 0"""
         tp = prep_temp_pep
@@ -269,7 +269,7 @@ class TestsLooperRunpBehavior:
         assert_content_in_all_files(subs_list, arg)
 
 
-class TestsLooperRunPreSubmissionHooks:
+class TestLooperRunPreSubmissionHooks:
     def test_looper_basic_plugin(self, prep_temp_pep):
         tp = prep_temp_pep
         stdout, stderr, rc = subp_exec(tp, "run")
@@ -320,7 +320,7 @@ class TestsLooperRunPreSubmissionHooks:
         verify_filecount_in_dir(sd, "test.txt", 3)
 
 
-class TestsLooperRunSubmissionScript:
+class TestLooperRunSubmissionScript:
     def test_looper_run_produces_submission_scripts(self, prep_temp_pep):
         tp = prep_temp_pep
         with open(tp, "r") as conf_file:
@@ -349,7 +349,7 @@ class TestsLooperRunSubmissionScript:
         verify_filecount_in_dir(sd, ".sub", 4)
 
 
-class TestsLooperCompute:
+class TestLooperCompute:
     @pytest.mark.parametrize("cmd", ["run", "runp"])
     def test_looper_respects_pkg_selection(self, prep_temp_pep, cmd):
         tp = prep_temp_pep
@@ -425,7 +425,7 @@ class TestsLooperCompute:
         assert_content_not_in_any_files(subs_list, "testin_mem")
 
 
-class TestsLooperConfig:
+class TestLooperConfig:
     @pytest.mark.parametrize("cmd", ["run", "runp"])
     def test_init_config_file(self, prep_temp_pep, cmd, dotfile_path):
         tp = prep_temp_pep
