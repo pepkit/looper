@@ -88,7 +88,7 @@ MESSAGE_BY_SUBCOMMAND = {
     "clean": "Run clean scripts of already processed jobs.",
     "inspect": "Print information about a project.",
     "init": "Initialize looper dotfile.",
-    "init-piface": "Initialize generic pipeline interface",
+    "init-piface": "Initialize generic pipeline interface.",
 }
 
 
