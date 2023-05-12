@@ -2,6 +2,16 @@
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format.
 
+## [1.5.0] -- 
+
+### Added 
+
+- ability to use PEPs from PEPhub without downloading project [#341](https://github.com/pepkit/looper/issues/341)
+- ability to specify pipeline interfaces inside looper config instead/
+
+### Changed
+- initialization of generic pipeline interface available using subcommand `init-piface`
+
 
 ## [1.4.0] -- 2023-04-24
 

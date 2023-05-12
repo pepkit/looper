@@ -702,15 +702,15 @@ class Project(peppyProject):
             _LOGGER.warning(msg)
         return samples_by_piface
 
-    def set_sample_piface(self, sample_pifase: Union[List[str], str]) -> NoReturn:
+    def set_sample_piface(self, sample_piface: Union[List[str], str]) -> NoReturn:
         """
         Add sample pipeline interfaces variable to object
 
-        :param list | str sample_pifase: sample pipeline interface
+        :param list | str sample_piface: sample pipeline interface
         """
         self._config.setdefault("sample_modifiers", {})
         self._config["sample_modifiers"].setdefault("append", {})
-        self.config["sample_modifiers"]["append"]["pipeline_interfaces"] = sample_pifase
+        self.config["sample_modifiers"]["append"]["pipeline_interfaces"] = sample_piface
 
         self.modify_samples()
 
