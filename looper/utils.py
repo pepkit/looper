@@ -334,7 +334,7 @@ def init_generic_pipeline():
     generic_pipeline_dict = {
         "pipeline_name": "count_lines",
         "pipeline_type": "sample",
-        "output_schema": "output_schema.yam",
+        "output_schema": "output_schema.yaml",
         "var_templates": {"pipeline": "{looper.piface_dir}/count_lines.sh"},
         "command_template": "{pipeline.var_templates.pipeline} {sample.file} "
         "--output-parent {looper.sample_output_folder}",
@@ -491,6 +491,8 @@ def is_registry_path(input_string: str) -> bool:
     :param str input_string: path to the PEP (or registry path)
     :return bool: True if input is a registry path
     """
+    if input_string.endswith(".yaml"):
+        return False
     try:
         registry_path = RegistryPath(**parse_registry_path(input_string))
     except (ValidationError, TypeError):
