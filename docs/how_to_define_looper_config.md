@@ -1,11 +1,9 @@
 # How to run pipeline using looper config file
 
-In looper>=1.5.0 was added new functionality that supports usage of projects from [PEPhub](https://pephub.databio.org/) and
-decouples PEP from pipeline interfaces.
-By using project from PEPhub, user can run pipeline without downloading PEP. User should only specify all necessary
-environment variables that are in PEP, to point directory of actual files and pipeline interfaces.
+Starting with looper>=1.5.0, you should specify a pipeline interface in the looper config file, rather than in the PEP.
 
 Example looper config file using local PEP:
+
 ```yaml
 pep_config: $HOME/hello_looper-master/project/project_config.yaml
 output_dir: "$HOME/hello_looper-master/output"
@@ -14,7 +12,12 @@ pipeline_interfaces:
   project: "some/project/pipeline"
 ```
 
+In addition, looper>=1.5.0 supports projects from [PEPhub](https://pephub.databio.org/). 
+Using a PEP from PEPhub allows a user to run a pipeline without downloading the PEP. This allows you to keep the sample table in a centralized, shared location. You need only specify all necessary
+environment variables used by the PEP.
+
 Example looper config file using PEPhub project:
+
 ```yaml
 pep_config: pephub::databio/looper:default
 output_dir: "$HOME/hello_looper-master/output"
