@@ -5,6 +5,7 @@ from shutil import copyfile as cpf, rmtree
 import tempfile
 from typing import *
 
+import peppy
 import pytest
 from peppy.const import *
 from yaml import dump, safe_load
@@ -196,4 +197,58 @@ def prep_temp_pep(example_pep_piface_path):
     ]
     with open(temp_path_cfg, "w") as f:
         dump(piface_data, f)
+
     return temp_path_cfg
+
+
+@pytest.fixture
+def prep_temp_config_with_pep(example_pep_piface_path):
+    # temp dir
+    td = tempfile.mkdtemp()
+    out_td = os.path.join(td, "output")
+    # ori paths
+    cfg_path = os.path.join(example_pep_piface_path, CFG)
+    sample_table_path = os.path.join(example_pep_piface_path, ST)
+    piface1s_path = os.path.join(example_pep_piface_path, PIS.format("1"))
+    temp_path_cfg = os.path.join(td, CFG)
+    temp_path_sample_table = os.path.join(td, ST)
+    temp_path_piface1s = os.path.join(td, PIS.format("1"))
+
+    # copying
+    cpf(cfg_path, temp_path_cfg)
+    cpf(sample_table_path, temp_path_sample_table)
+    cpf(piface1s_path, temp_path_piface1s)
+
+    return peppy.Project(temp_path_cfg).to_dict(extended=True), temp_path_piface1s
+
+
+@pytest.fixture
+def prepare_pep_with_dot_file(prep_temp_pep):
+    pep_config = prep_temp_pep
+    with open(pep_config) as f:
+        pep_data = safe_load(f)
+
+    output_dir = pep_data["looper"]["output_dir"]
+    project_piface = pep_data["looper"]["cli"]["runp"]["pipeline_interfaces"]
+    sample_piface = pep_data["sample_modifiers"]["append"]["pipeline_interfaces"]
+
+    pep_data.pop("looper")
+    pep_data["sample_modifiers"].pop("append")
+
+    with open(pep_config, "w") as f:
+        config = dump(pep_data, f)
+
+    looper_config = {
+        "pep_config": pep_config,
+        "output_dir": output_dir,
+        "pipeline_interfaces": {
+            "sample": sample_piface,
+            "project": project_piface,
+        },
+    }
+
+    dot_file_path = ".looper.yaml"
+    with open(dot_file_path, "w") as f:
+        config = dump(looper_config, f)
+
+    return dot_file_path

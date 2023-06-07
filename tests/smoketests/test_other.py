@@ -15,7 +15,7 @@ def _make_flags(cfg, type, count):
         open(os.path.join(sf, type + ".flag"), "a").close()
 
 
-class LooperCheckTests:
+class TestLooperCheck:
     @pytest.mark.parametrize("flag_id", FLAGS)
     @pytest.mark.parametrize("count", list(range(2)))
     def test_check_works(self, prep_temp_pep, flag_id, count):

@@ -69,8 +69,12 @@ __all__ = [
     "PIPESTAT_CONFIG_ATTR_KEY",
     "PIPESTAT_RESULTS_FILE_ATTR_KEY",
     "LOOPER_GENERIC_PIPELINE",
+    "PROJECT_PL_ARG",
+    "SAMPLE_PL_ARG",
     "JOB_NAME_KEY",
     "PIPELINE_INTERFACE_PIPELINE_NAME_KEY",
+    "PEP_CONFIG_KEY",
+    "PEP_CONFIG_FILE_KEY",
     "COMPUTE_SETTINGS_VARNAME",
     "DEFAULT_COMPUTE_RESOURCES_NAME",
     "NEW_COMPUTE_KEY",
@@ -179,6 +183,9 @@ LOOPER_KEY = "looper"
 PIPESTAT_KEY = "pipestat"
 NAMESPACE_ATTR_KEY = "namespace_attribute"
 OUTDIR_KEY = "output_dir"
+PEP_CONFIG_KEY = "pep_config"
+PEP_CONFIG_FILE_KEY = "config_file"
+
 RESULTS_SUBDIR_KEY = "results_subdir"
 SUBMISSION_SUBDIR_KEY = "submission_subdir"
 DRY_RUN_KEY = "dry_run"
@@ -187,10 +194,13 @@ EXAMPLE_COMPUTE_SPEC_FMT = "k1=v1 k2=v2"
 SUBMISSION_FAILURE_MESSAGE = "Cluster resource failure"
 LOOPER_DOTFILE_NAME = "." + LOOPER_KEY + ".yaml"
 LOOPER_GENERIC_PIPELINE = "generic_pipeline_interface.yaml"
-POSITIONAL = ["config_file", "command"]
+POSITIONAL = [PEP_CONFIG_FILE_KEY, "command"]
 SELECTED_COMPUTE_PKG = "package"
 EXTRA_KEY = "_cli_extra"
 ALL_SUBCMD_KEY = "all"
+SAMPLE_PL_ARG = "sample_pipeline_interfaces"
+PROJECT_PL_ARG = "project_pipeline_interfaces"
+
 DEFAULT_CFG_PATH = os.path.join(os.getcwd(), LOOPER_DOTFILE_NAME)
 CLI_PROJ_ATTRS = [
     OUTDIR_KEY,
@@ -201,6 +211,7 @@ CLI_PROJ_ATTRS = [
     COMPUTE_PACKAGE_KEY,
     DRY_RUN_KEY,
     FILE_CHECKS_KEY,
+    SAMPLE_PL_ARG,
 ]
 
 # resource package TSV-related consts

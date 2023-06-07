@@ -9,6 +9,7 @@ nav:
       - Introduction: README.md
       - Features at-a-glance: features.md
       - Hello world: hello-world.md
+      - Hello PEPhub: hello-world-pephub.md
   - How-to guides:
       - Defining a project: defining-a-project.md
       - Running a pipeline: running-a-pipeline.md
@@ -21,6 +22,7 @@ nav:
       - Handling multiple input files: how-to-merge-inputs.md
       - Running multiple pipelines: multiple-pipelines.md
       - Writing a pipeline interface: writing-a-pipeline-interface.md
+      - Create looper config file: how_to_define_looper_config.md
   - Using divvy:
       - Introduction: README_divvy.md
       - Install and configure: install_divvy.md

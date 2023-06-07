@@ -38,6 +38,7 @@ from rich.console import Console
 from rich.table import Table
 from ubiquerg.cli_tools import query_yes_no
 from ubiquerg.collection import uniqify
+from pephubclient import PEPHubClient
 
 from . import __version__, build_parser, validate_post_parse
 from .conductor import SubmissionConductor
@@ -1047,26 +1048,45 @@ def main():
     if args.command is None:
         parser.print_help(sys.stderr)
         sys.exit(1)
-    if args.config_file is None:
-        m = "No project config defined"
-        try:
-            setattr(args, "config_file", read_cfg_from_dotfile())
-        except OSError:
-            print(m + f" and dotfile does not exist: {dotfile_path()}")
-            parser.print_help(sys.stderr)
-            sys.exit(1)
-        else:
-            print(
-                m + f", using: {read_cfg_from_dotfile()}. "
-                f"Read from dotfile ({dotfile_path()})."
-            )
+    if "config_file" in vars(args):
+        if args.config_file is None:
+            m = "No project config defined"
+            try:
+                looper_config_dict = read_looper_dotfile()
+                for looper_config_key, looper_config_item in looper_config_dict.items():
+                    setattr(args, looper_config_key, looper_config_item)
+            except OSError:
+                print(m + f" and dotfile does not exist: {dotfile_path()}")
+                parser.print_help(sys.stderr)
+                sys.exit(1)
+            else:
+                print(
+                    m + f", using: {read_looper_dotfile()}. "
+                    f"Read from dotfile ({dotfile_path()})."
+                )
+
     if args.command == "init":
-        if args.piface == True:
-            sys.exit(int(not init_generic_pipeline()))
-        sys.exit(int(not init_dotfile(dotfile_path(), args.config_file, args.force)))
+        sys.exit(
+            int(
+                not init_dotfile(
+                    dotfile_path(),
+                    args.config_file,
+                    args.output_dir,
+                    args.sample_pipeline_interfaces,
+                    args.project_pipeline_interfaces,
+                    args.force,
+                )
+            )
+        )
+
+    if args.command == "init-piface":
+        sys.exit(int(not init_generic_pipeline()))
+
     args = enrich_args_via_cfg(args, aux_parser)
 
-    from logmuse import init_logger
+    # If project pipeline interface defined in the cli, change name to: "pipeline_interface"
+    if vars(args)[PROJECT_PL_ARG]:
+        args.pipeline_interfaces = vars(args)[PROJECT_PL_ARG]
 
     _LOGGER = logmuse.logger_via_cli(args, make_root=True)
 
@@ -1084,17 +1104,38 @@ def main():
     )
 
     # Initialize project
-    try:
-        p = Project(
-            cfg=args.config_file,
-            amendments=args.amend,
-            divcfg_path=divcfg,
-            runp=args.command == "runp",
-            **{attr: getattr(args, attr) for attr in CLI_PROJ_ATTRS if attr in args},
-        )
-    except yaml.parser.ParserError as e:
-        _LOGGER.error("Project config parse failed -- {}".format(e))
-        sys.exit(1)
+    if is_registry_path(args.config_file):
+        if vars(args)[SAMPLE_PL_ARG]:
+            p = Project(
+                amendments=args.amend,
+                divcfg_path=divcfg,
+                runp=args.command == "runp",
+                project_dict=PEPHubClient()._load_raw_pep(
+                    registry_path=args.config_file
+                ),
+                **{
+                    attr: getattr(args, attr) for attr in CLI_PROJ_ATTRS if attr in args
+                },
+            )
+        else:
+            raise MisconfigurationException(
+                f"`sample_pipeline_interface` is missing. Provide it in the parameters."
+            )
+    else:
+        try:
+            p = Project(
+                cfg=args.config_file,
+                amendments=args.amend,
+                divcfg_path=divcfg,
+                runp=args.command == "runp",
+                **{
+                    attr: getattr(args, attr) for attr in CLI_PROJ_ATTRS if attr in args
+                },
+            )
+        except yaml.parser.ParserError as e:
+            _LOGGER.error(f"Project config parse failed -- {e}")
+            sys.exit(1)
+
     selected_compute_pkg = p.selected_compute_package or DEFAULT_COMPUTE_RESOURCES_NAME
     if p.dcc is not None and not p.dcc.activate_package(selected_compute_pkg):
         _LOGGER.info(

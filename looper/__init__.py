@@ -88,6 +88,7 @@ MESSAGE_BY_SUBCOMMAND = {
     "clean": "Run clean scripts of already processed jobs.",
     "inspect": "Print information about a project.",
     "init": "Initialize looper dotfile.",
+    "init-piface": "Initialize generic pipeline interface.",
 }
 
 
@@ -156,6 +157,7 @@ def build_parser():
         clean_subparser = add_subparser("clean")
         inspect_subparser = add_subparser("inspect")
         init_subparser = add_subparser("init")
+        init_piface = add_subparser("init-piface")
 
         # Flag arguments
         ####################################################################
@@ -314,6 +316,38 @@ def build_parser():
         )
 
         init_subparser.add_argument(
+            "-o",
+            "--output-dir",
+            dest="output_dir",
+            metavar="DIR",
+            default=None,
+            type=str,
+        )
+
+        init_subparser.add_argument(
+            "-S",
+            "--sample-pipeline-interfaces",
+            dest=SAMPLE_PL_ARG,
+            metavar="YAML",
+            default=None,
+            nargs="+",
+            type=str,
+            help="Path to looper sample config file",
+        )
+        init_subparser.add_argument(
+            "-P",
+            "--project-pipeline-interfaces",
+            dest=PROJECT_PL_ARG,
+            metavar="YAML",
+            default=None,
+            nargs="+",
+            type=str,
+            help="Path to looper project config file",
+        )
+
+        # TODO: add  ouput dir, sample, project pifaces
+
+        init_subparser.add_argument(
             "-p",
             "--piface",
             help="Generates generic pipeline interface",
@@ -337,11 +371,38 @@ def build_parser():
                 "config_file",
                 nargs="?",
                 default=None,
-                help="Project configuration file (YAML)",
+                help="Project configuration file (YAML) or pephub registry path.",
+            )
+            # help="Path to the looper config file"
+            subparser.add_argument(
+                "-S",
+                "--sample-pipeline-interfaces",
+                dest=SAMPLE_PL_ARG,
+                metavar="YAML",
+                default=None,
+                nargs="+",
+                type=str,
+                help="Path to looper sample config file",
+            )
+            subparser.add_argument(
+                "-P",
+                "--project-pipeline-interfaces",
+                dest=PROJECT_PL_ARG,
+                metavar="YAML",
+                default=None,
+                nargs="+",
+                type=str,
+                help="Path to looper project config file",
             )
             # help="Path to the output directory"
             subparser.add_argument(
-                "-o", "--output-dir", metavar="DIR", help=argparse.SUPPRESS
+                "-o",
+                "--output-dir",
+                dest="output_dir",
+                metavar="DIR",
+                default=None,
+                type=str,
+                help=argparse.SUPPRESS,
             )
             # "Submission subdirectory name"
             subparser.add_argument(

@@ -5,11 +5,12 @@ from yaml import dump
 from looper.const import *
 from looper.project import Project
 from tests.conftest import *
+from looper.utils import *
 
 CMD_STRS = ["string", " --string", " --sjhsjd 212", "7867#$@#$cc@@"]
 
 
-class LooperBothRunsTests:
+class TestLooperBothRuns:
     @pytest.mark.parametrize("cmd", ["run", "runp"])
     def test_looper_cfg_invalid(self, cmd):
         """Verify looper does not accept invalid cfg paths"""
@@ -59,21 +60,8 @@ class LooperBothRunsTests:
         subs_list = [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
         assert_content_not_in_any_files(subs_list, "--unknown-arg")
 
-    @pytest.mark.parametrize("cmd", ["run", "runp"])
-    def test_run_after_init(self, prep_temp_pep, cmd, dotfile_path):
-        tp = prep_temp_pep
-        stdout, stderr, rc = subp_exec(tp, "init")
-        print_standard_stream(stderr)
-        print_standard_stream(stdout)
-        assert rc == 0
-        assert_content_in_all_files(dotfile_path, tp)
-        stdout, stderr, rc = subp_exec(cmd=cmd)
-        print_standard_stream(stderr)
-        print_standard_stream(stdout)
-        assert rc == 0
 
-
-class LooperRunBehaviorTests:
+class TestLooperRunBehavior:
     def test_looper_run_basic(self, prep_temp_pep):
         """Verify looper runs in a basic case and return code is 0"""
         tp = prep_temp_pep
@@ -242,7 +230,7 @@ class LooperRunBehaviorTests:
         assert_content_not_in_any_files(subs_list, arg)
 
 
-class LooperRunpBehaviorTests:
+class TestLooperRunpBehavior:
     def test_looper_runp_basic(self, prep_temp_pep):
         """Verify looper runps in a basic case and return code is 0"""
         tp = prep_temp_pep
@@ -281,7 +269,7 @@ class LooperRunpBehaviorTests:
         assert_content_in_all_files(subs_list, arg)
 
 
-class LooperRunPreSubmissionHooksTests:
+class TestLooperRunPreSubmissionHooks:
     def test_looper_basic_plugin(self, prep_temp_pep):
         tp = prep_temp_pep
         stdout, stderr, rc = subp_exec(tp, "run")
@@ -332,7 +320,7 @@ class LooperRunPreSubmissionHooksTests:
         verify_filecount_in_dir(sd, "test.txt", 3)
 
 
-class LooperRunSubmissionScriptTests:
+class TestLooperRunSubmissionScript:
     def test_looper_run_produces_submission_scripts(self, prep_temp_pep):
         tp = prep_temp_pep
         with open(tp, "r") as conf_file:
@@ -361,7 +349,7 @@ class LooperRunSubmissionScriptTests:
         verify_filecount_in_dir(sd, ".sub", 4)
 
 
-class TestsLooperCompute:
+class TestLooperCompute:
     @pytest.mark.parametrize("cmd", ["run", "runp"])
     def test_looper_respects_pkg_selection(self, prep_temp_pep, cmd):
         tp = prep_temp_pep
@@ -435,3 +423,63 @@ class TestsLooperCompute:
         sd = os.path.join(get_outdir(tp), "submission")
         subs_list = [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
         assert_content_not_in_any_files(subs_list, "testin_mem")
+
+
+class TestLooperConfig:
+    @pytest.mark.parametrize("cmd", ["run", "runp"])
+    def test_init_config_file(self, prep_temp_pep, cmd, dotfile_path):
+        tp = prep_temp_pep
+        stdout, stderr, rc = subp_exec(tp, "init")
+        print_standard_stream(stderr)
+        print_standard_stream(stdout)
+        assert rc == 0
+        assert_content_in_all_files(dotfile_path, tp)
+        stdout, stderr, rc = subp_exec(cmd=cmd)
+        print_standard_stream(stderr)
+        print_standard_stream(stdout)
+        assert rc == 0
+
+    def test_correct_execution_of_config(self, prepare_pep_with_dot_file):
+        dot_file_path = prepare_pep_with_dot_file
+        stdout, stderr, rc = subp_exec("", "run")
+
+        print_standard_stream(stderr)
+        print_standard_stream(stdout)
+
+        os.remove(dot_file_path)
+        assert rc == 0
+
+
+class TestLooperPEPhub:
+    @pytest.mark.parametrize(
+        "pep_path",
+        [
+            "pephub::some/registry:path",
+            "different/registry:path",
+            "default/tag",
+        ],
+    )
+    def test_pephub_registry_path_recognition(self, pep_path):
+        assert is_registry_path(pep_path) is True
+
+    @pytest.mark.parametrize(
+        "pep_path",
+        [
+            "some/path/to/pep.yaml",
+            "different/path.yaml",
+            "default/path/to/file/without/yaml",
+            "file_in_folder.yaml",
+            "not_yaml_file",
+        ],
+    )
+    def test_config_recognition(self, pep_path):
+        assert is_registry_path(pep_path) is False
+
+    def test_init_project_using_dict(self, prep_temp_config_with_pep):
+        """Verify looper runs using pephub in a basic case and return code is 0"""
+        raw_pep, piface1s_path = prep_temp_config_with_pep
+        init_project = Project(
+            runp=True, project_dict=raw_pep, sample_pipeline_interfaces=piface1s_path
+        )
+
+        assert len(init_project.pipeline_interfaces) == 3

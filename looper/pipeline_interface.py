@@ -77,17 +77,21 @@ class PipelineInterface(YAMLConfigManager):
 
         :param dict namespaces: namespaces to use for rendering
         """
-        if VAR_TEMPL_KEY in self:
-            var_templates = {}
-            var_templates.update(self[VAR_TEMPL_KEY])
-            for k, v in var_templates.items():
-                var_templates[k] = jinja_render_template_strictly(v, namespaces)
-            return var_templates
-        else:
+        try:
+            curr_data = self[VAR_TEMPL_KEY]
+        except KeyError:
             _LOGGER.debug(
                 f"'{VAR_TEMPL_KEY}' section not found in the "
                 f"{self.__class__.__name__} object."
             )
+            return {}
+        else:
+            var_templates = {}
+            if curr_data:
+                var_templates.update(curr_data)
+                for k, v in var_templates.items():
+                    var_templates[k] = jinja_render_template_strictly(v, namespaces)
+            return var_templates
 
     def get_pipeline_schemas(self, schema_key=INPUT_SCHEMA_KEY):
         """
