@@ -7,10 +7,10 @@ import subprocess
 import time
 from copy import copy, deepcopy
 from json import loads
-from subprocess import CalledProcessError, check_output
+from subprocess import check_output
 from typing import *
 
-from eido import read_schema, validate_inputs
+from eido import read_schema, get_input_files_size
 from eido.const import INPUT_FILE_SIZE_KEY, MISSING_KEY
 from jinja2.exceptions import UndefinedError
 
@@ -454,7 +454,7 @@ class SubmissionConductor(object):
         schema_source = self.pl_iface.get_pipeline_schemas()
         if schema_source and self.prj.file_checks:
             try:
-                validation = validate_inputs(sample, read_schema(schema_source))
+                validation = get_input_files_size(sample, read_schema(schema_source))
             except RemoteYAMLError:
                 _LOGGER.warn(
                     "Could not read remote schema. Skipping inputs validation."
