@@ -438,7 +438,7 @@ class Runner(Executor):
         # for every pipeline matched for this project
         for schema_file in self.prj.get_schemas(self.prj.pipeline_interfaces):
             try:
-                validate_config(self.prj, schema_file, True)
+                validate_config(self.prj, schema_file)
             except RemoteYAMLError:
                 _LOGGER.warn(
                     "Could not read remote schema, skipping config validation."
@@ -479,7 +479,7 @@ class Runner(Executor):
             # (from sample's piface)
             for schema_file in self.prj.get_schemas(sample_pifaces):
                 try:
-                    validate_sample(self.prj, sample.sample_name, schema_file, True)
+                    validate_sample(self.prj, sample.sample_name, schema_file)
                 except EidoValidationError as e:
                     _LOGGER.error(f"Short-circuiting due to validation error: {e}")
                     return False
