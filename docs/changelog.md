@@ -2,6 +2,10 @@
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format.
 
+## [1.4.1] -- 2023-06-22
+
+### Fixed
+- Upgraded Eido version to 0.2.0 or higher.
 
 ## [1.4.0] -- 2023-04-24
 
