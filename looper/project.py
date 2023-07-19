@@ -491,7 +491,6 @@ class Project(peppyProject):
             """
             if pipestat_sect is not None and attr_name in pipestat_sect:
                 return pipestat_sect[attr_name]
-                #return getattr(object, pipestat_sect[attr_name])
             try:
                 return getattr(object, default)
             except AttributeError:
@@ -528,13 +527,7 @@ class Project(peppyProject):
         )
 
         pipestat_config = self._resolve_path_with_cfg(pth=pipestat_config)
-        # project_name = _get_val_from_attr(
-        #     pipestat_section,
-        #     self.config if project_level else self.get_sample(sample_name),
-        #     PIPESTAT_NAMESPACE_ATTR_KEY,
-        #     "name" if project_level else self.sample_table_index,
-        #     pipestat_config and os.path.exists(pipestat_config),
-        # )
+
         results_file_path = _get_val_from_attr(
             pipestat_section,
             self.config if project_level else self.get_sample(sample_name),
@@ -558,7 +551,6 @@ class Project(peppyProject):
                 else f"{piface.pipeline_name}_{'_'.join(self.amendments)}"
             )
             ret[piface.pipeline_name] = {
-                # "project_name": project_name,
                 "config_file": pipestat_config,
                 "results_file_path": results_file_path,
                 "sample_name": rec_id,

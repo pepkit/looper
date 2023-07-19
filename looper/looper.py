@@ -578,41 +578,12 @@ class Reporter(Executor):
         p = self.prj
         project_level = args.project
 
-        # if args.project:
-        #     psms = self.prj.get_pipestat_managers(project_level=True)
-        #     for pipeline_name, psm in psms.items():
-        #         s = psm.get_status() or "unknown"
-        #         status.setdefault(pipeline_name, {})
-        #         status[pipeline_name][self.prj.name] = s
-        #         _LOGGER.debug(f"{self.prj.name} ({pipeline_name}): {s}")
-        # else:
-        #     for sample in self.prj.samples:
-        #         psms = self.prj.get_pipestat_managers(sample_name=sample.sample_name)
-        #         for pipeline_name, psm in psms.items():
-        #             s = psm.get_status()
-        #             status.setdefault(pipeline_name, {})
-        #             status[pipeline_name][sample.sample_name] = s
-        #             _LOGGER.debug(f"{sample.sample_name} ({pipeline_name}): {s}")
-
         if project_level:
             psms = self.prj.get_pipestat_managers(project_level=True)
             print(psms)
             for name, psm in psms.items():
-                #Summarize will generate the static HTML Report Function
+                # Summarize will generate the static HTML Report Function
                 psm.summarize()
-            # html_report_builder_project = HTMLReportBuilderProject(prj=p)
-            # self.counter = LooperCounter(len(p.project_pipeline_interfaces))
-            # for piface in p.project_pipeline_interface_sources:
-            #     pn = PipelineInterface(piface).pipeline_name
-            #     _LOGGER.info(
-            #         self.counter.show(name=p.name, type="project", pipeline_name=pn)
-            #     )
-            #     # Do the stats and object summarization.
-            #     # run the report builder. a set of HTML pages is produced
-            #     report_path = html_report_builder_project(piface_source=piface)
-            #     _LOGGER.info(
-            #         f"Project-level pipeline '{pn}' HTML report: {report_path}"
-            #     )
         else:
             for sample in p.prj.samples:
                 psms = self.prj.get_pipestat_managers(sample_name=sample.sample_name)
@@ -620,13 +591,6 @@ class Reporter(Executor):
                 for name, psm in psms.items():
                     # Summarize will generate the static HTML Report Function
                     psm.summarize()
-            # html_report_builder = HTMLReportBuilder(prj=self.prj)
-            # for sample_piface_source in self.prj.pipeline_interface_sources:
-            #     # Do the stats and object summarization.
-            #     pn = PipelineInterface(sample_piface_source).pipeline_name
-            #     # run the report builder. a set of HTML pages is produced
-            #     report_path = html_report_builder(pipeline_name=pn)
-            #     _LOGGER.info(f"Sample-level pipeline '{pn}' HTML report: {report_path}")
 
 
 class Tabulator(Executor):
