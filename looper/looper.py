@@ -111,7 +111,7 @@ class Checker(Executor):
             for sample in self.prj.samples:
                 psms = self.prj.get_pipestat_managers(sample_name=sample.sample_name)
                 for pipeline_name, psm in psms.items():
-                    s = psm.get_status()
+                    s = psm.get_status(sample_name=sample.sample_name)
                     status.setdefault(pipeline_name, {})
                     status[pipeline_name][sample.sample_name] = s
                     _LOGGER.debug(f"{sample.sample_name} ({pipeline_name}): {s}")
