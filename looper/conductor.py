@@ -660,8 +660,8 @@ class SubmissionConductor(object):
             full_namespace = {
                 "schema": psm.schema_path,
                 "results_file": psm.file,
-                "record_id": psm.record_identifier,
-                "namespace": psm.namespace,
+                "record_id": psm.sample_name,
+                "namespace": psm.project_name,
                 "config": psm.config_path,
             }
             filtered_namespace = {k: v for k, v in full_namespace.items() if v}
