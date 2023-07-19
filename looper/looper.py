@@ -577,28 +577,20 @@ class Reporter(Executor):
         # initialize the report builder
         p = self.prj
         project_level = args.project
+
         if project_level:
-            html_report_builder_project = HTMLReportBuilderProject(prj=p)
-            self.counter = LooperCounter(len(p.project_pipeline_interfaces))
-            for piface in p.project_pipeline_interface_sources:
-                pn = PipelineInterface(piface).pipeline_name
-                _LOGGER.info(
-                    self.counter.show(name=p.name, type="project", pipeline_name=pn)
-                )
-                # Do the stats and object summarization.
-                # run the report builder. a set of HTML pages is produced
-                report_path = html_report_builder_project(piface_source=piface)
-                _LOGGER.info(
-                    f"Project-level pipeline '{pn}' HTML report: {report_path}"
-                )
+            psms = self.prj.get_pipestat_managers(project_level=True)
+            print(psms)
+            for name, psm in psms.items():
+                # Summarize will generate the static HTML Report Function
+                psm.summarize()
         else:
-            html_report_builder = HTMLReportBuilder(prj=self.prj)
-            for sample_piface_source in self.prj.pipeline_interface_sources:
-                # Do the stats and object summarization.
-                pn = PipelineInterface(sample_piface_source).pipeline_name
-                # run the report builder. a set of HTML pages is produced
-                report_path = html_report_builder(pipeline_name=pn)
-                _LOGGER.info(f"Sample-level pipeline '{pn}' HTML report: {report_path}")
+            for sample in p.prj.samples:
+                psms = self.prj.get_pipestat_managers(sample_name=sample.sample_name)
+                print(psms)
+                for name, psm in psms.items():
+                    # Summarize will generate the static HTML Report Function
+                    psm.summarize()
 
 
 class Tabulator(Executor):
