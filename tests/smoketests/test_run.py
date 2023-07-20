@@ -10,6 +10,19 @@ from looper.utils import *
 CMD_STRS = ["string", " --string", " --sjhsjd 212", "7867#$@#$cc@@"]
 
 
+def is_connected():
+    """Determines if local machine can connect to the internet."""
+    import socket
+
+    try:
+        host = socket.gethostbyname("www.databio.org")
+        socket.create_connection((host, 80), 2)
+        return True
+    except:
+        pass
+    return False
+
+
 class TestLooperBothRuns:
     @pytest.mark.parametrize("cmd", ["run", "runp"])
     def test_looper_cfg_invalid(self, cmd):
@@ -163,6 +176,7 @@ class TestLooperRunBehavior:
         assert rc == 0
         assert "Jobs submitted: 0" in str(stderr)
 
+    @pytest.mark.skipif(not is_connected(), reason="Test needs an internet connection")
     def test_looper_sample_name_whitespace(self, prep_temp_pep):
         """
         Piface is ignored when it does not exist
@@ -286,6 +300,7 @@ class TestLooperRunPreSubmissionHooks:
             ("looper.write_sample_yaml_cwl", "cwl.yaml"),
         ],
     )
+    @pytest.mark.skipif(not is_connected(), reason="Test needs an internet connection")
     def test_looper_other_plugins(self, prep_temp_pep, plugin, appendix):
         tp = prep_temp_pep
         for path in {
