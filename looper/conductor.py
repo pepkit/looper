@@ -19,7 +19,7 @@ from peppy.exceptions import RemoteYAMLError
 from pipestat import PipestatError
 from ubiquerg import expandpath
 from yaml import dump
-from yacman import YAMLConfigManager
+from yacman import YAMLConfigManager, expandpath as expath
 
 from .const import *
 from .exceptions import JobSubmissionException
@@ -730,6 +730,8 @@ class SubmissionConductor(object):
             )
             _LOGGER.debug(f"namespace pipelines: { pl_iface }")
             namespaces["pipeline"]["var_templates"] = pl_iface[VAR_TEMPL_KEY]
+            for k, v in namespaces["pipeline"]["var_templates"].items():
+                namespaces["pipeline"]["var_templates"][k] = expath(v)
             # pre_submit hook namespace updates
             namespaces = _exec_pre_submit(pl_iface, namespaces)
             self._rendered_ok = False
