@@ -6,8 +6,20 @@ from looper.const import *
 from looper.project import Project
 from tests.conftest import *
 from looper.utils import *
+from looper.looper import main
 
 CMD_STRS = ["string", " --string", " --sjhsjd 212", "7867#$@#$cc@@"]
+
+def test_cli(prep_temp_pep):
+    tp = prep_temp_pep
+    from looper.looper import main
+    x = test_args_expansion(tp, "run")
+    try:
+        main(test_args=x)
+    except Exception:
+        raise pytest.fail("DID RAISE {0}".format(Exception))
+
+
 
 
 def is_connected():
@@ -27,16 +39,20 @@ class TestLooperBothRuns:
     @pytest.mark.parametrize("cmd", ["run", "runp"])
     def test_looper_cfg_invalid(self, cmd):
         """Verify looper does not accept invalid cfg paths"""
-        stdout, stderr, rc = subp_exec("jdfskfds/dsjfklds/dsjklsf.yaml", cmd)
-        print_standard_stream(stderr)
-        assert rc != 0
+        from looper.looper import main
+        x = test_args_expansion("jdfskfds/dsjfklds/dsjklsf.yaml", cmd)
+        with pytest.raises(OSError):
+            main(test_args=x)
+
 
     @pytest.mark.parametrize("cmd", ["run", "runp"])
     def test_looper_cfg_required(self, cmd):
         """Verify looper does not accept invalid cfg paths"""
-        stdout, stderr, rc = subp_exec(pth="", cmd=cmd)
-        print_standard_stream(stderr)
-        assert rc != 0
+
+        from looper.looper import main
+        x = test_args_expansion("", cmd)
+        with pytest.raises(SystemExit):
+            main(test_args=x)
 
     @pytest.mark.parametrize("cmd", ["run", "runp"])
     @pytest.mark.parametrize(
@@ -56,37 +72,72 @@ class TestLooperBothRuns:
         See https://github.com/pepkit/looper/issues/245#issuecomment-621815222
         """
         tp = prep_temp_pep
-        stdout, stderr, rc = subp_exec(tp, cmd, arg)
+        from looper.looper import main
+        #sys.argv = []
+        x = test_args_expansion(tp, cmd, arg)
+        try:
+            main(test_args=x)
+        except Exception:
+            raise pytest.fail("DID RAISE {0}".format(Exception))
+
         sd = os.path.join(get_outdir(tp), "submission")
-        print_standard_stream(stderr)
-        assert rc == 0
+
         subs_list = [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
         assert_content_in_all_files(subs_list, arg[1])
 
     @pytest.mark.parametrize("cmd", ["run", "runp"])
     def test_unrecognized_args_not_passing(self, prep_temp_pep, cmd):
         tp = prep_temp_pep
-        stdout, stderr, rc = subp_exec(tp, cmd, ["--unknown-arg", "4"])
-        sd = os.path.join(get_outdir(tp), "submission")
-        print_standard_stream(stderr)
-        assert rc == 0
-        subs_list = [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
-        assert_content_not_in_any_files(subs_list, "--unknown-arg")
+        from looper.looper import main
+        x = test_args_expansion(tp, cmd, ["--unknown-arg", "4"])
+        try:
+            main(test_args=x)
+            sd = os.path.join(get_outdir(tp), "submission")
+            subs_list = [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
+            assert_content_not_in_any_files(subs_list, "--unknown-arg")
+        except Exception:
+            raise pytest.fail("DID RAISE {0}".format(Exception))
+
 
 
 class TestLooperRunBehavior:
     def test_looper_run_basic(self, prep_temp_pep):
         """Verify looper runs in a basic case and return code is 0"""
         tp = prep_temp_pep
-        stdout, stderr, rc = subp_exec(tp, "run")
-        print_standard_stream(stderr)
-        assert rc == 0
+        x = test_args_expansion(tp, "run")
+        try:
+            main(test_args=x)
+        except Exception:
+            raise pytest.fail("DID RAISE {0}".format(Exception))
+
 
     def test_looper_multi_pipeline(self, prep_temp_pep):
         tp = prep_temp_pep
-        stdout, stderr, rc = subp_exec(tp, "run")
-        print_standard_stream(stderr)
-        assert "Commands submitted: 6 of 6" in str(stderr)
+        # stdout, stderr, rc = subp_exec(tp, "run")
+        # print_standard_stream(stderr)
+        # assert "Commands submitted: 6 of 6" in str(stderr)
+
+        import contextlib
+        import sys
+        tp = prep_temp_pep
+        x = test_args_expansion(tp, "run")
+
+        with contextlib.redirect_stdout(sys.stdout), contextlib.redirect_stderr(sys.stderr):
+            stderr = sys.stderr
+            print(stderr)
+            try:
+                main(test_args=x)
+                stderr = sys.stderr
+                stdout = sys.stdout
+                results = stderr.read(100)
+                print(results)
+                results2 = stdout.read(100)
+                print(results2)
+                assert "Commands submitted: 6 of 6" in str(stderr)
+            except Exception:
+                raise pytest.fail("DID RAISE {0}".format(Exception))
+
+
 
     def test_looper_single_pipeline(self, prep_temp_pep):
         tp = prep_temp_pep

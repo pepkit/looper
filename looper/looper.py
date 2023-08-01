@@ -1023,14 +1023,20 @@ def _proc_resources_spec(args):
     return settings_data
 
 
-def main():
+def main(test_args=None):
     """Primary workflow"""
     global _LOGGER
     import logmuse
 
     parser, aux_parser = build_parser()
     aux_parser.suppress_defaults()
-    args, remaining_args = parser.parse_known_args()
+
+    if test_args:
+        #args.__dict__.update(test_args)
+        args, remaining_args = parser.parse_known_args(args=test_args)
+    else:
+        args, remaining_args = parser.parse_known_args()
+
     cli_use_errors = validate_post_parse(args)
     if cli_use_errors:
         parser.print_help(sys.stderr)
@@ -1074,7 +1080,7 @@ def main():
     if args.command == "init-piface":
         sys.exit(int(not init_generic_pipeline()))
 
-    args = enrich_args_via_cfg(args, aux_parser)
+    args = enrich_args_via_cfg(args, aux_parser, test_args)
 
     # If project pipeline interface defined in the cli, change name to: "pipeline_interface"
     if vars(args)[PROJECT_PL_ARG]:

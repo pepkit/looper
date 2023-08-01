@@ -227,7 +227,7 @@ def read_yaml_file(filepath):
     return data
 
 
-def enrich_args_via_cfg(parser_args, aux_parser):
+def enrich_args_via_cfg(parser_args, aux_parser, test_args=None):
     """
     Read in a looper dotfile and set arguments.
 
@@ -244,7 +244,12 @@ def enrich_args_via_cfg(parser_args, aux_parser):
         else dict()
     )
     result = argparse.Namespace()
-    cli_args, _ = aux_parser.parse_known_args()
+    if test_args:
+        cli_args, _ = aux_parser.parse_known_args(args=test_args)
+
+    else:
+        cli_args, _ = aux_parser.parse_known_args()
+
     for dest in vars(parser_args):
         if dest not in POSITIONAL or not hasattr(result, dest):
             if dest in cli_args:
