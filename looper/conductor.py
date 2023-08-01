@@ -729,7 +729,7 @@ class SubmissionConductor(object):
                 namespaces=namespaces
             )
             _LOGGER.debug(f"namespace pipelines: { pl_iface }")
-            namespaces["pipeline"]["var_templates"] = pl_iface[VAR_TEMPL_KEY]
+            namespaces["pipeline"]["var_templates"] = pl_iface[VAR_TEMPL_KEY] or {}
             for k, v in namespaces["pipeline"]["var_templates"].items():
                 namespaces["pipeline"]["var_templates"][k] = expath(v)
             # pre_submit hook namespace updates
