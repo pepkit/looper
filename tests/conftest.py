@@ -99,9 +99,7 @@ def subp_exec(
     return stdout, stderr, proc.returncode
 
 
-def test_args_expansion(
-    pth=None, cmd=None, appendix=list(), dry=True
-) -> List[str]:
+def test_args_expansion(pth=None, cmd=None, appendix=list(), dry=True) -> List[str]:
     """
     This function takes a path, command, extra argument list and creates a list of
     strings to pass to looper.main() as test_args.
