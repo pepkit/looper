@@ -101,7 +101,7 @@ def subp_exec(
 
 def test_args_expansion(
     pth=None, cmd=None, appendix=list(), dry=True
-) -> Tuple[bytes, bytes, int]:
+) -> List[str]:
     """
     This function takes a path, command, extra argument list and creates a list of
     strings to pass to looper.main() as test_args.
