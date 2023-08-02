@@ -98,6 +98,7 @@ def subp_exec(
     stdout, stderr = proc.communicate()
     return stdout, stderr, proc.returncode
 
+
 def test_args_expansion(
     pth=None, cmd=None, appendix=list(), dry=True
 ) -> Tuple[bytes, bytes, int]:
@@ -109,12 +110,13 @@ def test_args_expansion(
     :param bool dry: whether to append dry run flag
     :return stdout, stderr, and return code
     """
-    #x = ["looper", cmd, "-d" if dry else ""]
+
     x = [cmd, "-d" if dry else ""]
     if pth:
         x.append(pth)
     x.extend(appendix)
     return x
+
 
 def verify_filecount_in_dir(dirpath, pattern, count):
     """
