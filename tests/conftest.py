@@ -103,14 +103,15 @@ def test_args_expansion(
     pth=None, cmd=None, appendix=list(), dry=True
 ) -> Tuple[bytes, bytes, int]:
     """
+    This function takes a path, command, extra argument list and creates a list of
+    strings to pass to looper.main() as test_args.
 
     :param str pth: config path
     :param str cmd: looper subcommand
     :param Iterable[str] appendix: other args to pass to the cmd
     :param bool dry: whether to append dry run flag
-    :return stdout, stderr, and return code
+    :return list of strings to pass to looper.main for testing
     """
-
     x = [cmd, "-d" if dry else ""]
     if pth:
         x.append(pth)

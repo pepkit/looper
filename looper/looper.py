@@ -1032,7 +1032,6 @@ def main(test_args=None):
     aux_parser.suppress_defaults()
 
     if test_args:
-        #args.__dict__.update(test_args)
         args, remaining_args = parser.parse_known_args(args=test_args)
     else:
         args, remaining_args = parser.parse_known_args()
