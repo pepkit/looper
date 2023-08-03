@@ -23,6 +23,7 @@ nav:
       - Running multiple pipelines: multiple-pipelines.md
       - Writing a pipeline interface: writing-a-pipeline-interface.md
       - Create looper config file: how_to_define_looper_config.md
+      - Using geofetch: using-geofetch.md
   - Using divvy:
       - Introduction: README_divvy.md
       - Install and configure: install_divvy.md
