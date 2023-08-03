@@ -1,32 +1,53 @@
 import pytest
-from tests.smoketests.conftest import *
 from peppy.const import *
-from looper.const import *
 from yaml import dump
+
+from looper.const import *
+from looper.project import Project
+from tests.conftest import *
+from looper.utils import *
 
 CMD_STRS = ["string", " --string", " --sjhsjd 212", "7867#$@#$cc@@"]
 
 
-class LooperBothRunsTests:
+def is_connected():
+    """Determines if local machine can connect to the internet."""
+    import socket
+
+    try:
+        host = socket.gethostbyname("www.databio.org")
+        socket.create_connection((host, 80), 2)
+        return True
+    except:
+        pass
+    return False
+
+
+class TestLooperBothRuns:
     @pytest.mark.parametrize("cmd", ["run", "runp"])
     def test_looper_cfg_invalid(self, cmd):
-        """ Verify looper does not accept invalid cfg paths """
+        """Verify looper does not accept invalid cfg paths"""
         stdout, stderr, rc = subp_exec("jdfskfds/dsjfklds/dsjklsf.yaml", cmd)
-        print(stderr)
+        print_standard_stream(stderr)
         assert rc != 0
 
     @pytest.mark.parametrize("cmd", ["run", "runp"])
     def test_looper_cfg_required(self, cmd):
-        """ Verify looper does not accept invalid cfg paths """
+        """Verify looper does not accept invalid cfg paths"""
         stdout, stderr, rc = subp_exec(pth="", cmd=cmd)
-        print(stderr)
+        print_standard_stream(stderr)
         assert rc != 0
 
     @pytest.mark.parametrize("cmd", ["run", "runp"])
-    @pytest.mark.parametrize("arg", [["--command-extra", CMD_STRS[0]],
-                                     ["--command-extra", CMD_STRS[1]],
-                                     ["--command-extra", CMD_STRS[2]],
-                                     ["--command-extra", CMD_STRS[3]]])
+    @pytest.mark.parametrize(
+        "arg",
+        [
+            ["--command-extra", CMD_STRS[0]],
+            ["--command-extra", CMD_STRS[1]],
+            ["--command-extra", CMD_STRS[2]],
+            ["--command-extra", CMD_STRS[3]],
+        ],
+    )
     def test_cmd_extra_cli(self, prep_temp_pep, cmd, arg):
         """
         Argument passing functionality works only for the above
@@ -37,79 +58,59 @@ class LooperBothRunsTests:
         tp = prep_temp_pep
         stdout, stderr, rc = subp_exec(tp, cmd, arg)
         sd = os.path.join(get_outdir(tp), "submission")
-        print(stderr)
+        print_standard_stream(stderr)
         assert rc == 0
-        subs_list = \
-            [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
-        is_in_file(subs_list, arg[1])
+        subs_list = [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
+        assert_content_in_all_files(subs_list, arg[1])
 
     @pytest.mark.parametrize("cmd", ["run", "runp"])
     def test_unrecognized_args_not_passing(self, prep_temp_pep, cmd):
         tp = prep_temp_pep
         stdout, stderr, rc = subp_exec(tp, cmd, ["--unknown-arg", "4"])
         sd = os.path.join(get_outdir(tp), "submission")
-        print(stderr)
+        print_standard_stream(stderr)
         assert rc == 0
-        subs_list = \
-            [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
-        is_in_file(subs_list, "--unknown-arg", reverse=True)
-
-    @pytest.mark.parametrize("cmd", ["run", "runp"])
-    def test_run_after_init(self, prep_temp_pep, cmd):
-        tp = prep_temp_pep
-        dotfile_path = os.path.join(os.getcwd(), LOOPER_DOTFILE_NAME)
-        stdout, stderr, rc = subp_exec(tp, "init")
-        print(stderr)
-        print(stdout)
-        assert rc == 0
-        is_in_file(dotfile_path, tp)
-        stdout, stderr, rc = subp_exec(cmd=cmd)
-        print(stderr)
-        print(stdout)
-        assert rc == 0
-        os.remove(dotfile_path)
+        subs_list = [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
+        assert_content_not_in_any_files(subs_list, "--unknown-arg")
 
 
-class LooperRunBehaviorTests:
+class TestLooperRunBehavior:
     def test_looper_run_basic(self, prep_temp_pep):
-        """ Verify looper runs in a basic case and return code is 0 """
+        """Verify looper runs in a basic case and return code is 0"""
         tp = prep_temp_pep
         stdout, stderr, rc = subp_exec(tp, "run")
-        print(stderr)
+        print_standard_stream(stderr)
         assert rc == 0
 
     def test_looper_multi_pipeline(self, prep_temp_pep):
         tp = prep_temp_pep
         stdout, stderr, rc = subp_exec(tp, "run")
-        print(stderr)
-        assert "Commands submitted: 6 of 6" in stderr
+        print_standard_stream(stderr)
+        assert "Commands submitted: 6 of 6" in str(stderr)
 
     def test_looper_single_pipeline(self, prep_temp_pep):
         tp = prep_temp_pep
-        with open(tp, 'r') as conf_file:
-            config_data = safe_load(conf_file)
-        print("\nconfig_data: \n{}\n".format(config_data))
-        pifaces = \
-            config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][PIPELINE_INTERFACES_KEY]
-        config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][PIPELINE_INTERFACES_KEY] = \
-            pifaces[1]
-        print("\nconfig_data: \n{}\n".format(config_data))
-        with open(tp, 'w') as conf_file:
-            dump(config_data, conf_file)
+        with mod_yaml_data(tp) as config_data:
+            pifaces = config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][
+                PIPELINE_INTERFACES_KEY
+            ]
+            config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][
+                PIPELINE_INTERFACES_KEY
+            ] = pifaces[1]
+
         stdout, stderr, rc = subp_exec(tp, "run")
-        print(stderr)
+        print_standard_stream(stderr)
         assert rc == 0
-        assert "Commands submitted: 6 of 6" not in stderr
+        assert "Commands submitted: 6 of 6" not in str(stderr)
 
     def test_looper_cli_pipeline(self, prep_temp_pep):
-        """ CLI-specified pipelines overwrite ones from config """
+        """CLI-specified pipelines overwrite ones from config"""
         tp = prep_temp_pep
         pi_pth = os.path.join(os.path.dirname(tp), PIS.format("1"))
-        stdout, stderr, rc = subp_exec(tp, "run",
-                                        ["--pipeline-interfaces", pi_pth])
-        print(stderr)
+        stdout, stderr, rc = subp_exec(tp, "run", ["--pipeline-interfaces", pi_pth])
+        print_standard_stream(stderr)
         assert rc == 0
-        assert "Commands submitted: 3 of 3" not in stdout
+        assert "Commands submitted: 3 of 3" not in str(stdout)
 
     def test_looper_no_pipeline(self, prep_temp_pep):
         """
@@ -117,119 +118,95 @@ class LooperRunBehaviorTests:
         valid pifaces defined
         """
         tp = prep_temp_pep
-        with open(tp, 'r') as conf_file:
-            config_data = safe_load(conf_file)
-        print("\nconfig_data: \n{}\n".format(config_data))
-        del config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][PIPELINE_INTERFACES_KEY]
-        print("\nconfig_data: \n{}\n".format(config_data))
-        with open(tp, 'w') as conf_file:
-            dump(config_data, conf_file)
+        with mod_yaml_data(tp) as config_data:
+            del config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][PIPELINE_INTERFACES_KEY]
         stdout, stderr, rc = subp_exec(tp, "run")
-        print(stderr)
+        print_standard_stream(stderr)
         assert rc == 0
-        assert "Jobs submitted: 0" in stderr
+        assert "Jobs submitted: 0" in str(stderr)
         assert "No pipeline interfaces defined"
 
     def test_looper_pipeline_not_found(self, prep_temp_pep):
         """
-        Piface is ignored when when it does not exist
+        Piface is ignored when it does not exist
         """
         tp = prep_temp_pep
-        with open(tp, 'r') as conf_file:
-            config_data = safe_load(conf_file)
-        print("\nconfig_data: \n{}\n".format(config_data))
-        config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][PIPELINE_INTERFACES_KEY] = \
-            ["bogus"]
-        print("\nconfig_data: \n{}\n".format(config_data))
-        with open(tp, 'w') as conf_file:
-            dump(config_data, conf_file)
+        with mod_yaml_data(tp) as config_data:
+            config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][PIPELINE_INTERFACES_KEY] = [
+                "bogus"
+            ]
         stdout, stderr, rc = subp_exec(tp, "run")
-        print(stderr)
+        print_standard_stream(stderr)
         assert rc == 0
-        assert "Jobs submitted: 0" in stderr
+        assert "Jobs submitted: 0" in str(stderr)
         assert "Ignoring invalid pipeline interface source"
 
     def test_looper_pipeline_invalid(self, prep_temp_pep):
         """
         Pipeline is ignored when does not validate successfully
-        agianst a schema
+        against a schema
         """
         tp = prep_temp_pep
-        with open(tp, 'r') as conf_file:
-            config_data = safe_load(conf_file)
-        print("\nconfig_data: \n{}\n".format(config_data))
-        pifaces = config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][
-            PIPELINE_INTERFACES_KEY]
-        config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][PIPELINE_INTERFACES_KEY] = \
-            pifaces[1]
-        print("\nconfig_data: \n{}\n".format(config_data))
-        with open(tp, 'w') as conf_file:
-            dump(config_data, conf_file)
+        with mod_yaml_data(tp) as config_data:
+            pifaces = config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][
+                PIPELINE_INTERFACES_KEY
+            ]
+            config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][
+                PIPELINE_INTERFACES_KEY
+            ] = pifaces[1]
         piface_path = os.path.join(os.path.dirname(tp), pifaces[1])
-        with open(piface_path, 'r') as piface_file:
-            piface_data = safe_load(piface_file)
-        del piface_data["pipeline_name"]
-        with open(piface_path, 'w') as piface_file:
-            dump(piface_data, piface_file)
+        with mod_yaml_data(piface_path) as piface_data:
+            del piface_data["pipeline_name"]
         stdout, stderr, rc = subp_exec(tp, "run")
-        print(stderr)
+        print_standard_stream(stderr)
         assert rc == 0
-        assert "Jobs submitted: 0" in stderr
+        assert "Jobs submitted: 0" in str(stderr)
         assert "Ignoring invalid pipeline interface source"
         assert "'pipeline_name' is a required property"
 
     def test_looper_sample_attr_missing(self, prep_temp_pep):
         """
-        Piface is ignored when when it does not exist
+        Piface is ignored when it does not exist
         """
         tp = prep_temp_pep
-        with open(tp, 'r') as conf_file:
-            config_data = safe_load(conf_file)
-        print("\nconfig_data: \n{}\n".format(config_data))
-        del config_data[SAMPLE_MODS_KEY][CONSTANT_KEY]["attr"]
-        print("\nconfig_data: \n{}\n".format(config_data))
-        with open(tp, 'w') as conf_file:
-            dump(config_data, conf_file)
+        with mod_yaml_data(tp) as config_data:
+            del config_data[SAMPLE_MODS_KEY][CONSTANT_KEY]["attr"]
         stdout, stderr, rc = subp_exec(tp, "run")
-        print(stderr)
+        print_standard_stream(stderr)
         assert rc == 0
-        assert "Jobs submitted: 0" in stderr
+        assert "Jobs submitted: 0" in str(stderr)
 
+    @pytest.mark.skipif(not is_connected(), reason="Test needs an internet connection")
     def test_looper_sample_name_whitespace(self, prep_temp_pep):
         """
-        Piface is ignored when when it does not exist
+        Piface is ignored when it does not exist
         """
-        tp = prep_temp_pep
-        imply_whitespace = \
-            [{IMPLIED_IF_KEY: {'sample_name': 'sample1'},
-              IMPLIED_THEN_KEY: {'sample_name': 'sample whitespace'}}]
-        with open(tp, 'r') as conf_file:
-            config_data = safe_load(conf_file)
-        print("\nconfig_data: \n{}\n".format(config_data))
-        config_data[SAMPLE_MODS_KEY][IMPLIED_KEY] = imply_whitespace
-        print("\nconfig_data: \n{}\n".format(config_data))
-        with open(tp, 'w') as conf_file:
-            dump(config_data, conf_file)
-        stdout, stderr, rc = subp_exec(tp, "run")
-        print(stderr)
-        assert rc != 0
-
-    def test_looper_toogle(self, prep_temp_pep):
-        """
-        If all samples have tooggle attr set to 0, no jobs are submitted
-        """
-        tp = prep_temp_pep
-        with open(tp, 'r') as conf_file:
-            config_data = safe_load(conf_file)
-        print("\nconfig_data: \n{}\n".format(config_data))
-        config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][SAMPLE_TOGGLE_ATTR] = 0
-        print("\nconfig_data: \n{}\n".format(config_data))
-        with open(tp, 'w') as conf_file:
-            dump(config_data, conf_file)
-        stdout, stderr, rc = subp_exec(tp, "run")
-        print(stderr)
+        pepfile = prep_temp_pep
+        imply_whitespace = [
+            {
+                IMPLIED_IF_KEY: {"sample_name": "sample1"},
+                IMPLIED_THEN_KEY: {"sample_name": "sample whitespace"},
+            }
+        ]
+        with mod_yaml_data(pepfile) as config_data:
+            config_data[SAMPLE_MODS_KEY][IMPLIED_KEY] = imply_whitespace
+        stdout, stderr, rc = subp_exec(pepfile, "run")
+        print_standard_stream(stderr)
         assert rc == 0
-        assert "Jobs submitted: 0" in stderr
+        expected_prefix = "Short-circuiting due to validation error"
+        assert expected_prefix in str(stderr)
+
+    def test_looper_toggle(self, prep_temp_pep):
+        """
+        If all samples have toggle attr set to 0, no jobs are submitted
+        """
+        tp = prep_temp_pep
+        with mod_yaml_data(tp) as config_data:
+            config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][SAMPLE_TOGGLE_ATTR] = 0
+        stdout, stderr, rc = subp_exec(tp, "run")
+        print_standard_stream(stderr)
+        assert rc == 0
+        assert "Jobs submitted: 0" in str(stderr)
 
     @pytest.mark.parametrize("arg", CMD_STRS)
     def test_cmd_extra_sample(self, prep_temp_pep, arg):
@@ -238,20 +215,14 @@ class LooperRunBehaviorTests:
         appended to the pipelinecommand
         """
         tp = prep_temp_pep
-        with open(tp, 'r') as conf_file:
-            config_data = safe_load(conf_file)
-        print("\nconfig_data: \n{}\n".format(config_data))
-        config_data[SAMPLE_MODS_KEY][CONSTANT_KEY]["command_extra"] = arg
-        print("\nconfig_data: \n{}\n".format(config_data))
-        with open(tp, 'w') as conf_file:
-            dump(config_data, conf_file)
+        with mod_yaml_data(tp) as config_data:
+            config_data[SAMPLE_MODS_KEY][CONSTANT_KEY]["command_extra"] = arg
         stdout, stderr, rc = subp_exec(tp, "run")
         sd = os.path.join(get_outdir(tp), "submission")
-        print(stderr)
+        print_standard_stream(stderr)
         assert rc == 0
-        subs_list = \
-            [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
-        is_in_file(subs_list, arg)
+        subs_list = [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
+        assert_content_in_all_files(subs_list, arg)
 
     @pytest.mark.parametrize("arg", CMD_STRS)
     def test_cmd_extra_override_sample(self, prep_temp_pep, arg):
@@ -261,183 +232,177 @@ class LooperRunBehaviorTests:
         pipeline command
         """
         tp = prep_temp_pep
-        with open(tp, 'r') as conf_file:
-            config_data = safe_load(conf_file)
-        print("\nconfig_data: \n{}\n".format(config_data))
-        config_data[SAMPLE_MODS_KEY][CONSTANT_KEY]["command_extra"] = arg
-        print("\nconfig_data: \n{}\n".format(config_data))
-        with open(tp, 'w') as conf_file:
-            dump(config_data, conf_file)
-        stdout, stderr, rc = \
-            subp_exec(tp, "run", ["--command-extra-override='different'"])
+        with mod_yaml_data(tp) as config_data:
+            config_data[SAMPLE_MODS_KEY][CONSTANT_KEY]["command_extra"] = arg
+        stdout, stderr, rc = subp_exec(
+            tp, "run", ["--command-extra-override='different'"]
+        )
         sd = os.path.join(get_outdir(tp), "submission")
-        print(stderr)
+        print_standard_stream(stderr)
         assert rc == 0
-        subs_list = \
-            [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
-        is_in_file(subs_list, arg, reverse=True)
+        subs_list = [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
+        assert_content_not_in_any_files(subs_list, arg)
 
 
-class LooperRunpBehaviorTests:
+class TestLooperRunpBehavior:
     def test_looper_runp_basic(self, prep_temp_pep):
-        """ Verify looper runps in a basic case and return code is 0 """
+        """Verify looper runps in a basic case and return code is 0"""
         tp = prep_temp_pep
         stdout, stderr, rc = subp_exec(tp, "runp")
-        print(stderr)
+        print_standard_stream(stderr)
         assert rc == 0
 
     def test_looper_multi_pipeline(self, prep_temp_pep):
         tp = prep_temp_pep
         stdout, stderr, rc = subp_exec(tp, "runp")
-        assert "Jobs submitted: 2" in stderr
+        assert "Jobs submitted: 2" in str(stderr)
 
     def test_looper_single_pipeline(self, prep_temp_pep):
         tp = prep_temp_pep
-        with open(tp, 'r') as conf_file:
-            config_data = safe_load(conf_file)
-        print("\nconfig_data: \n{}\n".format(config_data))
-        piface_path = os.path.join(os.path.dirname(tp), PIP.format("1"))
-        config_data[LOOPER_KEY][CLI_KEY]["runp"][PIPELINE_INTERFACES_KEY] = \
-            piface_path
-        print("\nconfig_data: \n{}\n".format(config_data))
-        with open(tp, 'w') as conf_file:
-            dump(config_data, conf_file)
+        with mod_yaml_data(tp) as config_data:
+            piface_path = os.path.join(os.path.dirname(tp), PIP.format("1"))
+            config_data[LOOPER_KEY][CLI_KEY]["runp"][
+                PIPELINE_INTERFACES_KEY
+            ] = piface_path
         stdout, stderr, rc = subp_exec(tp, "runp")
-        print(stderr)
+        print_standard_stream(stderr)
         assert rc == 0
-        assert "Jobs submitted: 2" not in stderr
-        assert "Jobs submitted: 1" in stderr
+        assert "Jobs submitted: 2" not in str(stderr)
+        assert "Jobs submitted: 1" in str(stderr)
 
     @pytest.mark.parametrize("arg", CMD_STRS)
     def test_cmd_extra_project(self, prep_temp_pep, arg):
-        """
-        """
         tp = prep_temp_pep
-        with open(tp, 'r') as conf_file:
-            config_data = safe_load(conf_file)
-        print("\nconfig_data: \n{}\n".format(config_data))
-        config_data[LOOPER_KEY]["command_extra"] = arg
-        print("\nconfig_data: \n{}\n".format(config_data))
-        with open(tp, 'w') as conf_file:
-            dump(config_data, conf_file)
+        with mod_yaml_data(tp) as config_data:
+            config_data[LOOPER_KEY]["command_extra"] = arg
         stdout, stderr, rc = subp_exec(tp, "runp")
         sd = os.path.join(get_outdir(tp), "submission")
-        print(stderr)
+        print_standard_stream(stderr)
         assert rc == 0
-        subs_list = \
-            [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
-        is_in_file(subs_list, arg)
+        subs_list = [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
+        assert_content_in_all_files(subs_list, arg)
 
 
-class LooperRunSubmissionScriptTests:
+class TestLooperRunPreSubmissionHooks:
+    def test_looper_basic_plugin(self, prep_temp_pep):
+        tp = prep_temp_pep
+        stdout, stderr, rc = subp_exec(tp, "run")
+        sd = os.path.join(get_outdir(tp), "submission")
+        print_standard_stream(stderr)
+        assert rc == 0
+        verify_filecount_in_dir(sd, ".yaml", 3)
+
+    @pytest.mark.parametrize(
+        "plugin,appendix",
+        [
+            ("looper.write_submission_yaml", "submission.yaml"),
+            ("looper.write_sample_yaml_prj", "prj.yaml"),
+            ("looper.write_sample_yaml_cwl", "cwl.yaml"),
+        ],
+    )
+    @pytest.mark.skipif(not is_connected(), reason="Test needs an internet connection")
+    def test_looper_other_plugins(self, prep_temp_pep, plugin, appendix):
+        tp = prep_temp_pep
+        for path in {
+            piface.pipe_iface_file for piface in Project(tp).pipeline_interfaces
+        }:
+            with mod_yaml_data(path) as piface_data:
+                piface_data[PRE_SUBMIT_HOOK_KEY][PRE_SUBMIT_PY_FUN_KEY] = [plugin]
+        stdout, stderr, rc = subp_exec(tp, "run")
+        sd = os.path.join(get_outdir(tp), "submission")
+        print_standard_stream(stderr)
+        assert rc == 0
+        verify_filecount_in_dir(sd, appendix, 3)
+
+    @pytest.mark.parametrize(
+        "cmd",
+        [
+            "touch {looper.output_dir}/submission/{sample.sample_name}_test.txt; "
+            "{%raw%}echo {}{%endraw%}"
+        ],
+    )
+    def test_looper_command_templates_hooks(self, prep_temp_pep, cmd):
+        tp = prep_temp_pep
+        for path in {
+            piface.pipe_iface_file for piface in Project(tp).pipeline_interfaces
+        }:
+            with mod_yaml_data(path) as piface_data:
+                piface_data[PRE_SUBMIT_HOOK_KEY][PRE_SUBMIT_CMD_KEY] = [cmd]
+        stdout, stderr, rc = subp_exec(tp, "run")
+        sd = os.path.join(get_outdir(tp), "submission")
+        print_standard_stream(stderr)
+        assert rc == 0
+        verify_filecount_in_dir(sd, "test.txt", 3)
+
+
+class TestLooperRunSubmissionScript:
     def test_looper_run_produces_submission_scripts(self, prep_temp_pep):
         tp = prep_temp_pep
-        with open(tp, 'r') as conf_file:
+        with open(tp, "r") as conf_file:
             config_data = safe_load(conf_file)
-        print("\nconfig_data: \n{}\n".format(config_data))
         outdir = config_data[LOOPER_KEY][OUTDIR_KEY]
         stdout, stderr, rc = subp_exec(tp, "run")
         sd = os.path.join(outdir, "submission")
-        subm_err = \
-            IOError("Not found in submission directory ({}): 6 "
-                              "submission scripts (3 per pipeline) and 3 sample"
-                              " YAML representations".format(sd))
-        print(stderr)
+        print_standard_stream(stderr)
         assert rc == 0
-        assert os.path.isdir(sd)
-        assert len(os.listdir(sd)) == 9, subm_err
-        assert sum([f.endswith(".sub") for f in os.listdir(sd)]) == 6, subm_err
-        assert sum([f.endswith(".yaml") for f in os.listdir(sd)]) == 3, subm_err
+        verify_filecount_in_dir(sd, ".sub", 6)
 
     def test_looper_lumping(self, prep_temp_pep):
         tp = prep_temp_pep
         stdout, stderr, rc = subp_exec(tp, "run", ["--lumpn", "2"])
         sd = os.path.join(get_outdir(tp), "submission")
-        subm_err = \
-            IOError("Not found in submission directory ({}): 4 "
-                              "submission scripts (2 per pipeline) and 3 sample"
-                              " YAML representations. Listdir: \n{}".
-                    format(sd, os.listdir(sd)))
-        print(stderr)
+        print_standard_stream(stderr)
         assert rc == 0
-        assert os.path.isdir(sd)
-        assert len(os.listdir(sd)) == 7, subm_err
-        assert sum([f.endswith(".sub") for f in os.listdir(sd)]) == 4, subm_err
-        assert sum([f.endswith(".yaml") for f in os.listdir(sd)]) == 3, subm_err
-
-    def test_looper_lumping(self, prep_temp_pep):
-        tp = prep_temp_pep
-        stdout, stderr, rc = subp_exec(tp, "run", ["--lumpn", "2"])
-        sd = os.path.join(get_outdir(tp), "submission")
-        subm_err = \
-            IOError("Not found in submission directory ({}): 4 "
-                              "submission scripts (2 per pipeline) and 3 sample"
-                              " YAML representations. Listdir: \n{}".
-                    format(sd, os.listdir(sd)))
-        print(stderr)
-        assert rc == 0
-        assert os.path.isdir(sd)
-        assert sum([f.endswith(".sub") for f in os.listdir(sd)]) == 4, subm_err
-        assert sum([f.endswith(".yaml") for f in os.listdir(sd)]) == 3, subm_err
+        verify_filecount_in_dir(sd, ".sub", 4)
 
     def test_looper_limiting(self, prep_temp_pep):
         tp = prep_temp_pep
         stdout, stderr, rc = subp_exec(tp, "run", ["--limit", "2"])
         sd = os.path.join(get_outdir(tp), "submission")
-        subm_err = \
-            IOError("Not found in submission directory ({}): 4 "
-                    "submission scripts (2 per pipeline) and 2 sample "
-                    "YAML representations. Listdir: \n{}".
-                    format(sd, os.listdir(sd)))
-        print(stderr)
+        print_standard_stream(stderr)
         assert rc == 0
-        assert os.path.isdir(sd)
-        assert sum([f.endswith(".sub") for f in os.listdir(sd)]) == 4, subm_err
-        assert sum([f.endswith(".yaml") for f in os.listdir(sd)]) == 2, subm_err
+        verify_filecount_in_dir(sd, ".sub", 4)
 
 
-class LooperComputeTests:
+class TestLooperCompute:
     @pytest.mark.parametrize("cmd", ["run", "runp"])
     def test_looper_respects_pkg_selection(self, prep_temp_pep, cmd):
         tp = prep_temp_pep
         stdout, stderr, rc = subp_exec(tp, cmd, ["--package", "local"])
         sd = os.path.join(get_outdir(tp), "submission")
-        print(stderr)
+        print_standard_stream(stderr)
         assert rc == 0
-        subs_list = \
-            [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
-        is_in_file(subs_list, "#SBATCH", reverse=True)
+        subs_list = [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
+        assert_content_not_in_any_files(subs_list, "#SBATCH")
 
     @pytest.mark.parametrize("cmd", ["run", "runp"])
     def test_looper_uses_cli_compute_options_spec(self, prep_temp_pep, cmd):
         tp = prep_temp_pep
-        stdout, stderr, rc = subp_exec(tp, cmd, ["--compute", "mem=12345",
-                                                    "--package", "slurm"])
+        stdout, stderr, rc = subp_exec(
+            tp, cmd, ["--compute", "mem=12345", "--package", "slurm"]
+        )
         sd = os.path.join(get_outdir(tp), "submission")
-        print(stderr)
+        print_standard_stream(stderr)
         assert rc == 0
-        subs_list = \
-            [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
-        is_in_file(subs_list, "#SBATCH --mem='12345'")
+        subs_list = [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
+        assert_content_in_all_files(subs_list, "#SBATCH --mem='12345'")
 
     @pytest.mark.parametrize("cmd", ["run", "runp"])
     def test_cli_yaml_settings_general(self, prep_temp_pep, cmd):
         tp = prep_temp_pep
         td = tempfile.mkdtemp()
         settings_file_path = os.path.join(td, "settings.yaml")
-        with open(settings_file_path, 'w') as sf:
+        with open(settings_file_path, "w") as sf:
             dump({"mem": "testin_mem"}, sf)
-        stdout, stderr, rc = \
-            subp_exec(tp, cmd, ["--settings", settings_file_path])
-        print(stderr)
+        stdout, stderr, rc = subp_exec(tp, cmd, ["--settings", settings_file_path])
+        print_standard_stream(stderr)
         assert rc == 0
 
     @pytest.mark.parametrize("cmd", ["run", "runp"])
     def test_nonexistent_yaml_settings_disregarded(self, prep_temp_pep, cmd):
         tp = prep_temp_pep
-        stdout, stderr, rc = \
-            subp_exec(tp, cmd, ["--settings", "niema.yaml"])
-        print(stderr)
+        stdout, stderr, rc = subp_exec(tp, cmd, ["--settings", "niema.yaml"])
+        print_standard_stream(stderr)
         assert rc == 0
 
     @pytest.mark.parametrize("cmd", ["run", "runp"])
@@ -445,31 +410,91 @@ class LooperComputeTests:
         tp = prep_temp_pep
         td = tempfile.mkdtemp()
         settings_file_path = os.path.join(td, "settings.yaml")
-        with open(settings_file_path, 'w') as sf:
+        with open(settings_file_path, "w") as sf:
             dump({"mem": "testin_mem"}, sf)
-        stdout, stderr, rc = \
-            subp_exec(tp, cmd, ["--settings", settings_file_path, "-p", "slurm"])
-        print(stderr)
+        stdout, stderr, rc = subp_exec(
+            tp, cmd, ["--settings", settings_file_path, "-p", "slurm"]
+        )
+        print_standard_stream(stderr)
         assert rc == 0
         sd = os.path.join(get_outdir(tp), "submission")
-        subs_list = [os.path.join(sd, f)
-                     for f in os.listdir(sd) if f.endswith(".sub")]
-        is_in_file(subs_list, "testin_mem")
+        subs_list = [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
+        assert_content_in_all_files(subs_list, "testin_mem")
 
     @pytest.mark.parametrize("cmd", ["run", "runp"])
     def test_cli_compute_overwrites_yaml_settings_spec(self, prep_temp_pep, cmd):
         tp = prep_temp_pep
         td = tempfile.mkdtemp()
         settings_file_path = os.path.join(td, "settings.yaml")
-        with open(settings_file_path, 'w') as sf:
+        with open(settings_file_path, "w") as sf:
             dump({"mem": "testin_mem"}, sf)
-        stdout, stderr, rc = \
-            subp_exec(tp, cmd, ["--settings", settings_file_path,
-                                 "--compute", "mem=10",
-                                 "-p", "slurm"])
-        print(stderr)
+        stdout, stderr, rc = subp_exec(
+            tp,
+            cmd,
+            ["--settings", settings_file_path, "--compute", "mem=10", "-p", "slurm"],
+        )
+        print_standard_stream(stderr)
         assert rc == 0
         sd = os.path.join(get_outdir(tp), "submission")
-        subs_list = [os.path.join(sd, f)
-                     for f in os.listdir(sd) if f.endswith(".sub")]
-        is_in_file(subs_list, "testin_mem", reverse=True)
+        subs_list = [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
+        assert_content_not_in_any_files(subs_list, "testin_mem")
+
+
+class TestLooperConfig:
+    @pytest.mark.parametrize("cmd", ["run", "runp"])
+    def test_init_config_file(self, prep_temp_pep, cmd, dotfile_path):
+        tp = prep_temp_pep
+        stdout, stderr, rc = subp_exec(tp, "init")
+        print_standard_stream(stderr)
+        print_standard_stream(stdout)
+        assert rc == 0
+        assert_content_in_all_files(dotfile_path, tp)
+        stdout, stderr, rc = subp_exec(cmd=cmd)
+        print_standard_stream(stderr)
+        print_standard_stream(stdout)
+        assert rc == 0
+
+    def test_correct_execution_of_config(self, prepare_pep_with_dot_file):
+        dot_file_path = prepare_pep_with_dot_file
+        stdout, stderr, rc = subp_exec("", "run")
+
+        print_standard_stream(stderr)
+        print_standard_stream(stdout)
+
+        os.remove(dot_file_path)
+        assert rc == 0
+
+
+class TestLooperPEPhub:
+    @pytest.mark.parametrize(
+        "pep_path",
+        [
+            "pephub::some/registry:path",
+            "different/registry:path",
+            "default/tag",
+        ],
+    )
+    def test_pephub_registry_path_recognition(self, pep_path):
+        assert is_registry_path(pep_path) is True
+
+    @pytest.mark.parametrize(
+        "pep_path",
+        [
+            "some/path/to/pep.yaml",
+            "different/path.yaml",
+            "default/path/to/file/without/yaml",
+            "file_in_folder.yaml",
+            "not_yaml_file",
+        ],
+    )
+    def test_config_recognition(self, pep_path):
+        assert is_registry_path(pep_path) is False
+
+    def test_init_project_using_dict(self, prep_temp_config_with_pep):
+        """Verify looper runs using pephub in a basic case and return code is 0"""
+        raw_pep, piface1s_path = prep_temp_config_with_pep
+        init_project = Project(
+            runp=True, project_dict=raw_pep, sample_pipeline_interfaces=piface1s_path
+        )
+
+        assert len(init_project.pipeline_interfaces) == 3

@@ -1,22 +1,23 @@
 """ Model the connection between a pipeline and a project or executor. """
 
 import os
-import jsonschema
-import pandas as pd
-
-from collections import Mapping
+from collections.abc import Mapping
 from logging import getLogger
 from warnings import warn
 
-from attmap import PathExAttMap as PXAM
+import jsonschema
+import pandas as pd
 from eido import read_schema
 from peppy import utils as peputil
 from ubiquerg import expandpath, is_url
-from yacman import load_yaml
+from yacman import load_yaml, YAMLConfigManager
 
 from .const import *
+from .exceptions import (
+    InvalidResourceSpecificationException,
+    PipelineInterfaceConfigError,
+)
 from .utils import jinja_render_template_strictly
-from .exceptions import InvalidResourceSpecificationException
 
 __author__ = "Michal Stolarczyk"
 __email__ = "michal@virginia.edu"
@@ -25,7 +26,7 @@ _LOGGER = getLogger(__name__)
 
 
 @peputil.copy
-class PipelineInterface(PXAM):
+class PipelineInterface(YAMLConfigManager):
     """
     This class parses, holds, and returns information for a yaml file that
     specifies how to interact with each individual pipeline. This
@@ -37,6 +38,7 @@ class PipelineInterface(PXAM):
     :param str pipeline_type: type of the pipeline,
         must be either 'sample' or 'project'.
     """
+
     def __init__(self, config, pipeline_type=None):
         super(PipelineInterface, self).__init__()
 
@@ -44,20 +46,30 @@ class PipelineInterface(PXAM):
             self.pipe_iface_file = None
             self.source = None
         else:
-            _LOGGER.debug("Reading {} from: {}".
-                          format(self.__class__.__name__, config))
+            _LOGGER.debug("Reading {} from: {}".format(self.__class__.__name__, config))
             self.pipe_iface_file = config
             self.source = config
             config = load_yaml(config)
+        if PIPELINE_INTERFACE_PIPELINE_NAME_KEY not in config:
+            raise PipelineInterfaceConfigError(
+                f"'{PIPELINE_INTERFACE_PIPELINE_NAME_KEY}' is required in pipeline interface config data."
+            )
         self.update(config)
-        self._validate(PIFACE_SCHEMA_SRC, flavor=pipeline_type)
+        self._validate(schema_src=PIFACE_SCHEMA_SRC)
         if "path" in self:
-            warn(message="'path' specification as a top-level pipeline "
-                         "interface key is deprecated and will be removed with "
-                         "the next release. Please use 'paths' section "
-                         "from now on.", category=DeprecationWarning)
+            warn(
+                message="'path' specification as a top-level pipeline "
+                "interface key is deprecated and will be removed with "
+                "the next release. Please use 'paths' section "
+                "from now on.",
+                category=DeprecationWarning,
+            )
             self._expand_paths(["path"])
         self._expand_paths(["compute", "dynamic_variables_script_path"])
+
+    @property
+    def pipeline_name(self):
+        return self[PIPELINE_INTERFACE_PIPELINE_NAME_KEY]
 
     def render_var_templates(self, namespaces):
         """
@@ -65,13 +77,21 @@ class PipelineInterface(PXAM):
 
         :param dict namespaces: namespaces to use for rendering
         """
-        if VAR_TEMPL_KEY in self:
-            for k, v in self[VAR_TEMPL_KEY].items():
-                setattr(self[VAR_TEMPL_KEY], k,
-                        jinja_render_template_strictly(v, namespaces))
+        try:
+            curr_data = self[VAR_TEMPL_KEY]
+        except KeyError:
+            _LOGGER.debug(
+                f"'{VAR_TEMPL_KEY}' section not found in the "
+                f"{self.__class__.__name__} object."
+            )
+            return {}
         else:
-            _LOGGER.debug(f"'{VAR_TEMPL_KEY}' section not found in the "
-                          f"{self.__class__.__name__} object.")
+            var_templates = {}
+            if curr_data:
+                var_templates.update(curr_data)
+                for k, v in var_templates.items():
+                    var_templates[k] = jinja_render_template_strictly(v, namespaces)
+            return var_templates
 
     def get_pipeline_schemas(self, schema_key=INPUT_SCHEMA_KEY):
         """
@@ -89,7 +109,8 @@ class PipelineInterface(PXAM):
                 return schema_source
             elif not os.path.isabs(schema_source):
                 schema_source = os.path.join(
-                    os.path.dirname(self.pipe_iface_file), schema_source)
+                    os.path.dirname(self.pipe_iface_file), schema_source
+                )
         return schema_source
 
     def choose_resource_package(self, namespaces, file_size):
@@ -106,6 +127,7 @@ class PipelineInterface(PXAM):
         :raises InvalidResourceSpecificationException: if no default
             resource package specification is provided
         """
+
         def _file_size_ante(name, data):
             # Retrieve this package's minimum file size.
             # Retain backwards compatibility while enforcing key presence.
@@ -114,12 +136,14 @@ class PipelineInterface(PXAM):
             except KeyError:
                 raise InvalidResourceSpecificationException(
                     "Required column '{}' does not exist in resource "
-                    "specification TSV.".format(FILE_SIZE_COLNAME))
+                    "specification TSV.".format(FILE_SIZE_COLNAME)
+                )
             # Negative file size is illogical and problematic for comparison.
             if fsize < 0:
                 raise InvalidResourceSpecificationException(
-                    "Found negative value () in '{}' column; package '{}'".
-                        format(fsize, FILE_SIZE_COLNAME, name)
+                    "Found negative value () in '{}' column; package '{}'".format(
+                        fsize, FILE_SIZE_COLNAME, name
+                    )
                 )
             return fsize
 
@@ -138,28 +162,35 @@ class PipelineInterface(PXAM):
             :return Mapping: a dict with attributes returned in the JSON
                 by called command
             """
+
             def _log_raise_latest():
-                """ Log error info and raise latest handled exception """
+                """Log error info and raise latest handled exception"""
                 _LOGGER.error(
                     "Could not retrieve JSON via command: '{}'".format(
-                        pipeline[COMPUTE_KEY][DYN_VARS_KEY]))
+                        pipeline[COMPUTE_KEY][DYN_VARS_KEY]
+                    )
+                )
                 raise
+
             json = None
-            if COMPUTE_KEY in pipeline \
-                    and DYN_VARS_KEY in pipeline[COMPUTE_KEY]:
-                from warnings import warn
-                from subprocess import check_output, CalledProcessError
+            if COMPUTE_KEY in pipeline and DYN_VARS_KEY in pipeline[COMPUTE_KEY]:
                 from json import loads
+                from subprocess import CalledProcessError, check_output
+                from warnings import warn
+
                 from .utils import jinja_render_template_strictly
-                warn(message="'dynamic_variables_command_template' feature is "
-                             "deprecated and will be removed with the next "
-                             "release. Please use 'pre_submit' feature from "
-                             "now on.",
-                     category=DeprecationWarning)
+
+                warn(
+                    message="'dynamic_variables_command_template' feature is "
+                    "deprecated and will be removed with the next "
+                    "release. Please use 'pre_submit' feature from "
+                    "now on.",
+                    category=DeprecationWarning,
+                )
                 try:
                     cmd = jinja_render_template_strictly(
                         template=pipeline[COMPUTE_KEY][DYN_VARS_KEY],
-                        namespaces=namespaces
+                        namespaces=namespaces,
                     )
                     json = loads(check_output(cmd, shell=True))
                 except CalledProcessError as e:
@@ -170,7 +201,8 @@ class PipelineInterface(PXAM):
                 else:
                     _LOGGER.debug(
                         "Loaded resources from JSON returned by a command for"
-                        " pipeline '{}':\n{}".format(self.pipeline_name, json))
+                        " pipeline '{}':\n{}".format(self.pipeline_name, json)
+                    )
             return json
 
         def _load_size_dep_vars(piface):
@@ -182,28 +214,32 @@ class PipelineInterface(PXAM):
             :return pandas.DataFrame: resources
             """
             df = None
-            if COMPUTE_KEY in piface \
-                    and SIZE_DEP_VARS_KEY in piface[COMPUTE_KEY]:
+            if COMPUTE_KEY in piface and SIZE_DEP_VARS_KEY in piface[COMPUTE_KEY]:
                 resources_tsv_path = piface[COMPUTE_KEY][SIZE_DEP_VARS_KEY]
                 if not os.path.isabs(resources_tsv_path):
                     resources_tsv_path = os.path.join(
-                        os.path.dirname(piface.pipe_iface_file),
-                        resources_tsv_path)
-                df = pd.read_csv(resources_tsv_path, sep='\t', header=0).\
-                    fillna(float("inf"))
+                        os.path.dirname(piface.pipe_iface_file), resources_tsv_path
+                    )
+                df = pd.read_csv(resources_tsv_path, sep="\t", header=0).fillna(
+                    float("inf")
+                )
                 df[ID_COLNAME] = df.index
                 df.set_index(ID_COLNAME)
-                _LOGGER.debug("Loaded resources ({}) for pipeline '{}':\n{}".
-                              format(resources_tsv_path, piface.pipeline_name, df))
+                _LOGGER.debug(
+                    "Loaded resources ({}) for pipeline '{}':\n{}".format(
+                        resources_tsv_path, piface.pipeline_name, df
+                    )
+                )
             else:
                 _notify("No '{}' defined".format(SIZE_DEP_VARS_KEY))
             return df
 
         # Ensure that we have a numeric value before attempting comparison.
         file_size = float(file_size)
-        assert file_size >= 0, ValueError("Attempted selection of resource "
-                                         "package for negative file size: {}".
-                                         format(file_size))
+        assert file_size >= 0, ValueError(
+            "Attempted selection of resource "
+            "package for negative file size: {}".format(file_size)
+        )
 
         fluid_resources = _load_dynamic_vars(self)
         if fluid_resources is not None:
@@ -211,17 +247,20 @@ class PipelineInterface(PXAM):
         resources_df = _load_size_dep_vars(self)
         resources_data = {}
         if resources_df is not None:
-            resources = resources_df.to_dict('index')
+            resources = resources_df.to_dict("index")
             try:
                 # Sort packages by descending file size minimum to return first
                 # package for which given file size satisfies the minimum.
                 resource_packages = sorted(
                     resources.items(),
                     key=lambda name_and_data: _file_size_ante(*name_and_data),
-                    reverse=False)
+                    reverse=False,
+                )
             except ValueError:
-                _LOGGER.error("Unable to use file size to prioritize "
-                              "resource packages: {}".format(resources))
+                _LOGGER.error(
+                    "Unable to use file size to prioritize "
+                    "resource packages: {}".format(resources)
+                )
                 raise
 
             # choose minimally-sufficient package
@@ -230,20 +269,22 @@ class PipelineInterface(PXAM):
                 if file_size <= size_ante:
                     _LOGGER.debug(
                         "Selected '{}' package with file size {}Gb for file "
-                        "of size {}Gb.".format(rp_name, size_ante, file_size))
-                    _LOGGER.debug("Selected resource package data:\n{}".
-                                  format(rp_data))
+                        "of size {}Gb.".format(rp_name, size_ante, file_size)
+                    )
+                    _LOGGER.debug("Selected resource package data:\n{}".format(rp_data))
                     resources_data = rp_data
                     break
 
         if COMPUTE_KEY in self:
             resources_data.update(self[COMPUTE_KEY])
         project = namespaces["project"]
-        if LOOPER_KEY in project and COMPUTE_KEY in project[LOOPER_KEY] \
-                and RESOURCES_KEY in project[LOOPER_KEY][COMPUTE_KEY]:
+        if (
+            LOOPER_KEY in project
+            and COMPUTE_KEY in project[LOOPER_KEY]
+            and RESOURCES_KEY in project[LOOPER_KEY][COMPUTE_KEY]
+        ):
             # overwrite with values from project.looper.compute.resources
-            resources_data.\
-                update(project[LOOPER_KEY][COMPUTE_KEY][RESOURCES_KEY])
+            resources_data.update(project[LOOPER_KEY][COMPUTE_KEY][RESOURCES_KEY])
         return resources_data
 
     def _expand_paths(self, keys):
@@ -253,6 +294,7 @@ class PipelineInterface(PXAM):
         :param list keys: list of keys resembling the nested structure to get
             to the pipeline interface attributre to expand
         """
+
         def _get_from_dict(map, attrs):
             """
             Get value from a possibly nested mapping using a list of its attributes
@@ -292,38 +334,40 @@ class PipelineInterface(PXAM):
         split_path = raw_path.split(" ")
         if len(split_path) > 1:
             _LOGGER.warning(
-                "Path ({}) contains spaces. Using the first part as path: {}".
-                    format(raw_path, split_path[0]))
+                "Path ({}) contains spaces. Using the first part as path: {}".format(
+                    raw_path, split_path[0]
+                )
+            )
         path = split_path[0]
         pipe_path = expandpath(path)
         if not os.path.isabs(pipe_path) and self.pipe_iface_file:
-            abs = os.path.join(os.path.dirname(
-                self.pipe_iface_file), pipe_path)
+            abs = os.path.join(os.path.dirname(self.pipe_iface_file), pipe_path)
             if os.path.exists(abs):
                 _LOGGER.debug(
-                    "Path relative to pipeline interface made absolute: {}".
-                        format(abs))
+                    "Path relative to pipeline interface made absolute: {}".format(abs)
+                )
                 _set_in_dict(self, keys, abs)
                 return
             _LOGGER.debug("Expanded path: {}".format(pipe_path))
             _set_in_dict(self, keys, pipe_path)
 
-    def _validate(self, schema_src, exclude_case=False, flavor=None):
+    def _validate(self, schema_src, exclude_case=False, flavor="generic"):
         """
-        Generic function to validate object against a schema
+        Generic function to validate the object against a schema
 
         :param str schema_src: schema source to validate against, URL or path
         :param bool exclude_case: whether to exclude validated objects
             from the error. Useful when used ith large projects
         :param str flavor: type of the pipeline schema to use
         """
-        schema_source = schema_src.format(flavor if flavor else "generic")
-        schemas = read_schema(schema_source)
-        for schema in schemas:
+        schema_source = schema_src.format(flavor)
+        for schema in read_schema(schema_source):
             try:
                 jsonschema.validate(self, schema)
-                _LOGGER.debug("Successfully validated {} against schema: {}".
-                              format(self.__class__.__name__, schema_source))
+                _LOGGER.debug(
+                    f"Successfully validated {self.__class__.__name__} "
+                    f"against schema: {schema_source}"
+                )
             except jsonschema.exceptions.ValidationError as e:
                 if not exclude_case:
                     raise e

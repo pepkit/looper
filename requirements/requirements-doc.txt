@@ -1,5 +1,9 @@
-mkdocs>=1.0
-markdown-include
-pydoc-markdown
 https://github.com/databio/mkdocs-databio/archive/master.zip
+markdown-include
 looper
+pephubclient
+mkdocs>=1.0
+https://github.com/pepkit/pipestat/archive/refs/heads/master.zip
+pydoc-markdown
+# versioneer
+# Cython

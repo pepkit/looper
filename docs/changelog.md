@@ -1,6 +1,72 @@
 # Changelog
 
-This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format. 
+This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format.
+
+## [1.5.0] -- 
+
+### Added 
+
+- ability to use PEPs from PEPhub without downloading project [#341](https://github.com/pepkit/looper/issues/341)
+- ability to specify pipeline interfaces inside looper config instead/
+
+### Changed
+- initialization of generic pipeline interface available using subcommand `init-piface`
+
+
+## [1.5.0] -- 2023-05-12
+
+### Added
+- divvy re-integrated in looper
+- divvy inspect -p package
+
+## [1.4.0] -- 2023-04-24
+
+### Added
+
+- preliminary support for [pipestat](http://pipestat.databio.org).
+- ability to skip samples using  `-k` or `--skip` [#367](https://github.com/pepkit/looper/pull/367)
+- ability to input a range into `limit` and `skip`[#367](https://github.com/pepkit/looper/pull/367)
+- `limit` and `skip` are now both usable with Destroy and Run. [#367](https://github.com/pepkit/looper/pull/367)
+- ability to generate generic pipeline interface using `init -p` or `init --piface` [#368](https://github.com/pepkit/looper/pull/368)
+- Fixed ability to use custom sample index
+- Added `write_custom_template`, a built-in pre-submit plugin for writing templates
+
+### Changed
+- looper now returns nonzero if any samples fail submission
+- various other developer changes
+
+### Deprecated
+- `path` variable will be deprecated in favor of `var_templates` [#322](https://github.com/pepkit/looper/issues/322)
+
+## [1.3.2] -- 2022-02-09
+
+### Changed
+- Fixed bug with use_2to3 for setuptools compatibility.
+
+## [1.3.1] -- 2021-06-18
+
+### Changed
+- If remote schemas are not accessbile, the job submission doesn't fail anymore
+- Fixed a bug where looper stated "No failed flag found" when a failed flag was found
+
+### Deprecated
+- Fixed and deprecated `looper inspect`. Use `eido inspect` from now on.
+
+
+## [1.3.0] -- 2020-10-07
+
+### Added
+- New plugin system for pre-submission hooks
+- Included plugin functions: `write_sample_yaml`, `write_sample_yaml_prj`, `write_sample_yaml_cwl` and `write_submission_yaml`
+- New `var_templates` section for defining variables in the pipeline interface
+
+### Changed
+- Pipeline interface specification was updated to accommodate new `var_templates` section and pre-submission hooks
+
+### Deprecated
+- pipeline interface sections:
+    - `dynamic_variables_command_template`, which can now be more simply accomplished with a pre-submission hook
+    - `path`, which is replaced by a more generic `var_templates` section
 
 ## [1.2.1] - 2020-08-26
 
@@ -63,10 +129,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ## [0.12.4] -- 2019-07-18
 ### Added
 - Ability to declare `required_executables` in a `PipelineInterface`, to trigger a naive "runnability" check for a sample submission
-- A possibility to opt out of status page inclusion in the navbar 
+- A possibility to opt out of status page inclusion in the navbar
 
 ### Changed
-- The status tables now use DataTables jQuery plugin to make them interactive 
+- The status tables now use DataTables jQuery plugin to make them interactive
 
 ### Fixed
 - Navbar links creation
@@ -105,7 +171,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Functions and attributes on `Project` to support "outputs" (`interfaces`, `get_interfaces`, `get_outputs`)
 
 ### Changed
-- Start "compute" --> "compute_packages" transition 
+- Start "compute" --> "compute_packages" transition
 - `get_logger` moved to `peppy`
 
 ### Fixed
@@ -133,7 +199,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Using `attmap` for "attribute-style key-vale store" implementation
 - Removed Python 3.4 support.
 - UI: change parameter names `in/exclude-samples` to `selector-in/exclude`.
-  
+
 ## [0.10.0] -- 2018-12-20
 
 ### Changed
@@ -204,7 +270,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Allow wildcard protocol_mapping for catch-all pipeline assignment
 - Improve user messages
 - New sample_subtypes section in pipeline_interface
-    
+
 ### Changed
 - Sample child classes are now defined explicitly in the pipeline interface. Previously, they were guessed based on presence of a class extending Sample in a pipeline script.
 - Changed 'library' key sample attribute to 'protocol'
@@ -216,7 +282,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   - Merges pipeline interface and protocol mappings. This means we now allow direct pointers to `pipeline_interface.yaml` files, increasing flexibility, so this relaxes the specified folder structure that was previously used for `pipelines_dir` (with `config` subfolder).
   - Allow URLs as paths to sample sheets.
   - Allow tsv format for sample sheets.
-  - Checks that the path to a pipeline actually exists before writing the submission script. 
+  - Checks that the path to a pipeline actually exists before writing the submission script.
 
 ### Changed
 - Changed LOOPERENV environment variable to PEPENV, generalizing it to generic models

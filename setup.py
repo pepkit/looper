@@ -1,9 +1,9 @@
 #! /usr/bin/env python
 
 import os
-from setuptools import setup
 import sys
 
+from setuptools import setup
 
 # Additional keyword arguments for setup().
 extra = {}
@@ -15,7 +15,7 @@ with open("requirements/requirements-all.txt", "r") as reqs_file:
     for line in reqs_file:
         if not line.strip():
             continue
-        #DEPENDENCIES.append(line.split("=")[0].rstrip("<>"))
+        # DEPENDENCIES.append(line.split("=")[0].rstrip("<>"))
         DEPENDENCIES.append(line)
 
 
@@ -31,15 +31,14 @@ else:
 extra["install_requires"] = DEPENDENCIES
 
 
-# 2to3
-if sys.version_info >= (3, ):
-    extra["use_2to3"] = True
-
-
 # Additional files to include with package
 def get_static(name, condition=None):
-    static = [os.path.join(name, f) for f in os.listdir(
-            os.path.join(os.path.dirname(os.path.realpath(__file__)), name))]
+    static = [
+        os.path.join(name, f)
+        for f in os.listdir(
+            os.path.join(os.path.dirname(os.path.realpath(__file__)), name)
+        )
+    ]
     if condition is None:
         return static
     else:
@@ -52,15 +51,11 @@ def get_static(name, condition=None):
 scripts = None
 
 
-with open("looper/_version.py", 'r') as versionfile:
+with open("looper/_version.py", "r") as versionfile:
     version = versionfile.readline().split()[-1].strip("\"'\n")
 
-# Handle the pypi README formatting.
-try:
-    import pypandoc
-    long_description = pypandoc.convert_file('README.md', 'rst')
-except(IOError, ImportError, OSError):
-    long_description = open('README.md').read()
+with open("README.md") as f:
+    long_description = f.read()
 
 setup(
     name="looper",
@@ -68,29 +63,33 @@ setup(
     version=version,
     description="A pipeline submission engine that parses sample inputs and submits pipelines for each sample.",
     long_description=long_description,
-    long_description_content_type='text/markdown', 
+    long_description_content_type="text/markdown",
     classifiers=[
         "Development Status :: 4 - Beta",
         "License :: OSI Approved :: BSD License",
-        "Programming Language :: Python :: 2.7",
-        "Programming Language :: Python :: 3.5",
-        "Programming Language :: Python :: 3.6",
-        "Topic :: Scientific/Engineering :: Bio-Informatics"
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Topic :: Scientific/Engineering :: Bio-Informatics",
     ],
     keywords="bioinformatics, sequencing, ngs",
     url="https://github.com/pepkit/looper",
-    author=u"Nathan Sheffield, Vince Reuter, Michal Stolarczyk, Johanna Klughammer, Andre Rendeiro",
+    author="Nathan Sheffield, Vince Reuter, Michal Stolarczyk, Johanna Klughammer, Andre Rendeiro",
     license="BSD2",
     entry_points={
         "console_scripts": [
-            'looper = looper.__main__:main'
+            "looper = looper.__main__:main",
+            "divvy = looper.__main__:divvy_main",
         ],
     },
     scripts=scripts,
-    package_data={'looper': ['submit_templates/*']},
+    package_data={"looper": ["submit_templates/*"]},
     include_package_data=True,
     test_suite="tests",
     tests_require=(["mock", "pytest"]),
-    setup_requires=(["pytest-runner"] if {"test", "pytest", "ptr"} & set(sys.argv) else []),
+    setup_requires=(
+        ["pytest-runner"] if {"test", "pytest", "ptr"} & set(sys.argv) else []
+    ),
     **extra
 )

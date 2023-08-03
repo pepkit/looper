@@ -5,35 +5,48 @@ repo_url: http://github.com/pepkit/looper
 pypi_name: loopercli
 
 nav:
-  - Getting Started: 
-    - Introduction: README.md
-    - Features at-a-glance: features.md
-    - Hello world: hello-world.md
-  - How-to guides:    
-    - Defining a project: defining-a-project.md
-    - Running a pipeline: running-a-pipeline.md
-    - Initializing a repository: initialize.md
-    - Parameterizing pipelines: parameterizing-pipelines.md
-    - Running on a cluster: running-on-a-cluster.md
-    - Grouping many jobs into one: grouping-jobs.md
-    - Running jobs in containers: containers.md
-    - Handling multiple input files: how-to-merge-inputs.md
-    - Running multiple pipelines: multiple-pipelines.md
-    - Writing a pipeline interface: writing-a-pipeline-interface.md
-    - Using geofetch: using-geofetch.md
+  - Getting Started:
+      - Introduction: README.md
+      - Features at-a-glance: features.md
+      - Hello world: hello-world.md
+      - Hello PEPhub: hello-world-pephub.md
+  - How-to guides:
+      - Defining a project: defining-a-project.md
+      - Running a pipeline: running-a-pipeline.md
+      - Initializing a repository: initialize.md
+      - Using pipestat: pipestat.md
+      - Parameterizing pipelines: parameterizing-pipelines.md
+      - Running on a cluster: running-on-a-cluster.md
+      - Grouping many jobs into one: grouping-jobs.md
+      - Running jobs in containers: containers.md
+      - Handling multiple input files: how-to-merge-inputs.md
+      - Running multiple pipelines: multiple-pipelines.md
+      - Writing a pipeline interface: writing-a-pipeline-interface.md
+      - Create looper config file: how_to_define_looper_config.md
+      - Using geofetch: using-geofetch.md
+  - Using divvy:
+      - Introduction: README_divvy.md
+      - Install and configure: install_divvy.md
+      - "Tutorial: divvy in python": tutorial_divvy.md
+      - "Tutorial: divvy on the command line": cli_divvy.md
+      - Configuring divvy: configuration_divvy.md
+      - Configuring containers: containers_divvy.md
+      - Configuring connection with client software: adapters_divvy.md
+      - Default packages: default_packages_divvy.md
+      - DIVCFG examples: http://github.com/pepkit/divcfg
   - Reference:
-    - Pipeline interface specification: pipeline-interface-specification.md
-    - Pipeline tiers: pipeline-tiers.md
-    - Concentric templates: concentric-templates.md
-    - Pre-submission hooks system: pre-submission-hooks.md
-    - Looper variable namespaces: variable-namespaces.md
-    - Usage: usage.md
-    - Configuration files: config-files.md
-    - API: autodoc_build/looper.md
-    - FAQ: faq.md
-    - Support: support.md
-    - Contributing: contributing.md
-    - Changelog: changelog.md
+      - Pipeline interface specification: pipeline-interface-specification.md
+      - Pipeline tiers: pipeline-tiers.md
+      - Concentric templates: concentric-templates.md
+      - Pre-submission hooks system: pre-submission-hooks.md
+      - Looper variable namespaces: variable-namespaces.md
+      - Usage: usage.md
+      - Configuration files: config-files.md
+      - API: autodoc_build/looper.md
+      - FAQ: faq.md
+      - Support: support.md
+      - Contributing: contributing.md
+      - Changelog: changelog.md
 
 theme: databio
 

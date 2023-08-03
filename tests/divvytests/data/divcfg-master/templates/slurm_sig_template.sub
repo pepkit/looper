@@ -1,0 +1,30 @@
+#!/bin/bash
+#SBATCH --job-name='{JOBNAME}'
+#SBATCH --output='{LOGFILE}'
+#SBATCH --mem='{MEM}'
+#SBATCH --cpus-per-task='{CORES}'
+#SBATCH --time='{TIME}'
+#SBATCH --partition='{PARTITION}'
+#SBATCH -m block
+#SBATCH --ntasks=1
+
+# define a function to catch SIGERM
+sigterm_handler() { 
+  echo "Shell caught SIGTERM" 
+  kill -TERM "$child" 2>/dev/null
+}
+
+# tell bash to call handler function upon SIGTERM receipt
+trap sigterm_handler SIGTERM
+
+echo 'Compute node:' `hostname`
+echo 'Start time:' `date +'%Y-%m-%d %T'`
+
+# use & to run process in the background
+srun {CODE} &
+
+# capture process id for child process
+child=$!
+echo "Waiting on $child"
+wait "$child"
+echo "Shell complete."

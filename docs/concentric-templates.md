@@ -57,4 +57,4 @@ The last point about the submission template being universal is exactly what loo
 
 ## Populating templates
 
-The task of running jobs can be thought of as simply populating the templates with variables. To do this, Looper provides [variables from several sources](variable-namespaces.md). 
+The task of running jobs can be thought of as simply populating the templates with variables. To do this, Looper provides [variables from several sources](variable-namespaces.md).

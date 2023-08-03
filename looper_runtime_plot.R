@@ -9,7 +9,7 @@
 #of the runtime for each pipeline subcommand
 #
 #NOTES:
-#usage: Rscript /path/to/Rscript/looper_runtime_plot.R 
+#usage: Rscript /path/to/Rscript/looper_runtime_plot.R
 #       /path/to/project_config.yaml
 #
 #requirements: argparser, dplyr, ggplot2, grid, stringr, pepr
@@ -42,9 +42,9 @@ if (length(loadLibrary)!=0) {
 p <- arg_parser("Produce an ATACseq pipeline (PEPATAC) runtime plot")
 
 # Add command line arguments
-p <- add_argument(p, "config", 
+p <- add_argument(p, "config",
                   help="PEPATAC project_config.yaml")
-# p <- add_argument(p, "--output", 
+# p <- add_argument(p, "--output",
                   # help="PNG or PDF",
                   # default = "PDF")
 
@@ -79,7 +79,7 @@ for (i in required_libraries) {
 ###############################################################################
 ####                               FUNCTIONS                               ####
 ###############################################################################
-# Convert Hours:Minutes:Seconds to Seconds 
+# Convert Hours:Minutes:Seconds to Seconds
 toSeconds <- function(HMS){
     if (!is.character(HMS)) {
         stop("HMS must be a character string of the form H:M:S")
@@ -95,7 +95,7 @@ toSeconds <- function(HMS){
                    else if (length(i) == 2) {i[1]*60 + i[2]}
                    else if (length(i) == 1) {i[1]}
                }))
-} 
+}
 
 # Convert seconds back to HMS format
 secondsToString <- function(secs, digits=2){
@@ -116,42 +116,42 @@ secondsToString <- function(secs, digits=2){
 }
 
 # Taken from https://github.com/baptiste/egg/blob/master/R/set_panel_size.r
-set_panel_size <- function(p=NULL, g=ggplotGrob(p), file=NULL, 
+set_panel_size <- function(p=NULL, g=ggplotGrob(p), file=NULL,
                            margin=unit(1, "in"),
-                           width=unit(4, "in"), 
+                           width=unit(4, "in"),
                            height=unit(4, "in")){
-    
+
     panels <- grep("panel", g$layout$name)
     panel_index_w <- unique(g$layout$l[panels])
     panel_index_h <- unique(g$layout$t[panels])
     nw <- length(panel_index_w)
     nh <- length(panel_index_h)
-    
+
     if(getRversion() < "3.3.0"){
-        
+
         # the following conversion is necessary
         # because there is no `[<-`.unit method
         # so promoting to unit.list allows standard list indexing
         g$widths  <- grid:::unit.list(g$widths)
         g$heights <- grid:::unit.list(g$heights)
-        
+
         g$widths[panel_index_w]  <- rep(list(width), nw)
         g$heights[panel_index_h] <- rep(list(height), nh)
-        
+
     } else {
-        
+
         g$widths[panel_index_w]  <- rep(width, nw)
         g$heights[panel_index_h] <- rep(height, nh)
-        
+
     }
-    
+
     if(!is.null(file))
         ggsave(file, g, limitsize = FALSE,
-               width=convertWidth(sum(g$widths) + margin, 
+               width=convertWidth(sum(g$widths) + margin,
                                   unitTo="in", valueOnly=TRUE),
-               height=convertHeight(sum(g$heights) + margin,  
+               height=convertHeight(sum(g$heights) + margin,
                                     unitTo="in", valueOnly=TRUE))
-    
+
     invisible(g)
 }
 
@@ -203,7 +203,7 @@ getRuntime = function(timeFile, sampleName, createPlot=TRUE) {
     } else {
         fileMissing <<- FALSE
         startTime  <- readLines(timeFile, n=1)
-    }    
+    }
 
     # Extract just the starting time timestamp
     startTime  <- word(startTime, -1, sep=" ")
@@ -235,18 +235,18 @@ getRuntime = function(timeFile, sampleName, createPlot=TRUE) {
     }
     # Remove leading directory structure
     for (i in 1:nrow(timeStamps)) {
-        timeStamps[i,1]  <- sub('.*\\/', '', timeStamps[i,1])   
+        timeStamps[i,1]  <- sub('.*\\/', '', timeStamps[i,1])
     }
     timeStamps           <- timeStamps[,-c(2,4)]
     colnames(timeStamps) <- c("cmd","time")
 
     timeStamps$time <- toSeconds(timeStamps$time)
-    
+
     # Combine any of the same commands to get total time spent per command
     # Eliminate only sequentially duplicated commands
     combinedTime <- dedupSequential(timeStamps)
     colnames(combinedTime) <- c("cmd", "time")
-    
+
     totalTime       <- sum(combinedTime$time)
     finishTime      <- secondsToString(toSeconds(startTime) + totalTime)
 
@@ -258,7 +258,7 @@ getRuntime = function(timeFile, sampleName, createPlot=TRUE) {
     combinedTime$cmd   <- as.character(combinedTime$cmd)
     # Set order for plotting purposes
     combinedTime$order <- as.factor(as.numeric(row.names(combinedTime)))
-    
+
     # Create plot
     if (createPlot) {
         p <- ggplot(data=combinedTime, aes(x=order, y=time)) +
@@ -266,25 +266,25 @@ getRuntime = function(timeFile, sampleName, createPlot=TRUE) {
                     scale_fill_brewer(palette="Paired")+
                     theme_minimal() +
                     coord_flip() +
-                    labs(y = paste("Time (s)\n", "[Start: ", startTime, " | ", 
+                    labs(y = paste("Time (s)\n", "[Start: ", startTime, " | ",
                                    "End: ", finishTime, "]", sep=""),
                          x = "PEPATAC Command") +
                     scale_x_discrete(labels=combinedTime$cmd) +
                     theme(plot.title = element_text(hjust = 0.5))
-        
+
         # Produce both PDF and PNG
         set_panel_size(
-            p, 
-            file=buildFilePath(sampleName, "_Runtime.pdf", prj), 
-            width=unit(8,"inches"), 
+            p,
+            file=buildFilePath(sampleName, "_Runtime.pdf", prj),
+            width=unit(8,"inches"),
             height=unit(5.5,"inches"))
         set_panel_size(
-            p, 
-            file=buildFilePath(sampleName, "_Runtime.png", prj), 
-            width=unit(8,"inches"), 
+            p,
+            file=buildFilePath(sampleName, "_Runtime.png", prj),
+            width=unit(8,"inches"),
             height=unit(5.5,"inches"))
     }
-    
+
     return(combinedTime)
 }
 
@@ -386,7 +386,7 @@ joinTimes = function (new, preexist) {
                         joinedTimes, uniqueCmds,by=c("cmd","order")))
         joinedTimes$order <- as.factor(rep(1:nrow(joinedTimes)))
         return(joinedTimes)
-    }  
+    }
 }
 
 ###############################################################################

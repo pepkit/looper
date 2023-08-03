@@ -1,7 +1,9 @@
-from .looper import main
 import sys
 
-if __name__ == '__main__':
+from .looper import main
+from .divvy import main as divvy_main
+
+if __name__ == "__main__":
     try:
         sys.exit(main())
     except KeyboardInterrupt:
