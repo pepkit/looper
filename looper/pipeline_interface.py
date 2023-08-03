@@ -9,7 +9,7 @@ import jsonschema
 import pandas as pd
 from eido import read_schema
 from peppy import utils as peputil
-from ubiquerg import expandpath, is_url
+from ubiquerg import expandpath, is_url, is_command_callable
 from yacman import load_yaml, YAMLConfigManager
 
 from .const import *
