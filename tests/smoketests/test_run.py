@@ -13,7 +13,6 @@ CMD_STRS = ["string", " --string", " --sjhsjd 212", "7867#$@#$cc@@"]
 
 def test_cli(prep_temp_pep):
     tp = prep_temp_pep
-    from looper.looper import main
 
     x = test_args_expansion(tp, "run")
     try:
@@ -39,7 +38,6 @@ class TestLooperBothRuns:
     @pytest.mark.parametrize("cmd", ["run", "runp"])
     def test_looper_cfg_invalid(self, cmd):
         """Verify looper does not accept invalid cfg paths"""
-        from looper.looper import main
 
         x = test_args_expansion("jdfskfds/dsjfklds/dsjklsf.yaml", cmd)
         with pytest.raises(OSError):
@@ -48,8 +46,6 @@ class TestLooperBothRuns:
     @pytest.mark.parametrize("cmd", ["run", "runp"])
     def test_looper_cfg_required(self, cmd):
         """Verify looper does not accept invalid cfg paths"""
-
-        from looper.looper import main
 
         x = test_args_expansion("", cmd)
         with pytest.raises(SystemExit):
@@ -73,7 +69,6 @@ class TestLooperBothRuns:
         See https://github.com/pepkit/looper/issues/245#issuecomment-621815222
         """
         tp = prep_temp_pep
-        from looper.looper import main
 
         x = test_args_expansion(tp, cmd, arg)
         try:
@@ -89,7 +84,6 @@ class TestLooperBothRuns:
     @pytest.mark.parametrize("cmd", ["run", "runp"])
     def test_unrecognized_args_not_passing(self, prep_temp_pep, cmd):
         tp = prep_temp_pep
-        from looper.looper import main
 
         x = test_args_expansion(tp, cmd, ["--unknown-arg", "4"])
         try:
@@ -133,6 +127,27 @@ class TestLooperRunBehavior:
         print_standard_stream(stderr)
         assert rc == 0
         assert "Commands submitted: 6 of 6" not in str(stderr)
+
+    def test_looper_var_templates(self, prep_temp_pep):
+        tp = prep_temp_pep
+        with mod_yaml_data(tp) as config_data:
+            pifaces = config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][
+                PIPELINE_INTERFACES_KEY
+            ]
+            config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][
+                PIPELINE_INTERFACES_KEY
+            ] = pifaces[1]
+        x = test_args_expansion(tp, "run")
+        try:
+            # Test that {looper.piface_dir} is correctly rendered to a path which will show up in the final .sub file
+            main(test_args=x)
+            sd = os.path.join(get_outdir(tp), "submission")
+            subs_list = [
+                os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")
+            ]
+            assert_content_not_in_any_files(subs_list, "looper.piface_dir")
+        except Exception:
+            raise pytest.fail("DID RAISE {0}".format(Exception))
 
     def test_looper_cli_pipeline(self, prep_temp_pep):
         """CLI-specified pipelines overwrite ones from config"""
