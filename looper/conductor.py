@@ -148,7 +148,7 @@ def write_custom_template(namespaces):
 
     tpl = load_template(namespaces["pipeline"])
     content = tpl.render(namespaces)
-    pth = _get_yaml_path(namespaces, "custom_template_output", "_config")
+    pth = _get_yaml_path(namespaces, "custom_template_output", "config")
     namespaces["sample"]["custom_template_output"] = pth
     with open(pth, "wb") as fh:
         # print(content)
