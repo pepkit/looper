@@ -774,11 +774,14 @@ class SubmissionConductor(object):
 
     def check_executable_path(self, pl_iface):
         """Determines if supplied pipelines are callable.
-        Raises error and exits Looper if not callable"""
-        pl_iface = pl_iface
+        Raises error and exits Looper if not callable
+        :param dict pl_iface: pipeline interface that stores paths to executables
+        :return bool: True if path is callable.
+        """
         pipeline_commands = []
         if "path" in pl_iface.keys():
             pipeline_commands.append(pl_iface["path"])
+
         if (
             "var_templates" in pl_iface.keys()
             and "pipeline" in pl_iface["var_templates"].keys()
