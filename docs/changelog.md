@@ -18,6 +18,18 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - `looper report` will now use pipestat to generate browsable HTML reports if pipestat is configured.
 - looper now works with pipestat v0.4.0.
 
+## [1.4.3] -- 2023-08-01
+
+### Fixed
+- Fix regression for var_templates expansion.
+
+## [1.4.2] -- 2023-07-31
+
+### Fixed
+- Fix for expanding paths properly.
+
+## [1.4.1] -- 2023-06-22
+
 
 ## [1.4.0] -- 2023-04-24
 

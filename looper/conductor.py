@@ -19,7 +19,7 @@ from peppy.exceptions import RemoteYAMLError
 from pipestat import PipestatError
 from ubiquerg import expandpath, is_command_callable
 from yaml import dump
-from yacman import YAMLConfigManager
+from yacman import YAMLConfigManager, expandpath as expath
 
 from .const import *
 from .exceptions import JobSubmissionException, SampleFailedException
@@ -723,8 +723,11 @@ class SubmissionConductor(object):
 
             # check here to ensure command is executable
             self.check_executable_path(pl_iface)
+            
+            namespaces["pipeline"]["var_templates"] = pl_iface[VAR_TEMPL_KEY] or {}
+            for k, v in namespaces["pipeline"]["var_templates"].items():
+                namespaces["pipeline"]["var_templates"][k] = expath(v)
 
-            namespaces["pipeline"]["var_templates"] = pl_iface[VAR_TEMPL_KEY]
             # pre_submit hook namespace updates
             namespaces = _exec_pre_submit(pl_iface, namespaces)
             self._rendered_ok = False
