@@ -16,7 +16,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### Changed
 - initialization of generic pipeline interface available using subcommand `init-piface`
 - `looper report` will now use pipestat to generate browsable HTML reports if pipestat is configured.
-- looper now works with pipestat v0.4.0.
+- looper now works with pipestat v0.5.0.
 - Removed --toggle-key functionality. 
 - Allow for user to input single integer value for --sel-incl or --sel-excl
 
