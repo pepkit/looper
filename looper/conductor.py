@@ -723,7 +723,7 @@ class SubmissionConductor(object):
 
             # check here to ensure command is executable
             self.check_executable_path(pl_iface)
-            
+
             namespaces["pipeline"]["var_templates"] = pl_iface[VAR_TEMPL_KEY] or {}
             for k, v in namespaces["pipeline"]["var_templates"].items():
                 namespaces["pipeline"]["var_templates"][k] = expath(v)
