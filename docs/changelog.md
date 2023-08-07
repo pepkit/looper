@@ -8,16 +8,16 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - ability to use PEPs from PEPhub without downloading project [#341](https://github.com/pepkit/looper/issues/341)
 - ability to specify pipeline interfaces inside looper config instead/
+- divvy re-integrated in looper
+- divvy inspect -p package
+- Looper will now check that the command path provided in the pipeline interface is callable before submitting.
+
 
 ### Changed
 - initialization of generic pipeline interface available using subcommand `init-piface`
+- `looper report` will now use pipestat to generate browsable HTML reports if pipestat is configured.
+- looper now works with pipestat v0.4.0.
 
-
-## [1.5.0] -- 2023-05-12
-
-### Added
-- divvy re-integrated in looper
-- divvy inspect -p package
 
 ## [1.4.0] -- 2023-04-24
 

@@ -17,14 +17,15 @@ from jinja2.exceptions import UndefinedError
 from peppy.const import CONFIG_KEY, SAMPLE_NAME_ATTR, SAMPLE_YAML_EXT
 from peppy.exceptions import RemoteYAMLError
 from pipestat import PipestatError
-from ubiquerg import expandpath
+from ubiquerg import expandpath, is_command_callable
 from yaml import dump
 from yacman import YAMLConfigManager
 
 from .const import *
-from .exceptions import JobSubmissionException
+from .exceptions import JobSubmissionException, SampleFailedException
 from .processed_project import populate_sample_paths
 from .utils import fetch_sample_flags, jinja_render_template_strictly
+
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -719,6 +720,10 @@ class SubmissionConductor(object):
                 namespaces=namespaces
             )
             _LOGGER.debug(f"namespace pipelines: { pl_iface }")
+
+            # check here to ensure command is executable
+            self.check_executable_path(pl_iface)
+
             namespaces["pipeline"]["var_templates"] = pl_iface[VAR_TEMPL_KEY]
             # pre_submit hook namespace updates
             namespaces = _exec_pre_submit(pl_iface, namespaces)
@@ -766,6 +771,34 @@ class SubmissionConductor(object):
     def _reset_curr_skips(self):
         self._curr_skip_pool = []
         self._curr_skip_size = 0
+
+    def check_executable_path(self, pl_iface):
+        """Determines if supplied pipelines are callable.
+        Raises error and exits Looper if not callable
+        :param dict pl_iface: pipeline interface that stores paths to executables
+        :return bool: True if path is callable.
+        """
+        pipeline_commands = []
+        if "path" in pl_iface.keys():
+            pipeline_commands.append(pl_iface["path"])
+
+        if (
+            "var_templates" in pl_iface.keys()
+            and "pipeline" in pl_iface["var_templates"].keys()
+        ):
+            pipeline_commands.append(pl_iface["var_templates"]["pipeline"])
+        for command in pipeline_commands:
+            try:
+                result = is_command_callable(command)
+            except:
+                _LOGGER.error(f" {command} IS NOT EXECUTABLE. EXITING")
+                raise SampleFailedException
+            else:
+                if not result:
+                    _LOGGER.error(f" {command} IS NOT EXECUTABLE. EXITING...")
+                    raise SampleFailedException
+                else:
+                    return True
 
 
 def _use_sample(flag, skips):
