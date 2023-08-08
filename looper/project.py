@@ -62,7 +62,10 @@ class ProjectContext(object):
             return self.__dict__[item]
         else:
             # Dispatch attribute request to Project.
-            return getattr(self.prj, item)
+            if hasattr(self.prj, item):
+                return getattr(self.prj, item)
+            else:
+                return self.prj.get(item)
 
     def __getitem__(self, item):
         """Provide the Mapping-like item access to the instance's Project."""

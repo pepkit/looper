@@ -49,7 +49,8 @@ class TestLooperBothRuns:
 
         x = test_args_expansion("", cmd)
         with pytest.raises(SystemExit):
-            main(test_args=x)
+            ff = main(test_args=x)
+            print(ff)
 
     @pytest.mark.parametrize("cmd", ["run", "runp"])
     @pytest.mark.parametrize(
@@ -73,8 +74,8 @@ class TestLooperBothRuns:
         x = test_args_expansion(tp, cmd, arg)
         try:
             main(test_args=x)
-        except Exception:
-            raise pytest.fail("DID RAISE {0}".format(Exception))
+        except Exception as err:
+            raise pytest.fail(f"DID RAISE {err}")
 
         sd = os.path.join(get_outdir(tp), "submission")
 

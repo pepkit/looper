@@ -244,7 +244,7 @@ def write_submission_yaml(namespaces):
     path = _get_yaml_path(namespaces, SAMPLE_CWL_YAML_PATH_KEY, "_submission")
     my_namespaces = {}
     for namespace, values in namespaces.items():
-        my_namespaces.update({str(namespace): values.to_dict()})
+        my_namespaces.update({str(namespace): dict(values)})
     with open(path, "w") as yamlfile:
         dump(my_namespaces, yamlfile)
     return my_namespaces
