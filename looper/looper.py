@@ -1047,11 +1047,15 @@ def main(test_args=None):
         sys.exit(1)
     if "config_file" in vars(args):
         if args.config_file is None:
-            m = "No project config defined"
+            m = "No project config defined (peppy)"
             try:
+                # if args.looper_config is None:
                 looper_config_dict = read_looper_dotfile()
                 for looper_config_key, looper_config_item in looper_config_dict.items():
                     setattr(args, looper_config_key, looper_config_item)
+                # else:
+                #     ...
+                # do something here
             except OSError:
                 print(m + f" and dotfile does not exist: {dotfile_path()}")
                 parser.print_help(sys.stderr)
