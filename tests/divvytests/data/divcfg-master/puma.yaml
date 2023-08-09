@@ -1,0 +1,39 @@
+# Environment configuration file for looper
+# This version describes the compute environment on Rivanna at UVA
+
+compute_packages:
+  default:
+    submission_template: templates/localhost_template.sub
+    submission_command: sh
+  local:
+    submission_template: templates/localhost_template.sub
+    submission_command: sh
+  default:
+    submission_template: templates/localhost_template.sub
+    submission_command: sh
+  singularity:
+    submission_template: templates/localhost_singularity_template.sub
+    submission_command: sh
+    singularity_args: -B /ext:/ext
+  docker:
+    submission_template: templates/localhost_docker_template.sub
+    submission_command: sh
+    docker_args: |
+      --user=$(id -u):$(id -g) \
+      --env="DISPLAY" \
+      -e "GENOMES" \
+      -e "REFGENIE" \
+      --volume="$EXTDATA:$EXTDATA" \
+      --volume="/project:/project" \
+      --volume ${CODEBASE}:${CODEBASE} \
+      --volume ${PROCESSED}:${PROCESSED} \
+      --volume="/etc/group:/etc/group:ro" \
+      --volume="/etc/passwd:/etc/passwd:ro" \
+      --volume="/etc/shadow:/etc/shadow:ro"  \
+      --volume="/etc/sudoers.d:/etc/sudoers.d:ro" \
+      --volume="/tmp/.X11-unix:/tmp/.X11-unix:rw" \
+      --workdir="`pwd`" \
+
+# old idea:
+# pipelines: [$CODEBASE/pipelines, $CODEBASE/ATACseq, $CODEBASE/hichip_pipeline, $CODEBASE/open_pipelines]
+

@@ -1,0 +1,21 @@
+description: "divvy configuration file schema"
+version: "0.1"
+required:
+  - compute_packages
+properties:
+  compute_packages:
+    type: object
+    additionalProperties: false
+    patternProperties:
+      ^.*$:
+        type: object
+        additionalProperties: false
+        patternProperties:
+          ^.*$:
+            type: string
+  adapters:
+    type: object
+    additionalProperties: false
+    patternProperties:
+      ^.*$:
+        type: string

@@ -5,24 +5,51 @@ from yaml import dump
 from looper.const import *
 from looper.project import Project
 from tests.conftest import *
+from looper.utils import *
+from looper.looper import main
 
 CMD_STRS = ["string", " --string", " --sjhsjd 212", "7867#$@#$cc@@"]
 
 
-class LooperBothRunsTests:
+def test_cli(prep_temp_pep):
+    tp = prep_temp_pep
+
+    x = test_args_expansion(tp, "run")
+    try:
+        main(test_args=x)
+    except Exception:
+        raise pytest.fail("DID RAISE {0}".format(Exception))
+
+
+def is_connected():
+    """Determines if local machine can connect to the internet."""
+    import socket
+
+    try:
+        host = socket.gethostbyname("www.databio.org")
+        socket.create_connection((host, 80), 2)
+        return True
+    except:
+        pass
+    return False
+
+
+class TestLooperBothRuns:
     @pytest.mark.parametrize("cmd", ["run", "runp"])
     def test_looper_cfg_invalid(self, cmd):
         """Verify looper does not accept invalid cfg paths"""
-        stdout, stderr, rc = subp_exec("jdfskfds/dsjfklds/dsjklsf.yaml", cmd)
-        print_standard_stream(stderr)
-        assert rc != 0
+
+        x = test_args_expansion("jdfskfds/dsjfklds/dsjklsf.yaml", cmd)
+        with pytest.raises(OSError):
+            main(test_args=x)
 
     @pytest.mark.parametrize("cmd", ["run", "runp"])
     def test_looper_cfg_required(self, cmd):
         """Verify looper does not accept invalid cfg paths"""
-        stdout, stderr, rc = subp_exec(pth="", cmd=cmd)
-        print_standard_stream(stderr)
-        assert rc != 0
+
+        x = test_args_expansion("", cmd)
+        with pytest.raises(SystemExit):
+            main(test_args=x)
 
     @pytest.mark.parametrize("cmd", ["run", "runp"])
     @pytest.mark.parametrize(
@@ -42,44 +69,43 @@ class LooperBothRunsTests:
         See https://github.com/pepkit/looper/issues/245#issuecomment-621815222
         """
         tp = prep_temp_pep
-        stdout, stderr, rc = subp_exec(tp, cmd, arg)
+
+        x = test_args_expansion(tp, cmd, arg)
+        try:
+            main(test_args=x)
+        except Exception:
+            raise pytest.fail("DID RAISE {0}".format(Exception))
+
         sd = os.path.join(get_outdir(tp), "submission")
-        print_standard_stream(stderr)
-        assert rc == 0
+
         subs_list = [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
         assert_content_in_all_files(subs_list, arg[1])
 
     @pytest.mark.parametrize("cmd", ["run", "runp"])
     def test_unrecognized_args_not_passing(self, prep_temp_pep, cmd):
         tp = prep_temp_pep
-        stdout, stderr, rc = subp_exec(tp, cmd, ["--unknown-arg", "4"])
-        sd = os.path.join(get_outdir(tp), "submission")
-        print_standard_stream(stderr)
-        assert rc == 0
-        subs_list = [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
-        assert_content_not_in_any_files(subs_list, "--unknown-arg")
 
-    @pytest.mark.parametrize("cmd", ["run", "runp"])
-    def test_run_after_init(self, prep_temp_pep, cmd, dotfile_path):
-        tp = prep_temp_pep
-        stdout, stderr, rc = subp_exec(tp, "init")
-        print_standard_stream(stderr)
-        print_standard_stream(stdout)
-        assert rc == 0
-        assert_content_in_all_files(dotfile_path, tp)
-        stdout, stderr, rc = subp_exec(cmd=cmd)
-        print_standard_stream(stderr)
-        print_standard_stream(stdout)
-        assert rc == 0
+        x = test_args_expansion(tp, cmd, ["--unknown-arg", "4"])
+        try:
+            main(test_args=x)
+            sd = os.path.join(get_outdir(tp), "submission")
+            subs_list = [
+                os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")
+            ]
+            assert_content_not_in_any_files(subs_list, "--unknown-arg")
+        except Exception:
+            raise pytest.fail("DID RAISE {0}".format(Exception))
 
 
-class LooperRunBehaviorTests:
+class TestLooperRunBehavior:
     def test_looper_run_basic(self, prep_temp_pep):
         """Verify looper runs in a basic case and return code is 0"""
         tp = prep_temp_pep
-        stdout, stderr, rc = subp_exec(tp, "run")
-        print_standard_stream(stderr)
-        assert rc == 0
+        x = test_args_expansion(tp, "run")
+        try:
+            main(test_args=x)
+        except Exception:
+            raise pytest.fail("DID RAISE {0}".format(Exception))
 
     def test_looper_multi_pipeline(self, prep_temp_pep):
         tp = prep_temp_pep
@@ -101,6 +127,27 @@ class LooperRunBehaviorTests:
         print_standard_stream(stderr)
         assert rc == 0
         assert "Commands submitted: 6 of 6" not in str(stderr)
+
+    def test_looper_var_templates(self, prep_temp_pep):
+        tp = prep_temp_pep
+        with mod_yaml_data(tp) as config_data:
+            pifaces = config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][
+                PIPELINE_INTERFACES_KEY
+            ]
+            config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][
+                PIPELINE_INTERFACES_KEY
+            ] = pifaces[1]
+        x = test_args_expansion(tp, "run")
+        try:
+            # Test that {looper.piface_dir} is correctly rendered to a path which will show up in the final .sub file
+            main(test_args=x)
+            sd = os.path.join(get_outdir(tp), "submission")
+            subs_list = [
+                os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")
+            ]
+            assert_content_not_in_any_files(subs_list, "looper.piface_dir")
+        except Exception:
+            raise pytest.fail("DID RAISE {0}".format(Exception))
 
     def test_looper_cli_pipeline(self, prep_temp_pep):
         """CLI-specified pipelines overwrite ones from config"""
@@ -175,6 +222,7 @@ class LooperRunBehaviorTests:
         assert rc == 0
         assert "Jobs submitted: 0" in str(stderr)
 
+    @pytest.mark.skipif(not is_connected(), reason="Test needs an internet connection")
     def test_looper_sample_name_whitespace(self, prep_temp_pep):
         """
         Piface is ignored when it does not exist
@@ -209,16 +257,19 @@ class LooperRunBehaviorTests:
     @pytest.mark.parametrize("arg", CMD_STRS)
     def test_cmd_extra_sample(self, prep_temp_pep, arg):
         """
-        string set by sample_modifiers in Sample.command_extra shuld be
+        string set by sample_modifiers in Sample.command_extra should be
         appended to the pipelinecommand
         """
         tp = prep_temp_pep
         with mod_yaml_data(tp) as config_data:
             config_data[SAMPLE_MODS_KEY][CONSTANT_KEY]["command_extra"] = arg
-        stdout, stderr, rc = subp_exec(tp, "run")
+
+        x = test_args_expansion(tp, "run")
+        try:
+            main(test_args=x)
+        except Exception:
+            raise pytest.fail("DID RAISE {0}".format(Exception))
         sd = os.path.join(get_outdir(tp), "submission")
-        print_standard_stream(stderr)
-        assert rc == 0
         subs_list = [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
         assert_content_in_all_files(subs_list, arg)
 
@@ -232,23 +283,25 @@ class LooperRunBehaviorTests:
         tp = prep_temp_pep
         with mod_yaml_data(tp) as config_data:
             config_data[SAMPLE_MODS_KEY][CONSTANT_KEY]["command_extra"] = arg
-        stdout, stderr, rc = subp_exec(
-            tp, "run", ["--command-extra-override='different'"]
-        )
+        x = test_args_expansion(tp, "run", ["--command-extra-override='different'"])
+        try:
+            main(test_args=x)
+        except Exception:
+            raise pytest.fail("DID RAISE {0}".format(Exception))
         sd = os.path.join(get_outdir(tp), "submission")
-        print_standard_stream(stderr)
-        assert rc == 0
         subs_list = [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
         assert_content_not_in_any_files(subs_list, arg)
 
 
-class LooperRunpBehaviorTests:
+class TestLooperRunpBehavior:
     def test_looper_runp_basic(self, prep_temp_pep):
         """Verify looper runps in a basic case and return code is 0"""
         tp = prep_temp_pep
-        stdout, stderr, rc = subp_exec(tp, "runp")
-        print_standard_stream(stderr)
-        assert rc == 0
+        x = test_args_expansion(tp, "runp")
+        try:
+            main(test_args=x)
+        except Exception:
+            raise pytest.fail("DID RAISE {0}".format(Exception))
 
     def test_looper_multi_pipeline(self, prep_temp_pep):
         tp = prep_temp_pep
@@ -273,21 +326,25 @@ class LooperRunpBehaviorTests:
         tp = prep_temp_pep
         with mod_yaml_data(tp) as config_data:
             config_data[LOOPER_KEY]["command_extra"] = arg
-        stdout, stderr, rc = subp_exec(tp, "runp")
+        x = test_args_expansion(tp, "runp")
+        try:
+            main(test_args=x)
+        except Exception:
+            raise pytest.fail("DID RAISE {0}".format(Exception))
         sd = os.path.join(get_outdir(tp), "submission")
-        print_standard_stream(stderr)
-        assert rc == 0
         subs_list = [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
         assert_content_in_all_files(subs_list, arg)
 
 
-class LooperRunPreSubmissionHooksTests:
+class TestLooperRunPreSubmissionHooks:
     def test_looper_basic_plugin(self, prep_temp_pep):
         tp = prep_temp_pep
-        stdout, stderr, rc = subp_exec(tp, "run")
+        x = test_args_expansion(tp, "run")
+        try:
+            main(test_args=x)
+        except Exception:
+            raise pytest.fail("DID RAISE {0}".format(Exception))
         sd = os.path.join(get_outdir(tp), "submission")
-        print_standard_stream(stderr)
-        assert rc == 0
         verify_filecount_in_dir(sd, ".yaml", 3)
 
     @pytest.mark.parametrize(
@@ -298,6 +355,7 @@ class LooperRunPreSubmissionHooksTests:
             ("looper.write_sample_yaml_cwl", "cwl.yaml"),
         ],
     )
+    @pytest.mark.skipif(not is_connected(), reason="Test needs an internet connection")
     def test_looper_other_plugins(self, prep_temp_pep, plugin, appendix):
         tp = prep_temp_pep
         for path in {
@@ -305,10 +363,13 @@ class LooperRunPreSubmissionHooksTests:
         }:
             with mod_yaml_data(path) as piface_data:
                 piface_data[PRE_SUBMIT_HOOK_KEY][PRE_SUBMIT_PY_FUN_KEY] = [plugin]
-        stdout, stderr, rc = subp_exec(tp, "run")
+
+        x = test_args_expansion(tp, "run")
+        try:
+            main(test_args=x)
+        except Exception:
+            raise pytest.fail("DID RAISE {0}".format(Exception))
         sd = os.path.join(get_outdir(tp), "submission")
-        print_standard_stream(stderr)
-        assert rc == 0
         verify_filecount_in_dir(sd, appendix, 3)
 
     @pytest.mark.parametrize(
@@ -325,62 +386,74 @@ class LooperRunPreSubmissionHooksTests:
         }:
             with mod_yaml_data(path) as piface_data:
                 piface_data[PRE_SUBMIT_HOOK_KEY][PRE_SUBMIT_CMD_KEY] = [cmd]
-        stdout, stderr, rc = subp_exec(tp, "run")
+        x = test_args_expansion(tp, "run")
+        try:
+            main(test_args=x)
+        except Exception:
+            raise pytest.fail("DID RAISE {0}".format(Exception))
         sd = os.path.join(get_outdir(tp), "submission")
-        print_standard_stream(stderr)
-        assert rc == 0
         verify_filecount_in_dir(sd, "test.txt", 3)
 
 
-class LooperRunSubmissionScriptTests:
+class TestLooperRunSubmissionScript:
     def test_looper_run_produces_submission_scripts(self, prep_temp_pep):
         tp = prep_temp_pep
         with open(tp, "r") as conf_file:
             config_data = safe_load(conf_file)
         outdir = config_data[LOOPER_KEY][OUTDIR_KEY]
-        stdout, stderr, rc = subp_exec(tp, "run")
+        x = test_args_expansion(tp, "run")
+        try:
+            main(test_args=x)
+        except Exception:
+            raise pytest.fail("DID RAISE {0}".format(Exception))
         sd = os.path.join(outdir, "submission")
-        print_standard_stream(stderr)
-        assert rc == 0
         verify_filecount_in_dir(sd, ".sub", 6)
 
     def test_looper_lumping(self, prep_temp_pep):
         tp = prep_temp_pep
-        stdout, stderr, rc = subp_exec(tp, "run", ["--lumpn", "2"])
+        x = test_args_expansion(tp, "run", ["--lumpn", "2"])
+        try:
+            main(test_args=x)
+        except Exception:
+            raise pytest.fail("DID RAISE {0}".format(Exception))
         sd = os.path.join(get_outdir(tp), "submission")
-        print_standard_stream(stderr)
-        assert rc == 0
         verify_filecount_in_dir(sd, ".sub", 4)
 
     def test_looper_limiting(self, prep_temp_pep):
         tp = prep_temp_pep
-        stdout, stderr, rc = subp_exec(tp, "run", ["--limit", "2"])
+        x = test_args_expansion(tp, "run", ["--limit", "2"])
+        try:
+            main(test_args=x)
+        except Exception:
+            raise pytest.fail("DID RAISE {0}".format(Exception))
         sd = os.path.join(get_outdir(tp), "submission")
-        print_standard_stream(stderr)
-        assert rc == 0
         verify_filecount_in_dir(sd, ".sub", 4)
 
 
-class LooperComputeTests:
+class TestLooperCompute:
     @pytest.mark.parametrize("cmd", ["run", "runp"])
     def test_looper_respects_pkg_selection(self, prep_temp_pep, cmd):
         tp = prep_temp_pep
-        stdout, stderr, rc = subp_exec(tp, cmd, ["--package", "local"])
+        x = test_args_expansion(tp, cmd, ["--package", "local"])
+        try:
+            main(test_args=x)
+        except Exception:
+            raise pytest.fail("DID RAISE {0}".format(Exception))
         sd = os.path.join(get_outdir(tp), "submission")
-        print_standard_stream(stderr)
-        assert rc == 0
         subs_list = [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
         assert_content_not_in_any_files(subs_list, "#SBATCH")
 
     @pytest.mark.parametrize("cmd", ["run", "runp"])
     def test_looper_uses_cli_compute_options_spec(self, prep_temp_pep, cmd):
         tp = prep_temp_pep
-        stdout, stderr, rc = subp_exec(
+        x = test_args_expansion(
             tp, cmd, ["--compute", "mem=12345", "--package", "slurm"]
         )
+        try:
+            main(test_args=x)
+        except Exception:
+            raise pytest.fail("DID RAISE {0}".format(Exception))
         sd = os.path.join(get_outdir(tp), "submission")
-        print_standard_stream(stderr)
-        assert rc == 0
         subs_list = [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
         assert_content_in_all_files(subs_list, "#SBATCH --mem='12345'")
 
@@ -391,16 +464,20 @@ class LooperComputeTests:
         settings_file_path = os.path.join(td, "settings.yaml")
         with open(settings_file_path, "w") as sf:
             dump({"mem": "testin_mem"}, sf)
-        stdout, stderr, rc = subp_exec(tp, cmd, ["--settings", settings_file_path])
-        print_standard_stream(stderr)
-        assert rc == 0
+        x = test_args_expansion(tp, cmd, ["--settings", settings_file_path])
+        try:
+            main(test_args=x)
+        except Exception:
+            raise pytest.fail("DID RAISE {0}".format(Exception))
 
     @pytest.mark.parametrize("cmd", ["run", "runp"])
     def test_nonexistent_yaml_settings_disregarded(self, prep_temp_pep, cmd):
         tp = prep_temp_pep
-        stdout, stderr, rc = subp_exec(tp, cmd, ["--settings", "niema.yaml"])
-        print_standard_stream(stderr)
-        assert rc == 0
+        x = test_args_expansion(tp, cmd, ["--settings", "niema.yaml"])
+        try:
+            main(test_args=x)
+        except Exception:
+            raise pytest.fail("DID RAISE {0}".format(Exception))
 
     @pytest.mark.parametrize("cmd", ["run", "runp"])
     def test_cli_yaml_settings_passes_settings(self, prep_temp_pep, cmd):
@@ -409,11 +486,14 @@ class LooperComputeTests:
         settings_file_path = os.path.join(td, "settings.yaml")
         with open(settings_file_path, "w") as sf:
             dump({"mem": "testin_mem"}, sf)
-        stdout, stderr, rc = subp_exec(
+
+        x = test_args_expansion(
             tp, cmd, ["--settings", settings_file_path, "-p", "slurm"]
         )
-        print_standard_stream(stderr)
-        assert rc == 0
+        try:
+            main(test_args=x)
+        except Exception:
+            raise pytest.fail("DID RAISE {0}".format(Exception))
         sd = os.path.join(get_outdir(tp), "submission")
         subs_list = [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
         assert_content_in_all_files(subs_list, "testin_mem")
@@ -425,13 +505,75 @@ class LooperComputeTests:
         settings_file_path = os.path.join(td, "settings.yaml")
         with open(settings_file_path, "w") as sf:
             dump({"mem": "testin_mem"}, sf)
-        stdout, stderr, rc = subp_exec(
+        x = test_args_expansion(
             tp,
             cmd,
             ["--settings", settings_file_path, "--compute", "mem=10", "-p", "slurm"],
         )
-        print_standard_stream(stderr)
-        assert rc == 0
+        try:
+            main(test_args=x)
+        except Exception:
+            raise pytest.fail("DID RAISE {0}".format(Exception))
+
         sd = os.path.join(get_outdir(tp), "submission")
         subs_list = [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
         assert_content_not_in_any_files(subs_list, "testin_mem")
+
+
+class TestLooperConfig:
+    @pytest.mark.parametrize("cmd", ["run", "runp"])
+    def test_init_config_file(self, prep_temp_pep, cmd, dotfile_path):
+        tp = prep_temp_pep
+        stdout, stderr, rc = subp_exec(tp, "init")
+        print_standard_stream(stderr)
+        print_standard_stream(stdout)
+        assert rc == 0
+        assert_content_in_all_files(dotfile_path, tp)
+        stdout, stderr, rc = subp_exec(cmd=cmd)
+        print_standard_stream(stderr)
+        print_standard_stream(stdout)
+        assert rc == 0
+
+    def test_correct_execution_of_config(self, prepare_pep_with_dot_file):
+        dot_file_path = prepare_pep_with_dot_file
+        x = test_args_expansion("", "run")
+        try:
+            main(test_args=x)
+        except Exception:
+            raise pytest.fail("DID RAISE {0}".format(Exception))
+        os.remove(dot_file_path)
+
+
+class TestLooperPEPhub:
+    @pytest.mark.parametrize(
+        "pep_path",
+        [
+            "pephub::some/registry:path",
+            "different/registry:path",
+            "default/tag",
+        ],
+    )
+    def test_pephub_registry_path_recognition(self, pep_path):
+        assert is_registry_path(pep_path) is True
+
+    @pytest.mark.parametrize(
+        "pep_path",
+        [
+            "some/path/to/pep.yaml",
+            "different/path.yaml",
+            "default/path/to/file/without/yaml",
+            "file_in_folder.yaml",
+            "not_yaml_file",
+        ],
+    )
+    def test_config_recognition(self, pep_path):
+        assert is_registry_path(pep_path) is False
+
+    def test_init_project_using_dict(self, prep_temp_config_with_pep):
+        """Verify looper runs using pephub in a basic case and return code is 0"""
+        raw_pep, piface1s_path = prep_temp_config_with_pep
+        init_project = Project(
+            runp=True, project_dict=raw_pep, sample_pipeline_interfaces=piface1s_path
+        )
+
+        assert len(init_project.pipeline_interfaces) == 3

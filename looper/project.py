@@ -10,7 +10,7 @@ except ImportError:
     cached_property = property
 from logging import getLogger
 
-from divvy import ComputingConfiguration
+from .divvy import ComputingConfiguration
 from eido import PathAttrNotFoundError, read_schema
 from jsonschema import ValidationError
 from pandas.core.common import flatten
@@ -20,7 +20,6 @@ from peppy.utils import make_abs_via_cfg
 from pipestat import PipestatError, PipestatManager
 from ubiquerg import expandpath, is_command_callable
 
-from .const import *
 from .exceptions import *
 from .pipeline_interface import PipelineInterface
 from .processed_project import populate_project_paths, populate_sample_paths
@@ -97,9 +96,23 @@ class Project(peppyProject):
         compute settings.
     """
 
-    def __init__(self, cfg, amendments=None, divcfg_path=None, runp=False, **kwargs):
+    def __init__(
+        self, cfg=None, amendments=None, divcfg_path=None, runp=False, **kwargs
+    ):
         super(Project, self).__init__(cfg=cfg, amendments=amendments)
+        prj_dict = kwargs.get("project_dict")
+
+        # init project from pephub:
+        if prj_dict is not None and cfg is None:
+            self.from_dict(prj_dict)
+            self["_config_file"] = os.getcwd()
+
         setattr(self, EXTRA_KEY, dict())
+
+        # add sample pipeline interface to the project
+        if kwargs.get(SAMPLE_PL_ARG):
+            self.set_sample_piface(kwargs.get(SAMPLE_PL_ARG))
+
         for attr_name in CLI_PROJ_ATTRS:
             if attr_name in kwargs:
                 setattr(self[EXTRA_KEY], attr_name, kwargs[attr_name])
@@ -127,15 +140,6 @@ class Project(peppyProject):
         :return str: name of the pipeline interface attribute
         """
         return self._extra_cli_or_cfg(PIFACE_KEY_SELECTOR) or PIPELINE_INTERFACES_KEY
-
-    @property
-    def toggle_key(self):
-        """
-        Name of the toggle attribute for this project
-
-        :return str: name of the toggle attribute
-        """
-        return self._extra_cli_or_cfg(TOGGLE_KEY_SELECTOR) or SAMPLE_TOGGLE_ATTR
 
     @property
     def selected_compute_package(self):
@@ -486,7 +490,7 @@ class Project(peppyProject):
             :return str: retrieved configuration value
             """
             if pipestat_sect is not None and attr_name in pipestat_sect:
-                return getattr(object, pipestat_sect[attr_name])
+                return pipestat_sect[attr_name]
             try:
                 return getattr(object, default)
             except AttributeError:
@@ -523,13 +527,7 @@ class Project(peppyProject):
         )
 
         pipestat_config = self._resolve_path_with_cfg(pth=pipestat_config)
-        namespace = _get_val_from_attr(
-            pipestat_section,
-            self.config if project_level else self.get_sample(sample_name),
-            PIPESTAT_NAMESPACE_ATTR_KEY,
-            "name" if project_level else self.sample_table_index,
-            pipestat_config and os.path.exists(pipestat_config),
-        )
+
         results_file_path = _get_val_from_attr(
             pipestat_section,
             self.config if project_level else self.get_sample(sample_name),
@@ -553,10 +551,9 @@ class Project(peppyProject):
                 else f"{piface.pipeline_name}_{'_'.join(self.amendments)}"
             )
             ret[piface.pipeline_name] = {
-                "namespace": namespace,
-                "config": pipestat_config,
+                "config_file": pipestat_config,
                 "results_file_path": results_file_path,
-                "record_identifier": rec_id,
+                "sample_name": rec_id,
                 "schema_path": piface.get_pipeline_schemas(OUTPUT_SCHEMA_KEY),
             }
         return ret
@@ -698,6 +695,18 @@ class Project(peppyProject):
             _LOGGER.warning(msg)
         return samples_by_piface
 
+    def set_sample_piface(self, sample_piface: Union[List[str], str]) -> NoReturn:
+        """
+        Add sample pipeline interfaces variable to object
+
+        :param list | str sample_piface: sample pipeline interface
+        """
+        self._config.setdefault("sample_modifiers", {})
+        self._config["sample_modifiers"].setdefault("append", {})
+        self.config["sample_modifiers"]["append"]["pipeline_interfaces"] = sample_piface
+
+        self.modify_samples()
+
 
 def fetch_samples(
     prj, selector_attribute=None, selector_include=None, selector_exclude=None
@@ -732,10 +741,21 @@ def fetch_samples(
         Python2;
         also possible if name of attribute for selection isn't a string
     """
-    if selector_attribute is None or (not selector_include and not selector_exclude):
-        # Simple; keep all samples.  In this case, this function simply
-        # offers a list rather than an iterator.
-        return list(prj.samples)
+    if not selector_include and not selector_exclude:
+        # Default case where user does not use selector_include or selector exclude.
+        # Assume that user wants to exclude samples if toggle = 0.
+        if any([hasattr(s, "toggle") for s in prj.samples]):
+            selector_exclude = [0]
+
+            def keep(s):
+                return (
+                    not hasattr(s, selector_attribute)
+                    or getattr(s, selector_attribute) not in selector_exclude
+                )
+
+            return list(filter(keep, prj.samples))
+        else:
+            return list(prj.samples)
 
     if not isinstance(selector_attribute, str):
         raise TypeError(
@@ -761,8 +781,13 @@ def fetch_samples(
 
     # Ensure that we're working with sets.
     def make_set(items):
-        if isinstance(items, str):
-            items = [items]
+        try:
+            # Check if user input single integer value for inclusion/exclusion criteria
+            if len(items) == 1:
+                items = list(map(int, items))  # list(int(items[0]))
+        except:
+            if isinstance(items, str):
+                items = [items]
         return items
 
     # Use the attr check here rather than exception block in case the

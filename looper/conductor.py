@@ -17,14 +17,15 @@ from jinja2.exceptions import UndefinedError
 from peppy.const import CONFIG_KEY, SAMPLE_NAME_ATTR, SAMPLE_YAML_EXT
 from peppy.exceptions import RemoteYAMLError
 from pipestat import PipestatError
-from ubiquerg import expandpath
+from ubiquerg import expandpath, is_command_callable
 from yaml import dump
 from yacman import YAMLConfigManager, expandpath as expath
 
 from .const import *
-from .exceptions import JobSubmissionException
+from .exceptions import JobSubmissionException, SampleFailedException
 from .processed_project import populate_sample_paths
 from .utils import fetch_sample_flags, jinja_render_template_strictly
+
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -333,6 +334,7 @@ class SubmissionConductor(object):
         self._num_cmds_submitted = 0
         self._curr_size = 0
         self._failed_sample_names = []
+        self._curr_skip_pool = []
 
         if self.extra_pipe_args:
             _LOGGER.debug(
@@ -438,14 +440,6 @@ class SubmissionConductor(object):
                     msg += f". Determined status: {', '.join(sample_statuses)}"
                 _LOGGER.info(msg)
 
-        if self.prj.toggle_key in sample and int(sample[self.prj.toggle_key]) == 0:
-            _LOGGER.warning(
-                "> Skipping sample ({}: {})".format(
-                    self.prj.toggle_key, sample[self.prj.toggle_key]
-                )
-            )
-            use_this_sample = False
-
         skip_reasons = []
         validation = {}
         validation.setdefault(INPUT_FILE_SIZE_KEY, 0)
@@ -475,11 +469,8 @@ class SubmissionConductor(object):
         else:
             self._curr_skip_size += float(validation[INPUT_FILE_SIZE_KEY])
             self._curr_skip_pool.append(sample)
-            if self._is_full(self._curr_skip_pool, self._curr_skip_size):
-                self._skipped_sample_pools.append(
-                    (self._curr_skip_pool, self._curr_skip_size)
-                )
-                self._reset_curr_skips()
+            self.write_script(self._curr_skip_pool, self._curr_skip_size)
+            self._reset_curr_skips()
 
         return skip_reasons
 
@@ -670,8 +661,8 @@ class SubmissionConductor(object):
             full_namespace = {
                 "schema": psm.schema_path,
                 "results_file": psm.file,
-                "record_id": psm.record_identifier,
-                "namespace": psm.namespace,
+                "record_id": psm.sample_name,
+                "namespace": psm.project_name,
                 "config": psm.config_path,
             }
             filtered_namespace = {k: v for k, v in full_namespace.items() if v}
@@ -729,9 +720,14 @@ class SubmissionConductor(object):
                 namespaces=namespaces
             )
             _LOGGER.debug(f"namespace pipelines: { pl_iface }")
+
+            # check here to ensure command is executable
+            self.check_executable_path(pl_iface)
+
             namespaces["pipeline"]["var_templates"] = pl_iface[VAR_TEMPL_KEY] or {}
             for k, v in namespaces["pipeline"]["var_templates"].items():
                 namespaces["pipeline"]["var_templates"][k] = expath(v)
+
             # pre_submit hook namespace updates
             namespaces = _exec_pre_submit(pl_iface, namespaces)
             self._rendered_ok = False
@@ -747,8 +743,10 @@ class SubmissionConductor(object):
             else:
                 commands.append("{} {}".format(argstring, self.extra_pipe_args))
                 self._rendered_ok = True
-                self._num_good_job_submissions += 1
-                self._num_total_job_submissions += 1
+                if sample not in self._curr_skip_pool:
+                    self._num_good_job_submissions += 1
+                    self._num_total_job_submissions += 1
+
         looper["command"] = "\n".join(commands)
         if self.collate:
             _LOGGER.debug("samples namespace:\n{}".format(self.prj.samples))
@@ -768,23 +766,6 @@ class SubmissionConductor(object):
             output_path=subm_base + ".sub", extra_vars=[{"looper": looper}]
         )
 
-    def write_skipped_sample_scripts(self):
-        """
-        For any sample skipped during initial processing write submission script
-        """
-        if self._curr_skip_pool:
-            # move any hanging samples from current skip pool to the main pool
-            self._skipped_sample_pools.append(
-                (self._curr_skip_pool, self._curr_skip_size)
-            )
-        if self._skipped_sample_pools:
-            _LOGGER.info(
-                "Writing {} submission scripts for skipped samples".format(
-                    len(self._skipped_sample_pools)
-                )
-            )
-            [self.write_script(pool, size) for pool, size in self._skipped_sample_pools]
-
     def _reset_pool(self):
         """Reset the state of the pool of samples"""
         self._pool = []
@@ -793,6 +774,34 @@ class SubmissionConductor(object):
     def _reset_curr_skips(self):
         self._curr_skip_pool = []
         self._curr_skip_size = 0
+
+    def check_executable_path(self, pl_iface):
+        """Determines if supplied pipelines are callable.
+        Raises error and exits Looper if not callable
+        :param dict pl_iface: pipeline interface that stores paths to executables
+        :return bool: True if path is callable.
+        """
+        pipeline_commands = []
+        if "path" in pl_iface.keys():
+            pipeline_commands.append(pl_iface["path"])
+
+        if (
+            "var_templates" in pl_iface.keys()
+            and "pipeline" in pl_iface["var_templates"].keys()
+        ):
+            pipeline_commands.append(pl_iface["var_templates"]["pipeline"])
+        for command in pipeline_commands:
+            try:
+                result = is_command_callable(command)
+            except:
+                _LOGGER.error(f" {command} IS NOT EXECUTABLE. EXITING")
+                raise SampleFailedException
+            else:
+                if not result:
+                    _LOGGER.error(f" {command} IS NOT EXECUTABLE. EXITING...")
+                    raise SampleFailedException
+                else:
+                    return True
 
 
 def _use_sample(flag, skips):

@@ -5,22 +5,17 @@ Looper: a pipeline submission engine. https://github.com/pepkit/looper
 
 import abc
 import csv
-import glob
 import logging
-import os
 import subprocess
 import sys
-from typing import *
 
 if sys.version_info < (3, 3):
     from collections import Mapping
 else:
     from collections.abc import Mapping
 
-from collections import defaultdict
-
+import logmuse
 import pandas as _pd
-import yaml
 
 # Need specific sequence of actions for colorama imports?
 from colorama import init
@@ -29,12 +24,13 @@ init()
 from shutil import rmtree
 
 from colorama import Fore, Style
-from divvy import DEFAULT_COMPUTE_RESOURCES_NAME, select_divvy_config
 from eido import inspect_project, validate_config, validate_sample
 from eido.exceptions import EidoValidationError
 from jsonschema import ValidationError
+from pephubclient import PEPHubClient
 from peppy.const import *
 from peppy.exceptions import RemoteYAMLError
+from rich.color import Color
 from rich.console import Console
 from rich.table import Table
 from ubiquerg.cli_tools import query_yes_no
@@ -43,6 +39,7 @@ from ubiquerg.collection import uniqify
 from . import __version__, build_parser, validate_post_parse
 from .conductor import SubmissionConductor
 from .const import *
+from .divvy import DEFAULT_COMPUTE_RESOURCES_NAME, select_divvy_config
 from .exceptions import (
     JobSubmissionException,
     MisconfigurationException,
@@ -93,7 +90,6 @@ class Checker(Executor):
 
         :param argparse.Namespace: arguments provided to the command
         """
-        from rich.color import Color
 
         # aggregate pipeline status data
         status = {}
@@ -108,7 +104,7 @@ class Checker(Executor):
             for sample in self.prj.samples:
                 psms = self.prj.get_pipestat_managers(sample_name=sample.sample_name)
                 for pipeline_name, psm in psms.items():
-                    s = psm.get_status()
+                    s = psm.get_status(sample_name=sample.sample_name)
                     status.setdefault(pipeline_name, {})
                     status[pipeline_name][sample.sample_name] = s
                     _LOGGER.debug(f"{sample.sample_name} ({pipeline_name}): {s}")
@@ -437,7 +433,7 @@ class Runner(Executor):
             try:
                 validate_config(self.prj, schema_file)
             except RemoteYAMLError:
-                _LOGGER.warn(
+                _LOGGER.warning(
                     "Could not read remote schema, skipping config validation."
                 )
 
@@ -513,7 +509,6 @@ class Runner(Executor):
             conductor.submit(force=True)
             job_sub_total += conductor.num_job_submissions
             cmd_sub_total += conductor.num_cmd_submissions
-            conductor.write_skipped_sample_scripts()
 
         # Report what went down.
         _LOGGER.info("\nLooper finished")
@@ -575,28 +570,20 @@ class Reporter(Executor):
         # initialize the report builder
         p = self.prj
         project_level = args.project
+
         if project_level:
-            html_report_builder_project = HTMLReportBuilderProject(prj=p)
-            self.counter = LooperCounter(len(p.project_pipeline_interfaces))
-            for piface in p.project_pipeline_interface_sources:
-                pn = PipelineInterface(piface).pipeline_name
-                _LOGGER.info(
-                    self.counter.show(name=p.name, type="project", pipeline_name=pn)
-                )
-                # Do the stats and object summarization.
-                # run the report builder. a set of HTML pages is produced
-                report_path = html_report_builder_project(piface_source=piface)
-                _LOGGER.info(
-                    f"Project-level pipeline '{pn}' HTML report: {report_path}"
-                )
+            psms = self.prj.get_pipestat_managers(project_level=True)
+            print(psms)
+            for name, psm in psms.items():
+                # Summarize will generate the static HTML Report Function
+                psm.summarize()
         else:
-            html_report_builder = HTMLReportBuilder(prj=self.prj)
-            for sample_piface_source in self.prj.pipeline_interface_sources:
-                # Do the stats and object summarization.
-                pn = PipelineInterface(sample_piface_source).pipeline_name
-                # run the report builder. a set of HTML pages is produced
-                report_path = html_report_builder(pipeline_name=pn)
-                _LOGGER.info(f"Sample-level pipeline '{pn}' HTML report: {report_path}")
+            for sample in p.prj.samples:
+                psms = self.prj.get_pipestat_managers(sample_name=sample.sample_name)
+                print(psms)
+                for name, psm in psms.items():
+                    # Summarize will generate the static HTML Report Function
+                    psm.summarize()
 
 
 class Tabulator(Executor):
@@ -1029,14 +1016,18 @@ def _proc_resources_spec(args):
     return settings_data
 
 
-def main():
+def main(test_args=None):
     """Primary workflow"""
     global _LOGGER
-    import logmuse
 
     parser, aux_parser = build_parser()
     aux_parser.suppress_defaults()
-    args, remaining_args = parser.parse_known_args()
+
+    if test_args:
+        args, remaining_args = parser.parse_known_args(args=test_args)
+    else:
+        args, remaining_args = parser.parse_known_args()
+
     cli_use_errors = validate_post_parse(args)
     if cli_use_errors:
         parser.print_help(sys.stderr)
@@ -1046,26 +1037,55 @@ def main():
     if args.command is None:
         parser.print_help(sys.stderr)
         sys.exit(1)
-    if args.config_file is None:
-        m = "No project config defined"
-        try:
-            setattr(args, "config_file", read_cfg_from_dotfile())
-        except OSError:
-            print(m + f" and dotfile does not exist: {dotfile_path()}")
-            parser.print_help(sys.stderr)
-            sys.exit(1)
-        else:
-            print(
-                m + f", using: {read_cfg_from_dotfile()}. "
-                f"Read from dotfile ({dotfile_path()})."
-            )
-    if args.command == "init":
-        if args.piface == True:
-            sys.exit(int(not init_generic_pipeline()))
-        sys.exit(int(not init_dotfile(dotfile_path(), args.config_file, args.force)))
-    args = enrich_args_via_cfg(args, aux_parser)
+    if "config_file" in vars(args):
+        if args.config_file is None:
+            msg = "No project config defined (peppy)"
+            try:
+                if args.looper_config:
+                    looper_config_dict = read_looper_config_file(args.looper_config)
+                else:
+                    looper_config_dict = read_looper_dotfile()
+                    print(
+                        msg + f", using: {read_looper_dotfile()}. "
+                        f"Read from dotfile ({dotfile_path()})."
+                    )
 
-    from logmuse import init_logger
+                for looper_config_key, looper_config_item in looper_config_dict.items():
+                    setattr(args, looper_config_key, looper_config_item)
+
+            except OSError:
+                print(msg + f" and dotfile does not exist: {dotfile_path()}")
+                parser.print_help(sys.stderr)
+                sys.exit(1)
+        else:
+            _LOGGER.warning(
+                "The Looper config specification through the PEP project is deprecated and will "
+                "be removed in future versions. Please use the new running method by "
+                f"utilizing a looper config file. For more information: {'here is more information'} "
+            )
+
+    if args.command == "init":
+        sys.exit(
+            int(
+                not init_dotfile(
+                    dotfile_path(),
+                    args.config_file,
+                    args.output_dir,
+                    args.sample_pipeline_interfaces,
+                    args.project_pipeline_interfaces,
+                    args.force,
+                )
+            )
+        )
+
+    if args.command == "init-piface":
+        sys.exit(int(not init_generic_pipeline()))
+
+    args = enrich_args_via_cfg(args, aux_parser, test_args)
+
+    # If project pipeline interface defined in the cli, change name to: "pipeline_interface"
+    if vars(args)[PROJECT_PL_ARG]:
+        args.pipeline_interfaces = vars(args)[PROJECT_PL_ARG]
 
     _LOGGER = logmuse.logger_via_cli(args, make_root=True)
 
@@ -1083,17 +1103,37 @@ def main():
     )
 
     # Initialize project
-    try:
-        p = Project(
-            cfg=args.config_file,
-            amendments=args.amend,
-            divcfg_path=divcfg,
-            runp=args.command == "runp",
-            **{attr: getattr(args, attr) for attr in CLI_PROJ_ATTRS if attr in args},
-        )
-    except yaml.parser.ParserError as e:
-        _LOGGER.error("Project config parse failed -- {}".format(e))
-        sys.exit(1)
+    if is_registry_path(args.config_file):
+        if vars(args)[SAMPLE_PL_ARG]:
+            p = Project(
+                amendments=args.amend,
+                divcfg_path=divcfg,
+                runp=args.command == "runp",
+                project_dict=PEPHubClient()._load_raw_pep(
+                    registry_path=args.config_file
+                ),
+                **{
+                    attr: getattr(args, attr) for attr in CLI_PROJ_ATTRS if attr in args
+                },
+            )
+        else:
+            raise MisconfigurationException(
+                f"`sample_pipeline_interface` is missing. Provide it in the parameters."
+            )
+    else:
+        try:
+            p = Project(
+                cfg=args.config_file,
+                amendments=args.amend,
+                divcfg_path=divcfg,
+                runp=args.command == "runp",
+                **{
+                    attr: getattr(args, attr) for attr in CLI_PROJ_ATTRS if attr in args
+                },
+            )
+        except yaml.parser.ParserError as e:
+            _LOGGER.error(f"Project config parse failed -- {e}")
+            sys.exit(1)
 
     selected_compute_pkg = p.selected_compute_package or DEFAULT_COMPUTE_RESOURCES_NAME
     if p.dcc is not None and not p.dcc.activate_package(selected_compute_pkg):

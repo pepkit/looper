@@ -8,12 +8,15 @@ from logging import getLogger
 import os
 import sys
 from typing import *
+import re
 
 import jinja2
 import yaml
 from peppy import Project as peppyProject
 from peppy.const import *
-from ubiquerg import convert_value, expandpath
+from ubiquerg import convert_value, expandpath, parse_registry_path
+from pephubclient.constants import RegistryPath
+from pydantic.error_wrappers import ValidationError
 
 from .const import *
 from .exceptions import MisconfigurationException
@@ -224,7 +227,7 @@ def read_yaml_file(filepath):
     return data
 
 
-def enrich_args_via_cfg(parser_args, aux_parser):
+def enrich_args_via_cfg(parser_args, aux_parser, test_args=None):
     """
     Read in a looper dotfile and set arguments.
 
@@ -241,7 +244,12 @@ def enrich_args_via_cfg(parser_args, aux_parser):
         else dict()
     )
     result = argparse.Namespace()
-    cli_args, _ = aux_parser.parse_known_args()
+    if test_args:
+        cli_args, _ = aux_parser.parse_known_args(args=test_args)
+
+    else:
+        cli_args, _ = aux_parser.parse_known_args()
+
     for dest in vars(parser_args):
         if dest not in POSITIONAL or not hasattr(result, dest):
             if dest in cli_args:
@@ -316,82 +324,156 @@ def _get_subcommand_args(parser_args):
 
 
 def init_generic_pipeline():
-    # check for pipeline folder
+    """
+    Create generic pipeline interface
+    """
     try:
         os.makedirs("pipeline")
     except FileExistsError:
-        print("Pipeline folder already exists.")
         pass
 
     # Destination one level down from CWD in pipeline folder
     dest_file = os.path.join(os.getcwd(), "pipeline", LOOPER_GENERIC_PIPELINE)
 
-    # Determine Lines for Generic Pipeline Interface
-    line1 = "pipeline_name: count_lines\n"
-    line2 = "pipeline_type: sample\n"
-    line3 = "output_schema: output_schema.yaml\n"
-    line4 = "var_templates:\n"
-    line5 = "  pipeline: '{looper.piface_dir}/count_lines.sh'\n"
-    line6 = "command_template: >\n"
-    line7 = "  {pipeline.var_templates.pipeline} {sample.file} --output-parent {looper.sample_output_folder}\n"
-    yaml_body = line1 + line2 + line3 + line4 + line5 + line6 + line7
+    # Determine Generic Pipeline Interface
+    generic_pipeline_dict = {
+        "pipeline_name": "count_lines",
+        "pipeline_type": "sample",
+        "output_schema": "output_schema.yaml",
+        "var_templates": {"pipeline": "{looper.piface_dir}/count_lines.sh"},
+        "command_template": "{pipeline.var_templates.pipeline} {sample.file} "
+        "--output-parent {looper.sample_output_folder}",
+    }
 
     # Write file
     if not os.path.exists(dest_file):
-        with open(dest_file, mode="w") as file:
-            file.write(str(yaml_body))
+        with open(dest_file, "w") as file:
+            yaml.dump(generic_pipeline_dict, file)
         print(f"Generic pipeline interface successfully created at: {dest_file}")
     else:
-        print("Generic pipeline interface file already exists. Skipping creation.")
+        print(
+            f"Generic pipeline interface file already exists `{dest_file}`. Skipping creation.."
+        )
 
     return True
 
 
-def init_dotfile(path, cfg_path, force=False):
+def init_dotfile(
+    path: str,
+    cfg_path: str = None,
+    output_dir: str = None,
+    sample_pipeline_interfaces: Union[List[str], str] = None,
+    project_pipeline_interfaces: Union[List[str], str] = None,
+    force=False,
+):
     """
     Initialize looper dotfile
 
     :param str path: absolute path to the file to initialize
     :param str cfg_path: path to the config file. Absolute or relative to 'path'
+    :param str output_dir: path to the output directory
+    :param str|list sample_pipeline_interfaces: path or list of paths to sample pipeline interfaces
+    :param str|list project_pipeline_interfaces: path or list of paths to project pipeline interfaces
     :param bool force: whether the existing file should be overwritten
     :return bool: whether the file was initialized
     """
     if os.path.exists(path) and not force:
         print("Can't initialize, file exists: {}".format(path))
         return False
-    cfg_path = expandpath(cfg_path)
-    if not os.path.isabs(cfg_path):
-        cfg_path = os.path.join(os.path.dirname(path), cfg_path)
-    assert os.path.exists(cfg_path), OSError(
-        "Provided config path is invalid. You must provide path "
-        "that is either absolute or relative to: {}".format(os.path.dirname(path))
-    )
-    relpath = os.path.relpath(cfg_path, os.path.dirname(path))
+    if cfg_path:
+        if is_registry_path(cfg_path):
+            pass
+        else:
+            cfg_path = expandpath(cfg_path)
+            if not os.path.isabs(cfg_path):
+                cfg_path = os.path.join(os.path.dirname(path), cfg_path)
+            assert os.path.exists(cfg_path), OSError(
+                "Provided config path is invalid. You must provide path "
+                "that is either absolute or relative to: {}".format(
+                    os.path.dirname(path)
+                )
+            )
+    else:
+        cfg_path = "example/pep/path"
+
+    if not output_dir:
+        output_dir = "."
+
+    looper_config_dict = {
+        "pep_config": os.path.relpath(cfg_path, os.path.dirname(path)),
+        "output_dir": output_dir,
+        "pipeline_interfaces": {
+            "sample": sample_pipeline_interfaces,
+            "project": project_pipeline_interfaces,
+        },
+    }
+
     with open(path, "w") as dotfile:
-        yaml.dump({DOTFILE_CFG_PTH_KEY: relpath}, dotfile)
+        yaml.dump(looper_config_dict, dotfile)
     print("Initialized looper dotfile: {}".format(path))
     return True
 
 
-def read_cfg_from_dotfile():
+def read_looper_dotfile():
     """
-    Read file path to the config file from the dotfile
+    Read looper config file
 
     :return str: path to the config file read from the dotfile
     :raise MisconfigurationException: if the dotfile does not consist of the
         required key pointing to the PEP
     """
-    dp = dotfile_path(must_exist=True)
-    with open(dp, "r") as dotfile:
+    dot_file_path = dotfile_path(must_exist=True)
+    return read_looper_config_file(looper_config_path=dot_file_path)
+
+
+def read_looper_config_file(looper_config_path: str) -> dict:
+    """
+    Read Looper config file which includes:
+    - PEP config (local path or pephub registry path)
+    - looper output dir
+    - looper pipeline interfaces
+
+    :param str looper_config_path: path to looper config path
+    :return dict: looper config file content
+    :raise MisconfigurationException: incorrect configuration.
+    """
+    return_dict = {}
+    with open(looper_config_path, "r") as dotfile:
         dp_data = yaml.safe_load(dotfile)
-    if DOTFILE_CFG_PTH_KEY in dp_data:
-        return os.path.join(
-            os.path.dirname(dp), str(os.path.join(dp_data[DOTFILE_CFG_PTH_KEY]))
-        )
+
+    if PEP_CONFIG_KEY in dp_data:
+        return_dict[PEP_CONFIG_FILE_KEY] = dp_data[PEP_CONFIG_KEY]
+
+    # TODO: delete it in looper 2.0
+    elif DOTFILE_CFG_PTH_KEY in dp_data:
+        return_dict[PEP_CONFIG_FILE_KEY] = dp_data[DOTFILE_CFG_PTH_KEY]
+
     else:
         raise MisconfigurationException(
-            "Looper dotfile ({}) is missing '{}' key".format(dp, DOTFILE_CFG_PTH_KEY)
+            f"Looper dotfile ({looper_config_path}) is missing '{PEP_CONFIG_KEY}' key"
         )
+
+    if OUTDIR_KEY in dp_data:
+        return_dict[OUTDIR_KEY] = dp_data[OUTDIR_KEY]
+    else:
+        _LOGGER.warning(
+            f"{OUTDIR_KEY} is not defined in looper config file ({looper_config_path})"
+        )
+
+    if PIPELINE_INTERFACES_KEY in dp_data:
+        dp_data.setdefault(PIPELINE_INTERFACES_KEY, {})
+        return_dict[SAMPLE_PL_ARG] = dp_data.get(PIPELINE_INTERFACES_KEY).get("sample")
+        return_dict[PROJECT_PL_ARG] = dp_data.get(PIPELINE_INTERFACES_KEY).get(
+            "project"
+        )
+
+    else:
+        _LOGGER.warning(
+            f"{PIPELINE_INTERFACES_KEY} is not defined in looper config file ({looper_config_path})"
+        )
+        dp_data.setdefault(PIPELINE_INTERFACES_KEY, {})
+
+    return return_dict
 
 
 def dotfile_path(directory=os.getcwd(), must_exist=False):
@@ -420,6 +502,21 @@ def dotfile_path(directory=os.getcwd(), must_exist=False):
                 "its parents".format(LOOPER_DOTFILE_NAME, directory)
             )
         cur_dir = parent_dir
+
+
+def is_registry_path(input_string: str) -> bool:
+    """
+    Check if input is a registry path to pephub
+    :param str input_string: path to the PEP (or registry path)
+    :return bool: True if input is a registry path
+    """
+    if input_string.endswith(".yaml"):
+        return False
+    try:
+        registry_path = RegistryPath(**parse_registry_path(input_string))
+    except (ValidationError, TypeError):
+        return False
+    return True
 
 
 class NatIntervalException(Exception):
@@ -559,3 +656,38 @@ def desired_samples_range_skipped(arg: str, num_samples: int) -> Iterable[int]:
             return []
         intv = NatIntervalInclusive(lower_bound + 1, num_samples)
         return intv.to_range()
+
+
+def write_submit_script(fp, content, data):
+    """
+    Write a submission script for divvy by populating a template with data.
+    :param str fp: Path to the file to which to create/write submissions script.
+    :param str content: Template for submission script, defining keys that
+        will be filled by given data
+    :param Mapping data: a "pool" from which values are available to replace
+        keys in the template
+    :return str: Path to the submission script
+    """
+
+    for k, v in data.items():
+        placeholder = "{" + str(k).upper() + "}"
+        content = content.replace(placeholder, str(v))
+
+    keys_left = re.findall(r"!$\{(.+?)\}", content)
+    if len(keys_left) > 0:
+        _LOGGER.warning(
+            "> Warning: %d submission template variables are not " "populated: '%s'",
+            len(keys_left),
+            str(keys_left),
+        )
+
+    if not fp:
+        print(content)
+        return content
+    else:
+        outdir = os.path.dirname(fp)
+        if outdir and not os.path.isdir(outdir):
+            os.makedirs(outdir)
+        with open(fp, "w") as f:
+            f.write(content)
+        return fp

@@ -1,0 +1,26 @@
+# Environment configuration file for looper
+# This version describes the compute environment at CeMM
+adapters:
+  CODE: looper.command
+  JOBNAME: looper.job_name
+  CORES: compute.cores
+  LOGFILE: looper.log_file
+  TIME: compute.time
+  MEM: compute.mem
+  BULKER_CRATE: compute.bulker_crate
+  DOCKER_ARGS: compute.docker_args
+  DOCKER_IMAGE: compute.docker_image
+  SINGULARITY_IMAGE: compute.singularity_image
+  SINGULARITY_ARGS: compute.singularity_args
+compute_packages:
+  default:
+    submission_template: templates/slurm_template.sub
+    submission_command: sbatch
+    partition: longq
+  develop:
+    submission_template: templates/slurm_template.sub
+    submission_command: sbatch
+    partition: develop
+  local:
+    submission_template: templates/localhost_template.sub
+    submission_command: sh

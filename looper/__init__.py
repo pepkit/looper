@@ -15,9 +15,9 @@ import argparse
 import logging
 import os
 from typing import *
-
-from divvy import DEFAULT_COMPUTE_RESOURCES_NAME
-from divvy import NEW_COMPUTE_KEY as COMPUTE_KEY
+from .divvy import ComputingConfiguration, select_divvy_config
+from .divvy import DEFAULT_COMPUTE_RESOURCES_NAME
+from .divvy import NEW_COMPUTE_KEY as COMPUTE_KEY
 from ubiquerg import VersionInHelpParser
 
 from ._version import __version__
@@ -39,7 +39,13 @@ from .project import Project
 # the locations of some of the peppy declarations. Effectively, concentrate
 # the connection between peppy and looper here, to the extent possible.
 
-__all__ = ["Project", "PipelineInterface", "SubmissionConductor"]
+__all__ = [
+    "Project",
+    "PipelineInterface",
+    "SubmissionConductor",
+    "ComputingConfiguration",
+    "select_divvy_config",
+]
 
 
 SAMPLE_SELECTION_ATTRIBUTE_OPTNAME = "sel-attr"
@@ -82,6 +88,7 @@ MESSAGE_BY_SUBCOMMAND = {
     "clean": "Run clean scripts of already processed jobs.",
     "inspect": "Print information about a project.",
     "init": "Initialize looper dotfile.",
+    "init-piface": "Initialize generic pipeline interface.",
 }
 
 
@@ -150,6 +157,7 @@ def build_parser():
         clean_subparser = add_subparser("clean")
         inspect_subparser = add_subparser("inspect")
         init_subparser = add_subparser("init")
+        init_piface = add_subparser("init-piface")
 
         # Flag arguments
         ####################################################################
@@ -300,12 +308,44 @@ def build_parser():
             )
 
         init_subparser.add_argument(
-            "config_file", help="Project configuration " "file (YAML)"
+            "config_file", help="Project configuration file (YAML)"
         )
 
         init_subparser.add_argument(
             "-f", "--force", help="Force overwrite", action="store_true", default=False
         )
+
+        init_subparser.add_argument(
+            "-o",
+            "--output-dir",
+            dest="output_dir",
+            metavar="DIR",
+            default=None,
+            type=str,
+        )
+
+        init_subparser.add_argument(
+            "-S",
+            "--sample-pipeline-interfaces",
+            dest=SAMPLE_PL_ARG,
+            metavar="YAML",
+            default=None,
+            nargs="+",
+            type=str,
+            help="Path to looper sample config file",
+        )
+        init_subparser.add_argument(
+            "-P",
+            "--project-pipeline-interfaces",
+            dest=PROJECT_PL_ARG,
+            metavar="YAML",
+            default=None,
+            nargs="+",
+            type=str,
+            help="Path to looper project config file",
+        )
+
+        # TODO: add  ouput dir, sample, project pifaces
 
         init_subparser.add_argument(
             "-p",
@@ -331,11 +371,45 @@ def build_parser():
                 "config_file",
                 nargs="?",
                 default=None,
-                help="Project configuration file (YAML)",
+                help="Project configuration file (YAML) or pephub registry path.",
+            )
+            subparser.add_argument(
+                "--looper_config",
+                required=False,
+                default=None,
+                type=str,
+                help="Looper configuration file (YAML)",
+            )
+            # help="Path to the looper config file"
+            subparser.add_argument(
+                "-S",
+                "--sample-pipeline-interfaces",
+                dest=SAMPLE_PL_ARG,
+                metavar="YAML",
+                default=None,
+                nargs="+",
+                type=str,
+                help="Path to looper sample config file",
+            )
+            subparser.add_argument(
+                "-P",
+                "--project-pipeline-interfaces",
+                dest=PROJECT_PL_ARG,
+                metavar="YAML",
+                default=None,
+                nargs="+",
+                type=str,
+                help="Path to looper project config file",
             )
             # help="Path to the output directory"
             subparser.add_argument(
-                "-o", "--output-dir", metavar="DIR", help=argparse.SUPPRESS
+                "-o",
+                "--output-dir",
+                dest="output_dir",
+                metavar="DIR",
+                default=None,
+                type=str,
+                help=argparse.SUPPRESS,
             )
             # "Submission subdirectory name"
             subparser.add_argument(
@@ -390,12 +464,6 @@ def build_parser():
                 help="Skip samples by numerical index",
             )
 
-            fetch_samples_group.add_argument(
-                "-g",
-                "--toggle-key",
-                metavar="K",
-                help="Sample attribute specifying toggle. Default: toggle",
-            )
             fetch_samples_group.add_argument(
                 f"--{SAMPLE_SELECTION_ATTRIBUTE_OPTNAME}",
                 default="toggle",

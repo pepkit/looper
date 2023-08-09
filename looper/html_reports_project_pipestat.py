@@ -92,7 +92,7 @@ class HTMLReportBuilderProject(object):
                 f"Sample-level '{pipeline_name}' pipeline HTML report: "
                 f"{report_path}"
             )
-        print(f"{linked_sample_reports=}")
+        print(f"{linked_sample_reports}")
         sample_reps_parent = os.path.join(self.pipeline_reports, "sample_reports.html")
         sample_reports_parent_relpath = os.path.relpath(
             sample_reps_parent, self.pipeline_reports
