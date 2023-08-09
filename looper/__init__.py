@@ -312,10 +312,6 @@ def build_parser():
         )
 
         init_subparser.add_argument(
-            "looper_config", help="Looper configuration file (YAML)"
-        )
-
-        init_subparser.add_argument(
             "-f", "--force", help="Force overwrite", action="store_true", default=False
         )
 
