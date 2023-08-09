@@ -16,6 +16,7 @@ else:
 
 import logmuse
 import pandas as _pd
+
 # Need specific sequence of actions for colorama imports?
 from colorama import init
 
@@ -39,8 +40,11 @@ from . import __version__, build_parser, validate_post_parse
 from .conductor import SubmissionConductor
 from .const import *
 from .divvy import DEFAULT_COMPUTE_RESOURCES_NAME, select_divvy_config
-from .exceptions import (JobSubmissionException, MisconfigurationException,
-                         SampleFailedException)
+from .exceptions import (
+    JobSubmissionException,
+    MisconfigurationException,
+    SampleFailedException,
+)
 from .html_reports import HTMLReportBuilderOld
 from .html_reports_pipestat import HTMLReportBuilder, fetch_pipeline_results
 from .html_reports_project_pipestat import HTMLReportBuilderProject
@@ -1053,6 +1057,12 @@ def main(test_args=None):
                 print(msg + f" and dotfile does not exist: {dotfile_path()}")
                 parser.print_help(sys.stderr)
                 sys.exit(1)
+        else:
+            _LOGGER.warning(
+                "The Looper config specification through the PEP project is deprecated and will "
+                "be removed in future versions. Please use the new running method by "
+                f"utilizing a looper config file. For more information: {'here is more information'} "
+            )
 
     if args.command == "init":
         sys.exit(
