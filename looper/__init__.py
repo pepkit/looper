@@ -308,7 +308,7 @@ def build_parser():
             )
 
         init_subparser.add_argument(
-            "config_file", help="Project configuration " "file (YAML)"
+            "config_file", help="Project configuration file (YAML)"
         )
 
         init_subparser.add_argument(
@@ -372,6 +372,13 @@ def build_parser():
                 nargs="?",
                 default=None,
                 help="Project configuration file (YAML) or pephub registry path.",
+            )
+            subparser.add_argument(
+                "--looper_config",
+                required=False,
+                default=None,
+                type=str,
+                help="Looper configuration file (YAML)",
             )
             # help="Path to the looper config file"
             subparser.add_argument(
