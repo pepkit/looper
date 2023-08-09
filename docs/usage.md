@@ -26,7 +26,7 @@ Each task is controlled by one of the following commands: `run`, `rerun`, `runp`
 Here you can see the command-line usage instructions for the main looper command and for each subcommand:
 ## `looper --help`
 ```console
-version: 1.4.0-dev
+version: 1.5.0
 usage: looper [-h] [--version] [--logfile LOGFILE] [--dbg] [--silent]
               [--verbosity V] [--logdev]
               {run,rerun,runp,table,report,destroy,check,clean,inspect,init,init-piface}
@@ -64,9 +64,10 @@ https://github.com/pepkit/looper
 ## `looper run --help`
 ```console
 usage: looper run [-h] [-i] [-d] [-t S] [-x S] [-y S] [-f] [--divvy DIVCFG] [-p P] [-s S]
-                  [-c K [K ...]] [-u X] [-n N] [-S YAML [YAML ...]] [-P YAML [YAML ...]]
-                  [-l N] [-k N] [--sel-attr ATTR] [--sel-excl [E ...] | --sel-incl
-                  [I ...]] [-a A [A ...]]
+                  [-c K [K ...]] [-u X] [-n N] [--looper_config LOOPER_CONFIG]
+                  [-S YAML [YAML ...]] [-P YAML [YAML ...]] [-l N] [-k N]
+                  [--sel-attr ATTR] [--sel-excl [E ...] | --sel-incl [I ...]]
+                  [-a A [A ...]]
                   [config_file]
 
 Run or submit sample jobs.
@@ -85,6 +86,7 @@ options:
   -f, --skip-file-checks             Do not perform input file checks
   -u X, --lump X                     Total input file size (GB) to batch into one job
   -n N, --lumpn N                    Number of commands to batch into one job
+  --looper_config LOOPER_CONFIG      Looper configuration file (YAML)
   -S YAML [YAML ...], --sample-pipeline-interfaces YAML [YAML ...]
                                      Path to looper sample config file
   -P YAML [YAML ...], --project-pipeline-interfaces YAML [YAML ...]
@@ -113,9 +115,9 @@ sample selection arguments:
 ## `looper runp --help`
 ```console
 usage: looper runp [-h] [-i] [-d] [-t S] [-x S] [-y S] [-f] [--divvy DIVCFG] [-p P] [-s S]
-                   [-c K [K ...]] [-S YAML [YAML ...]] [-P YAML [YAML ...]] [-l N] [-k N]
-                   [--sel-attr ATTR] [--sel-excl [E ...] | --sel-incl [I ...]]
-                   [-a A [A ...]]
+                   [-c K [K ...]] [--looper_config LOOPER_CONFIG] [-S YAML [YAML ...]]
+                   [-P YAML [YAML ...]] [-l N] [-k N] [--sel-attr ATTR]
+                   [--sel-excl [E ...] | --sel-incl [I ...]] [-a A [A ...]]
                    [config_file]
 
 Run or submit project jobs.
@@ -132,6 +134,7 @@ options:
   -x S, --command-extra S            String to append to every command
   -y S, --command-extra-override S   Same as command-extra, but overrides values in PEP
   -f, --skip-file-checks             Do not perform input file checks
+  --looper_config LOOPER_CONFIG      Looper configuration file (YAML)
   -S YAML [YAML ...], --sample-pipeline-interfaces YAML [YAML ...]
                                      Path to looper sample config file
   -P YAML [YAML ...], --project-pipeline-interfaces YAML [YAML ...]
@@ -160,9 +163,10 @@ sample selection arguments:
 ## `looper rerun --help`
 ```console
 usage: looper rerun [-h] [-i] [-d] [-t S] [-x S] [-y S] [-f] [--divvy DIVCFG] [-p P]
-                    [-s S] [-c K [K ...]] [-u X] [-n N] [-S YAML [YAML ...]]
-                    [-P YAML [YAML ...]] [-l N] [-k N] [--sel-attr ATTR]
-                    [--sel-excl [E ...] | --sel-incl [I ...]] [-a A [A ...]]
+                    [-s S] [-c K [K ...]] [-u X] [-n N] [--looper_config LOOPER_CONFIG]
+                    [-S YAML [YAML ...]] [-P YAML [YAML ...]] [-l N] [-k N]
+                    [--sel-attr ATTR] [--sel-excl [E ...] | --sel-incl [I ...]]
+                    [-a A [A ...]]
                     [config_file]
 
 Resubmit sample jobs with failed flags.
@@ -181,6 +185,7 @@ options:
   -f, --skip-file-checks             Do not perform input file checks
   -u X, --lump X                     Total input file size (GB) to batch into one job
   -n N, --lumpn N                    Number of commands to batch into one job
+  --looper_config LOOPER_CONFIG      Looper configuration file (YAML)
   -S YAML [YAML ...], --sample-pipeline-interfaces YAML [YAML ...]
                                      Path to looper sample config file
   -P YAML [YAML ...], --project-pipeline-interfaces YAML [YAML ...]
@@ -208,9 +213,9 @@ sample selection arguments:
 
 ## `looper report --help`
 ```console
-usage: looper report [-h] [-S YAML [YAML ...]] [-P YAML [YAML ...]] [-l N] [-k N]
-                     [--sel-attr ATTR] [--sel-excl [E ...] | --sel-incl [I ...]]
-                     [-a A [A ...]] [--project]
+usage: looper report [-h] [--looper_config LOOPER_CONFIG] [-S YAML [YAML ...]]
+                     [-P YAML [YAML ...]] [-l N] [-k N] [--sel-attr ATTR]
+                     [--sel-excl [E ...] | --sel-incl [I ...]] [-a A [A ...]] [--project]
                      [config_file]
 
 Create browsable HTML report of project results.
@@ -221,6 +226,7 @@ positional arguments:
 
 options:
   -h, --help                         show this help message and exit
+  --looper_config LOOPER_CONFIG      Looper configuration file (YAML)
   -S YAML [YAML ...], --sample-pipeline-interfaces YAML [YAML ...]
                                      Path to looper sample config file
   -P YAML [YAML ...], --project-pipeline-interfaces YAML [YAML ...]
@@ -240,9 +246,9 @@ sample selection arguments:
 
 ## `looper table --help`
 ```console
-usage: looper table [-h] [-S YAML [YAML ...]] [-P YAML [YAML ...]] [-l N] [-k N]
-                    [--sel-attr ATTR] [--sel-excl [E ...] | --sel-incl [I ...]]
-                    [-a A [A ...]] [--project]
+usage: looper table [-h] [--looper_config LOOPER_CONFIG] [-S YAML [YAML ...]]
+                    [-P YAML [YAML ...]] [-l N] [-k N] [--sel-attr ATTR]
+                    [--sel-excl [E ...] | --sel-incl [I ...]] [-a A [A ...]] [--project]
                     [config_file]
 
 Write summary stats table for project samples.
@@ -253,6 +259,7 @@ positional arguments:
 
 options:
   -h, --help                         show this help message and exit
+  --looper_config LOOPER_CONFIG      Looper configuration file (YAML)
   -S YAML [YAML ...], --sample-pipeline-interfaces YAML [YAML ...]
                                      Path to looper sample config file
   -P YAML [YAML ...], --project-pipeline-interfaces YAML [YAML ...]
@@ -272,10 +279,10 @@ sample selection arguments:
 
 ## `looper inspect --help`
 ```console
-usage: looper inspect [-h] [-S YAML [YAML ...]] [-P YAML [YAML ...]] [-l N] [-k N]
-                      [--sel-attr ATTR] [--sel-excl [E ...] | --sel-incl [I ...]]
-                      [-a A [A ...]] [--sample-names [SAMPLE_NAMES ...]]
-                      [--attr-limit ATTR_LIMIT]
+usage: looper inspect [-h] [--looper_config LOOPER_CONFIG] [-S YAML [YAML ...]]
+                      [-P YAML [YAML ...]] [-l N] [-k N] [--sel-attr ATTR]
+                      [--sel-excl [E ...] | --sel-incl [I ...]] [-a A [A ...]]
+                      [--sample-names [SAMPLE_NAMES ...]] [--attr-limit ATTR_LIMIT]
                       [config_file]
 
 Print information about a project.
@@ -286,6 +293,7 @@ positional arguments:
 
 options:
   -h, --help                         show this help message and exit
+  --looper_config LOOPER_CONFIG      Looper configuration file (YAML)
   -S YAML [YAML ...], --sample-pipeline-interfaces YAML [YAML ...]
                                      Path to looper sample config file
   -P YAML [YAML ...], --project-pipeline-interfaces YAML [YAML ...]
@@ -327,9 +335,10 @@ options:
 
 ## `looper destroy --help`
 ```console
-usage: looper destroy [-h] [-d] [--force-yes] [-S YAML [YAML ...]] [-P YAML [YAML ...]]
-                      [-l N] [-k N] [--sel-attr ATTR] [--sel-excl [E ...] | --sel-incl
-                      [I ...]] [-a A [A ...]]
+usage: looper destroy [-h] [-d] [--force-yes] [--looper_config LOOPER_CONFIG]
+                      [-S YAML [YAML ...]] [-P YAML [YAML ...]] [-l N] [-k N]
+                      [--sel-attr ATTR] [--sel-excl [E ...] | --sel-incl [I ...]]
+                      [-a A [A ...]]
                       [config_file]
 
 Remove output files of the project.
@@ -343,6 +352,7 @@ options:
   -d, --dry-run                      Don't actually submit the jobs. Default=False
   --force-yes                        Provide upfront confirmation of destruction intent,
                                      to skip console query. Default=False
+  --looper_config LOOPER_CONFIG      Looper configuration file (YAML)
   -S YAML [YAML ...], --sample-pipeline-interfaces YAML [YAML ...]
                                      Path to looper sample config file
   -P YAML [YAML ...], --project-pipeline-interfaces YAML [YAML ...]
@@ -361,7 +371,8 @@ sample selection arguments:
 
 ## `looper check --help`
 ```console
-usage: looper check [-h] [--describe-codes] [--itemized] [-f [F ...]] [-S YAML [YAML ...]]
+usage: looper check [-h] [--describe-codes] [--itemized] [-f [F ...]]
+                    [--looper_config LOOPER_CONFIG] [-S YAML [YAML ...]]
                     [-P YAML [YAML ...]] [-l N] [-k N] [--sel-attr ATTR]
                     [--sel-excl [E ...] | --sel-incl [I ...]] [-a A [A ...]] [--project]
                     [config_file]
@@ -377,6 +388,7 @@ options:
   --describe-codes                   Show status codes description
   --itemized                         Show a detailed, by sample statuses
   -f [F ...], --flags [F ...]        Check on only these flags/status values
+  --looper_config LOOPER_CONFIG      Looper configuration file (YAML)
   -S YAML [YAML ...], --sample-pipeline-interfaces YAML [YAML ...]
                                      Path to looper sample config file
   -P YAML [YAML ...], --project-pipeline-interfaces YAML [YAML ...]
@@ -396,9 +408,10 @@ sample selection arguments:
 
 ## `looper clean --help`
 ```console
-usage: looper clean [-h] [-d] [--force-yes] [-S YAML [YAML ...]] [-P YAML [YAML ...]]
-                    [-l N] [-k N] [--sel-attr ATTR] [--sel-excl [E ...] | --sel-incl
-                    [I ...]] [-a A [A ...]]
+usage: looper clean [-h] [-d] [--force-yes] [--looper_config LOOPER_CONFIG]
+                    [-S YAML [YAML ...]] [-P YAML [YAML ...]] [-l N] [-k N]
+                    [--sel-attr ATTR] [--sel-excl [E ...] | --sel-incl [I ...]]
+                    [-a A [A ...]]
                     [config_file]
 
 Run clean scripts of already processed jobs.
@@ -412,6 +425,7 @@ options:
   -d, --dry-run                      Don't actually submit the jobs. Default=False
   --force-yes                        Provide upfront confirmation of destruction intent,
                                      to skip console query. Default=False
+  --looper_config LOOPER_CONFIG      Looper configuration file (YAML)
   -S YAML [YAML ...], --sample-pipeline-interfaces YAML [YAML ...]
                                      Path to looper sample config file
   -P YAML [YAML ...], --project-pipeline-interfaces YAML [YAML ...]

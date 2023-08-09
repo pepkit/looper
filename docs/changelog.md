@@ -7,7 +7,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### Added 
 
 - ability to use PEPs from PEPhub without downloading project [#341](https://github.com/pepkit/looper/issues/341)
-- ability to specify pipeline interfaces inside looper config instead/
+- ability to specify pipeline interfaces inside looper config [Looper Config](https://looper.databio.org/en/dev/how_to_define_looper_config/)
 - divvy re-integrated in looper
 - divvy inspect -p package
 - Looper will now check that the command path provided in the pipeline interface is callable before submitting.
