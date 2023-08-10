@@ -513,11 +513,17 @@ class SubmissionConductor(object):
                 _LOGGER.info("Dry run, not submitted")
             elif self._rendered_ok:
                 sub_cmd = self.prj.dcc.compute.submission_command
-                submission_command = "{} {}".format(sub_cmd, script)
+                submission_command = f"{sub_cmd} {script}"  # old way
+                if sub_cmd == ".":
+                    sub_cmd_list = [script]
+                else:
+                    sub_cmd_list = [sub_cmd, script]
+
                 # Capture submission command return value so that we can
                 # intercept and report basic submission failures; #167
                 try:
-                    subprocess.check_call(submission_command, shell=True)
+                    # subprocess.check_call(submission_command, shell=True, executable="/bin/bash")  # old way
+                    subprocess.check_call(sub_cmd_list, shell=False)
                 except subprocess.CalledProcessError:
                     fails = (
                         "" if self.collate else [s.sample_name for s in self._samples]
