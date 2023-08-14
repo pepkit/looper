@@ -701,8 +701,8 @@ class Project(peppyProject):
 
         :param list | str sample_piface: sample pipeline interface
         """
-        self._config.setdefault("sample_modifiers", {})
-        self._config["sample_modifiers"].setdefault("append", {})
+        self["_config"].setdefault("sample_modifiers", {})
+        self["_config"]["sample_modifiers"].setdefault("append", {})
         self.config["sample_modifiers"]["append"]["pipeline_interfaces"] = sample_piface
 
         self.modify_samples()
