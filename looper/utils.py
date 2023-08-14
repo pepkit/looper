@@ -227,7 +227,7 @@ def read_yaml_file(filepath):
     return data
 
 
-def enrich_args_via_cfg(parser_args, aux_parser):
+def enrich_args_via_cfg(parser_args, aux_parser, test_args=None):
     """
     Read in a looper dotfile and set arguments.
 
@@ -244,7 +244,12 @@ def enrich_args_via_cfg(parser_args, aux_parser):
         else dict()
     )
     result = argparse.Namespace()
-    cli_args, _ = aux_parser.parse_known_args()
+    if test_args:
+        cli_args, _ = aux_parser.parse_known_args(args=test_args)
+
+    else:
+        cli_args, _ = aux_parser.parse_known_args()
+
     for dest in vars(parser_args):
         if dest not in POSITIONAL or not hasattr(result, dest):
             if dest in cli_args:
@@ -395,15 +400,13 @@ def init_dotfile(
         output_dir = "."
 
     looper_config_dict = {
-        "pep_config": cfg_path,
+        "pep_config": os.path.relpath(cfg_path, os.path.dirname(path)),
         "output_dir": output_dir,
         "pipeline_interfaces": {
             "sample": sample_pipeline_interfaces,
             "project": project_pipeline_interfaces,
         },
     }
-
-    cfg_relpath = os.path.relpath(cfg_path, os.path.dirname(path))
 
     with open(path, "w") as dotfile:
         yaml.dump(looper_config_dict, dotfile)
@@ -419,9 +422,23 @@ def read_looper_dotfile():
     :raise MisconfigurationException: if the dotfile does not consist of the
         required key pointing to the PEP
     """
-    dp = dotfile_path(must_exist=True)
+    dot_file_path = dotfile_path(must_exist=True)
+    return read_looper_config_file(looper_config_path=dot_file_path)
+
+
+def read_looper_config_file(looper_config_path: str) -> dict:
+    """
+    Read Looper config file which includes:
+    - PEP config (local path or pephub registry path)
+    - looper output dir
+    - looper pipeline interfaces
+
+    :param str looper_config_path: path to looper config path
+    :return dict: looper config file content
+    :raise MisconfigurationException: incorrect configuration.
+    """
     return_dict = {}
-    with open(dp, "r") as dotfile:
+    with open(looper_config_path, "r") as dotfile:
         dp_data = yaml.safe_load(dotfile)
 
     if PEP_CONFIG_KEY in dp_data:
@@ -433,13 +450,15 @@ def read_looper_dotfile():
 
     else:
         raise MisconfigurationException(
-            f"Looper dotfile ({dp}) is missing '{PEP_CONFIG_KEY}' key"
+            f"Looper dotfile ({looper_config_path}) is missing '{PEP_CONFIG_KEY}' key"
         )
 
     if OUTDIR_KEY in dp_data:
         return_dict[OUTDIR_KEY] = dp_data[OUTDIR_KEY]
     else:
-        _LOGGER.warning(f"{OUTDIR_KEY} is not defined in looper config file ({dp})")
+        _LOGGER.warning(
+            f"{OUTDIR_KEY} is not defined in looper config file ({looper_config_path})"
+        )
 
     if PIPELINE_INTERFACES_KEY in dp_data:
         dp_data.setdefault(PIPELINE_INTERFACES_KEY, {})
@@ -450,7 +469,7 @@ def read_looper_dotfile():
 
     else:
         _LOGGER.warning(
-            f"{PIPELINE_INTERFACES_KEY} is not defined in looper config file ({dp})"
+            f"{PIPELINE_INTERFACES_KEY} is not defined in looper config file ({looper_config_path})"
         )
         dp_data.setdefault(PIPELINE_INTERFACES_KEY, {})
 

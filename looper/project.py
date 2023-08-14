@@ -490,7 +490,7 @@ class Project(peppyProject):
             :return str: retrieved configuration value
             """
             if pipestat_sect is not None and attr_name in pipestat_sect:
-                return getattr(object, pipestat_sect[attr_name])
+                return pipestat_sect[attr_name]
             try:
                 return getattr(object, default)
             except AttributeError:
@@ -527,13 +527,7 @@ class Project(peppyProject):
         )
 
         pipestat_config = self._resolve_path_with_cfg(pth=pipestat_config)
-        namespace = _get_val_from_attr(
-            pipestat_section,
-            self.config if project_level else self.get_sample(sample_name),
-            PIPESTAT_NAMESPACE_ATTR_KEY,
-            "name" if project_level else self.sample_table_index,
-            pipestat_config and os.path.exists(pipestat_config),
-        )
+
         results_file_path = _get_val_from_attr(
             pipestat_section,
             self.config if project_level else self.get_sample(sample_name),
@@ -557,10 +551,9 @@ class Project(peppyProject):
                 else f"{piface.pipeline_name}_{'_'.join(self.amendments)}"
             )
             ret[piface.pipeline_name] = {
-                "namespace": namespace,
-                "config": pipestat_config,
+                "config_file": pipestat_config,
                 "results_file_path": results_file_path,
-                "record_identifier": rec_id,
+                "sample_name": rec_id,
                 "schema_path": piface.get_pipeline_schemas(OUTPUT_SCHEMA_KEY),
             }
         return ret

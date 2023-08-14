@@ -2,22 +2,44 @@
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format.
 
-## [1.5.0] -- 
+## [1.5.1] -- 2023-08-14
+
+### Fixed
+- fix `looper table` failing without `sample.protocol`
+
+### Changed
+- correct `--looper_conifg` to `--looper-config`
+
+## [1.5.0] -- 2023-08-09
 
 ### Added 
 
 - ability to use PEPs from PEPhub without downloading project [#341](https://github.com/pepkit/looper/issues/341)
-- ability to specify pipeline interfaces inside looper config instead/
+- ability to specify pipeline interfaces inside looper config [Looper Config](https://looper.databio.org/en/dev/how_to_define_looper_config/)
+- divvy re-integrated in looper
+- divvy inspect -p package
+- Looper will now check that the command path provided in the pipeline interface is callable before submitting.
+
 
 ### Changed
 - initialization of generic pipeline interface available using subcommand `init-piface`
+- `looper report` will now use pipestat to generate browsable HTML reports if pipestat is configured.
+- looper now works with pipestat v0.5.0.
+- Removed --toggle-key functionality. 
+- Allow for user to input single integer value for --sel-incl or --sel-excl
 
+## [1.4.3] -- 2023-08-01
 
-## [1.5.0] -- 2023-05-12
+### Fixed
+- Fix regression for var_templates expansion.
 
-### Added
-- divvy re-integrated in looper
-- divvy inspect -p package
+## [1.4.2] -- 2023-07-31
+
+### Fixed
+- Fix for expanding paths properly.
+
+## [1.4.1] -- 2023-06-22
+
 
 ## [1.4.0] -- 2023-04-24
 

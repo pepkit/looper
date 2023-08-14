@@ -6,7 +6,7 @@ logmuse>=0.2.0
 pandas>=2.0.2
 pephubclient
 peppy>=0.35.4
-pipestat>=0.1.0
+pipestat>=0.5.1
 pyyaml>=3.12
 rich>=9.10.0
 ubiquerg>=0.5.2
