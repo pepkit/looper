@@ -115,14 +115,14 @@ class Project(peppyProject):
 
         for attr_name in CLI_PROJ_ATTRS:
             if attr_name in kwargs:
-                getattr(self,EXTRA_KEY)[attr_name] = kwargs[attr_name]
+                getattr(self, EXTRA_KEY)[attr_name] = kwargs[attr_name]
         self._samples_by_interface = self._samples_by_piface(self.piface_key)
         self._interfaces_by_sample = self._piface_by_samples()
         self.linked_sample_interfaces = self._get_linked_pifaces()
-        if FILE_CHECKS_KEY in getattr(self,EXTRA_KEY):
-            setattr(self, "file_checks", not getattr(self,EXTRA_KEY)[FILE_CHECKS_KEY])
-        if DRY_RUN_KEY in getattr(self,EXTRA_KEY):
-            setattr(self, DRY_RUN_KEY, getattr(self,EXTRA_KEY)[DRY_RUN_KEY])
+        if FILE_CHECKS_KEY in getattr(self, EXTRA_KEY):
+            setattr(self, "file_checks", not getattr(self, EXTRA_KEY)[FILE_CHECKS_KEY])
+        if DRY_RUN_KEY in getattr(self, EXTRA_KEY):
+            setattr(self, DRY_RUN_KEY, getattr(self, EXTRA_KEY)[DRY_RUN_KEY])
         self.dcc = (
             None
             if divcfg_path is None
@@ -184,7 +184,7 @@ class Project(peppyProject):
          found
         """
         try:
-            result = getattr(getattr(self,EXTRA_KEY), attr_name)
+            result = getattr(getattr(self, EXTRA_KEY), attr_name)
         except (AttributeError, KeyError):
             pass
         else:
@@ -233,7 +233,7 @@ class Project(peppyProject):
         :return str: path to the folder
         """
         parent = getattr(self, OUTDIR_KEY)
-        child = getattr(getattr(self,EXTRA_KEY), key, default) or default
+        child = getattr(getattr(self, EXTRA_KEY), key, default) or default
         return os.path.join(parent, child)
 
     def make_project_dirs(self):
