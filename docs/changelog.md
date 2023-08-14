@@ -3,9 +3,13 @@
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format.
 
 
-## [1.5.1] -- 2023-08-11
-- fix `looper table` failing without sample.protocol 
+## [1.5.1] -- 2023-08-14
 
+### Fixed
+- fix `looper table` failing without `sample.protocol`
+
+### Changed
+- correct `--looper_conifg` to `--looper-config`
 
 ## [1.5.0] -- 2023-08-09
 
