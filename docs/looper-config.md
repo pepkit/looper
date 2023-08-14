@@ -1,6 +1,6 @@
-# How to run pipeline using looper config file
+# How to use the looper config file
 
-Starting with looper>=1.5.0, you should specify a pipeline interface in the looper config file, rather than in the PEP.
+Starting with `looper` version `>=1.5.0`, you should specify a pipeline interface in the looper config file, rather than in the PEP.
 
 Example looper config file using local PEP:
 
