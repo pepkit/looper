@@ -374,7 +374,9 @@ def build_parser():
                 help="Project configuration file (YAML) or pephub registry path.",
             )
             subparser.add_argument(
+
                 "--looper-config",
+
                 required=False,
                 default=None,
                 type=str,
