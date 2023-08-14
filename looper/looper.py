@@ -775,7 +775,7 @@ class TableOld(Executor):
             missing_files = []
             _LOGGER.info("Creating stats summary...")
             for sample in project_samples:
-                _LOGGER.info(counter.show(sample.sample_name, sample.protocol))
+                # _LOGGER.info(counter.show(sample.sample_name, sample.protocol))
                 sample_output_folder = sample_folder(project, sample)
                 # Grab the basic info from the annotation sheet for this sample.
                 # This will correspond to a row in the output.
@@ -833,7 +833,7 @@ class TableOld(Executor):
             missing_files = []
             for sample in project.samples:
                 # Process any reported objects
-                _LOGGER.info(counter.show(sample.sample_name, sample.protocol))
+                # _LOGGER.info(counter.show(sample.sample_name, sample.protocol))
                 sample_output_folder = sample_folder(project, sample)
                 objs_file = os.path.join(sample_output_folder, "objects.tsv")
                 if not os.path.isfile(objs_file):
