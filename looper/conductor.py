@@ -439,7 +439,7 @@ class SubmissionConductor(object):
                 msg = "> Skipping sample"
                 if sample_statuses:
                     msg += f". Determined status: {', '.join(sample_statuses)}"
-             _LOGGER.info(msg)
+            _LOGGER.info(msg)
 
         skip_reasons = []
         validation = {}
