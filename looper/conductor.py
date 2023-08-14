@@ -423,6 +423,7 @@ class SubmissionConductor(object):
             sample_statuses = fetch_sample_flags(self.prj, sample, self.pl_name)
         
         use_this_sample = True  # default to running this sample
+        msg = None
         if sample_statuses:
             status_str = ', '.join(sample_statuses)
             failed_flag = any("failed" in x for x in sample_statuses)
@@ -441,8 +442,8 @@ class SubmissionConductor(object):
                 else:
                     msg = f"> Skipping sample because rerun requested, but no failed flag found. Status: {status_str}"
                     use_this_sample = False
-
-        _LOGGER.info(msg)
+        if msg:
+            _LOGGER.info(msg)
 
         skip_reasons = []
         validation = {}
