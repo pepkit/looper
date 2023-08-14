@@ -436,7 +436,6 @@ class SubmissionConductor(object):
                     msg = "> Skipping sample because rerun requested, but no failed flag found"
                     use_this_sample = False
             if not use_this_sample:
-                msg = "> Skipping sample"
                 if sample_statuses:
                     msg += f". Determined status: {', '.join(sample_statuses)}"
             _LOGGER.info(msg)
