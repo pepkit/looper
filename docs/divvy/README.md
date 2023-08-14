@@ -1,13 +1,13 @@
-![Logo](img/divvy_logo.svg)
+![Logo](../img/divvy_logo.svg)
 
 ## What is `divvy`?
 
-`Divvy` allows you to populate job submission scripts by integrating job-specific settings with separately configured computing environment settings. Divvy *makes software portable*, so users may easily toggle among any computing resource (laptop, cluster, cloud). 
+The submission configuration tool embedded in `looper` is called `divvy`. Divvy is useful independently from looper, but it ships with looper. Divvy allows you to populate job submission scripts by integrating job-specific settings with separately configured computing environment settings. Divvy *makes software portable*, so users may easily toggle among any computing resource (laptop, cluster, cloud). 
 
-![Merge](img/divvy-merge.svg)
+![Merge](../img/divvy-merge.svg)
 ## What makes `divvy` better?
 
-![NoDivvy](img/nodivvy.svg)
+![NoDivvy](../img/nodivvy.svg)
 
 Tools require a particular compute resource setup. For example, one pipeline requires SLURM, another requires AWS, and yet another just runs directly on your laptop. This makes it difficult to transfer to different environments. For tools that can run in multiple environments, each one must be configured separately.
 
@@ -16,7 +16,7 @@ Tools require a particular compute resource setup. For example, one pipeline req
 
 Instead, `divvy`-compatible tools can run on any computing resource. **Users configure their computing environment once, and all divvy-compatible tools will use this same configuration.**
 
-![Connect](img/divvy-connect.svg)
+![Connect](../img/divvy-connect.svg)
 
 Divvy reads a standard configuration file describing available compute resources and then uses a simple template system to write custom job submission scripts. Computing resources are organized as *compute packages*, which users select, populate with values, and build scripts for compute jobs. 
 
