@@ -421,11 +421,11 @@ class SubmissionConductor(object):
             sample_statuses = [sample_statuses] if sample_statuses else []
         else:
             sample_statuses = fetch_sample_flags(self.prj, sample, self.pl_name)
-        
+
         use_this_sample = True  # default to running this sample
         msg = None
         if sample_statuses:
-            status_str = ', '.join(sample_statuses)
+            status_str = ", ".join(sample_statuses)
             failed_flag = any("failed" in x for x in sample_statuses)
             if self.ignore_flags:
                 msg = f"> Found existing status: {status_str}. Ignoring."
@@ -433,7 +433,7 @@ class SubmissionConductor(object):
                 msg = f"> Found existing status: {status_str}. Skipping sample."
                 if failed_flag:
                     msg += " Use rerun to ignore failed status."  # help guidance
-                use_this_sample = False  
+                use_this_sample = False
             if rerun:
                 # Rescue the sample if rerun requested, and failed flag is found
                 if failed_flag:

@@ -473,6 +473,11 @@ def read_looper_config_file(looper_config_path: str) -> dict:
         )
         dp_data.setdefault(PIPELINE_INTERFACES_KEY, {})
 
+    # Expand paths in case ENV variables are used
+    for k, v in return_dict.items():
+        if isinstance(v, str):
+            return_dict[k] = expandpath(v)
+
     return return_dict
 
 
