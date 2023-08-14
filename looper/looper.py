@@ -1059,9 +1059,9 @@ def main(test_args=None):
                 sys.exit(1)
         else:
             _LOGGER.warning(
-                "The Looper config specification through the PEP project is deprecated and will "
-                "be removed in future versions. Please use the new running method by "
-                f"utilizing a looper config file. For more information: {'here is more information'} "
+                "This PEP configues looper through the project config. This approach is deprecated and will "
+                "be removed in future versions. Please use a looper config file. For more information see "
+                "looper.databio.org/en/latest/looper-config"
             )
 
     if args.command == "init":
