@@ -429,15 +429,16 @@ class SubmissionConductor(object):
             failed_flag = any("failed" in x for x in sample_statuses)
             if rerun:
                 if failed_flag:
-                    _LOGGER.info("> Re-running failed sample")
+                    msg = "> Re-running failed sample"
                     use_this_sample = True
                 else:
+                    msg = "> Skipping sample because rerun requested, but no failed flag found"
                     use_this_sample = False
             if not use_this_sample:
                 msg = "> Skipping sample"
                 if sample_statuses:
                     msg += f". Determined status: {', '.join(sample_statuses)}"
-                _LOGGER.info(msg)
+             _LOGGER.info(msg)
 
         skip_reasons = []
         validation = {}
