@@ -1041,32 +1041,6 @@ def main(test_args=None):
     if args.command is None:
         parser.print_help(sys.stderr)
         sys.exit(1)
-    if "config_file" in vars(args):
-        if args.config_file is None:
-            msg = "No project config defined (peppy)"
-            try:
-                if args.looper_config:
-                    looper_config_dict = read_looper_config_file(args.looper_config)
-                else:
-                    looper_config_dict = read_looper_dotfile()
-                    print(
-                        msg + f", using: {read_looper_dotfile()}. "
-                        f"Read from dotfile ({dotfile_path()})."
-                    )
-
-                for looper_config_key, looper_config_item in looper_config_dict.items():
-                    setattr(args, looper_config_key, looper_config_item)
-
-            except OSError:
-                print(msg + f" and dotfile does not exist: {dotfile_path()}")
-                parser.print_help(sys.stderr)
-                sys.exit(1)
-        else:
-            _LOGGER.warning(
-                "This PEP configues looper through the project config. This approach is deprecated and will "
-                "be removed in future versions. Please use a looper config file. For more information see "
-                "looper.databio.org/en/latest/looper-config"
-            )
 
     if args.command == "init":
         sys.exit(
@@ -1085,15 +1059,42 @@ def main(test_args=None):
     if args.command == "init-piface":
         sys.exit(int(not init_generic_pipeline()))
 
+    _LOGGER = logmuse.logger_via_cli(args, make_root=True)
+    _LOGGER.info("Looper version: {}\nCommand: {}".format(__version__, args.command))
+
+    if "config_file" in vars(args):
+        if args.config_file is None:
+            looper_cfg_path = os.path.relpath(dotfile_path(), start = os.curdir)
+            try:
+                if args.looper_config:
+                    looper_config_dict = read_looper_config_file(args.looper_config)
+                else:
+                    looper_config_dict = read_looper_dotfile()
+                    _LOGGER.info(f"Using looper config ({looper_cfg_path})."
+                    )
+
+                for looper_config_key, looper_config_item in looper_config_dict.items():
+                    setattr(args, looper_config_key, looper_config_item)
+
+            except OSError:
+                parser.print_help(sys.stderr)
+                _LOGGER.warning(
+                    f"Looper config file does not exist. Use looper init to create one at {looper_cfg_path}."
+                )
+                sys.exit(1)
+        else:
+            _LOGGER.warning(
+                "This PEP configures looper through the project config. This approach is deprecated and will "
+                "be removed in future versions. Please use a looper config file. For more information see "
+                "looper.databio.org/en/latest/looper-config"
+            )
+
+
     args = enrich_args_via_cfg(args, aux_parser, test_args)
 
     # If project pipeline interface defined in the cli, change name to: "pipeline_interface"
     if vars(args)[PROJECT_PL_ARG]:
         args.pipeline_interfaces = vars(args)[PROJECT_PL_ARG]
-
-    _LOGGER = logmuse.logger_via_cli(args, make_root=True)
-
-    _LOGGER.info("Looper version: {}\nCommand: {}".format(__version__, args.command))
 
     if len(remaining_args) > 0:
         _LOGGER.warning(

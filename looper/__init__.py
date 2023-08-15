@@ -87,7 +87,7 @@ MESSAGE_BY_SUBCOMMAND = {
     "check": "Check flag status of current runs.",
     "clean": "Run clean scripts of already processed jobs.",
     "inspect": "Print information about a project.",
-    "init": "Initialize looper dotfile.",
+    "init": "Initialize looper config file.",
     "init-piface": "Initialize generic pipeline interface.",
 }
 
