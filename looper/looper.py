@@ -901,7 +901,7 @@ def _remove_or_dry_run(paths, dry_run=False):
 
     :param list|str paths: list of paths to files/dirs to be removed
     :param bool dry_run: logical indicating whether the files should remain
-        untouched and massage printed
+        untouched and message printed
     """
     paths = paths if isinstance(paths, list) else [paths]
     for path in paths:
