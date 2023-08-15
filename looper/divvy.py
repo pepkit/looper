@@ -28,7 +28,7 @@ _LOGGER = logging.getLogger(__name__)
 # This is the divvy.py submodule from divvy
 
 
-class ComputingConfiguration(yacman.YacAttMap):
+class ComputingConfiguration(yacman.YAMLConfigManager):
     """
     Represents computing configuration objects.
 
@@ -53,30 +53,30 @@ class ComputingConfiguration(yacman.YacAttMap):
             entries=entries,
             filepath=filepath,
             schema_source=DEFAULT_CONFIG_SCHEMA,
-            write_validate=True,
+            validate_on_write=True,
         )
 
-        if not hasattr(self, "compute_packages"):
+        if not "compute_packages" in self:
             raise Exception(
                 "Your divvy config file is not in divvy config format "
                 "(it lacks a compute_packages section): '{}'".format(filepath)
             )
             # We require that compute_packages be present, even if empty
-            self.compute_packages = {}
+            self["compute_packages"] = {}
 
         # Initialize default compute settings.
         _LOGGER.debug("Establishing project compute settings")
         self.compute = None
         self.setdefault("adapters", None)
         self.activate_package(DEFAULT_COMPUTE_RESOURCES_NAME)
-        self.config_file = self["__internal"].file_path
+        self.config_file = self.filepath
 
     def write(self, filename=None):
         super(ComputingConfiguration, self).write(filepath=filename, exclude_case=True)
         filename = filename or getattr(self, yacman.FILEPATH_KEY)
         filedir = os.path.dirname(filename)
         # For this object, we *also* have to write the template files
-        for pkg_name, pkg in self.compute_packages.items():
+        for pkg_name, pkg in self["compute_packages"].items():
             print(pkg)
             destfile = os.path.join(filedir, os.path.basename(pkg.submission_template))
             shutil.copyfile(pkg.submission_template, destfile)
@@ -109,7 +109,7 @@ class ComputingConfiguration(yacman.YacAttMap):
 
         :return str: submission script content template for current state
         """
-        with open(self.compute.submission_template, "r") as f:
+        with open(self.compute["submission_template"], "r") as f:
             return f.read()
 
     @property
@@ -145,28 +145,28 @@ class ComputingConfiguration(yacman.YacAttMap):
 
         if (
             package_name
-            and self.compute_packages
-            and package_name in self.compute_packages
+            and self["compute_packages"]
+            and package_name in self["compute_packages"]
         ):
             # Augment compute, creating it if needed.
             if self.compute is None:
                 _LOGGER.debug("Creating Project compute")
-                self.compute = yacman.YacAttMap()
+                self.compute = yacman.YAMLConfigManager()
                 _LOGGER.debug(
                     "Adding entries for package_name '{}'".format(package_name)
                 )
 
-            self.compute.add_entries(self.compute_packages[package_name])
+            self.compute.update(self["compute_packages"][package_name])
 
             # Ensure submission template is absolute. This *used to be* handled
             # at update (so the paths were stored as absolutes in the packages),
             # but now, it makes more sense to do it here so we can piggyback on
             # the default update() method and not even have to do that.
-            if not os.path.isabs(self.compute.submission_template):
+            if not os.path.isabs(self.compute["submission_template"]):
                 try:
-                    self.compute.submission_template = os.path.join(
-                        os.path.dirname(self["__internal"].file_path),
-                        self.compute.submission_template,
+                    self.compute["submission_template"] = os.path.join(
+                        os.path.dirname(self.filepath),
+                        self.compute["submission_template"],
                     )
                 except AttributeError as e:
                     # Environment and environment compute should at least have been
@@ -174,7 +174,7 @@ class ComputingConfiguration(yacman.YacAttMap):
                     _LOGGER.error(str(e))
 
             _LOGGER.debug(
-                "Submit template set to: {}".format(self.compute.submission_template)
+                "Submit template set to: {}".format(self.compute["submission_template"])
             )
 
             return True
@@ -184,7 +184,7 @@ class ComputingConfiguration(yacman.YacAttMap):
             # both present--but don't evaluate to True--is fairly harmless.
             _LOGGER.debug(
                 "Can't activate package. compute_packages = {}".format(
-                    self.compute_packages
+                    self["compute_packages"]
                 )
             )
 
@@ -214,7 +214,7 @@ class ComputingConfiguration(yacman.YacAttMap):
 
         :return set[str]: names of available compute packages
         """
-        return set(self.compute_packages.keys())
+        return set(self["compute_packages"].keys())
 
     def reset_active_settings(self):
         """
@@ -248,13 +248,13 @@ class ComputingConfiguration(yacman.YacAttMap):
         package-specific set of adapters, if any defined in 'adapters' section
         under currently active compute package.
 
-        :return yacman.YacAttMap: current adapters mapping
+        :return yacman.YAMLConfigManager: current adapters mapping
         """
-        adapters = yacman.YacAttMap()
-        if "adapters" in self and self.adapters is not None:
-            adapters.update(self.adapters)
+        adapters = yacman.YAMLConfigManager()
+        if "adapters" in self and self["adapters"] is not None:
+            adapters.update(self["adapters"])
         if "compute" in self and "adapters" in self.compute:
-            adapters.update(self.compute.adapters)
+            adapters.update(self.compute["adapters"])
         if not adapters:
             _LOGGER.debug("No adapters determined in divvy configuration file.")
         return adapters
@@ -270,7 +270,7 @@ class ComputingConfiguration(yacman.YacAttMap):
                 self.submit(temp.name, extra_vars)
         else:
             script = self.write_script(output_path, extra_vars)
-            submission_command = "{} {}".format(self.compute.submission_command, script)
+            submission_command = "{} {}".format(self.compute["submission_command"], script)
             _LOGGER.info(submission_command)
             os.system(submission_command)
 
@@ -337,7 +337,7 @@ class ComputingConfiguration(yacman.YacAttMap):
                 if len(extra_var) > 0 and list(extra_var.keys())[0] not in exclude:
                     variables.update(extra_var)
         _LOGGER.debug(
-            "Submission template: {}".format(self.compute.submission_template)
+            "Submission template: {}".format(self.compute["submission_template"])
         )
         if output_path:
             _LOGGER.info("Writing script to {}".format(os.path.abspath(output_path)))
@@ -379,6 +379,7 @@ def select_divvy_config(filepath):
         config_env_vars=COMPUTE_SETTINGS_VARNAME,
         default_config_filepath=DEFAULT_CONFIG_FILEPATH,
         check_exist=True,
+        config_name="divvy",
     )
     _LOGGER.debug("Selected divvy config: {}".format(divcfg))
     return divcfg
@@ -506,7 +507,7 @@ def build_argparser():
 
 
 def main():
-    """Primary workflow"""
+    """Primary workflow for divvy CLI"""
 
     parser = logmuse.add_logging_options(build_argparser())
     # args, remaining_args = parser.parse_known_args()

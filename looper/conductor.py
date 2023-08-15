@@ -517,7 +517,7 @@ class SubmissionConductor(object):
             if self.dry_run:
                 _LOGGER.info("Dry run, not submitted")
             elif self._rendered_ok:
-                sub_cmd = self.prj.dcc.compute.submission_command
+                sub_cmd = self.prj.dcc.compute["submission_command"]
                 submission_command = "{} {}".format(sub_cmd, script)
                 # Capture submission command return value so that we can
                 # intercept and report basic submission failures; #167
