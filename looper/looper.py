@@ -521,7 +521,9 @@ class Runner(Executor):
         if args.dry_run:
             job_sub_total_if_real = job_sub_total
             job_sub_total = 0
-            _LOGGER.info(f"Dry run. No jobs were actually submitted, but {job_sub_total_if_real} would have been.")
+            _LOGGER.info(
+                f"Dry run. No jobs were actually submitted, but {job_sub_total_if_real} would have been."
+            )
         _LOGGER.info("Jobs submitted: {}".format(job_sub_total))
 
         # Restructure sample/failure data for display.
