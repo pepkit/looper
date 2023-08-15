@@ -519,6 +519,7 @@ class Runner(Executor):
             )
         )
         _LOGGER.info("Commands submitted: {} of {}".format(cmd_sub_total, max_cmds))
+        self.debug['Commands submitted'] = "Commands submitted: {} of {}".format(cmd_sub_total, max_cmds)
         if args.dry_run:
             job_sub_total_if_real = job_sub_total
             job_sub_total = 0
@@ -532,6 +533,7 @@ class Runner(Executor):
         for sample, failures in failures.items():
             for f in failures:
                 samples_by_reason[f].add(sample)
+                self.debug[f] = sample
         # Collect samples by pipeline with submission failure.
         for piface, conductor in submission_conductors.items():
             # Don't add failure key if there are no samples that failed for
@@ -1188,13 +1190,13 @@ def main(test_args=None):
             )
         if args.command == "table":
             if use_pipestat:
-                return Tabulator(prj)(args)
+                Tabulator(prj)(args)
             else:
                 TableOld(prj)()
 
         if args.command == "report":
             if use_pipestat:
-                return Reporter(prj)(args)
+                Reporter(prj)(args)
             else:
                 ReportOld(prj)(args)
 
