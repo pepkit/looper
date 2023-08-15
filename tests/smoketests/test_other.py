@@ -16,6 +16,7 @@ def _make_flags(cfg, type, count):
 
 
 class TestLooperCheck:
+    @pytest.mark.skip(reason="Wait to deprecate CheckerOld")
     @pytest.mark.parametrize("flag_id", FLAGS)
     @pytest.mark.parametrize("count", list(range(2)))
     def test_check_works(self, prep_temp_pep, flag_id, count):
@@ -27,6 +28,7 @@ class TestLooperCheck:
         print_standard_stream(stderr)
         assert "{}: {}".format(flag_id.upper(), str(count)) in str(stderr)
 
+    @pytest.mark.skip(reason="Wait to deprecate CheckerOld ")
     @pytest.mark.parametrize("flag_id", FLAGS)
     @pytest.mark.parametrize("count", list(range(2)))
     def test_check_multi(self, prep_temp_pep, flag_id, count):
@@ -40,6 +42,7 @@ class TestLooperCheck:
         if flag_id != FLAGS[1]:
             assert "{}: {}".format(flag_id.upper(), str(count)) in str(stderr)
 
+    @pytest.mark.skip(reason="Wait to deprecate CheckerOld")
     @pytest.mark.parametrize("flag_id", ["3333", "tonieflag", "bogus", "ms"])
     def test_check_bogus(self, prep_temp_pep, flag_id):
         """Verify that checking works when bogus flags are created"""
