@@ -124,10 +124,13 @@ class TestLooperRunBehavior:
                 PIPELINE_INTERFACES_KEY
             ] = pifaces[1]
 
-        stdout, stderr, rc = subp_exec(tp, "run")
-        print_standard_stream(stderr)
-        assert rc == 0
-        assert "Commands submitted: 6 of 6" not in str(stderr)
+        x = test_args_expansion(tp, "run")
+        try:
+            result = main(test_args=x)
+            print(result)
+            assert result["Commands submitted"] != "Commands submitted: 6 of 6"
+        except Exception:
+            raise pytest.fail("DID RAISE {0}".format(Exception))
 
     def test_looper_var_templates(self, prep_temp_pep):
         tp = prep_temp_pep
@@ -154,10 +157,13 @@ class TestLooperRunBehavior:
         """CLI-specified pipelines overwrite ones from config"""
         tp = prep_temp_pep
         pi_pth = os.path.join(os.path.dirname(tp), PIS.format("1"))
-        stdout, stderr, rc = subp_exec(tp, "run", ["--pipeline-interfaces", pi_pth])
-        print_standard_stream(stderr)
-        assert rc == 0
-        assert "Commands submitted: 3 of 3" not in str(stdout)
+        x = test_args_expansion(tp, "run", ["--pipeline-interfaces", pi_pth])
+        try:
+            result = main(test_args=x)
+            print(result)
+            assert result["Commands submitted"] != "Commands submitted: 3 of 3"
+        except Exception:
+            raise pytest.fail("DID RAISE {0}".format(Exception))
 
     def test_looper_no_pipeline(self, prep_temp_pep):
         """
@@ -167,11 +173,13 @@ class TestLooperRunBehavior:
         tp = prep_temp_pep
         with mod_yaml_data(tp) as config_data:
             del config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][PIPELINE_INTERFACES_KEY]
-        stdout, stderr, rc = subp_exec(tp, "run")
-        print_standard_stream(stderr)
-        assert rc == 0
-        assert "Jobs submitted: 0" in str(stderr)
-        assert "No pipeline interfaces defined"
+        x = test_args_expansion(tp, "run")
+        try:
+            result = main(test_args=x)
+            print(result)
+            assert result["Jobs submitted"] == 0
+        except Exception:
+            raise pytest.fail("DID RAISE {0}".format(Exception))
 
     def test_looper_pipeline_not_found(self, prep_temp_pep):
         """
@@ -182,11 +190,14 @@ class TestLooperRunBehavior:
             config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][PIPELINE_INTERFACES_KEY] = [
                 "bogus"
             ]
-        stdout, stderr, rc = subp_exec(tp, "run")
-        print_standard_stream(stderr)
-        assert rc == 0
-        assert "Jobs submitted: 0" in str(stderr)
-        assert "Ignoring invalid pipeline interface source"
+        x = test_args_expansion(tp, "run")
+        try:
+            result = main(test_args=x)
+            print(result)
+            assert result["Jobs submitted"] == 0
+            assert "No pipeline interfaces defined" in result.keys()
+        except Exception:
+            raise pytest.fail("DID RAISE {0}".format(Exception))
 
     def test_looper_pipeline_invalid(self, prep_temp_pep):
         """
@@ -204,12 +215,14 @@ class TestLooperRunBehavior:
         piface_path = os.path.join(os.path.dirname(tp), pifaces[1])
         with mod_yaml_data(piface_path) as piface_data:
             del piface_data["pipeline_name"]
-        stdout, stderr, rc = subp_exec(tp, "run")
-        print_standard_stream(stderr)
-        assert rc == 0
-        assert "Jobs submitted: 0" in str(stderr)
-        assert "Ignoring invalid pipeline interface source"
-        assert "'pipeline_name' is a required property"
+        x = test_args_expansion(tp, "run")
+        try:
+            result = main(test_args=x)
+            print(result)
+            assert result["Jobs submitted"] == 0
+            assert "No pipeline interfaces defined" in result.keys()
+        except Exception:
+            raise pytest.fail("DID RAISE {0}".format(Exception))
 
     def test_looper_sample_attr_missing(self, prep_temp_pep):
         """
@@ -218,10 +231,13 @@ class TestLooperRunBehavior:
         tp = prep_temp_pep
         with mod_yaml_data(tp) as config_data:
             del config_data[SAMPLE_MODS_KEY][CONSTANT_KEY]["attr"]
-        stdout, stderr, rc = subp_exec(tp, "run")
-        print_standard_stream(stderr)
-        assert rc == 0
-        assert "Jobs submitted: 0" in str(stderr)
+        x = test_args_expansion(tp, "run")
+        try:
+            result = main(test_args=x)
+            print(result)
+            assert result["Jobs submitted"] == 0
+        except Exception:
+            raise pytest.fail("DID RAISE {0}".format(Exception))
 
     @pytest.mark.skipif(not is_connected(), reason="Test needs an internet connection")
     def test_looper_sample_name_whitespace(self, prep_temp_pep):
@@ -250,10 +266,13 @@ class TestLooperRunBehavior:
         tp = prep_temp_pep
         with mod_yaml_data(tp) as config_data:
             config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][SAMPLE_TOGGLE_ATTR] = 0
-        stdout, stderr, rc = subp_exec(tp, "run")
-        print_standard_stream(stderr)
-        assert rc == 0
-        assert "Jobs submitted: 0" in str(stderr)
+        x = test_args_expansion(tp, "run")
+        try:
+            result = main(test_args=x)
+            print(result)
+            assert result["Jobs submitted"] == 0
+        except Exception:
+            raise pytest.fail("DID RAISE {0}".format(Exception))
 
     @pytest.mark.parametrize("arg", CMD_STRS)
     def test_cmd_extra_sample(self, prep_temp_pep, arg):
@@ -525,15 +544,21 @@ class TestLooperConfig:
     @pytest.mark.parametrize("cmd", ["run", "runp"])
     def test_init_config_file(self, prep_temp_pep, cmd, dotfile_path):
         tp = prep_temp_pep
-        stdout, stderr, rc = subp_exec(tp, "init")
-        print_standard_stream(stderr)
-        print_standard_stream(stdout)
-        assert rc == 0
+        # stdout, stderr, rc = subp_exec(tp, "init")
+        # print_standard_stream(stderr)
+        # print_standard_stream(stdout)
+        x = test_args_expansion(tp, "init")
+        try:
+            result = main(test_args=x)
+        except Exception:
+            raise pytest.fail("DID RAISE {0}".format(Exception))
+        assert result == 0
         assert_content_in_all_files(dotfile_path, tp)
-        stdout, stderr, rc = subp_exec(cmd=cmd)
-        print_standard_stream(stderr)
-        print_standard_stream(stdout)
-        assert rc == 0
+        x = test_args_expansion(tp, cmd)
+        try:
+            result = main(test_args=x)
+        except Exception:
+            raise pytest.fail("DID RAISE {0}".format(Exception))
 
     def test_correct_execution_of_config(self, prepare_pep_with_dot_file):
         dot_file_path = prepare_pep_with_dot_file
