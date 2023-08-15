@@ -167,11 +167,20 @@ class TestLooperRunBehavior:
         tp = prep_temp_pep
         with mod_yaml_data(tp) as config_data:
             del config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][PIPELINE_INTERFACES_KEY]
-        stdout, stderr, rc = subp_exec(tp, "run")
-        print_standard_stream(stderr)
-        assert rc == 0
-        assert "Jobs submitted: 0" in str(stderr)
-        assert "No pipeline interfaces defined"
+        # stdout, stderr, rc = subp_exec(tp, "run")
+        # print_standard_stream(stderr)
+        # assert rc == 0
+        # assert "Jobs submitted: 0" in str(stderr)
+        # assert "No pipeline interfaces defined"
+        #
+        #tp = prep_temp_pep
+        x = test_args_expansion(tp, "run")
+        try:
+            result = main(test_args=x)
+            print(result)
+            assert result['Jobs submitted'] == 0
+        except Exception:
+            raise pytest.fail("DID RAISE {0}".format(Exception))
 
     def test_looper_pipeline_not_found(self, prep_temp_pep):
         """

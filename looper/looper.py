@@ -415,6 +415,7 @@ class Runner(Executor):
         :param bool rerun: whether the given sample is being rerun rather than
             run for the first time
         """
+        self.debug = {} # initialize empty dict for return values
         max_cmds = sum(list(map(len, self.prj._samples_by_interface.values())))
         self.counter.total = max_cmds
         failures = defaultdict(list)  # Collect problems by sample.
@@ -523,6 +524,7 @@ class Runner(Executor):
             job_sub_total = 0
             _LOGGER.info(f"Dry run. No jobs were actually submitted, but {job_sub_total_if_real} would have been.")
         _LOGGER.info("Jobs submitted: {}".format(job_sub_total))
+        self.debug['Jobs submitted'] = job_sub_total
 
         # Restructure sample/failure data for display.
         samples_by_reason = defaultdict(set)
@@ -564,6 +566,7 @@ class Runner(Executor):
             _LOGGER.debug("Raising SampleFailedException")
             raise SampleFailedException
 
+        return self.debug
 
 class Reporter(Executor):
     """Combine project outputs into a browsable HTML report"""
@@ -1154,7 +1157,7 @@ def main(test_args=None):
             run = Runner(prj)
             try:
                 compute_kwargs = _proc_resources_spec(args)
-                run(args, rerun=(args.command == "rerun"), **compute_kwargs)
+                return run(args, rerun=(args.command == "rerun"), **compute_kwargs)
             except SampleFailedException:
                 sys.exit(1)
             except IOError:
@@ -1185,13 +1188,13 @@ def main(test_args=None):
             )
         if args.command == "table":
             if use_pipestat:
-                Tabulator(prj)(args)
+                return Tabulator(prj)(args)
             else:
                 TableOld(prj)()
 
         if args.command == "report":
             if use_pipestat:
-                Reporter(prj)(args)
+                return Reporter(prj)(args)
             else:
                 ReportOld(prj)(args)
 
