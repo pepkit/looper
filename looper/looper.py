@@ -75,7 +75,9 @@ class Executor(object):
         """
         super(Executor, self).__init__()
         self.prj = prj
-        self.counter = LooperCounter(len(prj.samples))
+        print(self.prj)
+        print(f"samples:{self.prj.sample_table}")
+        self.counter = LooperCounter(len(prj.samples) if prj.samples else 0)
 
     @abc.abstractmethod
     def __call__(self, *args, **kwargs):
@@ -518,9 +520,11 @@ class Runner(Executor):
             )
         )
         _LOGGER.info("Commands submitted: {} of {}".format(cmd_sub_total, max_cmds))
-        _LOGGER.info("Jobs submitted: {}".format(job_sub_total))
         if args.dry_run:
-            _LOGGER.info("Dry run. No jobs were actually submitted.")
+            job_sub_total_if_real = job_sub_total
+            job_sub_total = 0
+            _LOGGER.info(f"Dry run. No jobs were actually submitted, but {job_sub_total_if_real} would have been.")
+        _LOGGER.info("Jobs submitted: {}".format(job_sub_total))
 
         # Restructure sample/failure data for display.
         samples_by_reason = defaultdict(set)
