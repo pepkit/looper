@@ -189,7 +189,7 @@ class Project(peppyProject):
         """
         try:
             result = self[EXTRA_KEY][attr_name]
-                # getattr(self[EXTRA_KEY], attr_name))
+            # getattr(self[EXTRA_KEY], attr_name))
         except (AttributeError, KeyError):
             pass
         else:
