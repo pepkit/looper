@@ -19,7 +19,7 @@ from peppy.exceptions import RemoteYAMLError
 from pipestat import PipestatError
 from ubiquerg import expandpath, is_command_callable
 from yaml import dump
-from yacman import YAMLConfigManager, expandpath as expath
+from yacman import YAMLConfigManager
 
 from .const import *
 from .exceptions import JobSubmissionException, SampleFailedException
@@ -731,7 +731,7 @@ class SubmissionConductor(object):
 
             namespaces["pipeline"]["var_templates"] = pl_iface[VAR_TEMPL_KEY] or {}
             for k, v in namespaces["pipeline"]["var_templates"].items():
-                namespaces["pipeline"]["var_templates"][k] = expath(v)
+                namespaces["pipeline"]["var_templates"][k] = expandpath(v)
 
             # pre_submit hook namespace updates
             namespaces = _exec_pre_submit(pl_iface, namespaces)
@@ -766,7 +766,7 @@ class SubmissionConductor(object):
         _LOGGER.debug("compute namespace:\n{}".format(self.prj.dcc.compute))
         _LOGGER.debug("looper namespace:\n{}".format(looper))
         _LOGGER.debug("pipestat namespace:\n{}".format(pipestat_namespace))
-        subm_base = os.path.join(self.prj.submission_folder, looper[JOB_NAME_KEY])
+        subm_base = os.path.join(expandpath(self.prj.submission_folder), looper[JOB_NAME_KEY])
         return self.prj.dcc.write_script(
             output_path=subm_base + ".sub", extra_vars=[{"looper": looper}]
         )
