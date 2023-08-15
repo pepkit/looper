@@ -110,9 +110,12 @@ class TestLooperRunBehavior:
 
     def test_looper_multi_pipeline(self, prep_temp_pep):
         tp = prep_temp_pep
-        stdout, stderr, rc = subp_exec(tp, "run")
-        print_standard_stream(stderr)
-        assert "Commands submitted: 6 of 6" in str(stderr)
+        x = test_args_expansion(tp, "run")
+        try:
+            result = main(test_args=x)
+            assert result["Commands submitted"] == "Commands submitted: 6 of 6"
+        except Exception:
+            raise pytest.fail("DID RAISE {0}".format(Exception))
 
     def test_looper_single_pipeline(self, prep_temp_pep):
         tp = prep_temp_pep
@@ -127,7 +130,6 @@ class TestLooperRunBehavior:
         x = test_args_expansion(tp, "run")
         try:
             result = main(test_args=x)
-            print(result)
             assert result["Commands submitted"] != "Commands submitted: 6 of 6"
         except Exception:
             raise pytest.fail("DID RAISE {0}".format(Exception))
@@ -160,7 +162,7 @@ class TestLooperRunBehavior:
         x = test_args_expansion(tp, "run", ["--pipeline-interfaces", pi_pth])
         try:
             result = main(test_args=x)
-            print(result)
+
             assert result["Commands submitted"] != "Commands submitted: 3 of 3"
         except Exception:
             raise pytest.fail("DID RAISE {0}".format(Exception))
@@ -176,7 +178,7 @@ class TestLooperRunBehavior:
         x = test_args_expansion(tp, "run")
         try:
             result = main(test_args=x)
-            print(result)
+
             assert result["Jobs submitted"] == 0
         except Exception:
             raise pytest.fail("DID RAISE {0}".format(Exception))
@@ -193,7 +195,7 @@ class TestLooperRunBehavior:
         x = test_args_expansion(tp, "run")
         try:
             result = main(test_args=x)
-            print(result)
+
             assert result["Jobs submitted"] == 0
             assert "No pipeline interfaces defined" in result.keys()
         except Exception:
@@ -218,7 +220,7 @@ class TestLooperRunBehavior:
         x = test_args_expansion(tp, "run")
         try:
             result = main(test_args=x)
-            print(result)
+
             assert result["Jobs submitted"] == 0
             assert "No pipeline interfaces defined" in result.keys()
         except Exception:
@@ -234,7 +236,7 @@ class TestLooperRunBehavior:
         x = test_args_expansion(tp, "run")
         try:
             result = main(test_args=x)
-            print(result)
+
             assert result["Jobs submitted"] == 0
         except Exception:
             raise pytest.fail("DID RAISE {0}".format(Exception))
@@ -244,20 +246,20 @@ class TestLooperRunBehavior:
         """
         Piface is ignored when it does not exist
         """
-        pepfile = prep_temp_pep
+        tp = prep_temp_pep
         imply_whitespace = [
             {
                 IMPLIED_IF_KEY: {"sample_name": "sample1"},
                 IMPLIED_THEN_KEY: {"sample_name": "sample whitespace"},
             }
         ]
-        with mod_yaml_data(pepfile) as config_data:
+        with mod_yaml_data(tp) as config_data:
             config_data[SAMPLE_MODS_KEY][IMPLIED_KEY] = imply_whitespace
-        stdout, stderr, rc = subp_exec(pepfile, "run")
-        print_standard_stream(stderr)
-        assert rc == 0
-        expected_prefix = "Short-circuiting due to validation error"
-        assert expected_prefix in str(stderr)
+        x = test_args_expansion(tp, "run")
+        with pytest.raises(Exception):
+            result = main(test_args=x)
+            expected_prefix = "Short-circuiting due to validation error"
+            assert expected_prefix in str(result["EidoValidationError"])
 
     def test_looper_toggle(self, prep_temp_pep):
         """
@@ -269,7 +271,7 @@ class TestLooperRunBehavior:
         x = test_args_expansion(tp, "run")
         try:
             result = main(test_args=x)
-            print(result)
+
             assert result["Jobs submitted"] == 0
         except Exception:
             raise pytest.fail("DID RAISE {0}".format(Exception))
@@ -325,8 +327,12 @@ class TestLooperRunpBehavior:
 
     def test_looper_multi_pipeline(self, prep_temp_pep):
         tp = prep_temp_pep
-        stdout, stderr, rc = subp_exec(tp, "runp")
-        assert "Jobs submitted: 2" in str(stderr)
+        x = test_args_expansion(tp, "runp")
+        try:
+            result = main(test_args=x)
+            assert result["Jobs submitted"] == 2
+        except Exception:
+            raise pytest.fail("DID RAISE {0}".format(Exception))
 
     def test_looper_single_pipeline(self, prep_temp_pep):
         tp = prep_temp_pep
@@ -335,11 +341,13 @@ class TestLooperRunpBehavior:
             config_data[LOOPER_KEY][CLI_KEY]["runp"][
                 PIPELINE_INTERFACES_KEY
             ] = piface_path
-        stdout, stderr, rc = subp_exec(tp, "runp")
-        print_standard_stream(stderr)
-        assert rc == 0
-        assert "Jobs submitted: 2" not in str(stderr)
-        assert "Jobs submitted: 1" in str(stderr)
+        x = test_args_expansion(tp, "runp")
+        try:
+            result = main(test_args=x)
+            assert result["Jobs submitted"] != 2
+            assert result["Jobs submitted"] == 1
+        except Exception:
+            raise pytest.fail("DID RAISE {0}".format(Exception))
 
     @pytest.mark.parametrize("arg", CMD_STRS)
     def test_cmd_extra_project(self, prep_temp_pep, arg):

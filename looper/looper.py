@@ -354,6 +354,7 @@ class Collator(Executor):
             arguments, recognized by looper
         """
         jobs = 0
+        self.debug = {}
         project_pifaces = self.prj.project_pipeline_interface_sources
         if not project_pifaces:
             raise MisconfigurationException(
@@ -399,6 +400,8 @@ class Collator(Executor):
                 jobs += conductor.num_job_submissions
         _LOGGER.info("\nLooper finished")
         _LOGGER.info("Jobs submitted: {}".format(jobs))
+        self.debug["Jobs submitted"] = jobs
+        return self.debug
 
 
 class Runner(Executor):
@@ -476,6 +479,9 @@ class Runner(Executor):
                     validate_sample(self.prj, sample.sample_name, schema_file)
                 except EidoValidationError as e:
                     _LOGGER.error(f"Short-circuiting due to validation error: {e}")
+                    self.debug[
+                        "EidoValidationError"
+                    ] = f"Short-circuiting due to validation error: {e}"
                     return False
                 except RemoteYAMLError:
                     _LOGGER.warn(
@@ -1070,14 +1076,13 @@ def main(test_args=None):
 
     if "config_file" in vars(args):
         if args.config_file is None:
-            looper_cfg_path = os.path.relpath(dotfile_path(), start = os.curdir)
+            looper_cfg_path = os.path.relpath(dotfile_path(), start=os.curdir)
             try:
                 if args.looper_config:
                     looper_config_dict = read_looper_config_file(args.looper_config)
                 else:
                     looper_config_dict = read_looper_dotfile()
-                    _LOGGER.info(f"Using looper config ({looper_cfg_path})."
-                    )
+                    _LOGGER.info(f"Using looper config ({looper_cfg_path}).")
 
                 for looper_config_key, looper_config_item in looper_config_dict.items():
                     setattr(args, looper_config_key, looper_config_item)
@@ -1094,7 +1099,6 @@ def main(test_args=None):
                 "be removed in future versions. Please use a looper config file. For more information see "
                 "looper.databio.org/en/latest/looper-config"
             )
-
 
     args = enrich_args_via_cfg(args, aux_parser, test_args)
 
@@ -1178,6 +1182,7 @@ def main(test_args=None):
             compute_kwargs = _proc_resources_spec(args)
             collate = Collator(prj)
             collate(args, **compute_kwargs)
+            return collate.debug
 
         if args.command == "destroy":
             return Destroyer(prj)(args)
