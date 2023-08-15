@@ -415,7 +415,7 @@ class Runner(Executor):
         :param bool rerun: whether the given sample is being rerun rather than
             run for the first time
         """
-        self.debug = {} # initialize empty dict for return values
+        self.debug = {}  # initialize empty dict for return values
         max_cmds = sum(list(map(len, self.prj._samples_by_interface.values())))
         self.counter.total = max_cmds
         failures = defaultdict(list)  # Collect problems by sample.
@@ -519,13 +519,17 @@ class Runner(Executor):
             )
         )
         _LOGGER.info("Commands submitted: {} of {}".format(cmd_sub_total, max_cmds))
-        self.debug['Commands submitted'] = "Commands submitted: {} of {}".format(cmd_sub_total, max_cmds)
+        self.debug["Commands submitted"] = "Commands submitted: {} of {}".format(
+            cmd_sub_total, max_cmds
+        )
         if args.dry_run:
             job_sub_total_if_real = job_sub_total
             job_sub_total = 0
-            _LOGGER.info(f"Dry run. No jobs were actually submitted, but {job_sub_total_if_real} would have been.")
+            _LOGGER.info(
+                f"Dry run. No jobs were actually submitted, but {job_sub_total_if_real} would have been."
+            )
         _LOGGER.info("Jobs submitted: {}".format(job_sub_total))
-        self.debug['Jobs submitted'] = job_sub_total
+        self.debug["Jobs submitted"] = job_sub_total
 
         # Restructure sample/failure data for display.
         samples_by_reason = defaultdict(set)
@@ -569,6 +573,7 @@ class Runner(Executor):
             raise SampleFailedException
 
         return self.debug
+
 
 class Reporter(Executor):
     """Combine project outputs into a browsable HTML report"""
@@ -1072,16 +1077,14 @@ def main(test_args=None):
             )
 
     if args.command == "init":
-        sys.exit(
-            int(
-                not init_dotfile(
-                    dotfile_path(),
-                    args.config_file,
-                    args.output_dir,
-                    args.sample_pipeline_interfaces,
-                    args.project_pipeline_interfaces,
-                    args.force,
-                )
+        return int(
+            not init_dotfile(
+                dotfile_path(),
+                args.config_file,
+                args.output_dir,
+                args.sample_pipeline_interfaces,
+                args.project_pipeline_interfaces,
+                args.force,
             )
         )
 

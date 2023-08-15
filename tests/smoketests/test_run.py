@@ -128,7 +128,7 @@ class TestLooperRunBehavior:
         try:
             result = main(test_args=x)
             print(result)
-            assert result['Commands submitted'] != "Commands submitted: 6 of 6"
+            assert result["Commands submitted"] != "Commands submitted: 6 of 6"
         except Exception:
             raise pytest.fail("DID RAISE {0}".format(Exception))
 
@@ -161,7 +161,7 @@ class TestLooperRunBehavior:
         try:
             result = main(test_args=x)
             print(result)
-            assert result['Commands submitted'] != "Commands submitted: 3 of 3"
+            assert result["Commands submitted"] != "Commands submitted: 3 of 3"
         except Exception:
             raise pytest.fail("DID RAISE {0}".format(Exception))
 
@@ -177,7 +177,7 @@ class TestLooperRunBehavior:
         try:
             result = main(test_args=x)
             print(result)
-            assert result['Jobs submitted'] == 0
+            assert result["Jobs submitted"] == 0
         except Exception:
             raise pytest.fail("DID RAISE {0}".format(Exception))
 
@@ -194,8 +194,8 @@ class TestLooperRunBehavior:
         try:
             result = main(test_args=x)
             print(result)
-            assert result['Jobs submitted'] == 0
-            assert 'No pipeline interfaces defined' in result.keys()
+            assert result["Jobs submitted"] == 0
+            assert "No pipeline interfaces defined" in result.keys()
         except Exception:
             raise pytest.fail("DID RAISE {0}".format(Exception))
 
@@ -219,8 +219,8 @@ class TestLooperRunBehavior:
         try:
             result = main(test_args=x)
             print(result)
-            assert result['Jobs submitted'] == 0
-            assert 'No pipeline interfaces defined' in result.keys()
+            assert result["Jobs submitted"] == 0
+            assert "No pipeline interfaces defined" in result.keys()
         except Exception:
             raise pytest.fail("DID RAISE {0}".format(Exception))
 
@@ -235,7 +235,7 @@ class TestLooperRunBehavior:
         try:
             result = main(test_args=x)
             print(result)
-            assert result['Jobs submitted'] == 0
+            assert result["Jobs submitted"] == 0
         except Exception:
             raise pytest.fail("DID RAISE {0}".format(Exception))
 
@@ -270,10 +270,9 @@ class TestLooperRunBehavior:
         try:
             result = main(test_args=x)
             print(result)
-            assert result['Jobs submitted'] == 0
+            assert result["Jobs submitted"] == 0
         except Exception:
             raise pytest.fail("DID RAISE {0}".format(Exception))
-
 
     @pytest.mark.parametrize("arg", CMD_STRS)
     def test_cmd_extra_sample(self, prep_temp_pep, arg):
@@ -545,15 +544,21 @@ class TestLooperConfig:
     @pytest.mark.parametrize("cmd", ["run", "runp"])
     def test_init_config_file(self, prep_temp_pep, cmd, dotfile_path):
         tp = prep_temp_pep
-        stdout, stderr, rc = subp_exec(tp, "init")
-        print_standard_stream(stderr)
-        print_standard_stream(stdout)
-        assert rc == 0
+        # stdout, stderr, rc = subp_exec(tp, "init")
+        # print_standard_stream(stderr)
+        # print_standard_stream(stdout)
+        x = test_args_expansion(tp, "init")
+        try:
+            result = main(test_args=x)
+        except Exception:
+            raise pytest.fail("DID RAISE {0}".format(Exception))
+        assert result == 0
         assert_content_in_all_files(dotfile_path, tp)
-        stdout, stderr, rc = subp_exec(cmd=cmd)
-        print_standard_stream(stderr)
-        print_standard_stream(stdout)
-        assert rc == 0
+        x = test_args_expansion(tp, cmd)
+        try:
+            result = main(test_args=x)
+        except Exception:
+            raise pytest.fail("DID RAISE {0}".format(Exception))
 
     def test_correct_execution_of_config(self, prepare_pep_with_dot_file):
         dot_file_path = prepare_pep_with_dot_file
