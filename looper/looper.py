@@ -75,9 +75,7 @@ class Executor(object):
         """
         super(Executor, self).__init__()
         self.prj = prj
-        print(self.prj)
-        print(f"samples:{self.prj.sample_table}")
-        self.counter = LooperCounter(len(prj.samples) if prj.samples else 0)
+        self.counter = LooperCounter(len(prj.samples))
 
     @abc.abstractmethod
     def __call__(self, *args, **kwargs):
