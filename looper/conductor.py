@@ -149,7 +149,7 @@ def write_custom_template(namespaces):
 
     tpl = load_template(namespaces["pipeline"])
     content = tpl.render(namespaces)
-    pth = _get_yaml_path(namespaces, "custom_template_output", "_config")
+    pth = _get_yaml_path(namespaces, "custom_template_output", "config")
     namespaces["sample"]["custom_template_output"] = pth
     with open(pth, "wb") as fh:
         # print(content)
@@ -245,7 +245,7 @@ def write_submission_yaml(namespaces):
     path = _get_yaml_path(namespaces, SAMPLE_CWL_YAML_PATH_KEY, "_submission")
     my_namespaces = {}
     for namespace, values in namespaces.items():
-        my_namespaces.update({str(namespace): values.to_dict()})
+        my_namespaces.update({str(namespace): dict(values)})
     with open(path, "w") as yamlfile:
         dump(my_namespaces, yamlfile)
     return my_namespaces

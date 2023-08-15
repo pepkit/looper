@@ -62,7 +62,10 @@ class ProjectContext(object):
             return self.__dict__[item]
         else:
             # Dispatch attribute request to Project.
-            return getattr(self.prj, item)
+            if hasattr(self.prj, item):
+                return getattr(self.prj, item)
+            else:
+                return self.prj.get(item)
 
     def __getitem__(self, item):
         """Provide the Mapping-like item access to the instance's Project."""
@@ -107,7 +110,7 @@ class Project(peppyProject):
             self.from_dict(prj_dict)
             self["_config_file"] = os.getcwd()
 
-        setattr(self, EXTRA_KEY, dict())
+        self[EXTRA_KEY] = {}
 
         # add sample pipeline interface to the project
         if kwargs.get(SAMPLE_PL_ARG):
@@ -115,7 +118,8 @@ class Project(peppyProject):
 
         for attr_name in CLI_PROJ_ATTRS:
             if attr_name in kwargs:
-                getattr(self, EXTRA_KEY)[attr_name] = kwargs[attr_name]
+                self[EXTRA_KEY][attr_name] = kwargs[attr_name]
+                # setattr(self[EXTRA_KEY], attr_name, kwargs[attr_name])
         self._samples_by_interface = self._samples_by_piface(self.piface_key)
         self._interfaces_by_sample = self._piface_by_samples()
         self.linked_sample_interfaces = self._get_linked_pifaces()
@@ -128,7 +132,7 @@ class Project(peppyProject):
             if divcfg_path is None
             else ComputingConfiguration(filepath=divcfg_path)
         )
-        if hasattr(self, DRY_RUN_KEY) and not self[DRY_RUN_KEY]:
+        if DRY_RUN_KEY in self and not self[DRY_RUN_KEY]:
             _LOGGER.debug("Ensuring project directories exist")
             self.make_project_dirs()
 
@@ -184,7 +188,8 @@ class Project(peppyProject):
          found
         """
         try:
-            result = getattr(getattr(self, EXTRA_KEY), attr_name)
+            result = self[EXTRA_KEY][attr_name]
+                # getattr(self[EXTRA_KEY], attr_name))
         except (AttributeError, KeyError):
             pass
         else:
@@ -492,8 +497,8 @@ class Project(peppyProject):
             if pipestat_sect is not None and attr_name in pipestat_sect:
                 return pipestat_sect[attr_name]
             try:
-                return getattr(object, default)
-            except AttributeError:
+                return object[default]
+            except KeyError:
                 if no_err:
                     return None
                 raise AttributeError(f"'{default}' attribute is missing")
@@ -701,8 +706,8 @@ class Project(peppyProject):
 
         :param list | str sample_piface: sample pipeline interface
         """
-        self["_config"].setdefault("sample_modifiers", {})
-        self["_config"]["sample_modifiers"].setdefault("append", {})
+        self.config.setdefault("sample_modifiers", {})
+        self.config["sample_modifiers"].setdefault("append", {})
         self.config["sample_modifiers"]["append"]["pipeline_interfaces"] = sample_piface
 
         self.modify_samples()
