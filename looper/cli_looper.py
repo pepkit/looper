@@ -14,10 +14,10 @@ from . import __version__
 from .const import *
 from .divvy import DEFAULT_COMPUTE_RESOURCES_NAME, select_divvy_config
 from .exceptions import *
-from .looper import Runner
+from .looper import *
 from .parser_types import *
 from .project import Project, ProjectContext
-from .utils import dotfile_path, enrich_args_via_cfg, is_registry_path, read_looper_dotfile, read_yaml_file
+from .utils import dotfile_path, enrich_args_via_cfg, init_dotfile, is_registry_path, read_looper_dotfile, read_yaml_file
 
 class _StoreBoolActionType(argparse.Action):
     """

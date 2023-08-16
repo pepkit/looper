@@ -42,6 +42,7 @@ from .html_reports_pipestat import HTMLReportBuilder, fetch_pipeline_results
 from .html_reports_project_pipestat import HTMLReportBuilderProject
 from .pipeline_interface import PipelineInterface
 from .project import Project
+from .utils import desired_samples_range_skipped, desired_samples_range_limited
 
 _PKGNAME = "looper"
 _LOGGER = logging.getLogger(_PKGNAME)
