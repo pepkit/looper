@@ -450,6 +450,7 @@ class Runner(Executor):
             submission_conductors[piface.pipe_iface_file] = conductor
 
         _LOGGER.info(f"Pipestat compatible: {self.prj.pipestat_configured_project}")
+        self.debug["Pipestat compatible"] = self.prj.pipestat_configured_project or self.prj.pipestat_configured
 
         for sample in select_samples(prj=self.prj, args=args):
             pl_fails = []
@@ -605,8 +606,8 @@ class Tabulator(Executor):
             psms = self.prj.get_pipestat_managers(project_level=True)
             print(psms)
             for name, psm in psms.items():
-                psm.table()
-            # self.counter = LooperCounter(len(self.prj.project_pipeline_interfaces))
+                psm.table(pipeline_type='project')
+            #self.counter = LooperCounter(len(self.prj.project_pipeline_interfaces))
             # for piface in self.prj.project_pipeline_interfaces:
             #     # Do the stats and object summarization.
             #     pipeline_name = piface.pipeline_name
@@ -636,65 +637,65 @@ class Tabulator(Executor):
         return self
 
 
-def _create_stats_summary(project, pipeline_name, project_level, counter):
-    """
-    Create stats spreadsheet and columns to be considered in the report, save
-    the spreadsheet to file
-
-    :param looper.Project project: the project to be summarized
-    :param str pipeline_name: name of the pipeline to tabulate results for
-    :param bool project_level: whether the project-level pipeline resutlts
-        should be tabulated
-    :param looper.LooperCounter counter: a counter object
-    """
-    # Create stats_summary file
-    columns = set()
-    stats = []
-    _LOGGER.info("Creating stats summary")
-    if project_level:
-        _LOGGER.info(
-            counter.show(name=project.name, type="project", pipeline_name=pipeline_name)
-        )
-        reported_stats = {"project_name": project.name}
-        results = fetch_pipeline_results(
-            project=project,
-            pipeline_name=pipeline_name,
-            inclusion_fun=lambda x: x not in OBJECT_TYPES,
-        )
-        reported_stats.update(results)
-        stats.append(reported_stats)
-        columns |= set(reported_stats.keys())
-
-    else:
-        for sample in project.samples:
-            sn = sample.sample_name
-            _LOGGER.info(counter.show(sn, pipeline_name))
-            reported_stats = {project.sample_table_index: sn}
-            results = fetch_pipeline_results(
-                project=project,
-                pipeline_name=pipeline_name,
-                sample_name=sn,
-                inclusion_fun=lambda x: x not in OBJECT_TYPES,
-            )
-            reported_stats.update(results)
-            stats.append(reported_stats)
-            columns |= set(reported_stats.keys())
-
-    tsv_outfile_path = get_file_for_project(project, pipeline_name, "stats_summary.tsv")
-    tsv_outfile = open(tsv_outfile_path, "w")
-    tsv_writer = csv.DictWriter(
-        tsv_outfile, fieldnames=list(columns), delimiter="\t", extrasaction="ignore"
-    )
-    tsv_writer.writeheader()
-    for row in stats:
-        tsv_writer.writerow(row)
-    tsv_outfile.close()
-    _LOGGER.info(
-        f"'{pipeline_name}' pipeline stats summary (n={len(stats)}):"
-        f" {tsv_outfile_path}"
-    )
-    counter.reset()
-    return stats
+# def _create_stats_summary(project, pipeline_name, project_level, counter):
+#     """
+#     Create stats spreadsheet and columns to be considered in the report, save
+#     the spreadsheet to file
+#
+#     :param looper.Project project: the project to be summarized
+#     :param str pipeline_name: name of the pipeline to tabulate results for
+#     :param bool project_level: whether the project-level pipeline resutlts
+#         should be tabulated
+#     :param looper.LooperCounter counter: a counter object
+#     """
+#     # Create stats_summary file
+#     columns = set()
+#     stats = []
+#     _LOGGER.info("Creating stats summary")
+#     if project_level:
+#         _LOGGER.info(
+#             counter.show(name=project.name, type="project", pipeline_name=pipeline_name)
+#         )
+#         reported_stats = {"project_name": project.name}
+#         results = fetch_pipeline_results(
+#             project=project,
+#             pipeline_name=pipeline_name,
+#             inclusion_fun=lambda x: x not in OBJECT_TYPES,
+#         )
+#         reported_stats.update(results)
+#         stats.append(reported_stats)
+#         columns |= set(reported_stats.keys())
+#
+#     else:
+#         for sample in project.samples:
+#             sn = sample.sample_name
+#             _LOGGER.info(counter.show(sn, pipeline_name))
+#             reported_stats = {project.sample_table_index: sn}
+#             results = fetch_pipeline_results(
+#                 project=project,
+#                 pipeline_name=pipeline_name,
+#                 sample_name=sn,
+#                 inclusion_fun=lambda x: x not in OBJECT_TYPES,
+#             )
+#             reported_stats.update(results)
+#             stats.append(reported_stats)
+#             columns |= set(reported_stats.keys())
+#
+#     tsv_outfile_path = get_file_for_project(project, pipeline_name, "stats_summary.tsv")
+#     tsv_outfile = open(tsv_outfile_path, "w")
+#     tsv_writer = csv.DictWriter(
+#         tsv_outfile, fieldnames=list(columns), delimiter="\t", extrasaction="ignore"
+#     )
+#     tsv_writer.writeheader()
+#     for row in stats:
+#         tsv_writer.writerow(row)
+#     tsv_outfile.close()
+#     _LOGGER.info(
+#         f"'{pipeline_name}' pipeline stats summary (n={len(stats)}):"
+#         f" {tsv_outfile_path}"
+#     )
+#     counter.reset()
+#     return stats
 
 
 def _create_obj_summary(project, pipeline_name, project_level, counter):
