@@ -81,6 +81,9 @@ __all__ = [
     "DEFAULT_CONFIG_FILEPATH",
     "DEFAULT_CONFIG_SCHEMA",
     "DEFAULT_COMPUTE_RESOURCES_NAME",
+    "DEBUG_JOBS",
+    "DEBUG_COMMANDS",
+    "DEBUG_EIDO_VALIDATION",
 ]
 
 FLAGS = ["completed", "running", "failed", "waiting", "partial"]
@@ -111,6 +114,10 @@ def _get_apperance_dict(type, templ=APPEARANCE_BY_FLAG):
             ret[flag][key] = ret[flag][key].format(type=type)
     return ret
 
+# Debug keys
+DEBUG_JOBS = "Jobs submitted"
+DEBUG_COMMANDS = "Commands submitted"
+DEBUG_EIDO_VALIDATION = "EidoValidationError"
 
 # Compute-related (for divvy)
 COMPUTE_SETTINGS_VARNAME = ["DIVCFG"]

@@ -400,7 +400,7 @@ class Collator(Executor):
                 jobs += conductor.num_job_submissions
         _LOGGER.info("\nLooper finished")
         _LOGGER.info("Jobs submitted: {}".format(jobs))
-        self.debug["Jobs submitted"] = jobs
+        self.debug[DEBUG_JOBS] = jobs
         return self.debug
 
 
@@ -480,7 +480,7 @@ class Runner(Executor):
                 except EidoValidationError as e:
                     _LOGGER.error(f"Short-circuiting due to validation error: {e}")
                     self.debug[
-                        "EidoValidationError"
+                        DEBUG_EIDO_VALIDATION
                     ] = f"Short-circuiting due to validation error: {e}"
                     return False
                 except RemoteYAMLError:
@@ -525,7 +525,7 @@ class Runner(Executor):
             )
         )
         _LOGGER.info("Commands submitted: {} of {}".format(cmd_sub_total, max_cmds))
-        self.debug["Commands submitted"] = "Commands submitted: {} of {}".format(
+        self.debug[DEBUG_COMMANDS] = "{} of {}".format(
             cmd_sub_total, max_cmds
         )
         if args.dry_run:
@@ -535,7 +535,7 @@ class Runner(Executor):
                 f"Dry run. No jobs were actually submitted, but {job_sub_total_if_real} would have been."
             )
         _LOGGER.info("Jobs submitted: {}".format(job_sub_total))
-        self.debug["Jobs submitted"] = job_sub_total
+        self.debug[DEBUG_JOBS] = job_sub_total
 
         # Restructure sample/failure data for display.
         samples_by_reason = defaultdict(set)
