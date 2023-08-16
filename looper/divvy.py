@@ -270,7 +270,9 @@ class ComputingConfiguration(yacman.YAMLConfigManager):
                 self.submit(temp.name, extra_vars)
         else:
             script = self.write_script(output_path, extra_vars)
-            submission_command = "{} {}".format(self.compute["submission_command"], script)
+            submission_command = "{} {}".format(
+                self.compute["submission_command"], script
+            )
             _LOGGER.info(submission_command)
             os.system(submission_command)
 

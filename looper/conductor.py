@@ -766,7 +766,9 @@ class SubmissionConductor(object):
         _LOGGER.debug("compute namespace:\n{}".format(self.prj.dcc.compute))
         _LOGGER.debug("looper namespace:\n{}".format(looper))
         _LOGGER.debug("pipestat namespace:\n{}".format(pipestat_namespace))
-        subm_base = os.path.join(expandpath(self.prj.submission_folder), looper[JOB_NAME_KEY])
+        subm_base = os.path.join(
+            expandpath(self.prj.submission_folder), looper[JOB_NAME_KEY]
+        )
         return self.prj.dcc.write_script(
             output_path=subm_base + ".sub", extra_vars=[{"looper": looper}]
         )
