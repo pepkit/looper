@@ -620,7 +620,10 @@ class Tabulator(Executor):
             #         self.prj, pipeline_name, project_level, self.counter
             #     )
         else:
-            pass
+            psms = self.prj.get_pipestat_managers(project_level=False)
+            print(psms)
+            for name, psm in psms.items():
+                psm.table(pipeline_type='sample')
             # for piface_source in self.prj._samples_by_piface(
             #     self.prj.piface_key
             # ).keys():
