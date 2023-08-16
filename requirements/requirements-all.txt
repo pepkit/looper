@@ -4,7 +4,7 @@ eido>=0.2.0
 jinja2
 logmuse>=0.2.0
 pandas>=2.0.2
-pephubclient
+pephubclient>=0.1.2
 peppy>=0.35.4
 pipestat>=0.5.1
 pyyaml>=3.12
