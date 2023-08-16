@@ -599,34 +599,40 @@ class Tabulator(Executor):
     """Project/Sample statistics and table output generator"""
 
     def __call__(self, args):
+        p = self.prj
         project_level = args.project
         if project_level:
-            self.counter = LooperCounter(len(self.prj.project_pipeline_interfaces))
-            for piface in self.prj.project_pipeline_interfaces:
-                # Do the stats and object summarization.
-                pipeline_name = piface.pipeline_name
-                # pull together all the fits and stats from each sample into
-                # project-combined spreadsheets.
-                self.stats = _create_stats_summary(
-                    self.prj, pipeline_name, project_level, self.counter
-                )
-                self.objs = _create_obj_summary(
-                    self.prj, pipeline_name, project_level, self.counter
-                )
+            psms = self.prj.get_pipestat_managers(project_level=True)
+            print(psms)
+            for name, psm in psms.items():
+                psm.table()
+            # self.counter = LooperCounter(len(self.prj.project_pipeline_interfaces))
+            # for piface in self.prj.project_pipeline_interfaces:
+            #     # Do the stats and object summarization.
+            #     pipeline_name = piface.pipeline_name
+            #     # pull together all the fits and stats from each sample into
+            #     # project-combined spreadsheets.
+            #     self.stats = _create_stats_summary(
+            #         self.prj, pipeline_name, project_level, self.counter
+            #     )
+            #     self.objs = _create_obj_summary(
+            #         self.prj, pipeline_name, project_level, self.counter
+            #     )
         else:
-            for piface_source in self.prj._samples_by_piface(
-                self.prj.piface_key
-            ).keys():
-                # Do the stats and object summarization.
-                pipeline_name = PipelineInterface(config=piface_source).pipeline_name
-                # pull together all the fits and stats from each sample into
-                # project-combined spreadsheets.
-                self.stats = _create_stats_summary(
-                    self.prj, pipeline_name, project_level, self.counter
-                )
-                self.objs = _create_obj_summary(
-                    self.prj, pipeline_name, project_level, self.counter
-                )
+            pass
+            # for piface_source in self.prj._samples_by_piface(
+            #     self.prj.piface_key
+            # ).keys():
+            #     # Do the stats and object summarization.
+            #     pipeline_name = PipelineInterface(config=piface_source).pipeline_name
+            #     # pull together all the fits and stats from each sample into
+            #     # project-combined spreadsheets.
+            #     self.stats = _create_stats_summary(
+            #         self.prj, pipeline_name, project_level, self.counter
+            #     )
+            #     self.objs = _create_obj_summary(
+            #         self.prj, pipeline_name, project_level, self.counter
+            #     )
         return self
 
 

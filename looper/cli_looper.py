@@ -697,12 +697,15 @@ def main(test_args=None):
         # with no pipestat reporting would not be compatible with
         # commands: table, report and check. Therefore we plan maintain
         # the old implementations for a couple of releases.
-        if hasattr(args, "project"):
-            use_pipestat = (
-                prj.pipestat_configured_project
-                if args.project
-                else prj.pipestat_configured
-            )
+        # if hasattr(args, "project"):
+        #     use_pipestat = (
+        #         prj.pipestat_configured_project
+        #         if args.project
+        #         else prj.pipestat_configured
+        #     )
+        use_pipestat = (
+            prj.pipestat_configured_project if args.project else prj.pipestat_configured
+        )
         if args.command == "table":
             if use_pipestat:
                 Tabulator(prj)(args)

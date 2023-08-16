@@ -520,30 +520,44 @@ class Project(peppyProject):
         else:
             _LOGGER.debug(
                 f"'{PIPESTAT_KEY}' not found in '{LOOPER_KEY}' section of the "
-                f"project configuration file. Using defaults."
+                f"project configuration file."
             )
             pipestat_section = None
+
         pipestat_config = _get_val_from_attr(
             pipestat_section,
             self.config if project_level else self.get_sample(sample_name),
-            PIPESTAT_CONFIG_ATTR_KEY,
+            DEFAULT_PIPESTAT_CONFIG_ATTR,
             DEFAULT_PIPESTAT_CONFIG_ATTR,
             True,  # allow for missing pipestat cfg attr, the settings may be provided as Project/Sample attrs
         )
 
-        pipestat_config = self._resolve_path_with_cfg(pth=pipestat_config)
+        pipestat_config_path = self._resolve_path_with_cfg(pth=pipestat_config)
+        from yacman import YAMLConfigManager, select_config
 
-        results_file_path = _get_val_from_attr(
-            pipestat_section,
-            self.config if project_level else self.get_sample(sample_name),
-            PIPESTAT_RESULTS_FILE_ATTR_KEY,
-            DEFAULT_PIPESTAT_RESULTS_FILE_ATTR,
-            pipestat_config and os.path.exists(pipestat_config),
-        )
+        pipestat_config = YAMLConfigManager(filepath=pipestat_config_path)
+        print(pipestat_config)
+        try:
+            results_file_path = pipestat_config.data["results_file_path"]
+        except KeyError:
+            results_file_path = None
+
+        # We need to look for the results file path within the pipestat config NOT the looper config
+        # results_file_path = _get_val_from_attr(
+        #     pipestat_section,
+        #     self.config if project_level else self.get_sample(sample_name),
+        #     PIPESTAT_RESULTS_FILE_ATTR_KEY,
+        #     DEFAULT_PIPESTAT_RESULTS_FILE_ATTR,
+        #     pipestat_config and os.path.exists(pipestat_config),
+        # )
+
         if results_file_path is not None:
             results_file_path = expandpath(results_file_path)
             if not os.path.isabs(results_file_path):
-                results_file_path = os.path.join(self.output_dir, results_file_path)
+                # TODO this should be relative to config file.
+                results_file_path = os.path.join(
+                    pipestat_config_path, results_file_path
+                )
         pifaces = (
             self.project_pipeline_interfaces
             if project_level
@@ -551,10 +565,16 @@ class Project(peppyProject):
         )
         for piface in pifaces:
             rec_id = (
-                piface.pipeline_name
-                if self.amendments is None
-                else f"{piface.pipeline_name}_{'_'.join(self.amendments)}"
+                pipestat_config.data["project_name"]
+                if project_level
+                else pipestat_config.data["sample_name"]
             )
+            # rec_id = (
+            #     piface.pipeline_name
+            #     if self.amendments is None
+            #     else f"{piface.pipeline_name}_{'_'.join(self.amendments)}"
+            # )
+
             ret[piface.pipeline_name] = {
                 "config_file": pipestat_config,
                 "results_file_path": results_file_path,
