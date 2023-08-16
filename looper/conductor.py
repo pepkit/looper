@@ -708,10 +708,15 @@ class SubmissionConductor(object):
                 namespaces.update({"sample": sample})
             else:
                 namespaces.update({"samples": self.prj.samples})
-            pipestat_namespace = self._set_pipestat_namespace(
-                sample_name=sample.sample_name if sample else None
-            )
-            namespaces.update({"pipestat": pipestat_namespace})
+            if self.prj.pipestat_configured:
+                pipestat_namespace = self._set_pipestat_namespace(
+                    sample_name=sample.sample_name if sample else None
+                )
+                namespaces.update({"pipestat": pipestat_namespace})
+            else:
+                # Pipestat isn't configured, simply place empty YAMLConfigManager object instead.
+                pipestat_namespace = YAMLConfigManager()
+                namespaces.update({"pipestat": pipestat_namespace})
             res_pkg = self.pl_iface.choose_resource_package(
                 namespaces, size or 0
             )  # config

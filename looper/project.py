@@ -457,12 +457,14 @@ class Project(peppyProject):
         """
         try:
             if project_level:
-                self._get_pipestat_configuration(
+                pipestat_configured = self._get_pipestat_configuration(
                     sample_name=None, project_level=project_level
                 )
             else:
                 for s in self.samples:
-                    self._get_pipestat_configuration(sample_name=s.sample_name)
+                    pipestat_configured = self._get_pipestat_configuration(
+                        sample_name=s.sample_name
+                    )
         except Exception as e:
             context = (
                 f"Project '{self.name}'"
@@ -474,7 +476,11 @@ class Project(peppyProject):
                 f"caught exception: {getattr(e, 'message', repr(e))}"
             )
             return False
-        return True
+        else:
+            if pipestat_configured is not None and pipestat_configured != {}:
+                return True
+            else:
+                return False
 
     def _get_pipestat_configuration(self, sample_name=None, project_level=False):
         """
@@ -533,6 +539,8 @@ class Project(peppyProject):
         )
 
         pipestat_config_path = self._resolve_path_with_cfg(pth=pipestat_config)
+        # if pipestat_config_path is None:
+        #     return ret
         from yacman import YAMLConfigManager, select_config
 
         pipestat_config = YAMLConfigManager(filepath=pipestat_config_path)
@@ -576,7 +584,7 @@ class Project(peppyProject):
             # )
 
             ret[piface.pipeline_name] = {
-                "config_file": pipestat_config,
+                "config_file": pipestat_config_path,
                 "results_file_path": results_file_path,
                 "sample_name": rec_id,
                 "schema_path": piface.get_pipeline_schemas(OUTPUT_SCHEMA_KEY),
