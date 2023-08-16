@@ -261,7 +261,8 @@ class Cleaner(Executor):
         self.counter.reset()
         return self(args, preview_flag=False)
 
-# NOTE: Adding type hint -> Iterable[Any] gives me  TypeError: 'ABCMeta' object is not subscriptable  
+
+# NOTE: Adding type hint -> Iterable[Any] gives me  TypeError: 'ABCMeta' object is not subscriptable
 def select_samples(prj: Project, args: argparse.Namespace):
     """Use CLI limit/skip arguments to select subset of project's samples."""
     # TODO: get proper element type for signature.
@@ -982,4 +983,3 @@ def _submission_status_text(
     if pipeline_name:
         txt += f"; pipeline: {pipeline_name}"
     return txt + Style.RESET_ALL
-

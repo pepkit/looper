@@ -1,4 +1,3 @@
-
 def build_argparser():
     """
     Builds argument parser.

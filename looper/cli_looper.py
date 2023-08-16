@@ -1,6 +1,5 @@
-
 import argparse
-import logmuse 
+import logmuse
 import os
 import sys
 import yaml
@@ -17,7 +16,16 @@ from .exceptions import *
 from .looper import *
 from .parser_types import *
 from .project import Project, ProjectContext
-from .utils import dotfile_path, enrich_args_via_cfg, init_dotfile, is_registry_path, read_looper_dotfile, read_yaml_file
+from .utils import (
+    dotfile_path,
+    enrich_args_via_cfg,
+    init_dotfile,
+    is_registry_path,
+    read_looper_dotfile,
+    read_looper_config_file,
+    read_yaml_file,
+)
+
 
 class _StoreBoolActionType(argparse.Action):
     """
@@ -490,7 +498,6 @@ def validate_post_parse(args: argparse.Namespace) -> List[str]:
     return problems
 
 
-
 def _proc_resources_spec(args):
     """
     Process CLI-sources compute setting specification. There are two sources
@@ -531,7 +538,6 @@ def _proc_resources_spec(args):
             "Correct format: " + EXAMPLE_COMPUTE_SPEC_FMT
         )
     return settings_data
-
 
 
 def main(test_args=None):
@@ -726,4 +732,3 @@ def main(test_args=None):
                 "The inspect feature has moved to eido and will be removed in the future release of looper. "
                 "Use `eido inspect` from now on.",
             )
-

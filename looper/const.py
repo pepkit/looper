@@ -226,7 +226,6 @@ IMAGE_EXTS = (".png", ".jpg", ".jpeg", ".svg", ".gif")
 PROFILE_COLNAMES = ["pid", "hash", "cid", "runtime", "mem", "cmd", "lock"]
 
 
-
 # Argument option names
 
 SAMPLE_SELECTION_ATTRIBUTE_OPTNAME = "sel-attr"
