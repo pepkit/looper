@@ -4,17 +4,12 @@ Looper: a pipeline submission engine. https://github.com/pepkit/looper
 """
 
 import abc
+import argparse
 import csv
 import logging
 import subprocess
-import sys
+import yaml
 
-if sys.version_info < (3, 3):
-    from collections import Mapping
-else:
-    from collections.abc import Mapping
-
-import logmuse
 import pandas as _pd
 
 # Need specific sequence of actions for colorama imports?
@@ -23,11 +18,12 @@ from colorama import init
 init()
 from shutil import rmtree
 
+# from collections.abc import Mapping
+from collections import defaultdict
 from colorama import Fore, Style
-from eido import inspect_project, validate_config, validate_sample
+from eido import validate_config, validate_sample
 from eido.exceptions import EidoValidationError
 from jsonschema import ValidationError
-from pephubclient import PEPHubClient
 from peppy.const import *
 from peppy.exceptions import RemoteYAMLError
 from rich.color import Color
@@ -36,21 +32,16 @@ from rich.table import Table
 from ubiquerg.cli_tools import query_yes_no
 from ubiquerg.collection import uniqify
 
-from . import __version__, build_parser, validate_post_parse
+
 from .conductor import SubmissionConductor
+
+from .exceptions import *
 from .const import *
-from .divvy import DEFAULT_COMPUTE_RESOURCES_NAME, select_divvy_config
-from .exceptions import (
-    JobSubmissionException,
-    MisconfigurationException,
-    SampleFailedException,
-)
 from .html_reports import HTMLReportBuilderOld
 from .html_reports_pipestat import HTMLReportBuilder, fetch_pipeline_results
 from .html_reports_project_pipestat import HTMLReportBuilderProject
 from .pipeline_interface import PipelineInterface
-from .project import Project, ProjectContext
-from .utils import *
+from .project import Project
 
 _PKGNAME = "looper"
 _LOGGER = logging.getLogger(_PKGNAME)
@@ -269,8 +260,8 @@ class Cleaner(Executor):
         self.counter.reset()
         return self(args, preview_flag=False)
 
-
-def select_samples(prj: Project, args: argparse.Namespace) -> Iterable[Any]:
+# NOTE: Adding type hint -> Iterable[Any] gives me  TypeError: 'ABCMeta' object is not subscriptable  
+def select_samples(prj: Project, args: argparse.Namespace):
     """Use CLI limit/skip arguments to select subset of project's samples."""
     # TODO: get proper element type for signature.
     num_samples = len(prj.samples)
@@ -991,238 +982,3 @@ def _submission_status_text(
         txt += f"; pipeline: {pipeline_name}"
     return txt + Style.RESET_ALL
 
-
-def _proc_resources_spec(args):
-    """
-    Process CLI-sources compute setting specification. There are two sources
-    of compute settings in the CLI alone:
-        * YAML file (--settings argument)
-        * itemized compute settings (--compute argument)
-
-    The itemized compute specification is given priority
-
-    :param argparse.Namespace: arguments namespace
-    :return Mapping[str, str]: binding between resource setting name and value
-    :raise ValueError: if interpretation of the given specification as encoding
-        of key-value pairs fails
-    """
-    spec = getattr(args, "compute", None)
-    try:
-        settings_data = read_yaml_file(args.settings) or {}
-    except yaml.YAMLError:
-        _LOGGER.warning(
-            "Settings file ({}) does not follow YAML format,"
-            " disregarding".format(args.settings)
-        )
-        settings_data = {}
-    if not spec:
-        return settings_data
-    pairs = [(kv, kv.split("=")) for kv in spec]
-    bads = []
-    for orig, pair in pairs:
-        try:
-            k, v = pair
-        except ValueError:
-            bads.append(orig)
-        else:
-            settings_data[k] = v
-    if bads:
-        raise ValueError(
-            "Could not correctly parse itemized compute specification. "
-            "Correct format: " + EXAMPLE_COMPUTE_SPEC_FMT
-        )
-    return settings_data
-
-
-def main(test_args=None):
-    """Primary workflow"""
-    global _LOGGER
-
-    parser, aux_parser = build_parser()
-    aux_parser.suppress_defaults()
-
-    if test_args:
-        args, remaining_args = parser.parse_known_args(args=test_args)
-    else:
-        args, remaining_args = parser.parse_known_args()
-
-    cli_use_errors = validate_post_parse(args)
-    if cli_use_errors:
-        parser.print_help(sys.stderr)
-        parser.error(
-            f"{len(cli_use_errors)} CLI use problem(s): {', '.join(cli_use_errors)}"
-        )
-    if args.command is None:
-        parser.print_help(sys.stderr)
-        sys.exit(1)
-
-    if args.command == "init":
-        return int(
-            not init_dotfile(
-                dotfile_path(),
-                args.config_file,
-                args.output_dir,
-                args.sample_pipeline_interfaces,
-                args.project_pipeline_interfaces,
-                args.force,
-            )
-        )
-
-    if args.command == "init-piface":
-        sys.exit(int(not init_generic_pipeline()))
-
-    _LOGGER = logmuse.logger_via_cli(args, make_root=True)
-    _LOGGER.info("Looper version: {}\nCommand: {}".format(__version__, args.command))
-
-    if "config_file" in vars(args):
-        if args.config_file is None:
-            looper_cfg_path = os.path.relpath(dotfile_path(), start=os.curdir)
-            try:
-                if args.looper_config:
-                    looper_config_dict = read_looper_config_file(args.looper_config)
-                else:
-                    looper_config_dict = read_looper_dotfile()
-                    _LOGGER.info(f"Using looper config ({looper_cfg_path}).")
-
-                for looper_config_key, looper_config_item in looper_config_dict.items():
-                    setattr(args, looper_config_key, looper_config_item)
-
-            except OSError:
-                parser.print_help(sys.stderr)
-                _LOGGER.warning(
-                    f"Looper config file does not exist. Use looper init to create one at {looper_cfg_path}."
-                )
-                sys.exit(1)
-        else:
-            _LOGGER.warning(
-                "This PEP configures looper through the project config. This approach is deprecated and will "
-                "be removed in future versions. Please use a looper config file. For more information see "
-                "looper.databio.org/en/latest/looper-config"
-            )
-
-    args = enrich_args_via_cfg(args, aux_parser, test_args)
-
-    # If project pipeline interface defined in the cli, change name to: "pipeline_interface"
-    if vars(args)[PROJECT_PL_ARG]:
-        args.pipeline_interfaces = vars(args)[PROJECT_PL_ARG]
-
-    if len(remaining_args) > 0:
-        _LOGGER.warning(
-            "Unrecognized arguments: {}".format(
-                " ".join([str(x) for x in remaining_args])
-            )
-        )
-
-    divcfg = (
-        select_divvy_config(filepath=args.divvy) if hasattr(args, "divvy") else None
-    )
-
-    # Initialize project
-    if is_registry_path(args.config_file):
-        if vars(args)[SAMPLE_PL_ARG]:
-            p = Project(
-                amendments=args.amend,
-                divcfg_path=divcfg,
-                runp=args.command == "runp",
-                project_dict=PEPHubClient()._load_raw_pep(
-                    registry_path=args.config_file
-                ),
-                **{
-                    attr: getattr(args, attr) for attr in CLI_PROJ_ATTRS if attr in args
-                },
-            )
-        else:
-            raise MisconfigurationException(
-                f"`sample_pipeline_interface` is missing. Provide it in the parameters."
-            )
-    else:
-        try:
-            p = Project(
-                cfg=args.config_file,
-                amendments=args.amend,
-                divcfg_path=divcfg,
-                runp=args.command == "runp",
-                **{
-                    attr: getattr(args, attr) for attr in CLI_PROJ_ATTRS if attr in args
-                },
-            )
-        except yaml.parser.ParserError as e:
-            _LOGGER.error(f"Project config parse failed -- {e}")
-            sys.exit(1)
-
-    selected_compute_pkg = p.selected_compute_package or DEFAULT_COMPUTE_RESOURCES_NAME
-    if p.dcc is not None and not p.dcc.activate_package(selected_compute_pkg):
-        _LOGGER.info(
-            "Failed to activate '{}' computing package. "
-            "Using the default one".format(selected_compute_pkg)
-        )
-
-    with ProjectContext(
-        prj=p,
-        selector_attribute=args.sel_attr,
-        selector_include=args.sel_incl,
-        selector_exclude=args.sel_excl,
-    ) as prj:
-        if args.command in ["run", "rerun"]:
-            run = Runner(prj)
-            try:
-                compute_kwargs = _proc_resources_spec(args)
-                return run(args, rerun=(args.command == "rerun"), **compute_kwargs)
-            except SampleFailedException:
-                sys.exit(1)
-            except IOError:
-                _LOGGER.error(
-                    "{} pipeline_interfaces: '{}'".format(
-                        prj.__class__.__name__, prj.pipeline_interface_sources
-                    )
-                )
-                raise
-
-        if args.command == "runp":
-            compute_kwargs = _proc_resources_spec(args)
-            collate = Collator(prj)
-            collate(args, **compute_kwargs)
-            return collate.debug
-
-        if args.command == "destroy":
-            return Destroyer(prj)(args)
-
-        # pipestat support introduces breaking changes and pipelines run
-        # with no pipestat reporting would not be compatible with
-        # commands: table, report and check. Therefore we plan maintain
-        # the old implementations for a couple of releases.
-        if hasattr(args, "project"):
-            use_pipestat = (
-                prj.pipestat_configured_project
-                if args.project
-                else prj.pipestat_configured
-            )
-        if args.command == "table":
-            if use_pipestat:
-                Tabulator(prj)(args)
-            else:
-                TableOld(prj)()
-
-        if args.command == "report":
-            if use_pipestat:
-                Reporter(prj)(args)
-            else:
-                ReportOld(prj)(args)
-
-        if args.command == "check":
-            if use_pipestat:
-                Checker(prj)(args)
-            else:
-                CheckerOld(prj)(flags=args.flags)
-
-        if args.command == "clean":
-            return Cleaner(prj)(args)
-
-        if args.command == "inspect":
-            inspect_project(p, args.sample_names, args.attr_limit)
-            from warnings import warn
-
-            warn(
-                "The inspect feature has moved to eido and will be removed in the future release of looper. "
-                "Use `eido inspect` from now on.",
-            )

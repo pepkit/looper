@@ -1,7 +1,7 @@
 import sys
 
-from .looper import main
-from .divvy import main as divvy_main
+from .cli_looper import main
+from .cli_divvy import main as divvy_main
 
 if __name__ == "__main__":
     try:

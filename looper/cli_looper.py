@@ -1,9 +1,23 @@
 
 import argparse
-import logging
+import logmuse 
 import os
+import sys
+import yaml
 
+from eido import inspect_project
+from pephubclient import PEPHubClient
+from typing import Tuple, List
 from ubiquerg import VersionInHelpParser
+
+from . import __version__
+from .const import *
+from .divvy import DEFAULT_COMPUTE_RESOURCES_NAME, select_divvy_config
+from .exceptions import *
+from .looper import Runner
+from .parser_types import *
+from .project import Project, ProjectContext
+from .utils import dotfile_path, enrich_args_via_cfg, is_registry_path, read_looper_dotfile, read_yaml_file
 
 class _StoreBoolActionType(argparse.Action):
     """
@@ -27,22 +41,6 @@ class _StoreBoolActionType(argparse.Action):
 
     def __call__(self, parser, namespace, values, option_string=None):
         setattr(namespace, self.dest, self.const)
-
-
-
-MESSAGE_BY_SUBCOMMAND = {
-    "run": "Run or submit sample jobs.",
-    "rerun": "Resubmit sample jobs with failed flags.",
-    "runp": "Run or submit project jobs.",
-    "table": "Write summary stats table for project samples.",
-    "report": "Create browsable HTML report of project results.",
-    "destroy": "Remove output files of the project.",
-    "check": "Check flag status of current runs.",
-    "clean": "Run clean scripts of already processed jobs.",
-    "inspect": "Print information about a project.",
-    "init": "Initialize looper config file.",
-    "init-piface": "Initialize generic pipeline interface.",
-}
 
 
 def build_parser():
@@ -490,6 +488,50 @@ def validate_post_parse(args: argparse.Namespace) -> List[str]:
             f"Used multiple mutually exclusive options: {', '.join(used_exclusives)}"
         )
     return problems
+
+
+
+def _proc_resources_spec(args):
+    """
+    Process CLI-sources compute setting specification. There are two sources
+    of compute settings in the CLI alone:
+        * YAML file (--settings argument)
+        * itemized compute settings (--compute argument)
+
+    The itemized compute specification is given priority
+
+    :param argparse.Namespace: arguments namespace
+    :return Mapping[str, str]: binding between resource setting name and value
+    :raise ValueError: if interpretation of the given specification as encoding
+        of key-value pairs fails
+    """
+    spec = getattr(args, "compute", None)
+    try:
+        settings_data = read_yaml_file(args.settings) or {}
+    except yaml.YAMLError:
+        _LOGGER.warning(
+            "Settings file ({}) does not follow YAML format,"
+            " disregarding".format(args.settings)
+        )
+        settings_data = {}
+    if not spec:
+        return settings_data
+    pairs = [(kv, kv.split("=")) for kv in spec]
+    bads = []
+    for orig, pair in pairs:
+        try:
+            k, v = pair
+        except ValueError:
+            bads.append(orig)
+        else:
+            settings_data[k] = v
+    if bads:
+        raise ValueError(
+            "Could not correctly parse itemized compute specification. "
+            "Correct format: " + EXAMPLE_COMPUTE_SPEC_FMT
+        )
+    return settings_data
+
 
 
 def main(test_args=None):
