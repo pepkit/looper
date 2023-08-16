@@ -220,3 +220,11 @@ FILE_SIZE_COLNAME = "max_file_size"
 IMAGE_EXTS = (".png", ".jpg", ".jpeg", ".svg", ".gif")
 # this strongly depends on pypiper's profile.tsv format
 PROFILE_COLNAMES = ["pid", "hash", "cid", "runtime", "mem", "cmd", "lock"]
+
+
+
+# Argument option names
+
+SAMPLE_SELECTION_ATTRIBUTE_OPTNAME = "sel-attr"
+SAMPLE_EXCLUSION_OPTNAME = "sel-excl"
+SAMPLE_INCLUSION_OPTNAME = "sel-incl"
