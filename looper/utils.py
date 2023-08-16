@@ -480,7 +480,7 @@ def read_looper_config_file(looper_config_path: str) -> dict:
         if isinstance(v, str):
             return_dict[k] = expandpath(v)
 
-        if v:
+        if isinstance(v, str):
             if not os.path.isabs(v):
                 return_dict[k] = os.path.join(abs_config_path, v)
 
