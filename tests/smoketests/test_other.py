@@ -2,7 +2,9 @@ import pytest
 from peppy import Project
 
 from looper.const import FLAGS
+from looper.exceptions import PipestatConfigurationException
 from tests.conftest import *
+from looper.cli_looper import main
 
 
 def _make_flags(cfg, type, count):
@@ -13,6 +15,16 @@ def _make_flags(cfg, type, count):
         if not os.path.exists(sf):
             os.makedirs(sf)
         open(os.path.join(sf, type + ".flag"), "a").close()
+
+
+class TestLooperPipestat:
+    @pytest.mark.parametrize("cmd", ["report", "table", "check"])
+    def test_fail_no_pipestat_config(self, prep_temp_pep, cmd):
+        "report, table, and check should fail if pipestat is NOT configured."
+        tp = prep_temp_pep
+        x = test_args_expansion(tp, cmd)
+        with pytest.raises(PipestatConfigurationException):
+            main(test_args=x)
 
 
 class TestLooperCheck:

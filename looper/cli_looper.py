@@ -707,19 +707,19 @@ def main(test_args=None):
             if use_pipestat:
                 Tabulator(prj)(args)
             else:
-                TableOld(prj)()
+                raise PipestatConfigurationException("table")
 
         if args.command == "report":
             if use_pipestat:
                 Reporter(prj)(args)
             else:
-                ReportOld(prj)(args)
+                raise PipestatConfigurationException("report")
 
         if args.command == "check":
             if use_pipestat:
                 Checker(prj)(args)
             else:
-                CheckerOld(prj)(flags=args.flags)
+                raise PipestatConfigurationException("check")
 
         if args.command == "clean":
             return Cleaner(prj)(args)
