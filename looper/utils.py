@@ -481,7 +481,7 @@ def read_looper_config_file(looper_config_path: str) -> dict:
             return_dict[k] = expandpath(v)
 
         if isinstance(v, str):
-            if not os.path.isabs(v):
+            if not os.path.isabs(v) and not is_registry_path(v):
                 return_dict[k] = os.path.join(abs_config_path, v)
 
     return return_dict
