@@ -6,7 +6,7 @@ from looper.const import *
 from looper.project import Project
 from tests.conftest import *
 from looper.utils import *
-from looper.looper import main
+from looper.cli_looper import main
 
 CMD_STRS = ["string", " --string", " --sjhsjd 212", "7867#$@#$cc@@"]
 
@@ -113,7 +113,7 @@ class TestLooperRunBehavior:
         x = test_args_expansion(tp, "run")
         try:
             result = main(test_args=x)
-            assert result["Commands submitted"] == "Commands submitted: 6 of 6"
+            assert result[DEBUG_COMMANDS] == "6 of 6"
         except Exception:
             raise pytest.fail("DID RAISE {0}".format(Exception))
 
@@ -130,7 +130,7 @@ class TestLooperRunBehavior:
         x = test_args_expansion(tp, "run")
         try:
             result = main(test_args=x)
-            assert result["Commands submitted"] != "Commands submitted: 6 of 6"
+            assert result[DEBUG_COMMANDS] != "6 of 6"
         except Exception:
             raise pytest.fail("DID RAISE {0}".format(Exception))
 
@@ -163,7 +163,7 @@ class TestLooperRunBehavior:
         try:
             result = main(test_args=x)
 
-            assert result["Commands submitted"] != "Commands submitted: 3 of 3"
+            assert result[DEBUG_COMMANDS] != "3 of 3"
         except Exception:
             raise pytest.fail("DID RAISE {0}".format(Exception))
 
@@ -179,7 +179,7 @@ class TestLooperRunBehavior:
         try:
             result = main(test_args=x)
 
-            assert result["Jobs submitted"] == 0
+            assert result[DEBUG_JOBS] == 0
         except Exception:
             raise pytest.fail("DID RAISE {0}".format(Exception))
 
@@ -196,7 +196,7 @@ class TestLooperRunBehavior:
         try:
             result = main(test_args=x)
 
-            assert result["Jobs submitted"] == 0
+            assert result[DEBUG_JOBS] == 0
             assert "No pipeline interfaces defined" in result.keys()
         except Exception:
             raise pytest.fail("DID RAISE {0}".format(Exception))
@@ -221,7 +221,7 @@ class TestLooperRunBehavior:
         try:
             result = main(test_args=x)
 
-            assert result["Jobs submitted"] == 0
+            assert result[DEBUG_JOBS] == 0
             assert "No pipeline interfaces defined" in result.keys()
         except Exception:
             raise pytest.fail("DID RAISE {0}".format(Exception))
@@ -237,7 +237,7 @@ class TestLooperRunBehavior:
         try:
             result = main(test_args=x)
 
-            assert result["Jobs submitted"] == 0
+            assert result[DEBUG_JOBS] == 0
         except Exception:
             raise pytest.fail("DID RAISE {0}".format(Exception))
 
@@ -259,7 +259,7 @@ class TestLooperRunBehavior:
         with pytest.raises(Exception):
             result = main(test_args=x)
             expected_prefix = "Short-circuiting due to validation error"
-            assert expected_prefix in str(result["EidoValidationError"])
+            assert expected_prefix in str(result[DEBUG_EIDO_VALIDATION])
 
     def test_looper_toggle(self, prep_temp_pep):
         """
@@ -272,7 +272,7 @@ class TestLooperRunBehavior:
         try:
             result = main(test_args=x)
 
-            assert result["Jobs submitted"] == 0
+            assert result[DEBUG_JOBS] == 0
         except Exception:
             raise pytest.fail("DID RAISE {0}".format(Exception))
 
@@ -330,7 +330,7 @@ class TestLooperRunpBehavior:
         x = test_args_expansion(tp, "runp")
         try:
             result = main(test_args=x)
-            assert result["Jobs submitted"] == 2
+            assert result[DEBUG_JOBS] == 2
         except Exception:
             raise pytest.fail("DID RAISE {0}".format(Exception))
 
@@ -344,8 +344,8 @@ class TestLooperRunpBehavior:
         x = test_args_expansion(tp, "runp")
         try:
             result = main(test_args=x)
-            assert result["Jobs submitted"] != 2
-            assert result["Jobs submitted"] == 1
+            assert result[DEBUG_JOBS] != 2
+            assert result[DEBUG_JOBS] == 1
         except Exception:
             raise pytest.fail("DID RAISE {0}".format(Exception))
 
