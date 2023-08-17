@@ -590,8 +590,15 @@ class Reporter(Executor):
                 # Summarize will generate the static HTML Report Function
                 psm.summarize()
         else:
-            for sample in p.prj.samples:
-                psms = self.prj.get_pipestat_managers(sample_name=sample.sample_name)
+            for piface_source_samples in self.prj._samples_by_piface(
+                self.prj.piface_key
+            ).values():
+                # For each piface_key, we have a list of samples, but we only need one sample from the list to
+                # call the related pipestat manager object which will pull ALL samples when using psm.summarize
+                first_sample_name = list(piface_source_samples)[0]
+                psms = self.prj.get_pipestat_managers(
+                    sample_name=first_sample_name, project_level=False
+                )
                 print(psms)
                 for name, psm in psms.items():
                     # Summarize will generate the static HTML Report Function
@@ -605,7 +612,7 @@ class Tabulator(Executor):
     """
 
     def __call__(self, args):
-        p = self.prj
+        # p = self.prj
         project_level = args.project
         results = []
         if project_level:
@@ -613,10 +620,17 @@ class Tabulator(Executor):
             for name, psm in psms.items():
                 results = psm.table(pipeline_type="project")
         else:
-            psms = self.prj.get_pipestat_managers(project_level=False)
-            for name, psm in psms.items():
-                results = psm.table(pipeline_type="sample")
-
+            for piface_source_samples in self.prj._samples_by_piface(
+                self.prj.piface_key
+            ).values():
+                # For each piface_key, we have a list of samples, but we only need one sample from the list to
+                # call the related pipestat manager object which will pull ALL samples when using psm.table
+                first_sample_name = list(piface_source_samples)[0]
+                psms = self.prj.get_pipestat_managers(
+                    sample_name=first_sample_name, project_level=False
+                )
+                for name, psm in psms.items():
+                    results = psm.table(pipeline_type="sample")
         # Results contains paths to stats and object summaries.
         return results
 
