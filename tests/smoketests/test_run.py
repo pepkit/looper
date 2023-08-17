@@ -566,6 +566,9 @@ class TestLooperConfig:
             raise pytest.fail(f"DID RAISE {err}")
 
     def test_correct_execution_of_config(self, prepare_pep_with_dot_file):
+        """
+        Test executing dot file and looper_config
+        """
         dot_file_path = os.path.abspath(prepare_pep_with_dot_file)
         x = test_args_expansion("", "run")
         try:
