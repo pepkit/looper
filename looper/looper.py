@@ -165,59 +165,6 @@ class Checker(Executor):
             console.print(table)
 
 
-class CheckerOld(Executor):
-    def __call__(self, flags=None, all_folders=False, max_file_count=30):
-        """
-        Check Project status, based on flag files.
-
-        :param Iterable[str] | str flags: Names of flags to check, optional;
-            if unspecified, all known flags will be checked.
-        :param bool all_folders: Whether to check flags in all folders, not
-            just those for samples in the config file from which the Project
-            was created.
-        :param int max_file_count: Maximum number of filepaths to display for a
-            given flag.
-        """
-
-        # Handle single or multiple flags, and alphabetize.
-        flags = sorted([flags] if isinstance(flags, str) else list(flags or FLAGS))
-        flag_text = ", ".join(flags)
-
-        # Collect the files by flag and sort by flag name.
-        _LOGGER.debug("Checking project folders for flags: %s", flag_text)
-        if all_folders:
-            files_by_flag = fetch_flag_files(
-                results_folder=self.prj.results_folder, flags=flags
-            )
-        else:
-            files_by_flag = fetch_flag_files(prj=self.prj, flags=flags)
-
-        # For each flag, output occurrence count.
-        for flag in flags:
-            _LOGGER.info("%s: %d", flag.upper(), len(files_by_flag[flag]))
-
-        # For each flag, output filepath(s) if not overly verbose.
-        for flag in flags:
-            try:
-                files = files_by_flag[flag]
-            except Exception as e:
-                _LOGGER.debug(
-                    "No files for {} flag. Caught exception: {}".format(
-                        flags, getattr(e, "message", repr(e))
-                    )
-                )
-                continue
-            # If checking on a specific flag, do not limit the number of
-            # reported filepaths, but do not report empty file lists
-            if len(flags) == 1 and len(files) > 0:
-                _LOGGER.info("%s (%d):\n%s", flag.upper(), len(files), "\n".join(files))
-            # Regardless of whether 0-count flags are previously reported,
-            # don't report an empty file list for a flag that's absent.
-            # If the flag-to-files mapping is defaultdict, absent flag (key)
-            # will fetch an empty collection, so check for length of 0.
-            if 0 < len(files) <= max_file_count:
-                _LOGGER.info("%s (%d):\n%s", flag.upper(), len(files), "\n".join(files))
-
 
 class Cleaner(Executor):
     """Remove all intermediate files (defined by pypiper clean scripts)."""
