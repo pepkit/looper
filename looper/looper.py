@@ -518,9 +518,7 @@ class Runner(Executor):
             )
         )
         _LOGGER.info("Commands submitted: {} of {}".format(cmd_sub_total, max_cmds))
-        self.debug[DEBUG_COMMANDS] = "{} of {}".format(
-            cmd_sub_total, max_cmds
-        )
+        self.debug[DEBUG_COMMANDS] = "{} of {}".format(cmd_sub_total, max_cmds)
         if args.dry_run:
             job_sub_total_if_real = job_sub_total
             job_sub_total = 0

@@ -567,10 +567,6 @@ def main(test_args=None):
             not init_dotfile(
                 dotfile_path(),
                 args.config_file,
-                args.output_dir,
-                args.sample_pipeline_interfaces,
-                args.project_pipeline_interfaces,
-                args.force,
             )
         )
 

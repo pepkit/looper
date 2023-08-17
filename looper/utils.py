@@ -360,47 +360,72 @@ def init_generic_pipeline():
 
 def init_dotfile(
     path: str,
-    cfg_path: str = None,
+    looper_config_path: str,
+    force=False,
+):
+    """
+    Initialize looper dotfile
+
+    :param str path: absolute path to the dot file to initialize
+    :param str looper_config_path: path to the looper config file. Absolute or relative to 'path'
+    :param bool force: whether the existing file should be overwritten
+    :return bool: whether the file was initialized
+    """
+    if os.path.exists(path) and not force:
+        print(f"Can't initialize, file exists: {path}")
+        return False
+    dot_dict = {
+        "looper_config": os.path.relpath(looper_config_path, os.path.dirname(path)),
+    }
+
+    with open(path, "w") as dotfile:
+        yaml.dump(dot_dict, dotfile)
+    print(f"Initialized looper dotfile: {path}")
+    return True
+
+
+def initiate_looper_config(
+    looper_config_path: str,
+    pep_path: str = None,
     output_dir: str = None,
     sample_pipeline_interfaces: Union[List[str], str] = None,
     project_pipeline_interfaces: Union[List[str], str] = None,
     force=False,
 ):
     """
-    Initialize looper dotfile
+    Initialize looper config file
 
-    :param str path: absolute path to the file to initialize
-    :param str cfg_path: path to the config file. Absolute or relative to 'path'
+    :param str looper_config_path: absolute path to the file to initialize
+    :param str pep_path: path to the PEP to be used in pipeline
     :param str output_dir: path to the output directory
     :param str|list sample_pipeline_interfaces: path or list of paths to sample pipeline interfaces
     :param str|list project_pipeline_interfaces: path or list of paths to project pipeline interfaces
     :param bool force: whether the existing file should be overwritten
     :return bool: whether the file was initialized
     """
-    if os.path.exists(path) and not force:
-        print("Can't initialize, file exists: {}".format(path))
+    if os.path.exists(looper_config_path) and not force:
+        print(f"Can't initialize, file exists: {looper_config_path}")
         return False
-    if cfg_path:
-        if is_registry_path(cfg_path):
+
+    if pep_path:
+        if is_registry_path(pep_path):
             pass
         else:
-            cfg_path = expandpath(cfg_path)
-            if not os.path.isabs(cfg_path):
-                cfg_path = os.path.join(os.path.dirname(path), cfg_path)
-            assert os.path.exists(cfg_path), OSError(
+            pep_path = expandpath(pep_path)
+            if not os.path.isabs(pep_path):
+                pep_path = os.path.join(os.path.dirname(looper_config_path), pep_path)
+            assert os.path.exists(pep_path), OSError(
                 "Provided config path is invalid. You must provide path "
-                "that is either absolute or relative to: {}".format(
-                    os.path.dirname(path)
-                )
+                f"that is either absolute or relative to: {os.path.dirname(looper_config_path)}"
             )
     else:
-        cfg_path = "example/pep/path"
+        pep_path = "example/pep/path"
 
     if not output_dir:
         output_dir = "."
 
     looper_config_dict = {
-        "pep_config": os.path.relpath(cfg_path, os.path.dirname(path)),
+        "pep_config": os.path.relpath(pep_path),
         "output_dir": output_dir,
         "pipeline_interfaces": {
             "sample": sample_pipeline_interfaces,
@@ -408,9 +433,9 @@ def init_dotfile(
         },
     }
 
-    with open(path, "w") as dotfile:
+    with open(looper_config_path, "w") as dotfile:
         yaml.dump(looper_config_dict, dotfile)
-    print("Initialized looper dotfile: {}".format(path))
+    print(f"Initialized looper config file: {looper_config_path}")
     return True
 
 
@@ -418,12 +443,13 @@ def read_looper_dotfile():
     """
     Read looper config file
 
-    :return str: path to the config file read from the dotfile
     :raise MisconfigurationException: if the dotfile does not consist of the
         required key pointing to the PEP
     """
     dot_file_path = dotfile_path(must_exist=True)
-    return read_looper_config_file(looper_config_path=dot_file_path)
+    with open(dot_file_path, "r") as file:
+        looper_config_path = yaml.safe_load(file)["looper_config"]
+    return read_looper_config_file(looper_config_path=looper_config_path)
 
 
 def read_looper_config_file(looper_config_path: str) -> dict:
