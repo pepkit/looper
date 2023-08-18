@@ -267,7 +267,7 @@ def build_parser():
             )
 
         init_subparser.add_argument(
-            "config_file", help="Project configuration file (YAML)"
+            "pep-config", help="Project configuration file (PEP)"
         )
 
         init_subparser.add_argument(
