@@ -1,0 +1,4 @@
+project_name: test
+sample_name: frog_1
+schema_path: pipestat_output_schema.yaml
+results_file_path: tmp_pipestat_results.yaml #this absolute path for now

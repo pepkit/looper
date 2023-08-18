@@ -26,6 +26,27 @@ class TestLooperPipestat:
         with pytest.raises(PipestatConfigurationException):
             main(test_args=x)
 
+    @pytest.mark.parametrize("cmd", ["report"])
+    def test_pipestat_configured(self, prep_temp_pep_pipestat, cmd):
+        tp = prep_temp_pep_pipestat
+        #td = tempfile.mkdtemp()
+        #looper_consettings_file_path = os.path.join(td, "settings.yaml")
+        # with mod_yaml_data(tp) as config_data:
+        #     pifaces = config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][
+        #         PIPELINE_INTERFACES_KEY
+        #     ]
+        #     config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][
+        #         PIPELINE_INTERFACES_KEY
+        #     ] = pifaces[1]
+
+        x = test_args_expansion(tp, cmd)
+
+        try:
+            result = main(test_args=x)
+            #assert result[DEBUG_COMMANDS] != "6 of 6"
+        except Exception:
+            raise pytest.fail("DID RAISE {0}".format(Exception))
+
 
 class TestLooperCheck:
     @pytest.mark.skip(reason="Wait to deprecate CheckerOld")
