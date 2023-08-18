@@ -9,7 +9,7 @@ import csv
 import logging
 import subprocess
 import yaml
-
+import os
 import pandas as _pd
 
 # Need specific sequence of actions for colorama imports?
@@ -42,8 +42,9 @@ from .html_reports_pipestat import HTMLReportBuilder, fetch_pipeline_results
 from .html_reports_project_pipestat import HTMLReportBuilderProject
 from .pipeline_interface import PipelineInterface
 from .project import Project
-from .utils import desired_samples_range_skipped, desired_samples_range_limited
-from pipestat import get_file_for_project
+from .utils import desired_samples_range_skipped, desired_samples_range_limited, sample_folder
+from pipestat import get_file_for_table
+from pipestat.html_reports_pipestat import get_file_for_project
 
 _PKGNAME = "looper"
 _LOGGER = logging.getLogger(_PKGNAME)
@@ -635,19 +636,19 @@ def destroy_summary(prj, dry_run=False, project_level=False):
                     get_file_for_project(
                         psm,
                         pipeline_name=psm["_pipeline_name"],
-                        appendix="summary.html",
+                        directory="reports",
                     ),
-                    get_file_for_project(
+                    get_file_for_table(
                         psm,
                         pipeline_name=psm["_pipeline_name"],
                         appendix="stats_summary.tsv",
                     ),
-                    get_file_for_project(
+                    get_file_for_table(
                         psm,
                         pipeline_name=psm["_pipeline_name"],
                         appendix="objs_summary.yaml",
                     ),
-                    get_file_for_project(
+                    get_file_for_table(
                         psm, pipeline_name=psm["_pipeline_name"], appendix="reports"
                     ),
                 ],
@@ -667,19 +668,19 @@ def destroy_summary(prj, dry_run=False, project_level=False):
                         get_file_for_project(
                             psm,
                             pipeline_name=psm["_pipeline_name"],
-                            appendix="summary.html",
+                            directory="reports",
                         ),
-                        get_file_for_project(
+                        get_file_for_table(
                             psm,
                             pipeline_name=psm["_pipeline_name"],
                             appendix="stats_summary.tsv",
                         ),
-                        get_file_for_project(
+                        get_file_for_table(
                             psm,
                             pipeline_name=psm["_pipeline_name"],
                             appendix="objs_summary.yaml",
                         ),
-                        get_file_for_project(
+                        get_file_for_table(
                             psm, pipeline_name=psm["_pipeline_name"], appendix="reports"
                         ),
                     ],
