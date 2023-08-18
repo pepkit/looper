@@ -43,6 +43,7 @@ from .html_reports_project_pipestat import HTMLReportBuilderProject
 from .pipeline_interface import PipelineInterface
 from .project import Project
 from .utils import desired_samples_range_skipped, desired_samples_range_limited
+from pipestat import get_file_for_project
 
 _PKGNAME = "looper"
 _LOGGER = logging.getLogger(_PKGNAME)
@@ -165,7 +166,6 @@ class Checker(Executor):
             console.print(table)
 
 
-
 class Cleaner(Executor):
     """Remove all intermediate files (defined by pypiper clean scripts)."""
 
@@ -250,7 +250,17 @@ class Destroyer(Executor):
                 _remove_or_dry_run(sample_output_folder, args.dry_run)
 
         _LOGGER.info("Removing summary:")
-        destroy_summary(self.prj, args.dry_run)
+        use_pipestat = (
+            self.prj.pipestat_configured_project
+            if args.project
+            else self.prj.pipestat_configured
+        )
+        if use_pipestat:
+            destroy_summary(self.prj, args.dry_run, args.project)
+        else:
+            _LOGGER.warning(
+                "Pipestat must be configured to destroy any created summaries."
+            )
 
         if not preview_flag:
             _LOGGER.info("Destroy complete.")
@@ -611,20 +621,70 @@ def _remove_or_dry_run(paths, dry_run=False):
             _LOGGER.info(path + " does not exist.")
 
 
-def destroy_summary(prj, dry_run=False):
+def destroy_summary(prj, dry_run=False, project_level=False):
     """
     Delete the summary files if not in dry run mode
+    This function is for use with pipestat configured projects.
     """
-    # TODO: update after get_file_for_project signature change
-    _remove_or_dry_run(
-        [
-            get_file_for_project(prj, "summary.html"),
-            get_file_for_project(prj, "stats_summary.tsv"),
-            get_file_for_project(prj, "objs_summary.tsv"),
-            get_file_for_project(prj, "reports"),
-        ],
-        dry_run,
-    )
+
+    if project_level:
+        psms = prj.get_pipestat_managers(project_level=True)
+        for name, psm in psms.items():
+            _remove_or_dry_run(
+                [
+                    get_file_for_project(
+                        psm,
+                        pipeline_name=psm["_pipeline_name"],
+                        appendix="summary.html",
+                    ),
+                    get_file_for_project(
+                        psm,
+                        pipeline_name=psm["_pipeline_name"],
+                        appendix="stats_summary.tsv",
+                    ),
+                    get_file_for_project(
+                        psm,
+                        pipeline_name=psm["_pipeline_name"],
+                        appendix="objs_summary.yaml",
+                    ),
+                    get_file_for_project(
+                        psm, pipeline_name=psm["_pipeline_name"], appendix="reports"
+                    ),
+                ],
+                dry_run,
+            )
+    else:
+        for piface_source_samples in prj._samples_by_piface(prj.piface_key).values():
+            # For each piface_key, we have a list of samples, but we only need one sample from the list to
+            # call the related pipestat manager object which will pull ALL samples when using psm.table
+            first_sample_name = list(piface_source_samples)[0]
+            psms = prj.get_pipestat_managers(
+                sample_name=first_sample_name, project_level=False
+            )
+            for name, psm in psms.items():
+                _remove_or_dry_run(
+                    [
+                        get_file_for_project(
+                            psm,
+                            pipeline_name=psm["_pipeline_name"],
+                            appendix="summary.html",
+                        ),
+                        get_file_for_project(
+                            psm,
+                            pipeline_name=psm["_pipeline_name"],
+                            appendix="stats_summary.tsv",
+                        ),
+                        get_file_for_project(
+                            psm,
+                            pipeline_name=psm["_pipeline_name"],
+                            appendix="objs_summary.yaml",
+                        ),
+                        get_file_for_project(
+                            psm, pipeline_name=psm["_pipeline_name"], appendix="reports"
+                        ),
+                    ],
+                    dry_run,
+                )
 
 
 class LooperCounter(object):
