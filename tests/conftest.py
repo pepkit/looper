@@ -265,14 +265,15 @@ def prepare_pep_with_dot_file(prep_temp_pep):
         },
     }
 
-    looper_config_path = os.path.join(os.path.dirname(pep_config), "looper_config.yaml")
+    # looper_config_path = os.path.join(os.path.dirname(pep_config), "looper_config.yaml")
+    #
+    # with open(looper_config_path, "w") as f:
+    #     config = dump(looper_config, f)
+    #
+    # looper_dot_file_content = {"looper_config": looper_config_path}
 
-    with open(looper_config_path, "w") as f:
-        config = dump(looper_config, f)
-
-    looper_dot_file_content = {"looper_config": looper_config_path}
     dot_file_path = ".looper.yaml"
     with open(dot_file_path, "w") as f:
-        config = dump(looper_dot_file_content, f)
+        config = dump(looper_config, f)
 
     return dot_file_path

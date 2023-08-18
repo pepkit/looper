@@ -358,30 +358,15 @@ def init_generic_pipeline():
     return True
 
 
-def init_dotfile(
-    path: str,
-    looper_config_path: str,
-    force=False,
-):
+def read_looper_dotfile():
     """
-    Initialize looper dotfile
-
-    :param str path: absolute path to the dot file to initialize
-    :param str looper_config_path: path to the looper config file. Absolute or relative to 'path'
-    :param bool force: whether the existing file should be overwritten
-    :return bool: whether the file was initialized
+    Read looper config file
+    :return str: path to the config file read from the dotfile
+    :raise MisconfigurationException: if the dotfile does not consist of the
+        required key pointing to the PEP
     """
-    if os.path.exists(path) and not force:
-        print(f"Can't initialize, file exists: {path}")
-        return False
-    dot_dict = {
-        "looper_config": os.path.relpath(looper_config_path, os.path.dirname(path)),
-    }
-
-    with open(path, "w") as dotfile:
-        yaml.dump(dot_dict, dotfile)
-    print(f"Initialized looper dotfile: {path}")
-    return True
+    dot_file_path = dotfile_path(must_exist=True)
+    return read_looper_config_file(looper_config_path=dot_file_path)
 
 
 def initiate_looper_config(
@@ -437,19 +422,6 @@ def initiate_looper_config(
         yaml.dump(looper_config_dict, dotfile)
     print(f"Initialized looper config file: {looper_config_path}")
     return True
-
-
-def read_looper_dotfile():
-    """
-    Read looper config file
-
-    :raise MisconfigurationException: if the dotfile does not consist of the
-        required key pointing to the PEP
-    """
-    dot_file_path = dotfile_path(must_exist=True)
-    with open(dot_file_path, "r") as file:
-        looper_config_path = yaml.safe_load(file)["looper_config"]
-    return read_looper_config_file(looper_config_path=looper_config_path)
 
 
 def read_looper_config_file(looper_config_path: str) -> dict:

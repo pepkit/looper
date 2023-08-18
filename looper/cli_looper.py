@@ -19,11 +19,11 @@ from .project import Project, ProjectContext
 from .utils import (
     dotfile_path,
     enrich_args_via_cfg,
-    init_dotfile,
     is_registry_path,
     read_looper_dotfile,
     read_looper_config_file,
     read_yaml_file,
+    initiate_looper_config,
 )
 
 
@@ -564,9 +564,13 @@ def main(test_args=None):
 
     if args.command == "init":
         return int(
-            not init_dotfile(
+            not initiate_looper_config(
                 dotfile_path(),
                 args.config_file,
+                args.output_dir,
+                args.sample_pipeline_interfaces,
+                args.project_pipeline_interfaces,
+                args.force,
             )
         )
 
