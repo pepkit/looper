@@ -440,7 +440,7 @@ class Runner(Executor):
                     ] = f"Short-circuiting due to validation error: {e}"
                     return False
                 except RemoteYAMLError:
-                    _LOGGER.warn(
+                    _LOGGER.warning(
                         f"Could not read remote schema, skipping '{sample.sample_name}' "
                         f"sample validation against {schema_file}"
                     )
