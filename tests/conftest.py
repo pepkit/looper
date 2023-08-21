@@ -276,6 +276,8 @@ def prepare_pep_with_dot_file(prep_temp_pep):
         config = dump(looper_config, f)
 
     return dot_file_path
+
+
 #
 @pytest.fixture
 def prep_temp_pep_pipestat(example_pep_piface_path):
@@ -290,10 +292,7 @@ def prep_temp_pep_pipestat(example_pep_piface_path):
     output_schema_path = os.path.join(example_pep_piface_path, PIPESTAT_OS)
 
     sample_table_path = os.path.join(example_pep_piface_path, ST)
-    #piface1p_path = os.path.join(example_pep_piface_path, PIP.format("1"))
-    #piface2p_path = os.path.join(example_pep_piface_path, PIP.format("2"))
     piface1s_path = os.path.join(example_pep_piface_path, PIPESTAT_PI)
-    #piface2s_path = os.path.join(example_pep_piface_path, PIS.format("2"))
 
     res_proj_path = os.path.join(example_pep_piface_path, RES.format("project"))
     res_samp_path = os.path.join(example_pep_piface_path, RES.format("sample"))
@@ -304,9 +303,6 @@ def prep_temp_pep_pipestat(example_pep_piface_path):
 
     temp_path_sample_table = os.path.join(td, ST)
     temp_path_piface1s = os.path.join(td, PIS.format("1"))
-    #temp_path_piface2s = os.path.join(td, PIS.format("2"))
-    #temp_path_piface1p = os.path.join(td, PIP.format("1"))
-    #temp_path_piface2p = os.path.join(td, PIP.format("2"))
     temp_path_res_proj = os.path.join(td, RES.format("project"))
     temp_path_res_samp = os.path.join(td, RES.format("sample"))
     # copying
@@ -315,9 +311,6 @@ def prep_temp_pep_pipestat(example_pep_piface_path):
     cpf(pipestat_config_path, temp_path_pipestat_config)
     cpf(sample_table_path, temp_path_sample_table)
     cpf(piface1s_path, temp_path_piface1s)
-    #cpf(piface2s_path, temp_path_piface2s)
-    #cpf(piface1p_path, temp_path_piface1p)
-    #cpf(piface2p_path, temp_path_piface2p)
     cpf(output_schema_path, temp_path_output_schema)
     cpf(res_proj_path, temp_path_res_proj)
     cpf(res_samp_path, temp_path_res_samp)
@@ -329,13 +322,8 @@ def prep_temp_pep_pipestat(example_pep_piface_path):
     piface_data[LOOPER_KEY][OUTDIR_KEY] = out_td
     piface_data[LOOPER_KEY][CLI_KEY] = {}
     piface_data[LOOPER_KEY][CLI_KEY]["runp"] = {}
-    # piface_data[LOOPER_KEY][CLI_KEY]["runp"][PIPELINE_INTERFACES_KEY] = [
-    #     temp_path_piface1p,
-    #     temp_path_piface2p,
-    # ]
     piface_data[SAMPLE_MODS_KEY][CONSTANT_KEY][PIPELINE_INTERFACES_KEY] = [
         temp_path_piface1s,
-        #temp_path_piface2s,
     ]
     with open(temp_path_cfg, "w") as f:
         dump(piface_data, f)

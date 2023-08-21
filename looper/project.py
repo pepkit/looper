@@ -547,6 +547,10 @@ class Project(peppyProject):
         print(pipestat_config)
         try:
             results_file_path = pipestat_config.data["results_file_path"]
+            if not os.path.isabs(results_file_path):
+                results_file_path = os.path.join(
+                    os.path.dirname(pipestat_config_path), results_file_path
+                )
         except KeyError:
             results_file_path = None
 

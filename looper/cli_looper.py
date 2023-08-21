@@ -450,7 +450,12 @@ def build_parser():
                 metavar="A",
                 help="List of amendments to activate",
             )
-        for subparser in [report_subparser, table_subparser, check_subparser, destroy_subparser]:
+        for subparser in [
+            report_subparser,
+            table_subparser,
+            check_subparser,
+            destroy_subparser,
+        ]:
             subparser.add_argument(
                 "--project",
                 help="Process project-level pipelines",
@@ -721,7 +726,7 @@ def main(test_args=None):
 
         if args.command == "check":
             if use_pipestat:
-                Checker(prj)(args)
+                return Checker(prj)(args)
             else:
                 raise PipestatConfigurationException("check")
 

@@ -39,7 +39,11 @@ from .exceptions import *
 from .const import *
 from .pipeline_interface import PipelineInterface
 from .project import Project
-from .utils import desired_samples_range_skipped, desired_samples_range_limited, sample_folder
+from .utils import (
+    desired_samples_range_skipped,
+    desired_samples_range_limited,
+    sample_folder,
+)
 from pipestat import get_file_for_table
 from pipestat.html_reports_pipestat import get_file_for_project
 
@@ -162,6 +166,7 @@ class Checker(Executor):
                     desc = ""
                 table.add_row(status, desc)
             console.print(table)
+        return status
 
 
 class Cleaner(Executor):
