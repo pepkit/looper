@@ -465,8 +465,8 @@ class TestLooperCompute:
         x = test_args_expansion(tp, cmd, ["--package", "local"])
         try:
             main(test_args=x)
-        except Exception:
-            raise pytest.fail("DID RAISE {0}".format(Exception))
+        except Exception as err:
+            raise pytest.fail(f"DID RAISE {err}")
         sd = os.path.join(get_outdir(tp), "submission")
         subs_list = [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
         assert_content_not_in_any_files(subs_list, "#SBATCH")
@@ -540,8 +540,8 @@ class TestLooperCompute:
         )
         try:
             main(test_args=x)
-        except Exception:
-            raise pytest.fail("DID RAISE {0}".format(Exception))
+        except Exception as err:
+            raise pytest.fail(f"DID RAISE {err}")
 
         sd = os.path.join(get_outdir(tp), "submission")
         subs_list = [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
@@ -552,29 +552,29 @@ class TestLooperConfig:
     @pytest.mark.parametrize("cmd", ["run", "runp"])
     def test_init_config_file(self, prep_temp_pep, cmd, dotfile_path):
         tp = prep_temp_pep
-        # stdout, stderr, rc = subp_exec(tp, "init")
-        # print_standard_stream(stderr)
-        # print_standard_stream(stdout)
         x = test_args_expansion(tp, "init")
         try:
             result = main(test_args=x)
-        except Exception:
-            raise pytest.fail("DID RAISE {0}".format(Exception))
+        except Exception as err:
+            raise pytest.fail(f"DID RAISE: {err}")
         assert result == 0
         assert_content_in_all_files(dotfile_path, tp)
         x = test_args_expansion(tp, cmd)
         try:
             result = main(test_args=x)
-        except Exception:
-            raise pytest.fail("DID RAISE {0}".format(Exception))
+        except Exception as err:
+            raise pytest.fail(f"DID RAISE {err}")
 
     def test_correct_execution_of_config(self, prepare_pep_with_dot_file):
-        dot_file_path = prepare_pep_with_dot_file
+        """
+        Test executing dot file and looper_config
+        """
+        dot_file_path = os.path.abspath(prepare_pep_with_dot_file)
         x = test_args_expansion("", "run")
         try:
             main(test_args=x)
-        except Exception:
-            raise pytest.fail("DID RAISE {0}".format(Exception))
+        except Exception as err:
+            raise pytest.fail(f"DID RAISE {err}")
         os.remove(dot_file_path)
 
 
