@@ -566,7 +566,6 @@ class Project(peppyProject):
         if results_file_path is not None:
             results_file_path = expandpath(results_file_path)
             if not os.path.isabs(results_file_path):
-                # TODO this should be relative to config file.
                 results_file_path = os.path.join(
                     pipestat_config_path, results_file_path
                 )

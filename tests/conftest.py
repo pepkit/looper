@@ -1,7 +1,7 @@
 from contextlib import contextmanager
 import os
 import subprocess
-from shutil import copyfile as cpf, rmtree
+from shutil import copyfile, rmtree
 import tempfile
 from typing import *
 
@@ -194,15 +194,15 @@ def prep_temp_pep(example_pep_piface_path):
     temp_path_res_proj = os.path.join(td, RES.format("project"))
     temp_path_res_samp = os.path.join(td, RES.format("sample"))
     # copying
-    cpf(cfg_path, temp_path_cfg)
-    cpf(sample_table_path, temp_path_sample_table)
-    cpf(piface1s_path, temp_path_piface1s)
-    cpf(piface2s_path, temp_path_piface2s)
-    cpf(piface1p_path, temp_path_piface1p)
-    cpf(piface2p_path, temp_path_piface2p)
-    cpf(output_schema_path, temp_path_output_schema)
-    cpf(res_proj_path, temp_path_res_proj)
-    cpf(res_samp_path, temp_path_res_samp)
+    copyfile(cfg_path, temp_path_cfg)
+    copyfile(sample_table_path, temp_path_sample_table)
+    copyfile(piface1s_path, temp_path_piface1s)
+    copyfile(piface2s_path, temp_path_piface2s)
+    copyfile(piface1p_path, temp_path_piface1p)
+    copyfile(piface2p_path, temp_path_piface2p)
+    copyfile(output_schema_path, temp_path_output_schema)
+    copyfile(res_proj_path, temp_path_res_proj)
+    copyfile(res_samp_path, temp_path_res_samp)
     # modififactions
     from yaml import dump, safe_load
 
@@ -239,9 +239,9 @@ def prep_temp_config_with_pep(example_pep_piface_path):
     temp_path_piface1s = os.path.join(td, PIS.format("1"))
 
     # copying
-    cpf(cfg_path, temp_path_cfg)
-    cpf(sample_table_path, temp_path_sample_table)
-    cpf(piface1s_path, temp_path_piface1s)
+    copyfile(cfg_path, temp_path_cfg)
+    copyfile(sample_table_path, temp_path_sample_table)
+    copyfile(piface1s_path, temp_path_piface1s)
 
     return peppy.Project(temp_path_cfg).to_dict(extended=True), temp_path_piface1s
 
@@ -313,14 +313,14 @@ def prep_temp_pep_pipestat(example_pep_piface_path):
     temp_path_res_proj = os.path.join(td, RES.format("project"))
     temp_path_res_samp = os.path.join(td, RES.format("sample"))
     # copying
-    cpf(cfg_path, temp_path_cfg)
+    copyfile(cfg_path, temp_path_cfg)
 
-    cpf(pipestat_config_path, temp_path_pipestat_config)
-    cpf(sample_table_path, temp_path_sample_table)
-    cpf(piface1s_path, temp_path_piface1s)
-    cpf(output_schema_path, temp_path_output_schema)
-    cpf(res_proj_path, temp_path_res_proj)
-    cpf(res_samp_path, temp_path_res_samp)
+    copyfile(pipestat_config_path, temp_path_pipestat_config)
+    copyfile(sample_table_path, temp_path_sample_table)
+    copyfile(piface1s_path, temp_path_piface1s)
+    copyfile(output_schema_path, temp_path_output_schema)
+    copyfile(res_proj_path, temp_path_res_proj)
+    copyfile(res_samp_path, temp_path_res_samp)
     # modififactions
     from yaml import dump, safe_load
 
