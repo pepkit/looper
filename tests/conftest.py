@@ -13,8 +13,9 @@ from yaml import dump, safe_load
 from looper.const import *
 
 CFG = "project_config.yaml"
-CFG_W_PIPESTAT = "project_config_pipestat.yaml"
-PIPESTAT_CONFIG = "pipestat_config.yaml"
+LOOPER_CFG = "looper_config_pipestat.yaml"
+PRJ_CFG_W_PIPESTAT = "project_config_pipestat.yaml"
+#PIPESTAT_CONFIG = "pipestat_config.yaml"
 PIPESTAT_OS = "pipestat_output_schema.yaml"
 PIPESTAT_PI = "pipeline_interface1_sample_pipestat.yaml"
 ST = "annotation_sheet.csv"
@@ -294,8 +295,8 @@ def prep_temp_pep_pipestat(example_pep_piface_path):
     out_td = os.path.join(td, "output")
     # ori paths
 
-    cfg_path = os.path.join(example_pep_piface_path, CFG_W_PIPESTAT)
-    pipestat_config_path = os.path.join(example_pep_piface_path, PIPESTAT_CONFIG)
+    cfg_path = os.path.join(example_pep_piface_path, LOOPER_CFG)
+    pipestat_config_path = os.path.join(example_pep_piface_path, PRJ_CFG_W_PIPESTAT)
     output_schema_path = os.path.join(example_pep_piface_path, PIPESTAT_OS)
 
     sample_table_path = os.path.join(example_pep_piface_path, ST)
@@ -304,9 +305,9 @@ def prep_temp_pep_pipestat(example_pep_piface_path):
     res_proj_path = os.path.join(example_pep_piface_path, RES.format("project"))
     res_samp_path = os.path.join(example_pep_piface_path, RES.format("sample"))
     # temp copies
-    temp_path_cfg = os.path.join(td, CFG_W_PIPESTAT)
+    temp_path_cfg = os.path.join(td, LOOPER_CFG)
     temp_path_output_schema = os.path.join(td, PIPESTAT_OS)
-    temp_path_pipestat_config = os.path.join(td, PIPESTAT_CONFIG)
+    temp_path_pipestat_config = os.path.join(td, PRJ_CFG_W_PIPESTAT)
 
     temp_path_sample_table = os.path.join(td, ST)
     temp_path_piface1s = os.path.join(td, PIS.format("1"))

@@ -224,6 +224,7 @@ CLI_PROJ_ATTRS = [
     DRY_RUN_KEY,
     FILE_CHECKS_KEY,
     SAMPLE_PL_ARG,
+    PIPESTAT_KEY,
 ]
 
 # resource package TSV-related consts

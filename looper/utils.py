@@ -458,6 +458,9 @@ def read_looper_config_file(looper_config_path: str) -> dict:
             f"{OUTDIR_KEY} is not defined in looper config file ({looper_config_path})"
         )
 
+    if PIPESTAT_KEY in dp_data:
+        return_dict[PIPESTAT_KEY] = dp_data[PIPESTAT_KEY]
+
     if PIPELINE_INTERFACES_KEY in dp_data:
         dp_data.setdefault(PIPELINE_INTERFACES_KEY, {})
         return_dict[SAMPLE_PL_ARG] = dp_data.get(PIPELINE_INTERFACES_KEY).get("sample")
