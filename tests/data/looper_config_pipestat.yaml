@@ -1,12 +1,11 @@
-pep_config: ./project_config_pipestat.yaml # pephub registry path or local path
+pep_config: project_config_pipestat.yaml # pephub registry path or local path
 output_dir: output
+sample_table: annotation_sheet.csv
 pipeline_interfaces:
-  sample:  ./pipeline_interface1_sample.yaml
-  #project: ./pipeline_interface_project.yaml
+  sample:  ./pipeline_interface1_sample_pipestat.yaml
 looper:
   all:
     output_dir: output
-
 sample_modifiers:
   append:
     attr: "val"
@@ -20,11 +19,11 @@ pipestat:
     project_name: test
     sample_name: frog_1
     schema_path: pipestat_output_schema.yaml
-    results_file_path: tmp_pipestat_results.yaml #this absolute path for now
-    #flag_file_dir: ../output/results_pipeline
+    results_file_path: tmp_pipestat_results.yaml
+    flag_file_dir: output/results_pipeline
   sample:
     project_name: test
     sample_name: frog_1
     schema_path: pipestat_output_schema.yaml
-    results_file_path: tmp_pipestat_results.yaml #this absolute path for now
-    #flag_file_dir: ../output/results_pipeline
+    results_file_path: tmp_pipestat_results.yaml
+    flag_file_dir: output/results_pipeline

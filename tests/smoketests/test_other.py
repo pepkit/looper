@@ -35,8 +35,7 @@ class TestLooperPipestat:
     def test_pipestat_configured(self, prep_temp_pep_pipestat, cmd):
         tp = prep_temp_pep_pipestat
 
-        #x = test_args_expansion(tp, cmd + " --looper-config", )
-        x = [cmd, '-d',  '--looper-config', tp]
+        x = [cmd, "-d", "--looper-config", tp]
 
         try:
             result = main(test_args=x)
@@ -47,7 +46,6 @@ class TestLooperPipestat:
 
 
 class TestLooperCheck:
-    @pytest.mark.skip(reason="test broken")
     @pytest.mark.parametrize("flag_id", FLAGS)
     @pytest.mark.parametrize(
         "pipeline_name", ["test_pipe"]
@@ -56,8 +54,8 @@ class TestLooperCheck:
         """Verify that checking works"""
         tp = prep_temp_pep_pipestat
         _make_flags(tp, flag_id, pipeline_name)
-        #x = test_args_expansion(tp, "check", ["--looper-config"])
-        x = ["check", '-d', '--looper-config', tp]
+
+        x = ["check", "-d", "--looper-config", tp]
 
         try:
             results = main(test_args=x)
@@ -68,7 +66,6 @@ class TestLooperCheck:
         except Exception:
             raise pytest.fail("DID RAISE {0}".format(Exception))
 
-    @pytest.mark.skip(reason="test broken")
     @pytest.mark.parametrize("flag_id", FLAGS)
     @pytest.mark.parametrize("pipeline_name", ["test_pipe"])
     def test_check_multi(self, prep_temp_pep_pipestat, flag_id, pipeline_name):
@@ -76,22 +73,21 @@ class TestLooperCheck:
         tp = prep_temp_pep_pipestat
         _make_flags(tp, flag_id, pipeline_name)
         _make_flags(tp, FLAGS[1], pipeline_name)
-        #x = test_args_expansion(tp, "check", ["--looper-config"])
-        x = ["check", '-d', '--looper-config', tp]
+
+        x = ["check", "-d", "--looper-config", tp]
         # Multiple flag files SHOULD cause pipestat to throw an assertion error
         if flag_id != FLAGS[1]:
             with pytest.raises(AssertionError):
                 main(test_args=x)
 
-    @pytest.mark.skip(reason="test broken")
     @pytest.mark.parametrize("flag_id", ["3333", "tonieflag", "bogus", "ms"])
     @pytest.mark.parametrize("pipeline_name", ["test_pipe"])
     def test_check_bogus(self, prep_temp_pep_pipestat, flag_id, pipeline_name):
         """Verify that checking works when bogus flags are created"""
         tp = prep_temp_pep_pipestat
         _make_flags(tp, flag_id, pipeline_name)
-        #x = test_args_expansion(tp, "check", ["--looper-config"])
-        x = ["check", '-d', '--looper-config', tp]
+
+        x = ["check", "-d", "--looper-config", tp]
         try:
             results = main(test_args=x)
             result_key = list(results.keys())[0]

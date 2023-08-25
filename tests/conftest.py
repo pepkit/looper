@@ -15,7 +15,6 @@ from looper.const import *
 CFG = "project_config.yaml"
 LOOPER_CFG = "looper_config_pipestat.yaml"
 PRJ_CFG_W_PIPESTAT = "project_config_pipestat.yaml"
-#PIPESTAT_CONFIG = "pipestat_config.yaml"
 PIPESTAT_OS = "pipestat_output_schema.yaml"
 PIPESTAT_PI = "pipeline_interface1_sample_pipestat.yaml"
 ST = "annotation_sheet.csv"
@@ -310,7 +309,7 @@ def prep_temp_pep_pipestat(example_pep_piface_path):
     temp_path_pipestat_config = os.path.join(td, PRJ_CFG_W_PIPESTAT)
 
     temp_path_sample_table = os.path.join(td, ST)
-    temp_path_piface1s = os.path.join(td, PIS.format("1"))
+    temp_path_piface1s = os.path.join(td, PIPESTAT_PI)
     temp_path_res_proj = os.path.join(td, RES.format("project"))
     temp_path_res_samp = os.path.join(td, RES.format("sample"))
     # copying
@@ -322,7 +321,7 @@ def prep_temp_pep_pipestat(example_pep_piface_path):
     copyfile(output_schema_path, temp_path_output_schema)
     copyfile(res_proj_path, temp_path_res_proj)
     copyfile(res_samp_path, temp_path_res_samp)
-    # modififactions
+    # modifications
     from yaml import dump, safe_load
 
     with open(temp_path_cfg, "r") as f:

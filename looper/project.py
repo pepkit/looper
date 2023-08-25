@@ -518,7 +518,7 @@ class Project(peppyProject):
             )
         key = "project" if project_level else "sample"
         # self[EXTRA_KEY] pipestat is stored here on the project if added to looper config file.
-        if (PIPESTAT_KEY in self[EXTRA_KEY] and key in self[EXTRA_KEY][PIPESTAT_KEY]):
+        if PIPESTAT_KEY in self[EXTRA_KEY] and key in self[EXTRA_KEY][PIPESTAT_KEY]:
             pipestat_config_dict = self[EXTRA_KEY][PIPESTAT_KEY][key]
         else:
             _LOGGER.debug(
@@ -530,12 +530,21 @@ class Project(peppyProject):
         pipestat_config = YAMLConfigManager(entries=pipestat_config_dict)
         try:
             results_file_path = pipestat_config.data["results_file_path"]
-            if not os.path.isabs(results_file_path):
+            if not os.path.exists(os.path.dirname(results_file_path)):
                 results_file_path = os.path.join(
-                    self.output_dir, results_file_path
+                    os.path.dirname(self.output_dir), results_file_path
                 )
         except KeyError:
             results_file_path = None
+
+        try:
+            flag_file_dir = pipestat_config.data["flag_file_dir"]
+            if not os.path.isabs(flag_file_dir):
+                flag_file_dir = os.path.join(
+                    os.path.dirname(self.output_dir), flag_file_dir
+                )
+        except KeyError:
+            flag_file_dir = None
 
         pifaces = (
             self.project_pipeline_interfaces
@@ -552,6 +561,7 @@ class Project(peppyProject):
             ret[piface.pipeline_name] = {
                 "config_dict": pipestat_config_dict,
                 "results_file_path": results_file_path,
+                "flag_file_dir": flag_file_dir,
                 "sample_name": rec_id,
                 "schema_path": piface.get_pipeline_schemas(OUTPUT_SCHEMA_KEY),
             }
