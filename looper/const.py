@@ -187,7 +187,7 @@ DEFAULT_PIPESTAT_CONFIG_ATTR = "pipestat_config"
 DEFAULT_PIPESTAT_RESULTS_FILE_ATTR = "pipestat_results_file"
 PIPESTAT_NAMESPACE_ATTR_KEY = "namespace_attribute"
 PIPESTAT_CONFIG_ATTR_KEY = "config_attribute"
-PIPESTAT_RESULTS_FILE_ATTR_KEY = "results_file_attribute"
+PIPESTAT_RESULTS_FILE_ATTR_KEY = "results_file_path"
 
 PIPE_ARGS_SECTION = "pipeline_args"
 CLI_KEY = "cli"
@@ -224,6 +224,7 @@ CLI_PROJ_ATTRS = [
     DRY_RUN_KEY,
     FILE_CHECKS_KEY,
     SAMPLE_PL_ARG,
+    PIPESTAT_KEY,
 ]
 
 # resource package TSV-related consts

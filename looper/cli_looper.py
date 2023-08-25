@@ -449,7 +449,12 @@ def build_parser():
                 metavar="A",
                 help="List of amendments to activate",
             )
-        for subparser in [report_subparser, table_subparser, check_subparser]:
+        for subparser in [
+            report_subparser,
+            table_subparser,
+            check_subparser,
+            destroy_subparser,
+        ]:
             subparser.add_argument(
                 "--project",
                 help="Process project-level pipelines",
@@ -697,29 +702,32 @@ def main(test_args=None):
         # with no pipestat reporting would not be compatible with
         # commands: table, report and check. Therefore we plan maintain
         # the old implementations for a couple of releases.
-        if hasattr(args, "project"):
-            use_pipestat = (
-                prj.pipestat_configured_project
-                if args.project
-                else prj.pipestat_configured
-            )
+        # if hasattr(args, "project"):
+        #     use_pipestat = (
+        #         prj.pipestat_configured_project
+        #         if args.project
+        #         else prj.pipestat_configured
+        #     )
+        use_pipestat = (
+            prj.pipestat_configured_project if args.project else prj.pipestat_configured
+        )
         if args.command == "table":
             if use_pipestat:
                 Tabulator(prj)(args)
             else:
-                TableOld(prj)()
+                raise PipestatConfigurationException("table")
 
         if args.command == "report":
             if use_pipestat:
                 Reporter(prj)(args)
             else:
-                ReportOld(prj)(args)
+                raise PipestatConfigurationException("report")
 
         if args.command == "check":
             if use_pipestat:
-                Checker(prj)(args)
+                return Checker(prj)(args)
             else:
-                CheckerOld(prj)(flags=args.flags)
+                raise PipestatConfigurationException("check")
 
         if args.command == "clean":
             return Cleaner(prj)(args)

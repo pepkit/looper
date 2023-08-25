@@ -1,0 +1,35 @@
+pipeline_name: test_pipe
+samples:
+  collection_of_images:
+    description: "This store collection of values or objects"
+    type: array
+    items:
+      properties:
+          prop1:
+            description: "This is an example file"
+            type: file
+  output_file_in_object:
+    type: object
+    properties:
+      prop1:
+        description: "This is an example file"
+        type: file
+      prop2:
+        description: "This is an example image"
+        type: image
+    description: "Object output"
+  output_file:
+    type: file
+    description: "This a path to the output file"
+  output_image:
+    type: image
+    description: "This a path to the output image"
+project:
+  another_collection_of_images:
+    description: "This store collection of values or objects"
+    type: array
+    items:
+      properties:
+        prop1:
+          description: "This is an example file"
+          type: file
