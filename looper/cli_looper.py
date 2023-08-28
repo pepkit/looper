@@ -267,7 +267,7 @@ def build_parser():
             )
 
         init_subparser.add_argument(
-            "pep-config", help="Project configuration file (PEP)"
+            "pep_config", help="Project configuration file (PEP)"
         )
 
         init_subparser.add_argument(
@@ -571,7 +571,7 @@ def main(test_args=None):
         return int(
             not initiate_looper_config(
                 dotfile_path(),
-                args.config_file,
+                args.pep_config,
                 args.output_dir,
                 args.sample_pipeline_interfaces,
                 args.project_pipeline_interfaces,
