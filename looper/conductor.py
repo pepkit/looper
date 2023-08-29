@@ -664,11 +664,12 @@ class SubmissionConductor(object):
             return YAMLConfigManager()
         else:
             full_namespace = {
-                "schema": psm.schema_path,
+                "schema": psm.schema,
+                "schema_path": psm["_config"].data["schema_path"],
                 "results_file": psm.file,
-                "record_id": psm.sample_name,
-                "namespace": psm.project_name,
-                "config": psm.config_path,
+                "sample_name": psm.sample_name,
+                "project_name": psm.project_name,
+                "pipeline_type": psm.pipeline_type,
             }
             filtered_namespace = {k: v for k, v in full_namespace.items() if v}
             return YAMLConfigManager(filtered_namespace)
@@ -745,6 +746,7 @@ class SubmissionConductor(object):
                 argstring = jinja_render_template_strictly(
                     template=templ, namespaces=namespaces
                 )
+                print(argstring)
             except UndefinedError as jinja_exception:
                 _LOGGER.warning(NOT_SUB_MSG.format(str(jinja_exception)))
             except KeyError as e:
