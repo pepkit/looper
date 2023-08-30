@@ -518,16 +518,17 @@ class Project(peppyProject):
             )
         key = "project" if project_level else "sample"
         # self[EXTRA_KEY] pipestat is stored here on the project if added to looper config file.
-        if PIPESTAT_KEY in self[EXTRA_KEY] and key in self[EXTRA_KEY][PIPESTAT_KEY]:
-            pipestat_config_dict = self[EXTRA_KEY][PIPESTAT_KEY][key]
+        if DEFAULT_PIPESTAT_CONFIG_ATTR in self[EXTRA_KEY]:
+            pipestat_config = self[EXTRA_KEY][DEFAULT_PIPESTAT_CONFIG_ATTR]
         else:
             _LOGGER.debug(
                 f"'{PIPESTAT_KEY}' not found in '{LOOPER_KEY}' section of the "
                 f"project configuration file."
             )
-            pipestat_config_dict = None
+            pipestat_config = None
 
-        pipestat_config = YAMLConfigManager(entries=pipestat_config_dict)
+        pipestat_config_path = self._resolve_path_with_cfg(pth=pipestat_config)
+        pipestat_config = YAMLConfigManager(filepath=pipestat_config_path)
         try:
             results_file_path = pipestat_config.data["results_file_path"]
             if not os.path.exists(os.path.dirname(results_file_path)):
@@ -546,24 +547,26 @@ class Project(peppyProject):
         except KeyError:
             flag_file_dir = None
 
+        try:
+            output_schema_path = pipestat_config.data["output_schema"]
+            if not os.path.isabs(output_schema_path):
+                output_schema_path = os.path.join(
+                    os.path.dirname(self.output_dir), output_schema_path
+                )
+        except KeyError:
+            output_schema_path = None
+
         pifaces = (
             self.project_pipeline_interfaces
             if project_level
             else self._interfaces_by_sample[sample_name]
         )
         for piface in pifaces:
-            rec_id = (
-                pipestat_config.data["project_name"]
-                if project_level
-                else pipestat_config.data["sample_name"]
-            )
-
             ret[piface.pipeline_name] = {
-                "config_dict": pipestat_config_dict,
+                "config_file": pipestat_config_path,
                 "results_file_path": results_file_path,
                 "flag_file_dir": flag_file_dir,
-                "sample_name": rec_id,
-                "schema_path": piface.get_pipeline_schemas(OUTPUT_SCHEMA_KEY),
+                "schema_path": output_schema_path,
                 "output_dir": self.output_dir,
             }
         return ret

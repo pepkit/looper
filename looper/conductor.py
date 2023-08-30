@@ -417,7 +417,9 @@ class SubmissionConductor(object):
         )
         if self.prj.pipestat_configured:
             psms = self.prj.get_pipestat_managers(sample_name=sample.sample_name)
-            sample_statuses = psms[self.pl_name].get_status()
+            sample_statuses = psms[self.pl_name].get_status(
+                sample_name=sample.sample_name
+            )
             sample_statuses = [sample_statuses] if sample_statuses else []
         else:
             sample_statuses = fetch_sample_flags(self.prj, sample, self.pl_name)
@@ -665,7 +667,7 @@ class SubmissionConductor(object):
         else:
             full_namespace = {
                 "schema": psm.schema,
-                "schema_path": psm["_config"].data["schema_path"],
+                "schema_path": psm["_config"].data["output_schema"],
                 "results_file": psm.file,
                 "sample_name": psm.sample_name,
                 "project_name": psm.project_name,
