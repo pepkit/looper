@@ -564,11 +564,7 @@ class Project(peppyProject):
             else self._interfaces_by_sample[sample_name]
         )
         for piface in pifaces:
-            rec_id = sample_name or (
-                pipestat_config.data["project_name"]
-                if project_level
-                else pipestat_config.data["sample_name"]
-            )
+            rec_id = sample_name
 
             ret[piface.pipeline_name] = {
                 "config_file": pipestat_config_path,
