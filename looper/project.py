@@ -571,7 +571,7 @@ class Project(peppyProject):
                 "results_file_path": results_file_path,
                 "flag_file_dir": flag_file_dir,
                 "sample_name": rec_id,
-                "schema_path": piface.get_pipeline_schemas(OUTPUT_SCHEMA_KEY),
+                "schema_path": output_schema_path,
                 "output_dir": self.output_dir,
             }
         return ret
