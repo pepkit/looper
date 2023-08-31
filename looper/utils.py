@@ -458,10 +458,8 @@ def read_looper_config_file(looper_config_path: str) -> dict:
             f"{OUTDIR_KEY} is not defined in looper config file ({looper_config_path})"
         )
 
-    if DEFAULT_PIPESTAT_CONFIG_ATTR in dp_data:
-        return_dict[DEFAULT_PIPESTAT_CONFIG_ATTR] = dp_data[
-            DEFAULT_PIPESTAT_CONFIG_ATTR
-        ]
+    if PIPESTAT_KEY in dp_data:
+        return_dict[PIPESTAT_KEY] = dp_data[PIPESTAT_KEY]
 
     if PIPELINE_INTERFACES_KEY in dp_data:
         dp_data.setdefault(PIPELINE_INTERFACES_KEY, {})

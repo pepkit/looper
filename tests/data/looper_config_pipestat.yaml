@@ -15,3 +15,14 @@ sample_modifiers:
       SRA_1: "{SRR}_1.fastq.gz"
       SRA_2: "{SRR}_2.fastq.gz"
 pipestat_config: ./global_pipestat_config.yaml
+pipestat:
+  results_file_path: tmp_pipestat_results.yaml #this absolute path for now
+  flag_file_dir: ../output/results_pipeline
+  database:
+    dialect: postgresql
+    driver: psycopg2
+    name: pipestat-test
+    user: postgres
+    password: pipestat-password
+    host: 127.0.0.1
+    port: 5432

@@ -20,6 +20,7 @@ from peppy.utils import make_abs_via_cfg
 from pipestat import PipestatError, PipestatManager
 from ubiquerg import expandpath, is_command_callable
 from yacman import YAMLConfigManager
+from conductor import write_pipestat_config
 
 from .exceptions import *
 from .pipeline_interface import PipelineInterface
@@ -517,9 +518,9 @@ class Project(peppyProject):
                 "sample to get the PipestatManagers for"
             )
         key = "project" if project_level else "sample"
-        # self[EXTRA_KEY] pipestat is stored here on the project if added to looper config file.
-        if DEFAULT_PIPESTAT_CONFIG_ATTR in self[EXTRA_KEY]:
-            pipestat_config = self[EXTRA_KEY][DEFAULT_PIPESTAT_CONFIG_ATTR]
+
+        if PIPESTAT_KEY in self[EXTRA_KEY]:
+            pipestat_config_dict = self[EXTRA_KEY][PIPESTAT_KEY]
         else:
             _LOGGER.debug(
                 f"'{PIPESTAT_KEY}' not found in '{LOOPER_KEY}' section of the "
@@ -528,15 +529,16 @@ class Project(peppyProject):
             # We can't use pipestat without the config file
             raise ValueError
 
-        pipestat_config_path = self._resolve_path_with_cfg(pth=pipestat_config)
+        pipestat_config = YAMLConfigManager(entries=pipestat_config_dict)
 
-        pipestat_config = YAMLConfigManager(filepath=pipestat_config_path)
+        # Get looper user configured items first and update the pipestat_config_dict
         try:
             results_file_path = pipestat_config.data["results_file_path"]
             if not os.path.exists(os.path.dirname(results_file_path)):
                 results_file_path = os.path.join(
                     os.path.dirname(self.output_dir), results_file_path
                 )
+            pipestat_config_dict.update({'results_file_path': results_file_path})
         except KeyError:
             results_file_path = None
 
@@ -546,33 +548,40 @@ class Project(peppyProject):
                 flag_file_dir = os.path.join(
                     os.path.dirname(self.output_dir), flag_file_dir
                 )
+            pipestat_config_dict.update({'flag_file_dir': flag_file_dir})
         except KeyError:
             flag_file_dir = None
 
-        try:
-            output_schema_path = pipestat_config.data["schema_path"]
-            if not os.path.isabs(output_schema_path):
-                output_schema_path = os.path.join(
-                    os.path.dirname(self.output_dir), output_schema_path
-                )
-        except KeyError:
-            output_schema_path = None
+        # Don't forget databse credentials here
+        # Get database items if supplied
 
         pifaces = (
             self.project_pipeline_interfaces
             if project_level
             else self._interfaces_by_sample[sample_name]
         )
+
         for piface in pifaces:
-            # TODO we need to get these items from the pifaces
+            # TODO we need to get the other pipestat items from the pipeline author's piface
+            if 'output_schema' in piface.data:
+                pipestat_config_dict.update({'output_schema':piface.data['output_schema']})
+            if 'pipeline_name' in piface.data:
+                pipestat_config_dict.update({'pipeline_name':piface.data['pipeline_name']})
+            if 'pipeline_type' in piface.data:
+                pipestat_config_dict.update({'pipeline_type':piface.data['pipeline_type']})
+
+            #Pipestat_dict_ is now updated from all sources and can be written to a yaml.
+            looper_pipestat_config_path = os.path.join(
+                    os.path.dirname(self.output_dir), "looper_pipestat_config.yaml"
+                )
+            if not os.path.exists(looper_pipestat_config_path):
+                write_pipestat_config(looper_pipestat_config_path, pipestat_config_dict)
+
             rec_id = sample_name
+
             ret[piface.pipeline_name] = {
-                "config_file": pipestat_config_path,
-                "results_file_path": results_file_path,
-                "flag_file_dir": flag_file_dir,
+                "config_file": looper_pipestat_config_path,
                 "sample_name": rec_id,
-                "schema_path": piface.get_pipeline_schemas(OUTPUT_SCHEMA_KEY),
-                "output_dir": self.output_dir,
             }
         return ret
 

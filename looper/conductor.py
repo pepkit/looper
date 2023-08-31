@@ -5,6 +5,7 @@ import logging
 import os
 import subprocess
 import time
+import yaml
 from copy import copy, deepcopy
 from json import loads
 from subprocess import check_output
@@ -101,31 +102,15 @@ def write_sample_yaml(namespaces):
     return {"sample": sample}
 
 
-def write_pipestat_config(namespaces):
+def write_pipestat_config(looper_pipestat_config_path, pipestat_config_dict):
     """
-    This is run a the project level, not at the sample level like the other plugins
+    This is run at the project level, not at the sample level like the other plugins
     """
+    with open(looper_pipestat_config_path, "w") as f:
+        yaml.dump(pipestat_config_dict, f)
+    print(f"Initialized looper config file: {looper_pipestat_config_path}")
 
-    if "pipestat" not in namespaces["looper"]: 
-        return {}
-
-    # pipestat config contains information from 2 sources: pipeline-author, and pipeline-runner
-    # start with the information provided by the pipeline-runner via looper config
-    pipestat_config_data = namespaces["looper"]["pipestat"]
-
-    # add information re: pipestat provided by pipeline-author in the piface.
-    pipestat_config_data["pipeline_type"] = namespaces["pipeline"]["pipeline_type"]
-    pipestat_config_data["pipestat_flag_dir"] = namespaces["pipeline"]["pipestat_flag_dir"]
-    pipestat_config_data["output_schema"] = namespaces["pipeline"]["output_schema"]
-
-    # where to save this?
-    pipestat_config_path = f"{namespaces['looper']['output_dir']}/pipestat_config.yaml"
-
-    # write pipestat config file.
-    with open(pipestat_config_path, "w") as yamlfile:
-        dump(pipestat_config_data, yamlfile)
-
-    return {"pipestat": {"config_path": pipestat_config_path}}
+    return True
 
 
 def write_sample_yaml_prj(namespaces):
