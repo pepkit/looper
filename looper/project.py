@@ -525,9 +525,11 @@ class Project(peppyProject):
                 f"'{PIPESTAT_KEY}' not found in '{LOOPER_KEY}' section of the "
                 f"project configuration file."
             )
-            pipestat_config = None
+            # We can't use pipestat without the config file
+            raise ValueError
 
         pipestat_config_path = self._resolve_path_with_cfg(pth=pipestat_config)
+
         pipestat_config = YAMLConfigManager(filepath=pipestat_config_path)
         try:
             results_file_path = pipestat_config.data["results_file_path"]
@@ -562,7 +564,7 @@ class Project(peppyProject):
             else self._interfaces_by_sample[sample_name]
         )
         for piface in pifaces:
-            rec_id = (
+            rec_id = sample_name or (
                 pipestat_config.data["project_name"]
                 if project_level
                 else pipestat_config.data["sample_name"]
