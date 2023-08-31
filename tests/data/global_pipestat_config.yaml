@@ -1,4 +1,5 @@
 project_name: test
 sample_name: frog_1
-output_schema: pipestat_output_schema.yaml
+schema_path: pipestat_output_schema.yaml
+flag_file_dir: output/results_pipeline
 results_file_path: tmp_pipestat_results.yaml #this absolute path for now

@@ -667,7 +667,7 @@ class SubmissionConductor(object):
         else:
             full_namespace = {
                 "schema": psm.schema,
-                "schema_path": psm["_config"].data["output_schema"],
+                "schema_path": psm["_config"].data["schema_path"],
                 "results_file": psm.file,
                 "sample_name": psm.sample_name,
                 "project_name": psm.project_name,
