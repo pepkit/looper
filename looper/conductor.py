@@ -666,11 +666,9 @@ class SubmissionConductor(object):
             return YAMLConfigManager()
         else:
             full_namespace = {
-                "schema_path": psm["_config"].data["schema_path"],
                 "results_file": psm.file,
                 "sample_name": psm.sample_name,
                 "project_name": psm.project_name,
-                "pipeline_type": psm.pipeline_type,
                 "config_file": psm._config_path,
             }
             filtered_namespace = {k: v for k, v in full_namespace.items() if v}

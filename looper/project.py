@@ -564,14 +564,14 @@ class Project(peppyProject):
             else self._interfaces_by_sample[sample_name]
         )
         for piface in pifaces:
+            # TODO we need to get these items from the pifaces
             rec_id = sample_name
-
             ret[piface.pipeline_name] = {
                 "config_file": pipestat_config_path,
                 "results_file_path": results_file_path,
                 "flag_file_dir": flag_file_dir,
                 "sample_name": rec_id,
-                "schema_path": output_schema_path,
+                "schema_path": piface.get_pipeline_schemas(OUTPUT_SCHEMA_KEY),
                 "output_dir": self.output_dir,
             }
         return ret
