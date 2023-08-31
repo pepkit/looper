@@ -101,6 +101,33 @@ def write_sample_yaml(namespaces):
     return {"sample": sample}
 
 
+def write_pipestat_config(namespaces):
+    """
+    This is run a the project level, not at the sample level like the other plugins
+    """
+
+    if "pipestat" not in namespaces["looper"]: 
+        return {}
+
+    # pipestat config contains information from 2 sources: pipeline-author, and pipeline-runner
+    # start with the information provided by the pipeline-runner via looper config
+    pipestat_config_data = namespaces["looper"]["pipestat"]
+
+    # add information re: pipestat provided by pipeline-author in the piface.
+    pipestat_config_data["pipeline_type"] = namespaces["pipeline"]["pipeline_type"]
+    pipestat_config_data["pipestat_flag_dir"] = namespaces["pipeline"]["pipestat_flag_dir"]
+    pipestat_config_data["output_schema"] = namespaces["pipeline"]["output_schema"]
+
+    # where to save this?
+    pipestat_config_path = f"{namespaces['looper']['output_dir']}/pipestat_config.yaml"
+
+    # write pipestat config file.
+    with open(pipestat_config_path, "w") as yamlfile:
+        dump(pipestat_config_data, yamlfile)
+
+    return {"pipestat": {"config_path": pipestat_config_path}}
+
+
 def write_sample_yaml_prj(namespaces):
     """
     Plugin: saves sample representation with project reference to YAML.
