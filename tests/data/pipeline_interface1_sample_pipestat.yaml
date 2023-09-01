@@ -1,7 +1,6 @@
 pipeline_name: PIPELINE1
 pipeline_type: sample
 input_schema: https://schema.databio.org/pep/2.0.0.yaml
-output_schema: pipestat_output_schema.yaml
 schema_path: pipestat_output_schema.yaml
 var_templates:
   path: "{looper.piface_dir}/pipelines/pipeline1.py"

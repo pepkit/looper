@@ -17,7 +17,7 @@ sample_modifiers:
 pipestat_config: ./global_pipestat_config.yaml
 pipestat:
   results_file_path: tmp_pipestat_results.yaml #this absolute path for now
-  flag_file_dir: ../output/results_pipeline
+  flag_file_dir: output/results_pipeline
   database:
     dialect: postgresql
     driver: psycopg2

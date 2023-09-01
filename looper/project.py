@@ -20,7 +20,7 @@ from peppy.utils import make_abs_via_cfg
 from pipestat import PipestatError, PipestatManager
 from ubiquerg import expandpath, is_command_callable
 from yacman import YAMLConfigManager
-from conductor import write_pipestat_config
+from .conductor import write_pipestat_config
 
 from .exceptions import *
 from .pipeline_interface import PipelineInterface
@@ -538,7 +538,7 @@ class Project(peppyProject):
                 results_file_path = os.path.join(
                     os.path.dirname(self.output_dir), results_file_path
                 )
-            pipestat_config_dict.update({'results_file_path': results_file_path})
+            pipestat_config_dict.update({"results_file_path": results_file_path})
         except KeyError:
             results_file_path = None
 
@@ -548,7 +548,7 @@ class Project(peppyProject):
                 flag_file_dir = os.path.join(
                     os.path.dirname(self.output_dir), flag_file_dir
                 )
-            pipestat_config_dict.update({'flag_file_dir': flag_file_dir})
+            pipestat_config_dict.update({"flag_file_dir": flag_file_dir})
         except KeyError:
             flag_file_dir = None
 
@@ -563,17 +563,21 @@ class Project(peppyProject):
 
         for piface in pifaces:
             # TODO we need to get the other pipestat items from the pipeline author's piface
-            if 'output_schema' in piface.data:
-                pipestat_config_dict.update({'output_schema':piface.data['output_schema']})
-            if 'pipeline_name' in piface.data:
-                pipestat_config_dict.update({'pipeline_name':piface.data['pipeline_name']})
-            if 'pipeline_type' in piface.data:
-                pipestat_config_dict.update({'pipeline_type':piface.data['pipeline_type']})
-
-            #Pipestat_dict_ is now updated from all sources and can be written to a yaml.
-            looper_pipestat_config_path = os.path.join(
-                    os.path.dirname(self.output_dir), "looper_pipestat_config.yaml"
+            if "schema_path" in piface.data:
+                pipestat_config_dict.update({"schema_path": piface.data["schema_path"]})
+            if "pipeline_name" in piface.data:
+                pipestat_config_dict.update(
+                    {"pipeline_name": piface.data["pipeline_name"]}
                 )
+            if "pipeline_type" in piface.data:
+                pipestat_config_dict.update(
+                    {"pipeline_type": piface.data["pipeline_type"]}
+                )
+
+            # Pipestat_dict_ is now updated from all sources and can be written to a yaml.
+            looper_pipestat_config_path = os.path.join(
+                os.path.dirname(self.output_dir), "looper_pipestat_config.yaml"
+            )
             if not os.path.exists(looper_pipestat_config_path):
                 write_pipestat_config(looper_pipestat_config_path, pipestat_config_dict)
 
