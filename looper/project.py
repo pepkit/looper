@@ -557,11 +557,8 @@ class Project(peppyProject):
             if not os.path.exists(looper_pipestat_config_path):
                 write_pipestat_config(looper_pipestat_config_path, pipestat_config_dict)
 
-            rec_id = sample_name or None # none if project level
-
             ret[piface.pipeline_name] = {
                 "config_file": looper_pipestat_config_path,
-                "sample_name": rec_id,
             }
         return ret
 
