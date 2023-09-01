@@ -506,7 +506,7 @@ class Project(peppyProject):
             # We cannot use pipestat without the config file
             raise ValueError
 
-        #pipestat_config = YAMLConfigManager(entries=pipestat_config_dict)
+        # pipestat_config = YAMLConfigManager(entries=pipestat_config_dict)
 
         # Get looper user configured items first and update the pipestat_config_dict
         try:
