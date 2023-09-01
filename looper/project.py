@@ -506,11 +506,11 @@ class Project(peppyProject):
             # We cannot use pipestat without the config file
             raise ValueError
 
-        pipestat_config = YAMLConfigManager(entries=pipestat_config_dict)
+        #pipestat_config = YAMLConfigManager(entries=pipestat_config_dict)
 
         # Get looper user configured items first and update the pipestat_config_dict
         try:
-            results_file_path = pipestat_config.data["results_file_path"]
+            results_file_path = pipestat_config_dict["results_file_path"]
             if not os.path.exists(os.path.dirname(results_file_path)):
                 results_file_path = os.path.join(
                     os.path.dirname(self.output_dir), results_file_path
@@ -520,7 +520,7 @@ class Project(peppyProject):
             results_file_path = None
 
         try:
-            flag_file_dir = pipestat_config.data["flag_file_dir"]
+            flag_file_dir = pipestat_config_dict["flag_file_dir"]
             if not os.path.isabs(flag_file_dir):
                 flag_file_dir = os.path.join(
                     os.path.dirname(self.output_dir), flag_file_dir
