@@ -489,35 +489,12 @@ class Project(peppyProject):
         Get all required pipestat configuration variables from looper_config file
         """
 
-        def _get_val_from_attr(pipestat_sect, object, attr_name, default, no_err=False):
-            """
-            Get configuration value from an object's attribute or return default
-
-            :param dict pipestat_sect: pipestat section for sample or project
-            :param peppy.Sample | peppy.Project object: object to get the
-                configuration values for
-            :param str attr_name: attribute name with the value to retrieve
-            :param str default: default attribute name
-            :param bool no_err: do not raise error in case the attribute is missing,
-                in order to use the values specified in a different way, e.g. in pipestat config
-            :return str: retrieved configuration value
-            """
-            if pipestat_sect is not None and attr_name in pipestat_sect:
-                return pipestat_sect[attr_name]
-            try:
-                return object[default]
-            except KeyError:
-                if no_err:
-                    return None
-                raise AttributeError(f"'{default}' attribute is missing")
-
         ret = {}
         if not project_level and sample_name is None:
             raise ValueError(
                 "Must provide the sample_name to determine the "
                 "sample to get the PipestatManagers for"
             )
-        key = "project" if project_level else "sample"
 
         if PIPESTAT_KEY in self[EXTRA_KEY]:
             pipestat_config_dict = self[EXTRA_KEY][PIPESTAT_KEY]
@@ -526,7 +503,7 @@ class Project(peppyProject):
                 f"'{PIPESTAT_KEY}' not found in '{LOOPER_KEY}' section of the "
                 f"project configuration file."
             )
-            # We can't use pipestat without the config file
+            # We cannot use pipestat without the config file
             raise ValueError
 
         pipestat_config = YAMLConfigManager(entries=pipestat_config_dict)
@@ -552,8 +529,7 @@ class Project(peppyProject):
         except KeyError:
             flag_file_dir = None
 
-        # Don't forget databse credentials here
-        # Get database items if supplied
+        pipestat_config_dict.update({"output_dir": self.output_dir})
 
         pifaces = (
             self.project_pipeline_interfaces
@@ -562,7 +538,7 @@ class Project(peppyProject):
         )
 
         for piface in pifaces:
-            # TODO we need to get the other pipestat items from the pipeline author's piface
+            # We must also obtain additional pipestat items from the pipeline author's piface
             if "schema_path" in piface.data:
                 pipestat_config_dict.update({"schema_path": piface.data["schema_path"]})
             if "pipeline_name" in piface.data:
@@ -581,7 +557,7 @@ class Project(peppyProject):
             if not os.path.exists(looper_pipestat_config_path):
                 write_pipestat_config(looper_pipestat_config_path, pipestat_config_dict)
 
-            rec_id = sample_name
+            rec_id = sample_name or None # none if project level
 
             ret[piface.pipeline_name] = {
                 "config_file": looper_pipestat_config_path,

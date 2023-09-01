@@ -298,7 +298,6 @@ def prep_temp_pep_pipestat(example_pep_piface_path):
     project_cfg_pipestat_path = os.path.join(
         example_pep_piface_path, PROJECT_CFG_PIPESTAT
     )
-    pipestat_config_path = os.path.join(example_pep_piface_path, PIPESTAT_CONFIG)
     output_schema_path = os.path.join(example_pep_piface_path, PIPESTAT_OS)
 
     sample_table_path = os.path.join(example_pep_piface_path, ST)
@@ -310,7 +309,6 @@ def prep_temp_pep_pipestat(example_pep_piface_path):
     temp_path_cfg = os.path.join(td, LOOPER_CFG)
     temp_path_project_cfg_pipestat = os.path.join(td, PROJECT_CFG_PIPESTAT)
     temp_path_output_schema = os.path.join(td, PIPESTAT_OS)
-    temp_path_pipestat_config = os.path.join(td, PIPESTAT_CONFIG)
 
     temp_path_sample_table = os.path.join(td, ST)
     temp_path_piface1s = os.path.join(td, PIPESTAT_PI)
@@ -319,7 +317,7 @@ def prep_temp_pep_pipestat(example_pep_piface_path):
     # copying
     copyfile(cfg_path, temp_path_cfg)
     copyfile(project_cfg_pipestat_path, temp_path_project_cfg_pipestat)
-    copyfile(pipestat_config_path, temp_path_pipestat_config)
+
     copyfile(sample_table_path, temp_path_sample_table)
     copyfile(piface1s_path, temp_path_piface1s)
     copyfile(output_schema_path, temp_path_output_schema)
