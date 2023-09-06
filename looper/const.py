@@ -225,6 +225,7 @@ CLI_PROJ_ATTRS = [
     FILE_CHECKS_KEY,
     SAMPLE_PL_ARG,
     PIPESTAT_KEY,
+    DEFAULT_PIPESTAT_CONFIG_ATTR,
 ]
 
 # resource package TSV-related consts

@@ -13,10 +13,12 @@ from yaml import dump, safe_load
 from looper.const import *
 
 CFG = "project_config.yaml"
+PIPESTAT_CONFIG = "global_pipestat_config.yaml"
+PROJECT_CFG_PIPESTAT = "project_config_pipestat.yaml"
 LOOPER_CFG = "looper_config_pipestat.yaml"
-PRJ_CFG_W_PIPESTAT = "project_config_pipestat.yaml"
 PIPESTAT_OS = "pipestat_output_schema.yaml"
 PIPESTAT_PI = "pipeline_interface1_sample_pipestat.yaml"
+PIPESTAT_PI_PRJ = "pipeline_interface1_project_pipestat.yaml"
 ST = "annotation_sheet.csv"
 PIP = "pipeline_interface{}_project.yaml"
 PIS = "pipeline_interface{}_sample.yaml"
@@ -285,7 +287,6 @@ def prepare_pep_with_dot_file(prep_temp_pep):
     return dot_file_path
 
 
-#
 @pytest.fixture
 def prep_temp_pep_pipestat(example_pep_piface_path):
     # TODO this should be combined with the other prep_temp_pep
@@ -295,29 +296,34 @@ def prep_temp_pep_pipestat(example_pep_piface_path):
     # ori paths
 
     cfg_path = os.path.join(example_pep_piface_path, LOOPER_CFG)
-    pipestat_config_path = os.path.join(example_pep_piface_path, PRJ_CFG_W_PIPESTAT)
+    project_cfg_pipestat_path = os.path.join(
+        example_pep_piface_path, PROJECT_CFG_PIPESTAT
+    )
     output_schema_path = os.path.join(example_pep_piface_path, PIPESTAT_OS)
 
     sample_table_path = os.path.join(example_pep_piface_path, ST)
     piface1s_path = os.path.join(example_pep_piface_path, PIPESTAT_PI)
+    piface1p_path = os.path.join(example_pep_piface_path, PIPESTAT_PI_PRJ)
 
     res_proj_path = os.path.join(example_pep_piface_path, RES.format("project"))
     res_samp_path = os.path.join(example_pep_piface_path, RES.format("sample"))
     # temp copies
     temp_path_cfg = os.path.join(td, LOOPER_CFG)
+    temp_path_project_cfg_pipestat = os.path.join(td, PROJECT_CFG_PIPESTAT)
     temp_path_output_schema = os.path.join(td, PIPESTAT_OS)
-    temp_path_pipestat_config = os.path.join(td, PRJ_CFG_W_PIPESTAT)
 
     temp_path_sample_table = os.path.join(td, ST)
     temp_path_piface1s = os.path.join(td, PIPESTAT_PI)
+    temp_path_piface1p = os.path.join(td, PIPESTAT_PI_PRJ)
     temp_path_res_proj = os.path.join(td, RES.format("project"))
     temp_path_res_samp = os.path.join(td, RES.format("sample"))
     # copying
     copyfile(cfg_path, temp_path_cfg)
+    copyfile(project_cfg_pipestat_path, temp_path_project_cfg_pipestat)
 
-    copyfile(pipestat_config_path, temp_path_pipestat_config)
     copyfile(sample_table_path, temp_path_sample_table)
     copyfile(piface1s_path, temp_path_piface1s)
+    copyfile(piface1p_path, temp_path_piface1p)
     copyfile(output_schema_path, temp_path_output_schema)
     copyfile(res_proj_path, temp_path_res_proj)
     copyfile(res_samp_path, temp_path_res_samp)
@@ -329,6 +335,9 @@ def prep_temp_pep_pipestat(example_pep_piface_path):
     piface_data[LOOPER_KEY][OUTDIR_KEY] = out_td
     piface_data[LOOPER_KEY][CLI_KEY] = {}
     piface_data[LOOPER_KEY][CLI_KEY]["runp"] = {}
+    piface_data[LOOPER_KEY][CLI_KEY]["runp"][PIPELINE_INTERFACES_KEY] = [
+        temp_path_piface1p,
+    ]
     piface_data[SAMPLE_MODS_KEY][CONSTANT_KEY][PIPELINE_INTERFACES_KEY] = [
         temp_path_piface1s,
     ]

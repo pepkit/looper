@@ -31,7 +31,7 @@ class TestLooperPipestat:
         with pytest.raises(PipestatConfigurationException):
             main(test_args=x)
 
-    @pytest.mark.parametrize("cmd", ["run", "report", "table", "check"])
+    @pytest.mark.parametrize("cmd", ["run", "runp", "report", "table", "check"])
     def test_pipestat_configured(self, prep_temp_pep_pipestat, cmd):
         tp = prep_temp_pep_pipestat
 

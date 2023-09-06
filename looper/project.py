@@ -20,6 +20,7 @@ from peppy.utils import make_abs_via_cfg
 from pipestat import PipestatError, PipestatManager
 from ubiquerg import expandpath, is_command_callable
 from yacman import YAMLConfigManager
+from .conductor import write_pipestat_config
 
 from .exceptions import *
 from .pipeline_interface import PipelineInterface
@@ -488,82 +489,79 @@ class Project(peppyProject):
         Get all required pipestat configuration variables from looper_config file
         """
 
-        def _get_val_from_attr(pipestat_sect, object, attr_name, default, no_err=False):
-            """
-            Get configuration value from an object's attribute or return default
-
-            :param dict pipestat_sect: pipestat section for sample or project
-            :param peppy.Sample | peppy.Project object: object to get the
-                configuration values for
-            :param str attr_name: attribute name with the value to retrieve
-            :param str default: default attribute name
-            :param bool no_err: do not raise error in case the attribute is missing,
-                in order to use the values specified in a different way, e.g. in pipestat config
-            :return str: retrieved configuration value
-            """
-            if pipestat_sect is not None and attr_name in pipestat_sect:
-                return pipestat_sect[attr_name]
-            try:
-                return object[default]
-            except KeyError:
-                if no_err:
-                    return None
-                raise AttributeError(f"'{default}' attribute is missing")
-
         ret = {}
         if not project_level and sample_name is None:
             raise ValueError(
                 "Must provide the sample_name to determine the "
                 "sample to get the PipestatManagers for"
             )
-        key = "project" if project_level else "sample"
-        # self[EXTRA_KEY] pipestat is stored here on the project if added to looper config file.
-        if PIPESTAT_KEY in self[EXTRA_KEY] and key in self[EXTRA_KEY][PIPESTAT_KEY]:
-            pipestat_config_dict = self[EXTRA_KEY][PIPESTAT_KEY][key]
+
+        if PIPESTAT_KEY in self[EXTRA_KEY]:
+            pipestat_config_dict = self[EXTRA_KEY][PIPESTAT_KEY]
         else:
             _LOGGER.debug(
                 f"'{PIPESTAT_KEY}' not found in '{LOOPER_KEY}' section of the "
                 f"project configuration file."
             )
-            pipestat_config_dict = None
+            # We cannot use pipestat without it being defined in the looper config file.
+            raise ValueError
 
-        pipestat_config = YAMLConfigManager(entries=pipestat_config_dict)
+        # Get looper user configured items first and update the pipestat_config_dict
         try:
-            results_file_path = pipestat_config.data["results_file_path"]
+            results_file_path = pipestat_config_dict["results_file_path"]
             if not os.path.exists(os.path.dirname(results_file_path)):
                 results_file_path = os.path.join(
                     os.path.dirname(self.output_dir), results_file_path
                 )
+            pipestat_config_dict.update({"results_file_path": results_file_path})
         except KeyError:
             results_file_path = None
 
         try:
-            flag_file_dir = pipestat_config.data["flag_file_dir"]
+            flag_file_dir = pipestat_config_dict["flag_file_dir"]
             if not os.path.isabs(flag_file_dir):
                 flag_file_dir = os.path.join(
                     os.path.dirname(self.output_dir), flag_file_dir
                 )
+            pipestat_config_dict.update({"flag_file_dir": flag_file_dir})
         except KeyError:
             flag_file_dir = None
+
+        if project_level and "project_name" in pipestat_config_dict:
+            pipestat_config_dict.update(
+                {"project_name": pipestat_config_dict["project_name"]}
+            )
+
+        pipestat_config_dict.update({"output_dir": self.output_dir})
 
         pifaces = (
             self.project_pipeline_interfaces
             if project_level
             else self._interfaces_by_sample[sample_name]
         )
+
         for piface in pifaces:
-            rec_id = (
-                pipestat_config.data["project_name"]
-                if project_level
-                else pipestat_config.data["sample_name"]
+            # We must also obtain additional pipestat items from the pipeline author's piface
+            if "schema_path" in piface.data:
+                pipestat_config_dict.update({"schema_path": piface.data["schema_path"]})
+            if "pipeline_name" in piface.data:
+                pipestat_config_dict.update(
+                    {"pipeline_name": piface.data["pipeline_name"]}
+                )
+            if "pipeline_type" in piface.data:
+                pipestat_config_dict.update(
+                    {"pipeline_type": piface.data["pipeline_type"]}
+                )
+
+            # Pipestat_dict_ is now updated from all sources and can be written to a yaml.
+            looper_pipestat_config_path = os.path.join(
+                os.path.dirname(self.output_dir), "looper_pipestat_config.yaml"
             )
+            if not os.path.exists(looper_pipestat_config_path):
+                write_pipestat_config(looper_pipestat_config_path, pipestat_config_dict)
 
             ret[piface.pipeline_name] = {
-                "config_dict": pipestat_config_dict,
-                "results_file_path": results_file_path,
-                "flag_file_dir": flag_file_dir,
-                "sample_name": rec_id,
-                "schema_path": piface.get_pipeline_schemas(OUTPUT_SCHEMA_KEY),
+                "config_file": looper_pipestat_config_path,
             }
         return ret
 
