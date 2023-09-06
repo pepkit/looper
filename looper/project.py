@@ -527,6 +527,11 @@ class Project(peppyProject):
         except KeyError:
             flag_file_dir = None
 
+        if project_level and "project_name" in pipestat_config_dict:
+            pipestat_config_dict.update(
+                {"project_name": pipestat_config_dict["project_name"]}
+            )
+
         pipestat_config_dict.update({"output_dir": self.output_dir})
 
         pifaces = (

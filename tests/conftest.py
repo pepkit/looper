@@ -18,6 +18,7 @@ PROJECT_CFG_PIPESTAT = "project_config_pipestat.yaml"
 LOOPER_CFG = "looper_config_pipestat.yaml"
 PIPESTAT_OS = "pipestat_output_schema.yaml"
 PIPESTAT_PI = "pipeline_interface1_sample_pipestat.yaml"
+PIPESTAT_PI_PRJ = "pipeline_interface1_project_pipestat.yaml"
 ST = "annotation_sheet.csv"
 PIP = "pipeline_interface{}_project.yaml"
 PIS = "pipeline_interface{}_sample.yaml"
@@ -302,6 +303,7 @@ def prep_temp_pep_pipestat(example_pep_piface_path):
 
     sample_table_path = os.path.join(example_pep_piface_path, ST)
     piface1s_path = os.path.join(example_pep_piface_path, PIPESTAT_PI)
+    piface1p_path = os.path.join(example_pep_piface_path, PIPESTAT_PI_PRJ)
 
     res_proj_path = os.path.join(example_pep_piface_path, RES.format("project"))
     res_samp_path = os.path.join(example_pep_piface_path, RES.format("sample"))
@@ -312,6 +314,7 @@ def prep_temp_pep_pipestat(example_pep_piface_path):
 
     temp_path_sample_table = os.path.join(td, ST)
     temp_path_piface1s = os.path.join(td, PIPESTAT_PI)
+    temp_path_piface1p = os.path.join(td, PIPESTAT_PI_PRJ)
     temp_path_res_proj = os.path.join(td, RES.format("project"))
     temp_path_res_samp = os.path.join(td, RES.format("sample"))
     # copying
@@ -320,6 +323,7 @@ def prep_temp_pep_pipestat(example_pep_piface_path):
 
     copyfile(sample_table_path, temp_path_sample_table)
     copyfile(piface1s_path, temp_path_piface1s)
+    copyfile(piface1p_path, temp_path_piface1p)
     copyfile(output_schema_path, temp_path_output_schema)
     copyfile(res_proj_path, temp_path_res_proj)
     copyfile(res_samp_path, temp_path_res_samp)
@@ -331,6 +335,9 @@ def prep_temp_pep_pipestat(example_pep_piface_path):
     piface_data[LOOPER_KEY][OUTDIR_KEY] = out_td
     piface_data[LOOPER_KEY][CLI_KEY] = {}
     piface_data[LOOPER_KEY][CLI_KEY]["runp"] = {}
+    piface_data[LOOPER_KEY][CLI_KEY]["runp"][PIPELINE_INTERFACES_KEY] = [
+        temp_path_piface1p,
+    ]
     piface_data[SAMPLE_MODS_KEY][CONSTANT_KEY][PIPELINE_INTERFACES_KEY] = [
         temp_path_piface1s,
     ]
