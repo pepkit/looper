@@ -503,10 +503,8 @@ class Project(peppyProject):
                 f"'{PIPESTAT_KEY}' not found in '{LOOPER_KEY}' section of the "
                 f"project configuration file."
             )
-            # We cannot use pipestat without the config file
+            # We cannot use pipestat without it being defined in the looper config file.
             raise ValueError
-
-        # pipestat_config = YAMLConfigManager(entries=pipestat_config_dict)
 
         # Get looper user configured items first and update the pipestat_config_dict
         try:
