@@ -395,8 +395,8 @@ class TestLooperRunPreSubmissionHooks:
         x = test_args_expansion(tp, "run")
         try:
             main(test_args=x)
-        except Exception:
-            raise pytest.fail("DID RAISE {0}".format(Exception))
+        except Exception as err:
+            raise pytest.fail(f"DID RAISE {err}")
         sd = os.path.join(get_outdir(tp), "submission")
         verify_filecount_in_dir(sd, appendix, 3)
 
