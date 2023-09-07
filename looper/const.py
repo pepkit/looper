@@ -88,7 +88,6 @@ __all__ = [
     "DEBUG_JOBS",
     "DEBUG_COMMANDS",
     "DEBUG_EIDO_VALIDATION",
-
 ]
 
 FLAGS = ["completed", "running", "failed", "waiting", "partial"]
@@ -118,6 +117,7 @@ def _get_apperance_dict(type, templ=APPEARANCE_BY_FLAG):
         for key, app in app_dict.items():
             ret[flag][key] = ret[flag][key].format(type=type)
     return ret
+
 
 # Debug keys
 DEBUG_JOBS = "Jobs submitted"
@@ -187,7 +187,7 @@ DEFAULT_PIPESTAT_CONFIG_ATTR = "pipestat_config"
 DEFAULT_PIPESTAT_RESULTS_FILE_ATTR = "pipestat_results_file"
 PIPESTAT_NAMESPACE_ATTR_KEY = "namespace_attribute"
 PIPESTAT_CONFIG_ATTR_KEY = "config_attribute"
-PIPESTAT_RESULTS_FILE_ATTR_KEY = "results_file_attribute"
+PIPESTAT_RESULTS_FILE_ATTR_KEY = "results_file_path"
 
 PIPE_ARGS_SECTION = "pipeline_args"
 CLI_KEY = "cli"
@@ -224,6 +224,8 @@ CLI_PROJ_ATTRS = [
     DRY_RUN_KEY,
     FILE_CHECKS_KEY,
     SAMPLE_PL_ARG,
+    PIPESTAT_KEY,
+    DEFAULT_PIPESTAT_CONFIG_ATTR,
 ]
 
 # resource package TSV-related consts

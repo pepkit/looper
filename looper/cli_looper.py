@@ -19,11 +19,11 @@ from .project import Project, ProjectContext
 from .utils import (
     dotfile_path,
     enrich_args_via_cfg,
-    init_dotfile,
     is_registry_path,
     read_looper_dotfile,
     read_looper_config_file,
     read_yaml_file,
+    initiate_looper_config,
 )
 
 
@@ -267,7 +267,7 @@ def build_parser():
             )
 
         init_subparser.add_argument(
-            "config_file", help="Project configuration file (YAML)"
+            "pep_config", help="Project configuration file (PEP)"
         )
 
         init_subparser.add_argument(
@@ -449,7 +449,12 @@ def build_parser():
                 metavar="A",
                 help="List of amendments to activate",
             )
-        for subparser in [report_subparser, table_subparser, check_subparser]:
+        for subparser in [
+            report_subparser,
+            table_subparser,
+            check_subparser,
+            destroy_subparser,
+        ]:
             subparser.add_argument(
                 "--project",
                 help="Process project-level pipelines",
@@ -564,9 +569,9 @@ def main(test_args=None):
 
     if args.command == "init":
         return int(
-            not init_dotfile(
+            not initiate_looper_config(
                 dotfile_path(),
-                args.config_file,
+                args.pep_config,
                 args.output_dir,
                 args.sample_pipeline_interfaces,
                 args.project_pipeline_interfaces,
@@ -697,29 +702,32 @@ def main(test_args=None):
         # with no pipestat reporting would not be compatible with
         # commands: table, report and check. Therefore we plan maintain
         # the old implementations for a couple of releases.
-        if hasattr(args, "project"):
-            use_pipestat = (
-                prj.pipestat_configured_project
-                if args.project
-                else prj.pipestat_configured
-            )
+        # if hasattr(args, "project"):
+        #     use_pipestat = (
+        #         prj.pipestat_configured_project
+        #         if args.project
+        #         else prj.pipestat_configured
+        #     )
+        use_pipestat = (
+            prj.pipestat_configured_project if args.project else prj.pipestat_configured
+        )
         if args.command == "table":
             if use_pipestat:
                 Tabulator(prj)(args)
             else:
-                TableOld(prj)()
+                raise PipestatConfigurationException("table")
 
         if args.command == "report":
             if use_pipestat:
                 Reporter(prj)(args)
             else:
-                ReportOld(prj)(args)
+                raise PipestatConfigurationException("report")
 
         if args.command == "check":
             if use_pipestat:
-                Checker(prj)(args)
+                return Checker(prj)(args)
             else:
-                CheckerOld(prj)(flags=args.flags)
+                raise PipestatConfigurationException("check")
 
         if args.command == "clean":
             return Cleaner(prj)(args)

@@ -60,6 +60,17 @@ class JobSubmissionException(LooperError):
         super(JobSubmissionException, self).__init__(reason)
 
 
+class PipestatConfigurationException(LooperError):
+    """Error type for when command fails due to missing pipestat config"""
+
+    def __init__(
+        self,
+        sub_cmd,
+    ):
+        reason = "Pipestat must be configured for command {}".format(sub_cmd)
+        super(PipestatConfigurationException, self).__init__(reason)
+
+
 class MissingPipelineConfigurationException(LooperError):
     """A selected pipeline needs configuration data."""
 

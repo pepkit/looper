@@ -5,6 +5,7 @@ import logging
 import os
 import subprocess
 import time
+import yaml
 from copy import copy, deepcopy
 from json import loads
 from subprocess import check_output
@@ -99,6 +100,17 @@ def write_sample_yaml(namespaces):
     )
     sample.to_yaml(sample["sample_yaml_path"], add_prj_ref=False)
     return {"sample": sample}
+
+
+def write_pipestat_config(looper_pipestat_config_path, pipestat_config_dict):
+    """
+    This is run at the project level, not at the sample level like the other plugins
+    """
+    with open(looper_pipestat_config_path, "w") as f:
+        yaml.dump(pipestat_config_dict, f)
+    print(f"Initialized looper config file: {looper_pipestat_config_path}")
+
+    return True
 
 
 def write_sample_yaml_prj(namespaces):
@@ -417,7 +429,9 @@ class SubmissionConductor(object):
         )
         if self.prj.pipestat_configured:
             psms = self.prj.get_pipestat_managers(sample_name=sample.sample_name)
-            sample_statuses = psms[self.pl_name].get_status()
+            sample_statuses = psms[self.pl_name].get_status(
+                sample_name=sample.sample_name
+            )
             sample_statuses = [sample_statuses] if sample_statuses else []
         else:
             sample_statuses = fetch_sample_flags(self.prj, sample, self.pl_name)
@@ -664,11 +678,10 @@ class SubmissionConductor(object):
             return YAMLConfigManager()
         else:
             full_namespace = {
-                "schema": psm.schema_path,
                 "results_file": psm.file,
-                "record_id": psm.sample_name,
-                "namespace": psm.project_name,
-                "config": psm.config_path,
+                "sample_name": psm.sample_name,
+                "project_name": psm.project_name,
+                "config_file": psm._config_path,
             }
             filtered_namespace = {k: v for k, v in full_namespace.items() if v}
             return YAMLConfigManager(filtered_namespace)
@@ -708,10 +721,15 @@ class SubmissionConductor(object):
                 namespaces.update({"sample": sample})
             else:
                 namespaces.update({"samples": self.prj.samples})
-            pipestat_namespace = self._set_pipestat_namespace(
-                sample_name=sample.sample_name if sample else None
-            )
-            namespaces.update({"pipestat": pipestat_namespace})
+            if self.prj.pipestat_configured:
+                pipestat_namespace = self._set_pipestat_namespace(
+                    sample_name=sample.sample_name if sample else None
+                )
+                namespaces.update({"pipestat": pipestat_namespace})
+            else:
+                # Pipestat isn't configured, simply place empty YAMLConfigManager object instead.
+                pipestat_namespace = YAMLConfigManager()
+                namespaces.update({"pipestat": pipestat_namespace})
             res_pkg = self.pl_iface.choose_resource_package(
                 namespaces, size or 0
             )  # config
@@ -740,6 +758,7 @@ class SubmissionConductor(object):
                 argstring = jinja_render_template_strictly(
                     template=templ, namespaces=namespaces
                 )
+                print(argstring)
             except UndefinedError as jinja_exception:
                 _LOGGER.warning(NOT_SUB_MSG.format(str(jinja_exception)))
             except KeyError as e:
