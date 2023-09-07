@@ -24,6 +24,7 @@ nav:
       - Writing a pipeline interface: writing-a-pipeline-interface.md
       - Using looper config: looper-config.md
       - Using geofetch: using-geofetch.md
+      - Browsable HTML Reports: looper-report.md
   - Using divvy:
       - Introduction: divvy/README.md
       - Configuring divvy: divvy/configuration.md
