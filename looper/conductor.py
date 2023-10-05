@@ -430,7 +430,7 @@ class SubmissionConductor(object):
         if self.prj.pipestat_configured:
             psms = self.prj.get_pipestat_managers(sample_name=sample.sample_name)
             sample_statuses = psms[self.pl_name].get_status(
-                sample_name=sample.sample_name
+                record_identifier=sample.sample_name
             )
             sample_statuses = [sample_statuses] if sample_statuses else []
         else:

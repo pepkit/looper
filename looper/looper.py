@@ -99,7 +99,7 @@ class Checker(Executor):
             for sample in self.prj.samples:
                 psms = self.prj.get_pipestat_managers(sample_name=sample.sample_name)
                 for pipeline_name, psm in psms.items():
-                    s = psm.get_status(sample_name=sample.sample_name)
+                    s = psm.get_status(record_identifier=sample.sample_name)
                     status.setdefault(pipeline_name, {})
                     status[pipeline_name][sample.sample_name] = s
                     _LOGGER.debug(f"{sample.sample_name} ({pipeline_name}): {s}")
@@ -578,7 +578,7 @@ class Tabulator(Executor):
         if project_level:
             psms = self.prj.get_pipestat_managers(project_level=True)
             for name, psm in psms.items():
-                results = psm.table(pipeline_type="project")
+                results = psm.table()
         else:
             for piface_source_samples in self.prj._samples_by_piface(
                 self.prj.piface_key
@@ -590,7 +590,7 @@ class Tabulator(Executor):
                     sample_name=first_sample_name, project_level=False
                 )
                 for name, psm in psms.items():
-                    results = psm.table(pipeline_type="sample")
+                    results = psm.table()
         # Results contains paths to stats and object summaries.
         return results
 
