@@ -432,6 +432,11 @@ class SubmissionConductor(object):
             sample_statuses = psms[self.pl_name].get_status(
                 record_identifier=sample.sample_name
             )
+            if sample_statuses == "failed" and rerun is True:
+                psms[self.pl_name].set_status(
+                    record_identifier=sample.sample_name, status_identifier="waiting"
+                )
+                sample_statuses = "waiting"
             sample_statuses = [sample_statuses] if sample_statuses else []
         else:
             sample_statuses = fetch_sample_flags(self.prj, sample, self.pl_name)
