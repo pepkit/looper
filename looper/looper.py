@@ -45,7 +45,7 @@ from .utils import (
     sample_folder,
 )
 from pipestat import get_file_for_table
-from pipestat.html_reports_pipestat import get_file_for_project
+from pipestat.reports import get_file_for_project
 
 _PKGNAME = "looper"
 _LOGGER = logging.getLogger(_PKGNAME)
