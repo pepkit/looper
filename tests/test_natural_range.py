@@ -48,6 +48,7 @@ class NaturalRangePureConstructorTests:
         with pytest.raises(NatIntervalException):
             NatIntervalInclusive(lo, hi)
 
+
 @pytest.mark.skip(reason="Unable to reproduce test failing locally.")
 class NaturalRangeFromStringTests:
     """Tests for parsing of natural number range from text, like CLI arg"""
@@ -60,7 +61,6 @@ class NaturalRangeFromStringTests:
         arg = arg_template.format(sep=legit_delim)
         with pytest.raises(NatIntervalException):
             NatIntervalInclusive.from_string(arg, upper_bound=upper_bound)
-
 
     @given(upper_bound=st.integers())
     def test_just_delimiter__does_not_parse(self, legit_delim, upper_bound):
