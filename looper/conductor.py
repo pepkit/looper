@@ -749,9 +749,6 @@ class SubmissionConductor(object):
             )
             _LOGGER.debug(f"namespace pipelines: { pl_iface }")
 
-            # check here to ensure command is executable
-            self.check_executable_path(pl_iface)
-
             namespaces["pipeline"]["var_templates"] = pl_iface[VAR_TEMPL_KEY] or {}
             for k, v in namespaces["pipeline"]["var_templates"].items():
                 namespaces["pipeline"]["var_templates"][k] = expandpath(v)
@@ -805,34 +802,6 @@ class SubmissionConductor(object):
     def _reset_curr_skips(self):
         self._curr_skip_pool = []
         self._curr_skip_size = 0
-
-    def check_executable_path(self, pl_iface):
-        """Determines if supplied pipelines are callable.
-        Raises error and exits Looper if not callable
-        :param dict pl_iface: pipeline interface that stores paths to executables
-        :return bool: True if path is callable.
-        """
-        pipeline_commands = []
-        if "path" in pl_iface.keys():
-            pipeline_commands.append(pl_iface["path"])
-
-        if (
-            "var_templates" in pl_iface.keys()
-            and "pipeline" in pl_iface["var_templates"].keys()
-        ):
-            pipeline_commands.append(pl_iface["var_templates"]["pipeline"])
-        for command in pipeline_commands:
-            try:
-                result = is_command_callable(command)
-            except:
-                _LOGGER.error(f" {command} IS NOT EXECUTABLE. EXITING")
-                raise SampleFailedException
-            else:
-                if not result:
-                    _LOGGER.error(f" {command} IS NOT EXECUTABLE. EXITING...")
-                    raise SampleFailedException
-                else:
-                    return True
 
 
 def _use_sample(flag, skips):
