@@ -18,10 +18,12 @@ from .divvy import NEW_COMPUTE_KEY as COMPUTE_KEY
 from ._version import __version__
 from .conductor import (
     SubmissionConductor,
+    write_submission_yaml,
+)
+from .plugins import (
     write_sample_yaml,
     write_sample_yaml_cwl,
     write_sample_yaml_prj,
-    write_submission_yaml,
     write_custom_template,
 )
 from .const import *
