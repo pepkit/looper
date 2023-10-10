@@ -45,7 +45,7 @@ pre_submit:
   python_functions:
     - looper.write_sample_yaml
 command_template: >
-  {pipeline.var_templates.main} ...
+  {pipeline.var_templates.main} {sample.sample_yaml_path} ...
 ```
 
 ### Included plugin: `looper.write_sample_yaml_cwl`
@@ -67,7 +67,7 @@ pre_submit:
   python_functions:
     - looper.write_sample_yaml_cwl
 command_template: >
-  {pipeline.var_templates.main} ...
+  {pipeline.var_templates.main} {sample.sample_yaml_cwl} ...
 ```
 
 
