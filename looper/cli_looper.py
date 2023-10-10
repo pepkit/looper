@@ -24,6 +24,7 @@ from .utils import (
     read_looper_config_file,
     read_yaml_file,
     initiate_looper_config,
+    init_generic_pipeline,
 )
 
 

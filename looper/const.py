@@ -205,7 +205,7 @@ FILE_CHECKS_KEY = "skip_file_checks"
 EXAMPLE_COMPUTE_SPEC_FMT = "k1=v1 k2=v2"
 SUBMISSION_FAILURE_MESSAGE = "Cluster resource failure"
 LOOPER_DOTFILE_NAME = "." + LOOPER_KEY + ".yaml"
-LOOPER_GENERIC_PIPELINE = "generic_pipeline_interface.yaml"
+LOOPER_GENERIC_PIPELINE = "pipeline_interface.yaml"
 POSITIONAL = [PEP_CONFIG_FILE_KEY, "command"]
 SELECTED_COMPUTE_PKG = "package"
 EXTRA_KEY = "_cli_extra"

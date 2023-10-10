@@ -337,10 +337,10 @@ def init_generic_pipeline():
 
     # Determine Generic Pipeline Interface
     generic_pipeline_dict = {
-        "pipeline_name": "count_lines",
+        "pipeline_name": "default_pipeline_name",
         "pipeline_type": "sample",
         "output_schema": "output_schema.yaml",
-        "var_templates": {"pipeline": "{looper.piface_dir}/count_lines.sh"},
+        "var_templates": {"pipeline": "{looper.piface_dir}/pipeline.sh"},
         "command_template": "{pipeline.var_templates.pipeline} {sample.file} "
         "--output-parent {looper.sample_output_folder}",
     }
@@ -349,10 +349,10 @@ def init_generic_pipeline():
     if not os.path.exists(dest_file):
         with open(dest_file, "w") as file:
             yaml.dump(generic_pipeline_dict, file)
-        print(f"Generic pipeline interface successfully created at: {dest_file}")
+        print(f"Pipeline interface successfully created at: {dest_file}")
     else:
         print(
-            f"Generic pipeline interface file already exists `{dest_file}`. Skipping creation.."
+            f"Pipeline interface file already exists `{dest_file}`. Skipping creation.."
         )
 
     return True
