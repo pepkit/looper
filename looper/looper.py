@@ -565,6 +565,32 @@ class Reporter(Executor):
                     psm.summarize()
 
 
+class Linker(Executor):
+    """Create symlinks for reported results. Requires pipestat to be configured."""
+
+    def __call__(self, args):
+        # initialize the report builder
+        p = self.prj
+        project_level = args.project
+        link_dir = args.output_dir
+
+        if project_level:
+            psms = self.prj.get_pipestat_managers(project_level=True)
+            for name, psm in psms.items():
+                psm.link(link_dir=link_dir)
+        else:
+            for piface_source_samples in self.prj._samples_by_piface(
+                self.prj.piface_key
+            ).values():
+                # For each piface_key, we have a list of samples, but we only need one sample from the list to
+                # call the related pipestat manager object which will pull ALL samples when using psm.summarize
+                first_sample_name = list(piface_source_samples)[0]
+                psms = self.prj.get_pipestat_managers(
+                    sample_name=first_sample_name, project_level=False
+                )
+                for name, psm in psms.items():
+                    psm.link(link_dir=link_dir)
+
 class Tabulator(Executor):
     """Project/Sample statistics and table output generator
 
