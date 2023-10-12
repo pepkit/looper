@@ -335,7 +335,7 @@ def init_generic_pipeline():
     # Destination one level down from CWD in pipeline folder
     dest_file = os.path.join(os.getcwd(), "pipeline", LOOPER_GENERIC_PIPELINE)
 
-    # Determine Generic Pipeline Interface
+    # Create Generic Pipeline Interface
     generic_pipeline_dict = {
         "pipeline_name": "default_pipeline_name",
         "pipeline_type": "sample",
@@ -354,6 +354,39 @@ def init_generic_pipeline():
         print(
             f"Pipeline interface file already exists `{dest_file}`. Skipping creation.."
         )
+
+    # Create Generic Output Schema
+    dest_file = os.path.join(os.getcwd(), "pipeline", LOOPER_GENERIC_OUTPUT_SCHEMA)
+    generic_output_schema_dict = {
+        "pipeline_name": "default_pipeline_name",
+        "samples": {
+            "number_of_lines": {
+                "type": "integer",
+                "description": "Number of lines in the input file.",
+            }
+        },
+    }
+    # Write file
+    if not os.path.exists(dest_file):
+        with open(dest_file, "w") as file:
+            yaml.dump(generic_output_schema_dict, file)
+        print(f"Output schema successfully created at: {dest_file}")
+    else:
+        print(f"Output schema file already exists `{dest_file}`. Skipping creation..")
+
+    # Create Generic countlines.sh
+    dest_file = os.path.join(os.getcwd(), "pipeline", LOOPER_GENERIC_COUNT_LINES)
+    shell_code = """#!/bin/bash
+linecount=`wc -l $1 | sed -E 's/^[[:space:]]+//' | cut -f1 -d' '`
+pipestat report -r $2 -i 'number_of_lines' -v $linecount -c $3
+echo "Number of lines: $linecount"
+    """
+    if not os.path.exists(dest_file):
+        with open(dest_file, "w") as file:
+            file.write(shell_code)
+        print(f"count_lines.sh successfully created at: {dest_file}")
+    else:
+        print(f"count_lines.sh file already exists `{dest_file}`. Skipping creation..")
 
     return True
 

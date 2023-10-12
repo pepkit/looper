@@ -88,6 +88,8 @@ __all__ = [
     "DEBUG_JOBS",
     "DEBUG_COMMANDS",
     "DEBUG_EIDO_VALIDATION",
+    "LOOPER_GENERIC_OUTPUT_SCHEMA",
+    "LOOPER_GENERIC_COUNT_LINES",
 ]
 
 FLAGS = ["completed", "running", "failed", "waiting", "partial"]
@@ -206,6 +208,8 @@ EXAMPLE_COMPUTE_SPEC_FMT = "k1=v1 k2=v2"
 SUBMISSION_FAILURE_MESSAGE = "Cluster resource failure"
 LOOPER_DOTFILE_NAME = "." + LOOPER_KEY + ".yaml"
 LOOPER_GENERIC_PIPELINE = "pipeline_interface.yaml"
+LOOPER_GENERIC_OUTPUT_SCHEMA = "output_schema.yaml"
+LOOPER_GENERIC_COUNT_LINES = "count_lines.sh"
 POSITIONAL = [PEP_CONFIG_FILE_KEY, "command"]
 SELECTED_COMPUTE_PKG = "package"
 EXTRA_KEY = "_cli_extra"
