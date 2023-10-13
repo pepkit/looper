@@ -591,6 +591,7 @@ class Linker(Executor):
                 for name, psm in psms.items():
                     psm.link(link_dir=link_dir)
 
+
 class Tabulator(Executor):
     """Project/Sample statistics and table output generator
 

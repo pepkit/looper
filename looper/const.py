@@ -258,5 +258,5 @@ MESSAGE_BY_SUBCOMMAND = {
     "inspect": "Print information about a project.",
     "init": "Initialize looper config file.",
     "init-piface": "Initialize generic pipeline interface.",
-    "link": "Create directory of symlinks for reported results."
+    "link": "Create directory of symlinks for reported results.",
 }

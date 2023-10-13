@@ -118,7 +118,7 @@ def build_parser():
         inspect_subparser = add_subparser("inspect")
         init_subparser = add_subparser("init")
         init_piface = add_subparser("init-piface")
-        #link_subparser = add_subparser("link")
+        link_subparser = add_subparser("link")
 
         # Flag arguments
         ####################################################################
@@ -315,58 +315,6 @@ def build_parser():
             action="store_true",
             default=False,
         )
-        #
-        # link_subparser.add_argument(
-        #     "-o",
-        #     "--output-dir",
-        #     dest="output_dir",
-        #     metavar="DIR",
-        #     default=None,
-        #     type=str,
-        # )
-        #
-        # link_subparser.add_argument(
-        #         "--looper-config",
-        #         required=False,
-        #         default=None,
-        #         type=str,
-        #         help="Looper configuration file (YAML)",
-        #
-        # )
-        #
-        # link_subparser.add_argument(
-        #     "config_file",
-        #     nargs="?",
-        #     default=None,
-        #     help="Project configuration file (YAML) or pephub registry path.",
-        #
-        # )
-        # link_subparser.add_argument(
-        # "-a",
-        # "--amend",
-        # nargs = "+",
-        # metavar = "A",
-        # help = "List of amendments to activate",
-        # )
-        # link_subparser.add_argument(
-        #     f"--{SAMPLE_SELECTION_ATTRIBUTE_OPTNAME}",
-        #     default="toggle",
-        #     metavar="ATTR",
-        #     help="Attribute for sample exclusion OR inclusion",
-        # )
-        # #protocols = fetch_samples_group.add_mutually_exclusive_group()
-        # link_subparser.add_argument(
-        #     f"--{SAMPLE_EXCLUSION_OPTNAME}",
-        #     nargs="*",
-        #     metavar="E",
-        #     help="Exclude samples with these values",
-        # )
-        # link_subparser.add_argument(
-        #     f"--{SAMPLE_INCLUSION_OPTNAME}",
-        #     nargs="*",
-        #     metavar="I",
-        #     help="Include only samples with these values",
-        # )
 
         # Common arguments
         for subparser in [
@@ -379,6 +327,7 @@ def build_parser():
             clean_subparser,
             collate_subparser,
             inspect_subparser,
+            link_subparser,
         ]:
             subparser.add_argument(
                 "config_file",
@@ -455,6 +404,7 @@ def build_parser():
             clean_subparser,
             collate_subparser,
             inspect_subparser,
+            link_subparser,
         ]:
             fetch_samples_group = subparser.add_argument_group(
                 "sample selection arguments",
@@ -508,6 +458,7 @@ def build_parser():
             table_subparser,
             check_subparser,
             destroy_subparser,
+            link_subparser,
         ]:
             subparser.add_argument(
                 "--project",
