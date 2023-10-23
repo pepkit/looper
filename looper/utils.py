@@ -19,7 +19,7 @@ from pephubclient.constants import RegistryPath
 from pydantic.error_wrappers import ValidationError
 
 from .const import *
-from .exceptions import MisconfigurationException
+from .exceptions import MisconfigurationException, RegistryPathException
 
 _LOGGER = getLogger(__name__)
 
@@ -555,8 +555,13 @@ def is_registry_path(input_string: str) -> bool:
     :param str input_string: path to the PEP (or registry path)
     :return bool: True if input is a registry path
     """
-    if input_string.endswith(".yaml"):
-        return False
+    try:
+        if input_string.endswith(".yaml"):
+            return False
+    except AttributeError:
+        raise RegistryPathException(
+            msg=f"Malformed registry path. Unable to parse {input_string} as a registry path."
+        )
     try:
         registry_path = RegistryPath(**parse_registry_path(input_string))
     except (ValidationError, TypeError):

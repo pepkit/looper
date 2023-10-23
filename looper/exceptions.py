@@ -37,6 +37,13 @@ class MisconfigurationException(LooperError):
         super(MisconfigurationException, self).__init__(key)
 
 
+class RegistryPathException(LooperError):
+    """Duplication of pipeline identifier precludes unique pipeline ref."""
+
+    def __init__(self, msg):
+        super(RegistryPathException, self).__init__(msg)
+
+
 class DuplicatePipelineKeyException(LooperError):
     """Duplication of pipeline identifier precludes unique pipeline ref."""
 
