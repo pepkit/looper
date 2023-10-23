@@ -470,7 +470,9 @@ class SubmissionConductor(object):
         :return yacman.YAMLConfigManager: looper/submission related settings
         """
         settings = YAMLConfigManager()
-        settings["pep_config"] = self.prj.config_file
+        settings["config_file"] = self.prj.config_file
+        settings["pep_config"] = self.prj.pep_config
+
         settings[RESULTS_SUBDIR_KEY] = self.prj.results_folder
         settings[SUBMISSION_SUBDIR_KEY] = self.prj.submission_folder
         settings[OUTDIR_KEY] = self.prj.output_dir

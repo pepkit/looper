@@ -106,11 +106,13 @@ class Project(peppyProject):
     ):
         super(Project, self).__init__(cfg=cfg, amendments=amendments)
         prj_dict = kwargs.get("project_dict")
+        pep_config = kwargs.get("pep_config", None)
 
-        # init project from pephub:
+        # init project from pephub pep_config:
         if prj_dict is not None and cfg is None:
             self.from_dict(prj_dict)
-            self["_config_file"] = os.getcwd()
+            self["_config_file"] = os.getcwd()  # for finding pipeline interface
+            self["pep_config"] = pep_config
 
         self[EXTRA_KEY] = {}
 

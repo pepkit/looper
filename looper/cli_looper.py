@@ -643,6 +643,7 @@ def main(test_args=None):
                 project_dict=PEPHubClient()._load_raw_pep(
                     registry_path=args.config_file
                 ),
+                pep_config=args.config_file,
                 **{
                     attr: getattr(args, attr) for attr in CLI_PROJ_ATTRS if attr in args
                 },
