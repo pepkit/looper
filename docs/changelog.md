@@ -2,12 +2,16 @@
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format.
 
-## [1.6.0] -- 2023-09-XX
+## [1.6.0] -- 2023-11-xx
+
+### Added
+- `looper link` creates symlinks for results grouped by record_identifier. It requires pipestat to be configured. [#72](https://github.com/pepkit/looper/issues/72)
 
 ### Changed
-- looper now works with pipestat v0.6.0 and greater
-- looper table and check now use pipestat and therefore require pipestat configuration. [#390](https://github.com/pepkit/looper/issues/390)
+- looper now works with pipestat v0.6.0 and greater.
+- `looper table`, `check` now use pipestat and therefore require pipestat configuration. [#390](https://github.com/pepkit/looper/issues/390)
 - changed how looper configures pipestat [#411](https://github.com/pepkit/looper/issues/411)
+- initializing pipeline interface also writes an example `output_schema.yaml` and `count_lines.sh` pipeline
 
 ## [1.5.1] -- 2023-08-14
 
