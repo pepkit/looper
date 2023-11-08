@@ -29,13 +29,13 @@ Here you can see the command-line usage instructions for the main looper command
 version: 1.5.2-dev
 usage: looper [-h] [--version] [--logfile LOGFILE] [--dbg] [--silent]
               [--verbosity V] [--logdev]
-              {run,rerun,runp,table,report,destroy,check,clean,inspect,init,init-piface}
+              {run,rerun,runp,table,report,destroy,check,clean,inspect,init,init-piface,link}
               ...
 
 looper - A project job submission engine and project manager.
 
 positional arguments:
-  {run,rerun,runp,table,report,destroy,check,clean,inspect,init,init-piface}
+  {run,rerun,runp,table,report,destroy,check,clean,inspect,init,init-piface,link}
     run                 Run or submit sample jobs.
     rerun               Resubmit sample jobs with failed flags.
     runp                Run or submit project jobs.
@@ -47,6 +47,7 @@ positional arguments:
     inspect             Print information about a project.
     init                Initialize looper config file.
     init-piface         Initialize generic pipeline interface.
+    link                Create directory of symlinks for reported results.
 
 options:
   -h, --help            show this help message and exit
