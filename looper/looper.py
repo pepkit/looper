@@ -44,7 +44,7 @@ from .utils import (
     desired_samples_range_limited,
     sample_folder,
 )
-from pipestat import get_file_for_table
+from pipestat.reports import get_file_for_table
 from pipestat.reports import get_file_for_project
 
 _PKGNAME = "looper"
