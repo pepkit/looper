@@ -18,7 +18,7 @@ Each task is controlled by one of the following commands: `run`, `rerun`, `runp`
 
 - `looper destroy`: Deletes all output results for this project.
 
-- `looper inspect`: Display the Prioject or Sample information
+- `looper inspect`: Display the Project or Sample information
 
 - `looper init`: Initialize a looper dotfile (`.looper.yaml`) in the current directory
 

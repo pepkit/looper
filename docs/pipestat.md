@@ -5,7 +5,7 @@ Starting with version 1.4.0, looper supports additional functionality for [pipes
 1. monitor the status of pipeline runs
 2. summarize the results of pipelines
 
-For non-pipestat-compatible pipelines, you can still use looper to run pipelines, but you won't be able to use `looper report` or `looper status` to manage their output.
+For non-pipestat-compatible pipelines, you can still use looper to run pipelines, but you won't be able to use `looper report` or `looper check` to manage their output.
 
 ## Pipestat configuration overview
 Starting with version 1.6.0 configuring looper to work with pipestat has changed.
