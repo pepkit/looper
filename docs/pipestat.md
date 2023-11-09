@@ -14,7 +14,7 @@ Now, Looper will obtain pipestat configurations data from two sources:
 1. pipeline interface
 2. looper_config file
 
-Looper will combine the necessary configuration data and write a new pipestat configuration file named `looper_pipestat_config.yaml` which looper will place in its output directory. Pipestat then uses this configuration file to create the required pipestatManager objects. See [Hello_Looper](https://github.com/pepkit/hello_looper) for a specific example.
+Looper will combine the necessary configuration data and write a new pipestat configuration file named `looper_pipestat_config.yaml` which looper will place in its output directory. Pipestat then uses this configuration file to create the required PipestatManager objects. See [Hello_Looper](https://github.com/pepkit/hello_looper) for a specific example.
 
 Briefly, the Looper config file must contain a pipestat field. A project name must be supplied if running a project level pipeline. The user must also supply a file path for a results file if using a local file backend or database credentials if using a postgresql database backend. 
 
