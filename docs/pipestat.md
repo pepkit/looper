@@ -25,17 +25,6 @@ sample_table: annotation_sheet.csv
 pipeline_interfaces:
   sample:  ./pipeline_interface1_sample_pipestat.yaml
   project: ./pipeline_interface1_project_pipestat.yaml
-looper:
-  all:
-    output_dir: output
-sample_modifiers:
-  append:
-    attr: "val"
-  derive:
-    attributes: [read1, read2]
-    sources:
-      SRA_1: "{SRR}_1.fastq.gz"
-      SRA_2: "{SRR}_2.fastq.gz"
 pipestat:
   project_name: TEST_PROJECT_NAME
   results_file_path: tmp_pipestat_results.yaml
