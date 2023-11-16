@@ -581,7 +581,8 @@ class Linker(Executor):
         if project_level:
             psms = self.prj.get_pipestat_managers(project_level=True)
             for name, psm in psms.items():
-                psm.link(link_dir=link_dir)
+                linked_results_path = psm.link(link_dir=link_dir)
+                print(f"Linked directory: {linked_results_path}")
         else:
             for piface_source_samples in self.prj._samples_by_piface(
                 self.prj.piface_key
@@ -593,7 +594,8 @@ class Linker(Executor):
                     sample_name=first_sample_name, project_level=False
                 )
                 for name, psm in psms.items():
-                    psm.link(link_dir=link_dir)
+                    linked_results_path = psm.link(link_dir=link_dir)
+                    print(f"Linked directory: {linked_results_path}")
 
 
 class Tabulator(Executor):
