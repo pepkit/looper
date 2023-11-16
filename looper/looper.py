@@ -434,10 +434,14 @@ class Runner(Executor):
                 try:
                     validate_sample(self.prj, sample.sample_name, schema_file)
                 except EidoValidationError as e:
-                    _LOGGER.error(f"Short-circuiting due to validation error: {e}")
-                    self.debug[
-                        DEBUG_EIDO_VALIDATION
-                    ] = f"Short-circuiting due to validation error: {e}"
+                    _LOGGER.error(
+                        f"Short-circuiting due to validation error!\nSchema file: "
+                        f"{schema_file}\nError: {e}\n{list(e.errors_by_type.keys())}"
+                    )
+                    self.debug[DEBUG_EIDO_VALIDATION] = (
+                        f"Short-circuiting due to validation error!\nSchema file: "
+                        f"{schema_file}\nError: {e}\n{list(e.errors_by_type.keys())}"
+                    )
                     return False
                 except RemoteYAMLError:
                     _LOGGER.warning(
