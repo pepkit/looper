@@ -508,23 +508,24 @@ class Project(peppyProject):
             # We cannot use pipestat without it being defined in the looper config file.
             raise ValueError
 
+        # Expand paths in the event ENV variables were used in config files
+        output_dir = expandpath(self.output_dir)
+
         # Get looper user configured items first and update the pipestat_config_dict
         try:
-            results_file_path = pipestat_config_dict["results_file_path"]
+            results_file_path = expandpath(pipestat_config_dict["results_file_path"])
             if not os.path.exists(os.path.dirname(results_file_path)):
                 results_file_path = os.path.join(
-                    os.path.dirname(self.output_dir), results_file_path
+                    os.path.dirname(output_dir), results_file_path
                 )
             pipestat_config_dict.update({"results_file_path": results_file_path})
         except KeyError:
             results_file_path = None
 
         try:
-            flag_file_dir = pipestat_config_dict["flag_file_dir"]
+            flag_file_dir = expandpath(pipestat_config_dict["flag_file_dir"])
             if not os.path.isabs(flag_file_dir):
-                flag_file_dir = os.path.join(
-                    os.path.dirname(self.output_dir), flag_file_dir
-                )
+                flag_file_dir = os.path.join(os.path.dirname(output_dir), flag_file_dir)
             pipestat_config_dict.update({"flag_file_dir": flag_file_dir})
         except KeyError:
             flag_file_dir = None
@@ -534,7 +535,7 @@ class Project(peppyProject):
                 {"project_name": pipestat_config_dict["project_name"]}
             )
 
-        pipestat_config_dict.update({"output_dir": self.output_dir})
+        pipestat_config_dict.update({"output_dir": output_dir})
 
         pifaces = (
             self.project_pipeline_interfaces
@@ -545,7 +546,8 @@ class Project(peppyProject):
         for piface in pifaces:
             # We must also obtain additional pipestat items from the pipeline author's piface
             if "schema_path" in piface.data:
-                pipestat_config_dict.update({"schema_path": piface.data["schema_path"]})
+                schema_path = expandpath(piface.data["schema_path"])
+                pipestat_config_dict.update({"schema_path": schema_path})
             if "pipeline_name" in piface.data:
                 pipestat_config_dict.update(
                     {"pipeline_name": piface.data["pipeline_name"]}
@@ -557,7 +559,7 @@ class Project(peppyProject):
 
             # Pipestat_dict_ is now updated from all sources and can be written to a yaml.
             looper_pipestat_config_path = os.path.join(
-                os.path.dirname(self.output_dir), "looper_pipestat_config.yaml"
+                os.path.dirname(output_dir), "looper_pipestat_config.yaml"
             )
             if not os.path.exists(looper_pipestat_config_path):
                 write_pipestat_config(looper_pipestat_config_path, pipestat_config_dict)
