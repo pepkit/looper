@@ -545,8 +545,13 @@ class Project(peppyProject):
 
         for piface in pifaces:
             # We must also obtain additional pipestat items from the pipeline author's piface
-            if "schema_path" in piface.data:
-                schema_path = expandpath(piface.data["schema_path"])
+            if "output_schema" in piface.data:
+                schema_path = expandpath(piface.data["output_schema"])
+                if not os.path.isabs(schema_path):
+                    # Get path relative to the pipeline_interface
+                    schema_path = os.path.join(
+                        os.path.dirname(piface.pipe_iface_file), schema_path
+                    )
                 pipestat_config_dict.update({"schema_path": schema_path})
             if "pipeline_name" in piface.data:
                 pipestat_config_dict.update(
