@@ -42,7 +42,7 @@ And the pipeline interface must include information required by pipestat such as
 ```yaml
 pipeline_name: example_pipestat_pipeline
 pipeline_type: sample
-schema_path: pipeline_pipestat/pipestat_output_schema.yaml
+output_schema: pipeline_pipestat/pipestat_output_schema.yaml
 command_template: >
   python {looper.piface_dir}/count_lines.py {sample.file} {sample.sample_name} {pipestat.results_file}
 
