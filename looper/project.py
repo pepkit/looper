@@ -530,6 +530,13 @@ class Project(peppyProject):
         except KeyError:
             flag_file_dir = None
 
+        if "record_identifier" in pipestat_config_dict:
+            pipestat_config_dict.update(
+                {"record_identifier": pipestat_config_dict["record_identifier"]}
+            )
+        elif sample_name:
+            pipestat_config_dict.update({"record_identifier": sample_name})
+
         if project_level and "project_name" in pipestat_config_dict:
             pipestat_config_dict.update(
                 {"project_name": pipestat_config_dict["project_name"]}
@@ -566,8 +573,7 @@ class Project(peppyProject):
             looper_pipestat_config_path = os.path.join(
                 os.path.dirname(output_dir), "looper_pipestat_config.yaml"
             )
-            if not os.path.exists(looper_pipestat_config_path):
-                write_pipestat_config(looper_pipestat_config_path, pipestat_config_dict)
+            write_pipestat_config(looper_pipestat_config_path, pipestat_config_dict)
 
             ret[piface.pipeline_name] = {
                 "config_file": looper_pipestat_config_path,
