@@ -538,6 +538,12 @@ class Project(peppyProject):
                 {"project_name": pipestat_config_dict["project_name"]}
             )
 
+        if project_level and "{record_identifier}" in results_file_path:
+            # if project level and using {record_identifier}, pipestat needs some sort of record_identifier during creation
+            pipestat_config_dict.update(
+                {"record_identifier": "default_project_record_identifier"}
+            )
+
         pipestat_config_dict.update({"output_dir": output_dir})
 
         pifaces = (
