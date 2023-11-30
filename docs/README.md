@@ -1,6 +1,6 @@
 # <img src="img/looper_logo.svg" class="img-header"> pipeline submitting engine
 
-[![PEP compatible](http://pepkit.github.io/img/PEP-compatible-green.svg)](http://pepkit.github.io)
+[![PEP compatible](https://pepkit.github.io/img/PEP-compatible-green.svg)](http://pepkit.github.io)
 
 ## What is looper?
 
