@@ -159,7 +159,9 @@ PIFACE_SCHEMA_SRC = os.path.join(
 EXTRA_SAMPLE_CMD_TEMPLATE = (
     "{%- if sample.command_extra is defined %} {sample.command_extra}   {% endif -%}"
 )
-EXTRA_PROJECT_CMD_TEMPLATE = "{%- if project.looper.command_extra is defined %} {project.looper.command_extra}{% endif -%}"
+EXTRA_PROJECT_CMD_TEMPLATE = (
+    "{%- if looper.command_extra is defined %} {looper.command_extra}{% endif -%}"
+)
 DOTFILE_CFG_PTH_KEY = "config_file_path"
 INPUT_SCHEMA_KEY = "input_schema"
 OUTPUT_SCHEMA_KEY = "output_schema"
