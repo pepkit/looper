@@ -473,7 +473,10 @@ def read_looper_config_file(looper_config_path: str) -> dict:
         dp_data = yaml.safe_load(dotfile)
 
     if PEP_CONFIG_KEY in dp_data:
+        # Looper expects the config path to live at looper.config_file
+        # However, user may wish to access the pep at looper.pep_config
         return_dict[PEP_CONFIG_FILE_KEY] = dp_data[PEP_CONFIG_KEY]
+        return_dict[PEP_CONFIG_KEY] = dp_data[PEP_CONFIG_KEY]
 
     # TODO: delete it in looper 2.0
     elif DOTFILE_CFG_PTH_KEY in dp_data:

@@ -107,6 +107,8 @@ class Project(peppyProject):
         super(Project, self).__init__(cfg=cfg, amendments=amendments)
         prj_dict = kwargs.get("project_dict")
         pep_config = kwargs.get("pep_config", None)
+        if pep_config:
+            self["pep_config"] = pep_config
 
         # init project from pephub pep_config:
         if prj_dict is not None and cfg is None:

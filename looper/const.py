@@ -219,6 +219,7 @@ ALL_SUBCMD_KEY = "all"
 SAMPLE_PL_ARG = "sample_pipeline_interfaces"
 PROJECT_PL_ARG = "project_pipeline_interfaces"
 
+
 DEFAULT_CFG_PATH = os.path.join(os.getcwd(), LOOPER_DOTFILE_NAME)
 CLI_PROJ_ATTRS = [
     OUTDIR_KEY,
@@ -232,6 +233,7 @@ CLI_PROJ_ATTRS = [
     SAMPLE_PL_ARG,
     PIPESTAT_KEY,
     DEFAULT_PIPESTAT_CONFIG_ATTR,
+    PEP_CONFIG_KEY,
 ]
 
 # resource package TSV-related consts
