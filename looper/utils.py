@@ -515,11 +515,11 @@ def read_looper_config_file(looper_config_path: str) -> dict:
     # Expand paths in case ENV variables are used
     for k, v in return_dict.items():
         if isinstance(v, str):
-            return_dict[k] = expandpath(v)
-
-        if isinstance(v, str):
+            v = expandpath(v)
             if not os.path.isabs(v) and not is_registry_path(v):
                 return_dict[k] = os.path.join(config_dir_path, v)
+            else:
+                return_dict[k] = v
 
     return return_dict
 
