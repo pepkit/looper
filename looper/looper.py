@@ -552,7 +552,7 @@ class Reporter(Executor):
             print(psms)
             for name, psm in psms.items():
                 # Summarize will generate the static HTML Report Function
-                report_directory = psm.summarize()
+                report_directory = psm.summarize(looper_samples=self.prj.samples)
                 print(f"Report directory: {report_directory}")
         else:
             for piface_source_samples in self.prj._samples_by_piface(
@@ -567,7 +567,7 @@ class Reporter(Executor):
                 print(psms)
                 for name, psm in psms.items():
                     # Summarize will generate the static HTML Report Function
-                    report_directory = psm.summarize()
+                    report_directory = psm.summarize(looper_samples=self.prj.samples)
                     print(f"Report directory: {report_directory}")
 
 
