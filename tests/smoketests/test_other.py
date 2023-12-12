@@ -96,3 +96,24 @@ class TestLooperCheck:
             print(results)
         except Exception:
             raise pytest.fail("DID RAISE {0}".format(Exception))
+
+class TestSelector:
+    @pytest.mark.parametrize("flag_id", FLAGS)
+    @pytest.mark.parametrize(
+        "pipeline_name", ["test_pipe"]
+    )  # This is given in the pipestat_output_schema.yaml
+    def test_selecting_works(self, prep_temp_pep_pipestat, flag_id, pipeline_name):
+        """Verify that checking works"""
+        tp = prep_temp_pep_pipestat
+        _make_flags(tp, flag_id, pipeline_name)
+
+        x = ["run", "-d", "--looper-config", tp, "--sel-flag", ['failed']]
+
+        try:
+            results = main(test_args=x)
+            result_key = list(results.keys())[0]
+            for k, v in results[result_key].items():
+                assert v == flag_id
+            print(results)
+        except Exception:
+            raise pytest.fail("DID RAISE {0}".format(Exception))

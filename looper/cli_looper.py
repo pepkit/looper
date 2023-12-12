@@ -433,6 +433,14 @@ def build_parser():
                 metavar="ATTR",
                 help="Attribute for sample exclusion OR inclusion",
             )
+
+            fetch_samples_group.add_argument(
+                f"--{SAMPLE_SELECTION_FLAG_OPTNAME}",
+                default=None,
+                metavar="FLAG",
+                help="Attribute for sample exclusion OR inclusion",
+            )
+
             protocols = fetch_samples_group.add_mutually_exclusive_group()
             protocols.add_argument(
                 f"--{SAMPLE_EXCLUSION_OPTNAME}",
@@ -678,6 +686,7 @@ def main(test_args=None):
         selector_attribute=args.sel_attr,
         selector_include=args.sel_incl,
         selector_exclude=args.sel_excl,
+        selector_flag=args.sel_flag,
     ) as prj:
         if args.command in ["run", "rerun"]:
             run = Runner(prj)

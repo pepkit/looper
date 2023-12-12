@@ -85,6 +85,7 @@ __all__ = [
     "SAMPLE_SELECTION_ATTRIBUTE_OPTNAME",
     "SAMPLE_EXCLUSION_OPTNAME",
     "SAMPLE_INCLUSION_OPTNAME",
+    "SAMPLE_SELECTION_FLAG_OPTNAME",
     "DEBUG_JOBS",
     "DEBUG_COMMANDS",
     "DEBUG_EIDO_VALIDATION",
@@ -249,6 +250,7 @@ PROFILE_COLNAMES = ["pid", "hash", "cid", "runtime", "mem", "cmd", "lock"]
 SAMPLE_SELECTION_ATTRIBUTE_OPTNAME = "sel-attr"
 SAMPLE_EXCLUSION_OPTNAME = "sel-excl"
 SAMPLE_INCLUSION_OPTNAME = "sel-incl"
+SAMPLE_SELECTION_FLAG_OPTNAME = "sel-flag"
 
 MESSAGE_BY_SUBCOMMAND = {
     "run": "Run or submit sample jobs.",

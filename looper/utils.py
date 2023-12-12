@@ -72,7 +72,7 @@ def fetch_flag_files(prj=None, results_folder="", flags=FLAGS):
     return files_by_flag
 
 
-def fetch_sample_flags(prj, sample, pl_name):
+def fetch_sample_flags(prj, sample, pl_name, flag_dir=None):
     """
     Find any flag files present for a sample associated with a project
 
@@ -82,7 +82,8 @@ def fetch_sample_flags(prj, sample, pl_name):
     :return Iterable[str]: collection of flag file path(s) associated with the
         given sample for the given project
     """
-    sfolder = sample_folder(prj=prj, sample=sample)
+    sfolder = flag_dir or sample_folder(prj=prj, sample=sample)
+    #sfolder = sample_folder(prj=prj, sample=sample)
     if not os.path.isdir(sfolder):
         _LOGGER.debug(
             "Results folder ({}) doesn't exist for sample {}".format(
