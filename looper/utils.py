@@ -98,6 +98,28 @@ def fetch_sample_flags(prj, sample, pl_name, flag_dir=None):
         if os.path.splitext(x)[1] == ".flag" and os.path.basename(x).startswith(pl_name)
     ]
 
+def get_sample_status(sample, flags):
+    """
+    get a sample status
+
+    """
+
+    #get sample, split on .flag
+    # split on underscore
+
+    statuses = []
+
+    for f in flags:
+        flag_items = os.path.splitext(os.path.basename(f))[0].split("_")
+        # 0 is pipeline name, 1 is sample name, 2 is status
+        if sample == flag_items[1]:
+            statuses.append(flag_items[2].upper())
+
+    if len(statuses) > 1:
+        _LOGGER.warning(f"Multiple status flags found for {sample}")
+
+    return statuses[0]
+
 
 def grab_project_data(prj):
     """

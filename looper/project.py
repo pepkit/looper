@@ -36,7 +36,7 @@ class ProjectContext(object):
     """Wrap a Project to provide protocol-specific Sample selection."""
 
     def __init__(
-        self, prj, selector_attribute=None, selector_include=None, selector_exclude=None, selector_flag=None,
+        self, prj, selector_attribute=None, selector_include=None, selector_exclude=None, selector_flag=None, exclusion_flag=None,
     ):
         """Project and what to include/exclude defines the context."""
         if not isinstance(selector_attribute, str):
@@ -48,7 +48,8 @@ class ProjectContext(object):
         self.include = selector_include
         self.exclude = selector_exclude
         self.attribute = selector_attribute
-        self.flag = selector_flag
+        self.selector_flag = selector_flag
+        self.exclusion_flag = exclusion_flag
 
     def __getattr__(self, item):
         """Samples are context-specific; other requests are handled
@@ -59,7 +60,9 @@ class ProjectContext(object):
                 selector_attribute=self.attribute,
                 selector_include=self.include,
                 selector_exclude=self.exclude,
-                selector_flag=self.flag
+                selector_flag=self.selector_flag,
+                exclusion_flag=self.exclusion_flag,
+
             )
         if item in ["prj", "include", "exclude"]:
             # Attributes requests that this context/wrapper handles
@@ -737,7 +740,7 @@ class Project(peppyProject):
 
 
 def fetch_samples(
-    prj, selector_attribute=None, selector_include=None, selector_exclude=None, selector_flag=None,
+    prj, selector_attribute=None, selector_include=None, selector_exclude=None, selector_flag=None, exclusion_flag=None,
 ):
     """
     Collect samples of particular protocol(s).
@@ -839,12 +842,16 @@ def fetch_samples(
 
         kept_samples = list(filter(keep, kept_samples))
 
-        if selector_flag:
+        if selector_flag and exclusion_flag:
+            raise TypeError(
+                "Specify only selector_flag or exclusion_flag not both."
+            )
+
+        flags = selector_flag or exclusion_flag or None
+        if flags:
             # Collect uppercase flags or error if not str
-            if not isinstance(selector_flag, list):
-                flags = [str(selector_flag)]
-            else:
-                flags = selector_flag
+            if not isinstance(flags, list):
+                flags = [str(flags)]
             for flag in flags:
                 if not isinstance(flag, str):
                     raise TypeError(f"Supplied flags must be a string! Flag:{flag} {type(flag)}")
@@ -866,8 +873,32 @@ def fetch_samples(
 
             # Using flag_dir, search for flags:
             for sample in kept_samples:
-                pl_name = None
-                flags = fetch_sample_flags(prj,sample,pl_name,flag_dir)
+                #filtered_samples = deepcopy
+                sample_pifaces = prj.get_sample_piface(
+                    sample[prj.sample_table_index]
+                )
+                pl_name = sample_pifaces[0].pipeline_name
+                flag_files = fetch_sample_flags(prj, sample, pl_name, flag_dir)
+                status = get_sample_status(sample.sample_name, flag_files)
+                sample.update({"status": status})
+                print(status)
+
+            if not selector_flag:
+                # Loose; keep all samples not in the exclusion_flag.
+                def keep(s):
+
+                    return not hasattr(s, 'status') or getattr(
+                        s, 'status'
+                    ) not in make_set(flags)
+
+            else:
+                # Strict; keep only samples in the selector_flag
+                def keep(s):
+                    return hasattr(s, 'status') and getattr(
+                        s, 'status'
+                    ) in make_set(flags)
+
+            kept_samples = list(filter(keep, kept_samples))
 
             print(flags)
 

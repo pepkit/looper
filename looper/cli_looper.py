@@ -437,7 +437,14 @@ def build_parser():
             fetch_samples_group.add_argument(
                 f"--{SAMPLE_SELECTION_FLAG_OPTNAME}",
                 default=None,
-                metavar="FLAG",
+                metavar="SELFLAG",
+                help="Attribute for sample exclusion OR inclusion",
+            )
+
+            fetch_samples_group.add_argument(
+                f"--{SAMPLE_EXCLUSION_FLAG_OPTNAME}",
+                default=None,
+                metavar="EXCFLAG",
                 help="Attribute for sample exclusion OR inclusion",
             )
 
@@ -687,6 +694,7 @@ def main(test_args=None):
         selector_include=args.sel_incl,
         selector_exclude=args.sel_excl,
         selector_flag=args.sel_flag,
+        exclusion_flag=args.exc_flag,
     ) as prj:
         if args.command in ["run", "rerun"]:
             run = Runner(prj)
