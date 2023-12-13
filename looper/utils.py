@@ -107,13 +107,16 @@ def get_sample_status(sample, flags):
     statuses = []
 
     for f in flags:
-        flag_items = os.path.splitext(os.path.basename(f))[0].split("_")
-        # 0 is pipeline name, 1 is sample name, 2 is status
-        if sample == flag_items[1]:
-            statuses.append(flag_items[2].upper())
+        basename = os.path.basename(f)
+        status = os.path.splitext(basename)[0].split("_")[-1]
+        if sample in basename:
+            statuses.append(status.upper())
 
     if len(statuses) > 1:
         _LOGGER.warning(f"Multiple status flags found for {sample}")
+
+    if statuses == []:
+        return None
 
     return statuses[0]
 

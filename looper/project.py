@@ -892,7 +892,6 @@ def fetch_samples(
                 flag_files = fetch_sample_flags(prj, sample, pl_name, flag_dir)
                 status = get_sample_status(sample.sample_name, flag_files)
                 sample.update({"status": status})
-                print(status)
 
             if not selector_flag:
                 # Loose; keep all samples not in the exclusion_flag.
@@ -910,7 +909,6 @@ def fetch_samples(
 
             kept_samples = list(filter(keep, kept_samples))
 
-            print(flags)
 
     return kept_samples
 
