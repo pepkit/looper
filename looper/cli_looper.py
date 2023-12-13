@@ -434,22 +434,6 @@ def build_parser():
                 help="Attribute for sample exclusion OR inclusion",
             )
 
-            fetch_samples_group.add_argument(
-                f"--{SAMPLE_SELECTION_FLAG_OPTNAME}",
-                default=None,
-                nargs="*",
-                metavar="SELFLAG",
-                help="Attribute for sample exclusion OR inclusion",
-            )
-
-            fetch_samples_group.add_argument(
-                f"--{SAMPLE_EXCLUSION_FLAG_OPTNAME}",
-                default=None,
-                nargs="*",
-                metavar="EXCFLAG",
-                help="Attribute for sample exclusion OR inclusion",
-            )
-
             protocols = fetch_samples_group.add_mutually_exclusive_group()
             protocols.add_argument(
                 f"--{SAMPLE_EXCLUSION_OPTNAME}",
@@ -463,6 +447,22 @@ def build_parser():
                 metavar="I",
                 help="Include only samples with these values",
             )
+            fetch_samples_group.add_argument(
+                f"--{SAMPLE_SELECTION_FLAG_OPTNAME}",
+                default=None,
+                nargs="*",
+                metavar="SELFLAG",
+                help="Include samples with this flag status, e.g. completed",
+            )
+
+            fetch_samples_group.add_argument(
+                f"--{SAMPLE_EXCLUSION_FLAG_OPTNAME}",
+                default=None,
+                nargs="*",
+                metavar="EXCFLAG",
+                help="Exclude samples with this flag status, e.g. completed",
+            )
+
             subparser.add_argument(
                 "-a",
                 "--amend",
