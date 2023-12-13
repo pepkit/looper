@@ -36,7 +36,13 @@ class ProjectContext(object):
     """Wrap a Project to provide protocol-specific Sample selection."""
 
     def __init__(
-        self, prj, selector_attribute=None, selector_include=None, selector_exclude=None, selector_flag=None, exclusion_flag=None,
+        self,
+        prj,
+        selector_attribute=None,
+        selector_include=None,
+        selector_exclude=None,
+        selector_flag=None,
+        exclusion_flag=None,
     ):
         """Project and what to include/exclude defines the context."""
         if not isinstance(selector_attribute, str):
@@ -62,7 +68,6 @@ class ProjectContext(object):
                 selector_exclude=self.exclude,
                 selector_flag=self.selector_flag,
                 exclusion_flag=self.exclusion_flag,
-
             )
         if item in ["prj", "include", "exclude"]:
             # Attributes requests that this context/wrapper handles
@@ -740,7 +745,12 @@ class Project(peppyProject):
 
 
 def fetch_samples(
-    prj, selector_attribute=None, selector_include=None, selector_exclude=None, selector_flag=None, exclusion_flag=None,
+    prj,
+    selector_attribute=None,
+    selector_include=None,
+    selector_exclude=None,
+    selector_flag=None,
+    exclusion_flag=None,
 ):
     """
     Collect samples of particular protocol(s).
@@ -761,7 +771,8 @@ def fetch_samples(
     :param Iterable[str] | str selector_include: protocol(s) of interest;
         if specified, a Sample must
     :param Iterable[str] | str selector_exclude: protocol(s) to include
-    :param str selector_flag: flag to filter on, e.g. FAILED, COMPLETED
+    :param Iterable[str] | str selector_flag: flag to select on, e.g. FAILED, COMPLETED
+    :param Iterable[str] | str exclusion_flag: flag to exclude on, e.g. FAILED, COMPLETED
     :return list[Sample]: Collection of this Project's samples with
         protocol that either matches one of those in selector_include,
         or either
@@ -773,7 +784,6 @@ def fetch_samples(
         Python2;
         also possible if name of attribute for selection isn't a string
     """
-
 
     kept_samples = prj.samples
 
@@ -811,7 +821,7 @@ def fetch_samples(
 
     # At least one of the samples has to have the specified attribute
     if prj.samples and not any([hasattr(s, selector_attribute) for s in prj.samples]):
-        if selector_attribute == 'toggle':
+        if selector_attribute == "toggle":
             # this is the default, so silently pass.
             pass
         else:
@@ -843,9 +853,7 @@ def fetch_samples(
         kept_samples = list(filter(keep, kept_samples))
 
         if selector_flag and exclusion_flag:
-            raise TypeError(
-                "Specify only selector_flag or exclusion_flag not both."
-            )
+            raise TypeError("Specify only selector_flag or exclusion_flag not both.")
 
         flags = selector_flag or exclusion_flag or None
         if flags:
@@ -854,18 +862,24 @@ def fetch_samples(
                 flags = [str(flags)]
             for flag in flags:
                 if not isinstance(flag, str):
-                    raise TypeError(f"Supplied flags must be a string! Flag:{flag} {type(flag)}")
+                    raise TypeError(
+                        f"Supplied flags must be a string! Flag:{flag} {type(flag)}"
+                    )
                 flags.remove(flag)
                 flags.append(flag.upper())
             # Look for flags
-            # is pipestat configured? the user may have set the flag folder
+            # Is pipestat configured? Then, the user may have set the flag folder
             if prj.pipestat_configured:
                 try:
-                    flag_dir = expandpath(prj[EXTRA_KEY][PIPESTAT_KEY]['flag_file_dir'])
+                    flag_dir = expandpath(prj[EXTRA_KEY][PIPESTAT_KEY]["flag_file_dir"])
                     if not os.path.isabs(flag_dir):
-                        flag_dir = os.path.join(os.path.dirname(prj.output_dir), flag_dir)
+                        flag_dir = os.path.join(
+                            os.path.dirname(prj.output_dir), flag_dir
+                        )
                 except KeyError:
-                    _LOGGER.warning("Pipestat is configured but no flag_file_dir supplied, defaulting to output_dir")
+                    _LOGGER.warning(
+                        "Pipestat is configured but no flag_file_dir supplied, defaulting to output_dir"
+                    )
                     flag_dir = prj.output_dir
             else:
                 # if pipestat not configured, check the looper output dir
@@ -873,10 +887,7 @@ def fetch_samples(
 
             # Using flag_dir, search for flags:
             for sample in kept_samples:
-                #filtered_samples = deepcopy
-                sample_pifaces = prj.get_sample_piface(
-                    sample[prj.sample_table_index]
-                )
+                sample_pifaces = prj.get_sample_piface(sample[prj.sample_table_index])
                 pl_name = sample_pifaces[0].pipeline_name
                 flag_files = fetch_sample_flags(prj, sample, pl_name, flag_dir)
                 status = get_sample_status(sample.sample_name, flag_files)
@@ -886,24 +897,24 @@ def fetch_samples(
             if not selector_flag:
                 # Loose; keep all samples not in the exclusion_flag.
                 def keep(s):
-
-                    return not hasattr(s, 'status') or getattr(
-                        s, 'status'
+                    return not hasattr(s, "status") or getattr(
+                        s, "status"
                     ) not in make_set(flags)
 
             else:
                 # Strict; keep only samples in the selector_flag
                 def keep(s):
-                    return hasattr(s, 'status') and getattr(
-                        s, 'status'
-                    ) in make_set(flags)
+                    return hasattr(s, "status") and getattr(s, "status") in make_set(
+                        flags
+                    )
 
             kept_samples = list(filter(keep, kept_samples))
 
             print(flags)
 
     return kept_samples
-    # Ensure that we're working with sets.
+
+
 def make_set(items):
     try:
         # Check if user input single integer value for inclusion/exclusion criteria

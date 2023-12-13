@@ -83,7 +83,6 @@ def fetch_sample_flags(prj, sample, pl_name, flag_dir=None):
         given sample for the given project
     """
     sfolder = flag_dir or sample_folder(prj=prj, sample=sample)
-    #sfolder = sample_folder(prj=prj, sample=sample)
     if not os.path.isdir(sfolder):
         _LOGGER.debug(
             "Results folder ({}) doesn't exist for sample {}".format(
@@ -98,14 +97,12 @@ def fetch_sample_flags(prj, sample, pl_name, flag_dir=None):
         if os.path.splitext(x)[1] == ".flag" and os.path.basename(x).startswith(pl_name)
     ]
 
+
 def get_sample_status(sample, flags):
     """
     get a sample status
 
     """
-
-    #get sample, split on .flag
-    # split on underscore
 
     statuses = []
 
