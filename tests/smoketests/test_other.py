@@ -122,7 +122,7 @@ class TestSelector:
                 f.write(FLAGS[count])
             count += 1
 
-        x = ["run", "-d", "--looper-config", tp, "--sel-flag", ["failed"]]
+        x = ["run", "-d", "--looper-config", tp, "--sel-flag", "failed"]
 
         try:
             results = main(test_args=x)
@@ -157,7 +157,7 @@ class TestSelector:
                 f.write(FLAGS[count])
             count += 1
 
-        x = ["run", "-d", "--looper-config", tp, "--exc-flag", ["failed"]]
+        x = ["run", "-d", "--looper-config", tp, "--exc-flag", "failed"]
 
         try:
             results = main(test_args=x)
@@ -193,7 +193,7 @@ class TestSelector:
                 f.write(FLAGS[count])
             count += 1
 
-        x = ["run", "-d", "--looper-config", tp, "--exc-flag", ["failed", "running"]]
+        x = ["run", "-d", "--looper-config", tp, "--exc-flag", "failed", "running"]
 
         try:
             results = main(test_args=x)
@@ -229,7 +229,7 @@ class TestSelector:
                 f.write(FLAGS[count])
             count += 1
 
-        x = ["run", "-d", "--looper-config", tp, "--sel-flag", ["failed", "running"]]
+        x = ["run", "-d", "--looper-config", tp, "--sel-flag", "failed", "running"]
 
         try:
             results = main(test_args=x)

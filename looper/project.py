@@ -866,7 +866,7 @@ def fetch_samples(
                         f"Supplied flags must be a string! Flag:{flag} {type(flag)}"
                     )
                 flags.remove(flag)
-                flags.append(flag.upper())
+                flags.insert(0, flag.upper())
             # Look for flags
             # Is pipestat configured? Then, the user may have set the flag folder
             if prj.pipestat_configured:
@@ -908,7 +908,6 @@ def fetch_samples(
                     )
 
             kept_samples = list(filter(keep, kept_samples))
-
 
     return kept_samples
 

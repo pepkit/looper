@@ -437,6 +437,7 @@ def build_parser():
             fetch_samples_group.add_argument(
                 f"--{SAMPLE_SELECTION_FLAG_OPTNAME}",
                 default=None,
+                nargs="*",
                 metavar="SELFLAG",
                 help="Attribute for sample exclusion OR inclusion",
             )
@@ -444,6 +445,7 @@ def build_parser():
             fetch_samples_group.add_argument(
                 f"--{SAMPLE_EXCLUSION_FLAG_OPTNAME}",
                 default=None,
+                nargs="*",
                 metavar="EXCFLAG",
                 help="Attribute for sample exclusion OR inclusion",
             )
@@ -647,6 +649,10 @@ def main(test_args=None):
     divcfg = (
         select_divvy_config(filepath=args.divvy) if hasattr(args, "divvy") else None
     )
+
+    # Ignore flags if user is selecting or excluding on flags:
+    if args.sel_flag or args.exc_flag:
+        args.ignore_flags = True
 
     # Initialize project
     if is_registry_path(args.config_file):
