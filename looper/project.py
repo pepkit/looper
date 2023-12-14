@@ -111,9 +111,7 @@ class Project(peppyProject):
         compute settings.
     """
 
-    def __init__(
-        self, cfg=None, amendments=None, divcfg_path=None, **kwargs
-    ):
+    def __init__(self, cfg=None, amendments=None, divcfg_path=None, **kwargs):
         super(Project, self).__init__(cfg=cfg, amendments=amendments)
         prj_dict = kwargs.get("project_dict")
         pep_config = kwargs.get("pep_config", None)
