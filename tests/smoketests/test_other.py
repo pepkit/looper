@@ -335,3 +335,95 @@ class TestSelector:
         subs_list = [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
 
         assert len(subs_list) == 2
+
+    @pytest.mark.parametrize("flag_id", ["completed"])
+    @pytest.mark.parametrize(
+        "pipeline_name", ["PIPELINE1"]
+    )  # This is given in the pipestat_output_schema.yaml
+    def test_excluding_toggle_attr(
+        self, prep_temp_pep_pipestat, flag_id, pipeline_name
+    ):
+        """Verify that checking works"""
+        tp = prep_temp_pep_pipestat
+
+        p = Project(tp)
+        out_dir = p[CONFIG_KEY][LOOPER_KEY][OUTDIR_KEY]
+        count = 0
+        for s in p.samples:
+            sf = os.path.join(out_dir, "results_pipeline")
+            if not os.path.exists(sf):
+                os.makedirs(sf)
+            flag_path = os.path.join(
+                sf, pipeline_name + "_" + s.sample_name + "_" + FLAGS[count] + ".flag"
+            )
+            with open(flag_path, "w") as f:
+                f.write(FLAGS[count])
+            count += 1
+
+        x = [
+            "run",
+            "-d",
+            "--looper-config",
+            tp,
+            "--sel-attr",
+            "toggle",
+            "--sel-excl",
+            "1",
+        ]
+
+        try:
+            results = main(test_args=x)
+        except Exception:
+            raise pytest.fail("DID RAISE {0}".format(Exception))
+
+        with pytest.raises(FileNotFoundError):
+            # No samples submitted, thus no sub dir
+            sd = os.path.join(get_outdir(tp), "submission")
+            subs_list = [
+                os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")
+            ]
+
+    @pytest.mark.parametrize("flag_id", ["completed"])
+    @pytest.mark.parametrize(
+        "pipeline_name", ["PIPELINE1"]
+    )  # This is given in the pipestat_output_schema.yaml
+    def test_including_toggle_attr(
+        self, prep_temp_pep_pipestat, flag_id, pipeline_name
+    ):
+        """Verify that checking works"""
+        tp = prep_temp_pep_pipestat
+
+        p = Project(tp)
+        out_dir = p[CONFIG_KEY][LOOPER_KEY][OUTDIR_KEY]
+        count = 0
+        for s in p.samples:
+            sf = os.path.join(out_dir, "results_pipeline")
+            if not os.path.exists(sf):
+                os.makedirs(sf)
+            flag_path = os.path.join(
+                sf, pipeline_name + "_" + s.sample_name + "_" + FLAGS[count] + ".flag"
+            )
+            with open(flag_path, "w") as f:
+                f.write(FLAGS[count])
+            count += 1
+
+        x = [
+            "run",
+            "-d",
+            "--looper-config",
+            tp,
+            "--sel-attr",
+            "toggle",
+            "--sel-incl",
+            "1",
+        ]
+
+        try:
+            results = main(test_args=x)
+        except Exception:
+            raise pytest.fail("DID RAISE {0}".format(Exception))
+
+        sd = os.path.join(get_outdir(tp), "submission")
+        subs_list = [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
+
+        assert len(subs_list) == 3
