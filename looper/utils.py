@@ -72,7 +72,7 @@ def fetch_flag_files(prj=None, results_folder="", flags=FLAGS):
     return files_by_flag
 
 
-def fetch_sample_flags(prj, sample, pl_name):
+def fetch_sample_flags(prj, sample, pl_name, flag_dir=None):
     """
     Find any flag files present for a sample associated with a project
 
@@ -82,7 +82,7 @@ def fetch_sample_flags(prj, sample, pl_name):
     :return Iterable[str]: collection of flag file path(s) associated with the
         given sample for the given project
     """
-    sfolder = sample_folder(prj=prj, sample=sample)
+    sfolder = flag_dir or sample_folder(prj=prj, sample=sample)
     if not os.path.isdir(sfolder):
         _LOGGER.debug(
             "Results folder ({}) doesn't exist for sample {}".format(
@@ -96,6 +96,29 @@ def fetch_sample_flags(prj, sample, pl_name):
         for x in folder_contents
         if os.path.splitext(x)[1] == ".flag" and os.path.basename(x).startswith(pl_name)
     ]
+
+
+def get_sample_status(sample, flags):
+    """
+    get a sample status
+
+    """
+
+    statuses = []
+
+    for f in flags:
+        basename = os.path.basename(f)
+        status = os.path.splitext(basename)[0].split("_")[-1]
+        if sample in basename:
+            statuses.append(status.upper())
+
+    if len(statuses) > 1:
+        _LOGGER.warning(f"Multiple status flags found for {sample}")
+
+    if statuses == []:
+        return None
+
+    return statuses[0]
 
 
 def grab_project_data(prj):

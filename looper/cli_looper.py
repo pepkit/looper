@@ -433,6 +433,7 @@ def build_parser():
                 metavar="ATTR",
                 help="Attribute for sample exclusion OR inclusion",
             )
+
             protocols = fetch_samples_group.add_mutually_exclusive_group()
             protocols.add_argument(
                 f"--{SAMPLE_EXCLUSION_OPTNAME}",
@@ -446,6 +447,22 @@ def build_parser():
                 metavar="I",
                 help="Include only samples with these values",
             )
+            fetch_samples_group.add_argument(
+                f"--{SAMPLE_SELECTION_FLAG_OPTNAME}",
+                default=None,
+                nargs="*",
+                metavar="SELFLAG",
+                help="Include samples with this flag status, e.g. completed",
+            )
+
+            fetch_samples_group.add_argument(
+                f"--{SAMPLE_EXCLUSION_FLAG_OPTNAME}",
+                default=None,
+                nargs="*",
+                metavar="EXCFLAG",
+                help="Exclude samples with this flag status, e.g. completed",
+            )
+
             subparser.add_argument(
                 "-a",
                 "--amend",
@@ -633,6 +650,10 @@ def main(test_args=None):
         select_divvy_config(filepath=args.divvy) if hasattr(args, "divvy") else None
     )
 
+    # Ignore flags if user is selecting or excluding on flags:
+    if args.sel_flag or args.exc_flag:
+        args.ignore_flags = True
+
     # Initialize project
     if is_registry_path(args.config_file):
         if vars(args)[SAMPLE_PL_ARG]:
@@ -678,6 +699,8 @@ def main(test_args=None):
         selector_attribute=args.sel_attr,
         selector_include=args.sel_incl,
         selector_exclude=args.sel_excl,
+        selector_flag=args.sel_flag,
+        exclusion_flag=args.exc_flag,
     ) as prj:
         if args.command in ["run", "rerun"]:
             run = Runner(prj)

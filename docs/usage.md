@@ -26,7 +26,7 @@ Each task is controlled by one of the following commands: `run`, `rerun`, `runp`
 Here you can see the command-line usage instructions for the main looper command and for each subcommand:
 ## `looper --help`
 ```console
-version: 1.5.2-dev
+version: 1.6.0
 usage: looper [-h] [--version] [--logfile LOGFILE] [--dbg] [--silent]
               [--verbosity V] [--logdev]
               {run,rerun,runp,table,report,destroy,check,clean,inspect,init,init-piface,link}
@@ -68,7 +68,7 @@ usage: looper run [-h] [-i] [-d] [-t S] [-x S] [-y S] [-f] [--divvy DIVCFG] [-p 
                   [-c K [K ...]] [-u X] [-n N] [--looper-config LOOPER_CONFIG]
                   [-S YAML [YAML ...]] [-P YAML [YAML ...]] [-l N] [-k N]
                   [--sel-attr ATTR] [--sel-excl [E ...] | --sel-incl [I ...]]
-                  [-a A [A ...]]
+                  [--sel-flag [SELFLAG ...]] [--exc-flag [EXCFLAG ...]] [-a A [A ...]]
                   [config_file]
 
 Run or submit sample jobs.
@@ -111,6 +111,8 @@ sample selection arguments:
   --sel-attr ATTR                    Attribute for sample exclusion OR inclusion
   --sel-excl [E ...]                 Exclude samples with these values
   --sel-incl [I ...]                 Include only samples with these values
+  --sel-flag [SELFLAG ...]           Include samples with this flag status, e.g. completed
+  --exc-flag [EXCFLAG ...]           Exclude samples with this flag status, e.g. completed
 ```
 
 ## `looper runp --help`
@@ -118,7 +120,8 @@ sample selection arguments:
 usage: looper runp [-h] [-i] [-d] [-t S] [-x S] [-y S] [-f] [--divvy DIVCFG] [-p P] [-s S]
                    [-c K [K ...]] [--looper-config LOOPER_CONFIG] [-S YAML [YAML ...]]
                    [-P YAML [YAML ...]] [-l N] [-k N] [--sel-attr ATTR]
-                   [--sel-excl [E ...] | --sel-incl [I ...]] [-a A [A ...]]
+                   [--sel-excl [E ...] | --sel-incl [I ...]] [--sel-flag [SELFLAG ...]]
+                   [--exc-flag [EXCFLAG ...]] [-a A [A ...]]
                    [config_file]
 
 Run or submit project jobs.
@@ -159,6 +162,8 @@ sample selection arguments:
   --sel-attr ATTR                    Attribute for sample exclusion OR inclusion
   --sel-excl [E ...]                 Exclude samples with these values
   --sel-incl [I ...]                 Include only samples with these values
+  --sel-flag [SELFLAG ...]           Include samples with this flag status, e.g. completed
+  --exc-flag [EXCFLAG ...]           Exclude samples with this flag status, e.g. completed
 ```
 
 ## `looper rerun --help`
@@ -167,7 +172,7 @@ usage: looper rerun [-h] [-i] [-d] [-t S] [-x S] [-y S] [-f] [--divvy DIVCFG] [-
                     [-s S] [-c K [K ...]] [-u X] [-n N] [--looper-config LOOPER_CONFIG]
                     [-S YAML [YAML ...]] [-P YAML [YAML ...]] [-l N] [-k N]
                     [--sel-attr ATTR] [--sel-excl [E ...] | --sel-incl [I ...]]
-                    [-a A [A ...]]
+                    [--sel-flag [SELFLAG ...]] [--exc-flag [EXCFLAG ...]] [-a A [A ...]]
                     [config_file]
 
 Resubmit sample jobs with failed flags.
@@ -210,13 +215,16 @@ sample selection arguments:
   --sel-attr ATTR                    Attribute for sample exclusion OR inclusion
   --sel-excl [E ...]                 Exclude samples with these values
   --sel-incl [I ...]                 Include only samples with these values
+  --sel-flag [SELFLAG ...]           Include samples with this flag status, e.g. completed
+  --exc-flag [EXCFLAG ...]           Exclude samples with this flag status, e.g. completed
 ```
 
 ## `looper report --help`
 ```console
 usage: looper report [-h] [--looper-config LOOPER_CONFIG] [-S YAML [YAML ...]]
                      [-P YAML [YAML ...]] [-l N] [-k N] [--sel-attr ATTR]
-                     [--sel-excl [E ...] | --sel-incl [I ...]] [-a A [A ...]] [--project]
+                     [--sel-excl [E ...] | --sel-incl [I ...]] [--sel-flag [SELFLAG ...]]
+                     [--exc-flag [EXCFLAG ...]] [-a A [A ...]] [--project]
                      [config_file]
 
 Create browsable HTML report of project results.
@@ -243,13 +251,16 @@ sample selection arguments:
   --sel-attr ATTR                    Attribute for sample exclusion OR inclusion
   --sel-excl [E ...]                 Exclude samples with these values
   --sel-incl [I ...]                 Include only samples with these values
+  --sel-flag [SELFLAG ...]           Include samples with this flag status, e.g. completed
+  --exc-flag [EXCFLAG ...]           Exclude samples with this flag status, e.g. completed
 ```
 
 ## `looper table --help`
 ```console
 usage: looper table [-h] [--looper-config LOOPER_CONFIG] [-S YAML [YAML ...]]
                     [-P YAML [YAML ...]] [-l N] [-k N] [--sel-attr ATTR]
-                    [--sel-excl [E ...] | --sel-incl [I ...]] [-a A [A ...]] [--project]
+                    [--sel-excl [E ...] | --sel-incl [I ...]] [--sel-flag [SELFLAG ...]]
+                    [--exc-flag [EXCFLAG ...]] [-a A [A ...]] [--project]
                     [config_file]
 
 Write summary stats table for project samples.
@@ -276,13 +287,16 @@ sample selection arguments:
   --sel-attr ATTR                    Attribute for sample exclusion OR inclusion
   --sel-excl [E ...]                 Exclude samples with these values
   --sel-incl [I ...]                 Include only samples with these values
+  --sel-flag [SELFLAG ...]           Include samples with this flag status, e.g. completed
+  --exc-flag [EXCFLAG ...]           Exclude samples with this flag status, e.g. completed
 ```
 
 ## `looper inspect --help`
 ```console
 usage: looper inspect [-h] [--looper-config LOOPER_CONFIG] [-S YAML [YAML ...]]
                       [-P YAML [YAML ...]] [-l N] [-k N] [--sel-attr ATTR]
-                      [--sel-excl [E ...] | --sel-incl [I ...]] [-a A [A ...]]
+                      [--sel-excl [E ...] | --sel-incl [I ...]] [--sel-flag [SELFLAG ...]]
+                      [--exc-flag [EXCFLAG ...]] [-a A [A ...]]
                       [--sample-names [SAMPLE_NAMES ...]] [--attr-limit ATTR_LIMIT]
                       [config_file]
 
@@ -311,6 +325,8 @@ sample selection arguments:
   --sel-attr ATTR                    Attribute for sample exclusion OR inclusion
   --sel-excl [E ...]                 Exclude samples with these values
   --sel-incl [I ...]                 Include only samples with these values
+  --sel-flag [SELFLAG ...]           Include samples with this flag status, e.g. completed
+  --exc-flag [EXCFLAG ...]           Exclude samples with this flag status, e.g. completed
 ```
 
 ## `looper init --help`
@@ -339,7 +355,8 @@ options:
 usage: looper destroy [-h] [-d] [--force-yes] [--looper-config LOOPER_CONFIG]
                       [-S YAML [YAML ...]] [-P YAML [YAML ...]] [-l N] [-k N]
                       [--sel-attr ATTR] [--sel-excl [E ...] | --sel-incl [I ...]]
-                      [-a A [A ...]] [--project]
+                      [--sel-flag [SELFLAG ...]] [--exc-flag [EXCFLAG ...]] [-a A [A ...]]
+                      [--project]
                       [config_file]
 
 Remove output files of the project.
@@ -369,6 +386,8 @@ sample selection arguments:
   --sel-attr ATTR                    Attribute for sample exclusion OR inclusion
   --sel-excl [E ...]                 Exclude samples with these values
   --sel-incl [I ...]                 Include only samples with these values
+  --sel-flag [SELFLAG ...]           Include samples with this flag status, e.g. completed
+  --exc-flag [EXCFLAG ...]           Exclude samples with this flag status, e.g. completed
 ```
 
 ## `looper check --help`
@@ -376,7 +395,8 @@ sample selection arguments:
 usage: looper check [-h] [--describe-codes] [--itemized] [-f [F ...]]
                     [--looper-config LOOPER_CONFIG] [-S YAML [YAML ...]]
                     [-P YAML [YAML ...]] [-l N] [-k N] [--sel-attr ATTR]
-                    [--sel-excl [E ...] | --sel-incl [I ...]] [-a A [A ...]] [--project]
+                    [--sel-excl [E ...] | --sel-incl [I ...]] [--sel-flag [SELFLAG ...]]
+                    [--exc-flag [EXCFLAG ...]] [-a A [A ...]] [--project]
                     [config_file]
 
 Check flag status of current runs.
@@ -406,6 +426,8 @@ sample selection arguments:
   --sel-attr ATTR                    Attribute for sample exclusion OR inclusion
   --sel-excl [E ...]                 Exclude samples with these values
   --sel-incl [I ...]                 Include only samples with these values
+  --sel-flag [SELFLAG ...]           Include samples with this flag status, e.g. completed
+  --exc-flag [EXCFLAG ...]           Exclude samples with this flag status, e.g. completed
 ```
 
 ## `looper clean --help`
@@ -413,7 +435,7 @@ sample selection arguments:
 usage: looper clean [-h] [-d] [--force-yes] [--looper-config LOOPER_CONFIG]
                     [-S YAML [YAML ...]] [-P YAML [YAML ...]] [-l N] [-k N]
                     [--sel-attr ATTR] [--sel-excl [E ...] | --sel-incl [I ...]]
-                    [-a A [A ...]]
+                    [--sel-flag [SELFLAG ...]] [--exc-flag [EXCFLAG ...]] [-a A [A ...]]
                     [config_file]
 
 Run clean scripts of already processed jobs.
@@ -442,5 +464,7 @@ sample selection arguments:
   --sel-attr ATTR                    Attribute for sample exclusion OR inclusion
   --sel-excl [E ...]                 Exclude samples with these values
   --sel-incl [I ...]                 Include only samples with these values
+  --sel-flag [SELFLAG ...]           Include samples with this flag status, e.g. completed
+  --exc-flag [EXCFLAG ...]           Exclude samples with this flag status, e.g. completed
 ```
 
