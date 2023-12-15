@@ -92,6 +92,8 @@ def build_parser():
             help="Turn on debug mode (default: %(default)s)",
         )
 
+
+
         parser = logmuse.add_logging_options(parser)
         subparsers = parser.add_subparsers(dest="command")
 
@@ -495,6 +497,11 @@ def build_parser():
             help="Number of attributes to display",
             type=int,
         )
+        parser.add_argument(
+            "--commands",
+            action="version",
+            version="{}".format(" ".join(subparsers.choices.keys())))
+
         result.append(parser)
     return result
 
