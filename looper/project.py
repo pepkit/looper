@@ -725,6 +725,8 @@ class Project(peppyProject):
                     else:
                         samples_by_piface.setdefault(source, set())
                         samples_by_piface[source].add(sample[self.sample_table_index])
+                        sample.sample_name = sample[self.sample_table_index]
+
         for msg in msgs:
             _LOGGER.warning(msg)
         return samples_by_piface
