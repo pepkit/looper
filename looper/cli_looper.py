@@ -495,6 +495,12 @@ def build_parser():
             help="Number of attributes to display",
             type=int,
         )
+        parser.add_argument(
+            "--commands",
+            action="version",
+            version="{}".format(" ".join(subparsers.choices.keys())),
+        )
+
         result.append(parser)
     return result
 
