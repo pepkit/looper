@@ -56,3 +56,30 @@ Once a pipeline is submitted any remaining interface files will be ignored.
 Until an appropriate pipeline is found, each interface file will be considered in succession.
 If no suitable pipeline is found in any interface, the sample will be skipped.
 In other words, the `pipeline_interfaces` value specifies a *prioritized* search list.
+
+## Set up tab completion
+
+Source `bash_complete.sh` to your `~/.bashrc` to get basic tab completion for Looper.
+
+Then, simply type `looper <tab> <tab>` to see a list of commands and `looper comma<tab>` to get autocompletion for specific commands.
+
+Source script to add to `~/.bashrc`:
+```bash
+# Begin looper bash autocomplete
+_looper_autocomplete()
+{
+    local cur prev opts1
+    cur=${COMP_WORDS[COMP_CWORD]}
+    prev=${COMP_WORDS[COMP_CWORD-1]}
+    opts1=$(looper --commands)
+    case ${COMP_CWORD} in
+        1)
+            COMPREPLY=($(compgen -W "${opts1}" -- ${cur}))
+            ;;
+        2)
+            COMPREPLY=()
+            ;;
+    esac
+} && complete -o bashdefault -o default -F _looper_autocomplete looper
+# end looper bash autocomplete
+```
