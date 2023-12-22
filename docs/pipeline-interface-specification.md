@@ -12,8 +12,19 @@ Table of contents:
 
 In order to run an arbitrary pipeline, we require a formal specification for how the pipeline is to be used. We define this using a *pipeline interface* file. It maps attributes of a PEP project or sample to the pipeline CLI arguments. Thus, it defines the interface between the project metadata (the PEP) and the pipeline itself.
 
-If you're using *existing* `looper`-compatible pipelines, you don't need to create a new interface; just [point your project at the one that comes with the pipeline](defining-a-project.md). When creating *new* `looper`-compatible pipelines, you'll need to create a new pipeline interface file.
+If you're using *existing* `looper`-compatible pipelines, you don't need to create a new interface; just point your project at the one that comes with the pipeline. When creating *new* `looper`-compatible pipelines, you'll need to create a new pipeline interface file.
 
+Pipeline interfaces are defined in the looper config file (e.g. `.looper.yaml`):
+
+```yaml
+pep_config: ./project/project_config.yaml # pephub registry path or local path
+output_dir: ./results
+pipeline_interfaces:
+  sample:  ./pipeline_pipestat/pipeline_interface.yaml
+pipestat:
+  results_file_path: results.yaml
+
+```
 
 
 ## Overview of pipeline interface components
@@ -22,10 +33,10 @@ A pipeline interface may contain the following keys:
 
 - `pipeline_name` (REQUIRED) - A string identifying the pipeline,
 - `pipeline_type` (REQUIRED) - A string indicating a pipeline type: "sample" (for `run`) or "project" (for `runp`),
-- `command_template` (REQUIRED) - A [Jinja2](https://jinja.palletsprojects.com/en/2.11.x/) template used to construct a pipeline command command to run.
+- `command_template` (REQUIRED) - A [Jinja2](https://jinja.palletsprojects.com/en/2.11.x/) template used to construct a pipeline command to run.
 - `linked_pipeline_interfaces` (OPTIONAL) - A collection of paths to sample pipeline interfaces related to this pipeline interface (used only in project pipeline interfaces for `looper report` purposes).
 - `input_schema` (RECOMMENDED) - A [PEP Schema](http://eido.databio.org) formally defining *required inputs* for the pipeline
-- `output_schema` (RECOMMENDED) - A schema describing the *outputs* of the pipeline
+- `schema_path` (RECOMMENDED| REQUIRED FOR PIPESTAT) - A schema describing the *outputs* of the pipeline.
 - `compute` (RECOMMENDED) - Settings for computing resources
 - `var_templates` (RECOMMENDED) - A mapping of [Jinja2](https://jinja.palletsprojects.com/en/2.11.x/) templates and corresponding names, typically used to encode submission-specific paths that can be submission-specific
 - `pre_submit` (OPTIONAL) - A mapping that defines the pre-submission tasks to be executed
@@ -78,21 +89,6 @@ command_template: >
 
 Arguments wrapped in Jinja2 conditionals will only be added *if the specified attribute exists for the sample*.
 
-### linked_pipeline_interfaces
-
-*Only project pipeline interfaces will respect this attribute*
-
-Since the sample and project pipeline interfaces are completely separate this is the only way to link them together. This attribute is used by `looper report` to organize the produced HTML reports into groups, i.e. project-level report will list linked sample-level reports.
-
-```
-linked_pipeline_interfaces:
-  - ../pipeline_interface.yaml
-  - /home/john/test/pipeline_interface1.yaml
-```
-
-The paths listed in `linked_pipeline_interfaces` are considered relative to the pipeline interface, unless they are absolute.
-
-
 ### input_schema
 
 The input schema formally specifies the *input processed by this pipeline*. The input schema serves 2 related purposes:
@@ -101,7 +97,7 @@ The input schema formally specifies the *input processed by this pipeline*. The 
 
 2. **Description**. The input schema is also useful to describe the inputs, including both required and optional inputs, thereby providing a standard way to describe a pipeline's inputs. In the schema, the pipeline author can describe exactly what the inputs mean, making it easier for users to learn how to structure a project for the pipeline.
 
-Details for how to write a schema in in [writing a schema](http://eido.databio.org/en/latest/writing-a-schema/). The input schema format is an extended [PEP JSON-schema validation framework](http://pep.databio.org/en/latest/howto_validate/), which adds several capabilities, including
+Details for how to write a schema in [writing a schema](http://eido.databio.org/en/latest/writing-a-schema/). The input schema format is an extended [PEP JSON-schema validation framework](http://pep.databio.org/en/latest/howto_validate/), which adds several capabilities, including
 
 - `required` (optional): A list of sample attributes (columns in the sample table) that **must be defined**
 - `required_files` (optional): A list of sample attributes that point to **input files that must exist**.
@@ -111,52 +107,67 @@ If no `input_schema` is included in the pipeline interface, looper will not be a
 
 ### output_schema
 
-The output schema formally specifies the *output produced by this pipeline*. It is used by downstream tools to that need to be aware of the products of the pipeline for further visualization or analysis. Like the input schema, it is based on JSON-schema, but *must* follow the [pipestat schema specification](http://pipestat.databio.org/en/latest/pipestat_specification/#pipestat-schema).
+The output schema formally specifies the *output produced by this pipeline*. It is used by downstream tools to that need to be aware of the products of the pipeline for further visualization or analysis. Beginning with Looper 1.6.0 and Pipestat 0.6.0, the output schema is a JSON-schema: [pipestat schema specification](http://pipestat.databio.org/en/latest/pipestat_specification/#pipestat-schema).
 
 Here is an example output schema:
 
 ```yaml
-number_of_things:
-  type: integer
-  multipleOf: 10
-  minimum: 20
-  description: "Number of things, min 20, multiple of 10"
-smooth_bw:
-  type: file
-  value:
-    path: "aligned_{genome}/{sample_name}_smooth.bw"
-    title: "A smooth bigwig file"
-  description: "This stores a bigwig file path"
-peaks_bed:
-  type: file
-  value:
-    path: "peak_calling_{genome}/{sample_name}_peaks.bed"
-    title: "Peaks in BED format"
-  description: "This stores a BED file path"
-collection_of_things:
-  type: array
-  items:
-    type: string
-  description: "This stores collection of strings"
-output_object:
-  type: object
-  properties:
-    GC_content_plot:
-      type: image
-    genomic_regions_plot:
-      type: image
-  value:
-    GC_content_plot:
-      path: "gc_content_{sample_name}.pdf"
-      thumbnail_path: "gc_content_{sample_name}.png"
-      title: "Plot of GC content"
-    genomic_regions_plot:
-      path: "genomic_regions_{sample_name}.pdf"
-      thumbnail_path: "genomic_regions_{sample_name}.png"
-      title: "Plot of genomic regions"
-  required:
-    - GC_content
-  description: "Object output with plots, the GC content plot is required"
+title: An example output schema
+description: An example description
+type: object
+properties:
+  pipeline_name: "default_pipeline_name"
+  samples:
+    type: object
+    properties:
+      number_of_things:
+        type: integer
+        description: "Number of things"
+      percentage_of_things:
+        type: number
+        description: "Percentage of things"
+      name_of_something:
+        type: string
+        description: "Name of something"
+      switch_value:
+        type: boolean
+        description: "Is the switch on or off"
+      output_file:
+        $ref: "#/$defs/file"
+        description: "This a path to the output file"
+      output_image:
+        $ref: "#/$defs/image"
+        description: "This a path to the output image"
+      md5sum:
+        type: string
+        description: "MD5SUM of an object"
+        highlight: true
+$defs:
+  image:
+    type: object
+    object_type: image
+    properties:
+      path:
+        type: string
+      thumbnail_path:
+        type: string
+      title:
+        type: string
+    required:
+      - path
+      - thumbnail_path
+      - title
+  file:
+    type: object
+    object_type: file
+    properties:
+      path:
+        type: string
+      title:
+        type: string
+    required:
+      - path
+      - title
 ```
 Looper uses the output schema in its `report` function, which produces a browsable HTML report summarizing the pipeline results. The output schema provides the relative locations to sample-level and project-level outputs produced by the pipeline, which looper can then integrate into the output results. If the output schema is not included, the `looper report` will be unable to locate and integrate the files produced by the pipeline and will therefore be limited to simple statistics.
 

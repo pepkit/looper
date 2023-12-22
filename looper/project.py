@@ -19,6 +19,8 @@ from peppy import Project as peppyProject
 from peppy.utils import make_abs_via_cfg
 from pipestat import PipestatError, PipestatManager
 from ubiquerg import expandpath, is_command_callable
+from yacman import YAMLConfigManager
+from .conductor import write_pipestat_config
 
 from .exceptions import *
 from .pipeline_interface import PipelineInterface
@@ -34,7 +36,13 @@ class ProjectContext(object):
     """Wrap a Project to provide protocol-specific Sample selection."""
 
     def __init__(
-        self, prj, selector_attribute=None, selector_include=None, selector_exclude=None
+        self,
+        prj,
+        selector_attribute=None,
+        selector_include=None,
+        selector_exclude=None,
+        selector_flag=None,
+        exclusion_flag=None,
     ):
         """Project and what to include/exclude defines the context."""
         if not isinstance(selector_attribute, str):
@@ -46,6 +54,8 @@ class ProjectContext(object):
         self.include = selector_include
         self.exclude = selector_exclude
         self.attribute = selector_attribute
+        self.selector_flag = selector_flag
+        self.exclusion_flag = exclusion_flag
 
     def __getattr__(self, item):
         """Samples are context-specific; other requests are handled
@@ -56,13 +66,18 @@ class ProjectContext(object):
                 selector_attribute=self.attribute,
                 selector_include=self.include,
                 selector_exclude=self.exclude,
+                selector_flag=self.selector_flag,
+                exclusion_flag=self.exclusion_flag,
             )
         if item in ["prj", "include", "exclude"]:
             # Attributes requests that this context/wrapper handles
             return self.__dict__[item]
         else:
             # Dispatch attribute request to Project.
-            return getattr(self.prj, item)
+            if hasattr(self.prj, item):
+                return getattr(self.prj, item)
+            else:
+                return self.prj.get(item)
 
     def __getitem__(self, item):
         """Provide the Mapping-like item access to the instance's Project."""
@@ -96,18 +111,20 @@ class Project(peppyProject):
         compute settings.
     """
 
-    def __init__(
-        self, cfg=None, amendments=None, divcfg_path=None, runp=False, **kwargs
-    ):
+    def __init__(self, cfg=None, amendments=None, divcfg_path=None, **kwargs):
         super(Project, self).__init__(cfg=cfg, amendments=amendments)
         prj_dict = kwargs.get("project_dict")
+        pep_config = kwargs.get("pep_config", None)
+        if pep_config:
+            self["pep_config"] = pep_config
 
-        # init project from pephub:
+        # init project from pephub pep_config:
         if prj_dict is not None and cfg is None:
-            self.from_dict(prj_dict)
-            self["_config_file"] = os.getcwd()
+            self._from_dict(prj_dict)
+            self["_config_file"] = os.getcwd()  # for finding pipeline interface
+            self["pep_config"] = pep_config
 
-        setattr(self, EXTRA_KEY, dict())
+        self[EXTRA_KEY] = {}
 
         # add sample pipeline interface to the project
         if kwargs.get(SAMPLE_PL_ARG):
@@ -115,7 +132,8 @@ class Project(peppyProject):
 
         for attr_name in CLI_PROJ_ATTRS:
             if attr_name in kwargs:
-                setattr(self[EXTRA_KEY], attr_name, kwargs[attr_name])
+                self[EXTRA_KEY][attr_name] = kwargs[attr_name]
+                # setattr(self[EXTRA_KEY], attr_name, kwargs[attr_name])
         self._samples_by_interface = self._samples_by_piface(self.piface_key)
         self._interfaces_by_sample = self._piface_by_samples()
         self.linked_sample_interfaces = self._get_linked_pifaces()
@@ -128,7 +146,7 @@ class Project(peppyProject):
             if divcfg_path is None
             else ComputingConfiguration(filepath=divcfg_path)
         )
-        if hasattr(self, DRY_RUN_KEY) and not self[DRY_RUN_KEY]:
+        if DRY_RUN_KEY in self and not self[DRY_RUN_KEY]:
             _LOGGER.debug("Ensuring project directories exist")
             self.make_project_dirs()
 
@@ -184,7 +202,8 @@ class Project(peppyProject):
          found
         """
         try:
-            result = getattr(self[EXTRA_KEY], attr_name)
+            result = self[EXTRA_KEY][attr_name]
+            # getattr(self[EXTRA_KEY], attr_name))
         except (AttributeError, KeyError):
             pass
         else:
@@ -452,12 +471,14 @@ class Project(peppyProject):
         """
         try:
             if project_level:
-                self._get_pipestat_configuration(
+                pipestat_configured = self._get_pipestat_configuration(
                     sample_name=None, project_level=project_level
                 )
             else:
                 for s in self.samples:
-                    self._get_pipestat_configuration(sample_name=s.sample_name)
+                    pipestat_configured = self._get_pipestat_configuration(
+                        sample_name=s.sample_name
+                    )
         except Exception as e:
             context = (
                 f"Project '{self.name}'"
@@ -469,34 +490,16 @@ class Project(peppyProject):
                 f"caught exception: {getattr(e, 'message', repr(e))}"
             )
             return False
-        return True
+        else:
+            if pipestat_configured is not None and pipestat_configured != {}:
+                return True
+            else:
+                return False
 
     def _get_pipestat_configuration(self, sample_name=None, project_level=False):
         """
-        Get all required pipestat configuration variables
+        Get all required pipestat configuration variables from looper_config file
         """
-
-        def _get_val_from_attr(pipestat_sect, object, attr_name, default, no_err=False):
-            """
-            Get configuration value from an object's attribute or return default
-
-            :param dict pipestat_sect: pipestat section for sample or project
-            :param peppy.Sample | peppy.Project object: object to get the
-                configuration values for
-            :param str attr_name: attribute name with the value to retrieve
-            :param str default: default attribute name
-            :param bool no_err: do not raise error in case the attribute is missing,
-                in order to use the values specified in a different way, e.g. in pipestat config
-            :return str: retrieved configuration value
-            """
-            if pipestat_sect is not None and attr_name in pipestat_sect:
-                return pipestat_sect[attr_name]
-            try:
-                return getattr(object, default)
-            except AttributeError:
-                if no_err:
-                    return None
-                raise AttributeError(f"'{default}' attribute is missing")
 
         ret = {}
         if not project_level and sample_name is None:
@@ -504,57 +507,88 @@ class Project(peppyProject):
                 "Must provide the sample_name to determine the "
                 "sample to get the PipestatManagers for"
             )
-        key = "project" if project_level else "sample"
-        if (
-            CONFIG_KEY in self
-            and LOOPER_KEY in self[CONFIG_KEY]
-            and PIPESTAT_KEY in self[CONFIG_KEY][LOOPER_KEY]
-            and key in self[CONFIG_KEY][LOOPER_KEY][PIPESTAT_KEY]
-        ):
-            pipestat_section = self[CONFIG_KEY][LOOPER_KEY][PIPESTAT_KEY][key]
+
+        if PIPESTAT_KEY in self[EXTRA_KEY]:
+            pipestat_config_dict = self[EXTRA_KEY][PIPESTAT_KEY]
         else:
             _LOGGER.debug(
                 f"'{PIPESTAT_KEY}' not found in '{LOOPER_KEY}' section of the "
-                f"project configuration file. Using defaults."
+                f"project configuration file."
             )
-            pipestat_section = None
-        pipestat_config = _get_val_from_attr(
-            pipestat_section,
-            self.config if project_level else self.get_sample(sample_name),
-            PIPESTAT_CONFIG_ATTR_KEY,
-            DEFAULT_PIPESTAT_CONFIG_ATTR,
-            True,  # allow for missing pipestat cfg attr, the settings may be provided as Project/Sample attrs
-        )
+            # We cannot use pipestat without it being defined in the looper config file.
+            raise ValueError
 
-        pipestat_config = self._resolve_path_with_cfg(pth=pipestat_config)
+        # Expand paths in the event ENV variables were used in config files
+        output_dir = expandpath(self.output_dir)
 
-        results_file_path = _get_val_from_attr(
-            pipestat_section,
-            self.config if project_level else self.get_sample(sample_name),
-            PIPESTAT_RESULTS_FILE_ATTR_KEY,
-            DEFAULT_PIPESTAT_RESULTS_FILE_ATTR,
-            pipestat_config and os.path.exists(pipestat_config),
-        )
-        if results_file_path is not None:
-            results_file_path = expandpath(results_file_path)
-            if not os.path.isabs(results_file_path):
-                results_file_path = os.path.join(self.output_dir, results_file_path)
+        # Get looper user configured items first and update the pipestat_config_dict
+        try:
+            results_file_path = expandpath(pipestat_config_dict["results_file_path"])
+            if not os.path.exists(os.path.dirname(results_file_path)):
+                results_file_path = os.path.join(
+                    os.path.dirname(output_dir), results_file_path
+                )
+            pipestat_config_dict.update({"results_file_path": results_file_path})
+        except KeyError:
+            results_file_path = None
+
+        try:
+            flag_file_dir = expandpath(pipestat_config_dict["flag_file_dir"])
+            if not os.path.isabs(flag_file_dir):
+                flag_file_dir = os.path.join(os.path.dirname(output_dir), flag_file_dir)
+            pipestat_config_dict.update({"flag_file_dir": flag_file_dir})
+        except KeyError:
+            flag_file_dir = None
+
+        if sample_name:
+            pipestat_config_dict.update({"record_identifier": sample_name})
+
+        if project_level and "project_name" in pipestat_config_dict:
+            pipestat_config_dict.update(
+                {"project_name": pipestat_config_dict["project_name"]}
+            )
+
+        if project_level and "{record_identifier}" in results_file_path:
+            # if project level and using {record_identifier}, pipestat needs some sort of record_identifier during creation
+            pipestat_config_dict.update(
+                {"record_identifier": "default_project_record_identifier"}
+            )
+
+        pipestat_config_dict.update({"output_dir": output_dir})
+
         pifaces = (
             self.project_pipeline_interfaces
             if project_level
             else self._interfaces_by_sample[sample_name]
         )
+
         for piface in pifaces:
-            rec_id = (
-                piface.pipeline_name
-                if self.amendments is None
-                else f"{piface.pipeline_name}_{'_'.join(self.amendments)}"
+            # We must also obtain additional pipestat items from the pipeline author's piface
+            if "output_schema" in piface.data:
+                schema_path = expandpath(piface.data["output_schema"])
+                if not os.path.isabs(schema_path):
+                    # Get path relative to the pipeline_interface
+                    schema_path = os.path.join(
+                        os.path.dirname(piface.pipe_iface_file), schema_path
+                    )
+                pipestat_config_dict.update({"schema_path": schema_path})
+            if "pipeline_name" in piface.data:
+                pipestat_config_dict.update(
+                    {"pipeline_name": piface.data["pipeline_name"]}
+                )
+            if "pipeline_type" in piface.data:
+                pipestat_config_dict.update(
+                    {"pipeline_type": piface.data["pipeline_type"]}
+                )
+
+            # Pipestat_dict_ is now updated from all sources and can be written to a yaml.
+            looper_pipestat_config_path = os.path.join(
+                os.path.dirname(output_dir), "looper_pipestat_config.yaml"
             )
+            write_pipestat_config(looper_pipestat_config_path, pipestat_config_dict)
+
             ret[piface.pipeline_name] = {
-                "config_file": pipestat_config,
-                "results_file_path": results_file_path,
-                "sample_name": rec_id,
-                "schema_path": piface.get_pipeline_schemas(OUTPUT_SCHEMA_KEY),
+                "config_file": looper_pipestat_config_path,
             }
         return ret
 
@@ -701,15 +735,20 @@ class Project(peppyProject):
 
         :param list | str sample_piface: sample pipeline interface
         """
-        self._config.setdefault("sample_modifiers", {})
-        self._config["sample_modifiers"].setdefault("append", {})
+        self.config.setdefault("sample_modifiers", {})
+        self.config["sample_modifiers"].setdefault("append", {})
         self.config["sample_modifiers"]["append"]["pipeline_interfaces"] = sample_piface
 
         self.modify_samples()
 
 
 def fetch_samples(
-    prj, selector_attribute=None, selector_include=None, selector_exclude=None
+    prj,
+    selector_attribute=None,
+    selector_include=None,
+    selector_exclude=None,
+    selector_flag=None,
+    exclusion_flag=None,
 ):
     """
     Collect samples of particular protocol(s).
@@ -730,6 +769,8 @@ def fetch_samples(
     :param Iterable[str] | str selector_include: protocol(s) of interest;
         if specified, a Sample must
     :param Iterable[str] | str selector_exclude: protocol(s) to include
+    :param Iterable[str] | str selector_flag: flag to select on, e.g. FAILED, COMPLETED
+    :param Iterable[str] | str exclusion_flag: flag to exclude on, e.g. FAILED, COMPLETED
     :return list[Sample]: Collection of this Project's samples with
         protocol that either matches one of those in selector_include,
         or either
@@ -741,10 +782,15 @@ def fetch_samples(
         Python2;
         also possible if name of attribute for selection isn't a string
     """
+
+    kept_samples = prj.samples
+
     if not selector_include and not selector_exclude:
         # Default case where user does not use selector_include or selector exclude.
         # Assume that user wants to exclude samples if toggle = 0.
-        if any([hasattr(s, "toggle") for s in prj.samples]):
+        # if any([hasattr(s, "toggle") for s in prj.samples]):
+        # if any("toggle" in s for s in prj.samples):
+        if "toggle" in prj.samples[0]:  # assume the samples have the same schema
             selector_exclude = [0]
 
             def keep(s):
@@ -753,9 +799,16 @@ def fetch_samples(
                     or getattr(s, selector_attribute) not in selector_exclude
                 )
 
-            return list(filter(keep, prj.samples))
+            kept_samples = list(filter(keep, prj.samples))
         else:
-            return list(prj.samples)
+            kept_samples = prj.samples
+
+    # Intersection between selector_include and selector_exclude is
+    # nonsense user error.
+    if selector_include and selector_exclude:
+        raise TypeError(
+            "Specify only selector_include or selector_exclude parameter, " "not both."
+        )
 
     if not isinstance(selector_attribute, str):
         raise TypeError(
@@ -766,46 +819,103 @@ def fetch_samples(
 
     # At least one of the samples has to have the specified attribute
     if prj.samples and not any([hasattr(s, selector_attribute) for s in prj.samples]):
-        raise AttributeError(
-            "The Project samples do not have the attribute '{attr}'".format(
-                attr=selector_attribute
+        if selector_attribute == "toggle":
+            # this is the default, so silently pass.
+            pass
+        else:
+            raise AttributeError(
+                "The Project samples do not have the attribute '{attr}'".format(
+                    attr=selector_attribute
+                )
             )
-        )
 
-    # Intersection between selector_include and selector_exclude is
-    # nonsense user error.
-    if selector_include and selector_exclude:
-        raise TypeError(
-            "Specify only selector_include or selector_exclude parameter, " "not both."
-        )
+    if prj.samples:
+        # Use the attr check here rather than exception block in case the
+        # hypothetical AttributeError would occur; we want such
+        # an exception to arise, not to catch it as if the Sample lacks
+        # "protocol"
+        if not selector_include:
+            # Loose; keep all samples not in the selector_exclude.
+            def keep(s):
+                return not hasattr(s, selector_attribute) or getattr(
+                    s, selector_attribute
+                ) not in make_set(selector_exclude)
 
-    # Ensure that we're working with sets.
-    def make_set(items):
-        try:
-            # Check if user input single integer value for inclusion/exclusion criteria
-            if len(items) == 1:
-                items = list(map(int, items))  # list(int(items[0]))
-        except:
-            if isinstance(items, str):
-                items = [items]
-        return items
+        else:
+            # Strict; keep only samples in the selector_include.
+            def keep(s):
+                return hasattr(s, selector_attribute) and getattr(
+                    s, selector_attribute
+                ) in make_set(selector_include)
 
-    # Use the attr check here rather than exception block in case the
-    # hypothetical AttributeError would occur; we want such
-    # an exception to arise, not to catch it as if the Sample lacks
-    # "protocol"
-    if not selector_include:
-        # Loose; keep all samples not in the selector_exclude.
-        def keep(s):
-            return not hasattr(s, selector_attribute) or getattr(
-                s, selector_attribute
-            ) not in make_set(selector_exclude)
+        kept_samples = list(filter(keep, kept_samples))
 
-    else:
-        # Strict; keep only samples in the selector_include.
-        def keep(s):
-            return hasattr(s, selector_attribute) and getattr(
-                s, selector_attribute
-            ) in make_set(selector_include)
+        if selector_flag and exclusion_flag:
+            raise TypeError("Specify only selector_flag or exclusion_flag not both.")
 
-    return list(filter(keep, prj.samples))
+        flags = selector_flag or exclusion_flag or None
+        if flags:
+            # Collect uppercase flags or error if not str
+            if not isinstance(flags, list):
+                flags = [str(flags)]
+            for flag in flags:
+                if not isinstance(flag, str):
+                    raise TypeError(
+                        f"Supplied flags must be a string! Flag:{flag} {type(flag)}"
+                    )
+                flags.remove(flag)
+                flags.insert(0, flag.upper())
+            # Look for flags
+            # Is pipestat configured? Then, the user may have set the flag folder
+            if prj.pipestat_configured:
+                try:
+                    flag_dir = expandpath(prj[EXTRA_KEY][PIPESTAT_KEY]["flag_file_dir"])
+                    if not os.path.isabs(flag_dir):
+                        flag_dir = os.path.join(
+                            os.path.dirname(prj.output_dir), flag_dir
+                        )
+                except KeyError:
+                    _LOGGER.warning(
+                        "Pipestat is configured but no flag_file_dir supplied, defaulting to output_dir"
+                    )
+                    flag_dir = prj.output_dir
+            else:
+                # if pipestat not configured, check the looper output dir
+                flag_dir = prj.output_dir
+
+            # Using flag_dir, search for flags:
+            for sample in kept_samples:
+                sample_pifaces = prj.get_sample_piface(sample[prj.sample_table_index])
+                pl_name = sample_pifaces[0].pipeline_name
+                flag_files = fetch_sample_flags(prj, sample, pl_name, flag_dir)
+                status = get_sample_status(sample.sample_name, flag_files)
+                sample.update({"status": status})
+
+            if not selector_flag:
+                # Loose; keep all samples not in the exclusion_flag.
+                def keep(s):
+                    return not hasattr(s, "status") or getattr(
+                        s, "status"
+                    ) not in make_set(flags)
+
+            else:
+                # Strict; keep only samples in the selector_flag
+                def keep(s):
+                    return hasattr(s, "status") and getattr(s, "status") in make_set(
+                        flags
+                    )
+
+            kept_samples = list(filter(keep, kept_samples))
+
+    return kept_samples
+
+
+def make_set(items):
+    try:
+        # Check if user input single integer value for inclusion/exclusion criteria
+        if len(items) == 1:
+            items = list(map(str, items))  # list(int(items[0]))
+    except:
+        if isinstance(items, str):
+            items = [items]
+    return items

@@ -4,17 +4,12 @@ Looper: a pipeline submission engine. https://github.com/pepkit/looper
 """
 
 import abc
+import argparse
 import csv
 import logging
 import subprocess
-import sys
-
-if sys.version_info < (3, 3):
-    from collections import Mapping
-else:
-    from collections.abc import Mapping
-
-import logmuse
+import yaml
+import os
 import pandas as _pd
 
 # Need specific sequence of actions for colorama imports?
@@ -23,11 +18,12 @@ from colorama import init
 init()
 from shutil import rmtree
 
+# from collections.abc import Mapping
+from collections import defaultdict
 from colorama import Fore, Style
-from eido import inspect_project, validate_config, validate_sample
+from eido import validate_config, validate_sample
 from eido.exceptions import EidoValidationError
 from jsonschema import ValidationError
-from pephubclient import PEPHubClient
 from peppy.const import *
 from peppy.exceptions import RemoteYAMLError
 from rich.color import Color
@@ -36,21 +32,20 @@ from rich.table import Table
 from ubiquerg.cli_tools import query_yes_no
 from ubiquerg.collection import uniqify
 
-from . import __version__, build_parser, validate_post_parse
+
 from .conductor import SubmissionConductor
+
+from .exceptions import *
 from .const import *
-from .divvy import DEFAULT_COMPUTE_RESOURCES_NAME, select_divvy_config
-from .exceptions import (
-    JobSubmissionException,
-    MisconfigurationException,
-    SampleFailedException,
-)
-from .html_reports import HTMLReportBuilderOld
-from .html_reports_pipestat import HTMLReportBuilder, fetch_pipeline_results
-from .html_reports_project_pipestat import HTMLReportBuilderProject
 from .pipeline_interface import PipelineInterface
-from .project import Project, ProjectContext
-from .utils import *
+from .project import Project
+from .utils import (
+    desired_samples_range_skipped,
+    desired_samples_range_limited,
+    sample_folder,
+)
+from pipestat.reports import get_file_for_table
+from pipestat.reports import get_file_for_project
 
 _PKGNAME = "looper"
 _LOGGER = logging.getLogger(_PKGNAME)
@@ -104,7 +99,7 @@ class Checker(Executor):
             for sample in self.prj.samples:
                 psms = self.prj.get_pipestat_managers(sample_name=sample.sample_name)
                 for pipeline_name, psm in psms.items():
-                    s = psm.get_status(sample_name=sample.sample_name)
+                    s = psm.get_status(record_identifier=sample.sample_name)
                     status.setdefault(pipeline_name, {})
                     status[pipeline_name][sample.sample_name] = s
                     _LOGGER.debug(f"{sample.sample_name} ({pipeline_name}): {s}")
@@ -171,60 +166,7 @@ class Checker(Executor):
                     desc = ""
                 table.add_row(status, desc)
             console.print(table)
-
-
-class CheckerOld(Executor):
-    def __call__(self, flags=None, all_folders=False, max_file_count=30):
-        """
-        Check Project status, based on flag files.
-
-        :param Iterable[str] | str flags: Names of flags to check, optional;
-            if unspecified, all known flags will be checked.
-        :param bool all_folders: Whether to check flags in all folders, not
-            just those for samples in the config file from which the Project
-            was created.
-        :param int max_file_count: Maximum number of filepaths to display for a
-            given flag.
-        """
-
-        # Handle single or multiple flags, and alphabetize.
-        flags = sorted([flags] if isinstance(flags, str) else list(flags or FLAGS))
-        flag_text = ", ".join(flags)
-
-        # Collect the files by flag and sort by flag name.
-        _LOGGER.debug("Checking project folders for flags: %s", flag_text)
-        if all_folders:
-            files_by_flag = fetch_flag_files(
-                results_folder=self.prj.results_folder, flags=flags
-            )
-        else:
-            files_by_flag = fetch_flag_files(prj=self.prj, flags=flags)
-
-        # For each flag, output occurrence count.
-        for flag in flags:
-            _LOGGER.info("%s: %d", flag.upper(), len(files_by_flag[flag]))
-
-        # For each flag, output filepath(s) if not overly verbose.
-        for flag in flags:
-            try:
-                files = files_by_flag[flag]
-            except Exception as e:
-                _LOGGER.debug(
-                    "No files for {} flag. Caught exception: {}".format(
-                        flags, getattr(e, "message", repr(e))
-                    )
-                )
-                continue
-            # If checking on a specific flag, do not limit the number of
-            # reported filepaths, but do not report empty file lists
-            if len(flags) == 1 and len(files) > 0:
-                _LOGGER.info("%s (%d):\n%s", flag.upper(), len(files), "\n".join(files))
-            # Regardless of whether 0-count flags are previously reported,
-            # don't report an empty file list for a flag that's absent.
-            # If the flag-to-files mapping is defaultdict, absent flag (key)
-            # will fetch an empty collection, so check for length of 0.
-            if 0 < len(files) <= max_file_count:
-                _LOGGER.info("%s (%d):\n%s", flag.upper(), len(files), "\n".join(files))
+        return status
 
 
 class Cleaner(Executor):
@@ -270,7 +212,8 @@ class Cleaner(Executor):
         return self(args, preview_flag=False)
 
 
-def select_samples(prj: Project, args: argparse.Namespace) -> Iterable[Any]:
+# NOTE: Adding type hint -> Iterable[Any] gives me  TypeError: 'ABCMeta' object is not subscriptable
+def select_samples(prj: Project, args: argparse.Namespace):
     """Use CLI limit/skip arguments to select subset of project's samples."""
     # TODO: get proper element type for signature.
     num_samples = len(prj.samples)
@@ -310,7 +253,17 @@ class Destroyer(Executor):
                 _remove_or_dry_run(sample_output_folder, args.dry_run)
 
         _LOGGER.info("Removing summary:")
-        destroy_summary(self.prj, args.dry_run)
+        use_pipestat = (
+            self.prj.pipestat_configured_project
+            if args.project
+            else self.prj.pipestat_configured
+        )
+        if use_pipestat:
+            destroy_summary(self.prj, args.dry_run, args.project)
+        else:
+            _LOGGER.warning(
+                "Pipestat must be configured to destroy any created summaries."
+            )
 
         if not preview_flag:
             _LOGGER.info("Destroy complete.")
@@ -354,6 +307,7 @@ class Collator(Executor):
             arguments, recognized by looper
         """
         jobs = 0
+        self.debug = {}
         project_pifaces = self.prj.project_pipeline_interface_sources
         if not project_pifaces:
             raise MisconfigurationException(
@@ -399,6 +353,8 @@ class Collator(Executor):
                 jobs += conductor.num_job_submissions
         _LOGGER.info("\nLooper finished")
         _LOGGER.info("Jobs submitted: {}".format(jobs))
+        self.debug[DEBUG_JOBS] = jobs
+        return self.debug
 
 
 class Runner(Executor):
@@ -415,6 +371,7 @@ class Runner(Executor):
         :param bool rerun: whether the given sample is being rerun rather than
             run for the first time
         """
+        self.debug = {}  # initialize empty dict for return values
         max_cmds = sum(list(map(len, self.prj._samples_by_interface.values())))
         self.counter.total = max_cmds
         failures = defaultdict(list)  # Collect problems by sample.
@@ -453,6 +410,9 @@ class Runner(Executor):
             submission_conductors[piface.pipe_iface_file] = conductor
 
         _LOGGER.info(f"Pipestat compatible: {self.prj.pipestat_configured_project}")
+        self.debug["Pipestat compatible"] = (
+            self.prj.pipestat_configured_project or self.prj.pipestat_configured
+        )
 
         for sample in select_samples(prj=self.prj, args=args):
             pl_fails = []
@@ -474,10 +434,17 @@ class Runner(Executor):
                 try:
                     validate_sample(self.prj, sample.sample_name, schema_file)
                 except EidoValidationError as e:
-                    _LOGGER.error(f"Short-circuiting due to validation error: {e}")
+                    _LOGGER.error(
+                        f"Short-circuiting due to validation error!\nSchema file: "
+                        f"{schema_file}\nError: {e}\n{list(e.errors_by_type.keys())}"
+                    )
+                    self.debug[DEBUG_EIDO_VALIDATION] = (
+                        f"Short-circuiting due to validation error!\nSchema file: "
+                        f"{schema_file}\nError: {e}\n{list(e.errors_by_type.keys())}"
+                    )
                     return False
                 except RemoteYAMLError:
-                    _LOGGER.warn(
+                    _LOGGER.warning(
                         f"Could not read remote schema, skipping '{sample.sample_name}' "
                         f"sample validation against {schema_file}"
                     )
@@ -518,9 +485,15 @@ class Runner(Executor):
             )
         )
         _LOGGER.info("Commands submitted: {} of {}".format(cmd_sub_total, max_cmds))
-        _LOGGER.info("Jobs submitted: {}".format(job_sub_total))
+        self.debug[DEBUG_COMMANDS] = "{} of {}".format(cmd_sub_total, max_cmds)
         if args.dry_run:
-            _LOGGER.info("Dry run. No jobs were actually submitted.")
+            job_sub_total_if_real = job_sub_total
+            job_sub_total = 0
+            _LOGGER.info(
+                f"Dry run. No jobs were actually submitted, but {job_sub_total_if_real} would have been."
+            )
+        _LOGGER.info("Jobs submitted: {}".format(job_sub_total))
+        self.debug[DEBUG_JOBS] = job_sub_total
 
         # Restructure sample/failure data for display.
         samples_by_reason = defaultdict(set)
@@ -528,6 +501,7 @@ class Runner(Executor):
         for sample, failures in failures.items():
             for f in failures:
                 samples_by_reason[f].add(sample)
+                self.debug[f] = sample
         # Collect samples by pipeline with submission failure.
         for piface, conductor in submission_conductors.items():
             # Don't add failure key if there are no samples that failed for
@@ -562,6 +536,8 @@ class Runner(Executor):
             _LOGGER.debug("Raising SampleFailedException")
             raise SampleFailedException
 
+        return self.debug
+
 
 class Reporter(Executor):
     """Combine project outputs into a browsable HTML report"""
@@ -576,305 +552,82 @@ class Reporter(Executor):
             print(psms)
             for name, psm in psms.items():
                 # Summarize will generate the static HTML Report Function
-                psm.summarize()
+                report_directory = psm.summarize(looper_samples=self.prj.samples)
+                print(f"Report directory: {report_directory}")
         else:
-            for sample in p.prj.samples:
-                psms = self.prj.get_pipestat_managers(sample_name=sample.sample_name)
+            for piface_source_samples in self.prj._samples_by_piface(
+                self.prj.piface_key
+            ).values():
+                # For each piface_key, we have a list of samples, but we only need one sample from the list to
+                # call the related pipestat manager object which will pull ALL samples when using psm.summarize
+                first_sample_name = list(piface_source_samples)[0]
+                psms = self.prj.get_pipestat_managers(
+                    sample_name=first_sample_name, project_level=False
+                )
                 print(psms)
                 for name, psm in psms.items():
                     # Summarize will generate the static HTML Report Function
-                    psm.summarize()
+                    report_directory = psm.summarize(looper_samples=self.prj.samples)
+                    print(f"Report directory: {report_directory}")
 
 
-class Tabulator(Executor):
-    """Project/Sample statistics and table output generator"""
-
-    def __call__(self, args):
-        project_level = args.project
-        if project_level:
-            self.counter = LooperCounter(len(self.prj.project_pipeline_interfaces))
-            for piface in self.prj.project_pipeline_interfaces:
-                # Do the stats and object summarization.
-                pipeline_name = piface.pipeline_name
-                # pull together all the fits and stats from each sample into
-                # project-combined spreadsheets.
-                self.stats = _create_stats_summary(
-                    self.prj, pipeline_name, project_level, self.counter
-                )
-                self.objs = _create_obj_summary(
-                    self.prj, pipeline_name, project_level, self.counter
-                )
-        else:
-            for piface_source in self.prj._samples_by_piface(
-                self.prj.piface_key
-            ).keys():
-                # Do the stats and object summarization.
-                pipeline_name = PipelineInterface(config=piface_source).pipeline_name
-                # pull together all the fits and stats from each sample into
-                # project-combined spreadsheets.
-                self.stats = _create_stats_summary(
-                    self.prj, pipeline_name, project_level, self.counter
-                )
-                self.objs = _create_obj_summary(
-                    self.prj, pipeline_name, project_level, self.counter
-                )
-        return self
-
-
-def _create_stats_summary(project, pipeline_name, project_level, counter):
-    """
-    Create stats spreadsheet and columns to be considered in the report, save
-    the spreadsheet to file
-
-    :param looper.Project project: the project to be summarized
-    :param str pipeline_name: name of the pipeline to tabulate results for
-    :param bool project_level: whether the project-level pipeline resutlts
-        should be tabulated
-    :param looper.LooperCounter counter: a counter object
-    """
-    # Create stats_summary file
-    columns = set()
-    stats = []
-    _LOGGER.info("Creating stats summary")
-    if project_level:
-        _LOGGER.info(
-            counter.show(name=project.name, type="project", pipeline_name=pipeline_name)
-        )
-        reported_stats = {"project_name": project.name}
-        results = fetch_pipeline_results(
-            project=project,
-            pipeline_name=pipeline_name,
-            inclusion_fun=lambda x: x not in OBJECT_TYPES,
-        )
-        reported_stats.update(results)
-        stats.append(reported_stats)
-        columns |= set(reported_stats.keys())
-
-    else:
-        for sample in project.samples:
-            sn = sample.sample_name
-            _LOGGER.info(counter.show(sn, pipeline_name))
-            reported_stats = {project.sample_table_index: sn}
-            results = fetch_pipeline_results(
-                project=project,
-                pipeline_name=pipeline_name,
-                sample_name=sn,
-                inclusion_fun=lambda x: x not in OBJECT_TYPES,
-            )
-            reported_stats.update(results)
-            stats.append(reported_stats)
-            columns |= set(reported_stats.keys())
-
-    tsv_outfile_path = get_file_for_project(project, pipeline_name, "stats_summary.tsv")
-    tsv_outfile = open(tsv_outfile_path, "w")
-    tsv_writer = csv.DictWriter(
-        tsv_outfile, fieldnames=list(columns), delimiter="\t", extrasaction="ignore"
-    )
-    tsv_writer.writeheader()
-    for row in stats:
-        tsv_writer.writerow(row)
-    tsv_outfile.close()
-    _LOGGER.info(
-        f"'{pipeline_name}' pipeline stats summary (n={len(stats)}):"
-        f" {tsv_outfile_path}"
-    )
-    counter.reset()
-    return stats
-
-
-def _create_obj_summary(project, pipeline_name, project_level, counter):
-    """
-    Read sample specific objects files and save to a data frame
-
-    :param looper.Project project: the project to be summarized
-    :param str pipeline_name: name of the pipeline to tabulate results for
-    :param looper.LooperCounter counter: a counter object
-    :param bool project_level: whether the project-level pipeline resutlts
-        should be tabulated
-    """
-    _LOGGER.info("Creating objects summary")
-    reported_objects = {}
-    if project_level:
-        _LOGGER.info(
-            counter.show(name=project.name, type="project", pipeline_name=pipeline_name)
-        )
-        res = fetch_pipeline_results(
-            project=project,
-            pipeline_name=pipeline_name,
-            inclusion_fun=lambda x: x in OBJECT_TYPES,
-        )
-        # need to cast to a dict, since other mapping-like objects might
-        # cause issues when writing to the collective yaml file below
-        project_reported_objects = {k: dict(v) for k, v in res.items()}
-        reported_objects[project.name] = project_reported_objects
-    else:
-        for sample in project.samples:
-            sn = sample.sample_name
-            _LOGGER.info(counter.show(sn, pipeline_name))
-            res = fetch_pipeline_results(
-                project=project,
-                pipeline_name=pipeline_name,
-                sample_name=sn,
-                inclusion_fun=lambda x: x in OBJECT_TYPES,
-            )
-            # need to cast to a dict, since other mapping-like objects might
-            # cause issues when writing to the collective yaml file below
-            sample_reported_objects = {k: dict(v) for k, v in res.items()}
-            reported_objects[sn] = sample_reported_objects
-    objs_yaml_path = get_file_for_project(project, pipeline_name, "objs_summary.yaml")
-    with open(objs_yaml_path, "w") as outfile:
-        yaml.dump(reported_objects, outfile)
-    _LOGGER.info(
-        f"'{pipeline_name}' pipeline objects summary "
-        f"(n={len(reported_objects.keys())}): {objs_yaml_path}"
-    )
-    counter.reset()
-    return reported_objects
-
-
-class ReportOld(Executor):
-    """Combine project outputs into a browsable HTML report"""
-
-    def __init__(self, prj):
-        # call the inherited initialization
-        super(ReportOld, self).__init__(prj)
-        self.prj = prj
+class Linker(Executor):
+    """Create symlinks for reported results. Requires pipestat to be configured."""
 
     def __call__(self, args):
         # initialize the report builder
-        report_builder = HTMLReportBuilderOld(self.prj)
+        p = self.prj
+        project_level = args.project
+        link_dir = args.output_dir
 
-        # Do the stats and object summarization.
-        table = TableOld(self.prj)()
-        # run the report builder. a set of HTML pages is produced
-        report_path = report_builder(table.objs, table.stats, uniqify(table.columns))
-
-        _LOGGER.info("HTML Report (n=" + str(len(table.stats)) + "): " + report_path)
-
-
-class TableOld(Executor):
-    """Project/Sample statistics and table output generator"""
-
-    def __init__(self, prj):
-        # call the inherited initialization
-        super(TableOld, self).__init__(prj)
-        self.prj = prj
-
-    def __call__(self):
-        def _create_stats_summary_old(project, counter):
-            """
-            Create stats spreadsheet and columns to be considered in the report, save
-            the spreadsheet to file
-            :param looper.Project project: the project to be summarized
-            :param looper.LooperCounter counter: a counter object
-            """
-            # Create stats_summary file
-            columns = []
-            stats = []
-            project_samples = project.samples
-            missing_files = []
-            _LOGGER.info("Creating stats summary...")
-            for sample in project_samples:
-                # _LOGGER.info(counter.show(sample.sample_name, sample.protocol))
-                sample_output_folder = sample_folder(project, sample)
-                # Grab the basic info from the annotation sheet for this sample.
-                # This will correspond to a row in the output.
-                sample_stats = sample.get_sheet_dict()
-                columns.extend(sample_stats.keys())
-                # Version 0.3 standardized all stats into a single file
-                stats_file = os.path.join(sample_output_folder, "stats.tsv")
-                if not os.path.isfile(stats_file):
-                    missing_files.append(stats_file)
-                    continue
-                t = _pd.read_csv(
-                    stats_file, sep="\t", header=None, names=["key", "value", "pl"]
+        if project_level:
+            psms = self.prj.get_pipestat_managers(project_level=True)
+            for name, psm in psms.items():
+                linked_results_path = psm.link(link_dir=link_dir)
+                print(f"Linked directory: {linked_results_path}")
+        else:
+            for piface_source_samples in self.prj._samples_by_piface(
+                self.prj.piface_key
+            ).values():
+                # For each piface_key, we have a list of samples, but we only need one sample from the list to
+                # call the related pipestat manager object which will pull ALL samples when using psm.summarize
+                first_sample_name = list(piface_source_samples)[0]
+                psms = self.prj.get_pipestat_managers(
+                    sample_name=first_sample_name, project_level=False
                 )
-                t.drop_duplicates(subset=["key", "pl"], keep="last", inplace=True)
-                t.loc[:, "plkey"] = t["pl"] + ":" + t["key"]
-                dupes = t.duplicated(subset=["key"], keep=False)
-                t.loc[dupes, "key"] = t.loc[dupes, "plkey"]
-                sample_stats.update(t.set_index("key")["value"].to_dict())
-                stats.append(sample_stats)
-                columns.extend(t.key.tolist())
-            if missing_files:
-                _LOGGER.warning(
-                    "Stats files missing for {} samples: {}".format(
-                        len(missing_files), missing_files
-                    )
-                )
-            tsv_outfile_path = get_file_for_project_old(project, "stats_summary.tsv")
-            tsv_outfile = open(tsv_outfile_path, "w")
-            tsv_writer = csv.DictWriter(
-                tsv_outfile,
-                fieldnames=uniqify(columns),
-                delimiter="\t",
-                extrasaction="ignore",
-            )
-            tsv_writer.writeheader()
-            for row in stats:
-                tsv_writer.writerow(row)
-            tsv_outfile.close()
-            _LOGGER.info(
-                "Statistics summary (n=" + str(len(stats)) + "): " + tsv_outfile_path
-            )
-            counter.reset()
-            return stats, uniqify(columns)
+                for name, psm in psms.items():
+                    linked_results_path = psm.link(link_dir=link_dir)
+                    print(f"Linked directory: {linked_results_path}")
 
-        def _create_obj_summary_old(project, counter):
-            """
-            Read sample specific objects files and save to a data frame
-            :param looper.Project project: the project to be summarized
-            :param looper.LooperCounter counter: a counter object
-            :return pandas.DataFrame: objects spreadsheet
-            """
-            _LOGGER.info("Creating objects summary...")
-            objs = _pd.DataFrame()
-            # Create objects summary file
-            missing_files = []
-            for sample in project.samples:
-                # Process any reported objects
-                # _LOGGER.info(counter.show(sample.sample_name, sample.protocol))
-                sample_output_folder = sample_folder(project, sample)
-                objs_file = os.path.join(sample_output_folder, "objects.tsv")
-                if not os.path.isfile(objs_file):
-                    missing_files.append(objs_file)
-                    continue
-                t = _pd.read_csv(
-                    objs_file,
-                    sep="\t",
-                    header=None,
-                    names=[
-                        "key",
-                        "filename",
-                        "anchor_text",
-                        "anchor_image",
-                        "annotation",
-                    ],
-                )
-                t["sample_name"] = sample.sample_name
-                objs = objs.append(t, ignore_index=True)
-            if missing_files:
-                _LOGGER.warning(
-                    "Object files missing for {} samples: {}".format(
-                        len(missing_files), missing_files
-                    )
-                )
-            # create the path to save the objects file in
-            objs_file = get_file_for_project_old(project, "objs_summary.tsv")
-            objs.to_csv(objs_file, sep="\t")
-            _LOGGER.info(
-                "Objects summary (n="
-                + str(len(project.samples) - len(missing_files))
-                + "): "
-                + objs_file
-            )
-            return objs
 
-        # pull together all the fits and stats from each sample into
-        # project-combined spreadsheets.
-        self.stats, self.columns = _create_stats_summary_old(self.prj, self.counter)
-        self.objs = _create_obj_summary_old(self.prj, self.counter)
-        return self
+class Tabulator(Executor):
+    """Project/Sample statistics and table output generator
+
+    :return list[str|any] results: list containing output file paths of stats and objects
+    """
+
+    def __call__(self, args):
+        # p = self.prj
+        project_level = args.project
+        results = []
+        if project_level:
+            psms = self.prj.get_pipestat_managers(project_level=True)
+            for name, psm in psms.items():
+                results = psm.table()
+        else:
+            for piface_source_samples in self.prj._samples_by_piface(
+                self.prj.piface_key
+            ).values():
+                # For each piface_key, we have a list of samples, but we only need one sample from the list to
+                # call the related pipestat manager object which will pull ALL samples when using psm.table
+                first_sample_name = list(piface_source_samples)[0]
+                psms = self.prj.get_pipestat_managers(
+                    sample_name=first_sample_name, project_level=False
+                )
+                for name, psm in psms.items():
+                    results = psm.table()
+        # Results contains paths to stats and object summaries.
+        return results
 
 
 def _create_failure_message(reason, samples):
@@ -889,7 +642,7 @@ def _remove_or_dry_run(paths, dry_run=False):
 
     :param list|str paths: list of paths to files/dirs to be removed
     :param bool dry_run: logical indicating whether the files should remain
-        untouched and massage printed
+        untouched and message printed
     """
     paths = paths if isinstance(paths, list) else [paths]
     for path in paths:
@@ -906,20 +659,70 @@ def _remove_or_dry_run(paths, dry_run=False):
             _LOGGER.info(path + " does not exist.")
 
 
-def destroy_summary(prj, dry_run=False):
+def destroy_summary(prj, dry_run=False, project_level=False):
     """
     Delete the summary files if not in dry run mode
+    This function is for use with pipestat configured projects.
     """
-    # TODO: update after get_file_for_project signature change
-    _remove_or_dry_run(
-        [
-            get_file_for_project(prj, "summary.html"),
-            get_file_for_project(prj, "stats_summary.tsv"),
-            get_file_for_project(prj, "objs_summary.tsv"),
-            get_file_for_project(prj, "reports"),
-        ],
-        dry_run,
-    )
+
+    if project_level:
+        psms = prj.get_pipestat_managers(project_level=True)
+        for name, psm in psms.items():
+            _remove_or_dry_run(
+                [
+                    get_file_for_project(
+                        psm,
+                        pipeline_name=psm["_pipeline_name"],
+                        directory="reports",
+                    ),
+                    get_file_for_table(
+                        psm,
+                        pipeline_name=psm["_pipeline_name"],
+                        appendix="stats_summary.tsv",
+                    ),
+                    get_file_for_table(
+                        psm,
+                        pipeline_name=psm["_pipeline_name"],
+                        appendix="objs_summary.yaml",
+                    ),
+                    get_file_for_table(
+                        psm, pipeline_name=psm["_pipeline_name"], appendix="reports"
+                    ),
+                ],
+                dry_run,
+            )
+    else:
+        for piface_source_samples in prj._samples_by_piface(prj.piface_key).values():
+            # For each piface_key, we have a list of samples, but we only need one sample from the list to
+            # call the related pipestat manager object which will pull ALL samples when using psm.table
+            first_sample_name = list(piface_source_samples)[0]
+            psms = prj.get_pipestat_managers(
+                sample_name=first_sample_name, project_level=False
+            )
+            for name, psm in psms.items():
+                _remove_or_dry_run(
+                    [
+                        get_file_for_project(
+                            psm,
+                            pipeline_name=psm["_pipeline_name"],
+                            directory="reports",
+                        ),
+                        get_file_for_table(
+                            psm,
+                            pipeline_name=psm["_pipeline_name"],
+                            appendix="stats_summary.tsv",
+                        ),
+                        get_file_for_table(
+                            psm,
+                            pipeline_name=psm["_pipeline_name"],
+                            appendix="objs_summary.yaml",
+                        ),
+                        get_file_for_table(
+                            psm, pipeline_name=psm["_pipeline_name"], appendix="reports"
+                        ),
+                    ],
+                    dry_run,
+                )
 
 
 class LooperCounter(object):
@@ -972,241 +775,3 @@ def _submission_status_text(
     if pipeline_name:
         txt += f"; pipeline: {pipeline_name}"
     return txt + Style.RESET_ALL
-
-
-def _proc_resources_spec(args):
-    """
-    Process CLI-sources compute setting specification. There are two sources
-    of compute settings in the CLI alone:
-        * YAML file (--settings argument)
-        * itemized compute settings (--compute argument)
-
-    The itemized compute specification is given priority
-
-    :param argparse.Namespace: arguments namespace
-    :return Mapping[str, str]: binding between resource setting name and value
-    :raise ValueError: if interpretation of the given specification as encoding
-        of key-value pairs fails
-    """
-    spec = getattr(args, "compute", None)
-    try:
-        settings_data = read_yaml_file(args.settings) or {}
-    except yaml.YAMLError:
-        _LOGGER.warning(
-            "Settings file ({}) does not follow YAML format,"
-            " disregarding".format(args.settings)
-        )
-        settings_data = {}
-    if not spec:
-        return settings_data
-    pairs = [(kv, kv.split("=")) for kv in spec]
-    bads = []
-    for orig, pair in pairs:
-        try:
-            k, v = pair
-        except ValueError:
-            bads.append(orig)
-        else:
-            settings_data[k] = v
-    if bads:
-        raise ValueError(
-            "Could not correctly parse itemized compute specification. "
-            "Correct format: " + EXAMPLE_COMPUTE_SPEC_FMT
-        )
-    return settings_data
-
-
-def main(test_args=None):
-    """Primary workflow"""
-    global _LOGGER
-
-    parser, aux_parser = build_parser()
-    aux_parser.suppress_defaults()
-
-    if test_args:
-        args, remaining_args = parser.parse_known_args(args=test_args)
-    else:
-        args, remaining_args = parser.parse_known_args()
-
-    cli_use_errors = validate_post_parse(args)
-    if cli_use_errors:
-        parser.print_help(sys.stderr)
-        parser.error(
-            f"{len(cli_use_errors)} CLI use problem(s): {', '.join(cli_use_errors)}"
-        )
-    if args.command is None:
-        parser.print_help(sys.stderr)
-        sys.exit(1)
-    if "config_file" in vars(args):
-        if args.config_file is None:
-            msg = "No project config defined (peppy)"
-            try:
-                if args.looper_config:
-                    looper_config_dict = read_looper_config_file(args.looper_config)
-                else:
-                    looper_config_dict = read_looper_dotfile()
-                    print(
-                        msg + f", using: {read_looper_dotfile()}. "
-                        f"Read from dotfile ({dotfile_path()})."
-                    )
-
-                for looper_config_key, looper_config_item in looper_config_dict.items():
-                    setattr(args, looper_config_key, looper_config_item)
-
-            except OSError:
-                print(msg + f" and dotfile does not exist: {dotfile_path()}")
-                parser.print_help(sys.stderr)
-                sys.exit(1)
-        else:
-            _LOGGER.warning(
-                "The Looper config specification through the PEP project is deprecated and will "
-                "be removed in future versions. Please use the new running method by "
-                f"utilizing a looper config file. For more information: {'here is more information'} "
-            )
-
-    if args.command == "init":
-        sys.exit(
-            int(
-                not init_dotfile(
-                    dotfile_path(),
-                    args.config_file,
-                    args.output_dir,
-                    args.sample_pipeline_interfaces,
-                    args.project_pipeline_interfaces,
-                    args.force,
-                )
-            )
-        )
-
-    if args.command == "init-piface":
-        sys.exit(int(not init_generic_pipeline()))
-
-    args = enrich_args_via_cfg(args, aux_parser, test_args)
-
-    # If project pipeline interface defined in the cli, change name to: "pipeline_interface"
-    if vars(args)[PROJECT_PL_ARG]:
-        args.pipeline_interfaces = vars(args)[PROJECT_PL_ARG]
-
-    _LOGGER = logmuse.logger_via_cli(args, make_root=True)
-
-    _LOGGER.info("Looper version: {}\nCommand: {}".format(__version__, args.command))
-
-    if len(remaining_args) > 0:
-        _LOGGER.warning(
-            "Unrecognized arguments: {}".format(
-                " ".join([str(x) for x in remaining_args])
-            )
-        )
-
-    divcfg = (
-        select_divvy_config(filepath=args.divvy) if hasattr(args, "divvy") else None
-    )
-
-    # Initialize project
-    if is_registry_path(args.config_file):
-        if vars(args)[SAMPLE_PL_ARG]:
-            p = Project(
-                amendments=args.amend,
-                divcfg_path=divcfg,
-                runp=args.command == "runp",
-                project_dict=PEPHubClient()._load_raw_pep(
-                    registry_path=args.config_file
-                ),
-                **{
-                    attr: getattr(args, attr) for attr in CLI_PROJ_ATTRS if attr in args
-                },
-            )
-        else:
-            raise MisconfigurationException(
-                f"`sample_pipeline_interface` is missing. Provide it in the parameters."
-            )
-    else:
-        try:
-            p = Project(
-                cfg=args.config_file,
-                amendments=args.amend,
-                divcfg_path=divcfg,
-                runp=args.command == "runp",
-                **{
-                    attr: getattr(args, attr) for attr in CLI_PROJ_ATTRS if attr in args
-                },
-            )
-        except yaml.parser.ParserError as e:
-            _LOGGER.error(f"Project config parse failed -- {e}")
-            sys.exit(1)
-
-    selected_compute_pkg = p.selected_compute_package or DEFAULT_COMPUTE_RESOURCES_NAME
-    if p.dcc is not None and not p.dcc.activate_package(selected_compute_pkg):
-        _LOGGER.info(
-            "Failed to activate '{}' computing package. "
-            "Using the default one".format(selected_compute_pkg)
-        )
-
-    with ProjectContext(
-        prj=p,
-        selector_attribute=args.sel_attr,
-        selector_include=args.sel_incl,
-        selector_exclude=args.sel_excl,
-    ) as prj:
-        if args.command in ["run", "rerun"]:
-            run = Runner(prj)
-            try:
-                compute_kwargs = _proc_resources_spec(args)
-                run(args, rerun=(args.command == "rerun"), **compute_kwargs)
-            except SampleFailedException:
-                sys.exit(1)
-            except IOError:
-                _LOGGER.error(
-                    "{} pipeline_interfaces: '{}'".format(
-                        prj.__class__.__name__, prj.pipeline_interface_sources
-                    )
-                )
-                raise
-
-        if args.command == "runp":
-            compute_kwargs = _proc_resources_spec(args)
-            collate = Collator(prj)
-            collate(args, **compute_kwargs)
-
-        if args.command == "destroy":
-            return Destroyer(prj)(args)
-
-        # pipestat support introduces breaking changes and pipelines run
-        # with no pipestat reporting would not be compatible with
-        # commands: table, report and check. Therefore we plan maintain
-        # the old implementations for a couple of releases.
-        if hasattr(args, "project"):
-            use_pipestat = (
-                prj.pipestat_configured_project
-                if args.project
-                else prj.pipestat_configured
-            )
-        if args.command == "table":
-            if use_pipestat:
-                Tabulator(prj)(args)
-            else:
-                TableOld(prj)()
-
-        if args.command == "report":
-            if use_pipestat:
-                Reporter(prj)(args)
-            else:
-                ReportOld(prj)(args)
-
-        if args.command == "check":
-            if use_pipestat:
-                Checker(prj)(args)
-            else:
-                CheckerOld(prj)(flags=args.flags)
-
-        if args.command == "clean":
-            return Cleaner(prj)(args)
-
-        if args.command == "inspect":
-            inspect_project(p, args.sample_names, args.attr_limit)
-            from warnings import warn
-
-            warn(
-                "The inspect feature has moved to eido and will be removed in the future release of looper. "
-                "Use `eido inspect` from now on.",
-            )

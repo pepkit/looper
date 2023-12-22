@@ -27,7 +27,7 @@ DRYRUN_OR_NOT_PREVIEW = [
 @pytest.mark.parametrize(["args", "preview"], DRYRUN_OR_NOT_PREVIEW)
 def test_cleaner_does_not_crash(args, preview, prep_temp_pep):
     prj = Project(prep_temp_pep)
-    prj.samples = []
+    prj._samples = []
     clean = Cleaner(prj)
     try:
         retcode = clean(args=args, preview_flag=preview)

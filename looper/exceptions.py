@@ -37,6 +37,13 @@ class MisconfigurationException(LooperError):
         super(MisconfigurationException, self).__init__(key)
 
 
+class RegistryPathException(LooperError):
+    """Duplication of pipeline identifier precludes unique pipeline ref."""
+
+    def __init__(self, msg):
+        super(RegistryPathException, self).__init__(msg)
+
+
 class DuplicatePipelineKeyException(LooperError):
     """Duplication of pipeline identifier precludes unique pipeline ref."""
 
@@ -58,6 +65,17 @@ class JobSubmissionException(LooperError):
         self.script = script
         reason = "Error for command {} and script '{}'".format(sub_cmd, self.script)
         super(JobSubmissionException, self).__init__(reason)
+
+
+class PipestatConfigurationException(LooperError):
+    """Error type for when command fails due to missing pipestat config"""
+
+    def __init__(
+        self,
+        sub_cmd,
+    ):
+        reason = "Pipestat must be configured for command {}".format(sub_cmd)
+        super(PipestatConfigurationException, self).__init__(reason)
 
 
 class MissingPipelineConfigurationException(LooperError):

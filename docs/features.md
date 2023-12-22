@@ -46,3 +46,4 @@ Looper uses a command-line interface so you have total power at your fingertips.
 ![html][html] **Beautiful linked result reports**
 
 Looper automatically creates an internally linked, portable HTML report highlighting all results for your pipeline, for every pipeline.
+For an html report example see: [PEPATAC Gold Summary](https://pepatac.databio.org/en/latest/files/examples/gold/gold_summary.html)

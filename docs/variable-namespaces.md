@@ -66,11 +66,9 @@ So, the compute namespace is first populated with any variables from the selecte
 
 The `pipestat` namespace conists of a group of variables that reflect the [pipestat](http://pipestat.databio.org) configuration for a submission.
 
-1. schema (`PipestatManager.schema_path`)
-2. results_file (`PipestatManager.file`)
-3. record_id (`PipestatManager.record_identifier`)
-4. namespace (`PipestatManager.namespace`)
-5. config (`PipestatManager.config_path`)
+1. results_file (`pipestat.file`)
+2. record_id (`pipestat.record_identifier`)
+3. config (`pipestat.config_path`)
 
 ## Mapping variables to submission templates using divvy adapters
 

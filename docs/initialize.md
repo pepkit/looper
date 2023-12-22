@@ -14,7 +14,7 @@ Now, as long as you are operating from within this directory or any of the subdi
 looper run
 ```
 
-The `looper init` command creates a dotfile called `.looper.yaml` in the current directory. This file simply points looper to the to the config file passed as positional argument to `looper init`:
+The `looper init` command creates a dotfile called `.looper.yaml` in the current directory. This file simply points looper to the config file passed as positional argument to `looper init`:
 
 ```yaml
 config_file_path: relative/path/to/pep.yaml

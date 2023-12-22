@@ -20,6 +20,6 @@ __email__ = "vreuter@virginia.edu"
 def test_write_script_is_effect_free(tmpdir, extras):
     """Writing script doesn't change computing configuration."""
     cc = ComputingConfiguration()
-    compute1 = deepcopy(cc.compute_packages)
+    compute1 = deepcopy(cc["compute_packages"])
     cc.write_script(tmpdir.join(get_random_key(20) + ".sh").strpath, extras)
-    assert cc.compute_packages == compute1
+    assert cc["compute_packages"] == compute1

@@ -1,6 +1,6 @@
-# How to run pipeline using looper config file
+# How to use the looper config file
 
-Starting with looper>=1.5.0, you should specify a pipeline interface in the looper config file, rather than in the PEP.
+Starting with `looper` version `>=1.5.0`, you should specify a pipeline interface in the looper config file, rather than in the PEP.
 
 Example looper config file using local PEP:
 
@@ -33,4 +33,4 @@ one of supported ways: `namespace/name`, `pephub::namespace/name`, `namespace/na
 - `pipeline interfaces` is a local path to project or sample pipelines.
 
 To run pipeline, go to the directory of .looper.config and execute command in your terminal:
-`looper run` or `looper runp`.
+`looper run --looper-config {looper_config_path}` or `looper runp --looper-config {looper_config_path}`.

@@ -45,7 +45,7 @@ class ActivatingTests:
     @pytest.mark.parametrize(argnames="package_idx", argvalues=[0, 1])
     def test_activating_some_package(self, dcc, package_idx):
         """Test if activating the default compute package works for every case"""
-        package = list(dcc.compute_packages.keys())[package_idx]
+        package = list(dcc["compute_packages"].keys())[package_idx]
         assert dcc.activate_package(package)
 
     @pytest.mark.parametrize(
@@ -98,4 +98,4 @@ class UpdatingPackagesTests:
         """Test updating does not produce empty compute packages"""
         entries = load_yaml(config_file)
         dcc.update(entries)
-        assert dcc.compute_packages != YacAttMap()
+        assert dcc["compute_packages"] != YacAttMap()

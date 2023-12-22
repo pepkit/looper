@@ -81,6 +81,17 @@ __all__ = [
     "DEFAULT_CONFIG_FILEPATH",
     "DEFAULT_CONFIG_SCHEMA",
     "DEFAULT_COMPUTE_RESOURCES_NAME",
+    "MESSAGE_BY_SUBCOMMAND",
+    "SAMPLE_SELECTION_ATTRIBUTE_OPTNAME",
+    "SAMPLE_EXCLUSION_OPTNAME",
+    "SAMPLE_INCLUSION_OPTNAME",
+    "SAMPLE_SELECTION_FLAG_OPTNAME",
+    "SAMPLE_EXCLUSION_FLAG_OPTNAME",
+    "DEBUG_JOBS",
+    "DEBUG_COMMANDS",
+    "DEBUG_EIDO_VALIDATION",
+    "LOOPER_GENERIC_OUTPUT_SCHEMA",
+    "LOOPER_GENERIC_COUNT_LINES",
 ]
 
 FLAGS = ["completed", "running", "failed", "waiting", "partial"]
@@ -111,6 +122,11 @@ def _get_apperance_dict(type, templ=APPEARANCE_BY_FLAG):
             ret[flag][key] = ret[flag][key].format(type=type)
     return ret
 
+
+# Debug keys
+DEBUG_JOBS = "Jobs submitted"
+DEBUG_COMMANDS = "Commands submitted"
+DEBUG_EIDO_VALIDATION = "EidoValidationError"
 
 # Compute-related (for divvy)
 COMPUTE_SETTINGS_VARNAME = ["DIVCFG"]
@@ -145,7 +161,9 @@ PIFACE_SCHEMA_SRC = os.path.join(
 EXTRA_SAMPLE_CMD_TEMPLATE = (
     "{%- if sample.command_extra is defined %} {sample.command_extra}   {% endif -%}"
 )
-EXTRA_PROJECT_CMD_TEMPLATE = "{%- if project.looper.command_extra is defined %} {project.looper.command_extra}{% endif -%}"
+EXTRA_PROJECT_CMD_TEMPLATE = (
+    "{%- if looper.command_extra is defined %} {looper.command_extra}{% endif -%}"
+)
 DOTFILE_CFG_PTH_KEY = "config_file_path"
 INPUT_SCHEMA_KEY = "input_schema"
 OUTPUT_SCHEMA_KEY = "output_schema"
@@ -175,7 +193,7 @@ DEFAULT_PIPESTAT_CONFIG_ATTR = "pipestat_config"
 DEFAULT_PIPESTAT_RESULTS_FILE_ATTR = "pipestat_results_file"
 PIPESTAT_NAMESPACE_ATTR_KEY = "namespace_attribute"
 PIPESTAT_CONFIG_ATTR_KEY = "config_attribute"
-PIPESTAT_RESULTS_FILE_ATTR_KEY = "results_file_attribute"
+PIPESTAT_RESULTS_FILE_ATTR_KEY = "results_file_path"
 
 PIPE_ARGS_SECTION = "pipeline_args"
 CLI_KEY = "cli"
@@ -193,13 +211,16 @@ FILE_CHECKS_KEY = "skip_file_checks"
 EXAMPLE_COMPUTE_SPEC_FMT = "k1=v1 k2=v2"
 SUBMISSION_FAILURE_MESSAGE = "Cluster resource failure"
 LOOPER_DOTFILE_NAME = "." + LOOPER_KEY + ".yaml"
-LOOPER_GENERIC_PIPELINE = "generic_pipeline_interface.yaml"
+LOOPER_GENERIC_PIPELINE = "pipeline_interface.yaml"
+LOOPER_GENERIC_OUTPUT_SCHEMA = "output_schema.yaml"
+LOOPER_GENERIC_COUNT_LINES = "count_lines.sh"
 POSITIONAL = [PEP_CONFIG_FILE_KEY, "command"]
 SELECTED_COMPUTE_PKG = "package"
 EXTRA_KEY = "_cli_extra"
 ALL_SUBCMD_KEY = "all"
 SAMPLE_PL_ARG = "sample_pipeline_interfaces"
 PROJECT_PL_ARG = "project_pipeline_interfaces"
+
 
 DEFAULT_CFG_PATH = os.path.join(os.getcwd(), LOOPER_DOTFILE_NAME)
 CLI_PROJ_ATTRS = [
@@ -212,6 +233,9 @@ CLI_PROJ_ATTRS = [
     DRY_RUN_KEY,
     FILE_CHECKS_KEY,
     SAMPLE_PL_ARG,
+    PIPESTAT_KEY,
+    DEFAULT_PIPESTAT_CONFIG_ATTR,
+    PEP_CONFIG_KEY,
 ]
 
 # resource package TSV-related consts
@@ -220,3 +244,27 @@ FILE_SIZE_COLNAME = "max_file_size"
 IMAGE_EXTS = (".png", ".jpg", ".jpeg", ".svg", ".gif")
 # this strongly depends on pypiper's profile.tsv format
 PROFILE_COLNAMES = ["pid", "hash", "cid", "runtime", "mem", "cmd", "lock"]
+
+
+# Argument option names
+
+SAMPLE_SELECTION_ATTRIBUTE_OPTNAME = "sel-attr"
+SAMPLE_EXCLUSION_OPTNAME = "sel-excl"
+SAMPLE_INCLUSION_OPTNAME = "sel-incl"
+SAMPLE_SELECTION_FLAG_OPTNAME = "sel-flag"
+SAMPLE_EXCLUSION_FLAG_OPTNAME = "exc-flag"
+
+MESSAGE_BY_SUBCOMMAND = {
+    "run": "Run or submit sample jobs.",
+    "rerun": "Resubmit sample jobs with failed flags.",
+    "runp": "Run or submit project jobs.",
+    "table": "Write summary stats table for project samples.",
+    "report": "Create browsable HTML report of project results.",
+    "destroy": "Remove output files of the project.",
+    "check": "Check flag status of current runs.",
+    "clean": "Run clean scripts of already processed jobs.",
+    "inspect": "Print information about a project.",
+    "init": "Initialize looper config file.",
+    "init-piface": "Initialize generic pipeline interface.",
+    "link": "Create directory of symlinks for reported results.",
+}

@@ -32,8 +32,8 @@ sample_modifiers:
 
 You can also pass extra arguments using `--command-extra` like this:
 
-```
-looper run project_config.yaml --command-extra="--flavor-flag"
+```bash
+looper run --looper-config .looper.yaml --command-extra="--flavor-flag"
 ```
 
 ## 2. Project pipeline command extras
@@ -52,7 +52,7 @@ or as an argument to the `looper runp` command:
 
 
 ```bash
-looper runp project_config.yaml --command-extra="--flavor-flag"
+looper runp --looper-config .looper.yaml --command-extra="--flavor-flag"
 ```
 
 

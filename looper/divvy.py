@@ -28,7 +28,7 @@ _LOGGER = logging.getLogger(__name__)
 # This is the divvy.py submodule from divvy
 
 
-class ComputingConfiguration(yacman.YacAttMap):
+class ComputingConfiguration(yacman.YAMLConfigManager):
     """
     Represents computing configuration objects.
 
@@ -53,30 +53,30 @@ class ComputingConfiguration(yacman.YacAttMap):
             entries=entries,
             filepath=filepath,
             schema_source=DEFAULT_CONFIG_SCHEMA,
-            write_validate=True,
+            validate_on_write=True,
         )
 
-        if not hasattr(self, "compute_packages"):
+        if not "compute_packages" in self:
             raise Exception(
                 "Your divvy config file is not in divvy config format "
                 "(it lacks a compute_packages section): '{}'".format(filepath)
             )
             # We require that compute_packages be present, even if empty
-            self.compute_packages = {}
+            self["compute_packages"] = {}
 
         # Initialize default compute settings.
         _LOGGER.debug("Establishing project compute settings")
         self.compute = None
         self.setdefault("adapters", None)
         self.activate_package(DEFAULT_COMPUTE_RESOURCES_NAME)
-        self.config_file = self["__internal"].file_path
+        self.config_file = self.filepath
 
     def write(self, filename=None):
         super(ComputingConfiguration, self).write(filepath=filename, exclude_case=True)
         filename = filename or getattr(self, yacman.FILEPATH_KEY)
         filedir = os.path.dirname(filename)
         # For this object, we *also* have to write the template files
-        for pkg_name, pkg in self.compute_packages.items():
+        for pkg_name, pkg in self["compute_packages"].items():
             print(pkg)
             destfile = os.path.join(filedir, os.path.basename(pkg.submission_template))
             shutil.copyfile(pkg.submission_template, destfile)
@@ -109,7 +109,7 @@ class ComputingConfiguration(yacman.YacAttMap):
 
         :return str: submission script content template for current state
         """
-        with open(self.compute.submission_template, "r") as f:
+        with open(self.compute["submission_template"], "r") as f:
             return f.read()
 
     @property
@@ -145,28 +145,28 @@ class ComputingConfiguration(yacman.YacAttMap):
 
         if (
             package_name
-            and self.compute_packages
-            and package_name in self.compute_packages
+            and self["compute_packages"]
+            and package_name in self["compute_packages"]
         ):
             # Augment compute, creating it if needed.
             if self.compute is None:
                 _LOGGER.debug("Creating Project compute")
-                self.compute = yacman.YacAttMap()
+                self.compute = yacman.YAMLConfigManager()
                 _LOGGER.debug(
                     "Adding entries for package_name '{}'".format(package_name)
                 )
 
-            self.compute.add_entries(self.compute_packages[package_name])
+            self.compute.update(self["compute_packages"][package_name])
 
             # Ensure submission template is absolute. This *used to be* handled
             # at update (so the paths were stored as absolutes in the packages),
             # but now, it makes more sense to do it here so we can piggyback on
             # the default update() method and not even have to do that.
-            if not os.path.isabs(self.compute.submission_template):
+            if not os.path.isabs(self.compute["submission_template"]):
                 try:
-                    self.compute.submission_template = os.path.join(
-                        os.path.dirname(self["__internal"].file_path),
-                        self.compute.submission_template,
+                    self.compute["submission_template"] = os.path.join(
+                        os.path.dirname(self.filepath),
+                        self.compute["submission_template"],
                     )
                 except AttributeError as e:
                     # Environment and environment compute should at least have been
@@ -174,7 +174,7 @@ class ComputingConfiguration(yacman.YacAttMap):
                     _LOGGER.error(str(e))
 
             _LOGGER.debug(
-                "Submit template set to: {}".format(self.compute.submission_template)
+                "Submit template set to: {}".format(self.compute["submission_template"])
             )
 
             return True
@@ -184,7 +184,7 @@ class ComputingConfiguration(yacman.YacAttMap):
             # both present--but don't evaluate to True--is fairly harmless.
             _LOGGER.debug(
                 "Can't activate package. compute_packages = {}".format(
-                    self.compute_packages
+                    self["compute_packages"]
                 )
             )
 
@@ -214,7 +214,7 @@ class ComputingConfiguration(yacman.YacAttMap):
 
         :return set[str]: names of available compute packages
         """
-        return set(self.compute_packages.keys())
+        return set(self["compute_packages"].keys())
 
     def reset_active_settings(self):
         """
@@ -248,13 +248,13 @@ class ComputingConfiguration(yacman.YacAttMap):
         package-specific set of adapters, if any defined in 'adapters' section
         under currently active compute package.
 
-        :return yacman.YacAttMap: current adapters mapping
+        :return yacman.YAMLConfigManager: current adapters mapping
         """
-        adapters = yacman.YacAttMap()
-        if "adapters" in self and self.adapters is not None:
-            adapters.update(self.adapters)
+        adapters = yacman.YAMLConfigManager()
+        if "adapters" in self and self["adapters"] is not None:
+            adapters.update(self["adapters"])
         if "compute" in self and "adapters" in self.compute:
-            adapters.update(self.compute.adapters)
+            adapters.update(self.compute["adapters"])
         if not adapters:
             _LOGGER.debug("No adapters determined in divvy configuration file.")
         return adapters
@@ -270,7 +270,9 @@ class ComputingConfiguration(yacman.YacAttMap):
                 self.submit(temp.name, extra_vars)
         else:
             script = self.write_script(output_path, extra_vars)
-            submission_command = "{} {}".format(self.compute.submission_command, script)
+            submission_command = "{} {}".format(
+                self.compute["submission_command"], script
+            )
             _LOGGER.info(submission_command)
             os.system(submission_command)
 
@@ -337,7 +339,7 @@ class ComputingConfiguration(yacman.YacAttMap):
                 if len(extra_var) > 0 and list(extra_var.keys())[0] not in exclude:
                     variables.update(extra_var)
         _LOGGER.debug(
-            "Submission template: {}".format(self.compute.submission_template)
+            "Submission template: {}".format(self.compute["submission_template"])
         )
         if output_path:
             _LOGGER.info("Writing script to {}".format(os.path.abspath(output_path)))
@@ -379,6 +381,7 @@ def select_divvy_config(filepath):
         config_env_vars=COMPUTE_SETTINGS_VARNAME,
         default_config_filepath=DEFAULT_CONFIG_FILEPATH,
         check_exist=True,
+        config_name="divvy",
     )
     _LOGGER.debug("Selected divvy config: {}".format(divcfg))
     return divcfg
@@ -415,174 +418,3 @@ def divvy_init(config_path, template_config_path):
         _LOGGER.info("Wrote new divvy configuration file: {}".format(config_path))
     else:
         _LOGGER.warning("Can't initialize, file exists: {} ".format(config_path))
-
-
-def build_argparser():
-    """
-    Builds argument parser.
-
-    :return argparse.ArgumentParser
-    """
-
-    banner = (
-        "%(prog)s - write compute job scripts that can be submitted to "
-        "any computing resource"
-    )
-    additional_description = "\nhttps://divvy.databio.org"
-
-    parser = VersionInHelpParser(
-        prog="divvy",
-        description=banner,
-        epilog=additional_description,
-        # version=__version__,
-    )
-
-    subparsers = parser.add_subparsers(dest="command")
-
-    def add_subparser(cmd, description):
-        return subparsers.add_parser(cmd, description=description, help=description)
-
-    subparser_messages = {
-        "init": "Initialize a new divvy config file",
-        "list": "List available compute packages",
-        "write": "Write a job script",
-        "submit": "Write and then submit a job script",
-        "inspect": "Inspect compute package",
-    }
-
-    sps = {}
-    for cmd, desc in subparser_messages.items():
-        sps[cmd] = add_subparser(cmd, desc)
-        # sps[cmd].add_argument(
-        #     "config", nargs="?", default=None,
-        #     help="Divvy configuration file.")
-
-    for sp in [sps["list"], sps["write"], sps["submit"], sps["inspect"]]:
-        sp.add_argument(
-            "config", nargs="?", default=None, help="Divvy configuration file."
-        )
-
-    sps["init"].add_argument("config", default=None, help="Divvy configuration file.")
-
-    for sp in [sps["inspect"]]:
-        sp.add_argument(
-            "-p",
-            "--package",
-            default=DEFAULT_COMPUTE_RESOURCES_NAME,
-            help="Select from available compute packages",
-        )
-
-    for sp in [sps["write"], sps["submit"]]:
-        sp.add_argument(
-            "-s",
-            "--settings",
-            help="YAML file with job settings to populate the template",
-        )
-
-        sp.add_argument(
-            "-p",
-            "--package",
-            default=DEFAULT_COMPUTE_RESOURCES_NAME,
-            help="Select from available compute packages",
-        )
-
-        sp.add_argument(
-            "-c",
-            "--compute",
-            nargs="+",
-            default=None,
-            help="Extra key=value variable pairs",
-        )
-
-        # sp.add_argument(
-        #         "-t", "--template",
-        #         help="Provide a template file (not yet implemented).")
-
-        sp.add_argument(
-            "-o", "--outfile", required=False, default=None, help="Output filepath"
-        )
-
-    return parser
-
-
-def main():
-    """Primary workflow"""
-
-    parser = logmuse.add_logging_options(build_argparser())
-    # args, remaining_args = parser.parse_known_args()
-    args = parser.parse_args()
-
-    logger_kwargs = {"level": args.verbosity, "devmode": args.logdev}
-    logmuse.init_logger("yacman", **logger_kwargs)
-    global _LOGGER
-    _LOGGER = logmuse.logger_via_cli(args)
-
-    if not args.command:
-        parser.print_help()
-        _LOGGER.error("No command given")
-        sys.exit(1)
-
-    if args.command == "init":
-        divcfg = args.config
-        _LOGGER.debug("Initializing divvy configuration")
-        is_writable(os.path.dirname(divcfg), check_exist=False)
-        divvy_init(divcfg, DEFAULT_CONFIG_FILEPATH)
-        sys.exit(0)
-
-    _LOGGER.debug("Divvy config: {}".format(args.config))
-    divcfg = select_divvy_config(args.config)
-    _LOGGER.info("Using divvy config: {}".format(divcfg))
-    dcc = ComputingConfiguration(filepath=divcfg)
-
-    if args.command == "list":
-        # Output header via logger and content via print so the user can
-        # redirect the list from stdout if desired without the header as clutter
-        _LOGGER.info("Available compute packages:\n")
-        print("{}".format("\n".join(dcc.list_compute_packages())))
-        sys.exit(1)
-
-    if args.command == "inspect":
-        # Output contents of selected compute package
-        _LOGGER.info("Your compute package template for: " + args.package + "\n")
-        found = False
-        for pkg_name, pkg in dcc.compute_packages.items():
-            if pkg_name == args.package:
-                found = True
-                with open(pkg.submission_template, "r") as f:
-                    print(f.read())
-                _LOGGER.info("Submission command is: " + pkg.submission_command + "\n")
-                if pkg_name == "docker":
-                    print("Docker args are: " + pkg.docker_args)
-
-        if not found:
-            _LOGGER.info("Package not found. Use 'divvy list' to see list of packages.")
-        sys.exit(1)
-
-    # Any non-divvy arguments will be passed along as key-value pairs
-    # that can be used to populate the template.
-    # keys = [str.replace(x, "--", "") for x in remaining_args[::2]]
-    # cli_vars = dict(zip(keys, remaining_args[1::2]))
-    if args.compute:
-        cli_vars = {y[0]: y[1] for y in [x.split("=") for x in args.compute]}
-    else:
-        cli_vars = {}
-
-    if args.command == "write" or args.command == "submit":
-        try:
-            dcc.activate_package(args.package)
-        except AttributeError:
-            parser.print_help(sys.stderr)
-            sys.exit(1)
-
-        if args.settings:
-            _LOGGER.info("Loading settings file: %s", args.settings)
-            with open(args.settings, "r") as f:
-                vars_groups = [cli_vars, yaml.load(f, SafeLoader)]
-        else:
-            vars_groups = [cli_vars]
-
-        _LOGGER.debug(vars_groups)
-        if args.command == "write":
-            dcc.write_script(args.outfile, vars_groups)
-        elif args.command == "submit":
-            dcc.submit(args.outfile, vars_groups)

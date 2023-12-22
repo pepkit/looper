@@ -2,6 +2,21 @@
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format.
 
+## [1.6.0] -- 2023-12-22
+
+### Added
+- `looper link` creates symlinks for results grouped by record_identifier. It requires pipestat to be configured. [#72](https://github.com/pepkit/looper/issues/72)
+- basic tab completion. 
+
+### Changed
+- looper now works with pipestat v0.6.0 and greater.
+- `looper table`, `check` now use pipestat and therefore require pipestat configuration. [#390](https://github.com/pepkit/looper/issues/390)
+- changed how looper configures pipestat [#411](https://github.com/pepkit/looper/issues/411)
+- initializing pipeline interface also writes an example `output_schema.yaml` and `count_lines.sh` pipeline
+
+### Fixed
+- filtering via attributes that are integers.
+
 ## [1.5.1] -- 2023-08-14
 
 ### Fixed
@@ -68,7 +83,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ## [1.3.1] -- 2021-06-18
 
 ### Changed
-- If remote schemas are not accessbile, the job submission doesn't fail anymore
+- If remote schemas are not accessible, the job submission doesn't fail anymore
 - Fixed a bug where looper stated "No failed flag found" when a failed flag was found
 
 ### Deprecated

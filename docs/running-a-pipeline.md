@@ -1,11 +1,11 @@
 # How to run a pipeline
 
-You first have to [define your project](defining-a-project.md). This will give you a PEP linked to a pipeline. Next, we'll run the pipeline.
+You first have to [define your project](defining-a-project.md) and a [config file](looper-config.md). This will give you a PEP linked to a pipeline. Next, we'll run the pipeline.
 
 The basic command is `looper run`. To run your pipeline, just:
 
 ```console
-looper run project_config.yaml
+looper run --looper-config .your_looper_config.yaml
 ```
 
 This will submit a job for each sample. That's basically all there is to it; after this, there's a lot of powerful options and tweaks you can do to control your jobs. Here we'll just mention a few of them.

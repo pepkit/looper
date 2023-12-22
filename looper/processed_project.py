@@ -203,7 +203,7 @@ def populate_sample_paths(sample, schema, check_exist=False):
         raise TypeError("Can only populate paths in peppy.Sample objects")
     # schema = schema[-1]  # use only first schema, in case there are imports
     if PROP_KEY in schema and "samples" in schema[PROP_KEY]:
-        _populate_paths(sample, schema[PROP_KEY]["samples"]["items"], check_exist)
+        _populate_paths(sample, schema, check_exist)
 
 
 def populate_project_paths(project, schema, check_exist=False):
