@@ -5,8 +5,8 @@ jinja2
 logmuse>=0.2.0
 pandas>=2.0.2
 pephubclient>=0.1.2
-peppy>=0.40.0.a4
-pipestat>=0.6.0a9
+peppy>=0.40.0
+pipestat>=0.6.0
 pyyaml>=3.12
 rich>=9.10.0
 ubiquerg>=0.5.2

@@ -2,11 +2,11 @@
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format.
 
-## [1.6.0] -- 2023-11-10
+## [1.6.0] -- 2023-12-22
 
 ### Added
 - `looper link` creates symlinks for results grouped by record_identifier. It requires pipestat to be configured. [#72](https://github.com/pepkit/looper/issues/72)
-- basic tab completion 
+- basic tab completion. 
 
 ### Changed
 - looper now works with pipestat v0.6.0 and greater.

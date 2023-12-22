@@ -28,7 +28,7 @@ Here you can see the command-line usage instructions for the main looper command
 ```console
 version: 1.6.0
 usage: looper [-h] [--version] [--logfile LOGFILE] [--dbg] [--silent]
-              [--verbosity V] [--logdev]
+              [--verbosity V] [--logdev] [--commands]
               {run,rerun,runp,table,report,destroy,check,clean,inspect,init,init-piface,link}
               ...
 
@@ -57,6 +57,7 @@ options:
   --silent              Silence logging. Overrides verbosity.
   --verbosity V         Set logging level (1-5 or logging module level name)
   --logdev              Expand content of logging message format.
+  --commands            show program's primary commands
 
 For subcommand-specific options, type: 'looper <subcommand> -h'
 https://github.com/pepkit/looper
