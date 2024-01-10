@@ -6,7 +6,7 @@ Each task is controlled by one of the following commands: `run`, `rerun`, `runp`
 
 - `looper run`:  Runs pipelines for each sample, for each pipeline. This will use your `compute` settings to build and submit scripts to your specified compute environment, or run them sequentially on your local computer.
 
-- `looper runp`:  Runs pipelines for each pipeline for project.
+- `looper runp`:  Runs [project-level pipelines](http://looper.databio.org/en/latest/pipeline-tiers/#project-pipelines). These are pipelines run once per project instead of once per sample.
 
 - `looper rerun`: Exactly the same as `looper run`, but only runs jobs with a failed flag.
 
