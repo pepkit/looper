@@ -1,5 +1,68 @@
+from dataclasses import dataclass
+import enum
+from typing import Optional, TypeAlias
+
 import pydantic
 import pydantic_argparse
+
+from const import MESSAGE_BY_SUBCOMMAND
+
+AllowedArgumentType: TypeAlias = str | int | bool | list
+
+
+class Command(enum.Enum):
+    """
+    Lists all supported commands
+    """
+    RUN = enum.auto()
+
+@dataclass
+class Argument:
+    """
+    CLI argument / flag definition
+    """
+    # argument name, e.g. "ignore-args"
+    name: str
+    # argument type, e.g. `bool`
+    type: type[AllowedArgumentType]
+    # argument description (will be the CLI help text)
+    description: str
+    # default value for argument (needs to be an instance of `type`)
+    # TODO: how can we constrain the type of this to be an instance of
+    # the value of the `type` field?
+    default: AllowedArgumentType
+    # set of commands this argument is used by
+    used_by: set[Command]
+
+arguments = [
+    Argument(
+        "ignore-flags",
+        bool,
+        "Ignore run status flags",
+        False,
+        {Command.RUN}
+    ),
+    Argument(
+        "time-delay",
+        int,
+        "Time delay in seconds between job submissions (min: 0, max: 30)",
+        0,
+        {Command.RUN}
+    )
+]
+
+def create_model_from_arguments(name: str, command: Command, arguments: list[Argument]) -> type[pydantic.BaseModel]:
+    """
+    Creates a `pydantic` model for a command from a list of arguments
+    """
+    return pydantic.create_model(
+    name, **{
+        arg.name: (arg.type, pydantic.Field(description=arg.description, default=arg.default))
+        for arg in arguments if command in arg.used_by
+    }
+)
+
+RunParser = create_model_from_arguments("RunParser", Command.RUN, arguments)
 
 class TopLevelParser(pydantic.BaseModel):
     """
@@ -8,7 +71,7 @@ class TopLevelParser(pydantic.BaseModel):
     - arguments that are required no matter the subcommand
     """
     # commands
-    ...
+    run: Optional[RunParser] = pydantic.Field(description=MESSAGE_BY_SUBCOMMAND["run"])
 
     # top-level arguments
     ...
