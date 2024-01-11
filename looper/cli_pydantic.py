@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 import enum
+import os
 from typing import Optional, TypeAlias
 
 import pydantic
@@ -54,6 +55,55 @@ arguments = [
         "Time delay in seconds between job submissions (min: 0, max: 30)",
         0,
         {Command.RUN}
+    ),
+    Argument(
+        "dry-run",
+        bool,
+        "Don't actually submit jobs",
+        False,
+        {Command.RUN}
+    ),
+    Argument(
+        "command-extra",
+        str,
+        "String to append to every command",
+        "",
+        {Command.RUN}
+    ),
+    Argument(
+        "command-extra-override",
+        str,
+        "Same as command-extra, but overrides values in PEP",
+        "",
+        {Command.RUN}
+    ),
+    Argument(
+        "lump",
+        int,
+        "Total input file size (GB) to batch into one job",
+        None,
+        {Command.RUN}
+    ),
+    Argument(
+        "lumpn",
+        int,
+        "Number of commands to batch into one job",
+        None,
+        {Command.RUN}
+    ),
+    Argument(
+        "limit",
+        int,
+        "Limit to n samples",
+        None,
+        {Command.RUN}
+    ),
+    Argument(
+        "skip",
+        int,
+        "Skip samples by numerical index",
+        None,
+        {Command.RUN}
     )
 ]
 
@@ -80,7 +130,28 @@ class TopLevelParser(pydantic.BaseModel):
     run: Optional[RunParser] = pydantic.Field(description=MESSAGE_BY_SUBCOMMAND["run"])
 
     # top-level arguments
-    ...
+    config_file: Optional[str] = pydantic.Field(
+        description="Project configuration file"
+    )
+    pep_config: Optional[str] = pydantic.Field(description="PEP configuration file")
+    output_dir: Optional[str] = pydantic.Field(description="Output directory")
+    sample_pipeline_interfaces: Optional[str] = pydantic.Field(
+        description="Sample pipeline interfaces definition"
+    )
+    project_pipeline_interfaces: Optional[str] = pydantic.Field(
+        description="Project pipeline interfaces definition"
+    )
+    amend: Optional[bool] = pydantic.Field(description="List of amendments to activate")
+    sel_flag: Optional[bool] = pydantic.Field(description="Selection flag")
+    exc_flag: Optional[bool] = pydantic.Field(description="Exclusion flag")
+    divvy: Optional[str] = pydantic.Field(
+        description=(
+            "Path to divvy configuration file. Default=$DIVCFG env "
+            "variable. Currently: {}".format(os.getenv("DIVCFG", None) or "not set")
+        )
+    )
+
+
 
 
 if __name__ == "__main__":
