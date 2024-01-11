@@ -9,7 +9,6 @@ from const import MESSAGE_BY_SUBCOMMAND
 
 AllowedArgumentType: TypeAlias = str | int | bool | list
 
-
 class Command(enum.Enum):
     """
     Lists all supported commands
@@ -33,6 +32,13 @@ class Argument:
     default: AllowedArgumentType
     # set of commands this argument is used by
     used_by: set[Command]
+
+    def __post_init__(self):
+        if not isinstance(self.default, self.type):
+            raise TypeError(
+                "Value for `default` needs to be of the type given in "
+                f"the `type` field ({self.type})"
+                )
 
 arguments = [
     Argument(
