@@ -29,12 +29,12 @@ class Argument:
     # default value for argument (needs to be an instance of `type`)
     # TODO: how can we constrain the type of this to be an instance of
     # the value of the `type` field?
-    default: AllowedArgumentType
+    default: None | AllowedArgumentType
     # set of commands this argument is used by
     used_by: set[Command]
 
     def __post_init__(self):
-        if not isinstance(self.default, self.type):
+        if self.default is not None and not isinstance(self.default, self.type):
             raise TypeError(
                 "Value for `default` needs to be of the type given in "
                 f"the `type` field ({self.type})"
