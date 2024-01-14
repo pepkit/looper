@@ -81,6 +81,7 @@ setup(
         "console_scripts": [
             "looper = looper.__main__:main",
             "divvy = looper.__main__:divvy_main",
+            "looper-pydantic-argparse = looper.cli_pydantic:main"
         ],
     },
     scripts=scripts,

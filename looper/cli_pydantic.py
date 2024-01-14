@@ -154,7 +154,7 @@ class TopLevelParser(pydantic.BaseModel):
 
 
 
-if __name__ == "__main__":
+def main() -> None:
     parser = pydantic_argparse.ArgumentParser(
         model=TopLevelParser,
         prog="looper",
@@ -163,3 +163,6 @@ if __name__ == "__main__":
     )
     args = parser.parse_typed_args()
     print(args)
+
+if __name__ == "__main__":
+    main()
