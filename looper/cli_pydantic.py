@@ -15,7 +15,7 @@ class Argument(pydantic.fields.FieldInfo):
     Naively, one would think one could just subclass `pydantic.Field`,
     but actually `pydantic.Field` is a function, and not a class.
     `pydantic.Field()` returns a validated `FieldInfo` instance,
-    so we instead sublcass `FieldInfo` directly and validate it in the
+    so we instead subclass `FieldInfo` directly and validate it in the
     constructor.
 
     :param str name: argument name, e.g. "ignore-args"
