@@ -114,3 +114,8 @@ class ArgumentEnum(enum.Enum):
         default=(str, None),
         description="Project configuration file",
     )
+    SETTINGS = Argument(
+        name="settings",
+        default=(str, ""),
+        description="Path to a YAML settings file with compute settings"
+    )

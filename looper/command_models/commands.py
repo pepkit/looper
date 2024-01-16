@@ -79,3 +79,4 @@ class TopLevelParser(pydantic.BaseModel):
     amend: Optional[bool] = pydantic.Field(description="Amend stuff?")
     sel_flag: Optional[bool] = pydantic.Field(description="Selection flag")
     exc_flag: Optional[bool] = pydantic.Field(description="Exclusion flag")
+    settings: Optional[str] = ArgumentEnum.SETTINGS.value.with_reduced_default()
