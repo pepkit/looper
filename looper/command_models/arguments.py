@@ -131,7 +131,7 @@ class ArgumentEnum(enum.Enum):
     )
     SAMPLE_PIPELINE_INTERFACES = Argument(
         name="sample_pipeline_interfaces",
-        default=(list, ...),
+        default=(list, []),
         description="Paths to looper sample config files"
     )
     PROJECT_PIPELINE_INTERFACES = Argument(
