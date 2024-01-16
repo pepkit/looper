@@ -65,7 +65,6 @@ class TopLevelParser(pydantic.BaseModel):
     run: Optional[RunParserModel] = pydantic.Field(description=RunParser.description)
 
     # arguments
-    exc_flag: Optional[bool] = pydantic.Field(description="Exclusion flag")
     settings: Optional[str] = ArgumentEnum.SETTINGS.value.with_reduced_default()
     pep_config: Optional[str] = ArgumentEnum.PEP_CONFIG.value.with_reduced_default()
     output_dir: Optional[str] = ArgumentEnum.OUTPUT_DIR.value.with_reduced_default()
@@ -74,3 +73,4 @@ class TopLevelParser(pydantic.BaseModel):
     project_pipeline_interfaces: list[str] = ArgumentEnum.PROJECT_PIPELINE_INTERFACES.value.with_reduced_default()
     amend: list[str] = ArgumentEnum.AMEND.value.with_reduced_default()
     sel_flag: Optional[str] = ArgumentEnum.SEL_FLAG.value.with_reduced_default()
+    exc_flag: Optional[str] = ArgumentEnum.EXC_FLAG.value.with_reduced_default()

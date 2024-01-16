@@ -149,3 +149,8 @@ class ArgumentEnum(enum.Enum):
         default=(str, ""),
         description="Sample selection flag"
     )
+    EXC_FLAG = Argument(
+        name="exc_flag",
+        default=(str, ""),
+        description="Sample exclusion flag"
+    )
