@@ -68,7 +68,6 @@ class TopLevelParser(pydantic.BaseModel):
     config_file: Optional[str] = pydantic.Field(
         description="Project configuration file"
     )
-    pep_config: Optional[str] = pydantic.Field(description="PEP configuration file")
     output_dir: Optional[str] = pydantic.Field(description="Output directory")
     sample_pipeline_interfaces: Optional[str] = pydantic.Field(
         description="Sample pipeline interfaces definition"
@@ -80,3 +79,4 @@ class TopLevelParser(pydantic.BaseModel):
     sel_flag: Optional[bool] = pydantic.Field(description="Selection flag")
     exc_flag: Optional[bool] = pydantic.Field(description="Exclusion flag")
     settings: Optional[str] = ArgumentEnum.SETTINGS.value.with_reduced_default()
+    pep_config: Optional[str] = ArgumentEnum.PEP_CONFIG.value.with_reduced_default()

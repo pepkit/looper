@@ -119,3 +119,8 @@ class ArgumentEnum(enum.Enum):
         default=(str, ""),
         description="Path to a YAML settings file with compute settings"
     )
+    PEP_CONFIG = Argument(
+        name="pep_config",
+        default=(str, None),
+        description="PEP configuration file",
+    )
