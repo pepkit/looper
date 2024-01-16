@@ -141,7 +141,7 @@ class ArgumentEnum(enum.Enum):
         )
     AMEND = Argument(
         name="amend",
-        default=(list, ...),
+        default=(list, []),
         description="List of amendments to activate"
     )
     SEL_FLAG = Argument(
