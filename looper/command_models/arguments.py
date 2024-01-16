@@ -144,3 +144,8 @@ class ArgumentEnum(enum.Enum):
         default=(list, ...),
         description="List of amendments to activate"
     )
+    SEL_FLAG = Argument(
+        name="sel_flag",
+        default=(str, ""),
+        description="Sample selection flag"
+    )
