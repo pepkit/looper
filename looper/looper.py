@@ -400,12 +400,12 @@ class Runner(Executor):
                 pipeline_interface=piface,
                 prj=self.prj,
                 compute_variables=comp_vars,
-                delay=args.time_delay,
-                extra_args=args.command_extra,
-                extra_args_override=args.command_extra_override,
-                ignore_flags=args.ignore_flags,
-                max_cmds=args.lumpn,
-                max_size=args.lump,
+                delay=args.run.time_delay,
+                extra_args=args.run.command_extra,
+                extra_args_override=args.run.command_extra_override,
+                ignore_flags=args.run.ignore_flags,
+                max_cmds=args.run.lumpn,
+                max_size=args.run.lump,
             )
             submission_conductors[piface.pipe_iface_file] = conductor
 
@@ -486,7 +486,7 @@ class Runner(Executor):
         )
         _LOGGER.info("Commands submitted: {} of {}".format(cmd_sub_total, max_cmds))
         self.debug[DEBUG_COMMANDS] = "{} of {}".format(cmd_sub_total, max_cmds)
-        if args.dry_run:
+        if args.run.dry_run:
             job_sub_total_if_real = job_sub_total
             job_sub_total = 0
             _LOGGER.info(
