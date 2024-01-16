@@ -139,3 +139,8 @@ class ArgumentEnum(enum.Enum):
         default=(list, ...),
         description="Paths to looper project config files"
         )
+    AMEND = Argument(
+        name="amend",
+        default=(list, ...),
+        description="List of amendments to activate"
+    )
