@@ -88,3 +88,8 @@ class ArgumentEnum(enum.Enum):
     SKIP = Argument(
         name="skip", default=(int, None), description="Skip samples by numerical index"
     )
+    CONFIG_FILE = Argument(
+        name="config-file",
+        default=(str, None),
+        description="Project configuration file",
+    )
