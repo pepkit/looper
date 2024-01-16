@@ -1,6 +1,6 @@
 import enum
 from dataclasses import dataclass
-from typing import Optional
+from typing import Any, Optional
 
 import pydantic
 import pydantic_argparse
@@ -23,13 +23,17 @@ class Argument(pydantic.fields.FieldInfo):
     constructor.
 
     :param str name: argument name, e.g. "ignore-args"
+    :param Any default: a tuple of the form (type, default_value). If the
+        default value is `...` (Ellipsis), then the argument is required.
+    :param str description: argument description, which will appear as the
+        help text for this argument
     :param dict kwargs: additional keyword arguments supported by
-        `FieldInfo`, such as description, default value, etc.
+        `FieldInfo`. These are passed along as they are.
     """
 
-    def __init__(self, name, **kwargs) -> None:
+    def __init__(self, name: str, default: Any, description: str, **kwargs) -> None:
         self._name = name
-        super().__init__(**kwargs)
+        super().__init__(default=default, description=description, **kwargs)
         self._validate()
 
     @property
@@ -73,7 +77,7 @@ class Command:
 class ArgumentEnum(enum.Enum):
     """
     Lists all available arguments
-    
+
     Having a single "repository" of arguments allows us to re-use them easily across different commands.
 
     TODO: not sure whether an enum is the ideal data structure for that
