@@ -41,6 +41,7 @@ def main() -> None:
     )
     args = parser.parse_typed_args()
     print(args)
+    print("#########################################")
 
     # here comes adapted `cli_looper.py` code
     looper_cfg_path = os.path.relpath(dotfile_path(), start=os.curdir)
