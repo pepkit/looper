@@ -57,7 +57,7 @@ def main() -> None:
             f"Looper config file does not exist. Use looper init to create one at {looper_cfg_path}."
         )
 
-    args = enrich_args_via_cfg(args, parser, False)
+    # args = enrich_args_via_cfg(args, parser, False)
     divcfg = (
         select_divvy_config(filepath=args.divvy) if hasattr(args, "divvy") else None
     )
