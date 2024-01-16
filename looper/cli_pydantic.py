@@ -69,6 +69,8 @@ class Command:
 class ArgumentEnum(enum.Enum):
     """
     Lists all available arguments
+    
+    Having a single "repository" of arguments allows us to re-use them easily across different commands.
 
     TODO: not sure whether an enum is the ideal data structure for that
     """
