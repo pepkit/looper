@@ -95,7 +95,7 @@ class ArgumentEnum(enum.Enum):
     )
     LUMP = Argument(
         name="lump",
-        default=(int, None),
+        default=(float, None),
         description="Total input file size (GB) to batch into one job",
     )
     LUMPN = Argument(
