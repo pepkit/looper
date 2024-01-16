@@ -1,3 +1,4 @@
+from copy import copy
 import enum
 from typing import Any
 
@@ -38,6 +39,26 @@ class Argument(pydantic.fields.FieldInfo):
         Argument name as used in the CLI, e.g. "ignore-args"
         """
         return self._name
+
+    def with_reduced_default(self) -> pydantic.fields.FieldInfo:
+        """
+        Convert to a `FieldInfo` instance with reduced default value
+
+        Returns a copy of an instance, but with the `default` attribute
+        replaced by only the default value, without the type information.
+        This is required when using an instance in a direct `pydantic`
+        model definition, instead of creating a model dynamically using
+        `pydantic.create_model`.
+
+        TODO: this is due to this issue:
+        https://github.com/pydantic/pydantic/issues/2248#issuecomment-757448447
+        and it's a bit tedious.
+
+        """
+        c = copy(self)
+        _, default_value = self.default
+        c.default = default_value
+        return c
 
 
 class ArgumentEnum(enum.Enum):
