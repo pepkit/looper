@@ -71,25 +71,25 @@ class ArgumentEnum(enum.Enum):
     """
 
     IGNORE_FLAGS = Argument(
-        name="ignore-flags",
+        name="ignore_flags",
         default=(bool, False),
         description="Ignore run status flags",
     )
     TIME_DELAY = Argument(
-        name="time-delay",
+        name="time_delay",
         default=(int, 0),
         description="Time delay in seconds between job submissions (min: 0, max: 30)",
     )
     DRY_RUN = Argument(
-        name="dry-run", default=(bool, False), description="Don't actually submit jobs"
+        name="dry_run", default=(bool, False), description="Don't actually submit jobs"
     )
     COMMAND_EXTRA = Argument(
-        name="command-extra",
+        name="command_extra",
         default=(str, ""),
         description="String to append to every command",
     )
     COMMAND_EXTRA_OVERRIDE = Argument(
-        name="command-extra-override",
+        name="command_extra_override",
         default=(str, ""),
         description="Same as command-extra, but overrides values in PEP",
     )
@@ -110,7 +110,7 @@ class ArgumentEnum(enum.Enum):
         name="skip", default=(int, None), description="Skip samples by numerical index"
     )
     CONFIG_FILE = Argument(
-        name="config-file",
+        name="config_file",
         default=(str, None),
         description="Project configuration file",
     )
