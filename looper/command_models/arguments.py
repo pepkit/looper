@@ -124,3 +124,8 @@ class ArgumentEnum(enum.Enum):
         default=(str, None),
         description="PEP configuration file",
     )
+    OUTPUT_DIR = Argument(
+        name="output_dir",
+        default=(str, None),
+        description="Output directory",
+    )
