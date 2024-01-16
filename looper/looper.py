@@ -400,7 +400,7 @@ class Runner(Executor):
                 pipeline_interface=piface,
                 prj=self.prj,
                 compute_variables=comp_vars,
-                delay=args.time_delay,
+                delay=args.run.time_delay,
                 extra_args=args.command_extra,
                 extra_args_override=args.command_extra_override,
                 ignore_flags=args.ignore_flags,
