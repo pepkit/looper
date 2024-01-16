@@ -129,3 +129,8 @@ class ArgumentEnum(enum.Enum):
         default=(str, None),
         description="Output directory",
     )
+    SAMPLE_PIPELINE_INTERFACES = Argument(
+        name="sample_pipeline_interfaces",
+        default=(list, ...),
+        description="Paths to looper sample config files"
+    )
