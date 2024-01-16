@@ -12,6 +12,10 @@ class Argument(pydantic.fields.FieldInfo):
     """
     CLI argument / flag definition
 
+    This class is designed to define CLI arguments or flags. It leverages
+    Pydantic for data validation and serves as a source of truth for multiple
+    interfaces, including a CLI.
+
     Naively, one would think one could just subclass `pydantic.Field`,
     but actually `pydantic.Field` is a function, and not a class.
     `pydantic.Field()` returns a validated `FieldInfo` instance,
