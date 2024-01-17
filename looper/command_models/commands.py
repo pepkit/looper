@@ -59,6 +59,7 @@ RunParser = Command(
 )
 RunParserModel = RunParser.create_model()
 
+SUPPORTED_COMMANDS = [RunParser]
 
 class TopLevelParser(pydantic.BaseModel):
     """
