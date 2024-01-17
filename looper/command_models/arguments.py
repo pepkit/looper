@@ -1,5 +1,5 @@
-from copy import copy
 import enum
+from copy import copy
 from typing import Any
 
 import pydantic
@@ -117,7 +117,7 @@ class ArgumentEnum(enum.Enum):
     SETTINGS = Argument(
         name="settings",
         default=(str, ""),
-        description="Path to a YAML settings file with compute settings"
+        description="Path to a YAML settings file with compute settings",
     )
     PEP_CONFIG = Argument(
         name="pep_config",
@@ -132,25 +132,19 @@ class ArgumentEnum(enum.Enum):
     SAMPLE_PIPELINE_INTERFACES = Argument(
         name="sample_pipeline_interfaces",
         default=(list, []),
-        description="Paths to looper sample config files"
+        description="Paths to looper sample config files",
     )
     PROJECT_PIPELINE_INTERFACES = Argument(
         name="project_pipeline_interfaces",
         default=(list, []),
-        description="Paths to looper project config files"
-        )
+        description="Paths to looper project config files",
+    )
     AMEND = Argument(
-        name="amend",
-        default=(list, []),
-        description="List of amendments to activate"
+        name="amend", default=(list, []), description="List of amendments to activate"
     )
     SEL_FLAG = Argument(
-        name="sel_flag",
-        default=(str, ""),
-        description="Sample selection flag"
+        name="sel_flag", default=(str, ""), description="Sample selection flag"
     )
     EXC_FLAG = Argument(
-        name="exc_flag",
-        default=(str, ""),
-        description="Sample exclusion flag"
+        name="exc_flag", default=(str, ""), description="Sample exclusion flag"
     )
