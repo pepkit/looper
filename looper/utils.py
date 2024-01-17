@@ -272,37 +272,32 @@ def enrich_args_via_cfg(parser_args, aux_parser, test_args=None):
     else:
         cli_args, _ = aux_parser.parse_known_args()
 
-    for dest in vars(parser_args):
-        if dest not in ["run"]:
-            if dest not in POSITIONAL or not hasattr(result, dest):
-                if dest in cli_args:
-                    x = getattr(cli_args, dest)
-                    r = convert_value(x) if isinstance(x, str) else x
-                elif cfg_args_all is not None and dest in cfg_args_all:
-                    if isinstance(cfg_args_all[dest], list):
-                        r = [convert_value(i) for i in cfg_args_all[dest]]
-                    else:
-                        r = convert_value(cfg_args_all[dest])
+
+    def set_single_arg(argname, default_source_namespace, result_namespace):
+        if argname not in POSITIONAL or not hasattr(result, argname):
+            if argname in cli_args:
+                cli_provided_value = getattr(cli_args, argname)
+                r = convert_value(cli_provided_value) if isinstance(cli_provided_value, str) else cli_provided_value
+            elif cfg_args_all is not None and argname in cfg_args_all:
+                if isinstance(cfg_args_all[argname], list):
+                    r = [convert_value(i) for i in cfg_args_all[argname]]
                 else:
-                    r = getattr(parser_args, dest)
-                setattr(result, dest, r)
+                    r = convert_value(cfg_args_all[argname])
+            else:
+                r = getattr(default_source_namespace, argname)
+            setattr(result_namespace, argname, r)
+
+    for top_level_argname in vars(parser_args):
+        if top_level_argname not in ["run"]:
+            # this argument is a top-level argument
+            set_single_arg(top_level_argname, parser_args, result)
         else:
-            nested_result = argparse.Namespace()
-            dest_value = getattr(parser_args, dest)
-            for nested_dest in vars(dest_value):
-                if nested_dest not in POSITIONAL or not hasattr(result, nested_dest):
-                    if nested_dest in cli_args:
-                        x = getattr(cli_args, nested_dest)
-                        r = convert_value(x) if isinstance(x, str) else x
-                    elif cfg_args_all is not None and nested_dest in cfg_args_all:
-                        if isinstance(cfg_args_all[nested_dest], list):
-                            r = [convert_value(i) for i in cfg_args_all[nested_dest]]
-                        else:
-                            r = convert_value(cfg_args_all[nested_dest])
-                    else:
-                        r = getattr(dest_value, nested_dest)
-                    setattr(nested_result, nested_dest, r)
-            setattr(result, dest, nested_result)
+            # this argument actually is a subcommand
+            enriched_command_namespace = argparse.Namespace()
+            command_namespace = getattr(parser_args, top_level_argname)
+            for argname in vars(command_namespace):
+                set_single_arg(argname, command_namespace, enriched_command_namespace)
+            setattr(result, top_level_argname, enriched_command_namespace)
     return result
 
 
