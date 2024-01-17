@@ -1,3 +1,17 @@
+"""
+CLI script using `pydantic-argparse` for parsing of arguments
+
+Arguments / commands are defined in `command_models/` and are given, eventually, as
+`pydantic` models, allowing for type-checking and validation of arguments.
+
+Note: this is only a test script so far, and coexists next to the current CLI
+(`cli_looper.py`), which uses `argparse` directly. The goal is to eventually
+replace the current CLI with a CLI based on above-mentioned `pydantic` models,
+but whether this will happen with `pydantic-argparse` or another, possibly self-
+written library is not yet clear.
+It is well possible that this script will be removed again.
+"""
+
 import os
 import sys
 
