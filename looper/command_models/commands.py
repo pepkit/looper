@@ -1,3 +1,7 @@
+"""
+`pydantic` models for `looper` commands and a wrapper class.
+"""
+
 from dataclasses import dataclass
 from typing import Optional
 

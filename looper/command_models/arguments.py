@@ -1,3 +1,7 @@
+"""
+Argument definitions via a thin wrapper around `pydantic.fields.FieldInfo`
+"""
+
 import enum
 from copy import copy
 import os
