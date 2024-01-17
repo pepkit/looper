@@ -8,12 +8,11 @@ from eido import inspect_project
 from pephubclient import PEPHubClient
 from ubiquerg import VersionInHelpParser
 
-from .command_models.commands import TopLevelParser
-
 from divvy import select_divvy_config
 
 from . import __version__
 from .cli_looper import _proc_resources_spec
+from .command_models.commands import TopLevelParser
 from .const import *
 from .divvy import DEFAULT_COMPUTE_RESOURCES_NAME, select_divvy_config
 from .exceptions import *
