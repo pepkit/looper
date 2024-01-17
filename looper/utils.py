@@ -1,22 +1,21 @@
 """ Helpers without an obvious logical home. """
 
 import argparse
-from collections import defaultdict, namedtuple
 import glob
 import itertools
-from logging import getLogger
 import os
-import sys
-from typing import *
 import re
+import sys
+from logging import getLogger
+from typing import *
 
 import jinja2
 import yaml
+from pephubclient.constants import RegistryPath
 from peppy import Project as peppyProject
 from peppy.const import *
-from ubiquerg import convert_value, expandpath, parse_registry_path
-from pephubclient.constants import RegistryPath
 from pydantic.error_wrappers import ValidationError
+from ubiquerg import convert_value, expandpath, parse_registry_path
 
 from .const import *
 from .exceptions import MisconfigurationException, RegistryPathException
