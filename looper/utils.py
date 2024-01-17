@@ -273,18 +273,36 @@ def enrich_args_via_cfg(parser_args, aux_parser, test_args=None):
         cli_args, _ = aux_parser.parse_known_args()
 
     for dest in vars(parser_args):
-        if dest not in POSITIONAL or not hasattr(result, dest):
-            if dest in cli_args:
-                x = getattr(cli_args, dest)
-                r = convert_value(x) if isinstance(x, str) else x
-            elif cfg_args_all is not None and dest in cfg_args_all:
-                if isinstance(cfg_args_all[dest], list):
-                    r = [convert_value(i) for i in cfg_args_all[dest]]
+        if dest not in ["run"]:
+            if dest not in POSITIONAL or not hasattr(result, dest):
+                if dest in cli_args:
+                    x = getattr(cli_args, dest)
+                    r = convert_value(x) if isinstance(x, str) else x
+                elif cfg_args_all is not None and dest in cfg_args_all:
+                    if isinstance(cfg_args_all[dest], list):
+                        r = [convert_value(i) for i in cfg_args_all[dest]]
+                    else:
+                        r = convert_value(cfg_args_all[dest])
                 else:
-                    r = convert_value(cfg_args_all[dest])
-            else:
-                r = getattr(parser_args, dest)
-            setattr(result, dest, r)
+                    r = getattr(parser_args, dest)
+                setattr(result, dest, r)
+        else:
+            nested_result = argparse.Namespace()
+            dest_value = getattr(parser_args, dest)
+            for nested_dest in vars(dest_value):
+                if nested_dest not in POSITIONAL or not hasattr(result, nested_dest):
+                    if nested_dest in cli_args:
+                        x = getattr(cli_args, nested_dest)
+                        r = convert_value(x) if isinstance(x, str) else x
+                    elif cfg_args_all is not None and nested_dest in cfg_args_all:
+                        if isinstance(cfg_args_all[nested_dest], list):
+                            r = [convert_value(i) for i in cfg_args_all[nested_dest]]
+                        else:
+                            r = convert_value(cfg_args_all[nested_dest])
+                    else:
+                        r = getattr(dest_value, nested_dest)
+                    setattr(nested_result, nested_dest, r)
+            setattr(result, dest, nested_result)
     return result
 
 
