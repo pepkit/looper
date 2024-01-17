@@ -1,5 +1,6 @@
 import enum
 from copy import copy
+import os
 from typing import Any
 
 import pydantic
@@ -152,4 +153,9 @@ class ArgumentEnum(enum.Enum):
     )
     EXC_FLAG = Argument(
         name="exc_flag", default=(str, ""), description="Sample exclusion flag"
+    )
+    DIVVY = Argument(
+        name="divvy", default=(str, os.getenv("DIVCFG", None)), description=(
+            "Path to divvy configuration file. Default=$DIVCFG env "
+            "variable. Currently: {}".format(os.getenv("DIVCFG", None) or "not set"))
     )
