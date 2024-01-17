@@ -19,8 +19,8 @@ from pephubclient.constants import RegistryPath
 from pydantic.error_wrappers import ValidationError
 
 from .const import *
+from .command_models.commands import SUPPORTED_COMMANDS
 from .exceptions import MisconfigurationException, RegistryPathException
-
 _LOGGER = getLogger(__name__)
 
 
@@ -289,7 +289,7 @@ def enrich_args_via_cfg(parser_args, aux_parser, test_args=None):
             setattr(result_namespace, argname, r)
 
     for top_level_argname in vars(parser_args):
-        if top_level_argname not in ["run"]:
+        if top_level_argname not in [cmd.name for cmd in SUPPORTED_COMMANDS]:
             # this argument is a top-level argument
             set_single_arg(top_level_argname, parser_args, result)
         else:
