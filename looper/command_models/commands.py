@@ -50,6 +50,7 @@ RunParser = Command(
         ArgumentEnum.LUMPN.value,
         ArgumentEnum.LIMIT.value,
         ArgumentEnum.SKIP.value,
+        ArgumentEnum.DIVVY.value
     ],
 )
 RunParserModel = RunParser.create_model()
