@@ -114,6 +114,11 @@ class ArgumentEnum(enum.Enum):
         default=(str, None),
         description="Project configuration file",
     )
+    LOOPER_CONFIG = Argument(
+        name="looper_config",
+        default=(str, None),
+        description="Looper configuration file (YAML)",
+    )
     SETTINGS = Argument(
         name="settings",
         default=(str, ""),
