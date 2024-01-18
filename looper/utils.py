@@ -20,6 +20,7 @@ from ubiquerg import convert_value, expandpath, parse_registry_path
 from .const import *
 from .command_models.commands import SUPPORTED_COMMANDS
 from .exceptions import MisconfigurationException, RegistryPathException
+
 _LOGGER = getLogger(__name__)
 
 
@@ -272,12 +273,15 @@ def enrich_args_via_cfg(parser_args, aux_parser, test_args=None):
     else:
         cli_args, _ = aux_parser.parse_known_args()
 
-
     def set_single_arg(argname, default_source_namespace, result_namespace):
         if argname not in POSITIONAL or not hasattr(result, argname):
             if argname in cli_args:
                 cli_provided_value = getattr(cli_args, argname)
-                r = convert_value(cli_provided_value) if isinstance(cli_provided_value, str) else cli_provided_value
+                r = (
+                    convert_value(cli_provided_value)
+                    if isinstance(cli_provided_value, str)
+                    else cli_provided_value
+                )
             elif cfg_args_all is not None and argname in cfg_args_all:
                 if isinstance(cfg_args_all[argname], list):
                     r = [convert_value(i) for i in cfg_args_all[argname]]
