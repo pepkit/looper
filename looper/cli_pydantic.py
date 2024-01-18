@@ -66,7 +66,9 @@ def main() -> None:
 
     args = enrich_args_via_cfg(args, parser, False)
     divcfg = (
-        select_divvy_config(filepath=args.run.divvy) if hasattr(args.run, "divvy") else None
+        select_divvy_config(filepath=args.run.divvy)
+        if hasattr(args.run, "divvy")
+        else None
     )
     # Ignore flags if user is selecting or excluding on flags:
     if args.sel_flag or args.exc_flag:

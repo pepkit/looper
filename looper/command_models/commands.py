@@ -54,12 +54,13 @@ RunParser = Command(
         ArgumentEnum.LUMPN.value,
         ArgumentEnum.LIMIT.value,
         ArgumentEnum.SKIP.value,
-        ArgumentEnum.DIVVY.value
+        ArgumentEnum.DIVVY.value,
     ],
 )
 RunParserModel = RunParser.create_model()
 
 SUPPORTED_COMMANDS = [RunParser]
+
 
 class TopLevelParser(pydantic.BaseModel):
     """
