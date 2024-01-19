@@ -14,10 +14,12 @@ It is well possible that this script will be removed again.
 
 import os
 import sys
+from argparse import Namespace
 
 import pydantic_argparse
 import yaml
 from pephubclient import PEPHubClient
+from pydantic_argparse.argparse.parser import ArgumentParser
 
 from divvy import select_divvy_config
 
@@ -38,17 +40,9 @@ from .utils import (
 )
 
 
-def main() -> None:
-    parser = pydantic_argparse.ArgumentParser(
-        model=TopLevelParser,
-        prog="looper",
-        description="pydantic-argparse demo",
-        add_help=True,
-    )
-    args = parser.parse_typed_args()
-    print(args)
-    print("#########################################")
-
+def run_looper(
+    args: Namespace | TopLevelParser, parser: ArgumentParser, http_api=False
+):
     # here comes adapted `cli_looper.py` code
     looper_cfg_path = os.path.relpath(dotfile_path(), start=os.curdir)
     try:
@@ -59,14 +53,17 @@ def main() -> None:
             setattr(args, looper_config_key, looper_config_item)
 
     except OSError:
-        parser.print_help(sys.stderr)
+        if not http_api:
+            parser.print_help(sys.stderr)
         raise ValueError(
             f"Looper config file does not exist. Use looper init to create one at {looper_cfg_path}."
         )
 
-    args = enrich_args_via_cfg(args, parser, False)
+    args = enrich_args_via_cfg(args, parser, False, http_api)
     divcfg = (
-        select_divvy_config(filepath=args.run.divvy) if hasattr(args.run, "divvy") else None
+        select_divvy_config(filepath=args.run.divvy)
+        if hasattr(args.run, "divvy")
+        else None
     )
     # Ignore flags if user is selecting or excluding on flags:
     if args.sel_flag or args.exc_flag:
@@ -135,6 +132,19 @@ def main() -> None:
                     )
                 )
                 raise
+
+
+def main() -> None:
+    parser = pydantic_argparse.ArgumentParser(
+        model=TopLevelParser,
+        prog="looper",
+        description="pydantic-argparse demo",
+        add_help=True,
+    )
+    args = parser.parse_typed_args()
+    print(args)
+    print("#########################################")
+    run_looper(args, parser)
 
 
 if __name__ == "__main__":
