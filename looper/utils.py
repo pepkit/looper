@@ -17,9 +17,10 @@ from peppy.const import *
 from pydantic.error_wrappers import ValidationError
 from ubiquerg import convert_value, expandpath, parse_registry_path
 
-from .const import *
 from .command_models.commands import SUPPORTED_COMMANDS
+from .const import *
 from .exceptions import MisconfigurationException, RegistryPathException
+
 _LOGGER = getLogger(__name__)
 
 
@@ -249,7 +250,7 @@ def read_yaml_file(filepath):
     return data
 
 
-def enrich_args_via_cfg(parser_args, aux_parser, test_args=None):
+def enrich_args_via_cfg(parser_args, aux_parser, test_args=None, http_api=False):
     """
     Read in a looper dotfile and set arguments.
 
@@ -266,18 +267,24 @@ def enrich_args_via_cfg(parser_args, aux_parser, test_args=None):
         else dict()
     )
     result = argparse.Namespace()
-    if test_args:
-        cli_args, _ = aux_parser.parse_known_args(args=test_args)
+    if not http_api:
+        if test_args:
+            cli_args, _ = aux_parser.parse_known_args(args=test_args)
 
+        else:
+            cli_args, _ = aux_parser.parse_known_args()
     else:
-        cli_args, _ = aux_parser.parse_known_args()
-
+        cli_args = []
 
     def set_single_arg(argname, default_source_namespace, result_namespace):
         if argname not in POSITIONAL or not hasattr(result, argname):
             if argname in cli_args:
                 cli_provided_value = getattr(cli_args, argname)
-                r = convert_value(cli_provided_value) if isinstance(cli_provided_value, str) else cli_provided_value
+                r = (
+                    convert_value(cli_provided_value)
+                    if isinstance(cli_provided_value, str)
+                    else cli_provided_value
+                )
             elif cfg_args_all is not None and argname in cfg_args_all:
                 if isinstance(cfg_args_all[argname], list):
                     r = [convert_value(i) for i in cfg_args_all[argname]]
