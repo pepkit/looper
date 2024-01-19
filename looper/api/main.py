@@ -21,19 +21,20 @@ def create_argparse_namespace(top_level_model: TopLevelParser) -> Namespace:
         the parsed command-line arguments.
     """
     namespace = Namespace()
-    for arg in vars(top_level_model):
-        if arg not in [cmd.name for cmd in SUPPORTED_COMMANDS]:
-            setattr(namespace, arg, getattr(top_level_model, arg))
+
+    for argname, value in vars(top_level_model).items():
+        if argname not in [cmd.name for cmd in SUPPORTED_COMMANDS]:
+            setattr(namespace, argname, value)
         else:
             command_namespace = Namespace()
-            command_namespace_args = getattr(top_level_model, arg)
-            for argname in vars(command_namespace_args):
+            command_namespace_args = value
+            for command_argname, command_arg_value in vars(command_namespace_args).items():
                 setattr(
                     command_namespace,
-                    argname,
-                    getattr(command_namespace_args, argname),
+                    command_argname,
+                    command_arg_value,
                 )
-            setattr(namespace, arg, command_namespace)
+            setattr(namespace, argname, command_namespace)
     return namespace
 
 
