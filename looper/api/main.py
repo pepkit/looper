@@ -41,7 +41,7 @@ def create_argparse_namespace(top_level_model: TopLevelParser) -> Namespace:
 
 
 @app.post("/")
-async def run_endpoint(top_level_model: TopLevelParser):
+async def main_endpoint(top_level_model: TopLevelParser):
     argparse_namespace = create_argparse_namespace(top_level_model)
     stdout_stream = io.StringIO()
     stderr_stream = io.StringIO()
