@@ -65,7 +65,7 @@ def run_cmd(args: Namespace):
     print("#####################################")
     print(args)
 
-    # args = enrich_args_via_cfg(args, parser, False)
+    args = enrich_args_via_cfg(args, None, False, True)
     divcfg = (
         select_divvy_config(filepath=args.run.divvy)
         if hasattr(args.run, "divvy")
