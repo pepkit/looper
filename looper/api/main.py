@@ -38,7 +38,7 @@ def create_argparse_namespace(top_level_model: TopLevelParser) -> Namespace:
     return namespace
 
 
-@app.post("/run")
+@app.post("/")
 async def run_endpoint(top_level_model: TopLevelParser):
     argparse_namespace = create_argparse_namespace(top_level_model)
     run_looper(argparse_namespace, None, True)
