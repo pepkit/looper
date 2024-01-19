@@ -1,4 +1,6 @@
 from argparse import Namespace
+from contextlib import redirect_stderr, redirect_stdout
+import io
 
 from fastapi import FastAPI
 from looper.cli_pydantic import run_looper
@@ -41,5 +43,11 @@ def create_argparse_namespace(top_level_model: TopLevelParser) -> Namespace:
 @app.post("/")
 async def run_endpoint(top_level_model: TopLevelParser):
     argparse_namespace = create_argparse_namespace(top_level_model)
-    run_looper(argparse_namespace, None, True)
-    return top_level_model
+    stdout_stream = io.StringIO()
+    stderr_stream = io.StringIO()
+    with redirect_stderr(stderr_stream), redirect_stdout(stdout_stream):
+        run_looper(argparse_namespace, None, True)
+    return {
+        "stdout": stdout_stream.getvalue(),
+        "stderr": stderr_stream.getvalue()
+    }
