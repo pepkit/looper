@@ -23,7 +23,7 @@ from divvy import select_divvy_config
 
 from . import __version__
 from .cli_looper import _proc_resources_spec
-from .command_models.commands import TopLevelParser
+from .command_models.commands import SUPPORTED_COMMANDS, TopLevelParser
 from .const import *
 from .divvy import DEFAULT_COMPUTE_RESOURCES_NAME, select_divvy_config
 from .exceptions import *
@@ -49,6 +49,16 @@ def main() -> None:
     print(args)
     print("#########################################")
 
+    # Find out which subcommand was used
+    supported_command_names = [cmd.name for cmd in SUPPORTED_COMMANDS]
+    subcommand_valued_args = [
+        (arg, value)
+        for arg, value in vars(args).items()
+        if arg and arg in supported_command_names
+    ]
+    # Only one subcommand argument will be not `None`, else we found a bug in `pydantic-argparse`
+    [(subcommand_name, subcommand_args)] = subcommand_valued_args
+
     # here comes adapted `cli_looper.py` code
     looper_cfg_path = os.path.relpath(dotfile_path(), start=os.curdir)
     try:
@@ -66,8 +76,8 @@ def main() -> None:
 
     args = enrich_args_via_cfg(args, parser, False)
     divcfg = (
-        select_divvy_config(filepath=args.run.divvy)
-        if hasattr(args.run, "divvy")
+        select_divvy_config(filepath=subcommand_args.divvy)
+        if hasattr(subcommand_args, "divvy")
         else None
     )
     # Ignore flags if user is selecting or excluding on flags:
@@ -122,8 +132,7 @@ def main() -> None:
         selector_flag=None,
         exclusion_flag=None,
     ) as prj:
-        command = "run"
-        if command == "run":
+        if subcommand_name == "run":
             run = Runner(prj)
             try:
                 compute_kwargs = _proc_resources_spec(args)
