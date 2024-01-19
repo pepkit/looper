@@ -163,6 +163,6 @@ class ArgumentEnum(enum.Enum):
         default=(str, os.getenv("DIVCFG", None)),
         description=(
             "Path to divvy configuration file. Default=$DIVCFG env "
-            "variable. Currently: {}".format(os.getenv("DIVCFG", None) or "not set")
+            "variable. Currently: {}".format(os.getenv("DIVCFG") or "not set")
         ),
     )
