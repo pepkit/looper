@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import os
 import sys
+from argparse import Namespace
 
 import logmuse
 import pydantic_argparse
@@ -46,7 +47,7 @@ from .utils import (
 )
 
 
-def run_looper(args: TopLevelParser, parser: ArgumentParser):
+def run_looper(args: Namespace | TopLevelParser, parser: ArgumentParser, http_api=False):
     # here comes adapted `cli_looper.py` code
     global _LOGGER
 
@@ -77,11 +78,11 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser):
                 setattr(args, looper_config_key, looper_config_item)
 
         except OSError:
-            parser.print_help(sys.stderr)
-            _LOGGER.warning(
+            if not http_api:
+                parser.print_help(sys.stderr)
+            raise ValueError(
                 f"Looper config file does not exist. Use looper init to create one at {looper_cfg_path}."
             )
-            sys.exit(1)
     else:
         _LOGGER.warning(
             "This PEP configures looper through the project config. This approach is deprecated and will "
@@ -89,7 +90,7 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser):
             "looper.databio.org/en/latest/looper-config"
         )
 
-    args = enrich_args_via_cfg(args, parser, False)
+    args = enrich_args_via_cfg(args, parser, False, http_api)
 
     # If project pipeline interface defined in the cli, change name to: "pipeline_interface"
     if vars(args)[PROJECT_PL_ARG]:
@@ -97,9 +98,10 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser):
 
     divcfg = (
         select_divvy_config(filepath=subcommand_args.divvy)
-        if hasattr(subcommand_args, "divvy")
-        else None
+        if hasattr(subcommand_args, "divvy") else None
     )
+    args = enrich_args_via_cfg(args, parser, False, http_api)
+
     # Ignore flags if user is selecting or excluding on flags:
     if args.sel_flag or args.exc_flag:
         args.ignore_flags = True
@@ -176,6 +178,11 @@ def main() -> None:
         add_help=True,
     )
     args = parser.parse_typed_args()
+<<<<<<< HEAD
+=======
+    print(args)
+    print("#########################################")
+>>>>>>> 0141fb3 (Re-organize cli_pydantic.py to run looper run via CLI and http-api)
     run_looper(args, parser)
 
 
