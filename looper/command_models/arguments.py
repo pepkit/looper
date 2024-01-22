@@ -166,3 +166,21 @@ class ArgumentEnum(enum.Enum):
             "variable. Currently: {}".format(os.getenv("DIVCFG") or "not set")
         ),
     )
+
+    # Arguments for logger compatible with logmuse
+    SILENT = Argument(
+        name="silent", default=(bool, False), description="Whether to silence logging"
+    )
+    VERBOSITY = Argument(
+        name="verbosity",
+        default=(int, None),
+        description="Alternate mode of expression for logging level that better "
+        "accords with intuition about how to convey this.",
+    )
+    LOGDEV = Argument(
+        name="logdev",
+        default=(bool, False),
+        description="Whether to log in development mode; possibly among other "
+        "behavioral changes to logs handling, use a more information-rich "
+        "message format template.",
+    )
