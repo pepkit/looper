@@ -178,11 +178,6 @@ def main() -> None:
         add_help=True,
     )
     args = parser.parse_typed_args()
-<<<<<<< HEAD
-=======
-    print(args)
-    print("#########################################")
->>>>>>> 0141fb3 (Re-organize cli_pydantic.py to run looper run via CLI and http-api)
     run_looper(args, parser)
 
 
