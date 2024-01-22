@@ -89,3 +89,8 @@ class TopLevelParser(pydantic.BaseModel):
     amend: Optional[List[str]] = ArgumentEnum.AMEND.value.with_reduced_default()
     sel_flag: Optional[str] = ArgumentEnum.SEL_FLAG.value.with_reduced_default()
     exc_flag: Optional[str] = ArgumentEnum.EXC_FLAG.value.with_reduced_default()
+
+    # arguments for logging
+    silent: Optional[bool] = ArgumentEnum.SILENT.value.with_reduced_default()
+    verbosity: Optional[int] = ArgumentEnum.VERBOSITY.value.with_reduced_default()
+    logdev: Optional[bool] = ArgumentEnum.LOGDEV.value.with_reduced_default()
