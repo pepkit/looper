@@ -16,6 +16,7 @@ import os
 import sys
 from argparse import Namespace
 
+import logmuse
 import pydantic_argparse
 import yaml
 from pephubclient import PEPHubClient
@@ -25,7 +26,7 @@ from divvy import select_divvy_config
 
 from . import __version__
 from .cli_looper import _proc_resources_spec
-from .command_models.commands import TopLevelParser
+from .command_models.commands import SUPPORTED_COMMANDS, TopLevelParser
 from .const import *
 from .divvy import DEFAULT_COMPUTE_RESOURCES_NAME, select_divvy_config
 from .exceptions import *
@@ -36,6 +37,7 @@ from .utils import (
     dotfile_path,
     enrich_args_via_cfg,
     is_registry_path,
+    read_looper_config_file,
     read_looper_dotfile,
 )
 
@@ -44,22 +46,46 @@ def run_looper(
     args: Namespace | TopLevelParser, parser: ArgumentParser, http_api=False
 ):
     # here comes adapted `cli_looper.py` code
-    looper_cfg_path = os.path.relpath(dotfile_path(), start=os.curdir)
-    try:
-        looper_config_dict = read_looper_dotfile()
+    global _LOGGER
 
-        for looper_config_key, looper_config_item in looper_config_dict.items():
-            print(looper_config_key, looper_config_item)
-            setattr(args, looper_config_key, looper_config_item)
+    _LOGGER = logmuse.logger_via_cli(args, make_root=True)
+    args_command = [
+        attr for attr in [cmd.name for cmd in SUPPORTED_COMMANDS] if hasattr(args, attr)
+    ]
+    _LOGGER.info("Looper version: {}\nCommand: {}".format(__version__, args_command))
 
-    except OSError:
-        if not http_api:
-            parser.print_help(sys.stderr)
-        raise ValueError(
-            f"Looper config file does not exist. Use looper init to create one at {looper_cfg_path}."
+    if args.config_file is None:
+        looper_cfg_path = os.path.relpath(dotfile_path(), start=os.curdir)
+        try:
+            if args.looper_config:
+                looper_config_dict = read_looper_config_file(args.looper_config)
+            else:
+                looper_config_dict = read_looper_dotfile()
+                _LOGGER.info(f"Using looper config ({looper_cfg_path}).")
+
+            for looper_config_key, looper_config_item in looper_config_dict.items():
+                setattr(args, looper_config_key, looper_config_item)
+
+        except OSError:
+            if not http_api:
+                parser.print_help(sys.stderr)
+            _LOGGER.warning(
+                f"Looper config file does not exist. Use looper init to create one at {looper_cfg_path}."
+            )
+            sys.exit(1)
+    else:
+        _LOGGER.warning(
+            "This PEP configures looper through the project config. This approach is deprecated and will "
+            "be removed in future versions. Please use a looper config file. For more information see "
+            "looper.databio.org/en/latest/looper-config"
         )
 
     args = enrich_args_via_cfg(args, parser, False, http_api)
+
+    # If project pipeline interface defined in the cli, change name to: "pipeline_interface"
+    if vars(args)[PROJECT_PL_ARG]:
+        args.pipeline_interfaces = vars(args)[PROJECT_PL_ARG]
+
     divcfg = (
         select_divvy_config(filepath=args.run.divvy)
         if hasattr(args.run, "divvy")
