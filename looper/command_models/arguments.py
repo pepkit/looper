@@ -3,8 +3,8 @@ Argument definitions via a thin wrapper around `pydantic.fields.FieldInfo`
 """
 
 import enum
-from copy import copy
 import os
+from copy import copy
 from typing import Any
 
 import pydantic
@@ -159,7 +159,10 @@ class ArgumentEnum(enum.Enum):
         name="exc_flag", default=(str, ""), description="Sample exclusion flag"
     )
     DIVVY = Argument(
-        name="divvy", default=(str, os.getenv("DIVCFG", None)), description=(
+        name="divvy",
+        default=(str, os.getenv("DIVCFG", None)),
+        description=(
             "Path to divvy configuration file. Default=$DIVCFG env "
-            "variable. Currently: {}".format(os.getenv("DIVCFG", None) or "not set"))
+            "variable. Currently: {}".format(os.getenv("DIVCFG", None) or "not set")
+        ),
     )
