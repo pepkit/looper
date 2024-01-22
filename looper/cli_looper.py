@@ -501,6 +501,12 @@ def build_parser():
             version="{}".format(" ".join(subparsers.choices.keys())),
         )
 
+        report_subparser.add_argument(
+            "--portable",
+            help="Makes html report portable.",
+            action="store_true",
+        )
+
         result.append(parser)
     return result
 

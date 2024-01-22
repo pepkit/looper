@@ -547,12 +547,16 @@ class Reporter(Executor):
         p = self.prj
         project_level = args.project
 
+        portable = args.portable
+
         if project_level:
             psms = self.prj.get_pipestat_managers(project_level=True)
             print(psms)
             for name, psm in psms.items():
                 # Summarize will generate the static HTML Report Function
-                report_directory = psm.summarize(looper_samples=self.prj.samples)
+                report_directory = psm.summarize(
+                    looper_samples=self.prj.samples, portable=portable
+                )
                 print(f"Report directory: {report_directory}")
         else:
             for piface_source_samples in self.prj._samples_by_piface(
@@ -567,7 +571,9 @@ class Reporter(Executor):
                 print(psms)
                 for name, psm in psms.items():
                     # Summarize will generate the static HTML Report Function
-                    report_directory = psm.summarize(looper_samples=self.prj.samples)
+                    report_directory = psm.summarize(
+                        looper_samples=self.prj.samples, portable=portable
+                    )
                     print(f"Report directory: {report_directory}")
 
 
