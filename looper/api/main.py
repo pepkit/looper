@@ -1,11 +1,11 @@
+import io
 from argparse import Namespace
 from contextlib import redirect_stderr, redirect_stdout
-import io
 
+import pydantic
 from fastapi import FastAPI
 from looper.cli_pydantic import run_looper
 from looper.command_models.commands import SUPPORTED_COMMANDS, TopLevelParser
-import pydantic
 
 app = FastAPI(validate_model=True)
 
@@ -31,7 +31,9 @@ def create_argparse_namespace(top_level_model: TopLevelParser) -> Namespace:
         else:
             command_namespace = Namespace()
             command_namespace_args = value
-            for command_argname, command_arg_value in vars(command_namespace_args).items():
+            for command_argname, command_arg_value in vars(
+                command_namespace_args
+            ).items():
                 setattr(
                     command_namespace,
                     command_argname,
@@ -40,12 +42,18 @@ def create_argparse_namespace(top_level_model: TopLevelParser) -> Namespace:
             setattr(namespace, argname, command_namespace)
     return namespace
 
+
 class MainResponse(pydantic.BaseModel):
     """
     Response of the main endpoint.
     """
-    stdout: str = pydantic.Field(description="Standard output produced by `looper` while running a command")
-    stderr: str = pydantic.Field(description="Standard error output produced by `looper` while running a command")
+
+    stdout: str = pydantic.Field(
+        description="Standard output produced by `looper` while running a command"
+    )
+    stderr: str = pydantic.Field(
+        description="Standard error output produced by `looper` while running a command"
+    )
 
 
 @app.post("/")
@@ -65,6 +73,5 @@ async def main_endpoint(top_level_model: TopLevelParser) -> MainResponse:
         # how to solve this.
         run_looper(argparse_namespace, None, True)
     return MainResponse(
-        stdout=stdout_stream.getvalue(),
-        stderr=stderr_stream.getvalue()
+        stdout=stdout_stream.getvalue(), stderr=stderr_stream.getvalue()
     )
