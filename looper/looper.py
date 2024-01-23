@@ -406,6 +406,7 @@ class Runner(Executor):
                 ignore_flags=args.ignore_flags,
                 max_cmds=args.lump_n,
                 max_size=args.lump_s,
+                max_jobs=args.lump_j,
             )
             submission_conductors[piface.pipe_iface_file] = conductor
 

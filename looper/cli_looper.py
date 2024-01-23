@@ -233,6 +233,14 @@ def build_parser():
                 type=html_range(min_val=1, max_val="num_samples", value=1),
                 help="Lump by number: number of samples to batch into one job",
             )
+            subparser.add_argument(
+                "-j",
+                "--lump-j",
+                default=None,
+                metavar="J",
+                type=int,
+                help="Lump samples into number of jobs.",
+            )
 
         check_subparser.add_argument(
             "--describe-codes",
