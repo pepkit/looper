@@ -577,6 +577,23 @@ class TestLooperConfig:
             raise pytest.fail(f"DID RAISE {err}")
         os.remove(dot_file_path)
 
+    @pytest.mark.parametrize("cmd", ["run", "runp"])
+    def test_config_dict(self, prep_temp_pep, cmd, dotfile_path):
+        tp = prep_temp_pep
+        x = [
+            "run",
+            "-d",
+            "--looper-dict",
+            f"pep_config={tp}",
+            "output_dir=results",
+            "sample_pipeline_interface=pipeline/pipeline_interface.yaml",
+        ]
+        try:
+            result = main(test_args=x)
+        except Exception as err:
+            raise pytest.fail(f"DID RAISE: {err}")
+        print(result)
+
 
 class TestLooperPEPhub:
     @pytest.mark.parametrize(
