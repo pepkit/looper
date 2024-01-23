@@ -780,3 +780,18 @@ def main(test_args=None):
                 "The inspect feature has moved to eido and will be removed in the future release of looper. "
                 "Use `eido inspect` from now on.",
             )
+
+
+def wrapped_main():
+    from io import StringIO
+    from contextlib import redirect_stderr, redirect_stdout
+    stdout_stream = StringIO()
+    stderr_stream = StringIO()
+    with redirect_stderr(stderr_stream), redirect_stdout(stdout_stream):
+        main()
+
+    print("Captured stderr:")
+    print(stderr_stream.getvalue())
+
+    print("Captured stdout:")
+    print(stdout_stream.getvalue())
