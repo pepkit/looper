@@ -49,10 +49,18 @@ def run_looper(
     global _LOGGER
 
     _LOGGER = logmuse.logger_via_cli(args, make_root=True)
-    args_command = [
-        attr for attr in [cmd.name for cmd in SUPPORTED_COMMANDS] if hasattr(args, attr)
+
+    # Find out which subcommand was used
+    supported_command_names = [cmd.name for cmd in SUPPORTED_COMMANDS]
+    subcommand_valued_args = [
+        (arg, value)
+        for arg, value in vars(args).items()
+        if arg and arg in supported_command_names
     ]
-    _LOGGER.info("Looper version: {}\nCommand: {}".format(__version__, args_command))
+    # Only one subcommand argument will be not `None`, else we found a bug in `pydantic-argparse`
+    [(subcommand_name, subcommand_args)] = subcommand_valued_args
+
+    _LOGGER.info("Looper version: {}\nCommand: {}".format(__version__, subcommand_name))
 
     if args.config_file is None:
         looper_cfg_path = os.path.relpath(dotfile_path(), start=os.curdir)
