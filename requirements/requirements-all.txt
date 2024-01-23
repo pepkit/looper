@@ -11,6 +11,6 @@ pyyaml>=3.12
 rich>=9.10.0
 ubiquerg>=0.5.2
 yacman>=0.9.2
-pydantic-argparse==0.8.0
+pydantic-argparse>=0.8.0
 fastapi
 uvicorn

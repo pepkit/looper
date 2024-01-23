@@ -87,8 +87,8 @@ def run_looper(
         args.pipeline_interfaces = vars(args)[PROJECT_PL_ARG]
 
     divcfg = (
-        select_divvy_config(filepath=args.run.divvy)
-        if hasattr(args.run, "divvy")
+        select_divvy_config(filepath=subcommand_args.divvy)
+        if hasattr(subcommand_args, "divvy")
         else None
     )
     # Ignore flags if user is selecting or excluding on flags:
@@ -143,8 +143,7 @@ def run_looper(
         selector_flag=None,
         exclusion_flag=None,
     ) as prj:
-        command = "run"
-        if command == "run":
+        if subcommand_name == "run":
             run = Runner(prj)
             try:
                 compute_kwargs = _proc_resources_spec(args)
