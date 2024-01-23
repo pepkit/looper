@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import os
 import sys
+import uuid
 from argparse import Namespace
 
 import logmuse
@@ -51,6 +52,7 @@ def run_looper(args: Namespace | TopLevelParser, parser: ArgumentParser, http_ap
     # here comes adapted `cli_looper.py` code
     global _LOGGER
 
+    _UUID = str(uuid.uuid4())
     _LOGGER = logmuse.logger_via_cli(args, make_root=True)
 
     # Find out which subcommand was used
@@ -158,6 +160,8 @@ def run_looper(args: Namespace | TopLevelParser, parser: ArgumentParser, http_ap
             run = Runner(prj)
             try:
                 compute_kwargs = _proc_resources_spec(args)
+                if http_api:
+                    return (run(args, rerun=False, **compute_kwargs), _UUID)
                 return run(args, rerun=False, **compute_kwargs)
             except SampleFailedException:
                 sys.exit(1)

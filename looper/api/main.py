@@ -9,6 +9,8 @@ from looper.command_models.commands import SUPPORTED_COMMANDS, TopLevelParser
 
 app = FastAPI(validate_model=True)
 
+_UUID = None
+
 
 def create_argparse_namespace(top_level_model: TopLevelParser) -> Namespace:
     """
@@ -58,6 +60,7 @@ class MainResponse(pydantic.BaseModel):
 
 @app.post("/")
 async def main_endpoint(top_level_model: TopLevelParser) -> MainResponse:
+    global _UUID
     argparse_namespace = create_argparse_namespace(top_level_model)
     stdout_stream = io.StringIO()
     stderr_stream = io.StringIO()
@@ -71,7 +74,17 @@ async def main_endpoint(top_level_model: TopLevelParser) -> MainResponse:
         # with an error stemming from the `yacman` library about `signal.signal` only
         # working in the main thread of the main interpreter. We have to investigate
         # how to solve this.
-        run_looper(argparse_namespace, None, True)
+        _, _UUID = run_looper(argparse_namespace, None, True)
     return MainResponse(
         stdout=stdout_stream.getvalue(), stderr=stderr_stream.getvalue()
     )
+
+
+@app.get("/status")
+async def get_status():
+    global _UUID
+    if _UUID:
+        print(_UUID)
+        return {"UUID": _UUID}
+    else:
+        return {"UUID": "Not found"}

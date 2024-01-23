@@ -15,3 +15,4 @@ pydantic-argparse>=0.8.0
 pydantic-argparse==0.8.0
 fastapi
 uvicorn
+uuid
