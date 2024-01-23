@@ -439,7 +439,7 @@ class TestLooperRunSubmissionScript:
 
     def test_looper_lumping(self, prep_temp_pep):
         tp = prep_temp_pep
-        x = test_args_expansion(tp, "run", ["--lumpn", "2"])
+        x = test_args_expansion(tp, "run", ["--lump-n", "2"])
         try:
             main(test_args=x)
         except Exception:
