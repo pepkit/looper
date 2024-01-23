@@ -2,6 +2,7 @@
 
 import argparse
 from collections import defaultdict, namedtuple
+import copy
 import glob
 import itertools
 from logging import getLogger
@@ -480,7 +481,9 @@ def initiate_looper_config(
     return True
 
 
-def read_looper_config_file(looper_config_path: str) -> dict:
+def read_looper_config_file(
+    looper_config_path: str, args_config_dict: Optional[dict] = None
+) -> dict:
     """
     Read Looper config file which includes:
     - PEP config (local path or pephub registry path)
@@ -488,12 +491,16 @@ def read_looper_config_file(looper_config_path: str) -> dict:
     - looper pipeline interfaces
 
     :param str looper_config_path: path to looper config path
-    :return dict: looper config file content
+    :param dict args_config_dict: dictionary containing looper config
+    :return dict: final looper config file content
     :raise MisconfigurationException: incorrect configuration.
     """
     return_dict = {}
-    with open(looper_config_path, "r") as dotfile:
-        dp_data = yaml.safe_load(dotfile)
+    if args_config_dict:
+        dp_data = copy.deepcopy(args_config_dict)
+    else:
+        with open(looper_config_path, "r") as dotfile:
+            dp_data = yaml.safe_load(dotfile)
 
     if PEP_CONFIG_KEY in dp_data:
         # Looper expects the config path to live at looper.config_file
@@ -533,15 +540,24 @@ def read_looper_config_file(looper_config_path: str) -> dict:
         )
         dp_data.setdefault(PIPELINE_INTERFACES_KEY, {})
 
-    config_dir_path = os.path.dirname(os.path.abspath(looper_config_path))
+    if looper_config_path:
+        config_dir_path = os.path.dirname(os.path.abspath(looper_config_path))
 
-    # Expand paths in case ENV variables are used
-    for k, v in return_dict.items():
-        if isinstance(v, str):
-            v = expandpath(v)
-            if not os.path.isabs(v) and not is_registry_path(v):
-                return_dict[k] = os.path.join(config_dir_path, v)
-            else:
+        # Expand paths in case ENV variables are used
+        for k, v in return_dict.items():
+            if isinstance(v, str):
+                v = expandpath(v)
+                if not os.path.isabs(v) and not is_registry_path(v):
+                    return_dict[k] = os.path.join(config_dir_path, v)
+                else:
+                    return_dict[k] = v
+    else:
+        for k, v in return_dict.items():
+            if isinstance(v, str):
+                v = expandpath(v)
+                if not os.path.isabs(v) and not is_registry_path(v):
+                    # instead of using looper config file as path, get cwd for path expansion
+                    return_dict[k] = os.path.join(os.getcwd(), v)
                 return_dict[k] = v
 
     return return_dict

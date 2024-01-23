@@ -342,6 +342,14 @@ def build_parser():
                 type=str,
                 help="Looper configuration file (YAML)",
             )
+            subparser.add_argument(
+                "--looper-dict",
+                required=False,
+                default=None,
+                type=str,
+                nargs="+",
+                help="Looper configuration list of key value pairs (k1=v1)",
+            )
             # help="Path to the looper config file"
             subparser.add_argument(
                 "-S",
@@ -537,6 +545,44 @@ def validate_post_parse(args: argparse.Namespace) -> List[str]:
     return problems
 
 
+def _process_config_dict(config_list) -> dict:
+    """
+    Get looper config list if user inputs it on CLI instead of via file path.
+    :param list config_list: list to be split and parsed into dict
+    :return dict return_dict: dictionary containing looper configuration key value pairs
+    """
+
+    return_dict = {}
+    pairs = [(kv, kv.split("=")) for kv in config_list]
+    bad_pairs = []
+    for orig, pair in pairs:
+        try:
+            k, v = pair
+        except ValueError:
+            bad_pairs.append(orig)
+        else:
+            return_dict[k] = v
+    if bad_pairs:
+        raise ValueError("Could not correctly parse itemized configuration. ")
+
+    if "sample_pipeline_interface" in return_dict:
+        return_dict[PIPELINE_INTERFACES_KEY] = {}
+        return_dict[PIPELINE_INTERFACES_KEY].update(
+            {"sample": return_dict["sample_pipeline_interface"]}
+        )
+    if "project_pipeline_interface" in return_dict:
+        return_dict[PIPELINE_INTERFACES_KEY] = {}
+        return_dict[PIPELINE_INTERFACES_KEY].update(
+            {"project": return_dict["project_pipeline_interface"]}
+        )
+
+    if "pipestat" in return_dict:
+        _LOGGER.warn("Pipestat configuration via CLI is not currently supported.")
+        del return_dict["pipestat"]
+
+    return return_dict
+
+
 def _proc_resources_spec(args):
     """
     Process CLI-sources compute setting specification. There are two sources
@@ -618,6 +664,14 @@ def main(test_args=None):
 
     _LOGGER = logmuse.logger_via_cli(args, make_root=True)
     _LOGGER.info("Looper version: {}\nCommand: {}".format(__version__, args.command))
+
+    if args.looper_dict is not None:
+        config_dict = _process_config_dict(args.looper_dict)
+        looper_config_dict = read_looper_config_file(
+            args.looper_config, args_config_dict=config_dict
+        )
+        for looper_config_key, looper_config_item in looper_config_dict.items():
+            setattr(args, looper_config_key, looper_config_item)
 
     if "config_file" in vars(args):
         if args.config_file is None:
