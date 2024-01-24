@@ -14,8 +14,8 @@ class Job(pydantic.BaseModel):
     id: UUID = pydantic.Field(default_factory=uuid4)
     status: str = "in_progress"
     progress: int = 0
-    stdout: str = None
-    stderr: str = None
+    stdout: str | None = None
+    stderr: str | None = None
 
 
 app = FastAPI(validate_model=True)
