@@ -1,8 +1,8 @@
 import io
 from argparse import Namespace
 from contextlib import redirect_stderr, redirect_stdout
-from typing import Dict
-from uuid import UUID, uuid4
+import secrets
+from typing import Dict, TypeAlias
 import fastapi
 
 import pydantic
@@ -10,10 +10,11 @@ from fastapi import FastAPI
 from looper.cli_pydantic import run_looper
 from looper.command_models.commands import SUPPORTED_COMMANDS, TopLevelParser
 
+JobId: TypeAlias = str
 
 class Job(pydantic.BaseModel):
-    id: UUID = pydantic.Field(
-        default_factory=uuid4,
+    id: JobId = pydantic.Field(
+        default_factory=lambda: secrets.token_urlsafe(4),
         description="The unique identifier of the job"
     )
     status: str = pydantic.Field(
@@ -28,12 +29,11 @@ class Job(pydantic.BaseModel):
         description="Standard error output produced by `looper` while performing the requested action"
     )
 
-
 app = FastAPI(validate_model=True)
-jobs: Dict[UUID, Job] = {}
+jobs: Dict[str, Job] = {}
 
 
-async def background_async(top_level_model: TopLevelParser, job_id: UUID) -> None:
+async def background_async(top_level_model: TopLevelParser, job_id: JobId) -> None:
     argparse_namespace = create_argparse_namespace(top_level_model)
     stdout_stream = io.StringIO()
     stderr_stream = io.StringIO()
@@ -95,5 +95,5 @@ async def main_endpoint(top_level_model: TopLevelParser, background_tasks: fasta
 
 
 @app.get("/status/{job_id}")
-async def get_status(job_id: UUID):
+async def get_status(job_id: JobId):
     return jobs[job_id]
