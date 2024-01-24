@@ -12,11 +12,21 @@ from looper.command_models.commands import SUPPORTED_COMMANDS, TopLevelParser
 
 
 class Job(pydantic.BaseModel):
-    id: UUID = pydantic.Field(default_factory=uuid4)
-    status: str = "in_progress"
+    id: UUID = pydantic.Field(
+        default_factory=uuid4,
+        description="The unique identifier of the job"
+    )
+    status: str = pydantic.Field(
+        default="in_progress",
+        description="The current status of the job. Can be either `in_progress` or `completed`."
+    )
     progress: int = 0
-    stdout: str | None = None
-    stderr: str | None = None
+    stdout: str | None = pydantic.Field(default=None,
+        description="Standard output produced by `looper` while performing the requested action"
+    )
+    stderr: str | None = pydantic.Field(default=None,
+        description="Standard error output produced by `looper` while performing the requested action"
+    )
 
 
 app = FastAPI(validate_model=True)
@@ -75,20 +85,6 @@ def create_argparse_namespace(top_level_model: TopLevelParser) -> Namespace:
                 )
             setattr(namespace, argname, command_namespace)
     return namespace
-
-
-class MainResponse(pydantic.BaseModel):
-    """
-    Response of the main endpoint.
-    """
-
-    stdout: str = pydantic.Field(
-        description="Standard output produced by `looper` while running a command"
-    )
-    stderr: str = pydantic.Field(
-        description="Standard error output produced by `looper` while running a command"
-    )
-
 
 @app.post("/")
 async def main_endpoint(top_level_model: TopLevelParser, background_tasks: fastapi.BackgroundTasks) -> Dict:
