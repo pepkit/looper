@@ -6,6 +6,7 @@ import os
 import subprocess
 import time
 import yaml
+from math import ceil
 from copy import copy, deepcopy
 from json import loads
 from subprocess import check_output
@@ -132,6 +133,7 @@ class SubmissionConductor(object):
         compute_variables=None,
         max_cmds=None,
         max_size=None,
+        max_jobs=None,
         automatic=True,
         collate=False,
     ):
@@ -166,6 +168,8 @@ class SubmissionConductor(object):
             include in a single job script.
         :param int | float | NoneType max_size: Upper bound on total file
             size of inputs used by the commands lumped into single job script.
+        :param int | float | NoneType max_jobs: Upper bound on total number of jobs to
+            group samples for submission.
         :param bool automatic: Whether the submission should be automatic once
             the pool reaches capacity.
         :param bool collate: Whether a collate job is to be submitted (runs on
@@ -199,6 +203,16 @@ class SubmissionConductor(object):
                 "String appended to every pipeline command: "
                 "{}".format(self.extra_pipe_args)
             )
+
+        if max_jobs:
+            if max_jobs == 0 or max_jobs < 0:
+                raise ValueError(
+                    "If specified, max job command count must be a positive integer, greater than zero."
+                )
+
+            num_samples = len(self.prj.samples)
+            samples_per_job = num_samples / max_jobs
+            max_cmds = ceil(samples_per_job)
 
         if not self.collate:
             self.automatic = automatic

@@ -404,8 +404,9 @@ class Runner(Executor):
                 extra_args=args.command_extra,
                 extra_args_override=args.command_extra_override,
                 ignore_flags=args.ignore_flags,
-                max_cmds=args.lumpn,
-                max_size=args.lump,
+                max_cmds=args.lump_n,
+                max_size=args.lump_s,
+                max_jobs=args.lump_j,
             )
             submission_conductors[piface.pipe_iface_file] = conductor
 
