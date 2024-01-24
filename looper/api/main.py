@@ -3,10 +3,11 @@ from argparse import Namespace
 from contextlib import redirect_stderr, redirect_stdout
 import secrets
 from typing import Dict, TypeAlias
-import fastapi
 
-import pydantic
+import fastapi
 from fastapi import FastAPI
+import pydantic
+
 from looper.cli_pydantic import run_looper
 from looper.command_models.commands import SUPPORTED_COMMANDS, TopLevelParser
 
