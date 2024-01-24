@@ -3,6 +3,7 @@ from argparse import Namespace
 from contextlib import redirect_stderr, redirect_stdout
 from typing import Dict
 from uuid import UUID, uuid4
+import fastapi
 
 import pydantic
 from fastapi import FastAPI
@@ -22,7 +23,7 @@ app = FastAPI(validate_model=True)
 jobs: Dict[UUID, Job] = {}
 
 
-def background_async(top_level_model: TopLevelParser, job_id: UUID) -> None:
+async def background_async(top_level_model: TopLevelParser, job_id: UUID) -> None:
     argparse_namespace = create_argparse_namespace(top_level_model)
     stdout_stream = io.StringIO()
     stderr_stream = io.StringIO()
@@ -90,10 +91,10 @@ class MainResponse(pydantic.BaseModel):
 
 
 @app.post("/")
-async def main_endpoint(top_level_model: TopLevelParser) -> Dict:
+async def main_endpoint(top_level_model: TopLevelParser, background_tasks: fastapi.BackgroundTasks) -> Dict:
     job = Job()
     jobs[job.id] = job
-    background_async(top_level_model, job.id)
+    background_tasks.add_task(background_async, top_level_model, job.id)
     return {"job_id": job.id}
 
 
