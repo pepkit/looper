@@ -86,7 +86,7 @@ def create_argparse_namespace(top_level_model: TopLevelParser) -> Namespace:
             setattr(namespace, argname, command_namespace)
     return namespace
 
-@app.post("/")
+@app.post("/", status_code=202)
 async def main_endpoint(top_level_model: TopLevelParser, background_tasks: fastapi.BackgroundTasks) -> Dict:
     job = Job()
     jobs[job.id] = job
