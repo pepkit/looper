@@ -40,7 +40,7 @@ async def background_async(top_level_model: TopLevelParser, job_id: JobId) -> No
     stderr_stream = io.StringIO()
     with redirect_stderr(stderr_stream), redirect_stdout(stdout_stream):
         # TODO: as it stands, because of the `async def`, and the lacking `await`
-        # in the following line, this endpoint is (I (Simeon) thing) currently blocking.
+        # in the following line, this endpoint is (I (Simeon) think) currently blocking.
         # We would need to make `run_looper()` return a future, but it inherently does
         # not support `async` calls.
         # So one option would be to run `run_looper()` in its own thread whose
