@@ -110,7 +110,7 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser):
             p = Project(
                 amendments=args.amend,
                 divcfg_path=divcfg,
-                runp=args.command == "runp",
+                runp=subcommand_name == "runp",
                 project_dict=PEPHubClient()._load_raw_pep(
                     registry_path=args.config_file
                 ),
@@ -128,7 +128,7 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser):
                 cfg=args.config_file,
                 amendments=args.amend,
                 divcfg_path=divcfg,
-                runp=False,
+                runp=subcommand_name == "runp",
                 **{
                     attr: getattr(args, attr) for attr in CLI_PROJ_ATTRS if attr in args
                 },
@@ -146,11 +146,11 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser):
 
     with ProjectContext(
         prj=p,
-        selector_attribute="toggle",
-        selector_include=None,
-        selector_exclude=None,
-        selector_flag=None,
-        exclusion_flag=None,
+        selector_attribute=args.sel_attr,
+        selector_include=args.sel_incl,
+        selector_exclude=args.sel_excl,
+        selector_flag=args.sel_flag,
+        exclusion_flag=args.exc_flag,
     ) as prj:
         if subcommand_name == "run":
             run = Runner(prj)
