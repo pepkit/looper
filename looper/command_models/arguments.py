@@ -5,7 +5,7 @@ Argument definitions via a thin wrapper around `pydantic.fields.FieldInfo`
 import enum
 from copy import copy
 import os
-from typing import Any
+from typing import Any, List
 
 import pydantic
 
@@ -141,16 +141,16 @@ class ArgumentEnum(enum.Enum):
     )
     SAMPLE_PIPELINE_INTERFACES = Argument(
         name="sample_pipeline_interfaces",
-        default=(list, []),
+        default=(List, []),
         description="Paths to looper sample config files",
     )
     PROJECT_PIPELINE_INTERFACES = Argument(
         name="project_pipeline_interfaces",
-        default=(list, []),
+        default=(List, []),
         description="Paths to looper project config files",
     )
     AMEND = Argument(
-        name="amend", default=(list, []), description="List of amendments to activate"
+        name="amend", default=(List, []), description="List of amendments to activate"
     )
     SEL_FLAG = Argument(
         name="sel_flag", default=(str, ""), description="Sample selection flag"

@@ -12,6 +12,11 @@ written library is not yet clear.
 It is well possible that this script will be removed again.
 """
 
+# Note: The following import is used for forward annotations (Python 3.8)
+# to prevent potential 'TypeError' related to the use of the '|' operator
+# with types.
+from __future__ import annotations
+
 import os
 import sys
 

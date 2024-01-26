@@ -3,7 +3,7 @@
 """
 
 from dataclasses import dataclass
-from typing import Optional
+from typing import List, Optional, Type
 
 import pydantic
 
@@ -23,9 +23,9 @@ class Command:
 
     name: str
     description: str
-    arguments: list[Argument]
+    arguments: List[Argument]
 
-    def create_model(self) -> type[pydantic.BaseModel]:
+    def create_model(self) -> Type[pydantic.BaseModel]:
         """
         Creates a `pydantic` model for this command
         """
@@ -81,11 +81,11 @@ class TopLevelParser(pydantic.BaseModel):
         str
     ] = ArgumentEnum.LOOPER_CONFIG.value.with_reduced_default()
     sample_pipeline_interfaces: Optional[
-        list[str]
+        List[str]
     ] = ArgumentEnum.SAMPLE_PIPELINE_INTERFACES.value.with_reduced_default()
     project_pipeline_interfaces: Optional[
-        list[str]
+        List[str]
     ] = ArgumentEnum.PROJECT_PIPELINE_INTERFACES.value.with_reduced_default()
-    amend: Optional[list[str]] = ArgumentEnum.AMEND.value.with_reduced_default()
+    amend: Optional[List[str]] = ArgumentEnum.AMEND.value.with_reduced_default()
     sel_flag: Optional[str] = ArgumentEnum.SEL_FLAG.value.with_reduced_default()
     exc_flag: Optional[str] = ArgumentEnum.EXC_FLAG.value.with_reduced_default()
