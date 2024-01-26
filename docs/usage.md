@@ -26,7 +26,7 @@ Each task is controlled by one of the following commands: `run`, `rerun`, `runp`
 Here you can see the command-line usage instructions for the main looper command and for each subcommand:
 ## `looper --help`
 ```console
-version: 1.6.0
+version: 1.7.0
 usage: looper [-h] [--version] [--logfile LOGFILE] [--dbg] [--silent]
               [--verbosity V] [--logdev] [--commands]
               {run,rerun,runp,table,report,destroy,check,clean,inspect,init,init-piface,link}
@@ -57,7 +57,7 @@ options:
   --silent              Silence logging. Overrides verbosity.
   --verbosity V         Set logging level (1-5 or logging module level name)
   --logdev              Expand content of logging message format.
-  --commands            show program's primary commands
+  --commands            show program's version number and exit
 
 For subcommand-specific options, type: 'looper <subcommand> -h'
 https://github.com/pepkit/looper
@@ -66,7 +66,7 @@ https://github.com/pepkit/looper
 ## `looper run --help`
 ```console
 usage: looper run [-h] [-i] [-d] [-t S] [-x S] [-y S] [-f] [--divvy DIVCFG] [-p P] [-s S]
-                  [-c K [K ...]] [-u X] [-n N] [--looper-config LOOPER_CONFIG]
+                  [-c K [K ...]] [-u X] [-n N] [-j J] [--looper-config LOOPER_CONFIG]
                   [-S YAML [YAML ...]] [-P YAML [YAML ...]] [-l N] [-k N]
                   [--sel-attr ATTR] [--sel-excl [E ...] | --sel-incl [I ...]]
                   [--sel-flag [SELFLAG ...]] [--exc-flag [EXCFLAG ...]] [-a A [A ...]]
@@ -86,8 +86,11 @@ options:
   -x S, --command-extra S            String to append to every command
   -y S, --command-extra-override S   Same as command-extra, but overrides values in PEP
   -f, --skip-file-checks             Do not perform input file checks
-  -u X, --lump X                     Total input file size (GB) to batch into one job
-  -n N, --lumpn N                    Number of commands to batch into one job
+  -u X, --lump-s X                   Lump by size: total input file size (GB) to batch
+                                     into one job
+  -n N, --lump-n N                   Lump by number: number of samples to batch into one
+                                     job
+  -j J, --lump-j J                   Lump samples into number of jobs.
   --looper-config LOOPER_CONFIG      Looper configuration file (YAML)
   -S YAML [YAML ...], --sample-pipeline-interfaces YAML [YAML ...]
                                      Path to looper sample config file
@@ -170,10 +173,11 @@ sample selection arguments:
 ## `looper rerun --help`
 ```console
 usage: looper rerun [-h] [-i] [-d] [-t S] [-x S] [-y S] [-f] [--divvy DIVCFG] [-p P]
-                    [-s S] [-c K [K ...]] [-u X] [-n N] [--looper-config LOOPER_CONFIG]
-                    [-S YAML [YAML ...]] [-P YAML [YAML ...]] [-l N] [-k N]
-                    [--sel-attr ATTR] [--sel-excl [E ...] | --sel-incl [I ...]]
-                    [--sel-flag [SELFLAG ...]] [--exc-flag [EXCFLAG ...]] [-a A [A ...]]
+                    [-s S] [-c K [K ...]] [-u X] [-n N] [-j J]
+                    [--looper-config LOOPER_CONFIG] [-S YAML [YAML ...]]
+                    [-P YAML [YAML ...]] [-l N] [-k N] [--sel-attr ATTR]
+                    [--sel-excl [E ...] | --sel-incl [I ...]] [--sel-flag [SELFLAG ...]]
+                    [--exc-flag [EXCFLAG ...]] [-a A [A ...]]
                     [config_file]
 
 Resubmit sample jobs with failed flags.
@@ -190,8 +194,11 @@ options:
   -x S, --command-extra S            String to append to every command
   -y S, --command-extra-override S   Same as command-extra, but overrides values in PEP
   -f, --skip-file-checks             Do not perform input file checks
-  -u X, --lump X                     Total input file size (GB) to batch into one job
-  -n N, --lumpn N                    Number of commands to batch into one job
+  -u X, --lump-s X                   Lump by size: total input file size (GB) to batch
+                                     into one job
+  -n N, --lump-n N                   Lump by number: number of samples to batch into one
+                                     job
+  -j J, --lump-j J                   Lump samples into number of jobs.
   --looper-config LOOPER_CONFIG      Looper configuration file (YAML)
   -S YAML [YAML ...], --sample-pipeline-interfaces YAML [YAML ...]
                                      Path to looper sample config file
@@ -225,7 +232,7 @@ sample selection arguments:
 usage: looper report [-h] [--looper-config LOOPER_CONFIG] [-S YAML [YAML ...]]
                      [-P YAML [YAML ...]] [-l N] [-k N] [--sel-attr ATTR]
                      [--sel-excl [E ...] | --sel-incl [I ...]] [--sel-flag [SELFLAG ...]]
-                     [--exc-flag [EXCFLAG ...]] [-a A [A ...]] [--project]
+                     [--exc-flag [EXCFLAG ...]] [-a A [A ...]] [--project] [--portable]
                      [config_file]
 
 Create browsable HTML report of project results.
@@ -243,6 +250,7 @@ options:
                                      Path to looper project config file
   -a A [A ...], --amend A [A ...]    List of amendments to activate
   --project                          Process project-level pipelines
+  --portable                         Makes html report portable.
 
 sample selection arguments:
   Specify samples to include or exclude based on sample attribute values
