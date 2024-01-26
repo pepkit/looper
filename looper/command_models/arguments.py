@@ -158,6 +158,21 @@ class ArgumentEnum(enum.Enum):
     EXC_FLAG = Argument(
         name="exc_flag", default=(str, ""), description="Sample exclusion flag"
     )
+    SKIP_FILE_CHECKS = Argument(
+        name="skip_file_checks",
+        default=(bool, False),
+        description="Do not perform input file checks"
+    )
+    PACKAGE = Argument(
+        name="package",
+        default=(str, None),
+        description="Name of computing resource package to use"
+        )
+    COMPUTE = Argument(
+        name="compute",
+        default=(List, []),
+        description="List of key-value pairs (k1=v1)"
+    )
     DIVVY = Argument(
         name="divvy",
         default=(str, os.getenv("DIVCFG", None)),
