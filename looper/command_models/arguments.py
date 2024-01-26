@@ -3,8 +3,8 @@ Argument definitions via a thin wrapper around `pydantic.fields.FieldInfo`
 """
 
 import enum
-from copy import copy
 import os
+from copy import copy
 from typing import Any, List
 
 import pydantic
@@ -181,7 +181,6 @@ class ArgumentEnum(enum.Enum):
             "variable. Currently: {}".format(os.getenv("DIVCFG") or "not set")
         ),
     )
-
     # Arguments for logger compatible with logmuse
     SILENT = Argument(
         name="silent", default=(bool, False), description="Whether to silence logging"
@@ -198,4 +197,9 @@ class ArgumentEnum(enum.Enum):
         description="Whether to log in development mode; possibly among other "
         "behavioral changes to logs handling, use a more information-rich "
         "message format template.",
+    )
+    PIPESTAT = Argument(
+        name="pipestat",
+        default=(str, None),
+        description="Path to pipestat files.",
     )
