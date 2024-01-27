@@ -16,5 +16,5 @@ ubiquerg>=0.5.2
 # supports a read-only mode.
 git+https://github.com/databio/yacman.git@tweag/thread-unsafe
 pydantic-argparse>=0.8.0
-uvicorn
 fastapi>=0.109.0
+uvicorn>=0.26.0
