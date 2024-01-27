@@ -34,7 +34,7 @@ app = FastAPI(validate_model=True)
 jobs: Dict[str, Job] = {}
 
 
-async def background_async(top_level_model: TopLevelParser, job_id: JobId) -> None:
+def background_async(top_level_model: TopLevelParser, job_id: JobId) -> None:
     argparse_namespace = create_argparse_namespace(top_level_model)
     stdout_stream = io.StringIO()
     stderr_stream = io.StringIO()
