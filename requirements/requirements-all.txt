@@ -14,7 +14,8 @@ ubiquerg>=0.5.2
 # YAMLConfigmanager not capture SIGTERM / SIGKILL (and thus Ctrl+c events).
 # In the near future, this will be replaced by a new version of Yacman that
 # supports a read-only mode.
-git+https://github.com/databio/yacman.git@tweag/thread-unsafe
+# git+https://github.com/databio/yacman.git@tweag/thread-unsafe
+../yacman/
 pydantic-argparse>=0.8.0
 fastapi>=0.109.0
 uvicorn>=0.26.0
