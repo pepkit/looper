@@ -48,7 +48,7 @@ def run_looper(
     # here comes adapted `cli_looper.py` code
     global _LOGGER
 
-    _LOGGER = logmuse.logger_via_cli(args, make_root=True)
+    _LOGGER = logmuse.logger_via_cli(args, make_root=True, stream=sys.stderr)
 
     # Find out which subcommand was used
     supported_command_names = [cmd.name for cmd in SUPPORTED_COMMANDS]
