@@ -20,6 +20,7 @@ from __future__ import annotations
 import os
 import sys
 
+import logmuse
 import pydantic_argparse
 import yaml
 from pephubclient import PEPHubClient
@@ -77,6 +78,13 @@ def main() -> None:
         parser.print_help(sys.stderr)
         raise ValueError(
             f"Looper config file does not exist. Use looper init to create one at {looper_cfg_path}."
+    global _LOGGER
+
+    _LOGGER = logmuse.logger_via_cli(args, make_root=True)
+    args_command = [
+        attr for attr in [cmd.name for cmd in SUPPORTED_COMMANDS] if hasattr(args, attr)
+    ]
+    _LOGGER.info("Looper version: {}\nCommand: {}".format(__version__, args_command))
         )
 
     args = enrich_args_via_cfg(args, parser, False)
