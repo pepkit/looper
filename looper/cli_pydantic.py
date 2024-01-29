@@ -24,6 +24,7 @@ import logmuse
 import pydantic_argparse
 import yaml
 from pephubclient import PEPHubClient
+from pydantic_argparse.argparse.parser import ArgumentParser
 
 from divvy import select_divvy_config
 
@@ -40,20 +41,16 @@ from .utils import (
     dotfile_path,
     enrich_args_via_cfg,
     is_registry_path,
+    read_looper_config_file,
     read_looper_dotfile,
 )
 
 
-def main() -> None:
-    parser = pydantic_argparse.ArgumentParser(
-        model=TopLevelParser,
-        prog="looper",
-        description="pydantic-argparse demo",
-        add_help=True,
-    )
-    args = parser.parse_typed_args()
-    print(args)
-    print("#########################################")
+def run_looper(args: TopLevelParser, parser: ArgumentParser):
+    # here comes adapted `cli_looper.py` code
+    global _LOGGER
+
+    _LOGGER = logmuse.logger_via_cli(args, make_root=True)
 
     # Find out which subcommand was used
     supported_command_names = [cmd.name for cmd in SUPPORTED_COMMANDS]
@@ -65,29 +62,39 @@ def main() -> None:
     # Only one subcommand argument will be not `None`, else we found a bug in `pydantic-argparse`
     [(subcommand_name, subcommand_args)] = subcommand_valued_args
 
-    # here comes adapted `cli_looper.py` code
-    looper_cfg_path = os.path.relpath(dotfile_path(), start=os.curdir)
-    try:
-        looper_config_dict = read_looper_dotfile()
+    _LOGGER.info("Looper version: {}\nCommand: {}".format(__version__, subcommand_name))
 
-        for looper_config_key, looper_config_item in looper_config_dict.items():
-            print(looper_config_key, looper_config_item)
-            setattr(args, looper_config_key, looper_config_item)
+    if args.config_file is None:
+        looper_cfg_path = os.path.relpath(dotfile_path(), start=os.curdir)
+        try:
+            if args.looper_config:
+                looper_config_dict = read_looper_config_file(args.looper_config)
+            else:
+                looper_config_dict = read_looper_dotfile()
+                _LOGGER.info(f"Using looper config ({looper_cfg_path}).")
 
-    except OSError:
-        parser.print_help(sys.stderr)
-        raise ValueError(
-            f"Looper config file does not exist. Use looper init to create one at {looper_cfg_path}."
-    global _LOGGER
+            for looper_config_key, looper_config_item in looper_config_dict.items():
+                setattr(args, looper_config_key, looper_config_item)
 
-    _LOGGER = logmuse.logger_via_cli(args, make_root=True)
-    args_command = [
-        attr for attr in [cmd.name for cmd in SUPPORTED_COMMANDS] if hasattr(args, attr)
-    ]
-    _LOGGER.info("Looper version: {}\nCommand: {}".format(__version__, args_command))
+        except OSError:
+            parser.print_help(sys.stderr)
+            _LOGGER.warning(
+                f"Looper config file does not exist. Use looper init to create one at {looper_cfg_path}."
+            )
+            sys.exit(1)
+    else:
+        _LOGGER.warning(
+            "This PEP configures looper through the project config. This approach is deprecated and will "
+            "be removed in future versions. Please use a looper config file. For more information see "
+            "looper.databio.org/en/latest/looper-config"
         )
 
     args = enrich_args_via_cfg(args, parser, False)
+
+    # If project pipeline interface defined in the cli, change name to: "pipeline_interface"
+    if vars(args)[PROJECT_PL_ARG]:
+        args.pipeline_interfaces = vars(args)[PROJECT_PL_ARG]
+
     divcfg = (
         select_divvy_config(filepath=subcommand_args.divvy)
         if hasattr(subcommand_args, "divvy")
@@ -159,6 +166,19 @@ def main() -> None:
                     )
                 )
                 raise
+
+
+def main() -> None:
+    parser = pydantic_argparse.ArgumentParser(
+        model=TopLevelParser,
+        prog="looper",
+        description="pydantic-argparse demo",
+        add_help=True,
+    )
+    args = parser.parse_typed_args()
+    print(args)
+    print("#########################################")
+    run_looper(args, parser)
 
 
 if __name__ == "__main__":
