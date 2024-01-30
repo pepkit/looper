@@ -4,6 +4,7 @@ import importlib
 import logging
 import os
 import subprocess
+import sys
 import time
 import yaml
 from copy import copy, deepcopy
@@ -387,7 +388,12 @@ class SubmissionConductor(object):
                 # Capture submission command return value so that we can
                 # intercept and report basic submission failures; #167
                 try:
-                    subprocess.check_call(submission_command, shell=True)
+                    # Using `subprocess.run()` instead of `subprocess.check()` allows us to capture
+                    # stdout and stderr of the child process, and pass it to the `stdout` / `stderr`
+                    # of `looper`'s Python process.
+                    result = subprocess.run(submission_command, check=True, shell=True, capture_output=True)
+                    print(result.stdout.decode())
+                    print(result.stderr.decode(), file=sys.stderr)
                 except subprocess.CalledProcessError:
                     fails = (
                         "" if self.collate else [s.sample_name for s in self._samples]
