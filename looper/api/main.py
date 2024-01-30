@@ -24,7 +24,6 @@ class Job(pydantic.BaseModel):
         default="in_progress",
         description="The current status of the job. Can be either `in_progress` or `completed`."
     )
-    progress: int = 0
     stdout: str | None = pydantic.Field(default=None,
         description="Standard output produced by `looper` while performing the requested action"
     )
