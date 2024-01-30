@@ -1,3 +1,5 @@
+# Copied from https://gitlab.com/yquemener/stdout-redirects
+#
 # copied from https://stackoverflow.com/a/43667367/1193986
 #
 # (c) umichscoots 2017
