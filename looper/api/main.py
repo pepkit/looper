@@ -1,6 +1,5 @@
 import io
 from argparse import Namespace
-from contextlib import redirect_stderr, redirect_stdout
 import secrets
 from typing import Dict, TypeAlias
 
@@ -10,6 +9,10 @@ import pydantic
 
 from looper.cli_pydantic import run_looper
 from looper.command_models.commands import SUPPORTED_COMMANDS, TopLevelParser
+
+import stdout_redirects
+
+stdout_redirects.enable_proxy()
 
 JobId: TypeAlias = str
 
@@ -36,23 +39,12 @@ jobs: Dict[str, Job] = {}
 
 def background_async(top_level_model: TopLevelParser, job_id: JobId) -> None:
     argparse_namespace = create_argparse_namespace(top_level_model)
-    stdout_stream = io.StringIO()
-    stderr_stream = io.StringIO()
-    with redirect_stderr(stderr_stream), redirect_stdout(stdout_stream):
-        # TODO: as it stands, because of the `async def`, and the lacking `await`
-        # in the following line, this endpoint is (I (Simeon) think) currently blocking.
-        # We would need to make `run_looper()` return a future, but it inherently does
-        # not support `async` calls.
-        # So one option would be to run `run_looper()` in its own thread whose
-        # termination we can `await`, using `fastapi.run_in_threadpool`. But that fails
-        # with an error stemming from the `yacman` library about `signal.signal` only
-        # working in the main thread of the main interpreter. We have to investigate
-        # how to solve this.
-        run_looper(argparse_namespace, None, True)
+    stdout_stream = stdout_redirects.redirect()
+
+    run_looper(argparse_namespace, None, True)
 
     jobs[job_id].status = "completed"
     jobs[job_id].stdout = stdout_stream.getvalue()
-    jobs[job_id].stderr = stderr_stream.getvalue()
 
 
 def create_argparse_namespace(top_level_model: TopLevelParser) -> Namespace:
