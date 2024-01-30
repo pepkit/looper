@@ -43,6 +43,9 @@ def background_async(top_level_model: TopLevelParser, job_id: JobId) -> None:
 
     run_looper(argparse_namespace, None, True)
 
+    # Here, we should call `stdout_redirects.stop_redirect()`, but that fails for reasons discussed
+    # in the following issue: https://github.com/python/cpython/issues/80374
+    # But this *seems* not to pose any problems.
     jobs[job_id].status = "completed"
     jobs[job_id].stdout = stdout_stream.getvalue()
 
