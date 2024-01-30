@@ -90,14 +90,28 @@ def create_argparse_namespace(top_level_model: TopLevelParser) -> Namespace:
             setattr(namespace, argname, command_namespace)
     return namespace
 
-@app.post("/", status_code=202)
-async def main_endpoint(top_level_model: TopLevelParser, background_tasks: fastapi.BackgroundTasks) -> Dict:
+
+@app.post(
+    "/",
+    status_code=202,
+    summary="Run Looper in Background",
+    description="Create a new job, process data with the specified "
+    "`top_level_model`, and initiate a background asynchronous task to run "
+    "looper.",
+)
+async def main_endpoint(
+    top_level_model: TopLevelParser, background_tasks: fastapi.BackgroundTasks
+) -> Dict:
     job = Job()
     jobs[job.id] = job
     background_tasks.add_task(background_async, top_level_model, job.id)
     return {"job_id": job.id}
 
 
-@app.get("/status/{job_id}")
+@app.get(
+    "/status/{job_id}",
+    summary="Get Job Status",
+    description="Retrieve the status of a job based on its unique identifier.",
+)
 async def get_status(job_id: JobId):
     return jobs[job_id]
