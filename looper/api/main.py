@@ -1,34 +1,37 @@
 import io
+import secrets
 from argparse import Namespace
 from contextlib import redirect_stderr, redirect_stdout
-import secrets
 from typing import Dict, TypeAlias
 
 import fastapi
-from fastapi import FastAPI
 import pydantic
-
+from fastapi import FastAPI
 from looper.cli_pydantic import run_looper
 from looper.command_models.commands import SUPPORTED_COMMANDS, TopLevelParser
 
 JobId: TypeAlias = str
 
+
 class Job(pydantic.BaseModel):
     id: JobId = pydantic.Field(
         default_factory=lambda: secrets.token_urlsafe(4),
-        description="The unique identifier of the job"
+        description="The unique identifier of the job",
     )
     status: str = pydantic.Field(
         default="in_progress",
-        description="The current status of the job. Can be either `in_progress` or `completed`."
+        description="The current status of the job. Can be either `in_progress` or `completed`.",
     )
     progress: int = 0
-    stdout: str | None = pydantic.Field(default=None,
-        description="Standard output produced by `looper` while performing the requested action"
+    stdout: str | None = pydantic.Field(
+        default=None,
+        description="Standard output produced by `looper` while performing the requested action",
     )
-    stderr: str | None = pydantic.Field(default=None,
-        description="Standard error output produced by `looper` while performing the requested action"
+    stderr: str | None = pydantic.Field(
+        default=None,
+        description="Standard error output produced by `looper` while performing the requested action",
     )
+
 
 app = FastAPI(validate_model=True)
 jobs: Dict[str, Job] = {}
