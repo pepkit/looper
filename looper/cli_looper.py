@@ -738,14 +738,19 @@ def main(test_args=None):
             )
     else:
         try:
+            project_args = {
+                    attr: getattr(args, attr) for attr in CLI_PROJ_ATTRS if attr in args
+            }
+            if args.command == "run":
+                project_args.update(**{
+                    attr: getattr(args.run, attr) for attr in CLI_PROJ_ATTRS if attr in args.run
+                })
             p = Project(
                 cfg=args.config_file,
                 amendments=args.amend,
                 divcfg_path=divcfg,
                 runp=args.command == "runp",
-                **{
-                    attr: getattr(args, attr) for attr in CLI_PROJ_ATTRS if attr in args
-                },
+                **project_args,
             )
         except yaml.parser.ParserError as e:
             _LOGGER.error(f"Project config parse failed -- {e}")
