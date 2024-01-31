@@ -6,6 +6,7 @@ import itertools
 import os
 import re
 import sys
+from collections import defaultdict
 from logging import getLogger
 from typing import *
 
