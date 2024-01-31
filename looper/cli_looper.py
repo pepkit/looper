@@ -10,6 +10,7 @@ from typing import Tuple, List
 from ubiquerg import VersionInHelpParser
 
 from . import __version__
+from .command_models.commands import RunParser
 from .const import *
 from .divvy import DEFAULT_COMPUTE_RESOURCES_NAME, select_divvy_config
 from .exceptions import *
@@ -573,20 +574,6 @@ def _proc_resources_spec(args):
     return settings_data
 
 
-RUN_ARGS = [
-    "ignore_flags",
-    "time_delay",
-    "dry_run",
-    "command_extra",
-    "command_extra_override",
-    "lump",
-    "lumpn",
-    "limit",
-    "skip",
-    "skip_file_checks",
-]
-
-
 def modify_args_namespace(args):
     """
     Modify the argument namespace based on the specified conditions.
@@ -598,17 +585,23 @@ def modify_args_namespace(args):
     :param argparse.Namespace: The argparse namespace containing program arguments.
     :return argparse.Namespace: The modified argparse namespace.
     """
-    if args.command == "run":
+
+    def add_command_hierarchy(command_args):
         command_namespace = argparse.Namespace()
         for arg in vars(args):
-            if arg in RUN_ARGS:
+            if arg in command_args:
                 setattr(command_namespace, arg, getattr(args, arg))
 
-        for arg in RUN_ARGS:
+        for arg in command_args:
             if hasattr(args, arg):
                 delattr(args, arg)
 
-        args.run = command_namespace
+        setattr(args, args.command, command_namespace)
+
+    if args.command == "run":
+        run_args = [argument.name for argument in RunParser.arguments]
+        add_command_hierarchy(run_args)
+
     return args
 
 def main(test_args=None):
