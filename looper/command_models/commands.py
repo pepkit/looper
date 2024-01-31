@@ -52,12 +52,11 @@ RunParser = Command(
         ArgumentEnum.COMMAND_EXTRA_OVERRIDE.value,
         ArgumentEnum.LUMP.value,
         ArgumentEnum.LUMPN.value,
-        ArgumentEnum.LIMIT.value,
-        ArgumentEnum.SKIP.value,
         ArgumentEnum.DIVVY.value,
         ArgumentEnum.SKIP_FILE_CHECKS.value,
         ArgumentEnum.COMPUTE.value,
-        ArgumentEnum.PACKAGE.value
+        ArgumentEnum.PACKAGE.value,
+        ArgumentEnum.SETTINGS.value
     ],
 )
 RunParserModel = RunParser.create_model()
