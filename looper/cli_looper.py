@@ -573,6 +573,44 @@ def _proc_resources_spec(args):
     return settings_data
 
 
+RUN_ARGS = [
+    "ignore_flags",
+    "time_delay",
+    "dry_run",
+    "command_extra",
+    "command_extra_override",
+    "lump",
+    "lumpn",
+    "limit",
+    "skip",
+    "skip_file_checks",
+]
+
+
+def modify_args_namespace(args):
+    """
+    Modify the argument namespace based on the specified conditions.
+
+    If the command in the given arguments is 'run', this function creates a sub-namespace
+    named 'run' and moves selected arguments specified in RUN_ARGS to the 'run' namespace.
+    The selected arguments are also removed from the original namespace.
+
+    :param argparse.Namespace: The argparse namespace containing program arguments.
+    :return argparse.Namespace: The modified argparse namespace.
+    """
+    if args.command == "run":
+        command_namespace = argparse.Namespace()
+        for arg in vars(args):
+            if arg in RUN_ARGS:
+                setattr(command_namespace, arg, getattr(args, arg))
+
+        for arg in RUN_ARGS:
+            if hasattr(args, arg):
+                delattr(args, arg)
+
+        args.run = command_namespace
+    return args
+
 def main(test_args=None):
     """Primary workflow"""
     global _LOGGER
@@ -585,6 +623,7 @@ def main(test_args=None):
     else:
         args, remaining_args = parser.parse_known_args()
 
+    args = modify_args_namespace(args)
     cli_use_errors = validate_post_parse(args)
     if cli_use_errors:
         parser.print_help(sys.stderr)
