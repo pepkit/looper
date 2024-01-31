@@ -696,9 +696,16 @@ def main(test_args=None):
             )
         )
 
-    divcfg = (
-        select_divvy_config(filepath=args.divvy) if hasattr(args, "divvy") else None
-    )
+    if args.command == "run":
+        divcfg = (
+            select_divvy_config(filepath=args.run.divvy)
+            if hasattr(args.run, "divvy")
+            else None
+        )
+    else:
+        divcfg = (
+            select_divvy_config(filepath=args.divvy) if hasattr(args, "divvy") else None
+        )
 
     # Ignore flags if user is selecting or excluding on flags:
     if args.sel_flag or args.exc_flag:
