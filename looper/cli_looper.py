@@ -546,13 +546,18 @@ def _proc_resources_spec(args):
     :raise ValueError: if interpretation of the given specification as encoding
         of key-value pairs fails
     """
-    spec = getattr(args, "compute", None)
+    if args.command in ("run",):
+        spec = getattr(args.run, "compute", None)
+        settings = args.run.settings
+    else:
+        spec = getattr(args, "compute", None)
+        settings = args.settings
     try:
-        settings_data = read_yaml_file(args.settings) or {}
+        settings_data = read_yaml_file(settings) or {}
     except yaml.YAMLError:
         _LOGGER.warning(
             "Settings file ({}) does not follow YAML format,"
-            " disregarding".format(args.settings)
+            " disregarding".format(settings)
         )
         settings_data = {}
     if not spec:
