@@ -523,7 +523,10 @@ def validate_post_parse(args: argparse.Namespace) -> List[str]:
                 SAMPLE_INCLUSION_OPTNAME,
             ],
         )
-        if getattr(args, attr, None)
+        # Depending on the subcommand used, the above options might either be in
+        # the top-level namespace or in the subcommand namespace (the latter due
+        # to a `modify_args_namespace()`)
+        if getattr(args, attr, None)# or (getattr(args.run, attr, None) if hasattr(args, "run") else False)
     ]
     if len(used_exclusives) > 1:
         problems.append(
@@ -677,7 +680,6 @@ def main(test_args=None):
             )
 
     args = enrich_args_via_cfg(args, aux_parser, test_args)
-
     # If project pipeline interface defined in the cli, change name to: "pipeline_interface"
     if vars(args)[PROJECT_PL_ARG]:
         args.pipeline_interfaces = vars(args)[PROJECT_PL_ARG]
