@@ -10,6 +10,7 @@ from typing import Tuple, List
 from ubiquerg import VersionInHelpParser
 
 from . import __version__
+from .command_models.commands import RunParser
 from .const import *
 from .divvy import DEFAULT_COMPUTE_RESOURCES_NAME, select_divvy_config
 from .exceptions import *
@@ -573,6 +574,48 @@ def _proc_resources_spec(args):
     return settings_data
 
 
+def make_hierarchical_if_needed(args):
+    """
+    Make an `argparse` namespace hierarchic for commands that support it
+
+    In the course of introducing `pydantic` models as ground truths, some logic pertaining
+    to the `run` command in `looper/looper.py` was changed in order to do accurately reflect
+    which arguments are top-level arguments and which arguments are specific to the `run`
+    command.
+
+    If the command in the given arguments is 'run', this function creates a sub-namespace
+    named 'run' and moves selected arguments specified in RUN_ARGS to the 'run' namespace.
+    The selected arguments are also removed from the original namespace.
+    This thus morphes the original namespace into the hierarchy the `run` command logic
+    expects downstream.
+
+    :param argparse.Namespace: The argparse namespace containing program arguments.
+    :return argparse.Namespace: The modified, partially hierarchical argparse namespace.
+    """
+
+    def add_command_hierarchy(command_args):
+        # make a new namespace that will be the resulting second-level namespace
+        command_namespace = argparse.Namespace()
+        for arg in vars(args):
+            if arg in command_args:
+                setattr(command_namespace, arg, getattr(args, arg))
+
+        # remove arguments that have been moved into the second-level namespace
+        # from the top-level namespace
+        for arg in command_args:
+            if hasattr(args, arg):
+                delattr(args, arg)
+
+        setattr(args, args.command, command_namespace)
+
+    if args.command == "run":
+        # we only want to only move arguments to the `run` second-level namespace
+        # that are in fact specific to the `run` subcommand
+        run_args = [argument.name for argument in RunParser.arguments]
+        add_command_hierarchy(run_args)
+
+    return args
+
 def main(test_args=None):
     """Primary workflow"""
     global _LOGGER
@@ -585,6 +628,7 @@ def main(test_args=None):
     else:
         args, remaining_args = parser.parse_known_args()
 
+    args = make_hierarchical_if_needed(args)
     cli_use_errors = validate_post_parse(args)
     if cli_use_errors:
         parser.print_help(sys.stderr)
