@@ -1,11 +1,13 @@
 from argparse import ArgumentParser, Namespace
 import secrets
+import io
 from typing import Dict, TypeAlias
 
 import fastapi
-from fastapi import FastAPI
 import pydantic
 import uvicorn
+
+from fastapi import FastAPI
 
 from looper.cli_pydantic import run_looper
 from looper.command_models.commands import SUPPORTED_COMMANDS, TopLevelParser
@@ -16,18 +18,21 @@ stdout_redirects.enable_proxy()
 
 JobId: TypeAlias = str
 
+
 class Job(pydantic.BaseModel):
     id: JobId = pydantic.Field(
         default_factory=lambda: secrets.token_urlsafe(4),
-        description="The unique identifier of the job"
+        description="The unique identifier of the job",
     )
     status: str = pydantic.Field(
         default="in_progress",
-        description="The current status of the job. Can be either `in_progress` or `completed`."
+        description="The current status of the job. Can be either `in_progress` or `completed`.",
     )
-    console_output: str | None = pydantic.Field(default=None,
-        description="Console output produced by `looper` while performing the requested action"
+    console_output: str | None = pydantic.Field(
+        default=None,
+        description="Console output produced by `looper` while performing the requested action",
     )
+
 
 app = FastAPI(validate_model=True)
 jobs: Dict[str, Job] = {}
@@ -78,15 +83,28 @@ def create_argparse_namespace(top_level_model: TopLevelParser) -> Namespace:
             setattr(namespace, argname, command_namespace)
     return namespace
 
-@app.post("/", status_code=202)
-async def main_endpoint(top_level_model: TopLevelParser, background_tasks: fastapi.BackgroundTasks) -> Dict:
+
+@app.post(
+    "/",
+    status_code=202,
+    summary="Run Looper",
+    description="Start a `looper` command with arguments specified in "
+    "`top_level_model` in the background and return a job identifier.",
+)
+async def main_endpoint(
+    top_level_model: TopLevelParser, background_tasks: fastapi.BackgroundTasks
+) -> Dict:
     job = Job()
     jobs[job.id] = job
     background_tasks.add_task(background_async, top_level_model, job.id)
     return {"job_id": job.id}
 
 
-@app.get("/status/{job_id}")
+@app.get(
+    "/status/{job_id}",
+    summary="Get job status",
+    description="Retrieve the status of a job based on its unique identifier.",
+)
 async def get_status(job_id: JobId) -> Job:
     return jobs[job_id]
 

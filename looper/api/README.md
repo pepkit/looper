@@ -19,3 +19,11 @@ curl -X POST -H "Content-Type: application/json" -d '{"run": {}, "looper_config"
 with the project files in the same `looper/api` folder.
 
 This example sends a JSON payload with the `run` and `looper_config` parameters to the `/` endpoint.
+
+## API Documentation
+The API documentation is automatically generated and can be accessed in your web browser:
+
+Swagger UI: http://127.0.0.1:8000/docs
+ReDoc: http://127.0.0.1:8000/redoc
+
+Explore the API documentation to understand available endpoints, request parameters, and response formats.
