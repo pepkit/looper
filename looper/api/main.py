@@ -1,10 +1,11 @@
-from argparse import Namespace
+from argparse import ArgumentParser, Namespace
 import secrets
 from typing import Dict, TypeAlias
 
 import fastapi
 from fastapi import FastAPI
 import pydantic
+import uvicorn
 
 from looper.cli_pydantic import run_looper
 from looper.command_models.commands import SUPPORTED_COMMANDS, TopLevelParser
@@ -91,3 +92,12 @@ async def main_endpoint(top_level_model: TopLevelParser, background_tasks: fasta
 @app.get("/status/{job_id}")
 async def get_status(job_id: JobId):
     return jobs[job_id]
+
+
+if __name__ == "__main__":
+    parser = ArgumentParser("looper-serve", description="Run looper HTTP API server")
+    parser.add_argument("--host", type=str, default="0.0.0.0", help="Host IP address to use (127.0.0.1 for local access only)")
+    parser.add_argument("--port", type=int, default=8000, help="Port the server listens on")
+    args = parser.parse_args()
+
+    uvicorn.run(app, host=args.host, port=args.port)
