@@ -47,7 +47,9 @@ from .utils import (
 )
 
 
-def run_looper(args: Namespace | TopLevelParser, parser: ArgumentParser, http_api=False):
+def run_looper(
+    args: Namespace | TopLevelParser, parser: ArgumentParser, http_api=False
+):
     # here comes adapted `cli_looper.py` code
     global _LOGGER
 
@@ -98,7 +100,8 @@ def run_looper(args: Namespace | TopLevelParser, parser: ArgumentParser, http_ap
 
     divcfg = (
         select_divvy_config(filepath=subcommand_args.divvy)
-        if hasattr(subcommand_args, "divvy") else None
+        if hasattr(subcommand_args, "divvy")
+        else None
     )
     args = enrich_args_via_cfg(args, parser, False, http_api)
 

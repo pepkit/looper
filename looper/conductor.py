@@ -391,7 +391,9 @@ class SubmissionConductor(object):
                     # Using `subprocess.run()` instead of `subprocess.check()` allows us to capture
                     # stdout and stderr of the child process, and pass it to the `stdout` / `stderr`
                     # of `looper`'s Python process.
-                    result = subprocess.run(submission_command, check=True, shell=True, capture_output=True)
+                    result = subprocess.run(
+                        submission_command, check=True, shell=True, capture_output=True
+                    )
                     print(result.stdout.decode())
                     print(result.stderr.decode(), file=sys.stderr)
                 except subprocess.CalledProcessError:
