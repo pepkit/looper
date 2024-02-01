@@ -152,6 +152,21 @@ class ArgumentEnum(enum.Enum):
     AMEND = Argument(
         name="amend", default=(List, []), description="List of amendments to activate"
     )
+    SEL_ATTR = Argument(
+        name="sel_attr",
+        default=(str, "toggle"),
+        description="Attribute for sample exclusion OR inclusion",
+    )
+    SEL_INCL = Argument(
+        name="sel_incl",
+        default=(str, ""),
+        description="Include only samples with these values",
+    )
+    SEL_EXCL = Argument(
+        name="sel_excl",
+        default=(str, ""),
+        description="Exclude samples with these values",
+    )
     SEL_FLAG = Argument(
         name="sel_flag", default=(str, ""), description="Sample selection flag"
     )
