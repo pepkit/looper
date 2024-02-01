@@ -25,11 +25,8 @@ class Job(pydantic.BaseModel):
         default="in_progress",
         description="The current status of the job. Can be either `in_progress` or `completed`."
     )
-    stdout: str | None = pydantic.Field(default=None,
-        description="Standard output produced by `looper` while performing the requested action"
-    )
-    stderr: str | None = pydantic.Field(default=None,
-        description="Standard error output produced by `looper` while performing the requested action"
+    console_output: str | None = pydantic.Field(default=None,
+        description="Console output produced by `looper` while performing the requested action"
     )
 
 app = FastAPI(validate_model=True)
@@ -38,7 +35,7 @@ jobs: Dict[str, Job] = {}
 
 def background_async(top_level_model: TopLevelParser, job_id: JobId) -> None:
     argparse_namespace = create_argparse_namespace(top_level_model)
-    stdout_stream = stdout_redirects.redirect()
+    output_stream = stdout_redirects.redirect()
 
     run_looper(argparse_namespace, None, True)
 
@@ -46,7 +43,7 @@ def background_async(top_level_model: TopLevelParser, job_id: JobId) -> None:
     # in the following issue: https://github.com/python/cpython/issues/80374
     # But this *seems* not to pose any problems.
     jobs[job_id].status = "completed"
-    jobs[job_id].stdout = stdout_stream.getvalue()
+    jobs[job_id].console_output = output_stream.getvalue()
 
 
 def create_argparse_namespace(top_level_model: TopLevelParser) -> Namespace:
