@@ -52,8 +52,6 @@ RunParser = Command(
         ArgumentEnum.COMMAND_EXTRA_OVERRIDE.value,
         ArgumentEnum.LUMP.value,
         ArgumentEnum.LUMPN.value,
-        ArgumentEnum.LIMIT.value,
-        ArgumentEnum.SKIP.value,
         ArgumentEnum.DIVVY.value,
         ArgumentEnum.SKIP_FILE_CHECKS.value,
         ArgumentEnum.COMPUTE.value,
@@ -97,3 +95,5 @@ class TopLevelParser(pydantic.BaseModel):
     verbosity: Optional[int] = ArgumentEnum.VERBOSITY.value.with_reduced_default()
     logdev: Optional[bool] = ArgumentEnum.LOGDEV.value.with_reduced_default()
     pipestat: Optional[str] = ArgumentEnum.PIPESTAT.value.with_reduced_default()
+    limit: Optional[int] = ArgumentEnum.LIMIT.value.with_reduced_default()
+    skip: Optional[int] = ArgumentEnum.SKIP.value.with_reduced_default()
