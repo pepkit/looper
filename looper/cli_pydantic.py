@@ -176,8 +176,6 @@ def main() -> None:
         add_help=True,
     )
     args = parser.parse_typed_args()
-    print(args)
-    print("#########################################")
     run_looper(args, parser)
 
 
