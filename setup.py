@@ -82,6 +82,7 @@ setup(
             "looper = looper.__main__:main",
             "divvy = looper.__main__:divvy_main",
             "looper-pydantic-argparse = looper.cli_pydantic:main",
+            "looper-serve = looper.api.main:main"
         ],
     },
     scripts=scripts,

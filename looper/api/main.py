@@ -10,7 +10,7 @@ import uvicorn
 from looper.cli_pydantic import run_looper
 from looper.command_models.commands import SUPPORTED_COMMANDS, TopLevelParser
 
-import stdout_redirects
+from looper.api import stdout_redirects
 
 stdout_redirects.enable_proxy()
 
@@ -94,10 +94,21 @@ async def get_status(job_id: JobId):
     return jobs[job_id]
 
 
-if __name__ == "__main__":
+def main() -> None:
     parser = ArgumentParser("looper-serve", description="Run looper HTTP API server")
-    parser.add_argument("--host", type=str, default="0.0.0.0", help="Host IP address to use (127.0.0.1 for local access only)")
-    parser.add_argument("--port", type=int, default=8000, help="Port the server listens on")
+    parser.add_argument(
+        "--host",
+        type=str,
+        default="0.0.0.0",
+        help="Host IP address to use (127.0.0.1 for local access only)",
+    )
+    parser.add_argument(
+        "--port", type=int, default=8000, help="Port the server listens on"
+    )
     args = parser.parse_args()
 
     uvicorn.run(app, host=args.host, port=args.port)
+
+
+if __name__ == "__main__":
+    main()
