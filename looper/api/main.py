@@ -87,7 +87,7 @@ async def main_endpoint(top_level_model: TopLevelParser, background_tasks: fasta
 
 
 @app.get("/status/{job_id}")
-async def get_status(job_id: JobId):
+async def get_status(job_id: JobId) -> Job:
     return jobs[job_id]
 
 
