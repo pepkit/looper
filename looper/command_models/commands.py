@@ -55,7 +55,8 @@ RunParser = Command(
         ArgumentEnum.DIVVY.value,
         ArgumentEnum.SKIP_FILE_CHECKS.value,
         ArgumentEnum.COMPUTE.value,
-        ArgumentEnum.PACKAGE.value
+        ArgumentEnum.PACKAGE.value,
+        ArgumentEnum.SETTINGS.value
     ],
 )
 RunParserModel = RunParser.create_model()
