@@ -1,6 +1,5 @@
 from argparse import ArgumentParser, Namespace
 import secrets
-import io
 from typing import Dict, TypeAlias
 
 import fastapi
@@ -16,11 +15,9 @@ from looper.api import stdout_redirects
 
 stdout_redirects.enable_proxy()
 
-JobId: TypeAlias = str
-
 
 class Job(pydantic.BaseModel):
-    id: JobId = pydantic.Field(
+    id: str = pydantic.Field(
         default_factory=lambda: secrets.token_urlsafe(4),
         description="The unique identifier of the job",
     )
@@ -38,7 +35,7 @@ app = FastAPI(validate_model=True)
 jobs: Dict[str, Job] = {}
 
 
-def background_async(top_level_model: TopLevelParser, job_id: JobId) -> None:
+def background_async(top_level_model: TopLevelParser, job_id: str) -> None:
     argparse_namespace = create_argparse_namespace(top_level_model)
     output_stream = stdout_redirects.redirect()
 
@@ -105,7 +102,7 @@ async def main_endpoint(
     summary="Get job status",
     description="Retrieve the status of a job based on its unique identifier.",
 )
-async def get_status(job_id: JobId) -> Job:
+async def get_status(job_id: str) -> Job:
     return jobs[job_id]
 
 
