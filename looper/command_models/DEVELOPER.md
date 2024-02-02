@@ -63,17 +63,23 @@ class TopLevelParser(pydantic.BaseModel):
     new_argument: Optional[new_argument_type] = ArgumentEnum.NEW_ARGUMENT.value.with_reduced_default()
 ```
 
-## Special Treatment for the `run` Command
+## Special treatment for the `run` command
 
 The `run` command in our project requires special treatment to accommodate hierarchical namespaces
 and properly handle its unique characteristics. Several functions have been adapted to ensure the
 correct behavior of the run command, and similar adaptations may be necessary for other commands.
 
 For developers looking to understand the details of the special treatment given to the `run`
-command and its associated changes, commits with titles starting with **"`run` special treatment:"**
-provide valuable insights. These commits encapsulate modifications made to functions such as
-`make_hierarchical_if_needed`, adjustments in `divvy` argument retrieval, adaptations to
-functions like `_proc_resources_spec`, `validate_post_parse`, and also project CLI
-attributes. If you are considering adding new commands to the project, it is recommended to follow
-these commits for guidance on adapting functions and ensuring consistent behavior across different
-commands.
+command and its associated changes, we recommend to inspect the following functions / part of the
+code:
+- `looper/cli_looper.py`:
+  - `make_hierarchical_if_needed()`
+  - assignment of the `divcfg` variable
+  - assignment of the `project_args` variable
+  - `_proc_resources_spec()`
+  - `validate_post_parse()`
+- `looper/utils.py`:
+  - `enrich_args_via_cfg()`
+
+If you are adding new commands to the project / migrate existing commands to a `pydantic` model-based definition, adapt these parts of the codes with equivalent behavior for your new command.
+Likewise, adapt argument accessions in the corresponding executor in `looper/looper.py` to take into account the hierarchical organization of the command's arguments.
