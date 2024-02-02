@@ -5,20 +5,25 @@
 This API provides an HTTP interface for running the `looper` commands, allowing users to interact with Looper via HTTP requests.
 
 ## Usage
-### Running the API
-To run the API, execute the following command:
+### Running the server
+Run the app:
 ```bash
-cd looper/api
-uvicorn main:app --reload
+looper-serve [--host <host IP address>] [--port <port>]
 ```
-### Example API Usage
-To run the `looper run` command through the HTTP API, you can use the following curl command:
-```bash
-curl -X POST -H "Content-Type: application/json" -d '{"run": {}, "looper_config": ".looper.yaml"}' "http://127.0.0.1:8000"
-```
-with the project files in the same `looper/api` folder.
 
-This example sends a JSON payload with the `run` and `looper_config` parameters to the `/` endpoint.
+> [!NOTE]
+This assumes that all files specified in the arguments are available on the file system of the machine that is running the HTTP API server. Best make sure you use absolute file paths in all `looper` YAML configuration files.
+
+### Sending requests
+To test this, you can clone the [`hello_looper`](https://github.com/pepkit/hello_looper) repository and then run (for example) the following in a second terminal:
+```bash
+curl -X POST -H "Content-Type: application/json" -d '{"run": {"time_delay": 5}, "looper_config": "/path/to/hello_looper/.looper.yaml"}' "http://127.0.0.1:8000"
+```
+This will return a six-letter job ID, say `abc123`. Then get the result / output of the run with
+```bash
+curl -X GET -v localhost:8000/status/abc123
+```
+For better visualization / readability, you can post-process the output by piping it to `jq` (` | jq -r .console_output`).
 
 ## API Documentation
 The API documentation is automatically generated and can be accessed in your web browser:
