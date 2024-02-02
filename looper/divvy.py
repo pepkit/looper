@@ -15,7 +15,6 @@ from yaml import SafeLoader
 from ubiquerg import is_writable, VersionInHelpParser
 
 
-
 from .const import (
     COMPUTE_SETTINGS_VARNAME,
     DEFAULT_COMPUTE_RESOURCES_NAME,
