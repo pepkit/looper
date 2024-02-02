@@ -21,7 +21,7 @@ from peppy.exceptions import RemoteYAMLError
 from pipestat import PipestatError
 from ubiquerg import expandpath, is_command_callable
 from yaml import dump
-from yacman import YAMLConfigManager
+from yacman import FutureYAMLConfigManager as YAMLConfigManager
 
 from .const import *
 from .exceptions import JobSubmissionException, SampleFailedException
