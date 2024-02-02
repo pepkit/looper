@@ -6,11 +6,15 @@ import os
 import sys
 import shutil
 import yaml
-from yaml import SafeLoader
-from shutil import copytree
 
+
+from shutil import copytree
+from yacman import YAMLConfigManager as YAMLConfigManager
+from yacman import FILEPATH_KEY, load_yaml, select_config
+from yaml import SafeLoader
 from ubiquerg import is_writable, VersionInHelpParser
-import yacman
+
+
 
 from .const import (
     COMPUTE_SETTINGS_VARNAME,
@@ -28,7 +32,7 @@ _LOGGER = logging.getLogger(__name__)
 # This is the divvy.py submodule from divvy
 
 
-class ComputingConfiguration(yacman.YAMLConfigManager):
+class ComputingConfiguration(YAMLConfigManager):
     """
     Represents computing configuration objects.
 
@@ -73,7 +77,7 @@ class ComputingConfiguration(yacman.YAMLConfigManager):
 
     def write(self, filename=None):
         super(ComputingConfiguration, self).write(filepath=filename, exclude_case=True)
-        filename = filename or getattr(self, yacman.FILEPATH_KEY)
+        filename = filename or getattr(self, FILEPATH_KEY)
         filedir = os.path.dirname(filename)
         # For this object, we *also* have to write the template files
         for pkg_name, pkg in self["compute_packages"].items():
@@ -151,7 +155,7 @@ class ComputingConfiguration(yacman.YAMLConfigManager):
             # Augment compute, creating it if needed.
             if self.compute is None:
                 _LOGGER.debug("Creating Project compute")
-                self.compute = yacman.YAMLConfigManager()
+                self.compute = YAMLConfigManager()
                 _LOGGER.debug(
                     "Adding entries for package_name '{}'".format(package_name)
                 )
@@ -200,11 +204,11 @@ class ComputingConfiguration(yacman.YAMLConfigManager):
         self.reset_active_settings()
         return self.activate_package(package_name)
 
-    def get_active_package(self):
+    def get_active_package(self) -> YAMLConfigManager:
         """
         Returns settings for the currently active compute package
 
-        :return yacman.YacAttMap: data defining the active compute package
+        :return YAMLConfigManager: data defining the active compute package
         """
         return self.compute
 
@@ -222,7 +226,7 @@ class ComputingConfiguration(yacman.YAMLConfigManager):
 
         :return bool: success flag
         """
-        self.compute = yacman.YacAttMap()
+        self.compute = YAMLConfigManager()
         return True
 
     def update_packages(self, config_file):
@@ -235,11 +239,11 @@ class ComputingConfiguration(yacman.YAMLConfigManager):
 
         :param str config_file: path to file with new divvy configuration data
         """
-        entries = yacman.load_yaml(config_file)
+        entries = load_yaml(config_file)
         self.update(entries)
         return True
 
-    def get_adapters(self):
+    def get_adapters(self) -> YAMLConfigManager:
         """
         Get current adapters, if defined.
 
@@ -248,9 +252,9 @@ class ComputingConfiguration(yacman.YAMLConfigManager):
         package-specific set of adapters, if any defined in 'adapters' section
         under currently active compute package.
 
-        :return yacman.YAMLConfigManager: current adapters mapping
+        :return YAMLConfigManager: current adapters mapping
         """
-        adapters = yacman.YAMLConfigManager()
+        adapters = YAMLConfigManager()
         if "adapters" in self and self["adapters"] is not None:
             adapters.update(self["adapters"])
         if "compute" in self and "adapters" in self.compute:
@@ -376,7 +380,7 @@ def select_divvy_config(filepath):
     :param str | NoneType filepath: direct file path specification
     :return str: path to the config file to read
     """
-    divcfg = yacman.select_config(
+    divcfg = select_config(
         config_filepath=filepath,
         config_env_vars=COMPUTE_SETTINGS_VARNAME,
         default_config_filepath=DEFAULT_CONFIG_FILEPATH,
