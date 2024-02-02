@@ -1,6 +1,6 @@
-# Developer Documentation
+# Developer documentation
 
-## Adding New Models
+## Adding new command models
 
 To add a new model (command) to the project, follow these steps:
 
