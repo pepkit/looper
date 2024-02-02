@@ -62,3 +62,18 @@ class TopLevelParser(pydantic.BaseModel):
     ...
     new_argument: Optional[new_argument_type] = ArgumentEnum.NEW_ARGUMENT.value.with_reduced_default()
 ```
+
+## Special Treatment for the `run` Command
+
+The `run` command in our project requires special treatment to accommodate hierarchical namespaces
+and properly handle its unique characteristics. Several functions have been adapted to ensure the
+correct behavior of the run command, and similar adaptations may be necessary for other commands.
+
+For developers looking to understand the details of the special treatment given to the `run`
+command and its associated changes, commits with titles starting with **"`run` special treatment:"**
+provide valuable insights. These commits encapsulate modifications made to functions such as
+`make_hierarchical_if_needed`, adjustments in `divvy` argument retrieval, adaptations to
+functions like `_proc_resources_spec`, `validate_post_parse`, and also project CLI
+attributes. If you are considering adding new commands to the project, it is recommended to follow
+these commits for guidance on adapting functions and ensuring consistent behavior across different
+commands.
