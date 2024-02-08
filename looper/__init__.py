@@ -7,10 +7,6 @@ local level, but this will at least provide a foundation.
 
 """
 
-import logmuse
-
-logmuse.init_logger("looper")
-
 from .divvy import ComputingConfiguration, select_divvy_config
 from .divvy import DEFAULT_COMPUTE_RESOURCES_NAME
 from .divvy import NEW_COMPUTE_KEY as COMPUTE_KEY
