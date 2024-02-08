@@ -9,11 +9,7 @@ from looper.divvy import select_divvy_config, DEFAULT_CONFIG_SCHEMA
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(THIS_DIR, "data/divcfg-master")
 FILES = glob.glob(DATA_DIR + "/*.yaml")
-DCC_ATTRIBUTES = divvy.ComputingConfiguration(
-    filepath=select_divvy_config(None),
-    schema_source=DEFAULT_CONFIG_SCHEMA,
-    validate_on_write=True,
-).keys()
+DCC_ATTRIBUTES = divvy.ComputingConfiguration().keys()
 
 
 @pytest.fixture

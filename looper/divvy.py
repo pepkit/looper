@@ -52,8 +52,9 @@ class ComputingConfiguration(YAMLConfigManager):
         entries=None,
         filepath=None,
         schema_source=None,
-        validate_on_write=False,
+        validate_on_write=True,
     ):
+
         super(ComputingConfiguration, self).__init__(
             validate_on_write=validate_on_write
         )
@@ -66,8 +67,10 @@ class ComputingConfiguration(YAMLConfigManager):
             filepath=filepath, schema_source=DEFAULT_CONFIG_SCHEMA
         )
         self.data.update(temp_ym.data)
+        setattr(self, "schema", temp_ym.schema)
+        self.schema_source = temp_ym.schema_source
         self.filepath = filepath
-        if not "compute_packages" in self:
+        if "compute_packages" not in self:
             raise Exception(
                 "Your divvy config file is not in divvy config format "
                 "(it lacks a compute_packages section): '{}'".format(filepath)
