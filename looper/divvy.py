@@ -9,7 +9,7 @@ import yaml
 
 
 from shutil import copytree
-from yacman import YAMLConfigManager as YAMLConfigManager
+from yacman import FutureYAMLConfigManager as YAMLConfigManager
 from yacman import FILEPATH_KEY, load_yaml, select_config
 from yaml import SafeLoader
 from ubiquerg import is_writable, VersionInHelpParser
@@ -47,25 +47,31 @@ class ComputingConfiguration(YAMLConfigManager):
         `DIVCFG` file)
     """
 
-    def __init__(self, entries=None, filepath=None):
+    def __init__(
+        self,
+        entries=None,
+        filepath=None,
+        schema_source=None,
+        validate_on_write=False,
+    ):
+        super(ComputingConfiguration, self).__init__(
+            validate_on_write=validate_on_write
+        )
+
         if not entries and not filepath:
             # Handle the case of an empty one, when we'll use the default
             filepath = select_divvy_config(None)
 
-        super(ComputingConfiguration, self).__init__(
-            entries=entries,
-            filepath=filepath,
-            schema_source=DEFAULT_CONFIG_SCHEMA,
-            validate_on_write=True,
+        temp_ym = YAMLConfigManager.from_yaml_file(
+            filepath=filepath, schema_source=DEFAULT_CONFIG_SCHEMA
         )
-
+        self.data.update(temp_ym.data)
+        self.filepath = filepath
         if not "compute_packages" in self:
             raise Exception(
                 "Your divvy config file is not in divvy config format "
                 "(it lacks a compute_packages section): '{}'".format(filepath)
             )
-            # We require that compute_packages be present, even if empty
-            self["compute_packages"] = {}
 
         # Initialize default compute settings.
         _LOGGER.debug("Establishing project compute settings")
