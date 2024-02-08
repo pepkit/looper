@@ -123,9 +123,9 @@ class TestLooperRunBehavior:
             pifaces = config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][
                 PIPELINE_INTERFACES_KEY
             ]
-            config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][
-                PIPELINE_INTERFACES_KEY
-            ] = pifaces[1]
+            config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][PIPELINE_INTERFACES_KEY] = (
+                pifaces[1]
+            )
 
         x = test_args_expansion(tp, "run")
         try:
@@ -140,9 +140,9 @@ class TestLooperRunBehavior:
             pifaces = config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][
                 PIPELINE_INTERFACES_KEY
             ]
-            config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][
-                PIPELINE_INTERFACES_KEY
-            ] = pifaces[1]
+            config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][PIPELINE_INTERFACES_KEY] = (
+                pifaces[1]
+            )
         x = test_args_expansion(tp, "run")
         try:
             # Test that {looper.piface_dir} is correctly rendered to a path which will show up in the final .sub file
@@ -211,9 +211,9 @@ class TestLooperRunBehavior:
             pifaces = config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][
                 PIPELINE_INTERFACES_KEY
             ]
-            config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][
-                PIPELINE_INTERFACES_KEY
-            ] = pifaces[1]
+            config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][PIPELINE_INTERFACES_KEY] = (
+                pifaces[1]
+            )
         piface_path = os.path.join(os.path.dirname(tp), pifaces[1])
         with mod_yaml_data(piface_path) as piface_data:
             del piface_data["pipeline_name"]
