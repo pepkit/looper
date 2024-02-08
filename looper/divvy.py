@@ -10,7 +10,7 @@ import yaml
 
 from shutil import copytree
 from yacman import FutureYAMLConfigManager as YAMLConfigManager
-from yacman import FILEPATH_KEY, load_yaml, select_config
+from yacman import write_lock, FILEPATH_KEY, load_yaml, select_config
 from yaml import SafeLoader
 from ubiquerg import is_writable, VersionInHelpParser
 
@@ -97,7 +97,9 @@ class ComputingConfiguration(YAMLConfigManager):
         )  # TODO this seems problematic if using entries for creation. There is no filepath.
 
     def write(self, filename=None):
-        super(ComputingConfiguration, self).write(filepath=filename, exclude_case=True)
+        with write_lock(self) as locked_ym:
+            locked_ym.rebase()
+            locked_ym.write()
         filename = filename or getattr(self, FILEPATH_KEY)
         filedir = os.path.dirname(filename)
         # For this object, we *also* have to write the template files
