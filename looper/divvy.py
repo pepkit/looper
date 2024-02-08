@@ -63,13 +63,24 @@ class ComputingConfiguration(YAMLConfigManager):
             # Handle the case of an empty one, when we'll use the default
             filepath = select_divvy_config(None)
 
-        temp_ym = YAMLConfigManager.from_yaml_file(
-            filepath=filepath, schema_source=DEFAULT_CONFIG_SCHEMA
-        )
+        if filepath:
+            temp_ym = YAMLConfigManager.from_yaml_file(
+                filepath=filepath, schema_source=DEFAULT_CONFIG_SCHEMA
+            )
+            self.filepath = filepath
+        elif entries:
+            temp_ym = YAMLConfigManager.from_obj(
+                entries=entries, schema_source=DEFAULT_CONFIG_SCHEMA
+            )
+        else:
+            raise Exception(
+                "Must provide either filepath or entries when creating ComputingConfiguration."
+            )
+
         self.data.update(temp_ym.data)
         setattr(self, "schema", temp_ym.schema)
         self.schema_source = temp_ym.schema_source
-        self.filepath = filepath
+
         if "compute_packages" not in self:
             raise Exception(
                 "Your divvy config file is not in divvy config format "
@@ -81,7 +92,9 @@ class ComputingConfiguration(YAMLConfigManager):
         self.compute = None
         self.setdefault("adapters", None)
         self.activate_package(DEFAULT_COMPUTE_RESOURCES_NAME)
-        self.config_file = self.filepath
+        self.config_file = (
+            self.filepath
+        )  # TODO this seems problematic if using entries for creation. There is no filepath.
 
     def write(self, filename=None):
         super(ComputingConfiguration, self).write(filepath=filename, exclude_case=True)
