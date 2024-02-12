@@ -144,7 +144,7 @@ class Project(peppyProject):
         self.dcc = (
             None
             if divcfg_path is None
-            else ComputingConfiguration(filepath=divcfg_path)
+            else ComputingConfiguration.from_yaml_file(filepath=divcfg_path)
         )
         if DRY_RUN_KEY in self and not self[DRY_RUN_KEY]:
             _LOGGER.debug("Ensuring project directories exist")

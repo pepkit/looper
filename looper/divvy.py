@@ -9,8 +9,8 @@ import yaml
 
 
 from shutil import copytree
-from yacman import YAMLConfigManager as YAMLConfigManager
-from yacman import FILEPATH_KEY, load_yaml, select_config
+from yacman import FutureYAMLConfigManager as YAMLConfigManager
+from yacman import write_lock, FILEPATH_KEY, load_yaml, select_config
 from yaml import SafeLoader
 from ubiquerg import is_writable, VersionInHelpParser
 
@@ -47,35 +47,30 @@ class ComputingConfiguration(YAMLConfigManager):
         `DIVCFG` file)
     """
 
-    def __init__(self, entries=None, filepath=None):
-        if not entries and not filepath:
-            # Handle the case of an empty one, when we'll use the default
-            filepath = select_divvy_config(None)
-
-        super(ComputingConfiguration, self).__init__(
-            entries=entries,
-            filepath=filepath,
-            schema_source=DEFAULT_CONFIG_SCHEMA,
-            validate_on_write=True,
+    def __init__(
+        self,
+        entries=None,
+        wait_max=None,
+        strict_ro_locks=False,
+        schema_source=None,
+        validate_on_write=False,
+    ):
+        super().__init__(
+            entries, wait_max, strict_ro_locks, schema_source, validate_on_write
         )
 
-        if not "compute_packages" in self:
-            raise Exception(
-                "Your divvy config file is not in divvy config format "
-                "(it lacks a compute_packages section): '{}'".format(filepath)
-            )
-            # We require that compute_packages be present, even if empty
+        if "compute_packages" not in self:
             self["compute_packages"] = {}
-
         # Initialize default compute settings.
         _LOGGER.debug("Establishing project compute settings")
         self.compute = None
         self.setdefault("adapters", None)
         self.activate_package(DEFAULT_COMPUTE_RESOURCES_NAME)
-        self.config_file = self.filepath
 
     def write(self, filename=None):
-        super(ComputingConfiguration, self).write(filepath=filename, exclude_case=True)
+        with write_lock(self) as locked_ym:
+            locked_ym.rebase()
+            locked_ym.write()
         filename = filename or getattr(self, FILEPATH_KEY)
         filedir = os.path.dirname(filename)
         # For this object, we *also* have to write the template files
@@ -159,7 +154,7 @@ class ComputingConfiguration(YAMLConfigManager):
                     "Adding entries for package_name '{}'".format(package_name)
                 )
 
-            self.compute.update(self["compute_packages"][package_name])
+            self.compute.update_from_obj(self["compute_packages"][package_name])
 
             # Ensure submission template is absolute. This *used to be* handled
             # at update (so the paths were stored as absolutes in the packages),
@@ -168,7 +163,7 @@ class ComputingConfiguration(YAMLConfigManager):
             if not os.path.isabs(self.compute["submission_template"]):
                 try:
                     self.compute["submission_template"] = os.path.join(
-                        os.path.dirname(self.filepath),
+                        os.path.dirname(self.default_config_file),
                         self.compute["submission_template"],
                     )
                 except AttributeError as e:
