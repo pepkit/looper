@@ -19,7 +19,7 @@ DCC_ATTRIBUTES = DCC.keys()
 @pytest.fixture
 def empty_dcc():
     """Provide the empty/default ComputingConfiguration object"""
-    return divvy.ComputingConfiguration.from_yaml_file(filepath=dcc_filepath)
+    return divvy.ComputingConfiguration()
 
 
 @pytest.fixture(params=FILES)
