@@ -50,51 +50,22 @@ class ComputingConfiguration(YAMLConfigManager):
     def __init__(
         self,
         entries=None,
-        filepath=None,
+        wait_max=None,
+        strict_ro_locks=False,
         schema_source=None,
-        validate_on_write=True,
+        validate_on_write=False,
     ):
-
-        super(ComputingConfiguration, self).__init__(
-            validate_on_write=validate_on_write
+        super().__init__(
+            entries, wait_max, strict_ro_locks, schema_source, validate_on_write
         )
 
-        if not entries and not filepath:
-            # Handle the case of an empty one, when we'll use the default
-            filepath = select_divvy_config(None)
-
-        if filepath:
-            temp_ym = YAMLConfigManager.from_yaml_file(
-                filepath=filepath, schema_source=DEFAULT_CONFIG_SCHEMA
-            )
-            self.filepath = filepath
-        elif entries:
-            temp_ym = YAMLConfigManager.from_obj(
-                entries=entries, schema_source=DEFAULT_CONFIG_SCHEMA
-            )
-        else:
-            raise Exception(
-                "Must provide either filepath or entries when creating ComputingConfiguration."
-            )
-
-        self.data.update(temp_ym.data)
-        setattr(self, "schema", temp_ym.schema)
-        self.schema_source = temp_ym.schema_source
-
         if "compute_packages" not in self:
-            raise Exception(
-                "Your divvy config file is not in divvy config format "
-                "(it lacks a compute_packages section): '{}'".format(filepath)
-            )
-
+            self["compute_packages"] = {}
         # Initialize default compute settings.
         _LOGGER.debug("Establishing project compute settings")
         self.compute = None
         self.setdefault("adapters", None)
         self.activate_package(DEFAULT_COMPUTE_RESOURCES_NAME)
-        self.config_file = (
-            self.filepath
-        )  # TODO this seems problematic if using entries for creation. There is no filepath.
 
     def write(self, filename=None):
         with write_lock(self) as locked_ym:
@@ -183,7 +154,7 @@ class ComputingConfiguration(YAMLConfigManager):
                     "Adding entries for package_name '{}'".format(package_name)
                 )
 
-            self.compute.update(self["compute_packages"][package_name])
+            self.compute.update_from_obj(self["compute_packages"][package_name])
 
             # Ensure submission template is absolute. This *used to be* handled
             # at update (so the paths were stored as absolutes in the packages),
@@ -192,7 +163,7 @@ class ComputingConfiguration(YAMLConfigManager):
             if not os.path.isabs(self.compute["submission_template"]):
                 try:
                     self.compute["submission_template"] = os.path.join(
-                        os.path.dirname(self.filepath),
+                        os.path.dirname(self.default_config_file),
                         self.compute["submission_template"],
                     )
                 except AttributeError as e:

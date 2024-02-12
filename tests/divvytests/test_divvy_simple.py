@@ -4,6 +4,7 @@ import pytest
 from collections import OrderedDict
 
 from yacman import YacAttMap
+from divvy import select_divvy_config
 
 # For interactive debugging:
 # import logmuse
@@ -12,7 +13,8 @@ from yacman import YacAttMap
 
 class TestPackageAtivation:
     def test_activate_package(self):
-        dcc = divvy.ComputingConfiguration()
+        dcc_filepath = select_divvy_config(None)
+        dcc = divvy.ComputingConfiguration().from_yaml_file(filepath=dcc_filepath)
         dcc.activate_package("default")
         t = dcc.compute["submission_template"]
         t2 = dcc["compute_packages"]["default"]["submission_template"]
@@ -25,7 +27,8 @@ class TestPackageAtivation:
 
 class TestWriting:
     def test_write_script(self):
-        dcc = divvy.ComputingConfiguration()
+        dcc_filepath = select_divvy_config(None)
+        dcc = divvy.ComputingConfiguration().from_yaml_file(filepath=dcc_filepath)
         dcc
         dcc.activate_package("singularity_slurm")
         extra_vars = {
