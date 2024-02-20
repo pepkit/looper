@@ -679,21 +679,21 @@ def destroy_summary(prj, dry_run=False, project_level=False):
                 [
                     get_file_for_project(
                         psm,
-                        pipeline_name=psm["_pipeline_name"],
+                        pipeline_name=psm.pipeline_name,
                         directory="reports",
                     ),
                     get_file_for_table(
                         psm,
-                        pipeline_name=psm["_pipeline_name"],
+                        pipeline_name=psm.pipeline_name,
                         appendix="stats_summary.tsv",
                     ),
                     get_file_for_table(
                         psm,
-                        pipeline_name=psm["_pipeline_name"],
+                        pipeline_name=psm.pipeline_name,
                         appendix="objs_summary.yaml",
                     ),
                     get_file_for_table(
-                        psm, pipeline_name=psm["_pipeline_name"], appendix="reports"
+                        psm, pipeline_name=psm.pipeline_name, appendix="reports"
                     ),
                 ],
                 dry_run,
@@ -711,21 +711,21 @@ def destroy_summary(prj, dry_run=False, project_level=False):
                     [
                         get_file_for_project(
                             psm,
-                            pipeline_name=psm["_pipeline_name"],
+                            pipeline_name=psm.pipeline_name,
                             directory="reports",
                         ),
                         get_file_for_table(
                             psm,
-                            pipeline_name=psm["_pipeline_name"],
+                            pipeline_name=psm.pipeline_name,
                             appendix="stats_summary.tsv",
                         ),
                         get_file_for_table(
                             psm,
-                            pipeline_name=psm["_pipeline_name"],
+                            pipeline_name=psm.pipeline_name,
                             appendix="objs_summary.yaml",
                         ),
                         get_file_for_table(
-                            psm, pipeline_name=psm["_pipeline_name"], appendix="reports"
+                            psm, pipeline_name=psm.pipeline_name, appendix="reports"
                         ),
                     ],
                     dry_run,
