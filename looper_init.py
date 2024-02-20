@@ -2,6 +2,7 @@
 # configuring a .looper.yaml file for a new project. To be used as `looper init`.
 
 import os
+
 cfg = {}
 
 print("This utility will walk you through creating a .looper.yaml file.")
@@ -19,7 +20,7 @@ DEFAULTS = {  # What you get if you just press enter
     "pep_config": "databio/example",
     "output_dir": "results",
     "piface_path": "pipeline_interface.yaml",
-    "project_name": os.path.basename(os.getcwd())
+    "project_name": os.path.basename(os.getcwd()),
 }
 
 
@@ -36,7 +37,8 @@ if not os.path.exists(cfg["pep_config"]):
     print(f"Warning: PEP file does not exist at '{cfg['pep_config']}'")
 
 cfg["output_dir"] = (
-    input(f"Path to output directory: ({DEFAULTS['output_dir']}) ") or DEFAULTS["output_dir"]
+    input(f"Path to output directory: ({DEFAULTS['output_dir']}) ")
+    or DEFAULTS["output_dir"]
 )
 
 # TODO: Right now this assumes you will have one pipeline interface, and a sample pipeline

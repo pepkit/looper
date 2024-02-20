@@ -85,11 +85,14 @@ def _get_yaml_path(namespaces, template_key, default_name_appendix="", filename=
 
 def write_pipestat_config(looper_pipestat_config_path, pipestat_config_dict):
     """
-    This is run at the project level, not at the sample level.
+    This writes a combined configuration file to be passed to a PipestatManager.
+    :param str looper_pipestat_config_path: path to the created pipestat configuration file
+    :param dict pipestat_config_dict: the dict containing key value pairs to be written to the pipestat configutation
+    return bool
     """
     with open(looper_pipestat_config_path, "w") as f:
         yaml.dump(pipestat_config_dict, f)
-    print(f"Initialized looper config file: {looper_pipestat_config_path}")
+    print(f"Initialized pipestat config file: {looper_pipestat_config_path}")
 
     return True
 
