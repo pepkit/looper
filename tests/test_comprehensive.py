@@ -37,7 +37,11 @@ def test_comprehensive_looper_pipestat():
     with TemporaryDirectory() as d:
         repo = Repo.clone_from(REPO_URL, d)
 
-        path_to_looper_config = os.path.join(d, "pipestat", ".looper.yaml")
+        # TODO executing either the .py or the .sh pipeline does not correctly report results because pytest is running from a different directory
+        pipestat_dir = os.path.join(d, "pipestat")
+        os.chdir(pipestat_dir)
+
+        path_to_looper_config = os.path.join(pipestat_dir, ".looper_pipestat_shell.yaml")
 
         x = [cmd, "-d", "--looper-config", path_to_looper_config]
 
@@ -47,3 +51,5 @@ def test_comprehensive_looper_pipestat():
                 assert result["Pipestat compatible"] is True
         except Exception:
             raise pytest.fail("DID RAISE {0}".format(Exception))
+
+        print(result)
