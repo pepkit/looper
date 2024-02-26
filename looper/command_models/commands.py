@@ -61,6 +61,59 @@ RunParser = Command(
 )
 RunParserModel = RunParser.create_model()
 
+# RERUN
+RerunParser = Command(
+    "rerun",
+    MESSAGE_BY_SUBCOMMAND["rerun"],
+    [
+        ArgumentEnum.IGNORE_FLAGS.value,
+        ArgumentEnum.TIME_DELAY.value,
+        ArgumentEnum.DRY_RUN.value,
+        ArgumentEnum.COMMAND_EXTRA.value,
+        ArgumentEnum.COMMAND_EXTRA_OVERRIDE.value,
+        ArgumentEnum.LUMP.value,
+        ArgumentEnum.LUMPN.value,
+        ArgumentEnum.DIVVY.value,
+        ArgumentEnum.SKIP_FILE_CHECKS.value,
+        ArgumentEnum.COMPUTE.value,
+        ArgumentEnum.PACKAGE.value,
+        ArgumentEnum.SETTINGS.value,
+    ],
+)
+RerunParserModel = RerunParser.create_model()
+
+# RUNP
+RunProjectParser = Command(
+    "runp",
+    MESSAGE_BY_SUBCOMMAND["runp"],
+    [
+        ArgumentEnum.IGNORE_FLAGS.value,
+        ArgumentEnum.TIME_DELAY.value,
+        ArgumentEnum.DRY_RUN.value,
+        ArgumentEnum.COMMAND_EXTRA.value,
+        ArgumentEnum.COMMAND_EXTRA_OVERRIDE.value,
+        ArgumentEnum.LUMP.value,
+        ArgumentEnum.LUMPN.value,
+        ArgumentEnum.DIVVY.value,
+        ArgumentEnum.SKIP_FILE_CHECKS.value,
+        ArgumentEnum.COMPUTE.value,
+        ArgumentEnum.PACKAGE.value,
+        ArgumentEnum.SETTINGS.value,
+    ],
+)
+RunProjectParserModel = RunProjectParser.create_model()
+
+# TABLE
+# REPORT
+# DESTROY
+# CHECK
+# CLEAN
+# INSPECT
+# INIT
+# INIT-PIFACE
+# LINK
+
+
 SUPPORTED_COMMANDS = [RunParser]
 
 
@@ -73,6 +126,12 @@ class TopLevelParser(pydantic.BaseModel):
 
     # commands
     run: Optional[RunParserModel] = pydantic.Field(description=RunParser.description)
+    rerun: Optional[RerunParserModel] = pydantic.Field(
+        description=RerunParser.description
+    )
+    runp: Optional[RunProjectParserModel] = pydantic.Field(
+        description=RunProjectParser.description
+    )
 
     # arguments
     settings: Optional[str] = ArgumentEnum.SETTINGS.value.with_reduced_default()
