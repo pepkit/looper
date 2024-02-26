@@ -761,13 +761,13 @@ def main(test_args=None):
         )
         if args.command == "table":
             if use_pipestat:
-                Tabulator(prj)(args)
+                return Tabulator(prj)(args)
             else:
                 raise PipestatConfigurationException("table")
 
         if args.command == "report":
             if use_pipestat:
-                Reporter(prj)(args)
+                return Reporter(prj)(args)
             else:
                 raise PipestatConfigurationException("report")
 

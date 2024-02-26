@@ -10,6 +10,7 @@ from looper.cli_looper import main
 from tests.smoketests.test_run import is_connected
 from tempfile import TemporaryDirectory
 from git import Repo
+from pipestat import PipestatManager
 
 from yaml import dump, safe_load
 
@@ -67,5 +68,66 @@ def test_comprehensive_looper_pipestat():
                 assert result["Pipestat compatible"] is True
         except Exception:
             raise pytest.fail("DID RAISE {0}".format(Exception))
+
+        # TODO TEST PROJECT LEVEL RUN
+        # Must add this to hello_looper for pipestat example
+
+        # TEST LOOPER CHECK
+
+        # looper cannot create flags, the pipeline or pipestat does that
+        # if you do not specify flag dir, pipestat places them in the same dir as config file
+        path_to_pipestat_config = os.path.join(
+            pipestat_dir, "looper_pipestat_config.yaml"
+        )
+        psm = PipestatManager(config_file=path_to_pipestat_config)
+        psm.set_status(record_identifier="frog_1", status_identifier="completed")
+        psm.set_status(record_identifier="frog_2", status_identifier="completed")
+
+        # Now use looper check to get statuses
+        x = ["check", "--looper-config", path_to_looper_config]
+
+        try:
+            result = main(test_args=x)
+            assert result["example_pipestat_pipeline"]["frog_1"] == "completed"
+        except Exception:
+            raise pytest.fail("DID RAISE {0}".format(Exception))
+
+        # TEST LOOPER REPORT
+
+        x = ["report", "--looper-config", path_to_looper_config]
+
+        try:
+            result = main(test_args=x)
+            assert "report_directory" in result
+        except Exception:
+            raise pytest.fail("DID RAISE {0}".format(Exception))
+
+        # TEST LOOPER Table
+
+        x = ["table", "--looper-config", path_to_looper_config]
+
+        try:
+            result = main(test_args=x)
+            assert "example_pipestat_pipeline_stats_summary.tsv" in result[0]
+        except Exception:
+            raise pytest.fail("DID RAISE {0}".format(Exception))
+
+        # TEST LOOPER DESTROY
+        # TODO add destroying individual samples via pipestat
+
+        x = [
+            "destroy",
+            "--looper-config",
+            path_to_looper_config,
+            "--force-yes",
+        ]  # Must force yes or pytest will throw an exception "OSError: pytest: reading from stdin while output is captured!"
+
+        try:
+            result = main(test_args=x)
+            # assert "report_directory" in result
+        except Exception:
+            raise pytest.fail("DID RAISE {0}".format(Exception))
+
+        # TODO TEST LOOPER INSPECT  -> I believe this moved to Eido?
 
         print(result)

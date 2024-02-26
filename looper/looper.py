@@ -545,6 +545,7 @@ class Reporter(Executor):
 
     def __call__(self, args):
         # initialize the report builder
+        self.debug = {}
         p = self.prj
         project_level = args.project
 
@@ -559,6 +560,8 @@ class Reporter(Executor):
                     looper_samples=self.prj.samples, portable=portable
                 )
                 print(f"Report directory: {report_directory}")
+                self.debug["report_directory"] = report_directory
+            return self.debug
         else:
             for piface_source_samples in self.prj._samples_by_piface(
                 self.prj.piface_key
@@ -576,6 +579,8 @@ class Reporter(Executor):
                         looper_samples=self.prj.samples, portable=portable
                     )
                     print(f"Report directory: {report_directory}")
+                    self.debug["report_directory"] = report_directory
+            return self.debug
 
 
 class Linker(Executor):
@@ -614,7 +619,6 @@ class Tabulator(Executor):
     """
 
     def __call__(self, args):
-        # p = self.prj
         project_level = args.project
         results = []
         if project_level:
