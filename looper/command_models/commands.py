@@ -144,11 +144,47 @@ CheckParser = Command(
 CheckParserModel = CheckParser.create_model()
 
 # CLEAN
-# INSPECT
-# INIT
-# INIT-PIFACE
-# LINK
+CleanParser = Command(
+    "clean",
+    MESSAGE_BY_SUBCOMMAND["clean"],
+    [
+        ArgumentEnum.DRY_RUN.value,
+        ArgumentEnum.FORCE_YES.value,
+    ],
+)
+CleanParserModel = CleanParser.create_model()
 
+# INSPECT
+# TODO Did this move to Eido?
+
+# INIT
+# TODO rename to `init-config` ?
+InitParser = Command(
+    "init",
+    MESSAGE_BY_SUBCOMMAND["init"],
+    [
+        # Original command has force flag which is technically a different flag, but we should just use FORCE_YES
+        ArgumentEnum.FORCE_YES.value,
+        ArgumentEnum.OUTPUT_DIR.value,
+    ],
+)
+InitParserModel = InitParser.create_model()
+
+# INIT-PIFACE
+InitPifaceParser = Command(
+    "init-piface",
+    MESSAGE_BY_SUBCOMMAND["init-piface"],
+    [],
+)
+InitPifaceParserModel = InitPifaceParser.create_model()
+
+# LINK
+LinkParser = Command(
+    "link",
+    MESSAGE_BY_SUBCOMMAND["link"],
+    [],
+)
+LinkParserModel = LinkParser.create_model()
 
 SUPPORTED_COMMANDS = [RunParser]
 
@@ -180,7 +216,14 @@ class TopLevelParser(pydantic.BaseModel):
     check: Optional[CheckParserModel] = pydantic.Field(
         description=CheckParser.description
     )
-
+    clean: Optional[CleanParserModel] = pydantic.Field(
+        description=CleanParser.description
+    )
+    init: Optional[InitParserModel] = pydantic.Field(description=InitParser.description)
+    init_piface: Optional[InitPifaceParserModel] = pydantic.Field(
+        description=InitPifaceParser.description
+    )
+    link: Optional[LinkParserModel] = pydantic.Field(description=LinkParser.description)
     # arguments
     settings: Optional[str] = ArgumentEnum.SETTINGS.value.with_reduced_default()
     pep_config: Optional[str] = ArgumentEnum.PEP_CONFIG.value.with_reduced_default()
