@@ -104,9 +104,45 @@ RunProjectParser = Command(
 RunProjectParserModel = RunProjectParser.create_model()
 
 # TABLE
+TableParser = Command(
+    "table",
+    MESSAGE_BY_SUBCOMMAND["table"],
+    [],
+)
+TableParserModel = TableParser.create_model()
+
+
 # REPORT
+ReportParser = Command(
+    "report",
+    MESSAGE_BY_SUBCOMMAND["report"],
+    [],
+)
+ReportParserModel = ReportParser.create_model()
+
 # DESTROY
+DestroyParser = Command(
+    "destroy",
+    MESSAGE_BY_SUBCOMMAND["destroy"],
+    [
+        ArgumentEnum.DRY_RUN.value,
+        ArgumentEnum.FORCE_YES.value,
+    ],
+)
+DestroyParserModel = DestroyParser.create_model()
+
 # CHECK
+CheckParser = Command(
+    "check",
+    MESSAGE_BY_SUBCOMMAND["check"],
+    [
+        ArgumentEnum.DESCRIBE_CODES.value,
+        ArgumentEnum.ITEMIZED.value,
+        ArgumentEnum.FLAGS.value,
+    ],
+)
+CheckParserModel = CheckParser.create_model()
+
 # CLEAN
 # INSPECT
 # INIT
@@ -131,6 +167,18 @@ class TopLevelParser(pydantic.BaseModel):
     )
     runp: Optional[RunProjectParserModel] = pydantic.Field(
         description=RunProjectParser.description
+    )
+    table: Optional[TableParserModel] = pydantic.Field(
+        description=TableParser.description
+    )
+    report: Optional[ReportParserModel] = pydantic.Field(
+        description=ReportParser.description
+    )
+    destroy: Optional[DestroyParserModel] = pydantic.Field(
+        description=DestroyParser.description
+    )
+    check: Optional[CheckParserModel] = pydantic.Field(
+        description=CheckParser.description
     )
 
     # arguments

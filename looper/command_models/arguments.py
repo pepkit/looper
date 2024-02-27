@@ -80,6 +80,30 @@ class ArgumentEnum(enum.Enum):
         default=(bool, False),
         description="Ignore run status flags",
     )
+    FORCE_YES = Argument(
+        name="force_yes",
+        default=(bool, False),
+        description="Provide upfront confirmation of destruction intent, to skip console query. Default=False",
+    )
+
+    DESCRIBE_CODES = Argument(
+        name="describe_codes",
+        default=(bool, False),
+        description="Show status codes description. Default=False",
+    )
+
+    ITEMIZED = Argument(
+        name="itemized",
+        default=(bool, False),
+        description="Show detailed overview of sample statuses. Default=False",
+    )
+
+    FLAGS = Argument(
+        name="flags",
+        default=(List, []),
+        description="Only check samples based on these status flags.",
+    )
+
     TIME_DELAY = Argument(
         name="time_delay",
         default=(int, 0),
