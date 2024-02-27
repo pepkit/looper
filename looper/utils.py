@@ -300,8 +300,11 @@ def enrich_args_via_cfg(parser_args, aux_parser, test_args=None):
             # this argument actually is a subcommand
             enriched_command_namespace = argparse.Namespace()
             command_namespace = getattr(parser_args, top_level_argname)
-            for argname in vars(command_namespace):
-                set_single_arg(argname, command_namespace, enriched_command_namespace)
+            if command_namespace:
+                for argname in vars(command_namespace):
+                    set_single_arg(
+                        argname, command_namespace, enriched_command_namespace
+                    )
             setattr(result, top_level_argname, enriched_command_namespace)
     return result
 

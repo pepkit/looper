@@ -57,7 +57,7 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser):
     subcommand_valued_args = [
         (arg, value)
         for arg, value in vars(args).items()
-        if arg and arg in supported_command_names
+        if arg and arg in supported_command_names and value is not None
     ]
     # Only one subcommand argument will be not `None`, else we found a bug in `pydantic-argparse`
     [(subcommand_name, subcommand_args)] = subcommand_valued_args

@@ -186,7 +186,19 @@ LinkParser = Command(
 )
 LinkParserModel = LinkParser.create_model()
 
-SUPPORTED_COMMANDS = [RunParser]
+SUPPORTED_COMMANDS = [
+    RunParser,
+    RerunParser,
+    RunProjectParser,
+    TableParser,
+    ReportParser,
+    DestroyParser,
+    CheckParser,
+    CleanParser,
+    InitParser,
+    InitPifaceParser,
+    LinkParser,
+]
 
 
 class TopLevelParser(pydantic.BaseModel):
