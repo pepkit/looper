@@ -172,7 +172,7 @@ InitParserModel = InitParser.create_model()
 
 # INIT-PIFACE
 InitPifaceParser = Command(
-    "init-piface",
+    "init_piface",
     MESSAGE_BY_SUBCOMMAND["init-piface"],
     [],
 )

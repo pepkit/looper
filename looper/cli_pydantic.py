@@ -76,8 +76,8 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser):
             )
         )
 
-    # if subcommand_name in ["init_piface"]:
-    #     sys.exit(int(not init_generic_pipeline()))
+    if subcommand_name in ["init_piface"]:
+        sys.exit(int(not init_generic_pipeline()))
 
     _LOGGER.info("Looper version: {}\nCommand: {}".format(__version__, subcommand_name))
 
