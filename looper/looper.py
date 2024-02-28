@@ -623,7 +623,7 @@ class Tabulator(Executor):
 
     def __call__(self, args):
         # p = self.prj
-        project_level = args.project
+        project_level = getattr(args, "project", None)
         results = []
         if project_level:
             psms = self.prj.get_pipestat_managers(project_level=True)

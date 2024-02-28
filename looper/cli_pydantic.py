@@ -194,6 +194,18 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser):
         if subcommand_name in ["destroy"]:
             return Destroyer(prj)(args)
 
+        use_pipestat = (
+            prj.pipestat_configured_project
+            if getattr(args, "project", None)
+            else prj.pipestat_configured
+        )
+
+        if subcommand_name in ["table"]:
+            if use_pipestat:
+                Tabulator(prj)(args)
+            else:
+                raise PipestatConfigurationException("table")
+
 
 def main() -> None:
     parser = pydantic_argparse.ArgumentParser(
