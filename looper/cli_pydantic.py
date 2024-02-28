@@ -43,6 +43,8 @@ from .utils import (
     is_registry_path,
     read_looper_config_file,
     read_looper_dotfile,
+    initiate_looper_config,
+    init_generic_pipeline,
 )
 
 
@@ -61,6 +63,21 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser):
     ]
     # Only one subcommand argument will be not `None`, else we found a bug in `pydantic-argparse`
     [(subcommand_name, subcommand_args)] = subcommand_valued_args
+
+    if subcommand_name in ["init"]:
+        return int(
+            not initiate_looper_config(
+                dotfile_path(),
+                args.pep_config,
+                args.init.output_dir,
+                args.sample_pipeline_interfaces,
+                args.project_pipeline_interfaces,
+                args.init.force_yes,
+            )
+        )
+
+    # if subcommand_name in ["init_piface"]:
+    #     sys.exit(int(not init_generic_pipeline()))
 
     _LOGGER.info("Looper version: {}\nCommand: {}".format(__version__, subcommand_name))
 
