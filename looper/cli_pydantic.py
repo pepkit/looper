@@ -191,6 +191,9 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser):
             collate(args, **compute_kwargs)
             return collate.debug
 
+        if subcommand_name in ["destroy"]:
+            return Destroyer(prj)(args)
+
 
 def main() -> None:
     parser = pydantic_argparse.ArgumentParser(

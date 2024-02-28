@@ -255,11 +255,17 @@ class Destroyer(Executor):
         _LOGGER.info("Removing summary:")
         use_pipestat = (
             self.prj.pipestat_configured_project
-            if args.project
+            if getattr(
+                args, "project", None
+            )  # TODO this argument hasn't been added to the pydantic models.
             else self.prj.pipestat_configured
         )
         if use_pipestat:
-            destroy_summary(self.prj, args.dry_run, args.project)
+            destroy_summary(
+                self.prj,
+                getattr(args.destroy, "dry_run", None),
+                getattr(args, "project", None),
+            )
         else:
             _LOGGER.warning(
                 "Pipestat must be configured to destroy any created summaries."
@@ -269,11 +275,11 @@ class Destroyer(Executor):
             _LOGGER.info("Destroy complete.")
             return 0
 
-        if args.dry_run:
+        if getattr(args.destroy, "dry_run", None):
             _LOGGER.info("Dry run. No files destroyed.")
             return 0
 
-        if not args.force_yes and not query_yes_no(
+        if not getattr(args.destroy, "force_yes", None) and not query_yes_no(
             "Are you sure you want to permanently delete all pipeline "
             "results for this project?"
         ):
@@ -681,21 +687,21 @@ def destroy_summary(prj, dry_run=False, project_level=False):
                 [
                     get_file_for_project(
                         psm,
-                        pipeline_name=psm["_pipeline_name"],
+                        pipeline_name=psm.pipeline_name,
                         directory="reports",
                     ),
                     get_file_for_table(
                         psm,
-                        pipeline_name=psm["_pipeline_name"],
+                        pipeline_name=psm.pipeline_name,
                         appendix="stats_summary.tsv",
                     ),
                     get_file_for_table(
                         psm,
-                        pipeline_name=psm["_pipeline_name"],
+                        pipeline_name=psm.pipeline_name,
                         appendix="objs_summary.yaml",
                     ),
                     get_file_for_table(
-                        psm, pipeline_name=psm["_pipeline_name"], appendix="reports"
+                        psm, pipeline_name=psm.pipeline_name, appendix="reports"
                     ),
                 ],
                 dry_run,
@@ -713,21 +719,21 @@ def destroy_summary(prj, dry_run=False, project_level=False):
                     [
                         get_file_for_project(
                             psm,
-                            pipeline_name=psm["_pipeline_name"],
+                            pipeline_name=psm.pipeline_name,
                             directory="reports",
                         ),
                         get_file_for_table(
                             psm,
-                            pipeline_name=psm["_pipeline_name"],
+                            pipeline_name=psm.pipeline_name,
                             appendix="stats_summary.tsv",
                         ),
                         get_file_for_table(
                             psm,
-                            pipeline_name=psm["_pipeline_name"],
+                            pipeline_name=psm.pipeline_name,
                             appendix="objs_summary.yaml",
                         ),
                         get_file_for_table(
-                            psm, pipeline_name=psm["_pipeline_name"], appendix="reports"
+                            psm, pipeline_name=psm.pipeline_name, appendix="reports"
                         ),
                     ],
                     dry_run,
