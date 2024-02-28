@@ -168,6 +168,12 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser):
                 )
                 raise
 
+        if subcommand_name in ["runp"]:
+            compute_kwargs = _proc_resources_spec(subcommand_args)
+            collate = Collator(prj)
+            collate(args, **compute_kwargs)
+            return collate.debug
+
 
 def main() -> None:
     parser = pydantic_argparse.ArgumentParser(

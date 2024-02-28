@@ -341,13 +341,15 @@ class Collator(Executor):
                 pipeline_interface=project_piface_object,
                 prj=self.prj,
                 compute_variables=compute_kwargs,
-                delay=args.time_delay,
-                extra_args=args.command_extra,
-                extra_args_override=args.command_extra_override,
-                ignore_flags=args.ignore_flags,
+                delay=getattr(args.runp, "time_delay", None),
+                extra_args=getattr(args.runp, "command_extra", None),
+                extra_args_override=getattr(args.runp, "command_extra_override", None),
+                ignore_flags=getattr(args.runp, "ignore_flags", None),
                 collate=True,
             )
-            if conductor.is_project_submittable(force=args.ignore_flags):
+            if conductor.is_project_submittable(
+                force=getattr(args.runp, "ignore_flags", None)
+            ):
                 conductor._pool = [None]
                 conductor.submit()
                 jobs += conductor.num_job_submissions
