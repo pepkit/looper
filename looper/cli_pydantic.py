@@ -206,6 +206,35 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser):
             else:
                 raise PipestatConfigurationException("table")
 
+        if subcommand_name in ["report"]:
+            if use_pipestat:
+                Reporter(prj)(args)
+            else:
+                raise PipestatConfigurationException("report")
+
+        if subcommand_name in ["link"]:
+            if use_pipestat:
+                Linker(prj)(args)
+            else:
+                raise PipestatConfigurationException("link")
+
+        if subcommand_name in ["check"]:
+            if use_pipestat:
+                return Checker(prj)(args)
+            else:
+                raise PipestatConfigurationException("check")
+
+        if subcommand_name in ["clean"]:
+            return Cleaner(prj)(args)
+
+        if subcommand_name in ["inspect"]:
+            from warnings import warn
+
+            warn(
+                "The inspect feature has moved to eido."
+                "Use `eido inspect` from now on.",
+            )
+
 
 def main() -> None:
     parser = pydantic_argparse.ArgumentParser(

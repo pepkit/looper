@@ -156,6 +156,12 @@ CleanParserModel = CleanParser.create_model()
 
 # INSPECT
 # TODO Did this move to Eido?
+InspectParser = Command(
+    "inspect",
+    MESSAGE_BY_SUBCOMMAND["inspect"],
+    [],
+)
+InspectParserModel = InspectParser.create_model()
 
 # INIT
 # TODO rename to `init-config` ?
@@ -236,6 +242,11 @@ class TopLevelParser(pydantic.BaseModel):
         description=InitPifaceParser.description
     )
     link: Optional[LinkParserModel] = pydantic.Field(description=LinkParser.description)
+
+    inspect: Optional[InspectParserModel] = pydantic.Field(
+        description=InspectParser.description
+    )
+
     # arguments
     settings: Optional[str] = ArgumentEnum.SETTINGS.value.with_reduced_default()
     pep_config: Optional[str] = ArgumentEnum.PEP_CONFIG.value.with_reduced_default()

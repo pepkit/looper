@@ -6,6 +6,7 @@ Looper: a pipeline submission engine. https://github.com/pepkit/looper
 import abc
 import argparse
 import csv
+import glob
 import logging
 import subprocess
 import yaml
@@ -88,7 +89,7 @@ class Checker(Executor):
 
         # aggregate pipeline status data
         status = {}
-        if args.project:
+        if getattr(args, "project", None):
             psms = self.prj.get_pipestat_managers(project_level=True)
             for pipeline_name, psm in psms.items():
                 s = psm.get_status() or "unknown"
@@ -123,7 +124,7 @@ class Checker(Executor):
                     table.add_row(status_id, f"{status_count}/{len(status_list)}")
             console.print(table)
 
-        if args.itemized:
+        if getattr(args.check, "itemized", None):
             for pipeline_name, pipeline_status in status.items():
                 table_title = f"Pipeline: '{pipeline_name}'"
                 table = Table(
@@ -199,10 +200,10 @@ class Cleaner(Executor):
         if not preview_flag:
             _LOGGER.info("Clean complete.")
             return 0
-        if args.dry_run:
+        if getattr(args.clean, "dry_run", None):
             _LOGGER.info("Dry run. No files cleaned.")
             return 0
-        if not args.force_yes and not query_yes_no(
+        if not getattr(args.clean, "force_yes", None) and not query_yes_no(
             "Are you sure you want to permanently delete all "
             "intermediate pipeline results for this project?"
         ):
@@ -560,7 +561,7 @@ class Reporter(Executor):
     def __call__(self, args):
         # initialize the report builder
         p = self.prj
-        project_level = args.project
+        project_level = getattr(args, "project", None)
 
         if project_level:
             psms = self.prj.get_pipestat_managers(project_level=True)
@@ -592,8 +593,8 @@ class Linker(Executor):
     def __call__(self, args):
         # initialize the report builder
         p = self.prj
-        project_level = args.project
-        link_dir = args.output_dir
+        project_level = getattr(args, "project", None)
+        link_dir = getattr(args, "output_dir", None)
 
         if project_level:
             psms = self.prj.get_pipestat_managers(project_level=True)
