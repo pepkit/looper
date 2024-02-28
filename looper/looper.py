@@ -395,17 +395,24 @@ class Runner(Executor):
                 )
 
         submission_conductors = {}
+
         for piface in self.prj.pipeline_interfaces:
             conductor = SubmissionConductor(
                 pipeline_interface=piface,
                 prj=self.prj,
                 compute_variables=comp_vars,
-                delay=args.run.time_delay,
-                extra_args=args.run.command_extra,
-                extra_args_override=args.run.command_extra_override,
-                ignore_flags=args.run.ignore_flags,
-                max_cmds=args.run.lumpn,
-                max_size=args.run.lump,
+                delay=getattr(args.run, "time_delay", None)
+                or getattr(args.rerun, "time_delay", None),
+                extra_args=getattr(args.run, "command_extra", None)
+                or getattr(args.rerun, "command_extra", None),
+                extra_args_override=getattr(args.run, "command_extra_override", None)
+                or getattr(args.rerun, "command_extra_override", None),
+                ignore_flags=getattr(args.run, "ignore_flags", None)
+                or getattr(args.rerun, "ignore_flags", None),
+                max_cmds=getattr(args.run, "lumpn", None)
+                or getattr(args.rerun, "lumpn", None),
+                max_size=getattr(args.run, "lump", None)
+                or getattr(args.rerun, "lump", None),
             )
             submission_conductors[piface.pipe_iface_file] = conductor
 
@@ -486,7 +493,7 @@ class Runner(Executor):
         )
         _LOGGER.info("Commands submitted: {} of {}".format(cmd_sub_total, max_cmds))
         self.debug[DEBUG_COMMANDS] = "{} of {}".format(cmd_sub_total, max_cmds)
-        if args.run.dry_run:
+        if getattr(args.run, "dry_run", None) or getattr(args.rerun, "dry_run", None):
             job_sub_total_if_real = job_sub_total
             job_sub_total = 0
             _LOGGER.info(

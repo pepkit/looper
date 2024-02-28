@@ -152,10 +152,11 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser):
         selector_flag=args.sel_flag,
         exclusion_flag=args.exc_flag,
     ) as prj:
-        if subcommand_name == "run":
+        if subcommand_name in ["run", "rerun"]:
             run = Runner(prj)
             try:
-                compute_kwargs = _proc_resources_spec(args)
+                # compute_kwargs = _proc_resources_spec(args)
+                compute_kwargs = _proc_resources_spec(subcommand_args)
                 return run(args, rerun=False, **compute_kwargs)
             except SampleFailedException:
                 sys.exit(1)

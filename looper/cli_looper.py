@@ -551,12 +551,12 @@ def _proc_resources_spec(args):
     :raise ValueError: if interpretation of the given specification as encoding
         of key-value pairs fails
     """
-    if (hasattr(args, "run") and args.run) or args.command in ("run",):
-        spec = getattr(args.run, "compute", None)
-        settings = args.run.settings
-    else:
-        spec = getattr(args, "compute", None)
-        settings = args.settings
+    # if (hasattr(args, "run") and args.run) or args.command in ("run",):
+    #     spec = getattr(args.run, "compute", None)
+    #     settings = args.run.settings
+    # else:
+    spec = getattr(args, "compute", None)
+    settings = args.settings
     try:
         settings_data = read_yaml_file(settings) or {}
     except yaml.YAMLError:
@@ -619,6 +619,7 @@ def make_hierarchical_if_needed(args):
         setattr(args, args.command, command_namespace)
 
     if args.command == "run":
+        # if args.command == "run" or args.command == "rerun":
         # we only want to only move arguments to the `run` second-level namespace
         # that are in fact specific to the `run` subcommand
         run_args = [argument.name for argument in RunParser.arguments]
