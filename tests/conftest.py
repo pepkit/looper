@@ -117,7 +117,7 @@ def test_args_expansion(pth=None, cmd=None, appendix=list(), dry=True) -> List[s
     :return list of strings to pass to looper.main for testing
     """
     # --looper-config .looper.yaml run --dry-run
-    #x = [cmd, "-d" if dry else ""]
+    # x = [cmd, "-d" if dry else ""]
     x = []
     if pth:
         x.append("--looper-config")
