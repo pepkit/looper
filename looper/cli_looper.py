@@ -220,19 +220,27 @@ def build_parser():
         for subparser in [run_subparser, rerun_subparser]:
             subparser.add_argument(
                 "-u",
-                "--lump",
+                "--lump-s",
                 default=None,
                 metavar="X",
                 type=html_range(min_val=0, max_val=100, step=0.1, value=0),
-                help="Total input file size (GB) to batch into one job",
+                help="Lump by size: total input file size (GB) to batch into one job",
             )
             subparser.add_argument(
                 "-n",
-                "--lumpn",
+                "--lump-n",
                 default=None,
                 metavar="N",
                 type=html_range(min_val=1, max_val="num_samples", value=1),
-                help="Number of commands to batch into one job",
+                help="Lump by number: number of samples to batch into one job",
+            )
+            subparser.add_argument(
+                "-j",
+                "--lump-j",
+                default=None,
+                metavar="J",
+                type=int,
+                help="Lump samples into number of jobs.",
             )
 
         check_subparser.add_argument(
@@ -500,6 +508,12 @@ def build_parser():
             "--commands",
             action="version",
             version="{}".format(" ".join(subparsers.choices.keys())),
+        )
+
+        report_subparser.add_argument(
+            "--portable",
+            help="Makes html report portable.",
+            action="store_true",
         )
 
         result.append(parser)
@@ -818,13 +832,13 @@ def main(test_args=None):
         )
         if args.command == "table":
             if use_pipestat:
-                Tabulator(prj)(args)
+                return Tabulator(prj)(args)
             else:
                 raise PipestatConfigurationException("table")
 
         if args.command == "report":
             if use_pipestat:
-                Reporter(prj)(args)
+                return Reporter(prj)(args)
             else:
                 raise PipestatConfigurationException("report")
 

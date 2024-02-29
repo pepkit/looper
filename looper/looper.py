@@ -416,6 +416,7 @@ class Runner(Executor):
                 ignore_flags=getattr(args, "ignore_flags", None),
                 max_cmds=getattr(args, "lumpn", None),
                 max_size=getattr(args, "lump", None),
+                max_jobs=args.lump_j,
             )
             submission_conductors[piface.pipe_iface_file] = conductor
 
@@ -554,16 +555,23 @@ class Reporter(Executor):
 
     def __call__(self, args):
         # initialize the report builder
+        self.debug = {}
         p = self.prj
         project_level = getattr(args, "project", None)
+
+        portable = args.portable
 
         if project_level:
             psms = self.prj.get_pipestat_managers(project_level=True)
             print(psms)
             for name, psm in psms.items():
                 # Summarize will generate the static HTML Report Function
-                report_directory = psm.summarize(looper_samples=self.prj.samples)
+                report_directory = psm.summarize(
+                    looper_samples=self.prj.samples, portable=portable
+                )
                 print(f"Report directory: {report_directory}")
+                self.debug["report_directory"] = report_directory
+            return self.debug
         else:
             for piface_source_samples in self.prj._samples_by_piface(
                 self.prj.piface_key
@@ -577,8 +585,12 @@ class Reporter(Executor):
                 print(psms)
                 for name, psm in psms.items():
                     # Summarize will generate the static HTML Report Function
-                    report_directory = psm.summarize(looper_samples=self.prj.samples)
+                    report_directory = psm.summarize(
+                        looper_samples=self.prj.samples, portable=portable
+                    )
                     print(f"Report directory: {report_directory}")
+                    self.debug["report_directory"] = report_directory
+            return self.debug
 
 
 class Linker(Executor):

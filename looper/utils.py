@@ -16,7 +16,7 @@ from peppy import Project as peppyProject
 from peppy.const import *
 from ubiquerg import convert_value, expandpath, parse_registry_path
 from pephubclient.constants import RegistryPath
-from pydantic.error_wrappers import ValidationError
+from pydantic import ValidationError
 
 from .const import *
 from .command_models.commands import SUPPORTED_COMMANDS
