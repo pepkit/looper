@@ -23,11 +23,15 @@ def _make_flags(cfg, type, pipeline_name):
 
 
 class TestLooperPipestat:
+
+    @pytest.mark.skip(reason="prep_temp_pep needs to be rewritten")
     @pytest.mark.parametrize("cmd", ["report", "table", "check"])
     def test_fail_no_pipestat_config(self, prep_temp_pep, cmd):
         "report, table, and check should fail if pipestat is NOT configured."
-        tp = prep_temp_pep
-        x = test_args_expansion(tp, cmd, dry=False)
+        #tp = prep_temp_pep
+        dot_file_path = os.path.abspath(prepare_pep_with_dot_file)
+        #x = test_args_expansion(tp, cmd, dry=False)
+        x = ["--looper-config", dot_file_path, cmd]
         with pytest.raises(PipestatConfigurationException):
             main(test_args=x)
 

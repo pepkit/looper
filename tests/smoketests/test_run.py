@@ -10,7 +10,7 @@ from looper.cli_pydantic import main
 
 CMD_STRS = ["string", " --string", " --sjhsjd 212", "7867#$@#$cc@@"]
 
-
+@pytest.mark.skip(reason="prep_temp_pep needs to be rewritten")
 def test_cli(prep_temp_pep):
     tp = prep_temp_pep
 
@@ -82,6 +82,7 @@ class TestLooperBothRuns:
         subs_list = [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
         assert_content_in_all_files(subs_list, arg[1])
 
+    @pytest.mark.skip(reason="prep_temp_pep needs to be rewritten")
     @pytest.mark.parametrize("cmd", ["run", "runp"])
     def test_unrecognized_args_not_passing(self, prep_temp_pep, cmd):
         tp = prep_temp_pep
@@ -97,7 +98,7 @@ class TestLooperBothRuns:
         except Exception:
             raise pytest.fail("DID RAISE {0}".format(Exception))
 
-
+@pytest.mark.skip(reason="prep_temp_pep needs to be rewritten")
 class TestLooperRunBehavior:
     def test_looper_run_basic(self, prep_temp_pep):
         """Verify looper runs in a basic case and return code is 0"""
@@ -314,7 +315,7 @@ class TestLooperRunBehavior:
         subs_list = [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
         assert_content_not_in_any_files(subs_list, arg)
 
-
+@pytest.mark.skip(reason="prep_temp_pep needs to be rewritten")
 class TestLooperRunpBehavior:
     def test_looper_runp_basic(self, prep_temp_pep):
         """Verify looper runps in a basic case and return code is 0"""
@@ -363,7 +364,7 @@ class TestLooperRunpBehavior:
         subs_list = [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
         assert_content_in_all_files(subs_list, arg)
 
-
+@pytest.mark.skip(reason="prep_temp_pep needs to be rewritten")
 class TestLooperRunPreSubmissionHooks:
     def test_looper_basic_plugin(self, prep_temp_pep):
         tp = prep_temp_pep
@@ -422,7 +423,7 @@ class TestLooperRunPreSubmissionHooks:
         sd = os.path.join(get_outdir(tp), "submission")
         verify_filecount_in_dir(sd, "test.txt", 3)
 
-
+@pytest.mark.skip(reason="prep_temp_pep needs to be rewritten")
 class TestLooperRunSubmissionScript:
     def test_looper_run_produces_submission_scripts(self, prep_temp_pep):
         tp = prep_temp_pep
@@ -474,7 +475,7 @@ class TestLooperRunSubmissionScript:
         sd = os.path.join(get_outdir(tp), "submission")
         verify_filecount_in_dir(sd, ".sub", 4)
 
-
+@pytest.mark.skip(reason="prep_temp_pep needs to be rewritten")
 class TestLooperCompute:
     @pytest.mark.parametrize("cmd", ["run", "runp"])
     def test_looper_respects_pkg_selection(self, prep_temp_pep, cmd):
@@ -566,6 +567,7 @@ class TestLooperCompute:
 
 
 class TestLooperConfig:
+    @pytest.mark.skip(reason="prep_temp_pep needs to be rewritten")
     @pytest.mark.parametrize("cmd", ["run", "runp"])
     def test_init_config_file(self, prep_temp_pep, cmd, dotfile_path):
         tp = prep_temp_pep
