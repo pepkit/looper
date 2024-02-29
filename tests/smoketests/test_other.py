@@ -27,7 +27,7 @@ class TestLooperPipestat:
     def test_fail_no_pipestat_config(self, prep_temp_pep, cmd):
         "report, table, and check should fail if pipestat is NOT configured."
         tp = prep_temp_pep
-        x = test_args_expansion(tp, cmd)
+        x = test_args_expansion(tp, cmd, dry=False)
         with pytest.raises(PipestatConfigurationException):
             main(test_args=x)
 
@@ -74,7 +74,7 @@ class TestLooperCheck:
         _make_flags(tp, flag_id, pipeline_name)
         _make_flags(tp, FLAGS[1], pipeline_name)
 
-        x = ["check", "-d", "--looper-config", tp]
+        x = ["--looper-config", tp, "check"]
         # Multiple flag files SHOULD cause pipestat to throw an assertion error
         if flag_id != FLAGS[1]:
             with pytest.raises(AssertionError):
@@ -87,7 +87,7 @@ class TestLooperCheck:
         tp = prep_temp_pep_pipestat
         _make_flags(tp, flag_id, pipeline_name)
 
-        x = ["check", "-d", "--looper-config", tp]
+        x = ["--looper-config", tp, "check"]
         try:
             results = main(test_args=x)
             result_key = list(results.keys())[0]
