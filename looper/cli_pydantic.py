@@ -174,7 +174,11 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser):
             try:
                 # compute_kwargs = _proc_resources_spec(args)
                 compute_kwargs = _proc_resources_spec(subcommand_args)
-                return run(args, rerun=False, **compute_kwargs)
+
+                # TODO Shouldn't top level args and subcommand args be accessible on the same object?
+                return run(
+                    subcommand_args, top_level_args=args, rerun=False, **compute_kwargs
+                )
             except SampleFailedException:
                 sys.exit(1)
             except IOError:
@@ -236,11 +240,11 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser):
             )
 
 
-def main() -> None:
+def main(test_args=None) -> None:
     parser = pydantic_argparse.ArgumentParser(
         model=TopLevelParser,
         prog="looper",
-        description="pydantic-argparse demo",
+        description="Looper Pydantic Argument Parser",
         add_help=True,
     )
     args = parser.parse_typed_args()

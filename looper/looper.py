@@ -150,7 +150,7 @@ class Checker(Executor):
                     table.add_row(name, f"[{color}]{status_id}[/{color}]")
                 console.print(table)
 
-        if args.describe_codes:
+        if args.check.describe_codes:
             table = Table(
                 show_header=True,
                 header_style="bold magenta",
@@ -369,7 +369,7 @@ class Collator(Executor):
 class Runner(Executor):
     """The true submitter of pipelines"""
 
-    def __call__(self, args, rerun=False, **compute_kwargs):
+    def __call__(self, args, top_level_args=None, rerun=False, **compute_kwargs):
         """
         Do the Sample submission.
 
@@ -410,18 +410,12 @@ class Runner(Executor):
                 pipeline_interface=piface,
                 prj=self.prj,
                 compute_variables=comp_vars,
-                delay=getattr(args.run, "time_delay", None)
-                or getattr(args.rerun, "time_delay", None),
-                extra_args=getattr(args.run, "command_extra", None)
-                or getattr(args.rerun, "command_extra", None),
-                extra_args_override=getattr(args.run, "command_extra_override", None)
-                or getattr(args.rerun, "command_extra_override", None),
-                ignore_flags=getattr(args.run, "ignore_flags", None)
-                or getattr(args.rerun, "ignore_flags", None),
-                max_cmds=getattr(args.run, "lumpn", None)
-                or getattr(args.rerun, "lumpn", None),
-                max_size=getattr(args.run, "lump", None)
-                or getattr(args.rerun, "lump", None),
+                delay=getattr(args, "time_delay", None),
+                extra_args=getattr(args, "command_extra", None),
+                extra_args_override=getattr(args, "command_extra_override", None),
+                ignore_flags=getattr(args, "ignore_flags", None),
+                max_cmds=getattr(args, "lumpn", None),
+                max_size=getattr(args, "lump", None),
             )
             submission_conductors[piface.pipe_iface_file] = conductor
 
@@ -430,7 +424,7 @@ class Runner(Executor):
             self.prj.pipestat_configured_project or self.prj.pipestat_configured
         )
 
-        for sample in select_samples(prj=self.prj, args=args):
+        for sample in select_samples(prj=self.prj, args=top_level_args):
             pl_fails = []
             skip_reasons = []
             sample_pifaces = self.prj.get_sample_piface(
@@ -502,7 +496,7 @@ class Runner(Executor):
         )
         _LOGGER.info("Commands submitted: {} of {}".format(cmd_sub_total, max_cmds))
         self.debug[DEBUG_COMMANDS] = "{} of {}".format(cmd_sub_total, max_cmds)
-        if getattr(args.run, "dry_run", None) or getattr(args.rerun, "dry_run", None):
+        if getattr(args, "dry_run", None):
             job_sub_total_if_real = job_sub_total
             job_sub_total = 0
             _LOGGER.info(
