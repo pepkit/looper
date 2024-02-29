@@ -6,7 +6,7 @@ from looper.const import *
 from looper.project import Project
 from tests.conftest import *
 from looper.utils import *
-from looper.cli_looper import main
+from looper.cli_pydantic import main
 
 CMD_STRS = ["string", " --string", " --sjhsjd 212", "7867#$@#$cc@@"]
 

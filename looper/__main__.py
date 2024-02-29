@@ -1,6 +1,6 @@
 import sys
 
-from .cli_looper import main
+from .cli_pydantic import main
 from .cli_divvy import main as divvy_main
 
 if __name__ == "__main__":

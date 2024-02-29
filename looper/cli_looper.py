@@ -10,6 +10,7 @@ from typing import Tuple, List
 from ubiquerg import VersionInHelpParser
 
 from . import __version__
+from .command_models.commands import RunParser
 from .const import *
 from .divvy import DEFAULT_COMPUTE_RESOURCES_NAME, select_divvy_config
 from .exceptions import *
@@ -536,7 +537,12 @@ def validate_post_parse(args: argparse.Namespace) -> List[str]:
                 SAMPLE_INCLUSION_OPTNAME,
             ],
         )
-        if getattr(args, attr, None)
+        # Depending on the subcommand used, the above options might either be in
+        # the top-level namespace or in the subcommand namespace (the latter due
+        # to a `modify_args_namespace()`)
+        if getattr(
+            args, attr, None
+        )  # or (getattr(args.run, attr, None) if hasattr(args, "run") else False)
     ]
     if len(used_exclusives) > 1:
         problems.append(
@@ -559,13 +565,18 @@ def _proc_resources_spec(args):
     :raise ValueError: if interpretation of the given specification as encoding
         of key-value pairs fails
     """
+    # if (hasattr(args, "run") and args.run) or args.command in ("run",):
+    #     spec = getattr(args.run, "compute", None)
+    #     settings = args.run.settings
+    # else:
     spec = getattr(args, "compute", None)
+    settings = args.settings
     try:
-        settings_data = read_yaml_file(args.settings) or {}
+        settings_data = read_yaml_file(settings) or {}
     except yaml.YAMLError:
         _LOGGER.warning(
             "Settings file ({}) does not follow YAML format,"
-            " disregarding".format(args.settings)
+            " disregarding".format(settings)
         )
         settings_data = {}
     if not spec:
@@ -587,6 +598,50 @@ def _proc_resources_spec(args):
     return settings_data
 
 
+def make_hierarchical_if_needed(args):
+    """
+    Make an `argparse` namespace hierarchic for commands that support it
+
+    In the course of introducing `pydantic` models as ground truths, some logic pertaining
+    to the `run` command in `looper/looper.py` was changed in order to do accurately reflect
+    which arguments are top-level arguments and which arguments are specific to the `run`
+    command.
+
+    If the command in the given arguments is 'run', this function creates a sub-namespace
+    named 'run' and moves selected arguments specified in RUN_ARGS to the 'run' namespace.
+    The selected arguments are also removed from the original namespace.
+    This thus morphes the original namespace into the hierarchy the `run` command logic
+    expects downstream.
+
+    :param argparse.Namespace: The argparse namespace containing program arguments.
+    :return argparse.Namespace: The modified, partially hierarchical argparse namespace.
+    """
+
+    def add_command_hierarchy(command_args):
+        # make a new namespace that will be the resulting second-level namespace
+        command_namespace = argparse.Namespace()
+        for arg in vars(args):
+            if arg in command_args:
+                setattr(command_namespace, arg, getattr(args, arg))
+
+        # remove arguments that have been moved into the second-level namespace
+        # from the top-level namespace
+        for arg in command_args:
+            if hasattr(args, arg):
+                delattr(args, arg)
+
+        setattr(args, args.command, command_namespace)
+
+    if args.command == "run":
+        # if args.command == "run" or args.command == "rerun":
+        # we only want to only move arguments to the `run` second-level namespace
+        # that are in fact specific to the `run` subcommand
+        run_args = [argument.name for argument in RunParser.arguments]
+        add_command_hierarchy(run_args)
+
+    return args
+
+
 def main(test_args=None):
     """Primary workflow"""
     global _LOGGER
@@ -599,6 +654,7 @@ def main(test_args=None):
     else:
         args, remaining_args = parser.parse_known_args()
 
+    args = make_hierarchical_if_needed(args)
     cli_use_errors = validate_post_parse(args)
     if cli_use_errors:
         parser.print_help(sys.stderr)
@@ -654,7 +710,6 @@ def main(test_args=None):
             )
 
     args = enrich_args_via_cfg(args, aux_parser, test_args)
-
     # If project pipeline interface defined in the cli, change name to: "pipeline_interface"
     if vars(args)[PROJECT_PL_ARG]:
         args.pipeline_interfaces = vars(args)[PROJECT_PL_ARG]
@@ -666,9 +721,16 @@ def main(test_args=None):
             )
         )
 
-    divcfg = (
-        select_divvy_config(filepath=args.divvy) if hasattr(args, "divvy") else None
-    )
+    if args.command == "run":
+        divcfg = (
+            select_divvy_config(filepath=args.run.divvy)
+            if hasattr(args.run, "divvy")
+            else None
+        )
+    else:
+        divcfg = (
+            select_divvy_config(filepath=args.divvy) if hasattr(args, "divvy") else None
+        )
 
     # Ignore flags if user is selecting or excluding on flags:
     if args.sel_flag or args.exc_flag:
@@ -694,14 +756,23 @@ def main(test_args=None):
             )
     else:
         try:
+            project_args = {
+                attr: getattr(args, attr) for attr in CLI_PROJ_ATTRS if attr in args
+            }
+            if args.command == "run":
+                project_args.update(
+                    **{
+                        attr: getattr(args.run, attr)
+                        for attr in CLI_PROJ_ATTRS
+                        if attr in args.run
+                    }
+                )
             p = Project(
                 cfg=args.config_file,
                 amendments=args.amend,
                 divcfg_path=divcfg,
                 runp=args.command == "runp",
-                **{
-                    attr: getattr(args, attr) for attr in CLI_PROJ_ATTRS if attr in args
-                },
+                **project_args,
             )
         except yaml.parser.ParserError as e:
             _LOGGER.error(f"Project config parse failed -- {e}")
