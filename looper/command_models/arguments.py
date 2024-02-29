@@ -132,6 +132,11 @@ class ArgumentEnum(enum.Enum):
         default=(int, None),
         description="Number of commands to batch into one job",
     )
+    LUMPJ = Argument(
+        name="lumpj",
+        default=(int, None),
+        description="Lump samples into number of jobs.",
+    )
     LIMIT = Argument(
         name="limit", default=(int, None), description="Limit to n samples"
     )
