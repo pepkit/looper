@@ -4,7 +4,7 @@ from peppy import Project
 from looper.const import FLAGS
 from looper.exceptions import PipestatConfigurationException
 from tests.conftest import *
-from looper.cli_looper import main
+from looper.cli_pydantic import main
 
 
 def _make_flags(cfg, type, pipeline_name):
@@ -55,7 +55,7 @@ class TestLooperCheck:
         tp = prep_temp_pep_pipestat
         _make_flags(tp, flag_id, pipeline_name)
 
-        x = ["check", "-d", "--looper-config", tp]
+        x = ["--looper-config", tp, "check"]
 
         try:
             results = main(test_args=x)

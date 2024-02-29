@@ -48,7 +48,7 @@ from .utils import (
 )
 
 
-def run_looper(args: TopLevelParser, parser: ArgumentParser):
+def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
     # here comes adapted `cli_looper.py` code
     global _LOGGER
 
@@ -106,7 +106,7 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser):
             "looper.databio.org/en/latest/looper-config"
         )
 
-    args = enrich_args_via_cfg(args, parser, False)
+    args = enrich_args_via_cfg(args, parser, test_args=test_args)
 
     # If project pipeline interface defined in the cli, change name to: "pipeline_interface"
     if vars(args)[PROJECT_PL_ARG]:
@@ -247,8 +247,11 @@ def main(test_args=None) -> None:
         description="Looper Pydantic Argument Parser",
         add_help=True,
     )
-    args = parser.parse_typed_args()
-    run_looper(args, parser)
+    if test_args:
+        args = parser.parse_typed_args(args=test_args)
+    else:
+        args = parser.parse_typed_args()
+    return run_looper(args, parser, test_args=test_args)
 
 
 if __name__ == "__main__":
