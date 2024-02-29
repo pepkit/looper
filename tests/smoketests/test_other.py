@@ -35,7 +35,11 @@ class TestLooperPipestat:
     def test_pipestat_configured(self, prep_temp_pep_pipestat, cmd):
         tp = prep_temp_pep_pipestat
 
-        x = [cmd, "-d", "--looper-config", tp]
+        if cmd in ["run", "runp"]:
+            x = ["--looper-config", tp, cmd, "--dry-run"]
+        else:
+            # Not every command supports dry run
+            x = ["--looper-config", tp, cmd]
 
         try:
             result = main(test_args=x)

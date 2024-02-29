@@ -247,3 +247,8 @@ class ArgumentEnum(enum.Enum):
         default=(str, None),
         description="Path to pipestat files.",
     )
+    PORTABLE = Argument(
+        name="portable",
+        default=(bool, False),
+        description="Makes html report portable.",
+    )

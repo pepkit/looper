@@ -559,7 +559,7 @@ class Reporter(Executor):
         p = self.prj
         project_level = getattr(args, "project", None)
 
-        portable = args.portable
+        portable = args.report.portable
 
         if project_level:
             psms = self.prj.get_pipestat_managers(project_level=True)

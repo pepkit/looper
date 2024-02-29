@@ -118,7 +118,9 @@ TableParserModel = TableParser.create_model()
 ReportParser = Command(
     "report",
     MESSAGE_BY_SUBCOMMAND["report"],
-    [],
+    [
+        ArgumentEnum.PORTABLE.value,
+    ],
 )
 ReportParserModel = ReportParser.create_model()
 
