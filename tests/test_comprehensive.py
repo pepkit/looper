@@ -19,14 +19,33 @@ CMD_STRS = ["string", " --string", " --sjhsjd 212", "7867#$@#$cc@@"]
 REPO_URL = "https://github.com/pepkit/hello_looper.git"
 
 
-def test_comprehensive_looper_no_pipestat(prep_temp_pep):
-    tp = prep_temp_pep
+@pytest.mark.skipif(not is_connected(), reason="Test needs an internet connection")
+def test_comprehensive_looper_no_pipestat():
 
-    x = test_args_expansion(tp, "run")
-    try:
-        main(test_args=x)
-    except Exception:
-        raise pytest.fail("DID RAISE {0}".format(Exception))
+    with TemporaryDirectory() as d:
+        repo = Repo.clone_from(REPO_URL, d, branch="dev_derive")
+        basic_dir = os.path.join(d, "basic")
+
+        path_to_looper_config = os.path.join(basic_dir, ".looper.yaml")
+
+        # open up the project config and replace the derived attributes with the path to the data. In a way, this simulates using the environment variables.
+        basic_project_file = os.path.join(d, "basic/project", "project_config.yaml")
+        with open(basic_project_file, "r") as f:
+            pipestat_project_data = safe_load(f)
+
+        pipestat_project_data["sample_modifiers"]["derive"]["sources"]["source1"] = (
+            os.path.join(basic_dir, "data/{sample_name}.txt")
+        )
+
+        with open(basic_project_file, "w") as f:
+            dump(pipestat_project_data, f)
+
+        x = ["--looper-config", path_to_looper_config, "run"]
+
+        try:
+            main(test_args=x)
+        except Exception:
+            raise pytest.fail("DID RAISE {0}".format(Exception))
 
 
 @pytest.mark.skipif(not is_connected(), reason="Test needs an internet connection")

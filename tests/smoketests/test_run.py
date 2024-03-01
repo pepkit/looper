@@ -37,6 +37,7 @@ def is_connected():
 
 class TestLooperBothRuns:
     @pytest.mark.parametrize("cmd", ["run", "runp"])
+    @pytest.mark.skip(reason="prep_temp_pep needs to be rewritten")
     def test_looper_cfg_invalid(self, cmd):
         """Verify looper does not accept invalid cfg paths"""
 
@@ -63,6 +64,7 @@ class TestLooperBothRuns:
             ["--command-extra", CMD_STRS[3]],
         ],
     )
+    @pytest.mark.skip(reason="prep_temp_pep needs to be rewritten")
     def test_cmd_extra_cli(self, prep_temp_pep, cmd, arg):
         """
         Argument passing functionality works only for the above
