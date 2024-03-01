@@ -3,7 +3,7 @@
 """
 
 from dataclasses import dataclass
-from typing import List, Optional, Type
+from typing import List, Optional, Type, Union
 
 import pydantic.v1 as pydantic
 
@@ -270,7 +270,9 @@ class TopLevelParser(pydantic.BaseModel):
     sel_incl: Optional[str] = ArgumentEnum.SEL_INCL.value.with_reduced_default()
     sel_excl: Optional[str] = ArgumentEnum.SEL_EXCL.value.with_reduced_default()
     sel_flag: Optional[str] = ArgumentEnum.SEL_FLAG.value.with_reduced_default()
-    exc_flag: Optional[str] = ArgumentEnum.EXC_FLAG.value.with_reduced_default()
+    exc_flag: Optional[Union[str, List[str]]] = (
+        ArgumentEnum.EXC_FLAG.value.with_reduced_default()
+    )
     # arguments for logging
     silent: Optional[bool] = ArgumentEnum.SILENT.value.with_reduced_default()
     verbosity: Optional[int] = ArgumentEnum.VERBOSITY.value.with_reduced_default()

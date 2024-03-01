@@ -200,7 +200,7 @@ class ArgumentEnum(enum.Enum):
         name="sel_flag", default=(str, ""), description="Sample selection flag"
     )
     EXC_FLAG = Argument(
-        name="exc_flag", default=(str, ""), description="Sample exclusion flag"
+        name="exc_flag", default=(List, []), description="Sample exclusion flag"
     )
     SKIP_FILE_CHECKS = Argument(
         name="skip_file_checks",
