@@ -7,7 +7,7 @@ import os
 from copy import copy
 from typing import Any, List
 
-import pydantic
+import pydantic.v1 as pydantic
 
 
 class Argument(pydantic.fields.FieldInfo):

@@ -10,6 +10,7 @@ from looper.cli_pydantic import main
 
 CMD_STRS = ["string", " --string", " --sjhsjd 212", "7867#$@#$cc@@"]
 
+
 @pytest.mark.skip(reason="prep_temp_pep needs to be rewritten")
 def test_cli(prep_temp_pep):
     tp = prep_temp_pep
@@ -97,6 +98,7 @@ class TestLooperBothRuns:
             assert_content_not_in_any_files(subs_list, "--unknown-arg")
         except Exception:
             raise pytest.fail("DID RAISE {0}".format(Exception))
+
 
 @pytest.mark.skip(reason="prep_temp_pep needs to be rewritten")
 class TestLooperRunBehavior:
@@ -315,6 +317,7 @@ class TestLooperRunBehavior:
         subs_list = [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
         assert_content_not_in_any_files(subs_list, arg)
 
+
 @pytest.mark.skip(reason="prep_temp_pep needs to be rewritten")
 class TestLooperRunpBehavior:
     def test_looper_runp_basic(self, prep_temp_pep):
@@ -363,6 +366,7 @@ class TestLooperRunpBehavior:
         sd = os.path.join(get_outdir(tp), "submission")
         subs_list = [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
         assert_content_in_all_files(subs_list, arg)
+
 
 @pytest.mark.skip(reason="prep_temp_pep needs to be rewritten")
 class TestLooperRunPreSubmissionHooks:
@@ -423,6 +427,7 @@ class TestLooperRunPreSubmissionHooks:
         sd = os.path.join(get_outdir(tp), "submission")
         verify_filecount_in_dir(sd, "test.txt", 3)
 
+
 @pytest.mark.skip(reason="prep_temp_pep needs to be rewritten")
 class TestLooperRunSubmissionScript:
     def test_looper_run_produces_submission_scripts(self, prep_temp_pep):
@@ -474,6 +479,7 @@ class TestLooperRunSubmissionScript:
             raise pytest.fail("DID RAISE {0}".format(Exception))
         sd = os.path.join(get_outdir(tp), "submission")
         verify_filecount_in_dir(sd, ".sub", 4)
+
 
 @pytest.mark.skip(reason="prep_temp_pep needs to be rewritten")
 class TestLooperCompute:

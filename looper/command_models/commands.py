@@ -5,7 +5,7 @@
 from dataclasses import dataclass
 from typing import List, Optional, Type
 
-import pydantic
+import pydantic.v1 as pydantic
 
 from ..const import MESSAGE_BY_SUBCOMMAND
 from .arguments import Argument, ArgumentEnum

@@ -21,10 +21,10 @@ import os
 import sys
 
 import logmuse
-import pydantic_argparse
+import pydantic2_argparse
 import yaml
 from pephubclient import PEPHubClient
-from pydantic_argparse.argparse.parser import ArgumentParser
+from pydantic2_argparse.argparse.parser import ArgumentParser
 
 from divvy import select_divvy_config
 
@@ -241,7 +241,7 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
 
 
 def main(test_args=None) -> None:
-    parser = pydantic_argparse.ArgumentParser(
+    parser = pydantic2_argparse.ArgumentParser(
         model=TopLevelParser,
         prog="looper",
         description="Looper Pydantic Argument Parser",
