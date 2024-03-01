@@ -251,7 +251,7 @@ class Destroyer(Executor):
                 # Preview: Don't actually delete, just show files.
                 _LOGGER.info(str(sample_output_folder))
             else:
-                _remove_or_dry_run(sample_output_folder, args.dry_run)
+                _remove_or_dry_run(sample_output_folder, args.destroy.dry_run)
 
         _LOGGER.info("Removing summary:")
         use_pipestat = (

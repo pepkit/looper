@@ -206,13 +206,13 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
 
         if subcommand_name in ["table"]:
             if use_pipestat:
-                Tabulator(prj)(args)
+                return Tabulator(prj)(args)
             else:
                 raise PipestatConfigurationException("table")
 
         if subcommand_name in ["report"]:
             if use_pipestat:
-                Reporter(prj)(args)
+                return Reporter(prj)(args)
             else:
                 raise PipestatConfigurationException("report")
 

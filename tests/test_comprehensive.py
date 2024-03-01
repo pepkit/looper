@@ -6,7 +6,7 @@ from looper.const import *
 from looper.project import Project
 from tests.conftest import *
 from looper.utils import *
-from looper.cli_looper import main
+from looper.cli_pydantic import main
 from tests.smoketests.test_run import is_connected
 from tempfile import TemporaryDirectory
 from git import Repo
@@ -60,7 +60,7 @@ def test_comprehensive_looper_pipestat():
             dump(pipestat_project_data, f)
 
         # x = [cmd, "-d", "--looper-config", path_to_looper_config]
-        x = [cmd, "--looper-config", path_to_looper_config]
+        x = ["--looper-config", path_to_looper_config, cmd]
 
         try:
             result = main(test_args=x)
@@ -84,7 +84,7 @@ def test_comprehensive_looper_pipestat():
         psm.set_status(record_identifier="frog_2", status_identifier="completed")
 
         # Now use looper check to get statuses
-        x = ["check", "--looper-config", path_to_looper_config]
+        x = ["--looper-config", path_to_looper_config, "check"]
 
         try:
             result = main(test_args=x)
@@ -94,7 +94,7 @@ def test_comprehensive_looper_pipestat():
 
         # TEST LOOPER REPORT
 
-        x = ["report", "--looper-config", path_to_looper_config]
+        x = ["--looper-config", path_to_looper_config, "report"]
 
         try:
             result = main(test_args=x)
@@ -104,7 +104,7 @@ def test_comprehensive_looper_pipestat():
 
         # TEST LOOPER Table
 
-        x = ["table", "--looper-config", path_to_looper_config]
+        x = ["--looper-config", path_to_looper_config, "table"]
 
         try:
             result = main(test_args=x)
@@ -116,15 +116,14 @@ def test_comprehensive_looper_pipestat():
         # TODO add destroying individual samples via pipestat
 
         x = [
-            "destroy",
             "--looper-config",
             path_to_looper_config,
+            "destroy",
             "--force-yes",
         ]  # Must force yes or pytest will throw an exception "OSError: pytest: reading from stdin while output is captured!"
 
         try:
             result = main(test_args=x)
-            # assert "report_directory" in result
         except Exception:
             raise pytest.fail("DID RAISE {0}".format(Exception))
 
