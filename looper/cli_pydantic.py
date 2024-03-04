@@ -118,8 +118,8 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
         else None
     )
     # Ignore flags if user is selecting or excluding on flags:
-    if args.sel_flag or args.exc_flag:
-        args.ignore_flags = True
+    if subcommand_args.sel_flag or subcommand_args.exc_flag:
+        subcommand_args.ignore_flags = True
 
     # Initialize project
     if is_registry_path(args.config_file):
@@ -166,8 +166,8 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
         selector_attribute=args.sel_attr,
         selector_include=args.sel_incl,
         selector_exclude=args.sel_excl,
-        selector_flag=args.sel_flag,
-        exclusion_flag=args.exc_flag,
+        selector_flag=subcommand_args.sel_flag,
+        exclusion_flag=subcommand_args.exc_flag,
     ) as prj:
         if subcommand_name in ["run", "rerun"]:
             run = Runner(prj)

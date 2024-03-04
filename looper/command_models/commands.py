@@ -58,6 +58,8 @@ RunParser = Command(
         ArgumentEnum.COMPUTE.value,
         ArgumentEnum.PACKAGE.value,
         ArgumentEnum.SETTINGS.value,
+        ArgumentEnum.EXC_FLAG.value,
+        ArgumentEnum.SEL_FLAG.value,
     ],
 )
 RunParserModel = RunParser.create_model()
@@ -269,10 +271,10 @@ class TopLevelParser(pydantic.BaseModel):
     sel_attr: Optional[str] = ArgumentEnum.SEL_ATTR.value.with_reduced_default()
     sel_incl: Optional[str] = ArgumentEnum.SEL_INCL.value.with_reduced_default()
     sel_excl: Optional[str] = ArgumentEnum.SEL_EXCL.value.with_reduced_default()
-    sel_flag: Optional[str] = ArgumentEnum.SEL_FLAG.value.with_reduced_default()
-    exc_flag: Optional[Union[str, List[str]]] = (
-        ArgumentEnum.EXC_FLAG.value.with_reduced_default()
-    )
+    # sel_flag: Optional[str] = ArgumentEnum.SEL_FLAG.value.with_reduced_default()
+    # exc_flag: Optional[Union[str, List[str]]] = (
+    #     ArgumentEnum.EXC_FLAG.value.with_reduced_default()
+    # )
     # arguments for logging
     silent: Optional[bool] = ArgumentEnum.SILENT.value.with_reduced_default()
     verbosity: Optional[int] = ArgumentEnum.VERBOSITY.value.with_reduced_default()
