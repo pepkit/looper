@@ -60,6 +60,23 @@ RunParser = Command(
         ArgumentEnum.SETTINGS.value,
         ArgumentEnum.EXC_FLAG.value,
         ArgumentEnum.SEL_FLAG.value,
+        ArgumentEnum.SEL_ATTR.value,
+        ArgumentEnum.SEL_INCL.value,
+        ArgumentEnum.SEL_EXCL.value,
+        ArgumentEnum.LIMIT.value,
+        ArgumentEnum.SKIP.value,
+        ArgumentEnum.PEP_CONFIG.value,
+        ArgumentEnum.OUTPUT_DIR.value,
+        ArgumentEnum.CONFIG_FILE.value,
+        ArgumentEnum.LOOPER_CONFIG.value,
+        ArgumentEnum.SAMPLE_PIPELINE_INTERFACES.value,
+        ArgumentEnum.PROJECT_PIPELINE_INTERFACES.value,
+        ArgumentEnum.PIPESTAT.value,
+        ArgumentEnum.SETTINGS.value,
+        ArgumentEnum.AMEND.value,
+        ArgumentEnum.SILENT.value,
+        ArgumentEnum.VERBOSITY.value,
+        ArgumentEnum.LOGDEV.value,
     ],
 )
 RunParserModel = RunParser.create_model()
@@ -82,6 +99,25 @@ RerunParser = Command(
         ArgumentEnum.COMPUTE.value,
         ArgumentEnum.PACKAGE.value,
         ArgumentEnum.SETTINGS.value,
+        ArgumentEnum.EXC_FLAG.value,
+        ArgumentEnum.SEL_FLAG.value,
+        ArgumentEnum.SEL_ATTR.value,
+        ArgumentEnum.SEL_INCL.value,
+        ArgumentEnum.SEL_EXCL.value,
+        ArgumentEnum.LIMIT.value,
+        ArgumentEnum.SKIP.value,
+        ArgumentEnum.PEP_CONFIG.value,
+        ArgumentEnum.OUTPUT_DIR.value,
+        ArgumentEnum.CONFIG_FILE.value,
+        ArgumentEnum.LOOPER_CONFIG.value,
+        ArgumentEnum.SAMPLE_PIPELINE_INTERFACES.value,
+        ArgumentEnum.PROJECT_PIPELINE_INTERFACES.value,
+        ArgumentEnum.PIPESTAT.value,
+        ArgumentEnum.SETTINGS.value,
+        ArgumentEnum.AMEND.value,
+        ArgumentEnum.SILENT.value,
+        ArgumentEnum.VERBOSITY.value,
+        ArgumentEnum.LOGDEV.value,
     ],
 )
 RerunParserModel = RerunParser.create_model()
@@ -103,6 +139,25 @@ RunProjectParser = Command(
         ArgumentEnum.COMPUTE.value,
         ArgumentEnum.PACKAGE.value,
         ArgumentEnum.SETTINGS.value,
+        ArgumentEnum.EXC_FLAG.value,
+        ArgumentEnum.SEL_FLAG.value,
+        ArgumentEnum.SEL_ATTR.value,
+        ArgumentEnum.SEL_INCL.value,
+        ArgumentEnum.SEL_EXCL.value,
+        ArgumentEnum.LIMIT.value,
+        ArgumentEnum.SKIP.value,
+        ArgumentEnum.PEP_CONFIG.value,
+        ArgumentEnum.OUTPUT_DIR.value,
+        ArgumentEnum.CONFIG_FILE.value,
+        ArgumentEnum.LOOPER_CONFIG.value,
+        ArgumentEnum.SAMPLE_PIPELINE_INTERFACES.value,
+        ArgumentEnum.PROJECT_PIPELINE_INTERFACES.value,
+        ArgumentEnum.PIPESTAT.value,
+        ArgumentEnum.SETTINGS.value,
+        ArgumentEnum.AMEND.value,
+        ArgumentEnum.SILENT.value,
+        ArgumentEnum.VERBOSITY.value,
+        ArgumentEnum.LOGDEV.value,
     ],
 )
 RunProjectParserModel = RunProjectParser.create_model()
@@ -111,7 +166,15 @@ RunProjectParserModel = RunProjectParser.create_model()
 TableParser = Command(
     "table",
     MESSAGE_BY_SUBCOMMAND["table"],
-    [],
+    [
+        ArgumentEnum.PEP_CONFIG.value,
+        ArgumentEnum.OUTPUT_DIR.value,
+        ArgumentEnum.CONFIG_FILE.value,
+        ArgumentEnum.LOOPER_CONFIG.value,
+        ArgumentEnum.SILENT.value,
+        ArgumentEnum.VERBOSITY.value,
+        ArgumentEnum.LOGDEV.value,
+    ],
 )
 TableParserModel = TableParser.create_model()
 
@@ -122,6 +185,13 @@ ReportParser = Command(
     MESSAGE_BY_SUBCOMMAND["report"],
     [
         ArgumentEnum.PORTABLE.value,
+        ArgumentEnum.PEP_CONFIG.value,
+        ArgumentEnum.OUTPUT_DIR.value,
+        ArgumentEnum.CONFIG_FILE.value,
+        ArgumentEnum.LOOPER_CONFIG.value,
+        ArgumentEnum.SILENT.value,
+        ArgumentEnum.VERBOSITY.value,
+        ArgumentEnum.LOGDEV.value,
     ],
 )
 ReportParserModel = ReportParser.create_model()
@@ -133,6 +203,14 @@ DestroyParser = Command(
     [
         ArgumentEnum.DRY_RUN.value,
         ArgumentEnum.FORCE_YES.value,
+        ArgumentEnum.PEP_CONFIG.value,
+        ArgumentEnum.OUTPUT_DIR.value,
+        ArgumentEnum.CONFIG_FILE.value,
+        ArgumentEnum.LOOPER_CONFIG.value,
+        ArgumentEnum.AMEND.value,
+        ArgumentEnum.SILENT.value,
+        ArgumentEnum.VERBOSITY.value,
+        ArgumentEnum.LOGDEV.value,
     ],
 )
 DestroyParserModel = DestroyParser.create_model()
@@ -145,6 +223,14 @@ CheckParser = Command(
         ArgumentEnum.DESCRIBE_CODES.value,
         ArgumentEnum.ITEMIZED.value,
         ArgumentEnum.FLAGS.value,
+        ArgumentEnum.PEP_CONFIG.value,
+        ArgumentEnum.OUTPUT_DIR.value,
+        ArgumentEnum.CONFIG_FILE.value,
+        ArgumentEnum.LOOPER_CONFIG.value,
+        ArgumentEnum.AMEND.value,
+        ArgumentEnum.SILENT.value,
+        ArgumentEnum.VERBOSITY.value,
+        ArgumentEnum.LOGDEV.value,
     ],
 )
 CheckParserModel = CheckParser.create_model()
@@ -156,6 +242,18 @@ CleanParser = Command(
     [
         ArgumentEnum.DRY_RUN.value,
         ArgumentEnum.FORCE_YES.value,
+        ArgumentEnum.PEP_CONFIG.value,
+        ArgumentEnum.OUTPUT_DIR.value,
+        ArgumentEnum.CONFIG_FILE.value,
+        ArgumentEnum.LOOPER_CONFIG.value,
+        ArgumentEnum.SAMPLE_PIPELINE_INTERFACES.value,
+        ArgumentEnum.PROJECT_PIPELINE_INTERFACES.value,
+        ArgumentEnum.PIPESTAT.value,
+        ArgumentEnum.SETTINGS.value,
+        ArgumentEnum.AMEND.value,
+        ArgumentEnum.SILENT.value,
+        ArgumentEnum.VERBOSITY.value,
+        ArgumentEnum.LOGDEV.value,
     ],
 )
 CleanParserModel = CleanParser.create_model()
@@ -194,7 +292,15 @@ InitPifaceParserModel = InitPifaceParser.create_model()
 LinkParser = Command(
     "link",
     MESSAGE_BY_SUBCOMMAND["link"],
-    [],
+    [
+        ArgumentEnum.PEP_CONFIG.value,
+        ArgumentEnum.OUTPUT_DIR.value,
+        ArgumentEnum.CONFIG_FILE.value,
+        ArgumentEnum.LOOPER_CONFIG.value,
+        ArgumentEnum.SILENT.value,
+        ArgumentEnum.VERBOSITY.value,
+        ArgumentEnum.LOGDEV.value,
+    ],
 )
 LinkParserModel = LinkParser.create_model()
 
@@ -254,31 +360,32 @@ class TopLevelParser(pydantic.BaseModel):
     )
 
     # arguments
-    settings: Optional[str] = ArgumentEnum.SETTINGS.value.with_reduced_default()
-    pep_config: Optional[str] = ArgumentEnum.PEP_CONFIG.value.with_reduced_default()
-    output_dir: Optional[str] = ArgumentEnum.OUTPUT_DIR.value.with_reduced_default()
-    config_file: Optional[str] = ArgumentEnum.CONFIG_FILE.value.with_reduced_default()
-    looper_config: Optional[str] = (
-        ArgumentEnum.LOOPER_CONFIG.value.with_reduced_default()
-    )
-    sample_pipeline_interfaces: Optional[List[str]] = (
-        ArgumentEnum.SAMPLE_PIPELINE_INTERFACES.value.with_reduced_default()
-    )
-    project_pipeline_interfaces: Optional[List[str]] = (
-        ArgumentEnum.PROJECT_PIPELINE_INTERFACES.value.with_reduced_default()
-    )
-    amend: Optional[List[str]] = ArgumentEnum.AMEND.value.with_reduced_default()
-    sel_attr: Optional[str] = ArgumentEnum.SEL_ATTR.value.with_reduced_default()
-    sel_incl: Optional[str] = ArgumentEnum.SEL_INCL.value.with_reduced_default()
-    sel_excl: Optional[str] = ArgumentEnum.SEL_EXCL.value.with_reduced_default()
+    # settings: Optional[str] = ArgumentEnum.SETTINGS.value.with_reduced_default()
+    # pep_config: Optional[str] = ArgumentEnum.PEP_CONFIG.value.with_reduced_default()
+    # output_dir: Optional[str] = ArgumentEnum.OUTPUT_DIR.value.with_reduced_default()
+    # config_file: Optional[str] = ArgumentEnum.CONFIG_FILE.value.with_reduced_default()
+    # looper_config: Optional[str] = (
+    #     ArgumentEnum.LOOPER_CONFIG.value.with_reduced_default()
+    # )
+    # sample_pipeline_interfaces: Optional[List[str]] = (
+    #     ArgumentEnum.SAMPLE_PIPELINE_INTERFACES.value.with_reduced_default()
+    # )
+    # project_pipeline_interfaces: Optional[List[str]] = (
+    #     ArgumentEnum.PROJECT_PIPELINE_INTERFACES.value.with_reduced_default()
+    # )
+    # amend: Optional[List[str]] = ArgumentEnum.AMEND.value.with_reduced_default()
+    # sel_attr: Optional[str] = ArgumentEnum.SEL_ATTR.value.with_reduced_default()
+    # sel_incl: Optional[str] = ArgumentEnum.SEL_INCL.value.with_reduced_default()
+    # sel_excl: Optional[str] = ArgumentEnum.SEL_EXCL.value.with_reduced_default()
     # sel_flag: Optional[str] = ArgumentEnum.SEL_FLAG.value.with_reduced_default()
     # exc_flag: Optional[Union[str, List[str]]] = (
     #     ArgumentEnum.EXC_FLAG.value.with_reduced_default()
     # )
+
     # arguments for logging
-    silent: Optional[bool] = ArgumentEnum.SILENT.value.with_reduced_default()
-    verbosity: Optional[int] = ArgumentEnum.VERBOSITY.value.with_reduced_default()
-    logdev: Optional[bool] = ArgumentEnum.LOGDEV.value.with_reduced_default()
-    pipestat: Optional[str] = ArgumentEnum.PIPESTAT.value.with_reduced_default()
-    limit: Optional[int] = ArgumentEnum.LIMIT.value.with_reduced_default()
-    skip: Optional[int] = ArgumentEnum.SKIP.value.with_reduced_default()
+    # silent: Optional[bool] = ArgumentEnum.SILENT.value.with_reduced_default()
+    # verbosity: Optional[int] = ArgumentEnum.VERBOSITY.value.with_reduced_default()
+    # logdev: Optional[bool] = ArgumentEnum.LOGDEV.value.with_reduced_default()
+    # pipestat: Optional[str] = ArgumentEnum.PIPESTAT.value.with_reduced_default()
+    # limit: Optional[int] = ArgumentEnum.LIMIT.value.with_reduced_default()
+    # skip: Optional[int] = ArgumentEnum.SKIP.value.with_reduced_default()

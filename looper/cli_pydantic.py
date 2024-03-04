@@ -163,9 +163,9 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
 
     with ProjectContext(
         prj=p,
-        selector_attribute=args.sel_attr,
-        selector_include=args.sel_incl,
-        selector_exclude=args.sel_excl,
+        selector_attribute=subcommand_args.sel_attr,
+        selector_include=subcommand_args.sel_incl,
+        selector_exclude=subcommand_args.sel_excl,
         selector_flag=subcommand_args.sel_flag,
         exclusion_flag=subcommand_args.exc_flag,
     ) as prj:

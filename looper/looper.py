@@ -425,7 +425,7 @@ class Runner(Executor):
             self.prj.pipestat_configured_project or self.prj.pipestat_configured
         )
 
-        for sample in select_samples(prj=self.prj, args=top_level_args):
+        for sample in select_samples(prj=self.prj, args=args):
             pl_fails = []
             skip_reasons = []
             sample_pifaces = self.prj.get_sample_piface(
