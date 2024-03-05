@@ -124,7 +124,7 @@ class Checker(Executor):
                     table.add_row(status_id, f"{status_count}/{len(status_list)}")
             console.print(table)
 
-        if getattr(args.check, "itemized", None):
+        if getattr(args, "itemized", None):
             for pipeline_name, pipeline_status in status.items():
                 table_title = f"Pipeline: '{pipeline_name}'"
                 table = Table(
@@ -150,7 +150,7 @@ class Checker(Executor):
                     table.add_row(name, f"[{color}]{status_id}[/{color}]")
                 console.print(table)
 
-        if args.check.describe_codes:
+        if args.describe_codes:
             table = Table(
                 show_header=True,
                 header_style="bold magenta",
@@ -251,7 +251,7 @@ class Destroyer(Executor):
                 # Preview: Don't actually delete, just show files.
                 _LOGGER.info(str(sample_output_folder))
             else:
-                _remove_or_dry_run(sample_output_folder, args.destroy.dry_run)
+                _remove_or_dry_run(sample_output_folder, args.dry_run)
 
         _LOGGER.info("Removing summary:")
         use_pipestat = (

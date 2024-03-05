@@ -40,7 +40,7 @@ def test_comprehensive_looper_no_pipestat():
         with open(basic_project_file, "w") as f:
             dump(pipestat_project_data, f)
 
-        x = ["--looper-config", path_to_looper_config, "run"]
+        x = ["run", "--looper-config", path_to_looper_config]
 
         try:
             main(test_args=x)
@@ -79,7 +79,7 @@ def test_comprehensive_looper_pipestat():
             dump(pipestat_project_data, f)
 
         # x = [cmd, "-d", "--looper-config", path_to_looper_config]
-        x = ["--looper-config", path_to_looper_config, cmd]
+        x = [cmd, "--looper-config", path_to_looper_config]
 
         try:
             result = main(test_args=x)
@@ -103,7 +103,7 @@ def test_comprehensive_looper_pipestat():
         psm.set_status(record_identifier="frog_2", status_identifier="completed")
 
         # Now use looper check to get statuses
-        x = ["--looper-config", path_to_looper_config, "check"]
+        x = ["check", "--looper-config", path_to_looper_config]
 
         try:
             result = main(test_args=x)
@@ -113,7 +113,7 @@ def test_comprehensive_looper_pipestat():
 
         # TEST LOOPER REPORT
 
-        x = ["--looper-config", path_to_looper_config, "report"]
+        x = ["report", "--looper-config", path_to_looper_config]
 
         try:
             result = main(test_args=x)
@@ -123,7 +123,7 @@ def test_comprehensive_looper_pipestat():
 
         # TEST LOOPER Table
 
-        x = ["--looper-config", path_to_looper_config, "table"]
+        x = ["table", "--looper-config", path_to_looper_config]
 
         try:
             result = main(test_args=x)
@@ -135,9 +135,9 @@ def test_comprehensive_looper_pipestat():
         # TODO add destroying individual samples via pipestat
 
         x = [
+            "destroy",
             "--looper-config",
             path_to_looper_config,
-            "destroy",
             "--force-yes",
         ]  # Must force yes or pytest will throw an exception "OSError: pytest: reading from stdin while output is captured!"
 
