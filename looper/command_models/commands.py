@@ -391,33 +391,8 @@ class TopLevelParser(pydantic.BaseModel):
         description=InspectParser.description
     )
 
-    # arguments
-    # settings: Optional[str] = ArgumentEnum.SETTINGS.value.with_reduced_default()
-    # pep_config: Optional[str] = ArgumentEnum.PEP_CONFIG.value.with_reduced_default()
-    # output_dir: Optional[str] = ArgumentEnum.OUTPUT_DIR.value.with_reduced_default()
-    # config_file: Optional[str] = ArgumentEnum.CONFIG_FILE.value.with_reduced_default()
-    # looper_config: Optional[str] = (
-    #     ArgumentEnum.LOOPER_CONFIG.value.with_reduced_default()
-    # )
-    # sample_pipeline_interfaces: Optional[List[str]] = (
-    #     ArgumentEnum.SAMPLE_PIPELINE_INTERFACES.value.with_reduced_default()
-    # )
-    # project_pipeline_interfaces: Optional[List[str]] = (
-    #     ArgumentEnum.PROJECT_PIPELINE_INTERFACES.value.with_reduced_default()
-    # )
-    # amend: Optional[List[str]] = ArgumentEnum.AMEND.value.with_reduced_default()
-    # sel_attr: Optional[str] = ArgumentEnum.SEL_ATTR.value.with_reduced_default()
-    # sel_incl: Optional[str] = ArgumentEnum.SEL_INCL.value.with_reduced_default()
-    # sel_excl: Optional[str] = ArgumentEnum.SEL_EXCL.value.with_reduced_default()
-    # sel_flag: Optional[str] = ArgumentEnum.SEL_FLAG.value.with_reduced_default()
-    # exc_flag: Optional[Union[str, List[str]]] = (
-    #     ArgumentEnum.EXC_FLAG.value.with_reduced_default()
-    # )
-
-    # arguments for logging
+    # Additional arguments for logging, added to ALL commands
+    # These must be used before the command
     silent: Optional[bool] = ArgumentEnum.SILENT.value.with_reduced_default()
     verbosity: Optional[int] = ArgumentEnum.VERBOSITY.value.with_reduced_default()
     logdev: Optional[bool] = ArgumentEnum.LOGDEV.value.with_reduced_default()
-    # pipestat: Optional[str] = ArgumentEnum.PIPESTAT.value.with_reduced_default()
-    # limit: Optional[int] = ArgumentEnum.LIMIT.value.with_reduced_default()
-    # skip: Optional[int] = ArgumentEnum.SKIP.value.with_reduced_default()
