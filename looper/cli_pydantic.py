@@ -29,7 +29,6 @@ from pydantic2_argparse.argparse.parser import ArgumentParser
 from divvy import select_divvy_config
 
 from . import __version__
-from .cli_looper import _proc_resources_spec
 from .command_models.commands import SUPPORTED_COMMANDS, TopLevelParser
 from .const import *
 from .divvy import DEFAULT_COMPUTE_RESOURCES_NAME, select_divvy_config
@@ -45,6 +44,7 @@ from .utils import (
     read_looper_dotfile,
     initiate_looper_config,
     init_generic_pipeline,
+    read_yaml_file,
 )
 
 
@@ -258,6 +258,49 @@ def main(test_args=None) -> None:
     else:
         args = parser.parse_typed_args()
     return run_looper(args, parser, test_args=test_args)
+
+
+def _proc_resources_spec(args):
+    """
+    Process CLI-sources compute setting specification. There are two sources
+    of compute settings in the CLI alone:
+        * YAML file (--settings argument)
+        * itemized compute settings (--compute argument)
+
+    The itemized compute specification is given priority
+
+    :param argparse.Namespace: arguments namespace
+    :return Mapping[str, str]: binding between resource setting name and value
+    :raise ValueError: if interpretation of the given specification as encoding
+        of key-value pairs fails
+    """
+    spec = getattr(args, "compute", None)
+    settings = args.settings
+    try:
+        settings_data = read_yaml_file(settings) or {}
+    except yaml.YAMLError:
+        _LOGGER.warning(
+            "Settings file ({}) does not follow YAML format,"
+            " disregarding".format(settings)
+        )
+        settings_data = {}
+    if not spec:
+        return settings_data
+    pairs = [(kv, kv.split("=")) for kv in spec]
+    bads = []
+    for orig, pair in pairs:
+        try:
+            k, v = pair
+        except ValueError:
+            bads.append(orig)
+        else:
+            settings_data[k] = v
+    if bads:
+        raise ValueError(
+            "Could not correctly parse itemized compute specification. "
+            "Correct format: " + EXAMPLE_COMPUTE_SPEC_FMT
+        )
+    return settings_data
 
 
 if __name__ == "__main__":
