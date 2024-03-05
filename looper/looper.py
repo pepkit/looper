@@ -264,7 +264,7 @@ class Destroyer(Executor):
         if use_pipestat:
             destroy_summary(
                 self.prj,
-                getattr(args.destroy, "dry_run", None),
+                getattr(args, "dry_run", None),
                 getattr(args, "project", None),
             )
         else:
@@ -276,11 +276,11 @@ class Destroyer(Executor):
             _LOGGER.info("Destroy complete.")
             return 0
 
-        if getattr(args.destroy, "dry_run", None):
+        if getattr(args, "dry_run", None):
             _LOGGER.info("Dry run. No files destroyed.")
             return 0
 
-        if not getattr(args.destroy, "force_yes", None) and not query_yes_no(
+        if not getattr(args, "force_yes", None) and not query_yes_no(
             "Are you sure you want to permanently delete all pipeline "
             "results for this project?"
         ):
@@ -348,14 +348,14 @@ class Collator(Executor):
                 pipeline_interface=project_piface_object,
                 prj=self.prj,
                 compute_variables=compute_kwargs,
-                delay=getattr(args.runp, "time_delay", None),
-                extra_args=getattr(args.runp, "command_extra", None),
-                extra_args_override=getattr(args.runp, "command_extra_override", None),
-                ignore_flags=getattr(args.runp, "ignore_flags", None),
+                delay=getattr(args, "time_delay", None),
+                extra_args=getattr(args, "command_extra", None),
+                extra_args_override=getattr(args, "command_extra_override", None),
+                ignore_flags=getattr(args, "ignore_flags", None),
                 collate=True,
             )
             if conductor.is_project_submittable(
-                force=getattr(args.runp, "ignore_flags", None)
+                force=getattr(args, "ignore_flags", None)
             ):
                 conductor._pool = [None]
                 conductor.submit()
@@ -559,7 +559,7 @@ class Reporter(Executor):
         p = self.prj
         project_level = getattr(args, "project", None)
 
-        portable = args.report.portable
+        portable = args.portable
 
         if project_level:
             psms = self.prj.get_pipestat_managers(project_level=True)

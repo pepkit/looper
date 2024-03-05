@@ -68,11 +68,11 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
         return int(
             not initiate_looper_config(
                 dotfile_path(),
-                args.pep_config,
-                args.init.output_dir,
-                args.sample_pipeline_interfaces,
-                args.project_pipeline_interfaces,
-                args.init.force_yes,
+                subcommand_args.pep_config,
+                subcommand_args.output_dir,
+                subcommand_args.sample_pipeline_interfaces,
+                subcommand_args.project_pipeline_interfaces,
+                subcommand_args.force_yes,
             )
         )
 
@@ -81,17 +81,19 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
 
     _LOGGER.info("Looper version: {}\nCommand: {}".format(__version__, subcommand_name))
 
-    if args.config_file is None:
+    if subcommand_args.config_file is None:
         looper_cfg_path = os.path.relpath(dotfile_path(), start=os.curdir)
         try:
-            if args.looper_config:
-                looper_config_dict = read_looper_config_file(args.looper_config)
+            if subcommand_args.looper_config:
+                looper_config_dict = read_looper_config_file(
+                    subcommand_args.looper_config
+                )
             else:
                 looper_config_dict = read_looper_dotfile()
                 _LOGGER.info(f"Using looper config ({looper_cfg_path}).")
 
             for looper_config_key, looper_config_item in looper_config_dict.items():
-                setattr(args, looper_config_key, looper_config_item)
+                setattr(subcommand_args, looper_config_key, looper_config_item)
 
         except OSError:
             parser.print_help(sys.stderr)
@@ -106,11 +108,11 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
             "looper.databio.org/en/latest/looper-config"
         )
 
-    args = enrich_args_via_cfg(args, parser, test_args=test_args)
+    subcommand_args = enrich_args_via_cfg(subcommand_args, parser, test_args=test_args)
 
     # If project pipeline interface defined in the cli, change name to: "pipeline_interface"
-    if vars(args)[PROJECT_PL_ARG]:
-        args.pipeline_interfaces = vars(args)[PROJECT_PL_ARG]
+    if vars(subcommand_args)[PROJECT_PL_ARG]:
+        subcommand_args.pipeline_interfaces = vars(subcommand_args)[PROJECT_PL_ARG]
 
     divcfg = (
         select_divvy_config(filepath=subcommand_args.divvy)
@@ -122,17 +124,19 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
         subcommand_args.ignore_flags = True
 
     # Initialize project
-    if is_registry_path(args.config_file):
-        if vars(args)[SAMPLE_PL_ARG]:
+    if is_registry_path(subcommand_args.config_file):
+        if vars(subcommand_args)[SAMPLE_PL_ARG]:
             p = Project(
-                amendments=args.amend,
+                amendments=subcommand_args.amend,
                 divcfg_path=divcfg,
                 runp=subcommand_name == "runp",
                 project_dict=PEPHubClient()._load_raw_pep(
-                    registry_path=args.config_file
+                    registry_path=subcommand_args.config_file
                 ),
                 **{
-                    attr: getattr(args, attr) for attr in CLI_PROJ_ATTRS if attr in args
+                    attr: getattr(subcommand_args, attr)
+                    for attr in CLI_PROJ_ATTRS
+                    if attr in subcommand_args
                 },
             )
         else:
@@ -142,12 +146,14 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
     else:
         try:
             p = Project(
-                cfg=args.config_file,
-                amendments=args.amend,
+                cfg=subcommand_args.config_file,
+                amendments=subcommand_args.amend,
                 divcfg_path=divcfg,
                 runp=subcommand_name == "runp",
                 **{
-                    attr: getattr(args, attr) for attr in CLI_PROJ_ATTRS if attr in args
+                    attr: getattr(subcommand_args, attr)
+                    for attr in CLI_PROJ_ATTRS
+                    if attr in subcommand_args
                 },
             )
         except yaml.parser.ParserError as e:
@@ -192,44 +198,44 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
         if subcommand_name in ["runp"]:
             compute_kwargs = _proc_resources_spec(subcommand_args)
             collate = Collator(prj)
-            collate(args, **compute_kwargs)
+            collate(subcommand_args, **compute_kwargs)
             return collate.debug
 
         if subcommand_name in ["destroy"]:
-            return Destroyer(prj)(args)
+            return Destroyer(prj)(subcommand_args)
 
         use_pipestat = (
             prj.pipestat_configured_project
-            if getattr(args, "project", None)
+            if getattr(subcommand_args, "project", None)
             else prj.pipestat_configured
         )
 
         if subcommand_name in ["table"]:
             if use_pipestat:
-                return Tabulator(prj)(args)
+                return Tabulator(prj)(subcommand_args)
             else:
                 raise PipestatConfigurationException("table")
 
         if subcommand_name in ["report"]:
             if use_pipestat:
-                return Reporter(prj)(args)
+                return Reporter(prj)(subcommand_args)
             else:
                 raise PipestatConfigurationException("report")
 
         if subcommand_name in ["link"]:
             if use_pipestat:
-                Linker(prj)(args)
+                Linker(prj)(subcommand_args)
             else:
                 raise PipestatConfigurationException("link")
 
         if subcommand_name in ["check"]:
             if use_pipestat:
-                return Checker(prj)(args)
+                return Checker(prj)(subcommand_args)
             else:
                 raise PipestatConfigurationException("check")
 
         if subcommand_name in ["clean"]:
-            return Cleaner(prj)(args)
+            return Cleaner(prj)(subcommand_args)
 
         if subcommand_name in ["inspect"]:
             from warnings import warn
