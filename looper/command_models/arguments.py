@@ -188,7 +188,7 @@ class ArgumentEnum(enum.Enum):
     )
     SEL_INCL = Argument(
         name="sel_incl",
-        default=(str, ""),
+        default=(List, []),
         description="Include only samples with these values",
     )
     SEL_EXCL = Argument(
@@ -197,7 +197,7 @@ class ArgumentEnum(enum.Enum):
         description="Exclude samples with these values",
     )
     SEL_FLAG = Argument(
-        name="sel_flag", default=(str, ""), description="Sample selection flag"
+        name="sel_flag", default=(List, []), description="Sample selection flag"
     )
     EXC_FLAG = Argument(
         name="exc_flag", default=(List, []), description="Sample exclusion flag"

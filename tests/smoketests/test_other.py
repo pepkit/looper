@@ -31,7 +31,7 @@ class TestLooperPipestat:
         # tp = prep_temp_pep
         dot_file_path = os.path.abspath(prepare_pep_with_dot_file)
         # x = test_args_expansion(tp, cmd, dry=False)
-        x = ["--looper-config", dot_file_path, cmd]
+        x = [cmd, "--looper-config", dot_file_path]
         with pytest.raises(PipestatConfigurationException):
             main(test_args=x)
 
@@ -40,10 +40,10 @@ class TestLooperPipestat:
         tp = prep_temp_pep_pipestat
 
         if cmd in ["run", "runp"]:
-            x = ["--looper-config", tp, cmd, "--dry-run"]
+            x = [cmd, "--looper-config", tp, "--dry-run"]
         else:
             # Not every command supports dry run
-            x = ["--looper-config", tp, cmd]
+            x = [cmd, "--looper-config", tp]
 
         try:
             result = main(test_args=x)
@@ -63,7 +63,7 @@ class TestLooperCheck:
         tp = prep_temp_pep_pipestat
         _make_flags(tp, flag_id, pipeline_name)
 
-        x = ["--looper-config", tp, "check"]
+        x = ["check", "--looper-config", tp]
 
         try:
             results = main(test_args=x)
@@ -82,7 +82,7 @@ class TestLooperCheck:
         _make_flags(tp, flag_id, pipeline_name)
         _make_flags(tp, FLAGS[1], pipeline_name)
 
-        x = ["--looper-config", tp, "check"]
+        x = ["check", "--looper-config", tp]
         # Multiple flag files SHOULD cause pipestat to throw an assertion error
         if flag_id != FLAGS[1]:
             with pytest.raises(AssertionError):
@@ -95,7 +95,7 @@ class TestLooperCheck:
         tp = prep_temp_pep_pipestat
         _make_flags(tp, flag_id, pipeline_name)
 
-        x = ["--looper-config", tp, "check"]
+        x = ["check", "--looper-config", tp]
         try:
             results = main(test_args=x)
             result_key = list(results.keys())[0]
@@ -130,7 +130,7 @@ class TestSelector:
                 f.write(FLAGS[count])
             count += 1
 
-        x = ["--looper-config", tp, "--sel-flag", "failed", "run", "--dry-run"]
+        x = ["run", "--looper-config", tp, "--sel-flag", "failed", "--dry-run"]
 
         try:
             results = main(test_args=x)
@@ -165,7 +165,7 @@ class TestSelector:
                 f.write(FLAGS[count])
             count += 1
 
-        x = ["--looper-config", tp, "--exc-flag", "failed", "run", "--dry-run"]
+        x = ["run", "--looper-config", tp, "--exc-flag", "failed", "--dry-run"]
 
         try:
             results = main(test_args=x)
@@ -204,12 +204,12 @@ class TestSelector:
         # x = ["--looper-config", "--exc-flag", "['failed','running']", tp, "run", "--dry-run"]
 
         x = [
+            "run",
             "--looper-config",
             tp,
             "--exc-flag",
             "failed",
             "running",
-            "run",
             "--dry-run",
         ]
 
@@ -247,7 +247,15 @@ class TestSelector:
                 f.write(FLAGS[count])
             count += 1
 
-        x = ["run", "-d", "--looper-config", tp, "--sel-flag", "failed", "running"]
+        x = [
+            "run",
+            "--dry-run",
+            "--looper-config",
+            tp,
+            "--sel-flag",
+            "failed",
+            "running",
+        ]
 
         try:
             results = main(test_args=x)
@@ -285,7 +293,7 @@ class TestSelector:
 
         x = [
             "run",
-            "-d",
+            "--dry-run",
             "--looper-config",
             tp,
             "--sel-flag",
@@ -332,7 +340,7 @@ class TestSelector:
 
         x = [
             "run",
-            "-d",
+            "--dry-run",
             "--looper-config",
             tp,
             "--exc-flag",
@@ -380,7 +388,7 @@ class TestSelector:
 
         x = [
             "run",
-            "-d",
+            "--dry-run",
             "--looper-config",
             tp,
             "--sel-attr",
@@ -427,7 +435,7 @@ class TestSelector:
 
         x = [
             "run",
-            "-d",
+            "--dry-run",
             "--looper-config",
             tp,
             "--sel-attr",
