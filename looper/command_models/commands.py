@@ -41,6 +41,26 @@ class Command:
         return pydantic.create_model(self.name, **arguments)
 
 
+SHARED_ARGUMENTS = [
+    ArgumentEnum.SETTINGS.value,
+    ArgumentEnum.EXC_FLAG.value,
+    ArgumentEnum.SEL_FLAG.value,
+    ArgumentEnum.SEL_ATTR.value,
+    ArgumentEnum.SEL_INCL.value,
+    ArgumentEnum.SEL_EXCL.value,
+    ArgumentEnum.LIMIT.value,
+    ArgumentEnum.SKIP.value,
+    ArgumentEnum.PEP_CONFIG.value,
+    ArgumentEnum.OUTPUT_DIR.value,
+    ArgumentEnum.CONFIG_FILE.value,
+    ArgumentEnum.LOOPER_CONFIG.value,
+    ArgumentEnum.SAMPLE_PIPELINE_INTERFACES.value,
+    ArgumentEnum.PROJECT_PIPELINE_INTERFACES.value,
+    ArgumentEnum.PIPESTAT.value,
+    ArgumentEnum.SETTINGS.value,
+    ArgumentEnum.AMEND.value,
+]
+
 RunParser = Command(
     "run",
     MESSAGE_BY_SUBCOMMAND["run"],
@@ -57,26 +77,8 @@ RunParser = Command(
         ArgumentEnum.SKIP_FILE_CHECKS.value,
         ArgumentEnum.COMPUTE.value,
         ArgumentEnum.PACKAGE.value,
-        ArgumentEnum.SETTINGS.value,
-        ArgumentEnum.EXC_FLAG.value,
-        ArgumentEnum.SEL_FLAG.value,
-        ArgumentEnum.SEL_ATTR.value,
-        ArgumentEnum.SEL_INCL.value,
-        ArgumentEnum.SEL_EXCL.value,
-        ArgumentEnum.LIMIT.value,
-        ArgumentEnum.SKIP.value,
-        ArgumentEnum.PEP_CONFIG.value,
-        ArgumentEnum.OUTPUT_DIR.value,
-        ArgumentEnum.CONFIG_FILE.value,
-        ArgumentEnum.LOOPER_CONFIG.value,
-        ArgumentEnum.SAMPLE_PIPELINE_INTERFACES.value,
-        ArgumentEnum.PROJECT_PIPELINE_INTERFACES.value,
-        ArgumentEnum.PIPESTAT.value,
-        ArgumentEnum.SETTINGS.value,
-        ArgumentEnum.AMEND.value,
     ],
 )
-RunParserModel = RunParser.create_model()
 
 # RERUN
 RerunParser = Command(
@@ -95,26 +97,8 @@ RerunParser = Command(
         ArgumentEnum.SKIP_FILE_CHECKS.value,
         ArgumentEnum.COMPUTE.value,
         ArgumentEnum.PACKAGE.value,
-        ArgumentEnum.SETTINGS.value,
-        ArgumentEnum.EXC_FLAG.value,
-        ArgumentEnum.SEL_FLAG.value,
-        ArgumentEnum.SEL_ATTR.value,
-        ArgumentEnum.SEL_INCL.value,
-        ArgumentEnum.SEL_EXCL.value,
-        ArgumentEnum.LIMIT.value,
-        ArgumentEnum.SKIP.value,
-        ArgumentEnum.PEP_CONFIG.value,
-        ArgumentEnum.OUTPUT_DIR.value,
-        ArgumentEnum.CONFIG_FILE.value,
-        ArgumentEnum.LOOPER_CONFIG.value,
-        ArgumentEnum.SAMPLE_PIPELINE_INTERFACES.value,
-        ArgumentEnum.PROJECT_PIPELINE_INTERFACES.value,
-        ArgumentEnum.PIPESTAT.value,
-        ArgumentEnum.SETTINGS.value,
-        ArgumentEnum.AMEND.value,
     ],
 )
-RerunParserModel = RerunParser.create_model()
 
 # RUNP
 RunProjectParser = Command(
@@ -132,50 +116,15 @@ RunProjectParser = Command(
         ArgumentEnum.SKIP_FILE_CHECKS.value,
         ArgumentEnum.COMPUTE.value,
         ArgumentEnum.PACKAGE.value,
-        ArgumentEnum.SETTINGS.value,
-        ArgumentEnum.EXC_FLAG.value,
-        ArgumentEnum.SEL_FLAG.value,
-        ArgumentEnum.SEL_ATTR.value,
-        ArgumentEnum.SEL_INCL.value,
-        ArgumentEnum.SEL_EXCL.value,
-        ArgumentEnum.LIMIT.value,
-        ArgumentEnum.SKIP.value,
-        ArgumentEnum.PEP_CONFIG.value,
-        ArgumentEnum.OUTPUT_DIR.value,
-        ArgumentEnum.CONFIG_FILE.value,
-        ArgumentEnum.LOOPER_CONFIG.value,
-        ArgumentEnum.SAMPLE_PIPELINE_INTERFACES.value,
-        ArgumentEnum.PROJECT_PIPELINE_INTERFACES.value,
-        ArgumentEnum.PIPESTAT.value,
-        ArgumentEnum.SETTINGS.value,
-        ArgumentEnum.AMEND.value,
     ],
 )
-RunProjectParserModel = RunProjectParser.create_model()
 
 # TABLE
 TableParser = Command(
     "table",
     MESSAGE_BY_SUBCOMMAND["table"],
-    [
-        ArgumentEnum.EXC_FLAG.value,
-        ArgumentEnum.SEL_FLAG.value,
-        ArgumentEnum.SEL_ATTR.value,
-        ArgumentEnum.SEL_INCL.value,
-        ArgumentEnum.SEL_EXCL.value,
-        ArgumentEnum.LIMIT.value,
-        ArgumentEnum.SKIP.value,
-        ArgumentEnum.PEP_CONFIG.value,
-        ArgumentEnum.OUTPUT_DIR.value,
-        ArgumentEnum.CONFIG_FILE.value,
-        ArgumentEnum.LOOPER_CONFIG.value,
-        ArgumentEnum.SAMPLE_PIPELINE_INTERFACES.value,
-        ArgumentEnum.PROJECT_PIPELINE_INTERFACES.value,
-        ArgumentEnum.PIPESTAT.value,
-        ArgumentEnum.AMEND.value,
-    ],
+    [],
 )
-TableParserModel = TableParser.create_model()
 
 
 # REPORT
@@ -184,24 +133,8 @@ ReportParser = Command(
     MESSAGE_BY_SUBCOMMAND["report"],
     [
         ArgumentEnum.PORTABLE.value,
-        ArgumentEnum.EXC_FLAG.value,
-        ArgumentEnum.SEL_FLAG.value,
-        ArgumentEnum.SEL_ATTR.value,
-        ArgumentEnum.SEL_INCL.value,
-        ArgumentEnum.SEL_EXCL.value,
-        ArgumentEnum.LIMIT.value,
-        ArgumentEnum.SKIP.value,
-        ArgumentEnum.PEP_CONFIG.value,
-        ArgumentEnum.OUTPUT_DIR.value,
-        ArgumentEnum.CONFIG_FILE.value,
-        ArgumentEnum.LOOPER_CONFIG.value,
-        ArgumentEnum.SAMPLE_PIPELINE_INTERFACES.value,
-        ArgumentEnum.PROJECT_PIPELINE_INTERFACES.value,
-        ArgumentEnum.PIPESTAT.value,
-        ArgumentEnum.AMEND.value,
     ],
 )
-ReportParserModel = ReportParser.create_model()
 
 # DESTROY
 DestroyParser = Command(
@@ -210,24 +143,8 @@ DestroyParser = Command(
     [
         ArgumentEnum.DRY_RUN.value,
         ArgumentEnum.FORCE_YES.value,
-        ArgumentEnum.EXC_FLAG.value,
-        ArgumentEnum.SEL_FLAG.value,
-        ArgumentEnum.SEL_ATTR.value,
-        ArgumentEnum.SEL_INCL.value,
-        ArgumentEnum.SEL_EXCL.value,
-        ArgumentEnum.LIMIT.value,
-        ArgumentEnum.SKIP.value,
-        ArgumentEnum.PEP_CONFIG.value,
-        ArgumentEnum.OUTPUT_DIR.value,
-        ArgumentEnum.CONFIG_FILE.value,
-        ArgumentEnum.LOOPER_CONFIG.value,
-        ArgumentEnum.SAMPLE_PIPELINE_INTERFACES.value,
-        ArgumentEnum.PROJECT_PIPELINE_INTERFACES.value,
-        ArgumentEnum.PIPESTAT.value,
-        ArgumentEnum.AMEND.value,
     ],
 )
-DestroyParserModel = DestroyParser.create_model()
 
 # CHECK
 CheckParser = Command(
@@ -237,24 +154,8 @@ CheckParser = Command(
         ArgumentEnum.DESCRIBE_CODES.value,
         ArgumentEnum.ITEMIZED.value,
         ArgumentEnum.FLAGS.value,
-        ArgumentEnum.EXC_FLAG.value,
-        ArgumentEnum.SEL_FLAG.value,
-        ArgumentEnum.SEL_ATTR.value,
-        ArgumentEnum.SEL_INCL.value,
-        ArgumentEnum.SEL_EXCL.value,
-        ArgumentEnum.LIMIT.value,
-        ArgumentEnum.SKIP.value,
-        ArgumentEnum.PEP_CONFIG.value,
-        ArgumentEnum.OUTPUT_DIR.value,
-        ArgumentEnum.CONFIG_FILE.value,
-        ArgumentEnum.LOOPER_CONFIG.value,
-        ArgumentEnum.SAMPLE_PIPELINE_INTERFACES.value,
-        ArgumentEnum.PROJECT_PIPELINE_INTERFACES.value,
-        ArgumentEnum.PIPESTAT.value,
-        ArgumentEnum.AMEND.value,
     ],
 )
-CheckParserModel = CheckParser.create_model()
 
 # CLEAN
 CleanParser = Command(
@@ -263,25 +164,8 @@ CleanParser = Command(
     [
         ArgumentEnum.DRY_RUN.value,
         ArgumentEnum.FORCE_YES.value,
-        ArgumentEnum.EXC_FLAG.value,
-        ArgumentEnum.SEL_FLAG.value,
-        ArgumentEnum.SEL_ATTR.value,
-        ArgumentEnum.SEL_INCL.value,
-        ArgumentEnum.SEL_EXCL.value,
-        ArgumentEnum.LIMIT.value,
-        ArgumentEnum.SKIP.value,
-        ArgumentEnum.PEP_CONFIG.value,
-        ArgumentEnum.OUTPUT_DIR.value,
-        ArgumentEnum.CONFIG_FILE.value,
-        ArgumentEnum.LOOPER_CONFIG.value,
-        ArgumentEnum.SAMPLE_PIPELINE_INTERFACES.value,
-        ArgumentEnum.PROJECT_PIPELINE_INTERFACES.value,
-        ArgumentEnum.PIPESTAT.value,
-        ArgumentEnum.SETTINGS.value,
-        ArgumentEnum.AMEND.value,
     ],
 )
-CleanParserModel = CleanParser.create_model()
 
 # INSPECT
 # TODO Did this move to Eido?
@@ -320,21 +204,33 @@ InitPifaceParserModel = InitPifaceParser.create_model()
 LinkParser = Command(
     "link",
     MESSAGE_BY_SUBCOMMAND["link"],
-    [
-        ArgumentEnum.EXC_FLAG.value,
-        ArgumentEnum.SEL_FLAG.value,
-        ArgumentEnum.SEL_ATTR.value,
-        ArgumentEnum.SEL_INCL.value,
-        ArgumentEnum.SEL_EXCL.value,
-        ArgumentEnum.LIMIT.value,
-        ArgumentEnum.SKIP.value,
-        ArgumentEnum.PEP_CONFIG.value,
-        ArgumentEnum.OUTPUT_DIR.value,
-        ArgumentEnum.CONFIG_FILE.value,
-        ArgumentEnum.LOOPER_CONFIG.value,
-    ],
+    [],
 )
+
+
+# Add shared arguments for all commands that use them
+for arg in SHARED_ARGUMENTS:
+    RunParser.arguments.append(arg)
+    RerunParser.arguments.append(arg)
+    RunProjectParser.arguments.append(arg)
+    ReportParser.arguments.append(arg)
+    DestroyParser.arguments.append(arg)
+    CheckParser.arguments.append(arg)
+    CleanParser.arguments.append(arg)
+    TableParser.arguments.append(arg)
+    LinkParser.arguments.append(arg)
+
+# Create all Models
+RunParserModel = RunParser.create_model()
+RerunParserModel = RerunParser.create_model()
+RunProjectParserModel = RunProjectParser.create_model()
+ReportParserModel = ReportParser.create_model()
+DestroyParserModel = DestroyParser.create_model()
+CheckParserModel = CheckParser.create_model()
+CleanParserModel = CleanParser.create_model()
+TableParserModel = TableParser.create_model()
 LinkParserModel = LinkParser.create_model()
+
 
 SUPPORTED_COMMANDS = [
     RunParser,
