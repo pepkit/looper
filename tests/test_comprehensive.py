@@ -17,8 +17,6 @@ from yaml import dump, safe_load
 CMD_STRS = ["string", " --string", " --sjhsjd 212", "7867#$@#$cc@@"]
 
 
-
-
 @pytest.mark.skipif(not is_connected(), reason="Test needs an internet connection")
 def test_comprehensive_looper_no_pipestat():
 

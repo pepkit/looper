@@ -39,7 +39,9 @@ class TestLooperBothRuns:
     def test_looper_cfg_invalid(self, cmd):
         """Verify looper does not accept invalid cfg paths"""
 
-        x = test_args_expansion(cmd, "--looper-config", "jdfskfds/dsjfklds/dsjklsf.yaml")
+        x = test_args_expansion(
+            cmd, "--looper-config", "jdfskfds/dsjfklds/dsjklsf.yaml"
+        )
         with pytest.raises(SystemExit):
             result = main(test_args=x)
             print(result)
@@ -53,7 +55,7 @@ class TestLooperBothRuns:
             ff = main(test_args=x)
             print(ff)
 
-    @pytest.mark.parametrize("cmd", ["run","runp"])
+    @pytest.mark.parametrize("cmd", ["run", "runp"])
     @pytest.mark.parametrize(
         "arg",
         [
@@ -92,7 +94,6 @@ class TestLooperBothRuns:
             main(test_args=x)
 
 
-
 class TestLooperRunBehavior:
     def test_looper_run_basic(self, prep_temp_pep):
         """Verify looper runs in a basic case and return code is 0"""
@@ -117,9 +118,7 @@ class TestLooperRunBehavior:
 
         with mod_yaml_data(tp) as config_data:
             pifaces = config_data[PIPELINE_INTERFACES_KEY]
-            config_data[PIPELINE_INTERFACES_KEY]["sample"] = (
-                pifaces["sample"][1]
-            )
+            config_data[PIPELINE_INTERFACES_KEY]["sample"] = pifaces["sample"][1]
             del config_data[PIPELINE_INTERFACES_KEY]["project"]
 
         x = test_args_expansion(tp, "run")
@@ -133,9 +132,7 @@ class TestLooperRunBehavior:
         tp = prep_temp_pep
         with mod_yaml_data(tp) as config_data:
             pifaces = config_data[PIPELINE_INTERFACES_KEY]
-            config_data[PIPELINE_INTERFACES_KEY]["sample"] = (
-                pifaces["sample"][1]
-            )
+            config_data[PIPELINE_INTERFACES_KEY]["sample"] = pifaces["sample"][1]
         x = test_args_expansion(tp, "run")
         try:
             # Test that {looper.piface_dir} is correctly rendered to a path which will show up in the final .sub file
@@ -579,7 +576,6 @@ class TestLooperConfig:
             result = main(test_args=x)
         except Exception as err:
             raise pytest.fail(f"DID RAISE {err}")
-
 
 
 class TestLooperPEPhub:

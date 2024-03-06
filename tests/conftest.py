@@ -50,8 +50,8 @@ def get_outdir(pth):
     output_path = config_data[OUTDIR_KEY]
     dirname = os.path.dirname(pth)
 
-
     return os.path.join(dirname, output_path)
+
 
 def get_project_config_path(looper_config_pth):
     """
@@ -61,7 +61,6 @@ def get_project_config_path(looper_config_pth):
     :return str: output directory
     """
     dirname = os.path.dirname(looper_config_pth)
-
 
     return os.path.join(dirname, "project/project_config.yaml")
 
@@ -205,7 +204,7 @@ def prep_temp_pep():
     path_to_looper_config = os.path.join(advanced_dir, ".looper.yaml")
 
     # open up the project config and replace the derived attributes with the path to the data. In a way, this simulates using the environment variables.
-    #advanced_project_file = os.path.join(d, "advanced/project", "project_config.yaml")
+    # advanced_project_file = os.path.join(d, "advanced/project", "project_config.yaml")
 
     # with open(advanced_project_file, "r") as f:
     #     advanced_project_data = safe_load(f)
@@ -216,7 +215,6 @@ def prep_temp_pep():
     #
     # with open(advanced_project_file, "w") as f:
     #     dump(advanced_project_data, f)
-
 
     return path_to_looper_config
 
