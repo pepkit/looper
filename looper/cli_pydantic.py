@@ -108,7 +108,7 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
             "looper.databio.org/en/latest/looper-config"
         )
 
-    subcommand_args = enrich_args_via_cfg(subcommand_args, parser, test_args=test_args)
+    subcommand_args = enrich_args_via_cfg(subcommand_name, subcommand_args, parser, test_args=test_args)
 
     # If project pipeline interface defined in the cli, change name to: "pipeline_interface"
     if vars(subcommand_args)[PROJECT_PL_ARG]:

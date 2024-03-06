@@ -16,7 +16,7 @@ from yaml import dump, safe_load
 
 CMD_STRS = ["string", " --string", " --sjhsjd 212", "7867#$@#$cc@@"]
 
-REPO_URL = "https://github.com/pepkit/hello_looper.git"
+
 
 
 @pytest.mark.skipif(not is_connected(), reason="Test needs an internet connection")
@@ -43,9 +43,11 @@ def test_comprehensive_looper_no_pipestat():
         x = ["run", "--looper-config", path_to_looper_config]
 
         try:
-            main(test_args=x)
+            results = main(test_args=x)
         except Exception:
             raise pytest.fail("DID RAISE {0}".format(Exception))
+
+        print(results)
 
 
 @pytest.mark.skipif(not is_connected(), reason="Test needs an internet connection")

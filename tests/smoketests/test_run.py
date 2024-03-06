@@ -11,11 +11,10 @@ from looper.cli_pydantic import main
 CMD_STRS = ["string", " --string", " --sjhsjd 212", "7867#$@#$cc@@"]
 
 
-@pytest.mark.skip(reason="prep_temp_pep needs to be rewritten")
 def test_cli(prep_temp_pep):
     tp = prep_temp_pep
 
-    x = test_args_expansion(tp, "run")
+    x = ["run", "--looper-config", tp, "--dry-run"]
     try:
         main(test_args=x)
     except Exception:
@@ -37,13 +36,13 @@ def is_connected():
 
 class TestLooperBothRuns:
     @pytest.mark.parametrize("cmd", ["run", "runp"])
-    @pytest.mark.skip(reason="prep_temp_pep needs to be rewritten")
     def test_looper_cfg_invalid(self, cmd):
         """Verify looper does not accept invalid cfg paths"""
 
-        x = test_args_expansion("jdfskfds/dsjfklds/dsjklsf.yaml", cmd)
-        with pytest.raises(OSError):
-            main(test_args=x)
+        x = test_args_expansion(cmd, "--looper-config", "jdfskfds/dsjfklds/dsjklsf.yaml")
+        with pytest.raises(SystemExit):
+            result = main(test_args=x)
+            print(result)
 
     @pytest.mark.parametrize("cmd", ["run", "runp"])
     def test_looper_cfg_required(self, cmd):
@@ -54,7 +53,7 @@ class TestLooperBothRuns:
             ff = main(test_args=x)
             print(ff)
 
-    @pytest.mark.parametrize("cmd", ["run", "runp"])
+    @pytest.mark.parametrize("cmd", ["run","runp"])
     @pytest.mark.parametrize(
         "arg",
         [
@@ -64,7 +63,6 @@ class TestLooperBothRuns:
             ["--command-extra", CMD_STRS[3]],
         ],
     )
-    @pytest.mark.skip(reason="prep_temp_pep needs to be rewritten")
     def test_cmd_extra_cli(self, prep_temp_pep, cmd, arg):
         """
         Argument passing functionality works only for the above
@@ -85,24 +83,16 @@ class TestLooperBothRuns:
         subs_list = [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
         assert_content_in_all_files(subs_list, arg[1])
 
-    @pytest.mark.skip(reason="prep_temp_pep needs to be rewritten")
     @pytest.mark.parametrize("cmd", ["run", "runp"])
     def test_unrecognized_args_not_passing(self, prep_temp_pep, cmd):
         tp = prep_temp_pep
 
         x = test_args_expansion(tp, cmd, ["--unknown-arg", "4"])
-        try:
+        with pytest.raises(SystemExit):
             main(test_args=x)
-            sd = os.path.join(get_outdir(tp), "submission")
-            subs_list = [
-                os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")
-            ]
-            assert_content_not_in_any_files(subs_list, "--unknown-arg")
-        except Exception:
-            raise pytest.fail("DID RAISE {0}".format(Exception))
 
 
-@pytest.mark.skip(reason="prep_temp_pep needs to be rewritten")
+
 class TestLooperRunBehavior:
     def test_looper_run_basic(self, prep_temp_pep):
         """Verify looper runs in a basic case and return code is 0"""
@@ -124,13 +114,13 @@ class TestLooperRunBehavior:
 
     def test_looper_single_pipeline(self, prep_temp_pep):
         tp = prep_temp_pep
+
         with mod_yaml_data(tp) as config_data:
-            pifaces = config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][
-                PIPELINE_INTERFACES_KEY
-            ]
-            config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][PIPELINE_INTERFACES_KEY] = (
-                pifaces[1]
+            pifaces = config_data[PIPELINE_INTERFACES_KEY]
+            config_data[PIPELINE_INTERFACES_KEY]["sample"] = (
+                pifaces["sample"][1]
             )
+            del config_data[PIPELINE_INTERFACES_KEY]["project"]
 
         x = test_args_expansion(tp, "run")
         try:
@@ -142,11 +132,9 @@ class TestLooperRunBehavior:
     def test_looper_var_templates(self, prep_temp_pep):
         tp = prep_temp_pep
         with mod_yaml_data(tp) as config_data:
-            pifaces = config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][
-                PIPELINE_INTERFACES_KEY
-            ]
-            config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][PIPELINE_INTERFACES_KEY] = (
-                pifaces[1]
+            pifaces = config_data[PIPELINE_INTERFACES_KEY]
+            config_data[PIPELINE_INTERFACES_KEY]["sample"] = (
+                pifaces["sample"][1]
             )
         x = test_args_expansion(tp, "run")
         try:
@@ -592,17 +580,6 @@ class TestLooperConfig:
         except Exception as err:
             raise pytest.fail(f"DID RAISE {err}")
 
-    def test_correct_execution_of_config(self, prepare_pep_with_dot_file):
-        """
-        Test executing dot file and looper_config
-        """
-        dot_file_path = os.path.abspath(prepare_pep_with_dot_file)
-        x = test_args_expansion("", "run")
-        try:
-            main(test_args=x)
-        except Exception as err:
-            raise pytest.fail(f"DID RAISE {err}")
-        os.remove(dot_file_path)
 
 
 class TestLooperPEPhub:

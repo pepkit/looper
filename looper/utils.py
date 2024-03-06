@@ -251,19 +251,20 @@ def read_yaml_file(filepath):
     return data
 
 
-def enrich_args_via_cfg(parser_args, aux_parser, test_args=None):
+def enrich_args_via_cfg(subcommand_name, parser_args, aux_parser, test_args=None):
     """
     Read in a looper dotfile and set arguments.
 
     Priority order: CLI > dotfile/config > parser default
 
+    :param subcommand name: the name of the command used
     :param argparse.Namespace parser_args: parsed args by the original parser
     :param argparse.Namespace aux_parser: parsed args by the a parser
         with defaults suppressed
     :return argparse.Namespace: selected argument values
     """
     cfg_args_all = (
-        _get_subcommand_args(parser_args)
+        _get_subcommand_args(subcommand_name, parser_args)
         if os.path.exists(parser_args.config_file)
         else dict()
     )
@@ -309,7 +310,7 @@ def enrich_args_via_cfg(parser_args, aux_parser, test_args=None):
     return result
 
 
-def _get_subcommand_args(parser_args):
+def _get_subcommand_args(subcommand_name, parser_args):
     """
     Get the union of values for the subcommand arguments from
     Project.looper, Project.looper.cli.<subcommand> and Project.looper.cli.all.
@@ -341,8 +342,8 @@ def _get_subcommand_args(parser_args):
                 else dict()
             )
             args.update(
-                cfg_args[parser_args.command] or dict()
-                if parser_args.command in cfg_args
+                cfg_args[subcommand_name] or dict()
+                if subcommand_name in cfg_args
                 else dict()
             )
         except (TypeError, KeyError, AttributeError, ValueError) as e:
