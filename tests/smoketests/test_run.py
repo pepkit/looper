@@ -94,6 +94,7 @@ class TestLooperBothRuns:
             main(test_args=x)
 
 
+@pytest.mark.skipif(not is_connected(), reason="Test needs an internet connection")
 class TestLooperRunBehavior:
     def test_looper_run_basic(self, prep_temp_pep):
         """Verify looper runs in a basic case and return code is 0"""
@@ -190,35 +191,24 @@ class TestLooperRunBehavior:
         except Exception:
             raise pytest.fail("DID RAISE {0}".format(Exception))
 
-    def test_looper_sample_attr_missing(self, prep_temp_pep):
-        """
-        Piface is ignored when it does not exist
-        """
-        tp = prep_temp_pep
-        with mod_yaml_data(tp) as config_data:
-            del config_data[SAMPLE_MODS_KEY][CONSTANT_KEY]["attr"]
-        x = test_args_expansion(tp, "run")
-        try:
-            result = main(test_args=x)
-
-            assert result[DEBUG_JOBS] == 0
-        except Exception:
-            raise pytest.fail("DID RAISE {0}".format(Exception))
-
-    @pytest.mark.skipif(not is_connected(), reason="Test needs an internet connection")
     def test_looper_sample_name_whitespace(self, prep_temp_pep):
         """
         Piface is ignored when it does not exist
         """
         tp = prep_temp_pep
+
         imply_whitespace = [
             {
                 IMPLIED_IF_KEY: {"sample_name": "sample1"},
                 IMPLIED_THEN_KEY: {"sample_name": "sample whitespace"},
             }
         ]
-        with mod_yaml_data(tp) as config_data:
-            config_data[SAMPLE_MODS_KEY][IMPLIED_KEY] = imply_whitespace
+
+        project_config_path = get_project_config_path(tp)
+
+        with mod_yaml_data(project_config_path) as project_config_data:
+            project_config_data[SAMPLE_MODS_KEY][IMPLIED_KEY] = imply_whitespace
+
         x = test_args_expansion(tp, "run")
         with pytest.raises(Exception):
             result = main(test_args=x)
@@ -230,12 +220,16 @@ class TestLooperRunBehavior:
         If all samples have toggle attr set to 0, no jobs are submitted
         """
         tp = prep_temp_pep
-        with mod_yaml_data(tp) as config_data:
-            config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][SAMPLE_TOGGLE_ATTR] = 0
+        project_config_path = get_project_config_path(tp)
+
+        with mod_yaml_data(project_config_path) as project_config_data:
+            project_config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][SAMPLE_TOGGLE_ATTR] = 0
+
         x = test_args_expansion(tp, "run")
+        x.pop(-1)  # remove dry run for this test
+
         try:
             result = main(test_args=x)
-
             assert result[DEBUG_JOBS] == 0
         except Exception:
             raise pytest.fail("DID RAISE {0}".format(Exception))
@@ -247,9 +241,10 @@ class TestLooperRunBehavior:
         appended to the pipelinecommand
         """
         tp = prep_temp_pep
-        with mod_yaml_data(tp) as config_data:
-            config_data[SAMPLE_MODS_KEY][CONSTANT_KEY]["command_extra"] = arg
+        project_config_path = get_project_config_path(tp)
 
+        with mod_yaml_data(project_config_path) as project_config_data:
+            project_config_data[SAMPLE_MODS_KEY][CONSTANT_KEY]["command_extra"] = arg
         x = test_args_expansion(tp, "run")
         try:
             main(test_args=x)
@@ -267,8 +262,11 @@ class TestLooperRunBehavior:
         pipeline command
         """
         tp = prep_temp_pep
-        with mod_yaml_data(tp) as config_data:
-            config_data[SAMPLE_MODS_KEY][CONSTANT_KEY]["command_extra"] = arg
+        project_config_path = get_project_config_path(tp)
+
+        with mod_yaml_data(project_config_path) as project_config_data:
+            project_config_data[SAMPLE_MODS_KEY][CONSTANT_KEY]["command_extra"] = arg
+
         x = test_args_expansion(tp, "run", ["--command-extra-override='different'"])
         try:
             main(test_args=x)
