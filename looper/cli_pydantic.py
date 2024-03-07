@@ -47,6 +47,39 @@ from .utils import (
     read_yaml_file,
 )
 
+from typing import List, Tuple
+
+
+def opt_attr_pair(name: str) -> Tuple[str, str]:
+    return f"--{name}", name.replace("-", "_")
+
+
+def validate_post_parse(args: argparse.Namespace) -> List[str]:
+    problems = []
+    used_exclusives = [
+        opt
+        for opt, attr in map(
+            opt_attr_pair,
+            [
+                "skip",
+                "limit",
+                SAMPLE_EXCLUSION_OPTNAME,
+                SAMPLE_INCLUSION_OPTNAME,
+            ],
+        )
+        # Depending on the subcommand used, the above options might either be in
+        # the top-level namespace or in the subcommand namespace (the latter due
+        # to a `modify_args_namespace()`)
+        if getattr(
+            args, attr, None
+        )  # or (getattr(args.run, attr, None) if hasattr(args, "run") else False)
+    ]
+    if len(used_exclusives) > 1:
+        problems.append(
+            f"Used multiple mutually exclusive options: {', '.join(used_exclusives)}"
+        )
+    return problems
+
 
 def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
     # here comes adapted `cli_looper.py` code
@@ -63,6 +96,17 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
     ]
     # Only one subcommand argument will be not `None`, else we found a bug in `pydantic-argparse`
     [(subcommand_name, subcommand_args)] = subcommand_valued_args
+
+    cli_use_errors = validate_post_parse(subcommand_args)
+    if cli_use_errors:
+        parser.print_help(sys.stderr)
+        parser.error(
+            f"{len(cli_use_errors)} CLI use problem(s): {', '.join(cli_use_errors)}"
+        )
+
+    if subcommand_name is None:
+        parser.print_help(sys.stderr)
+        sys.exit(1)
 
     if subcommand_name in ["init"]:
         return int(
