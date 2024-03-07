@@ -1,3 +1,5 @@
+import os.path
+
 import pytest
 from peppy.const import *
 from yaml import dump
@@ -339,7 +341,6 @@ class TestLooperRunpBehavior:
         assert_content_in_all_files(subs_list, arg)
 
 
-@pytest.mark.skip(reason="prep_temp_pep needs to be rewritten")
 class TestLooperRunPreSubmissionHooks:
     def test_looper_basic_plugin(self, prep_temp_pep):
         tp = prep_temp_pep
@@ -362,13 +363,16 @@ class TestLooperRunPreSubmissionHooks:
     @pytest.mark.skipif(not is_connected(), reason="Test needs an internet connection")
     def test_looper_other_plugins(self, prep_temp_pep, plugin, appendix):
         tp = prep_temp_pep
-        for path in {
-            piface.pipe_iface_file for piface in Project(tp).pipeline_interfaces
-        }:
-            with mod_yaml_data(path) as piface_data:
-                piface_data[PRE_SUBMIT_HOOK_KEY][PRE_SUBMIT_PY_FUN_KEY] = [plugin]
+        pep_dir = os.path.dirname(tp)
+        pipeline_interface1 = os.path.join(
+            pep_dir, "pipeline/pipeline_interface1_sample.yaml"
+        )
+
+        with mod_yaml_data(pipeline_interface1) as piface_data:
+            piface_data[PRE_SUBMIT_HOOK_KEY][PRE_SUBMIT_PY_FUN_KEY] = [plugin]
 
         x = test_args_expansion(tp, "run")
+        x.pop(-1)
         try:
             main(test_args=x)
         except Exception as err:
@@ -385,11 +389,13 @@ class TestLooperRunPreSubmissionHooks:
     )
     def test_looper_command_templates_hooks(self, prep_temp_pep, cmd):
         tp = prep_temp_pep
-        for path in {
-            piface.pipe_iface_file for piface in Project(tp).pipeline_interfaces
-        }:
-            with mod_yaml_data(path) as piface_data:
-                piface_data[PRE_SUBMIT_HOOK_KEY][PRE_SUBMIT_CMD_KEY] = [cmd]
+        pep_dir = os.path.dirname(tp)
+        pipeline_interface1 = os.path.join(
+            pep_dir, "pipeline/pipeline_interface1_sample.yaml"
+        )
+
+        with mod_yaml_data(pipeline_interface1) as piface_data:
+            piface_data[PRE_SUBMIT_HOOK_KEY][PRE_SUBMIT_CMD_KEY] = [cmd]
         x = test_args_expansion(tp, "run")
         try:
             main(test_args=x)
