@@ -405,13 +405,11 @@ class TestLooperRunPreSubmissionHooks:
         verify_filecount_in_dir(sd, "test.txt", 3)
 
 
-@pytest.mark.skip(reason="prep_temp_pep needs to be rewritten")
 class TestLooperRunSubmissionScript:
     def test_looper_run_produces_submission_scripts(self, prep_temp_pep):
         tp = prep_temp_pep
-        with open(tp, "r") as conf_file:
-            config_data = safe_load(conf_file)
-        outdir = config_data[LOOPER_KEY][OUTDIR_KEY]
+
+        outdir = get_outdir(tp)
         x = test_args_expansion(tp, "run")
         try:
             main(test_args=x)
@@ -422,7 +420,7 @@ class TestLooperRunSubmissionScript:
 
     def test_looper_lumping(self, prep_temp_pep):
         tp = prep_temp_pep
-        x = test_args_expansion(tp, "run", ["--lump-n", "2"])
+        x = test_args_expansion(tp, "run", ["--lumpn", "2"])
         try:
             main(test_args=x)
         except Exception:
@@ -432,7 +430,7 @@ class TestLooperRunSubmissionScript:
 
     def test_looper_lumping_jobs(self, prep_temp_pep):
         tp = prep_temp_pep
-        x = test_args_expansion(tp, "run", ["--lump-j", "1"])
+        x = test_args_expansion(tp, "run", ["--lumpj", "1"])
         try:
             main(test_args=x)
         except Exception:
@@ -442,7 +440,7 @@ class TestLooperRunSubmissionScript:
 
     def test_looper_lumping_jobs_negative(self, prep_temp_pep):
         tp = prep_temp_pep
-        x = test_args_expansion(tp, "run", ["--lump-j", "-1"])
+        x = test_args_expansion(tp, "run", ["--lumpj", "-1"])
 
         with pytest.raises(ValueError):
             main(test_args=x)
@@ -556,22 +554,15 @@ class TestLooperCompute:
 
 
 class TestLooperConfig:
-    @pytest.mark.skip(reason="prep_temp_pep needs to be rewritten")
-    @pytest.mark.parametrize("cmd", ["run", "runp"])
-    def test_init_config_file(self, prep_temp_pep, cmd, dotfile_path):
+
+    def test_init_config_file(self, prep_temp_pep):
         tp = prep_temp_pep
-        x = test_args_expansion(tp, "init")
+        x = ["init", "--force-yes"]
         try:
             result = main(test_args=x)
         except Exception as err:
             raise pytest.fail(f"DID RAISE: {err}")
         assert result == 0
-        assert_content_in_all_files(dotfile_path, tp)
-        x = test_args_expansion(tp, cmd)
-        try:
-            result = main(test_args=x)
-        except Exception as err:
-            raise pytest.fail(f"DID RAISE {err}")
 
 
 class TestLooperPEPhub:
