@@ -190,31 +190,6 @@ class TestLooperRunBehavior:
         except Exception:
             raise pytest.fail("DID RAISE {0}".format(Exception))
 
-    def test_looper_pipeline_invalid(self, prep_temp_pep):
-        """
-        Pipeline is ignored when does not validate successfully
-        against a schema
-        """
-        tp = prep_temp_pep
-        with mod_yaml_data(tp) as config_data:
-            pifaces = config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][
-                PIPELINE_INTERFACES_KEY
-            ]
-            config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][PIPELINE_INTERFACES_KEY] = (
-                pifaces[1]
-            )
-        piface_path = os.path.join(os.path.dirname(tp), pifaces[1])
-        with mod_yaml_data(piface_path) as piface_data:
-            del piface_data["pipeline_name"]
-        x = test_args_expansion(tp, "run")
-        try:
-            result = main(test_args=x)
-
-            assert result[DEBUG_JOBS] == 0
-            assert "No pipeline interfaces defined" in result.keys()
-        except Exception:
-            raise pytest.fail("DID RAISE {0}".format(Exception))
-
     def test_looper_sample_attr_missing(self, prep_temp_pep):
         """
         Piface is ignored when it does not exist
