@@ -130,13 +130,12 @@ class TestLooperRunBehavior:
 
     def test_looper_var_templates(self, prep_temp_pep):
         tp = prep_temp_pep
-        with mod_yaml_data(tp) as config_data:
-            pifaces = config_data[PIPELINE_INTERFACES_KEY]
-            config_data[PIPELINE_INTERFACES_KEY]["sample"] = pifaces["sample"][1]
         x = test_args_expansion(tp, "run")
+        x.pop(-1)  # remove the --dry-run argument for this specific test
+
         try:
             # Test that {looper.piface_dir} is correctly rendered to a path which will show up in the final .sub file
-            main(test_args=x)
+            results = main(test_args=x)
             sd = os.path.join(get_outdir(tp), "submission")
             subs_list = [
                 os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")
@@ -148,8 +147,10 @@ class TestLooperRunBehavior:
     def test_looper_cli_pipeline(self, prep_temp_pep):
         """CLI-specified pipelines overwrite ones from config"""
         tp = prep_temp_pep
-        pi_pth = os.path.join(os.path.dirname(tp), PIS.format("1"))
-        x = test_args_expansion(tp, "run", ["--pipeline-interfaces", pi_pth])
+        with mod_yaml_data(tp) as config_data:
+            pifaces = config_data[PIPELINE_INTERFACES_KEY]
+            pi_pth = pifaces["sample"][1]
+        x = test_args_expansion(tp, "run", ["--sample-pipeline-interfaces", pi_pth])
         try:
             result = main(test_args=x)
 
@@ -164,12 +165,12 @@ class TestLooperRunBehavior:
         """
         tp = prep_temp_pep
         with mod_yaml_data(tp) as config_data:
-            del config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][PIPELINE_INTERFACES_KEY]
+            del config_data[PIPELINE_INTERFACES_KEY]
         x = test_args_expansion(tp, "run")
         try:
             result = main(test_args=x)
-
             assert result[DEBUG_JOBS] == 0
+            assert "No pipeline interfaces defined" in list(result.keys())
         except Exception:
             raise pytest.fail("DID RAISE {0}".format(Exception))
 
@@ -179,9 +180,7 @@ class TestLooperRunBehavior:
         """
         tp = prep_temp_pep
         with mod_yaml_data(tp) as config_data:
-            config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][PIPELINE_INTERFACES_KEY] = [
-                "bogus"
-            ]
+            config_data[PIPELINE_INTERFACES_KEY]["sample"] = ["bogus"]
         x = test_args_expansion(tp, "run")
         try:
             result = main(test_args=x)
