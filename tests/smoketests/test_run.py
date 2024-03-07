@@ -277,7 +277,7 @@ class TestLooperRunBehavior:
         assert_content_not_in_any_files(subs_list, arg)
 
 
-@pytest.mark.skip(reason="prep_temp_pep needs to be rewritten")
+# @pytest.mark.skip(reason="prep_temp_pep needs to be rewritten")
 class TestLooperRunpBehavior:
     def test_looper_runp_basic(self, prep_temp_pep):
         """Verify looper runps in a basic case and return code is 0"""
@@ -299,12 +299,17 @@ class TestLooperRunpBehavior:
 
     def test_looper_single_pipeline(self, prep_temp_pep):
         tp = prep_temp_pep
+
         with mod_yaml_data(tp) as config_data:
-            piface_path = os.path.join(os.path.dirname(tp), PIP.format("1"))
-            config_data[LOOPER_KEY][CLI_KEY]["runp"][
-                PIPELINE_INTERFACES_KEY
-            ] = piface_path
+            # Modifying in this way due to https://github.com/pepkit/looper/issues/474
+            config_data[PIPELINE_INTERFACES_KEY]["project"] = os.path.join(
+                os.path.dirname(tp), "pipeline/pipeline_interface1_project.yaml"
+            )
+            del config_data[PIPELINE_INTERFACES_KEY]["sample"]
+
+        print(tp)
         x = test_args_expansion(tp, "runp")
+        x.pop(-1)  # remove the --dry-run argument for this specific test
         try:
             result = main(test_args=x)
             assert result[DEBUG_JOBS] != 2
@@ -312,12 +317,20 @@ class TestLooperRunpBehavior:
         except Exception:
             raise pytest.fail("DID RAISE {0}".format(Exception))
 
+    @pytest.mark.skip(reason="Functionality broken")
     @pytest.mark.parametrize("arg", CMD_STRS)
     def test_cmd_extra_project(self, prep_temp_pep, arg):
+
+        # Test is currently broken, see https://github.com/pepkit/looper/issues/475
+
         tp = prep_temp_pep
-        with mod_yaml_data(tp) as config_data:
-            config_data[LOOPER_KEY]["command_extra"] = arg
+
+        project_config_path = get_project_config_path(tp)
+
+        with mod_yaml_data(project_config_path) as project_config_data:
+            project_config_data[SAMPLE_MODS_KEY][CONSTANT_KEY]["command_extra"] = arg
         x = test_args_expansion(tp, "runp")
+
         try:
             main(test_args=x)
         except Exception:

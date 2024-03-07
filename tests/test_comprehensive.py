@@ -18,6 +18,25 @@ CMD_STRS = ["string", " --string", " --sjhsjd 212", "7867#$@#$cc@@"]
 
 
 @pytest.mark.skipif(not is_connected(), reason="Test needs an internet connection")
+def test_comprehensive_advanced_looper_no_pipestat():
+
+    with TemporaryDirectory() as d:
+        repo = Repo.clone_from(REPO_URL, d, branch="dev_derive")
+        basic_dir = os.path.join(d, "advanced")
+
+        path_to_looper_config = os.path.join(basic_dir, ".looper.yaml")
+
+        x = ["run", "--looper-config", path_to_looper_config]
+
+        try:
+            results = main(test_args=x)
+        except Exception:
+            raise pytest.fail("DID RAISE {0}".format(Exception))
+
+        print(results)
+
+
+@pytest.mark.skipif(not is_connected(), reason="Test needs an internet connection")
 def test_comprehensive_looper_no_pipestat():
 
     with TemporaryDirectory() as d:
