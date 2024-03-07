@@ -277,7 +277,6 @@ class TestLooperRunBehavior:
         assert_content_not_in_any_files(subs_list, arg)
 
 
-# @pytest.mark.skip(reason="prep_temp_pep needs to be rewritten")
 class TestLooperRunpBehavior:
     def test_looper_runp_basic(self, prep_temp_pep):
         """Verify looper runps in a basic case and return code is 0"""
@@ -453,7 +452,6 @@ class TestLooperRunSubmissionScript:
         verify_filecount_in_dir(sd, ".sub", 4)
 
 
-@pytest.mark.skip(reason="prep_temp_pep needs to be rewritten")
 class TestLooperCompute:
     @pytest.mark.parametrize("cmd", ["run", "runp"])
     def test_looper_respects_pkg_selection(self, prep_temp_pep, cmd):
@@ -512,7 +510,7 @@ class TestLooperCompute:
             dump({"mem": "testin_mem"}, sf)
 
         x = test_args_expansion(
-            tp, cmd, ["--settings", settings_file_path, "-p", "slurm"]
+            tp, cmd, ["--settings", settings_file_path, "--package", "slurm"]
         )
         try:
             main(test_args=x)
@@ -532,7 +530,14 @@ class TestLooperCompute:
         x = test_args_expansion(
             tp,
             cmd,
-            ["--settings", settings_file_path, "--compute", "mem=10", "-p", "slurm"],
+            [
+                "--settings",
+                settings_file_path,
+                "--compute",
+                "mem=10",
+                "--package",
+                "slurm",
+            ],
         )
         try:
             main(test_args=x)
