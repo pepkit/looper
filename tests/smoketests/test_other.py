@@ -7,6 +7,7 @@ from looper.const import FLAGS
 from looper.exceptions import PipestatConfigurationException
 from tests.conftest import *
 from looper.cli_pydantic import main
+import pandas as pd
 
 
 def _make_flags(cfg, type, pipeline_name):
@@ -116,18 +117,26 @@ class TestLooperCheck:
 class TestSelector:
     @pytest.mark.parametrize("flag_id", ["completed"])
     @pytest.mark.parametrize(
-        "pipeline_name", ["PIPELINE1"]
+        "pipeline_name", ["example_pipestat_pipeline"]
     )  # This is given in the pipestat_output_schema.yaml
     def test_selecting_flags_works(
         self, prep_temp_pep_pipestat, flag_id, pipeline_name
     ):
-        """Verify that checking works"""
+        """Verify selecting on a single flag"""
         tp = prep_temp_pep_pipestat
-        p = Project(tp)
-        out_dir = p[CONFIG_KEY][LOOPER_KEY][OUTDIR_KEY]
+        project_config_path = get_project_config_path(tp)
+        p = Project(project_config_path)
+
+        # get flag dir from .looper.yaml
+        with open(tp, "r") as f:
+            looper_cfg_data = safe_load(f)
+            flag_dir = looper_cfg_data[PIPESTAT_KEY]["flag_file_dir"]
+
+        flag_dir = os.path.join(os.path.dirname(tp), flag_dir)
+
         count = 0
         for s in p.samples:
-            sf = os.path.join(out_dir, "results_pipeline")
+            sf = flag_dir
             if not os.path.exists(sf):
                 os.makedirs(sf)
             flag_path = os.path.join(
@@ -137,7 +146,7 @@ class TestSelector:
                 f.write(FLAGS[count])
             count += 1
 
-        x = ["run", "--looper-config", tp, "--sel-flag", "failed", "--dry-run"]
+        x = ["run", "--looper-config", tp, "--sel-flag", "completed", "--dry-run"]
 
         try:
             results = main(test_args=x)
@@ -150,19 +159,25 @@ class TestSelector:
 
     @pytest.mark.parametrize("flag_id", ["completed"])
     @pytest.mark.parametrize(
-        "pipeline_name", ["PIPELINE1"]
+        "pipeline_name", ["example_pipestat_pipeline"]
     )  # This is given in the pipestat_output_schema.yaml
     def test_excluding_flags_works(
         self, prep_temp_pep_pipestat, flag_id, pipeline_name
     ):
-        """Verify that checking works"""
+        """Verify that excluding a single flag works"""
         tp = prep_temp_pep_pipestat
-        # _make_flags(tp, flag_id, pipeline_name)
-        p = Project(tp)
-        out_dir = p[CONFIG_KEY][LOOPER_KEY][OUTDIR_KEY]
+        project_config_path = get_project_config_path(tp)
+        p = Project(project_config_path)
+
+        # get flag dir from .looper.yaml
+        with open(tp, "r") as f:
+            looper_cfg_data = safe_load(f)
+            flag_dir = looper_cfg_data[PIPESTAT_KEY]["flag_file_dir"]
+
+        flag_dir = os.path.join(os.path.dirname(tp), flag_dir)
         count = 0
         for s in p.samples:
-            sf = os.path.join(out_dir, "results_pipeline")
+            sf = flag_dir
             if not os.path.exists(sf):
                 os.makedirs(sf)
             flag_path = os.path.join(
@@ -172,7 +187,7 @@ class TestSelector:
                 f.write(FLAGS[count])
             count += 1
 
-        x = ["run", "--looper-config", tp, "--exc-flag", "failed", "--dry-run"]
+        x = ["run", "--looper-config", tp, "--exc-flag", "running", "--dry-run"]
 
         try:
             results = main(test_args=x)
@@ -182,23 +197,30 @@ class TestSelector:
         sd = os.path.join(get_outdir(tp), "submission")
         subs_list = [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
 
-        assert len(subs_list) == 2
+        assert len(subs_list) == 1
 
     @pytest.mark.parametrize("flag_id", ["completed"])
     @pytest.mark.parametrize(
-        "pipeline_name", ["PIPELINE1"]
+        "pipeline_name", ["example_pipestat_pipeline"]
     )  # This is given in the pipestat_output_schema.yaml
     def test_excluding_multi_flags_works(
         self, prep_temp_pep_pipestat, flag_id, pipeline_name
     ):
-        """Verify that checking works"""
+        """Verify excluding multi flags"""
         tp = prep_temp_pep_pipestat
+        project_config_path = get_project_config_path(tp)
+        p = Project(project_config_path)
 
-        p = Project(tp)
-        out_dir = p[CONFIG_KEY][LOOPER_KEY][OUTDIR_KEY]
+        # get flag dir from .looper.yaml
+        with open(tp, "r") as f:
+            looper_cfg_data = safe_load(f)
+            flag_dir = looper_cfg_data[PIPESTAT_KEY]["flag_file_dir"]
+
+        flag_dir = os.path.join(os.path.dirname(tp), flag_dir)
+
         count = 0
         for s in p.samples:
-            sf = os.path.join(out_dir, "results_pipeline")
+            sf = flag_dir
             if not os.path.exists(sf):
                 os.makedirs(sf)
             flag_path = os.path.join(
@@ -208,14 +230,12 @@ class TestSelector:
                 f.write(FLAGS[count])
             count += 1
 
-        # x = ["--looper-config", "--exc-flag", "['failed','running']", tp, "run", "--dry-run"]
-
         x = [
             "run",
             "--looper-config",
             tp,
             "--exc-flag",
-            "failed",
+            "completed",
             "running",
             "--dry-run",
         ]
@@ -225,26 +245,31 @@ class TestSelector:
         except Exception:
             raise pytest.fail("DID RAISE {0}".format(Exception))
 
+        # No submission directory will exist because both samples are excluded.
         sd = os.path.join(get_outdir(tp), "submission")
-        subs_list = [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
-
-        assert len(subs_list) == 1
+        assert os.path.exists(sd) is False
 
     @pytest.mark.parametrize("flag_id", ["completed"])
     @pytest.mark.parametrize(
-        "pipeline_name", ["PIPELINE1"]
+        "pipeline_name", ["example_pipestat_pipeline"]
     )  # This is given in the pipestat_output_schema.yaml
     def test_selecting_multi_flags_works(
         self, prep_temp_pep_pipestat, flag_id, pipeline_name
     ):
-        """Verify that checking works"""
+        """Verify selecting multiple flags"""
         tp = prep_temp_pep_pipestat
+        project_config_path = get_project_config_path(tp)
+        p = Project(project_config_path)
 
-        p = Project(tp)
-        out_dir = p[CONFIG_KEY][LOOPER_KEY][OUTDIR_KEY]
+        # get flag dir from .looper.yaml
+        with open(tp, "r") as f:
+            looper_cfg_data = safe_load(f)
+            flag_dir = looper_cfg_data[PIPESTAT_KEY]["flag_file_dir"]
+
+        flag_dir = os.path.join(os.path.dirname(tp), flag_dir)
         count = 0
         for s in p.samples:
-            sf = os.path.join(out_dir, "results_pipeline")
+            sf = flag_dir
             if not os.path.exists(sf):
                 os.makedirs(sf)
             flag_path = os.path.join(
@@ -260,7 +285,7 @@ class TestSelector:
             "--looper-config",
             tp,
             "--sel-flag",
-            "failed",
+            "completed",
             "running",
         ]
 
@@ -276,19 +301,26 @@ class TestSelector:
 
     @pytest.mark.parametrize("flag_id", ["completed"])
     @pytest.mark.parametrize(
-        "pipeline_name", ["PIPELINE1"]
+        "pipeline_name", ["example_pipestat_pipeline"]
     )  # This is given in the pipestat_output_schema.yaml
     def test_selecting_attr_and_flags_works(
-        self, prep_temp_pep_pipestat, flag_id, pipeline_name
+        self, prep_temp_pep_pipestat_advanced, flag_id, pipeline_name
     ):
-        """Verify that checking works"""
-        tp = prep_temp_pep_pipestat
+        """Verify selecting via attr and flags"""
 
-        p = Project(tp)
-        out_dir = p[CONFIG_KEY][LOOPER_KEY][OUTDIR_KEY]
+        tp = prep_temp_pep_pipestat_advanced
+        project_config_path = get_project_config_path(tp)
+        p = Project(project_config_path)
+
+        # get flag dir from .looper.yaml
+        with open(tp, "r") as f:
+            looper_cfg_data = safe_load(f)
+            flag_dir = looper_cfg_data[PIPESTAT_KEY]["flag_file_dir"]
+
+        flag_dir = os.path.join(os.path.dirname(tp), flag_dir)
         count = 0
         for s in p.samples:
-            sf = os.path.join(out_dir, "results_pipeline")
+            sf = flag_dir
             if not os.path.exists(sf):
                 os.makedirs(sf)
             flag_path = os.path.join(
@@ -323,19 +355,25 @@ class TestSelector:
 
     @pytest.mark.parametrize("flag_id", ["completed"])
     @pytest.mark.parametrize(
-        "pipeline_name", ["PIPELINE1"]
+        "pipeline_name", ["example_pipestat_pipeline"]
     )  # This is given in the pipestat_output_schema.yaml
     def test_excluding_attr_and_flags_works(
-        self, prep_temp_pep_pipestat, flag_id, pipeline_name
+        self, prep_temp_pep_pipestat_advanced, flag_id, pipeline_name
     ):
-        """Verify that checking works"""
-        tp = prep_temp_pep_pipestat
+        """Verify excluding via attr and flags"""
+        tp = prep_temp_pep_pipestat_advanced
+        project_config_path = get_project_config_path(tp)
+        p = Project(project_config_path)
 
-        p = Project(tp)
-        out_dir = p[CONFIG_KEY][LOOPER_KEY][OUTDIR_KEY]
+        # get flag dir from .looper.yaml
+        with open(tp, "r") as f:
+            looper_cfg_data = safe_load(f)
+            flag_dir = looper_cfg_data[PIPESTAT_KEY]["flag_file_dir"]
+
+        flag_dir = os.path.join(os.path.dirname(tp), flag_dir)
         count = 0
         for s in p.samples:
-            sf = os.path.join(out_dir, "results_pipeline")
+            sf = flag_dir
             if not os.path.exists(sf):
                 os.makedirs(sf)
             flag_path = os.path.join(
@@ -371,19 +409,33 @@ class TestSelector:
 
     @pytest.mark.parametrize("flag_id", ["completed"])
     @pytest.mark.parametrize(
-        "pipeline_name", ["PIPELINE1"]
+        "pipeline_name", ["example_pipestat_pipeline"]
     )  # This is given in the pipestat_output_schema.yaml
     def test_excluding_toggle_attr(
-        self, prep_temp_pep_pipestat, flag_id, pipeline_name
+        self, prep_temp_pep_pipestat_advanced, flag_id, pipeline_name
     ):
-        """Verify that checking works"""
-        tp = prep_temp_pep_pipestat
+        """Verify excluding based on toggle attr"""
+        tp = prep_temp_pep_pipestat_advanced
+        project_config_path = get_project_config_path(tp)
+        p = Project(project_config_path)
 
-        p = Project(tp)
-        out_dir = p[CONFIG_KEY][LOOPER_KEY][OUTDIR_KEY]
+        # get flag dir from .looper.yaml
+        with open(tp, "r") as f:
+            looper_cfg_data = safe_load(f)
+            flag_dir = looper_cfg_data[PIPESTAT_KEY]["flag_file_dir"]
+
+        # Manually add a toggle column to the PEP for this specific test
+        sample_csv = os.path.join(
+            os.path.dirname(project_config_path), "annotation_sheet.csv"
+        )
+        df = pd.read_csv(sample_csv)
+        df["toggle"] = 1
+        df.to_csv(sample_csv, index=False)
+
+        flag_dir = os.path.join(os.path.dirname(tp), flag_dir)
         count = 0
         for s in p.samples:
-            sf = os.path.join(out_dir, "results_pipeline")
+            sf = flag_dir
             if not os.path.exists(sf):
                 os.makedirs(sf)
             flag_path = os.path.join(
@@ -418,19 +470,34 @@ class TestSelector:
 
     @pytest.mark.parametrize("flag_id", ["completed"])
     @pytest.mark.parametrize(
-        "pipeline_name", ["PIPELINE1"]
+        "pipeline_name", ["example_pipestat_pipeline"]
     )  # This is given in the pipestat_output_schema.yaml
     def test_including_toggle_attr(
-        self, prep_temp_pep_pipestat, flag_id, pipeline_name
+        self, prep_temp_pep_pipestat_advanced, flag_id, pipeline_name
     ):
-        """Verify that checking works"""
-        tp = prep_temp_pep_pipestat
+        """Verify including based on toggle attr"""
 
-        p = Project(tp)
-        out_dir = p[CONFIG_KEY][LOOPER_KEY][OUTDIR_KEY]
+        tp = prep_temp_pep_pipestat_advanced
+        project_config_path = get_project_config_path(tp)
+        p = Project(project_config_path)
+
+        # get flag dir from .looper.yaml
+        with open(tp, "r") as f:
+            looper_cfg_data = safe_load(f)
+            flag_dir = looper_cfg_data[PIPESTAT_KEY]["flag_file_dir"]
+
+        # Manually add a toggle column to the PEP for this specific test
+        sample_csv = os.path.join(
+            os.path.dirname(project_config_path), "annotation_sheet.csv"
+        )
+        df = pd.read_csv(sample_csv)
+        df["toggle"] = 1
+        df.to_csv(sample_csv, index=False)
+
+        flag_dir = os.path.join(os.path.dirname(tp), flag_dir)
         count = 0
         for s in p.samples:
-            sf = os.path.join(out_dir, "results_pipeline")
+            sf = flag_dir
             if not os.path.exists(sf):
                 os.makedirs(sf)
             flag_path = os.path.join(
