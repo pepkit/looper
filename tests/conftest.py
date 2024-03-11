@@ -1,7 +1,8 @@
+import shutil
 from contextlib import contextmanager
 import os
 import subprocess
-from shutil import copyfile, rmtree
+from shutil import copyfile, rmtree, copytree
 import tempfile
 from typing import *
 
@@ -11,7 +12,6 @@ from peppy.const import *
 from yaml import dump, safe_load
 
 from looper.const import *
-from git import Repo
 
 REPO_URL = "https://github.com/pepkit/hello_looper.git"
 
@@ -195,9 +195,15 @@ def example_pep_piface_path_cfg(example_pep_piface_path):
 
 
 @pytest.fixture
-def prep_temp_pep():
+def prep_temp_pep(example_pep_piface_path):
+
+
+    # Get Path to local copy of hello_looper
+    hello_looper_dir_path = os.path.join(example_pep_piface_path, "hello_looper-dev_derive")
+
+    # Make local temp copy of hello_looper
     d = tempfile.mkdtemp()
-    repo = Repo.clone_from(REPO_URL, d, branch="dev_derive")
+    shutil.copytree(hello_looper_dir_path, d, dirs_exist_ok=True)
 
     advanced_dir = os.path.join(d, "advanced")
 
