@@ -200,10 +200,10 @@ class Cleaner(Executor):
         if not preview_flag:
             _LOGGER.info("Clean complete.")
             return 0
-        if getattr(args.clean, "dry_run", None):
+        if getattr(args, "dry_run", None):
             _LOGGER.info("Dry run. No files cleaned.")
             return 0
-        if not getattr(args.clean, "force_yes", None) and not query_yes_no(
+        if not getattr(args, "force_yes", None) and not query_yes_no(
             "Are you sure you want to permanently delete all "
             "intermediate pipeline results for this project?"
         ):

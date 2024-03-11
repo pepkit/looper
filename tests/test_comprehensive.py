@@ -17,54 +17,45 @@ from yaml import dump, safe_load
 CMD_STRS = ["string", " --string", " --sjhsjd 212", "7867#$@#$cc@@"]
 
 
-@pytest.mark.skipif(not is_connected(), reason="Test needs an internet connection")
-def test_comprehensive_advanced_looper_no_pipestat():
+def test_comprehensive_advanced_looper_no_pipestat(prep_temp_pep):
 
-    with TemporaryDirectory() as d:
-        repo = Repo.clone_from(REPO_URL, d, branch="dev_derive")
-        basic_dir = os.path.join(d, "advanced")
+    path_to_looper_config = prep_temp_pep
 
-        path_to_looper_config = os.path.join(basic_dir, ".looper.yaml")
+    x = ["run", "--looper-config", path_to_looper_config]
 
-        x = ["run", "--looper-config", path_to_looper_config]
+    try:
+        results = main(test_args=x)
+    except Exception:
+        raise pytest.fail("DID RAISE {0}".format(Exception))
 
-        try:
-            results = main(test_args=x)
-        except Exception:
-            raise pytest.fail("DID RAISE {0}".format(Exception))
-
-        print(results)
+    print(results)
 
 
-@pytest.mark.skipif(not is_connected(), reason="Test needs an internet connection")
-def test_comprehensive_looper_no_pipestat():
+def test_comprehensive_looper_no_pipestat(prep_temp_pep_basic):
 
-    with TemporaryDirectory() as d:
-        repo = Repo.clone_from(REPO_URL, d, branch="dev_derive")
-        basic_dir = os.path.join(d, "basic")
+    path_to_looper_config = prep_temp_pep_basic
+    basic_dir = os.path.dirname(path_to_looper_config)
 
-        path_to_looper_config = os.path.join(basic_dir, ".looper.yaml")
+    # open up the project config and replace the derived attributes with the path to the data. In a way, this simulates using the environment variables.
+    basic_project_file = os.path.join(basic_dir, "project", "project_config.yaml")
+    with open(basic_project_file, "r") as f:
+        basic_project_data = safe_load(f)
 
-        # open up the project config and replace the derived attributes with the path to the data. In a way, this simulates using the environment variables.
-        basic_project_file = os.path.join(d, "basic/project", "project_config.yaml")
-        with open(basic_project_file, "r") as f:
-            pipestat_project_data = safe_load(f)
+    basic_project_data["sample_modifiers"]["derive"]["sources"]["source1"] = (
+        os.path.join(basic_dir, "data/{sample_name}.txt")
+    )
 
-        pipestat_project_data["sample_modifiers"]["derive"]["sources"]["source1"] = (
-            os.path.join(basic_dir, "data/{sample_name}.txt")
-        )
+    with open(basic_project_file, "w") as f:
+        dump(basic_project_data, f)
 
-        with open(basic_project_file, "w") as f:
-            dump(pipestat_project_data, f)
+    x = ["run", "--looper-config", path_to_looper_config]
 
-        x = ["run", "--looper-config", path_to_looper_config]
+    try:
+        results = main(test_args=x)
+    except Exception:
+        raise pytest.fail("DID RAISE {0}".format(Exception))
 
-        try:
-            results = main(test_args=x)
-        except Exception:
-            raise pytest.fail("DID RAISE {0}".format(Exception))
-
-        print(results)
+    print(results)
 
 
 @pytest.mark.skipif(not is_connected(), reason="Test needs an internet connection")

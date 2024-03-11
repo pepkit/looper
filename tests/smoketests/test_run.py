@@ -96,7 +96,6 @@ class TestLooperBothRuns:
             main(test_args=x)
 
 
-@pytest.mark.skipif(not is_connected(), reason="Test needs an internet connection")
 class TestLooperRunBehavior:
     def test_looper_run_basic(self, prep_temp_pep):
         """Verify looper runs in a basic case and return code is 0"""
@@ -360,7 +359,6 @@ class TestLooperRunPreSubmissionHooks:
             ("looper.write_sample_yaml_cwl", "cwl.yaml"),
         ],
     )
-    @pytest.mark.skipif(not is_connected(), reason="Test needs an internet connection")
     def test_looper_other_plugins(self, prep_temp_pep, plugin, appendix):
         tp = prep_temp_pep
         pep_dir = os.path.dirname(tp)

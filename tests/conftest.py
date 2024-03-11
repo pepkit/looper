@@ -197,30 +197,35 @@ def example_pep_piface_path_cfg(example_pep_piface_path):
 @pytest.fixture
 def prep_temp_pep(example_pep_piface_path):
 
-
     # Get Path to local copy of hello_looper
-    hello_looper_dir_path = os.path.join(example_pep_piface_path, "hello_looper-dev_derive")
+    hello_looper_dir_path = os.path.join(
+        example_pep_piface_path, "hello_looper-dev_derive"
+    )
 
     # Make local temp copy of hello_looper
     d = tempfile.mkdtemp()
     shutil.copytree(hello_looper_dir_path, d, dirs_exist_ok=True)
 
     advanced_dir = os.path.join(d, "advanced")
-
     path_to_looper_config = os.path.join(advanced_dir, ".looper.yaml")
 
-    # open up the project config and replace the derived attributes with the path to the data. In a way, this simulates using the environment variables.
-    # advanced_project_file = os.path.join(d, "advanced/project", "project_config.yaml")
+    return path_to_looper_config
 
-    # with open(advanced_project_file, "r") as f:
-    #     advanced_project_data = safe_load(f)
-    #
-    # advanced_project_data["sample_modifiers"]["derive"]["sources"]["source1"] = (
-    #     os.path.join(advanced_dir, "data/{sample_name}.txt")
-    # )
-    #
-    # with open(advanced_project_file, "w") as f:
-    #     dump(advanced_project_data, f)
+
+@pytest.fixture
+def prep_temp_pep_basic(example_pep_piface_path):
+
+    # Get Path to local copy of hello_looper
+    hello_looper_dir_path = os.path.join(
+        example_pep_piface_path, "hello_looper-dev_derive"
+    )
+
+    # Make local temp copy of hello_looper
+    d = tempfile.mkdtemp()
+    shutil.copytree(hello_looper_dir_path, d, dirs_exist_ok=True)
+
+    advanced_dir = os.path.join(d, "basic")
+    path_to_looper_config = os.path.join(advanced_dir, ".looper.yaml")
 
     return path_to_looper_config
 
