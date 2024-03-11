@@ -53,7 +53,8 @@ class TestLooperBothRuns:
         """Verify looper does not accept invalid cfg paths"""
 
         x = test_args_expansion("", cmd)
-        with pytest.raises(SystemExit):
+
+        with pytest.raises(ValueError):
             ff = main(test_args=x)
             print(ff)
 
