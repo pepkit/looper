@@ -1,3 +1,5 @@
+import os.path
+
 import pytest
 from peppy import Project
 
@@ -8,11 +10,19 @@ from looper.cli_pydantic import main
 
 
 def _make_flags(cfg, type, pipeline_name):
-    p = Project(cfg)
-    out_dir = p[CONFIG_KEY][LOOPER_KEY][OUTDIR_KEY]
-    print(p.samples)
+
+    # get flag dir from .looper.yaml
+    with open(cfg, "r") as f:
+        looper_cfg_data = safe_load(f)
+        flag_dir = looper_cfg_data[PIPESTAT_KEY]["flag_file_dir"]
+
+    flag_dir = os.path.join(os.path.dirname(cfg), flag_dir)
+    # get samples from the project config via Peppy
+    project_config_path = get_project_config_path(cfg)
+    p = Project(project_config_path)
+
     for s in p.samples:
-        sf = os.path.join(out_dir, "results_pipeline")
+        sf = flag_dir
         if not os.path.exists(sf):
             os.makedirs(sf)
         flag_path = os.path.join(
@@ -24,14 +34,11 @@ def _make_flags(cfg, type, pipeline_name):
 
 class TestLooperPipestat:
 
-    @pytest.mark.skip(reason="prep_temp_pep needs to be rewritten")
     @pytest.mark.parametrize("cmd", ["report", "table", "check"])
     def test_fail_no_pipestat_config(self, prep_temp_pep, cmd):
         "report, table, and check should fail if pipestat is NOT configured."
-        # tp = prep_temp_pep
-        dot_file_path = os.path.abspath(prepare_pep_with_dot_file)
-        # x = test_args_expansion(tp, cmd, dry=False)
-        x = [cmd, "--looper-config", dot_file_path]
+        tp = prep_temp_pep
+        x = [cmd, "--looper-config", tp]
         with pytest.raises(PipestatConfigurationException):
             main(test_args=x)
 
@@ -56,7 +63,7 @@ class TestLooperPipestat:
 class TestLooperCheck:
     @pytest.mark.parametrize("flag_id", FLAGS)
     @pytest.mark.parametrize(
-        "pipeline_name", ["test_pipe"]
+        "pipeline_name", ["example_pipestat_pipeline"]
     )  # This is given in the pipestat_output_schema.yaml
     def test_check_works(self, prep_temp_pep_pipestat, flag_id, pipeline_name):
         """Verify that checking works"""
@@ -75,7 +82,7 @@ class TestLooperCheck:
             raise pytest.fail("DID RAISE {0}".format(Exception))
 
     @pytest.mark.parametrize("flag_id", FLAGS)
-    @pytest.mark.parametrize("pipeline_name", ["test_pipe"])
+    @pytest.mark.parametrize("pipeline_name", ["example_pipestat_pipeline"])
     def test_check_multi(self, prep_temp_pep_pipestat, flag_id, pipeline_name):
         """Verify that checking works when multiple flags are created"""
         tp = prep_temp_pep_pipestat
@@ -89,7 +96,7 @@ class TestLooperCheck:
                 main(test_args=x)
 
     @pytest.mark.parametrize("flag_id", ["3333", "tonieflag", "bogus", "ms"])
-    @pytest.mark.parametrize("pipeline_name", ["test_pipe"])
+    @pytest.mark.parametrize("pipeline_name", ["example_pipestat_pipeline"])
     def test_check_bogus(self, prep_temp_pep_pipestat, flag_id, pipeline_name):
         """Verify that checking works when bogus flags are created"""
         tp = prep_temp_pep_pipestat

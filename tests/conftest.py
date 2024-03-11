@@ -253,59 +253,18 @@ def prep_temp_config_with_pep(example_pep_piface_path):
 
 @pytest.fixture
 def prep_temp_pep_pipestat(example_pep_piface_path):
-    # TODO this should be combined with the other prep_temp_pep
-    # temp dir
-    td = tempfile.mkdtemp()
-    out_td = os.path.join(td, "output")
-    # ori paths
 
-    cfg_path = os.path.join(example_pep_piface_path, LOOPER_CFG)
-    project_cfg_pipestat_path = os.path.join(
-        example_pep_piface_path, PROJECT_CFG_PIPESTAT
+    # Get Path to local copy of hello_looper
+
+    hello_looper_dir_path = os.path.join(
+        example_pep_piface_path, "hello_looper-dev_derive"
     )
-    output_schema_path = os.path.join(example_pep_piface_path, PIPESTAT_OS)
 
-    sample_table_path = os.path.join(example_pep_piface_path, ST)
-    piface1s_path = os.path.join(example_pep_piface_path, PIPESTAT_PI)
-    piface1p_path = os.path.join(example_pep_piface_path, PIPESTAT_PI_PRJ)
+    # Make local temp copy of hello_looper
+    d = tempfile.mkdtemp()
+    shutil.copytree(hello_looper_dir_path, d, dirs_exist_ok=True)
 
-    res_proj_path = os.path.join(example_pep_piface_path, RES.format("project"))
-    res_samp_path = os.path.join(example_pep_piface_path, RES.format("sample"))
-    # temp copies
-    temp_path_cfg = os.path.join(td, LOOPER_CFG)
-    temp_path_project_cfg_pipestat = os.path.join(td, PROJECT_CFG_PIPESTAT)
-    temp_path_output_schema = os.path.join(td, PIPESTAT_OS)
+    advanced_dir = os.path.join(d, "pipestat")
+    path_to_looper_config = os.path.join(advanced_dir, ".looper.yaml")
 
-    temp_path_sample_table = os.path.join(td, ST)
-    temp_path_piface1s = os.path.join(td, PIPESTAT_PI)
-    temp_path_piface1p = os.path.join(td, PIPESTAT_PI_PRJ)
-    temp_path_res_proj = os.path.join(td, RES.format("project"))
-    temp_path_res_samp = os.path.join(td, RES.format("sample"))
-    # copying
-    copyfile(cfg_path, temp_path_cfg)
-    copyfile(project_cfg_pipestat_path, temp_path_project_cfg_pipestat)
-
-    copyfile(sample_table_path, temp_path_sample_table)
-    copyfile(piface1s_path, temp_path_piface1s)
-    copyfile(piface1p_path, temp_path_piface1p)
-    copyfile(output_schema_path, temp_path_output_schema)
-    copyfile(res_proj_path, temp_path_res_proj)
-    copyfile(res_samp_path, temp_path_res_samp)
-    # modifications
-    from yaml import dump, safe_load
-
-    with open(temp_path_cfg, "r") as f:
-        piface_data = safe_load(f)
-    piface_data[LOOPER_KEY][OUTDIR_KEY] = out_td
-    piface_data[LOOPER_KEY][CLI_KEY] = {}
-    piface_data[LOOPER_KEY][CLI_KEY]["runp"] = {}
-    piface_data[LOOPER_KEY][CLI_KEY]["runp"][PIPELINE_INTERFACES_KEY] = [
-        temp_path_piface1p,
-    ]
-    piface_data[SAMPLE_MODS_KEY][CONSTANT_KEY][PIPELINE_INTERFACES_KEY] = [
-        temp_path_piface1s,
-    ]
-    with open(temp_path_cfg, "w") as f:
-        dump(piface_data, f)
-
-    return temp_path_cfg
+    return path_to_looper_config
