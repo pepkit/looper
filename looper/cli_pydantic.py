@@ -110,7 +110,7 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
         parser.print_help(sys.stderr)
         sys.exit(1)
 
-    if subcommand_name in ["init"]:
+    if subcommand_name == "init":
         return int(
             not initiate_looper_config(
                 dotfile_path(),
@@ -122,7 +122,7 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
             )
         )
 
-    if subcommand_name in ["init_piface"]:
+    if subcommand_name == "init_piface":
         sys.exit(int(not init_generic_pipeline()))
 
     _LOGGER.info("Looper version: {}\nCommand: {}".format(__version__, subcommand_name))
@@ -243,13 +243,13 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
                 )
                 raise
 
-        if subcommand_name in ["runp"]:
+        if subcommand_name == "runp":
             compute_kwargs = _proc_resources_spec(subcommand_args)
             collate = Collator(prj)
             collate(subcommand_args, **compute_kwargs)
             return collate.debug
 
-        if subcommand_name in ["destroy"]:
+        if subcommand_name == "destroy":
             return Destroyer(prj)(subcommand_args)
 
         use_pipestat = (
@@ -258,34 +258,34 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
             else prj.pipestat_configured
         )
 
-        if subcommand_name in ["table"]:
+        if subcommand_name == "table":
             if use_pipestat:
                 return Tabulator(prj)(subcommand_args)
             else:
                 raise PipestatConfigurationException("table")
 
-        if subcommand_name in ["report"]:
+        if subcommand_name == "report":
             if use_pipestat:
                 return Reporter(prj)(subcommand_args)
             else:
                 raise PipestatConfigurationException("report")
 
-        if subcommand_name in ["link"]:
+        if subcommand_name == "link":
             if use_pipestat:
                 Linker(prj)(subcommand_args)
             else:
                 raise PipestatConfigurationException("link")
 
-        if subcommand_name in ["check"]:
+        if subcommand_name == "check":
             if use_pipestat:
                 return Checker(prj)(subcommand_args)
             else:
                 raise PipestatConfigurationException("check")
 
-        if subcommand_name in ["clean"]:
+        if subcommand_name == "clean":
             return Cleaner(prj)(subcommand_args)
 
-        if subcommand_name in ["inspect"]:
+        if subcommand_name == "inspect":
             from warnings import warn
 
             warn(
