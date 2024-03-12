@@ -128,12 +128,12 @@ class ArgumentEnum(enum.Enum):
         description="Total input file size (GB) to batch into one job",
     )
     LUMPN = Argument(
-        name="lumpn",
+        name="lump_n",
         default=(int, None),
         description="Number of commands to batch into one job",
     )
     LUMPJ = Argument(
-        name="lumpj",
+        name="lump_j",
         default=(int, None),
         description="Lump samples into number of jobs.",
     )

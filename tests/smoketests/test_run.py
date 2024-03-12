@@ -419,7 +419,7 @@ class TestLooperRunSubmissionScript:
 
     def test_looper_lumping(self, prep_temp_pep):
         tp = prep_temp_pep
-        x = test_args_expansion(tp, "run", ["--lumpn", "2"])
+        x = test_args_expansion(tp, "run", ["--lump-n", "2"])
         try:
             main(test_args=x)
         except Exception:
@@ -429,7 +429,7 @@ class TestLooperRunSubmissionScript:
 
     def test_looper_lumping_jobs(self, prep_temp_pep):
         tp = prep_temp_pep
-        x = test_args_expansion(tp, "run", ["--lumpj", "1"])
+        x = test_args_expansion(tp, "run", ["--lump-j", "1"])
         try:
             main(test_args=x)
         except Exception:
@@ -439,7 +439,7 @@ class TestLooperRunSubmissionScript:
 
     def test_looper_lumping_jobs_negative(self, prep_temp_pep):
         tp = prep_temp_pep
-        x = test_args_expansion(tp, "run", ["--lumpj", "-1"])
+        x = test_args_expansion(tp, "run", ["--lump-j", "-1"])
 
         with pytest.raises(ValueError):
             main(test_args=x)
