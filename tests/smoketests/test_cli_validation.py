@@ -10,7 +10,7 @@ from looper.const import (
     SAMPLE_INCLUSION_OPTNAME,
 )
 from tests.conftest import print_standard_stream, subp_exec, test_args_expansion
-from looper.cli_looper import main
+from looper.cli_pydantic import main
 
 
 SUBCOMMANDS_WHICH_SUPPORT_SKIP_XOR_LIMIT = ["run", "destroy"]

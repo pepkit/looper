@@ -19,6 +19,7 @@ from pephubclient.constants import RegistryPath
 from pydantic import ValidationError
 
 from .const import *
+from .command_models.commands import SUPPORTED_COMMANDS
 from .exceptions import MisconfigurationException, RegistryPathException
 
 _LOGGER = getLogger(__name__)
@@ -250,19 +251,20 @@ def read_yaml_file(filepath):
     return data
 
 
-def enrich_args_via_cfg(parser_args, aux_parser, test_args=None):
+def enrich_args_via_cfg(subcommand_name, parser_args, aux_parser, test_args=None):
     """
     Read in a looper dotfile and set arguments.
 
     Priority order: CLI > dotfile/config > parser default
 
+    :param subcommand name: the name of the command used
     :param argparse.Namespace parser_args: parsed args by the original parser
     :param argparse.Namespace aux_parser: parsed args by the a parser
         with defaults suppressed
     :return argparse.Namespace: selected argument values
     """
     cfg_args_all = (
-        _get_subcommand_args(parser_args)
+        _get_subcommand_args(subcommand_name, parser_args)
         if os.path.exists(parser_args.config_file)
         else dict()
     )
@@ -273,23 +275,42 @@ def enrich_args_via_cfg(parser_args, aux_parser, test_args=None):
     else:
         cli_args, _ = aux_parser.parse_known_args()
 
-    for dest in vars(parser_args):
-        if dest not in POSITIONAL or not hasattr(result, dest):
-            if dest in cli_args:
-                x = getattr(cli_args, dest)
-                r = convert_value(x) if isinstance(x, str) else x
-            elif cfg_args_all is not None and dest in cfg_args_all:
-                if isinstance(cfg_args_all[dest], list):
-                    r = [convert_value(i) for i in cfg_args_all[dest]]
+    def set_single_arg(argname, default_source_namespace, result_namespace):
+        if argname not in POSITIONAL or not hasattr(result, argname):
+            if argname in cli_args:
+                cli_provided_value = getattr(cli_args, argname)
+                r = (
+                    convert_value(cli_provided_value)
+                    if isinstance(cli_provided_value, str)
+                    else cli_provided_value
+                )
+            elif cfg_args_all is not None and argname in cfg_args_all:
+                if isinstance(cfg_args_all[argname], list):
+                    r = [convert_value(i) for i in cfg_args_all[argname]]
                 else:
-                    r = convert_value(cfg_args_all[dest])
+                    r = convert_value(cfg_args_all[argname])
             else:
-                r = getattr(parser_args, dest)
-            setattr(result, dest, r)
+                r = getattr(default_source_namespace, argname)
+            setattr(result_namespace, argname, r)
+
+    for top_level_argname in vars(parser_args):
+        if top_level_argname not in [cmd.name for cmd in SUPPORTED_COMMANDS]:
+            # this argument is a top-level argument
+            set_single_arg(top_level_argname, parser_args, result)
+        else:
+            # this argument actually is a subcommand
+            enriched_command_namespace = argparse.Namespace()
+            command_namespace = getattr(parser_args, top_level_argname)
+            if command_namespace:
+                for argname in vars(command_namespace):
+                    set_single_arg(
+                        argname, command_namespace, enriched_command_namespace
+                    )
+            setattr(result, top_level_argname, enriched_command_namespace)
     return result
 
 
-def _get_subcommand_args(parser_args):
+def _get_subcommand_args(subcommand_name, parser_args):
     """
     Get the union of values for the subcommand arguments from
     Project.looper, Project.looper.cli.<subcommand> and Project.looper.cli.all.
@@ -321,8 +342,8 @@ def _get_subcommand_args(parser_args):
                 else dict()
             )
             args.update(
-                cfg_args[parser_args.command] or dict()
-                if parser_args.command in cfg_args
+                cfg_args[subcommand_name] or dict()
+                if subcommand_name in cfg_args
                 else dict()
             )
         except (TypeError, KeyError, AttributeError, ValueError) as e:

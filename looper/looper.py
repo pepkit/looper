@@ -6,6 +6,7 @@ Looper: a pipeline submission engine. https://github.com/pepkit/looper
 import abc
 import argparse
 import csv
+import glob
 import logging
 import subprocess
 import yaml
@@ -88,7 +89,7 @@ class Checker(Executor):
 
         # aggregate pipeline status data
         status = {}
-        if args.project:
+        if getattr(args, "project", None):
             psms = self.prj.get_pipestat_managers(project_level=True)
             for pipeline_name, psm in psms.items():
                 s = psm.get_status() or "unknown"
@@ -123,7 +124,7 @@ class Checker(Executor):
                     table.add_row(status_id, f"{status_count}/{len(status_list)}")
             console.print(table)
 
-        if args.itemized:
+        if getattr(args, "itemized", None):
             for pipeline_name, pipeline_status in status.items():
                 table_title = f"Pipeline: '{pipeline_name}'"
                 table = Table(
@@ -199,10 +200,10 @@ class Cleaner(Executor):
         if not preview_flag:
             _LOGGER.info("Clean complete.")
             return 0
-        if args.dry_run:
+        if getattr(args, "dry_run", None):
             _LOGGER.info("Dry run. No files cleaned.")
             return 0
-        if not args.force_yes and not query_yes_no(
+        if not getattr(args, "force_yes", None) and not query_yes_no(
             "Are you sure you want to permanently delete all "
             "intermediate pipeline results for this project?"
         ):
@@ -255,11 +256,17 @@ class Destroyer(Executor):
         _LOGGER.info("Removing summary:")
         use_pipestat = (
             self.prj.pipestat_configured_project
-            if args.project
+            if getattr(
+                args, "project", None
+            )  # TODO this argument hasn't been added to the pydantic models.
             else self.prj.pipestat_configured
         )
         if use_pipestat:
-            destroy_summary(self.prj, args.dry_run, args.project)
+            destroy_summary(
+                self.prj,
+                getattr(args, "dry_run", None),
+                getattr(args, "project", None),
+            )
         else:
             _LOGGER.warning(
                 "Pipestat must be configured to destroy any created summaries."
@@ -269,11 +276,11 @@ class Destroyer(Executor):
             _LOGGER.info("Destroy complete.")
             return 0
 
-        if args.dry_run:
+        if getattr(args, "dry_run", None):
             _LOGGER.info("Dry run. No files destroyed.")
             return 0
 
-        if not args.force_yes and not query_yes_no(
+        if not getattr(args, "force_yes", None) and not query_yes_no(
             "Are you sure you want to permanently delete all pipeline "
             "results for this project?"
         ):
@@ -341,13 +348,15 @@ class Collator(Executor):
                 pipeline_interface=project_piface_object,
                 prj=self.prj,
                 compute_variables=compute_kwargs,
-                delay=args.time_delay,
-                extra_args=args.command_extra,
-                extra_args_override=args.command_extra_override,
-                ignore_flags=args.ignore_flags,
+                delay=getattr(args, "time_delay", None),
+                extra_args=getattr(args, "command_extra", None),
+                extra_args_override=getattr(args, "command_extra_override", None),
+                ignore_flags=getattr(args, "ignore_flags", None),
                 collate=True,
             )
-            if conductor.is_project_submittable(force=args.ignore_flags):
+            if conductor.is_project_submittable(
+                force=getattr(args, "ignore_flags", None)
+            ):
                 conductor._pool = [None]
                 conductor.submit()
                 jobs += conductor.num_job_submissions
@@ -360,7 +369,7 @@ class Collator(Executor):
 class Runner(Executor):
     """The true submitter of pipelines"""
 
-    def __call__(self, args, rerun=False, **compute_kwargs):
+    def __call__(self, args, top_level_args=None, rerun=False, **compute_kwargs):
         """
         Do the Sample submission.
 
@@ -395,18 +404,19 @@ class Runner(Executor):
                 )
 
         submission_conductors = {}
+
         for piface in self.prj.pipeline_interfaces:
             conductor = SubmissionConductor(
                 pipeline_interface=piface,
                 prj=self.prj,
                 compute_variables=comp_vars,
-                delay=args.time_delay,
-                extra_args=args.command_extra,
-                extra_args_override=args.command_extra_override,
-                ignore_flags=args.ignore_flags,
-                max_cmds=args.lump_n,
-                max_size=args.lump_s,
-                max_jobs=args.lump_j,
+                delay=getattr(args, "time_delay", None),
+                extra_args=getattr(args, "command_extra", None),
+                extra_args_override=getattr(args, "command_extra_override", None),
+                ignore_flags=getattr(args, "ignore_flags", None),
+                max_cmds=getattr(args, "lump_n", None),
+                max_size=getattr(args, "lump", None),
+                max_jobs=getattr(args, "lump_j", None),
             )
             submission_conductors[piface.pipe_iface_file] = conductor
 
@@ -487,7 +497,7 @@ class Runner(Executor):
         )
         _LOGGER.info("Commands submitted: {} of {}".format(cmd_sub_total, max_cmds))
         self.debug[DEBUG_COMMANDS] = "{} of {}".format(cmd_sub_total, max_cmds)
-        if args.dry_run:
+        if getattr(args, "dry_run", None):
             job_sub_total_if_real = job_sub_total
             job_sub_total = 0
             _LOGGER.info(
@@ -545,8 +555,9 @@ class Reporter(Executor):
 
     def __call__(self, args):
         # initialize the report builder
+        self.debug = {}
         p = self.prj
-        project_level = args.project
+        project_level = getattr(args, "project", None)
 
         portable = args.portable
 
@@ -559,6 +570,8 @@ class Reporter(Executor):
                     looper_samples=self.prj.samples, portable=portable
                 )
                 print(f"Report directory: {report_directory}")
+                self.debug["report_directory"] = report_directory
+            return self.debug
         else:
             for piface_source_samples in self.prj._samples_by_piface(
                 self.prj.piface_key
@@ -576,6 +589,8 @@ class Reporter(Executor):
                         looper_samples=self.prj.samples, portable=portable
                     )
                     print(f"Report directory: {report_directory}")
+                    self.debug["report_directory"] = report_directory
+            return self.debug
 
 
 class Linker(Executor):
@@ -584,8 +599,8 @@ class Linker(Executor):
     def __call__(self, args):
         # initialize the report builder
         p = self.prj
-        project_level = args.project
-        link_dir = args.output_dir
+        project_level = getattr(args, "project", None)
+        link_dir = getattr(args, "output_dir", None)
 
         if project_level:
             psms = self.prj.get_pipestat_managers(project_level=True)
@@ -615,7 +630,7 @@ class Tabulator(Executor):
 
     def __call__(self, args):
         # p = self.prj
-        project_level = args.project
+        project_level = getattr(args, "project", None)
         results = []
         if project_level:
             psms = self.prj.get_pipestat_managers(project_level=True)
