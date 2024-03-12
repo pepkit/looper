@@ -6,6 +6,7 @@ import os
 import subprocess
 import time
 import yaml
+from math import ceil
 from copy import copy, deepcopy
 from json import loads
 from subprocess import check_output
@@ -20,7 +21,7 @@ from peppy.exceptions import RemoteYAMLError
 from pipestat import PipestatError
 from ubiquerg import expandpath, is_command_callable
 from yaml import dump
-from yacman import YAMLConfigManager
+from yacman import FutureYAMLConfigManager as YAMLConfigManager
 
 from .const import *
 from .exceptions import JobSubmissionException, SampleFailedException
@@ -84,11 +85,14 @@ def _get_yaml_path(namespaces, template_key, default_name_appendix="", filename=
 
 def write_pipestat_config(looper_pipestat_config_path, pipestat_config_dict):
     """
-    This is run at the project level, not at the sample level.
+    This writes a combined configuration file to be passed to a PipestatManager.
+    :param str looper_pipestat_config_path: path to the created pipestat configuration file
+    :param dict pipestat_config_dict: the dict containing key value pairs to be written to the pipestat configutation
+    return bool
     """
     with open(looper_pipestat_config_path, "w") as f:
         yaml.dump(pipestat_config_dict, f)
-    print(f"Initialized looper config file: {looper_pipestat_config_path}")
+    print(f"Initialized pipestat config file: {looper_pipestat_config_path}")
 
     return True
 
@@ -132,6 +136,7 @@ class SubmissionConductor(object):
         compute_variables=None,
         max_cmds=None,
         max_size=None,
+        max_jobs=None,
         automatic=True,
         collate=False,
     ):
@@ -166,6 +171,8 @@ class SubmissionConductor(object):
             include in a single job script.
         :param int | float | NoneType max_size: Upper bound on total file
             size of inputs used by the commands lumped into single job script.
+        :param int | float | NoneType max_jobs: Upper bound on total number of jobs to
+            group samples for submission.
         :param bool automatic: Whether the submission should be automatic once
             the pool reaches capacity.
         :param bool collate: Whether a collate job is to be submitted (runs on
@@ -199,6 +206,16 @@ class SubmissionConductor(object):
                 "String appended to every pipeline command: "
                 "{}".format(self.extra_pipe_args)
             )
+
+        if max_jobs:
+            if max_jobs == 0 or max_jobs < 0:
+                raise ValueError(
+                    "If specified, max job command count must be a positive integer, greater than zero."
+                )
+
+            num_samples = len(self.prj.samples)
+            samples_per_job = num_samples / max_jobs
+            max_cmds = ceil(samples_per_job)
 
         if not self.collate:
             self.automatic = automatic

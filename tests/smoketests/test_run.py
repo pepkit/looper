@@ -439,13 +439,30 @@ class TestLooperRunSubmissionScript:
 
     def test_looper_lumping(self, prep_temp_pep):
         tp = prep_temp_pep
-        x = test_args_expansion(tp, "run", ["--lumpn", "2"])
+        x = test_args_expansion(tp, "run", ["--lump-n", "2"])
         try:
             main(test_args=x)
         except Exception:
             raise pytest.fail("DID RAISE {0}".format(Exception))
         sd = os.path.join(get_outdir(tp), "submission")
         verify_filecount_in_dir(sd, ".sub", 4)
+
+    def test_looper_lumping_jobs(self, prep_temp_pep):
+        tp = prep_temp_pep
+        x = test_args_expansion(tp, "run", ["--lump-j", "1"])
+        try:
+            main(test_args=x)
+        except Exception:
+            raise pytest.fail("DID RAISE {0}".format(Exception))
+        sd = os.path.join(get_outdir(tp), "submission")
+        verify_filecount_in_dir(sd, ".sub", 2)
+
+    def test_looper_lumping_jobs_negative(self, prep_temp_pep):
+        tp = prep_temp_pep
+        x = test_args_expansion(tp, "run", ["--lump-j", "-1"])
+
+        with pytest.raises(ValueError):
+            main(test_args=x)
 
     def test_looper_limiting(self, prep_temp_pep):
         tp = prep_temp_pep
