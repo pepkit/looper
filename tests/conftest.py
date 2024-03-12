@@ -55,7 +55,7 @@ def get_outdir(pth):
 
 def get_project_config_path(looper_config_pth):
     """
-    Get project config file path from a config file path since they are relative
+    Get project config file path from a looper config file path, since they are relative
 
     :param str pth:
     :return str: output directory
