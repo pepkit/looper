@@ -81,6 +81,8 @@ def validate_post_parse(args: argparse.Namespace) -> List[str]:
     return problems
 
 
+# TODO rename to run_looper_via_cli for running lloper as a python library:
+#  https://github.com/pepkit/looper/pull/472#discussion_r1521970763
 def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
     # here comes adapted `cli_looper.py` code
     global _LOGGER
