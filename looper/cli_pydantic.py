@@ -21,15 +21,15 @@ import os
 import sys
 
 import logmuse
-import pydantic_argparse
+import pydantic2_argparse
 import yaml
+from eido import inspect_project
 from pephubclient import PEPHubClient
-from pydantic_argparse.argparse.parser import ArgumentParser
+from pydantic2_argparse.argparse.parser import ArgumentParser
 
 from divvy import select_divvy_config
 
 from . import __version__
-from .cli_looper import _proc_resources_spec
 from .command_models.commands import SUPPORTED_COMMANDS, TopLevelParser
 from .const import *
 from .divvy import DEFAULT_COMPUTE_RESOURCES_NAME, select_divvy_config
@@ -43,10 +43,50 @@ from .utils import (
     is_registry_path,
     read_looper_config_file,
     read_looper_dotfile,
+    initiate_looper_config,
+    init_generic_pipeline,
+    read_yaml_file,
 )
 
+from typing import List, Tuple
 
-def run_looper(args: TopLevelParser, parser: ArgumentParser):
+
+def opt_attr_pair(name: str) -> Tuple[str, str]:
+    """Takes argument as attribute and returns as tuple of top-level or subcommand used."""
+    return f"--{name}", name.replace("-", "_")
+
+
+def validate_post_parse(args: argparse.Namespace) -> List[str]:
+    """Checks if user is attempting to use mutually exclusive options."""
+    problems = []
+    used_exclusives = [
+        opt
+        for opt, attr in map(
+            opt_attr_pair,
+            [
+                "skip",
+                "limit",
+                SAMPLE_EXCLUSION_OPTNAME,
+                SAMPLE_INCLUSION_OPTNAME,
+            ],
+        )
+        # Depending on the subcommand used, the above options might either be in
+        # the top-level namespace or in the subcommand namespace (the latter due
+        # to a `modify_args_namespace()`)
+        if getattr(
+            args, attr, None
+        )  # or (getattr(args.run, attr, None) if hasattr(args, "run") else False)
+    ]
+    if len(used_exclusives) > 1:
+        problems.append(
+            f"Used multiple mutually exclusive options: {', '.join(used_exclusives)}"
+        )
+    return problems
+
+
+# TODO rename to run_looper_via_cli for running lloper as a python library:
+#  https://github.com/pepkit/looper/pull/472#discussion_r1521970763
+def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
     # here comes adapted `cli_looper.py` code
     global _LOGGER
 
@@ -57,24 +97,52 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser):
     subcommand_valued_args = [
         (arg, value)
         for arg, value in vars(args).items()
-        if arg and arg in supported_command_names
+        if arg and arg in supported_command_names and value is not None
     ]
     # Only one subcommand argument will be not `None`, else we found a bug in `pydantic-argparse`
     [(subcommand_name, subcommand_args)] = subcommand_valued_args
 
+    cli_use_errors = validate_post_parse(subcommand_args)
+    if cli_use_errors:
+        parser.print_help(sys.stderr)
+        parser.error(
+            f"{len(cli_use_errors)} CLI use problem(s): {', '.join(cli_use_errors)}"
+        )
+
+    if subcommand_name is None:
+        parser.print_help(sys.stderr)
+        sys.exit(1)
+
+    if subcommand_name == "init":
+        return int(
+            not initiate_looper_config(
+                dotfile_path(),
+                subcommand_args.pep_config,
+                subcommand_args.output_dir,
+                subcommand_args.sample_pipeline_interfaces,
+                subcommand_args.project_pipeline_interfaces,
+                subcommand_args.force_yes,
+            )
+        )
+
+    if subcommand_name == "init_piface":
+        sys.exit(int(not init_generic_pipeline()))
+
     _LOGGER.info("Looper version: {}\nCommand: {}".format(__version__, subcommand_name))
 
-    if args.config_file is None:
+    if subcommand_args.config_file is None:
         looper_cfg_path = os.path.relpath(dotfile_path(), start=os.curdir)
         try:
-            if args.looper_config:
-                looper_config_dict = read_looper_config_file(args.looper_config)
+            if subcommand_args.looper_config:
+                looper_config_dict = read_looper_config_file(
+                    subcommand_args.looper_config
+                )
             else:
                 looper_config_dict = read_looper_dotfile()
                 _LOGGER.info(f"Using looper config ({looper_cfg_path}).")
 
             for looper_config_key, looper_config_item in looper_config_dict.items():
-                setattr(args, looper_config_key, looper_config_item)
+                setattr(subcommand_args, looper_config_key, looper_config_item)
 
         except OSError:
             parser.print_help(sys.stderr)
@@ -89,11 +157,13 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser):
             "looper.databio.org/en/latest/looper-config"
         )
 
-    args = enrich_args_via_cfg(args, parser, False)
+    subcommand_args = enrich_args_via_cfg(
+        subcommand_name, subcommand_args, parser, test_args=test_args
+    )
 
     # If project pipeline interface defined in the cli, change name to: "pipeline_interface"
-    if vars(args)[PROJECT_PL_ARG]:
-        args.pipeline_interfaces = vars(args)[PROJECT_PL_ARG]
+    if vars(subcommand_args)[PROJECT_PL_ARG]:
+        subcommand_args.pipeline_interfaces = vars(subcommand_args)[PROJECT_PL_ARG]
 
     divcfg = (
         select_divvy_config(filepath=subcommand_args.divvy)
@@ -101,21 +171,23 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser):
         else None
     )
     # Ignore flags if user is selecting or excluding on flags:
-    if args.sel_flag or args.exc_flag:
-        args.ignore_flags = True
+    if subcommand_args.sel_flag or subcommand_args.exc_flag:
+        subcommand_args.ignore_flags = True
 
     # Initialize project
-    if is_registry_path(args.config_file):
-        if vars(args)[SAMPLE_PL_ARG]:
+    if is_registry_path(subcommand_args.config_file):
+        if vars(subcommand_args)[SAMPLE_PL_ARG]:
             p = Project(
-                amendments=args.amend,
+                amendments=subcommand_args.amend,
                 divcfg_path=divcfg,
                 runp=subcommand_name == "runp",
                 project_dict=PEPHubClient()._load_raw_pep(
-                    registry_path=args.config_file
+                    registry_path=subcommand_args.config_file
                 ),
                 **{
-                    attr: getattr(args, attr) for attr in CLI_PROJ_ATTRS if attr in args
+                    attr: getattr(subcommand_args, attr)
+                    for attr in CLI_PROJ_ATTRS
+                    if attr in subcommand_args
                 },
             )
         else:
@@ -125,12 +197,14 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser):
     else:
         try:
             p = Project(
-                cfg=args.config_file,
-                amendments=args.amend,
+                cfg=subcommand_args.config_file,
+                amendments=subcommand_args.amend,
                 divcfg_path=divcfg,
                 runp=subcommand_name == "runp",
                 **{
-                    attr: getattr(args, attr) for attr in CLI_PROJ_ATTRS if attr in args
+                    attr: getattr(subcommand_args, attr)
+                    for attr in CLI_PROJ_ATTRS
+                    if attr in subcommand_args
                 },
             )
         except yaml.parser.ParserError as e:
@@ -146,17 +220,22 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser):
 
     with ProjectContext(
         prj=p,
-        selector_attribute=args.sel_attr,
-        selector_include=args.sel_incl,
-        selector_exclude=args.sel_excl,
-        selector_flag=args.sel_flag,
-        exclusion_flag=args.exc_flag,
+        selector_attribute=subcommand_args.sel_attr,
+        selector_include=subcommand_args.sel_incl,
+        selector_exclude=subcommand_args.sel_excl,
+        selector_flag=subcommand_args.sel_flag,
+        exclusion_flag=subcommand_args.exc_flag,
     ) as prj:
-        if subcommand_name == "run":
+        if subcommand_name in ["run", "rerun"]:
             run = Runner(prj)
             try:
-                compute_kwargs = _proc_resources_spec(args)
-                return run(args, rerun=False, **compute_kwargs)
+                # compute_kwargs = _proc_resources_spec(args)
+                compute_kwargs = _proc_resources_spec(subcommand_args)
+
+                # TODO Shouldn't top level args and subcommand args be accessible on the same object?
+                return run(
+                    subcommand_args, top_level_args=args, rerun=False, **compute_kwargs
+                )
             except SampleFailedException:
                 sys.exit(1)
             except IOError:
@@ -167,16 +246,109 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser):
                 )
                 raise
 
+        if subcommand_name == "runp":
+            compute_kwargs = _proc_resources_spec(subcommand_args)
+            collate = Collator(prj)
+            collate(subcommand_args, **compute_kwargs)
+            return collate.debug
 
-def main() -> None:
-    parser = pydantic_argparse.ArgumentParser(
+        if subcommand_name == "destroy":
+            return Destroyer(prj)(subcommand_args)
+
+        use_pipestat = (
+            prj.pipestat_configured_project
+            if getattr(subcommand_args, "project", None)
+            else prj.pipestat_configured
+        )
+
+        if subcommand_name == "table":
+            if use_pipestat:
+                return Tabulator(prj)(subcommand_args)
+            else:
+                raise PipestatConfigurationException("table")
+
+        if subcommand_name == "report":
+            if use_pipestat:
+                return Reporter(prj)(subcommand_args)
+            else:
+                raise PipestatConfigurationException("report")
+
+        if subcommand_name == "link":
+            if use_pipestat:
+                Linker(prj)(subcommand_args)
+            else:
+                raise PipestatConfigurationException("link")
+
+        if subcommand_name == "check":
+            if use_pipestat:
+                return Checker(prj)(subcommand_args)
+            else:
+                raise PipestatConfigurationException("check")
+
+        if subcommand_name == "clean":
+            return Cleaner(prj)(subcommand_args)
+
+        if subcommand_name == "inspect":
+            # Inspects project from eido
+            inspect_project(p, args.sample_names, args.attr_limit)
+            # TODO add inspecting looper config: https://github.com/pepkit/looper/issues/462
+
+
+def main(test_args=None) -> None:
+    parser = pydantic2_argparse.ArgumentParser(
         model=TopLevelParser,
         prog="looper",
-        description="pydantic-argparse demo",
+        description="Looper Pydantic Argument Parser",
         add_help=True,
     )
-    args = parser.parse_typed_args()
-    run_looper(args, parser)
+    if test_args:
+        args = parser.parse_typed_args(args=test_args)
+    else:
+        args = parser.parse_typed_args()
+    return run_looper(args, parser, test_args=test_args)
+
+
+def _proc_resources_spec(args):
+    """
+    Process CLI-sources compute setting specification. There are two sources
+    of compute settings in the CLI alone:
+        * YAML file (--settings argument)
+        * itemized compute settings (--compute argument)
+
+    The itemized compute specification is given priority
+
+    :param argparse.Namespace: arguments namespace
+    :return Mapping[str, str]: binding between resource setting name and value
+    :raise ValueError: if interpretation of the given specification as encoding
+        of key-value pairs fails
+    """
+    spec = getattr(args, "compute", None)
+    settings = args.settings
+    try:
+        settings_data = read_yaml_file(settings) or {}
+    except yaml.YAMLError:
+        _LOGGER.warning(
+            "Settings file ({}) does not follow YAML format,"
+            " disregarding".format(settings)
+        )
+        settings_data = {}
+    if not spec:
+        return settings_data
+    pairs = [(kv, kv.split("=")) for kv in spec]
+    bads = []
+    for orig, pair in pairs:
+        try:
+            k, v = pair
+        except ValueError:
+            bads.append(orig)
+        else:
+            settings_data[k] = v
+    if bads:
+        raise ValueError(
+            "Could not correctly parse itemized compute specification. "
+            "Correct format: " + EXAMPLE_COMPUTE_SPEC_FMT
+        )
+    return settings_data
 
 
 if __name__ == "__main__":

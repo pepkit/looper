@@ -7,7 +7,7 @@ import os
 from copy import copy
 from typing import Any, List
 
-import pydantic
+import pydantic.v1 as pydantic
 
 
 class Argument(pydantic.fields.FieldInfo):
@@ -80,6 +80,30 @@ class ArgumentEnum(enum.Enum):
         default=(bool, False),
         description="Ignore run status flags",
     )
+    FORCE_YES = Argument(
+        name="force_yes",
+        default=(bool, False),
+        description="Provide upfront confirmation of destruction intent, to skip console query. Default=False",
+    )
+
+    DESCRIBE_CODES = Argument(
+        name="describe_codes",
+        default=(bool, False),
+        description="Show status codes description. Default=False",
+    )
+
+    ITEMIZED = Argument(
+        name="itemized",
+        default=(bool, False),
+        description="Show detailed overview of sample statuses. Default=False",
+    )
+
+    FLAGS = Argument(
+        name="flags",
+        default=(List, []),
+        description="Only check samples based on these status flags.",
+    )
+
     TIME_DELAY = Argument(
         name="time_delay",
         default=(int, 0),
@@ -104,9 +128,14 @@ class ArgumentEnum(enum.Enum):
         description="Total input file size (GB) to batch into one job",
     )
     LUMPN = Argument(
-        name="lumpn",
+        name="lump_n",
         default=(int, None),
         description="Number of commands to batch into one job",
+    )
+    LUMPJ = Argument(
+        name="lump_j",
+        default=(int, None),
+        description="Lump samples into number of jobs.",
     )
     LIMIT = Argument(
         name="limit", default=(int, None), description="Limit to n samples"
@@ -159,7 +188,7 @@ class ArgumentEnum(enum.Enum):
     )
     SEL_INCL = Argument(
         name="sel_incl",
-        default=(str, ""),
+        default=(List, []),
         description="Include only samples with these values",
     )
     SEL_EXCL = Argument(
@@ -168,10 +197,10 @@ class ArgumentEnum(enum.Enum):
         description="Exclude samples with these values",
     )
     SEL_FLAG = Argument(
-        name="sel_flag", default=(str, ""), description="Sample selection flag"
+        name="sel_flag", default=(List, []), description="Sample selection flag"
     )
     EXC_FLAG = Argument(
-        name="exc_flag", default=(str, ""), description="Sample exclusion flag"
+        name="exc_flag", default=(List, []), description="Sample exclusion flag"
     )
     SKIP_FILE_CHECKS = Argument(
         name="skip_file_checks",
@@ -217,4 +246,9 @@ class ArgumentEnum(enum.Enum):
         name="pipestat",
         default=(str, None),
         description="Path to pipestat files.",
+    )
+    PORTABLE = Argument(
+        name="portable",
+        default=(bool, False),
+        description="Makes html report portable.",
     )
