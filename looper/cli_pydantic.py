@@ -51,10 +51,12 @@ from typing import List, Tuple
 
 
 def opt_attr_pair(name: str) -> Tuple[str, str]:
+    """Takes argument as attribute and returns as tuple of top-level or subcommand used."""
     return f"--{name}", name.replace("-", "_")
 
 
 def validate_post_parse(args: argparse.Namespace) -> List[str]:
+    """Checks if user is attempting to use mutually exclusive options."""
     problems = []
     used_exclusives = [
         opt
