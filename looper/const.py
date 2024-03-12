@@ -263,7 +263,7 @@ MESSAGE_BY_SUBCOMMAND = {
     "destroy": "Remove output files of the project.",
     "check": "Check flag status of current runs.",
     "clean": "Run clean scripts of already processed jobs.",
-    "inspect": "Deprecated. Use `eido inspect` instead. Print information about a project.",
+    "inspect": "Print information about a project.",
     "init": "Initialize looper config file.",
     "init-piface": "Initialize generic pipeline interface.",
     "link": "Create directory of symlinks for reported results.",

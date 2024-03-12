@@ -527,3 +527,16 @@ class TestSelector:
         subs_list = [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
 
         assert len(subs_list) == 3
+
+
+@pytest.mark.skip(reason="Functionality not implemented.")
+class TestLooperInspect:
+    @pytest.mark.parametrize("cmd", ["inspect"])
+    def test_inspect_config(self, prep_temp_pep, cmd):
+        "Checks inspect command"
+        tp = prep_temp_pep
+        x = [cmd, "--looper-config", tp]
+        try:
+            results = main(test_args=x)
+        except Exception:
+            raise pytest.fail("DID RAISE {0}".format(Exception))

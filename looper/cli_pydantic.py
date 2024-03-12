@@ -23,6 +23,7 @@ import sys
 import logmuse
 import pydantic2_argparse
 import yaml
+from eido import inspect_project
 from pephubclient import PEPHubClient
 from pydantic2_argparse.argparse.parser import ArgumentParser
 
@@ -288,12 +289,9 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
             return Cleaner(prj)(subcommand_args)
 
         if subcommand_name == "inspect":
-            from warnings import warn
-
-            warn(
-                "The inspect feature has moved to eido."
-                "Use `eido inspect` from now on.",
-            )
+            # Inspects project from eido
+            inspect_project(p, args.sample_names, args.attr_limit)
+            # TODO add inspecting looper config: https://github.com/pepkit/looper/issues/462
 
 
 def main(test_args=None) -> None:
