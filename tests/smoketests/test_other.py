@@ -529,7 +529,6 @@ class TestSelector:
         assert len(subs_list) == 3
 
 
-@pytest.mark.skip(reason="Functionality not implemented.")
 class TestLooperInspect:
     @pytest.mark.parametrize("cmd", ["inspect"])
     def test_inspect_config(self, prep_temp_pep, cmd):
@@ -540,3 +539,10 @@ class TestLooperInspect:
             results = main(test_args=x)
         except Exception:
             raise pytest.fail("DID RAISE {0}".format(Exception))
+
+    @pytest.mark.parametrize("cmd", ["inspect"])
+    def test_inspect_no_config_found(self, cmd):
+        "Checks inspect command"
+        x = [cmd]
+        with pytest.raises(ValueError):
+            results = main(test_args=x)

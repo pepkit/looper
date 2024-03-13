@@ -788,3 +788,15 @@ def write_submit_script(fp, content, data):
         with open(fp, "w") as f:
             f.write(content)
         return fp
+
+
+def inspect_looper_config_file(looper_config_dict) -> None:
+    """
+    Inspects looper config by printing it to terminal.
+    param dict looper_config_dict: dict representing looper_config
+
+    """
+    # Simply print this to terminal
+    print("LOOPER INSPECT")
+    for key, value in looper_config_dict.items():
+        print(f"{key} {value}")

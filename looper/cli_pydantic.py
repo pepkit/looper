@@ -46,6 +46,7 @@ from .utils import (
     initiate_looper_config,
     init_generic_pipeline,
     read_yaml_file,
+    inspect_looper_config_file,
 )
 
 from typing import List, Tuple
@@ -289,12 +290,11 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
             return Cleaner(prj)(subcommand_args)
 
         if subcommand_name == "inspect":
-            # Inspects project from eido
-            sample_names = []
-            for sample in p.samples:
-                sample_names.append(sample["sample_name"])
-            inspect_project(p, sample_names)
-            # TODO add inspecting looper config: https://github.com/pepkit/looper/issues/462
+            # Inspect looper config file
+            if looper_config_dict:
+                inspect_looper_config_file(looper_config_dict)
+            else:
+                _LOGGER.warning("No looper configuration was supplied.")
 
 
 def main(test_args=None) -> None:
