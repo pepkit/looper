@@ -290,6 +290,11 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
             return Cleaner(prj)(subcommand_args)
 
         if subcommand_name == "inspect":
+            # Inspect PEP from Eido
+            sample_names = []
+            for sample in p.samples:
+                sample_names.append(sample["sample_name"])
+            inspect_project(p, sample_names)
             # Inspect looper config file
             if looper_config_dict:
                 inspect_looper_config_file(looper_config_dict)
