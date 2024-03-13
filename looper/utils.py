@@ -95,7 +95,9 @@ def fetch_sample_flags(prj, sample, pl_name, flag_dir=None):
     return [
         x
         for x in folder_contents
-        if os.path.splitext(x)[1] == ".flag" and os.path.basename(x).startswith(pl_name)
+        if os.path.splitext(x)[1] == ".flag"
+        and os.path.basename(x).startswith(pl_name)
+        and sample.sample_name in x
     ]
 
 
