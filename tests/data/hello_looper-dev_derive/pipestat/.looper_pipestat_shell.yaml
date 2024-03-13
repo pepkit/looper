@@ -1,0 +1,7 @@
+pep_config: ./project/project_config.yaml # pephub registry path or local path
+output_dir: ./results
+pipeline_interfaces:
+  sample:  ./pipeline_pipestat/pipeline_interface_shell.yaml
+pipestat:
+  results_file_path: results.yaml
+  flag_file_dir: results/flags

@@ -81,4 +81,4 @@ __pycache__/
 *ipynb_checkpoints*
 hello_looper-master*
 /pipeline/
-/tests/data/hello_looper-dev_derive/
+/tests/data/hello_looper-dev_derive/.gitignore
