@@ -64,7 +64,9 @@ open_pipelines/
 .coverage*
 .pytest_cache
 .vscode/
-.looper.yaml
+/tests/data/hello_looper-dev_derive/.gitignore
+/.looper.yaml
+/tests/smoketests/.looper.yaml
 
 # Reserved files for comparison
 *RESERVE*
@@ -81,4 +83,3 @@ __pycache__/
 *ipynb_checkpoints*
 hello_looper-master*
 /pipeline/
-/tests/data/hello_looper-dev_derive/.gitignore
