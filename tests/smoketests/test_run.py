@@ -1,6 +1,7 @@
 import os.path
 
 import pytest
+import pandas as pd
 from peppy.const import *
 from yaml import dump
 
@@ -277,6 +278,27 @@ class TestLooperRunBehavior:
         sd = os.path.join(get_outdir(tp), "submission")
         subs_list = [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
         assert_content_not_in_any_files(subs_list, arg)
+
+    def test_looper_sample_table_index(self, prep_temp_pep):
+        tp = prep_temp_pep
+        project_config_path = get_project_config_path(tp)
+        # get flag dir from .looper.yaml
+        with mod_yaml_data(project_config_path) as project_cfg_data:
+            project_cfg_data.update({"sample_table_index": "NOT_SAMPLE_NAME"})
+
+        # Manually add a toggle column to the PEP for this specific test
+        sample_csv = os.path.join(
+            os.path.dirname(project_config_path), "annotation_sheet.csv"
+        )
+        df = pd.read_csv(sample_csv)
+        df = df.rename(columns={"sample_name": "NOT_SAMPLE_NAME"})
+        df.to_csv(sample_csv, index=False)
+
+        x = test_args_expansion(tp, "run")
+        try:
+            main(test_args=x)
+        except Exception:
+            raise pytest.fail("DID RAISE {0}".format(Exception))
 
 
 class TestLooperRunpBehavior:

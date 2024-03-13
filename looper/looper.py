@@ -443,7 +443,9 @@ class Runner(Executor):
             # (from sample's piface)
             for schema_file in self.prj.get_schemas(sample_pifaces):
                 try:
-                    validate_sample(self.prj, sample.sample_name, schema_file)
+                    validate_sample(
+                        self.prj, sample[self.prj.sample_table_index], schema_file
+                    )
                 except EidoValidationError as e:
                     _LOGGER.error(
                         f"Short-circuiting due to validation error!\nSchema file: "
