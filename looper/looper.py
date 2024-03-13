@@ -242,6 +242,20 @@ class Destroyer(Executor):
         :param bool preview_flag: whether to halt before actually removing files
         """
 
+        use_pipestat = (
+            self.prj.pipestat_configured_project
+            if getattr(args, "project", None)
+            else self.prj.pipestat_configured
+        )
+
+        if use_pipestat:
+            _LOGGER.info("Removing summary:")
+            destroy_summary(
+                self.prj,
+                getattr(args, "dry_run", None),
+                getattr(args, "project", None),
+            )
+
         _LOGGER.info("Removing results:")
 
         for sample in select_samples(prj=self.prj, args=args):
@@ -251,26 +265,14 @@ class Destroyer(Executor):
                 # Preview: Don't actually delete, just show files.
                 _LOGGER.info(str(sample_output_folder))
             else:
-                _remove_or_dry_run(sample_output_folder, args.dry_run)
-
-        _LOGGER.info("Removing summary:")
-        use_pipestat = (
-            self.prj.pipestat_configured_project
-            if getattr(
-                args, "project", None
-            )  # TODO this argument hasn't been added to the pydantic models.
-            else self.prj.pipestat_configured
-        )
-        if use_pipestat:
-            destroy_summary(
-                self.prj,
-                getattr(args, "dry_run", None),
-                getattr(args, "project", None),
-            )
-        else:
-            _LOGGER.warning(
-                "Pipestat must be configured to destroy any created summaries."
-            )
+                if use_pipestat:
+                    psms = self.prj.get_pipestat_managers(
+                        sample_name=sample.sample_name
+                    )
+                    for pipeline_name, psm in psms.items():
+                        psm.remove(record_identifier=sample.sample_name)
+                else:
+                    _remove_or_dry_run(sample_output_folder, args.dry_run)
 
         if not preview_flag:
             _LOGGER.info("Destroy complete.")
