@@ -92,7 +92,9 @@ def write_pipestat_config(looper_pipestat_config_path, pipestat_config_dict):
     """
     with open(looper_pipestat_config_path, "w") as f:
         yaml.dump(pipestat_config_dict, f)
-    print(f"Initialized pipestat config file: {looper_pipestat_config_path}")
+    _LOGGER.debug(
+        msg=f"Initialized pipestat config file: {looper_pipestat_config_path}"
+    )
 
     return True
 
