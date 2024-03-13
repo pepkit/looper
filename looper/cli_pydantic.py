@@ -227,6 +227,9 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
         exclusion_flag=subcommand_args.exc_flag,
     ) as prj:
         if subcommand_name in ["run", "rerun"]:
+            rerun = False
+            if subcommand_name == "rerun":
+                rerun = True
             run = Runner(prj)
             try:
                 # compute_kwargs = _proc_resources_spec(args)
@@ -234,7 +237,7 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
 
                 # TODO Shouldn't top level args and subcommand args be accessible on the same object?
                 return run(
-                    subcommand_args, top_level_args=args, rerun=False, **compute_kwargs
+                    subcommand_args, top_level_args=args, rerun=rerun, **compute_kwargs
                 )
             except SampleFailedException:
                 sys.exit(1)

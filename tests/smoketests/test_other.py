@@ -61,6 +61,21 @@ class TestLooperPipestat:
             raise pytest.fail("DID RAISE {0}".format(Exception))
 
 
+class TestLooperRerun:
+    @pytest.mark.parametrize("flag_id", FLAGS)
+    @pytest.mark.parametrize("pipeline_name", ["example_pipestat_pipeline"])
+    def test_pipestat_rerun(self, prep_temp_pep_pipestat, flag_id, pipeline_name):
+        """Verify that checking works when multiple flags are created"""
+        tp = prep_temp_pep_pipestat
+        _make_flags(tp, FLAGS[2], pipeline_name)
+
+        x = ["rerun", "--looper-config", tp]
+        try:
+            result = main(test_args=x)
+        except Exception:
+            raise pytest.fail("DID RAISE {0}".format(Exception))
+
+
 class TestLooperCheck:
     @pytest.mark.parametrize("flag_id", FLAGS)
     @pytest.mark.parametrize(

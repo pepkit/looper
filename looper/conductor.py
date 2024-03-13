@@ -309,6 +309,7 @@ class SubmissionConductor(object):
         if sample_statuses:
             status_str = ", ".join(sample_statuses)
             failed_flag = any("failed" in x for x in sample_statuses)
+            waiting_flag = any("waiting" in x for x in sample_statuses)
             if self.ignore_flags:
                 msg = f"> Found existing status: {status_str}. Ignoring."
             else:  # this pipeline already has a status
@@ -318,11 +319,11 @@ class SubmissionConductor(object):
                 use_this_sample = False
             if rerun:
                 # Rescue the sample if rerun requested, and failed flag is found
-                if failed_flag:
+                if failed_flag or waiting_flag:
                     msg = f"> Re-running failed sample. Status: {status_str}"
                     use_this_sample = True
                 else:
-                    msg = f"> Skipping sample because rerun requested, but no failed flag found. Status: {status_str}"
+                    msg = f"> Skipping sample because rerun requested, but no failed or waiting flag found. Status: {status_str}"
                     use_this_sample = False
         if msg:
             _LOGGER.info(msg)
