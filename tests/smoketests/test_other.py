@@ -62,11 +62,14 @@ class TestLooperPipestat:
 
 
 class TestLooperRerun:
+    @pytest.mark.parametrize(
+        "flags", [FLAGS[2], FLAGS[3]]
+    )  # Waiting and Failed flags should work
     @pytest.mark.parametrize("pipeline_name", ["example_pipestat_pipeline"])
-    def test_pipestat_rerun(self, prep_temp_pep_pipestat, pipeline_name):
-        """Verify that checking works when multiple flags are created"""
+    def test_pipestat_rerun(self, prep_temp_pep_pipestat, pipeline_name, flags):
+        """Verify that rerun works with either failed or waiting flags"""
         tp = prep_temp_pep_pipestat
-        _make_flags(tp, FLAGS[2], pipeline_name)
+        _make_flags(tp, flags, pipeline_name)
 
         x = ["rerun", "--looper-config", tp]
         try:
