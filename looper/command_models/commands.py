@@ -168,16 +168,14 @@ CleanParser = Command(
 )
 
 # INSPECT
-# TODO Did this move to Eido?
 InspectParser = Command(
     "inspect",
     MESSAGE_BY_SUBCOMMAND["inspect"],
     [],
 )
-InspectParserModel = InspectParser.create_model()
+
 
 # INIT
-# TODO rename to `init-config` ?
 InitParser = Command(
     "init",
     MESSAGE_BY_SUBCOMMAND["init"],
@@ -190,7 +188,7 @@ InitParser = Command(
         ArgumentEnum.PROJECT_PIPELINE_INTERFACES.value,
     ],
 )
-InitParserModel = InitParser.create_model()
+
 
 # INIT-PIFACE
 InitPifaceParser = Command(
@@ -198,7 +196,7 @@ InitPifaceParser = Command(
     MESSAGE_BY_SUBCOMMAND["init-piface"],
     [],
 )
-InitPifaceParserModel = InitPifaceParser.create_model()
+
 
 # LINK
 LinkParser = Command(
@@ -219,6 +217,7 @@ for arg in SHARED_ARGUMENTS:
     CleanParser.arguments.append(arg)
     TableParser.arguments.append(arg)
     LinkParser.arguments.append(arg)
+    InspectParser.arguments.append(arg)
 
 # Create all Models
 RunParserModel = RunParser.create_model()
@@ -230,6 +229,9 @@ CheckParserModel = CheckParser.create_model()
 CleanParserModel = CleanParser.create_model()
 TableParserModel = TableParser.create_model()
 LinkParserModel = LinkParser.create_model()
+InspectParserModel = InspectParser.create_model()
+InitParserModel = InitParser.create_model()
+InitPifaceParserModel = InitPifaceParser.create_model()
 
 
 SUPPORTED_COMMANDS = [
@@ -244,6 +246,7 @@ SUPPORTED_COMMANDS = [
     InitParser,
     InitPifaceParser,
     LinkParser,
+    InspectParser,
 ]
 
 

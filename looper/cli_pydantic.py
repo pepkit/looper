@@ -290,7 +290,10 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
 
         if subcommand_name == "inspect":
             # Inspects project from eido
-            inspect_project(p, args.sample_names, args.attr_limit)
+            sample_names = []
+            for sample in p.samples:
+                sample_names.append(sample["sample_name"])
+            inspect_project(p, sample_names)
             # TODO add inspecting looper config: https://github.com/pepkit/looper/issues/462
 
 
