@@ -227,9 +227,7 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
         exclusion_flag=subcommand_args.exc_flag,
     ) as prj:
         if subcommand_name in ["run", "rerun"]:
-            rerun = False
-            if subcommand_name == "rerun":
-                rerun = True
+            rerun = subcommand_name == "rerun"
             run = Runner(prj)
             try:
                 # compute_kwargs = _proc_resources_spec(args)
