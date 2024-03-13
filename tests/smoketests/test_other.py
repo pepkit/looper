@@ -10,7 +10,8 @@ from looper.cli_pydantic import main
 import pandas as pd
 
 
-def _make_flags(cfg, type, pipeline_name):
+def _make_flags_pipestat(cfg, type, pipeline_name):
+    """This makes flags for projects where pipestat is configured and used"""
 
     # get flag dir from .looper.yaml
     with open(cfg, "r") as f:
@@ -24,6 +25,31 @@ def _make_flags(cfg, type, pipeline_name):
 
     for s in p.samples:
         sf = flag_dir
+        if not os.path.exists(sf):
+            os.makedirs(sf)
+        flag_path = os.path.join(
+            sf, pipeline_name + "_" + s.sample_name + "_" + type + ".flag"
+        )
+        with open(flag_path, "w") as f:
+            f.write(type)
+
+
+def _make_flags(cfg, type, pipeline_name):
+    """This makes flags for projects where pipestat is NOT configured"""
+
+    # get flag dir from .looper.yaml
+    with open(cfg, "r") as f:
+        looper_cfg_data = safe_load(f)
+        output_dir = looper_cfg_data[OUTDIR_KEY]
+
+    output_dir = os.path.join(os.path.dirname(cfg), output_dir)
+    # get samples from the project config via Peppy
+    project_config_path = get_project_config_path(cfg)
+    p = Project(project_config_path)
+
+    for s in p.samples:
+        # Make flags in sample subfolder, e.g /tmp/tmphqxdmxnl/advanced/results/results_pipeline/sample1
+        sf = os.path.join(output_dir, "results_pipeline", s.sample_name)
         if not os.path.exists(sf):
             os.makedirs(sf)
         flag_path = os.path.join(
@@ -69,7 +95,7 @@ class TestLooperRerun:
     def test_pipestat_rerun(self, prep_temp_pep_pipestat, pipeline_name, flags):
         """Verify that rerun works with either failed or waiting flags"""
         tp = prep_temp_pep_pipestat
-        _make_flags(tp, flags, pipeline_name)
+        _make_flags_pipestat(tp, flags, pipeline_name)
 
         x = ["rerun", "--looper-config", tp]
         try:
@@ -78,6 +104,24 @@ class TestLooperRerun:
             raise pytest.fail("DID RAISE {0}".format(Exception))
 
         assert result["Jobs submitted"] == 2
+
+    @pytest.mark.parametrize(
+        "flags", [FLAGS[2], FLAGS[3]]
+    )  # Waiting and Failed flags should work
+    @pytest.mark.parametrize("pipeline_name", ["PIPELINE1"])
+    def test_rerun_no_pipestat(self, prep_temp_pep, pipeline_name, flags):
+        """Verify that rerun works with either failed or waiting flags"""
+        tp = prep_temp_pep
+        _make_flags(tp, flags, pipeline_name)
+
+        x = ["rerun", "--looper-config", tp]
+        try:
+            result = main(test_args=x)
+        except Exception:
+            raise pytest.fail("DID RAISE {0}".format(Exception))
+
+        # Only 3 failed flags exist for PIPELINE1, so only 3 samples should be submitted
+        assert result["Jobs submitted"] == 3
 
 
 class TestLooperCheck:
@@ -88,7 +132,7 @@ class TestLooperCheck:
     def test_check_works(self, prep_temp_pep_pipestat, flag_id, pipeline_name):
         """Verify that checking works"""
         tp = prep_temp_pep_pipestat
-        _make_flags(tp, flag_id, pipeline_name)
+        _make_flags_pipestat(tp, flag_id, pipeline_name)
 
         x = ["check", "--looper-config", tp]
 
@@ -106,8 +150,8 @@ class TestLooperCheck:
     def test_check_multi(self, prep_temp_pep_pipestat, flag_id, pipeline_name):
         """Verify that checking works when multiple flags are created"""
         tp = prep_temp_pep_pipestat
-        _make_flags(tp, flag_id, pipeline_name)
-        _make_flags(tp, FLAGS[1], pipeline_name)
+        _make_flags_pipestat(tp, flag_id, pipeline_name)
+        _make_flags_pipestat(tp, FLAGS[1], pipeline_name)
 
         x = ["check", "--looper-config", tp]
         # Multiple flag files SHOULD cause pipestat to throw an assertion error
@@ -120,7 +164,7 @@ class TestLooperCheck:
     def test_check_bogus(self, prep_temp_pep_pipestat, flag_id, pipeline_name):
         """Verify that checking works when bogus flags are created"""
         tp = prep_temp_pep_pipestat
-        _make_flags(tp, flag_id, pipeline_name)
+        _make_flags_pipestat(tp, flag_id, pipeline_name)
 
         x = ["check", "--looper-config", tp]
         try:
