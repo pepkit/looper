@@ -46,7 +46,6 @@ from .utils import (
     sample_folder,
 )
 from pipestat.reports import get_file_for_table
-from pipestat.reports import get_file_for_project
 
 _PKGNAME = "looper"
 _LOGGER = logging.getLogger(_PKGNAME)
@@ -270,7 +269,9 @@ class Destroyer(Executor):
                         sample_name=sample.sample_name
                     )
                     for pipeline_name, psm in psms.items():
-                        psm.remove(record_identifier=sample.sample_name)
+                        psm.backend.remove_record(
+                            record_identifier=sample.sample_name, rm_record=True
+                        )
                 else:
                     _remove_or_dry_run(sample_output_folder, args.dry_run)
 
@@ -694,10 +695,8 @@ def destroy_summary(prj, dry_run=False, project_level=False):
         for name, psm in psms.items():
             _remove_or_dry_run(
                 [
-                    get_file_for_project(
-                        psm,
-                        pipeline_name=psm.pipeline_name,
-                        directory="reports",
+                    get_file_for_table(
+                        psm, pipeline_name=psm.pipeline_name, directory="reports"
                     ),
                     get_file_for_table(
                         psm,
@@ -708,9 +707,6 @@ def destroy_summary(prj, dry_run=False, project_level=False):
                         psm,
                         pipeline_name=psm.pipeline_name,
                         appendix="objs_summary.yaml",
-                    ),
-                    get_file_for_table(
-                        psm, pipeline_name=psm.pipeline_name, appendix="reports"
                     ),
                 ],
                 dry_run,
@@ -726,10 +722,8 @@ def destroy_summary(prj, dry_run=False, project_level=False):
             for name, psm in psms.items():
                 _remove_or_dry_run(
                     [
-                        get_file_for_project(
-                            psm,
-                            pipeline_name=psm.pipeline_name,
-                            directory="reports",
+                        get_file_for_table(
+                            psm, pipeline_name=psm.pipeline_name, directory="reports"
                         ),
                         get_file_for_table(
                             psm,
@@ -742,7 +736,7 @@ def destroy_summary(prj, dry_run=False, project_level=False):
                             appendix="objs_summary.yaml",
                         ),
                         get_file_for_table(
-                            psm, pipeline_name=psm.pipeline_name, appendix="reports"
+                            psm, pipeline_name="", directory="aggregate_results.yaml"
                         ),
                     ],
                     dry_run,
