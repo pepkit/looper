@@ -1,3 +1,5 @@
+import os.path
+
 import pytest
 from peppy.const import *
 from yaml import dump
@@ -10,6 +12,7 @@ from looper.cli_pydantic import main
 from tests.smoketests.test_run import is_connected
 from tempfile import TemporaryDirectory
 from pipestat import PipestatManager
+from pipestat.exceptions import RecordNotFoundError
 
 from yaml import dump, safe_load
 
@@ -137,3 +140,9 @@ def test_comprehensive_looper_pipestat(prep_temp_pep_pipestat):
         result = main(test_args=x)
     except Exception:
         raise pytest.fail("DID RAISE {0}".format(Exception))
+
+    sd = os.path.dirname(path_to_looper_config)
+    tsv_list = [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".tsv")]
+    assert len(tsv_list) == 0
+    with pytest.raises(RecordNotFoundError):
+        retrieved_result = psm.retrieve_one(record_identifier="frog_2")
