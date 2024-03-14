@@ -605,7 +605,7 @@ def is_registry_path(input_string: str) -> bool:
     :return bool: True if input is a registry path
     """
     try:
-        if input_string.endswith(".yaml"):
+        if input_string.endswith(".yaml") or input_string.endswith(".csv"):
             return False
     except AttributeError:
         raise RegistryPathException(

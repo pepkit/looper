@@ -23,6 +23,16 @@ def test_cli(prep_temp_pep):
         raise pytest.fail("DID RAISE {0}".format(Exception))
 
 
+def test_running_csv_pep(prep_temp_pep_csv):
+    tp = prep_temp_pep_csv
+
+    x = ["run", "--looper-config", tp, "--dry-run"]
+    try:
+        main(test_args=x)
+    except Exception:
+        raise pytest.fail("DID RAISE {0}".format(Exception))
+
+
 def is_connected():
     """Determines if local machine can connect to the internet."""
     import socket
@@ -597,3 +607,14 @@ class TestLooperPEPhub:
         )
 
         assert len(init_project.pipeline_interfaces) == 3
+
+    def test_init_project_using_csv(self, prep_temp_pep_csv):
+        """Verify looper runs using pephub in a basic case and return code is 0"""
+        tp = prep_temp_pep_csv
+        with mod_yaml_data(tp) as config_data:
+            pep_config_csv = config_data["pep_config"]
+
+        pep_config_csv = os.path.join(os.path.dirname(tp), pep_config_csv)
+        init_project = Project(cfg=pep_config_csv)
+
+        assert len(init_project.samples) == 2
