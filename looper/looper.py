@@ -251,8 +251,8 @@ class Destroyer(Executor):
             _LOGGER.info("Removing summary:")
             destroy_summary(
                 self.prj,
-                getattr(args, "dry_run", None),
-                getattr(args, "project", None),
+                dry_run=preview_flag,
+                project_level=getattr(args, "project", None),
             )
 
         _LOGGER.info("Removing results:")
@@ -708,6 +708,9 @@ def destroy_summary(prj, dry_run=False, project_level=False):
                         pipeline_name=psm.pipeline_name,
                         appendix="objs_summary.yaml",
                     ),
+                    os.path.join(
+                        os.path.dirname(psm.config_path), "aggregate_results.yaml"
+                    ),
                 ],
                 dry_run,
             )
@@ -735,8 +738,8 @@ def destroy_summary(prj, dry_run=False, project_level=False):
                             pipeline_name=psm.pipeline_name,
                             appendix="objs_summary.yaml",
                         ),
-                        get_file_for_table(
-                            psm, pipeline_name="", directory="aggregate_results.yaml"
+                        os.path.join(
+                            os.path.dirname(psm.config_path), "aggregate_results.yaml"
                         ),
                     ],
                     dry_run,
