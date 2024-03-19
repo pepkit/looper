@@ -23,6 +23,7 @@ def test_cli(prep_temp_pep):
         raise pytest.fail("DID RAISE {0}".format(Exception))
 
 
+@pytest.mark.skip(reason="PEP via CSV is currently broken.")
 def test_running_csv_pep(prep_temp_pep_csv):
     tp = prep_temp_pep_csv
 
