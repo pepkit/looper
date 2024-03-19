@@ -598,6 +598,21 @@ def dotfile_path(directory=os.getcwd(), must_exist=False):
         cur_dir = parent_dir
 
 
+def is_PEP_file_type(input_string: str) -> bool:
+    """
+    Determines if the provided path is actually a file type that Looper can use for loading PEP
+    """
+
+    PEP_FILE_TYPES = ["yaml", "csv"]
+
+    parsed_path = parse_registry_path(input_string)
+
+    if parsed_path["subitem"] in PEP_FILE_TYPES:
+        return True
+    else:
+        return False
+
+
 def is_registry_path(input_string: str) -> bool:
     """
     Check if input is a registry path to pephub

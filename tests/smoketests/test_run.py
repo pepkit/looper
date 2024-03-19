@@ -34,6 +34,15 @@ def test_running_csv_pep(prep_temp_pep_csv):
         raise pytest.fail("DID RAISE {0}".format(Exception))
 
 
+@pytest.mark.parametrize(
+    "path", ["something/example.yaml", "somethingelse/example2.csv"]
+)
+def test_is_PEP_file_type(path):
+
+    result = is_PEP_file_type(path)
+    assert result == True
+
+
 def is_connected():
     """Determines if local machine can connect to the internet."""
     import socket
