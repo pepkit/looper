@@ -605,12 +605,8 @@ def is_PEP_file_type(input_string: str) -> bool:
 
     PEP_FILE_TYPES = ["yaml", "csv"]
 
-    parsed_path = parse_registry_path(input_string)
-
-    if parsed_path["subitem"] in PEP_FILE_TYPES:
-        return True
-    else:
-        return False
+    res = list(filter(input_string.endswith, PEP_FILE_TYPES)) != []
+    return res
 
 
 def is_registry_path(input_string: str) -> bool:

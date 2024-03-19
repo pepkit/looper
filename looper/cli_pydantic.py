@@ -47,6 +47,7 @@ from .utils import (
     init_generic_pipeline,
     read_yaml_file,
     inspect_looper_config_file,
+    is_PEP_file_type,
 )
 
 from typing import List, Tuple
@@ -176,7 +177,23 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
         subcommand_args.ignore_flags = True
 
     # Initialize project
-    if is_registry_path(subcommand_args.config_file):
+    if is_PEP_file_type(subcommand_args.config_file) and os.path.exists(subcommand_args.config_file):
+        try:
+            p = Project(
+                cfg=subcommand_args.config_file,
+                amendments=subcommand_args.amend,
+                divcfg_path=divcfg,
+                runp=subcommand_name == "runp",
+                **{
+                    attr: getattr(subcommand_args, attr)
+                    for attr in CLI_PROJ_ATTRS
+                    if attr in subcommand_args
+                },
+            )
+        except yaml.parser.ParserError as e:
+            _LOGGER.error(f"Project config parse failed -- {e}")
+            sys.exit(1)
+    elif is_registry_path(subcommand_args.config_file):
         if vars(subcommand_args)[SAMPLE_PL_ARG]:
             p = Project(
                 amendments=subcommand_args.amend,
@@ -196,21 +213,10 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
                 f"`sample_pipeline_interface` is missing. Provide it in the parameters."
             )
     else:
-        try:
-            p = Project(
-                cfg=subcommand_args.config_file,
-                amendments=subcommand_args.amend,
-                divcfg_path=divcfg,
-                runp=subcommand_name == "runp",
-                **{
-                    attr: getattr(subcommand_args, attr)
-                    for attr in CLI_PROJ_ATTRS
-                    if attr in subcommand_args
-                },
-            )
-        except yaml.parser.ParserError as e:
-            _LOGGER.error(f"Project config parse failed -- {e}")
-            sys.exit(1)
+        raise MisconfigurationException(
+            f"Cannot load PEP. Check file path or registry path to pep."
+        )
+
 
     selected_compute_pkg = p.selected_compute_package or DEFAULT_COMPUTE_RESOURCES_NAME
     if p.dcc is not None and not p.dcc.activate_package(selected_compute_pkg):
