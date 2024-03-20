@@ -231,6 +231,24 @@ def prep_temp_pep_basic(example_pep_piface_path):
 
 
 @pytest.fixture
+def prep_temp_pep_csv(example_pep_piface_path):
+
+    # Get Path to local copy of hello_looper
+    hello_looper_dir_path = os.path.join(
+        example_pep_piface_path, "hello_looper-dev_derive"
+    )
+
+    # Make local temp copy of hello_looper
+    d = tempfile.mkdtemp()
+    shutil.copytree(hello_looper_dir_path, d, dirs_exist_ok=True)
+
+    advanced_dir = os.path.join(d, "csv")
+    path_to_looper_config = os.path.join(advanced_dir, ".looper.yaml")
+
+    return path_to_looper_config
+
+
+@pytest.fixture
 def prep_temp_config_with_pep(example_pep_piface_path):
     # temp dir
     td = tempfile.mkdtemp()
@@ -285,5 +303,24 @@ def prep_temp_pep_pipestat_advanced(example_pep_piface_path):
 
     advanced_dir = os.path.join(d, "advanced")
     path_to_looper_config = os.path.join(advanced_dir, ".looper_advanced_pipestat.yaml")
+
+    return path_to_looper_config
+
+
+@pytest.fixture
+def prep_temp_pep_pephub(example_pep_piface_path):
+
+    # Get Path to local copy of hello_looper
+
+    hello_looper_dir_path = os.path.join(
+        example_pep_piface_path, "hello_looper-dev_derive"
+    )
+
+    # Make local temp copy of hello_looper
+    d = tempfile.mkdtemp()
+    shutil.copytree(hello_looper_dir_path, d, dirs_exist_ok=True)
+
+    advanced_dir = os.path.join(d, "pephub")
+    path_to_looper_config = os.path.join(advanced_dir, ".looper.yaml")
 
     return path_to_looper_config

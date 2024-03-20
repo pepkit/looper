@@ -472,7 +472,7 @@ def initiate_looper_config(
         return False
 
     if pep_path:
-        if is_registry_path(pep_path):
+        if is_pephub_registry_path(pep_path):
             pass
         else:
             pep_path = expandpath(pep_path)
@@ -562,10 +562,20 @@ def read_looper_config_file(looper_config_path: str) -> dict:
     for k, v in return_dict.items():
         if isinstance(v, str):
             v = expandpath(v)
-            if not os.path.isabs(v) and not is_registry_path(v):
-                return_dict[k] = os.path.join(config_dir_path, v)
-            else:
+            # TODO this is messy because is_pephub_registry needs to fail on anything NOT a pephub registry path
+            # https://github.com/pepkit/ubiquerg/issues/43
+            if is_PEP_file_type(v):
+                if not os.path.isabs(v):
+                    return_dict[k] = os.path.join(config_dir_path, v)
+                else:
+                    return_dict[k] = v
+            elif is_pephub_registry_path(v):
                 return_dict[k] = v
+            else:
+                if not os.path.isabs(v):
+                    return_dict[k] = os.path.join(config_dir_path, v)
+                else:
+                    return_dict[k] = v
 
     return return_dict
 
@@ -598,19 +608,23 @@ def dotfile_path(directory=os.getcwd(), must_exist=False):
         cur_dir = parent_dir
 
 
-def is_registry_path(input_string: str) -> bool:
+def is_PEP_file_type(input_string: str) -> bool:
+    """
+    Determines if the provided path is actually a file type that Looper can use for loading PEP
+    """
+
+    PEP_FILE_TYPES = ["yaml", "csv"]
+
+    res = list(filter(input_string.endswith, PEP_FILE_TYPES)) != []
+    return res
+
+
+def is_pephub_registry_path(input_string: str) -> bool:
     """
     Check if input is a registry path to pephub
     :param str input_string: path to the PEP (or registry path)
     :return bool: True if input is a registry path
     """
-    try:
-        if input_string.endswith(".yaml"):
-            return False
-    except AttributeError:
-        raise RegistryPathException(
-            msg=f"Malformed registry path. Unable to parse {input_string} as a registry path."
-        )
     try:
         registry_path = RegistryPath(**parse_registry_path(input_string))
     except (ValidationError, TypeError):

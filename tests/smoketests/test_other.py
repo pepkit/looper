@@ -3,8 +3,7 @@ import os.path
 import pytest
 from peppy import Project
 
-from looper.const import FLAGS
-from looper.exceptions import PipestatConfigurationException
+from looper.exceptions import PipestatConfigurationException, MisconfigurationException
 from tests.conftest import *
 from looper.cli_pydantic import main
 import pandas as pd
@@ -607,5 +606,5 @@ class TestLooperInspect:
     def test_inspect_no_config_found(self, cmd):
         "Checks inspect command"
         x = [cmd]
-        with pytest.raises(ValueError):
+        with pytest.raises(MisconfigurationException):
             results = main(test_args=x)

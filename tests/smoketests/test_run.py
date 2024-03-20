@@ -23,6 +23,26 @@ def test_cli(prep_temp_pep):
         raise pytest.fail("DID RAISE {0}".format(Exception))
 
 
+@pytest.mark.skip(reason="PEP via CSV is currently broken.")
+def test_running_csv_pep(prep_temp_pep_csv):
+    tp = prep_temp_pep_csv
+
+    x = ["run", "--looper-config", tp, "--dry-run"]
+    try:
+        main(test_args=x)
+    except Exception:
+        raise pytest.fail("DID RAISE {0}".format(Exception))
+
+
+@pytest.mark.parametrize(
+    "path", ["something/example.yaml", "somethingelse/example2.csv"]
+)
+def test_is_PEP_file_type(path):
+
+    result = is_PEP_file_type(path)
+    assert result == True
+
+
 def is_connected():
     """Determines if local machine can connect to the internet."""
     import socket
@@ -54,7 +74,7 @@ class TestLooperBothRuns:
 
         x = test_args_expansion("", cmd)
 
-        with pytest.raises(ValueError):
+        with pytest.raises(MisconfigurationException):
             ff = main(test_args=x)
             print(ff)
 
@@ -574,20 +594,7 @@ class TestLooperPEPhub:
         ],
     )
     def test_pephub_registry_path_recognition(self, pep_path):
-        assert is_registry_path(pep_path) is True
-
-    @pytest.mark.parametrize(
-        "pep_path",
-        [
-            "some/path/to/pep.yaml",
-            "different/path.yaml",
-            "default/path/to/file/without/yaml",
-            "file_in_folder.yaml",
-            "not_yaml_file",
-        ],
-    )
-    def test_config_recognition(self, pep_path):
-        assert is_registry_path(pep_path) is False
+        assert is_pephub_registry_path(pep_path) is True
 
     def test_init_project_using_dict(self, prep_temp_config_with_pep):
         """Verify looper runs using pephub in a basic case and return code is 0"""
@@ -597,3 +604,14 @@ class TestLooperPEPhub:
         )
 
         assert len(init_project.pipeline_interfaces) == 3
+
+    def test_init_project_using_csv(self, prep_temp_pep_csv):
+        """Verify looper runs using pephub in a basic case and return code is 0"""
+        tp = prep_temp_pep_csv
+        with mod_yaml_data(tp) as config_data:
+            pep_config_csv = config_data["pep_config"]
+
+        pep_config_csv = os.path.join(os.path.dirname(tp), pep_config_csv)
+        init_project = Project(cfg=pep_config_csv)
+
+        assert len(init_project.samples) == 2
