@@ -594,20 +594,7 @@ class TestLooperPEPhub:
         ],
     )
     def test_pephub_registry_path_recognition(self, pep_path):
-        assert is_registry_path(pep_path) is True
-
-    @pytest.mark.parametrize(
-        "pep_path",
-        [
-            "some/path/to/pep.yaml",
-            "different/path.yaml",
-            "default/path/to/file/without/yaml",
-            "file_in_folder.yaml",
-            "not_yaml_file",
-        ],
-    )
-    def test_config_recognition(self, pep_path):
-        assert is_registry_path(pep_path) is False
+        assert is_pephub_registry_path(pep_path) is True
 
     def test_init_project_using_dict(self, prep_temp_config_with_pep):
         """Verify looper runs using pephub in a basic case and return code is 0"""

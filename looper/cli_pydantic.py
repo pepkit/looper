@@ -40,7 +40,7 @@ from .project import Project, ProjectContext
 from .utils import (
     dotfile_path,
     enrich_args_via_cfg,
-    is_registry_path,
+    is_pephub_registry_path,
     read_looper_config_file,
     read_looper_dotfile,
     initiate_looper_config,
@@ -195,7 +195,7 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
         except yaml.parser.ParserError as e:
             _LOGGER.error(f"Project config parse failed -- {e}")
             sys.exit(1)
-    elif is_registry_path(subcommand_args.config_file):
+    elif is_pephub_registry_path(subcommand_args.config_file):
         if vars(subcommand_args)[SAMPLE_PL_ARG]:
             p = Project(
                 amendments=subcommand_args.amend,
