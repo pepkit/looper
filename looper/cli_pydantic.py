@@ -177,7 +177,9 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
         subcommand_args.ignore_flags = True
 
     # Initialize project
-    if is_PEP_file_type(subcommand_args.config_file) and os.path.exists(subcommand_args.config_file):
+    if is_PEP_file_type(subcommand_args.config_file) and os.path.exists(
+        subcommand_args.config_file
+    ):
         try:
             p = Project(
                 cfg=subcommand_args.config_file,
@@ -216,7 +218,6 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
         raise MisconfigurationException(
             f"Cannot load PEP. Check file path or registry path to pep."
         )
-
 
     selected_compute_pkg = p.selected_compute_package or DEFAULT_COMPUTE_RESOURCES_NAME
     if p.dcc is not None and not p.dcc.activate_package(selected_compute_pkg):

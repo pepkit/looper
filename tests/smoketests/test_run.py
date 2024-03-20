@@ -74,7 +74,7 @@ class TestLooperBothRuns:
 
         x = test_args_expansion("", cmd)
 
-        with pytest.raises(ValueError):
+        with pytest.raises(MisconfigurationException):
             ff = main(test_args=x)
             print(ff)
 
