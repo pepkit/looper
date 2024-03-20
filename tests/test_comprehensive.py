@@ -146,3 +146,16 @@ def test_comprehensive_looper_pipestat(prep_temp_pep_pipestat):
     assert len(tsv_list) == 0
     with pytest.raises(RecordNotFoundError):
         retrieved_result = psm.retrieve_one(record_identifier="frog_2")
+
+
+def test_comprehensive_looper_pephub(prep_temp_pep_pephub):
+    """Basic test to determine if Looper can run a PEP from PEPHub"""
+
+    path_to_looper_config = prep_temp_pep_pephub
+
+    x = ["run", "--looper-config", path_to_looper_config]
+
+    try:
+        results = main(test_args=x)
+    except Exception:
+        raise pytest.fail("DID RAISE {0}".format(Exception))
