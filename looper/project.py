@@ -126,6 +126,12 @@ class Project(peppyProject):
 
         self[EXTRA_KEY] = {}
 
+        try:
+            # For loading PEPs via CSV, Peppy cannot infer project name.
+            name = self.name
+        except NotImplementedError:
+            self.name = None
+
         # add sample pipeline interface to the project
         if kwargs.get(SAMPLE_PL_ARG):
             self.set_sample_piface(kwargs.get(SAMPLE_PL_ARG))
