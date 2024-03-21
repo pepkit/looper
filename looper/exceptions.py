@@ -37,6 +37,13 @@ class MisconfigurationException(LooperError):
         super(MisconfigurationException, self).__init__(key)
 
 
+class PresubmissionException(LooperError):
+    """Raise during presubmission checks."""
+
+    def __init__(self, key):
+        super(PresubmissionException, self).__init__(key)
+
+
 class RegistryPathException(LooperError):
     """Duplication of pipeline identifier precludes unique pipeline ref."""
 

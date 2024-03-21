@@ -24,7 +24,7 @@ from yaml import dump
 from yacman import FutureYAMLConfigManager as YAMLConfigManager
 
 from .const import *
-from .exceptions import JobSubmissionException, SampleFailedException
+from .exceptions import JobSubmissionException, PresubmissionException
 from .processed_project import populate_sample_paths
 from .utils import fetch_sample_flags, jinja_render_template_strictly
 
@@ -738,6 +738,11 @@ def _exec_pre_submit(piface, namespaces):
                     )
                     _LOGGER.info("Executing pre-submit command: {}".format(cmd))
                     json = loads(check_output(cmd, shell=True))
+                    for key in json.keys():
+                        if key not in list(namespaces.keys()):
+                            raise PresubmissionException(
+                                f"{key} found in pre-submit command template but does not conform to Looper namespaces."
+                            )
                 except Exception as e:
                     if hasattr(e, "output"):
                         print(e.output)
