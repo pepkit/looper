@@ -198,9 +198,7 @@ def example_pep_piface_path_cfg(example_pep_piface_path):
 def prep_temp_pep(example_pep_piface_path):
 
     # Get Path to local copy of hello_looper
-    hello_looper_dir_path = os.path.join(
-        example_pep_piface_path, "hello_looper-dev"
-    )
+    hello_looper_dir_path = os.path.join(example_pep_piface_path, "hello_looper-dev")
 
     # Make local temp copy of hello_looper
     d = tempfile.mkdtemp()
@@ -216,9 +214,7 @@ def prep_temp_pep(example_pep_piface_path):
 def prep_temp_pep_basic(example_pep_piface_path):
 
     # Get Path to local copy of hello_looper
-    hello_looper_dir_path = os.path.join(
-        example_pep_piface_path, "hello_looper-dev"
-    )
+    hello_looper_dir_path = os.path.join(example_pep_piface_path, "hello_looper-dev")
 
     # Make local temp copy of hello_looper
     d = tempfile.mkdtemp()
@@ -234,9 +230,7 @@ def prep_temp_pep_basic(example_pep_piface_path):
 def prep_temp_pep_csv(example_pep_piface_path):
 
     # Get Path to local copy of hello_looper
-    hello_looper_dir_path = os.path.join(
-        example_pep_piface_path, "hello_looper-dev"
-    )
+    hello_looper_dir_path = os.path.join(example_pep_piface_path, "hello_looper-dev")
 
     # Make local temp copy of hello_looper
     d = tempfile.mkdtemp()
@@ -274,9 +268,7 @@ def prep_temp_pep_pipestat(example_pep_piface_path):
 
     # Get Path to local copy of hello_looper
 
-    hello_looper_dir_path = os.path.join(
-        example_pep_piface_path, "hello_looper-dev"
-    )
+    hello_looper_dir_path = os.path.join(example_pep_piface_path, "hello_looper-dev")
 
     # Make local temp copy of hello_looper
     d = tempfile.mkdtemp()
@@ -293,9 +285,7 @@ def prep_temp_pep_pipestat_advanced(example_pep_piface_path):
 
     # Get Path to local copy of hello_looper
 
-    hello_looper_dir_path = os.path.join(
-        example_pep_piface_path, "hello_looper-dev"
-    )
+    hello_looper_dir_path = os.path.join(example_pep_piface_path, "hello_looper-dev")
 
     # Make local temp copy of hello_looper
     d = tempfile.mkdtemp()
@@ -312,9 +302,7 @@ def prep_temp_pep_pephub(example_pep_piface_path):
 
     # Get Path to local copy of hello_looper
 
-    hello_looper_dir_path = os.path.join(
-        example_pep_piface_path, "hello_looper-dev"
-    )
+    hello_looper_dir_path = os.path.join(example_pep_piface_path, "hello_looper-dev")
 
     # Make local temp copy of hello_looper
     d = tempfile.mkdtemp()
