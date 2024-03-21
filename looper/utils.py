@@ -560,6 +560,9 @@ def read_looper_config_file(looper_config_path: str) -> dict:
 
     # Expand paths in case ENV variables are used
     for k, v in return_dict.items():
+        if k == SAMPLE_PL_ARG or k == PROJECT_PL_ARG:
+            # Pipeline interfaces are resolved at a later point. Do it there only to maintain consistency. #474
+            pass
         if isinstance(v, str):
             v = expandpath(v)
             # TODO this is messy because is_pephub_registry needs to fail on anything NOT a pephub registry path
