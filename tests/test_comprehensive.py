@@ -148,6 +148,7 @@ def test_comprehensive_looper_pipestat(prep_temp_pep_pipestat):
         retrieved_result = psm.retrieve_one(record_identifier="frog_2")
 
 
+@pytest.mark.skipif(not is_connected(), reason="This test needs internet access.")
 def test_comprehensive_looper_pephub(prep_temp_pep_pephub):
     """Basic test to determine if Looper can run a PEP from PEPHub"""
 
