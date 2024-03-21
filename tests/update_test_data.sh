@@ -1,6 +1,6 @@
 #!/bin/bash
 
-branch='dev_derive'
+branch='dev'
 
 wget https://github.com/pepkit/hello_looper/archive/refs/heads/${branch}.zip
 mv ${branch}.zip data/

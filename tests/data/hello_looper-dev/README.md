@@ -4,10 +4,12 @@ This repository provides minimal working examples for the [looper pipeline submi
 
 This repository contains examples
 
-1. `/basic` - A basic example pipeline and project.
-2. `/pephub` - Example of how to point looper to PEPhub.
-3. `/pipestat` - Example of a pipeline that uses pipestat for recording results.
-4. `/csv` - How to use a pipeline with a CSV sample table (no YAML config)
+1. `/minimal` - A basic example pipeline and project.
+2. `/intermediate` - An intermediate example pipeline and project with a couple extra options.
+3. `/advanced` - A more advanced example, showcasing the capabilities of Looper.
+4. `/pephub` - Example of how to point looper to PEPhub.
+5. `/pipestat` - Example of a pipeline that uses pipestat for recording results.
+6. `/csv` - How to use a pipeline with a CSV sample table (no YAML config)
 
 Each example contains:
 
