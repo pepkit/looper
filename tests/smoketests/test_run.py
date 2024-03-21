@@ -337,18 +337,16 @@ class TestLooperRunpBehavior:
         except Exception:
             raise pytest.fail("DID RAISE {0}".format(Exception))
 
-    @pytest.mark.skip(reason="Functionality broken")
     @pytest.mark.parametrize("arg", CMD_STRS)
     def test_cmd_extra_project(self, prep_temp_pep, arg):
-
-        # Test is currently broken, see https://github.com/pepkit/looper/issues/475
 
         tp = prep_temp_pep
 
         project_config_path = get_project_config_path(tp)
 
         with mod_yaml_data(project_config_path) as project_config_data:
-            project_config_data[SAMPLE_MODS_KEY][CONSTANT_KEY]["command_extra"] = arg
+            project_config_data["looper"] = {}
+            project_config_data["looper"]["command_extra"] = arg
         x = test_args_expansion(tp, "runp")
 
         try:
