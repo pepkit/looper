@@ -2,6 +2,28 @@
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format.
 
+## [1.8.0] -- 2024-03-29
+
+### Added
+- looper destroy now destroys individual results when pipestat is configured: https://github.com/pepkit/looper/issues/469
+- comprehensive smoketests: https://github.com/pepkit/looper/issues/464
+- allow rerun to work on both failed or waiting flags: https://github.com/pepkit/looper/issues/463
+
+### Changed
+- Migrated `argparse` CLI definition to a pydantic basis for all commands. See: https://github.com/pepkit/looper/issues/438
+- during project load, check if PEP file path is a file first, then check if it is a registry path: https://github.com/pepkit/looper/issues/456 
+- Looper now uses FutureYamlConfigManager due to the yacman refactor v0.9.3: https://github.com/pepkit/looper/issues/452
+
+### Fixed
+- inferring project name when loading PEP from csv: https://github.com/pepkit/looper/issues/484
+- fix inconsistency resolving pipeline interface paths if multiple paths are supplied: https://github.com/pepkit/looper/issues/474
+- fix bug with checking for completed flags: https://github.com/pepkit/looper/issues/470
+- fix looper destroy not properly destroying all related files: https://github.com/pepkit/looper/issues/468
+- looper rerun now only runs failed jobs as intended: https://github.com/pepkit/looper/issues/467 
+- looper inspect now inspects the looper config: https://github.com/pepkit/looper/issues/462
+- Load PEP from CSV: https://github.com/pepkit/looper/issues/456
+
+
 ## [1.7.0] -- 2024-01-26
 
 ### Added
