@@ -126,6 +126,12 @@ class Project(peppyProject):
 
         self[EXTRA_KEY] = {}
 
+        try:
+            # For loading PEPs via CSV, Peppy cannot infer project name.
+            name = self.name
+        except NotImplementedError:
+            self.name = None
+
         # add sample pipeline interface to the project
         if kwargs.get(SAMPLE_PL_ARG):
             self.set_sample_piface(kwargs.get(SAMPLE_PL_ARG))
@@ -144,7 +150,7 @@ class Project(peppyProject):
         self.dcc = (
             None
             if divcfg_path is None
-            else ComputingConfiguration(filepath=divcfg_path)
+            else ComputingConfiguration.from_yaml_file(filepath=divcfg_path)
         )
         if DRY_RUN_KEY in self and not self[DRY_RUN_KEY]:
             _LOGGER.debug("Ensuring project directories exist")

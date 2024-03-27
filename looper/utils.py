@@ -16,9 +16,10 @@ from peppy import Project as peppyProject
 from peppy.const import *
 from ubiquerg import convert_value, expandpath, parse_registry_path
 from pephubclient.constants import RegistryPath
-from pydantic.error_wrappers import ValidationError
+from pydantic import ValidationError
 
 from .const import *
+from .command_models.commands import SUPPORTED_COMMANDS
 from .exceptions import MisconfigurationException, RegistryPathException
 
 _LOGGER = getLogger(__name__)
@@ -94,7 +95,9 @@ def fetch_sample_flags(prj, sample, pl_name, flag_dir=None):
     return [
         x
         for x in folder_contents
-        if os.path.splitext(x)[1] == ".flag" and os.path.basename(x).startswith(pl_name)
+        if os.path.splitext(x)[1] == ".flag"
+        and os.path.basename(x).startswith(pl_name)
+        and sample.sample_name in x
     ]
 
 
@@ -250,19 +253,20 @@ def read_yaml_file(filepath):
     return data
 
 
-def enrich_args_via_cfg(parser_args, aux_parser, test_args=None):
+def enrich_args_via_cfg(subcommand_name, parser_args, aux_parser, test_args=None):
     """
     Read in a looper dotfile and set arguments.
 
     Priority order: CLI > dotfile/config > parser default
 
+    :param subcommand name: the name of the command used
     :param argparse.Namespace parser_args: parsed args by the original parser
     :param argparse.Namespace aux_parser: parsed args by the a parser
         with defaults suppressed
     :return argparse.Namespace: selected argument values
     """
     cfg_args_all = (
-        _get_subcommand_args(parser_args)
+        _get_subcommand_args(subcommand_name, parser_args)
         if os.path.exists(parser_args.config_file)
         else dict()
     )
@@ -273,23 +277,42 @@ def enrich_args_via_cfg(parser_args, aux_parser, test_args=None):
     else:
         cli_args, _ = aux_parser.parse_known_args()
 
-    for dest in vars(parser_args):
-        if dest not in POSITIONAL or not hasattr(result, dest):
-            if dest in cli_args:
-                x = getattr(cli_args, dest)
-                r = convert_value(x) if isinstance(x, str) else x
-            elif cfg_args_all is not None and dest in cfg_args_all:
-                if isinstance(cfg_args_all[dest], list):
-                    r = [convert_value(i) for i in cfg_args_all[dest]]
+    def set_single_arg(argname, default_source_namespace, result_namespace):
+        if argname not in POSITIONAL or not hasattr(result, argname):
+            if argname in cli_args:
+                cli_provided_value = getattr(cli_args, argname)
+                r = (
+                    convert_value(cli_provided_value)
+                    if isinstance(cli_provided_value, str)
+                    else cli_provided_value
+                )
+            elif cfg_args_all is not None and argname in cfg_args_all:
+                if isinstance(cfg_args_all[argname], list):
+                    r = [convert_value(i) for i in cfg_args_all[argname]]
                 else:
-                    r = convert_value(cfg_args_all[dest])
+                    r = convert_value(cfg_args_all[argname])
             else:
-                r = getattr(parser_args, dest)
-            setattr(result, dest, r)
+                r = getattr(default_source_namespace, argname)
+            setattr(result_namespace, argname, r)
+
+    for top_level_argname in vars(parser_args):
+        if top_level_argname not in [cmd.name for cmd in SUPPORTED_COMMANDS]:
+            # this argument is a top-level argument
+            set_single_arg(top_level_argname, parser_args, result)
+        else:
+            # this argument actually is a subcommand
+            enriched_command_namespace = argparse.Namespace()
+            command_namespace = getattr(parser_args, top_level_argname)
+            if command_namespace:
+                for argname in vars(command_namespace):
+                    set_single_arg(
+                        argname, command_namespace, enriched_command_namespace
+                    )
+            setattr(result, top_level_argname, enriched_command_namespace)
     return result
 
 
-def _get_subcommand_args(parser_args):
+def _get_subcommand_args(subcommand_name, parser_args):
     """
     Get the union of values for the subcommand arguments from
     Project.looper, Project.looper.cli.<subcommand> and Project.looper.cli.all.
@@ -321,8 +344,8 @@ def _get_subcommand_args(parser_args):
                 else dict()
             )
             args.update(
-                cfg_args[parser_args.command] or dict()
-                if parser_args.command in cfg_args
+                cfg_args[subcommand_name] or dict()
+                if subcommand_name in cfg_args
                 else dict()
             )
         except (TypeError, KeyError, AttributeError, ValueError) as e:
@@ -449,7 +472,7 @@ def initiate_looper_config(
         return False
 
     if pep_path:
-        if is_registry_path(pep_path):
+        if is_pephub_registry_path(pep_path):
             pass
         else:
             pep_path = expandpath(pep_path)
@@ -537,12 +560,25 @@ def read_looper_config_file(looper_config_path: str) -> dict:
 
     # Expand paths in case ENV variables are used
     for k, v in return_dict.items():
+        if k == SAMPLE_PL_ARG or k == PROJECT_PL_ARG:
+            # Pipeline interfaces are resolved at a later point. Do it there only to maintain consistency. #474
+            pass
         if isinstance(v, str):
             v = expandpath(v)
-            if not os.path.isabs(v) and not is_registry_path(v):
-                return_dict[k] = os.path.join(config_dir_path, v)
-            else:
+            # TODO this is messy because is_pephub_registry needs to fail on anything NOT a pephub registry path
+            # https://github.com/pepkit/ubiquerg/issues/43
+            if is_PEP_file_type(v):
+                if not os.path.isabs(v):
+                    return_dict[k] = os.path.join(config_dir_path, v)
+                else:
+                    return_dict[k] = v
+            elif is_pephub_registry_path(v):
                 return_dict[k] = v
+            else:
+                if not os.path.isabs(v):
+                    return_dict[k] = os.path.join(config_dir_path, v)
+                else:
+                    return_dict[k] = v
 
     return return_dict
 
@@ -575,19 +611,23 @@ def dotfile_path(directory=os.getcwd(), must_exist=False):
         cur_dir = parent_dir
 
 
-def is_registry_path(input_string: str) -> bool:
+def is_PEP_file_type(input_string: str) -> bool:
+    """
+    Determines if the provided path is actually a file type that Looper can use for loading PEP
+    """
+
+    PEP_FILE_TYPES = ["yaml", "csv"]
+
+    res = list(filter(input_string.endswith, PEP_FILE_TYPES)) != []
+    return res
+
+
+def is_pephub_registry_path(input_string: str) -> bool:
     """
     Check if input is a registry path to pephub
     :param str input_string: path to the PEP (or registry path)
     :return bool: True if input is a registry path
     """
-    try:
-        if input_string.endswith(".yaml"):
-            return False
-    except AttributeError:
-        raise RegistryPathException(
-            msg=f"Malformed registry path. Unable to parse {input_string} as a registry path."
-        )
     try:
         registry_path = RegistryPath(**parse_registry_path(input_string))
     except (ValidationError, TypeError):
@@ -767,3 +807,15 @@ def write_submit_script(fp, content, data):
         with open(fp, "w") as f:
             f.write(content)
         return fp
+
+
+def inspect_looper_config_file(looper_config_dict) -> None:
+    """
+    Inspects looper config by printing it to terminal.
+    param dict looper_config_dict: dict representing looper_config
+
+    """
+    # Simply print this to terminal
+    print("LOOPER INSPECT")
+    for key, value in looper_config_dict.items():
+        print(f"{key} {value}")

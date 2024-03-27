@@ -21,7 +21,7 @@ from peppy.exceptions import RemoteYAMLError
 from pipestat import PipestatError
 from ubiquerg import expandpath, is_command_callable
 from yaml import dump
-from yacman import YAMLConfigManager
+from yacman import FutureYAMLConfigManager as YAMLConfigManager
 
 from .const import *
 from .exceptions import JobSubmissionException, SampleFailedException
@@ -85,11 +85,16 @@ def _get_yaml_path(namespaces, template_key, default_name_appendix="", filename=
 
 def write_pipestat_config(looper_pipestat_config_path, pipestat_config_dict):
     """
-    This is run at the project level, not at the sample level.
+    This writes a combined configuration file to be passed to a PipestatManager.
+    :param str looper_pipestat_config_path: path to the created pipestat configuration file
+    :param dict pipestat_config_dict: the dict containing key value pairs to be written to the pipestat configutation
+    return bool
     """
     with open(looper_pipestat_config_path, "w") as f:
         yaml.dump(pipestat_config_dict, f)
-    print(f"Initialized looper config file: {looper_pipestat_config_path}")
+    _LOGGER.debug(
+        msg=f"Initialized pipestat config file: {looper_pipestat_config_path}"
+    )
 
     return True
 
@@ -303,23 +308,27 @@ class SubmissionConductor(object):
 
         use_this_sample = True  # default to running this sample
         msg = None
+        if rerun and sample_statuses == []:
+            msg = f"> Skipping sample because rerun requested, but no failed or waiting flag found."
+            use_this_sample = False
         if sample_statuses:
             status_str = ", ".join(sample_statuses)
             failed_flag = any("failed" in x for x in sample_statuses)
+            waiting_flag = any("waiting" in x for x in sample_statuses)
             if self.ignore_flags:
                 msg = f"> Found existing status: {status_str}. Ignoring."
             else:  # this pipeline already has a status
                 msg = f"> Found existing status: {status_str}. Skipping sample."
-                if failed_flag:
+                if failed_flag and not rerun:
                     msg += " Use rerun to ignore failed status."  # help guidance
                 use_this_sample = False
             if rerun:
                 # Rescue the sample if rerun requested, and failed flag is found
-                if failed_flag:
-                    msg = f"> Re-running failed sample. Status: {status_str}"
+                if failed_flag or waiting_flag:
+                    msg = f"> Re-running sample. Status: {status_str}"
                     use_this_sample = True
                 else:
-                    msg = f"> Skipping sample because rerun requested, but no failed flag found. Status: {status_str}"
+                    msg = f"> Skipping sample because rerun requested, but no failed or waiting flag found. Status: {status_str}"
                     use_this_sample = False
         if msg:
             _LOGGER.info(msg)

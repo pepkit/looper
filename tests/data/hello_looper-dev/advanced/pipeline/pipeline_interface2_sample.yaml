@@ -1,0 +1,16 @@
+pipeline_name: OTHER_PIPELINE2
+pipeline_type: sample
+output_schema: output_schema.yaml
+var_templates:
+  path: "{looper.piface_dir}/pipelines/other_pipeline2.py"
+pre_submit:
+    python_functions:
+      - looper.write_sample_yaml
+command_template: >
+  {pipeline.var_templates.path} --sample-name {sample.sample_name} --req-attr {sample.attr}
+compute:
+  size_dependent_variables: resources-sample.tsv
+
+bioconductor:
+  readFunName: readData
+  readFunPath: readData.R

@@ -1,0 +1,7 @@
+results_file_path: /home/drc/GITHUB/hello_looper/hello_looper/pipestat/./results.yaml
+flag_file_dir: /home/drc/GITHUB/hello_looper/hello_looper/pipestat/./results/flags
+output_dir: /home/drc/GITHUB/hello_looper/hello_looper/pipestat/./results
+record_identifier: frog_2
+schema_path: /home/drc/GITHUB/hello_looper/hello_looper/pipestat/./pipeline_pipestat/pipestat_output_schema.yaml
+pipeline_name: test_pipe
+pipeline_type: sample
