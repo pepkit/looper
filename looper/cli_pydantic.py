@@ -53,6 +53,22 @@ from .utils import (
 from typing import List, Tuple
 
 
+run_arguments_dict = {
+    "-d": "--dry-run",
+    "-l": "--limit",
+    "-k": "--skip",
+    "-o": "--output-dir",
+    "-S": "--sample-pipeline-interfaces",
+    "-P": "--project-pipeline-interfaces",
+    "-p": "--piface",
+    "-i": "--ignore-flags",
+    "-t": "--time-delay",
+    "-x": "--command-extra",
+    "-y": "--command-extra-override",
+    "-f": "--skip-file-checks",
+}
+
+
 def opt_attr_pair(name: str) -> Tuple[str, str]:
     """Takes argument as attribute and returns as tuple of top-level or subcommand used."""
     return f"--{name}", name.replace("-", "_")
@@ -310,6 +326,27 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
                 _LOGGER.warning("No looper configuration was supplied.")
 
 
+def create_command_string(args, command):
+    """
+    This is a workaround for short form arguments not being supported by the pydantic argparse package
+    """
+    arguments_dict = {}
+
+    # Must determine argument dict based on command since there is overlap in shortform keys...
+    if command in ["run", "runp", "rerun"]:
+        arguments_dict = run_arguments_dict
+
+    modified_command_string = []
+    for arg in args:
+        replacement = arguments_dict.get(arg)
+        modified_command_string.append(replacement if replacement else arg)
+
+    if command not in modified_command_string:
+        modified_command_string.insert(command)
+
+    return modified_command_string
+
+
 def main(test_args=None) -> None:
     parser = pydantic2_argparse.ArgumentParser(
         model=TopLevelParser,
@@ -318,9 +355,13 @@ def main(test_args=None) -> None:
         add_help=True,
     )
     if test_args:
-        args = parser.parse_typed_args(args=test_args)
+        command_string = create_command_string(args=test_args, command=test_args[0])
     else:
-        args = parser.parse_typed_args()
+        sys_args = sys.argv[1:]
+        command_string = create_command_string(args=sys_args, command=sys_args[0])
+
+    args = parser.parse_typed_args(args=command_string)
+
     return run_looper(args, parser, test_args=test_args)
 
 

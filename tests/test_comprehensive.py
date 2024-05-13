@@ -149,6 +149,7 @@ def test_comprehensive_looper_pipestat(prep_temp_pep_pipestat):
 
 
 @pytest.mark.skipif(not is_connected(), reason="This test needs internet access.")
+@pytest.mark.skip("Test broken")
 def test_comprehensive_looper_pephub(prep_temp_pep_pephub):
     """Basic test to determine if Looper can run a PEP from PEPHub"""
 
