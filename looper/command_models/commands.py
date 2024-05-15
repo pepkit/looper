@@ -240,43 +240,27 @@ def add_short_arguments(parser: ArgumentParser) -> ArgumentParser:
     This function takes a parser object created under pydantic argparse and adds the short arguments AFTER the initial creation.
     This is a workaround as pydantic-argparse does not currently support this during initial parser creation.
 
-    :param ArgumentParser
-    :return ArgumentParser
+    :param ArgumentParser: parser before adding short arguments
+    :return ArgumentParser: parser after short arguments have been added
     """
-    # Loop through commands, add relevant short arguments
-    # Note there are three long form arguments that have 'f' as a short form. However, they are used on 3 separate commands.
-
-    short_arguments_dict = {
-        "--dry-run": "-d",
-        "--limit": "-l",
-        "--compute": "-c",
-        "--skip": "-k",
-        "--output-dir": "-o",
-        "--sample-pipeline-interfaces": "-S",
-        "--project-pipeline-interfaces": "-P",
-        "--piface": "-p",
-        "--ignore-flags": "-i",
-        "--time-delay": "-t",
-        "--command-extra": "-x",
-        "--command-extra-override": "-y",
-        "--lump-s": "-u",
-        "--lump-n": "-n",
-        "--lump-j": "-j",
-        "--skip-file-checks": "-f",
-        "--force-yes": "-f",
-        "--flags": "-f",
-    }
 
     for cmd in parser._subcommands.choices.keys():
-        for long_key, short_key in short_arguments_dict.items():
-            if long_key in parser._subcommands.choices[cmd]._option_string_actions:
-                argument = parser._subcommands.choices[cmd]._option_string_actions[
-                    long_key
-                ]
-                argument.option_strings = (short_key, long_key)
-                parser._subcommands.choices[cmd]._option_string_actions[
-                    short_key
-                ] = argument
+
+        for argument_enum in list(ArgumentEnum):
+            # First check there is an alias for the argument otherwise skip
+            if argument_enum.value.alias:
+                short_key = argument_enum.value.alias
+                long_key = "--" + argument_enum.value.name.replace(
+                    "_", "-"
+                )  # We must do this because the ArgumentEnum names are transformed during parser creation
+                if long_key in parser._subcommands.choices[cmd]._option_string_actions:
+                    argument = parser._subcommands.choices[cmd]._option_string_actions[
+                        long_key
+                    ]
+                    argument.option_strings = (short_key, long_key)
+                    parser._subcommands.choices[cmd]._option_string_actions[
+                        short_key
+                    ] = argument
 
     return parser
 
