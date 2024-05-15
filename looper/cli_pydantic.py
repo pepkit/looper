@@ -30,6 +30,9 @@ from pydantic2_argparse.argparse.parser import ArgumentParser
 from divvy import select_divvy_config
 
 from . import __version__
+
+from .command_models.arguments import ArgumentEnum
+
 from .command_models.commands import (
     SUPPORTED_COMMANDS,
     TopLevelParser,
@@ -322,7 +325,7 @@ def main(test_args=None) -> None:
         add_help=True,
     )
 
-    parser = add_short_arguments(parser)
+    parser = add_short_arguments(parser, ArgumentEnum)
 
     if test_args:
         args = parser.parse_typed_args(args=test_args)
