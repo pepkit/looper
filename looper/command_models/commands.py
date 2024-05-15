@@ -240,6 +240,7 @@ def add_short_arguments(parser):
     This is a workaround as pydantic-argparse does not currently support this during initial parser creation.
     """
     # Loop through commands, add relevant short arguments
+    # Note there are three long form arguments that have 'f' as a short form. However, they are used on 3 separate commands.
 
     short_arguments_dict = {
         "--dry-run": "-d",
@@ -258,7 +259,7 @@ def add_short_arguments(parser):
         "--lump-n": "-n",
         "--lump-j": "-j",
         "--skip-file-checks": "-f",
-        "--force": "-f",
+        "--force-yes": "-f",
         "--flags": "-f",
     }
 
