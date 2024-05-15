@@ -33,9 +33,13 @@ class Argument(pydantic.fields.FieldInfo):
         `FieldInfo`. These are passed along as they are.
     """
 
-    def __init__(self, name: str, default: Any, description: str, **kwargs) -> None:
+    def __init__(
+        self, name: str, default: Any, description: str, alias: str = None, **kwargs
+    ) -> None:
         self._name = name
-        super().__init__(default=default, description=description, **kwargs)
+        super().__init__(
+            default=default, description=description, alias=alias, **kwargs
+        )
         self._validate()
 
     @property
@@ -77,11 +81,13 @@ class ArgumentEnum(enum.Enum):
 
     IGNORE_FLAGS = Argument(
         name="ignore_flags",
+        alias="-i",
         default=(bool, False),
         description="Ignore run status flags",
     )
     FORCE_YES = Argument(
         name="force_yes",
+        alias="-f",
         default=(bool, False),
         description="Provide upfront confirmation of destruction intent, to skip console query. Default=False",
     )
@@ -100,48 +106,61 @@ class ArgumentEnum(enum.Enum):
 
     FLAGS = Argument(
         name="flags",
+        alias="-f",
         default=(List, []),
         description="Only check samples based on these status flags.",
     )
 
     TIME_DELAY = Argument(
         name="time_delay",
+        alias="-t",
         default=(int, 0),
         description="Time delay in seconds between job submissions (min: 0, max: 30)",
     )
     DRY_RUN = Argument(
-        name="dry_run", default=(bool, False), description="Don't actually submit jobs"
+        name="dry_run",
+        alias="-d",
+        default=(bool, False),
+        description="Don't actually submit jobs",
     )
     COMMAND_EXTRA = Argument(
         name="command_extra",
+        alias="-x",
         default=(str, ""),
         description="String to append to every command",
     )
     COMMAND_EXTRA_OVERRIDE = Argument(
         name="command_extra_override",
+        alias="-y",
         default=(str, ""),
         description="Same as command-extra, but overrides values in PEP",
     )
     LUMP = Argument(
         name="lump",
+        alias="-u",
         default=(float, None),
         description="Total input file size (GB) to batch into one job",
     )
     LUMPN = Argument(
         name="lump_n",
+        alias="-n",
         default=(int, None),
         description="Number of commands to batch into one job",
     )
     LUMPJ = Argument(
         name="lump_j",
+        alias="-j",
         default=(int, None),
         description="Lump samples into number of jobs.",
     )
     LIMIT = Argument(
-        name="limit", default=(int, None), description="Limit to n samples"
+        name="limit", alias="-l", default=(int, None), description="Limit to n samples"
     )
     SKIP = Argument(
-        name="skip", default=(int, None), description="Skip samples by numerical index"
+        name="skip",
+        alias="-k",
+        default=(int, None),
+        description="Skip samples by numerical index",
     )
     CONFIG_FILE = Argument(
         name="config_file",
@@ -165,16 +184,19 @@ class ArgumentEnum(enum.Enum):
     )
     OUTPUT_DIR = Argument(
         name="output_dir",
+        alias="-o",
         default=(str, None),
         description="Output directory",
     )
     SAMPLE_PIPELINE_INTERFACES = Argument(
         name="sample_pipeline_interfaces",
+        alias="-S",
         default=(List, []),
         description="Paths to looper sample config files",
     )
     PROJECT_PIPELINE_INTERFACES = Argument(
         name="project_pipeline_interfaces",
+        alias="-P",
         default=(List, []),
         description="Paths to looper project config files",
     )
@@ -204,6 +226,7 @@ class ArgumentEnum(enum.Enum):
     )
     SKIP_FILE_CHECKS = Argument(
         name="skip_file_checks",
+        alias="-f",
         default=(bool, False),
         description="Do not perform input file checks",
     )
@@ -214,6 +237,7 @@ class ArgumentEnum(enum.Enum):
     )
     COMPUTE = Argument(
         name="compute",
+        alias="-c",
         default=(List, []),
         description="List of key-value pairs (k1=v1)",
     )
