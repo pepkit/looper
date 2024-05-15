@@ -235,7 +235,9 @@ InitParserModel = InitParser.create_model()
 InitPifaceParserModel = InitPifaceParser.create_model()
 
 
-def add_short_arguments(parser: ArgumentParser, argument_enums: Type[ArgumentEnum]) -> ArgumentParser:
+def add_short_arguments(
+    parser: ArgumentParser, argument_enums: Type[ArgumentEnum]
+) -> ArgumentParser:
     """
     This function takes a parser object created under pydantic argparse and adds the short arguments AFTER the initial creation.
     This is a workaround as pydantic-argparse does not currently support this during initial parser creation.
