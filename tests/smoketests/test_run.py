@@ -32,6 +32,19 @@ def test_cli_shortform(prep_temp_pep):
     except Exception:
         raise pytest.fail("DID RAISE {0}".format(Exception))
 
+    x = ["run", "--looper-config", tp, "-d", "-l", "2"]
+    try:
+        main(test_args=x)
+    except Exception:
+        raise pytest.fail("DID RAISE {0}".format(Exception))
+
+    tp = prep_temp_pep
+    x = ["run", "--looper-config", tp, "-d", "-n", "2"]
+    try:
+        main(test_args=x)
+    except Exception:
+        raise pytest.fail("DID RAISE {0}".format(Exception))
+
 
 def test_running_csv_pep(prep_temp_pep_csv):
     tp = prep_temp_pep_csv

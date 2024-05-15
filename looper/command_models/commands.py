@@ -234,6 +234,48 @@ InitParserModel = InitParser.create_model()
 InitPifaceParserModel = InitPifaceParser.create_model()
 
 
+def add_short_arguments(parser):
+    """
+    This function takes a parser object created under pydantic argparse and adds the short arguments AFTER the initial creation.
+    This is a workaround as pydantic-argparse does not currently support this during initial parser creation.
+    """
+    # Loop through commands, add relevant short arguments
+
+    short_arguments_dict = {
+        "--dry-run": "-d",
+        "--limit": "-l",
+        "--compute": "-c",
+        "--skip": "-k",
+        "--output-dir": "-o",
+        "--sample-pipeline-interfaces": "-S",
+        "--project-pipeline-interfaces": "-P",
+        "--piface": "-p",
+        "--ignore-flags": "-i",
+        "--time-delay": "-t",
+        "--command-extra": "-x",
+        "--command-extra-override": "-y",
+        "--lump-s": "-u",
+        "--lump-n": "-n",
+        "--lump-j": "-j",
+        "--skip-file-checks": "-f",
+        "--force": "-f",
+        "--flags": "-f",
+    }
+
+    for cmd in parser._subcommands.choices.keys():
+        for long_key, short_key in short_arguments_dict.items():
+            if long_key in parser._subcommands.choices[cmd]._option_string_actions:
+                argument = parser._subcommands.choices[cmd]._option_string_actions[
+                    long_key
+                ]
+                argument.option_strings = (short_key, long_key)
+                parser._subcommands.choices[cmd]._option_string_actions[
+                    short_key
+                ] = argument
+
+    return parser
+
+
 SUPPORTED_COMMANDS = [
     RunParser,
     RerunParser,

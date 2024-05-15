@@ -30,7 +30,11 @@ from pydantic2_argparse.argparse.parser import ArgumentParser
 from divvy import select_divvy_config
 
 from . import __version__
-from .command_models.commands import SUPPORTED_COMMANDS, TopLevelParser
+from .command_models.commands import (
+    SUPPORTED_COMMANDS,
+    TopLevelParser,
+    add_short_arguments,
+)
 from .const import *
 from .divvy import DEFAULT_COMPUTE_RESOURCES_NAME, select_divvy_config
 from .exceptions import *
@@ -51,64 +55,6 @@ from .utils import (
 )
 
 from typing import List, Tuple
-
-
-run_arguments_dict = {
-    "-d": "--dry-run",
-    "-c": "--compute",
-    "-l": "--limit",
-    "-k": "--skip",
-    "-o": "--output-dir",
-    "-S": "--sample-pipeline-interfaces",
-    "-P": "--project-pipeline-interfaces",
-    "-p": "--piface",
-    "-i": "--ignore-flags",
-    "-t": "--time-delay",
-    "-x": "--command-extra",
-    "-y": "--command-extra-override",
-    "-f": "--skip-file-checks",
-    "-u": "--lump-s",
-    "-n": "--lump-n",
-    "-j": "--lump-j",
-}
-
-init_arguments_dict = {
-    "-d": "--dry-run",
-    "-c": "--compute",
-    "-l": "--limit",
-    "-k": "--skip",
-    "-o": "--output-dir",
-    "-S": "--sample-pipeline-interfaces",
-    "-P": "--project-pipeline-interfaces",
-    "-p": "--piface",
-    "-i": "--ignore-flags",
-    "-t": "--time-delay",
-    "-x": "--command-extra",
-    "-y": "--command-extra-override",
-    "-f": "--force",
-    "-u": "--lump-s",
-    "-n": "--lump-n",
-    "-j": "--lump-j",
-}
-
-check_arguments_dict = {
-    "-d": "--dry-run",
-    "-c": "--compute",
-    "-l": "--limit",
-    "-k": "--skip",
-    "-o": "--output-dir",
-    "-S": "--sample-pipeline-interfaces",
-    "-P": "--project-pipeline-interfaces",
-    "-p": "--piface",
-    "-i": "--ignore-flags",
-    "-t": "--time-delay",
-    "-x": "--command-extra",
-    "-y": "--command-extra-override",
-    "-f": "--flags",
-    "-u": "--lump-s",
-    "-n": "--lump-n",
-    "-j": "--lump-j",
-}
 
 
 def opt_attr_pair(name: str) -> Tuple[str, str]:
@@ -368,46 +314,6 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
                 _LOGGER.warning("No looper configuration was supplied.")
 
 
-def create_command_string(args: list[str], command: str):
-    """
-    This is a workaround for short form arguments not being supported by the pydantic argparse package.
-    :param args: list[str] taken from test_args or sys.argv
-    :param command: str  high level command
-    :return modified_command_string: list[str] that has been modified, replacing shortforms with longforms
-    """
-    arguments_dict = {}
-
-    # Must determine argument dict based on command since there is overlap in shortform keys for a couple of commands
-    if command in [
-        "run",
-        "runp",
-        "rerun",
-        "table",
-        "report",
-        "destroy",
-        "clean",
-        "inspect",
-        "link",
-    ]:
-        arguments_dict = run_arguments_dict
-    if command in ["init"]:
-        arguments_dict = init_arguments_dict
-    if command in ["check"]:
-        arguments_dict = check_arguments_dict
-
-    modified_command_string = []
-    for arg in args:
-        # Replace shortform with long form based on the dictionary
-        replacement = arguments_dict.get(arg)
-        modified_command_string.append(replacement if replacement else arg)
-
-    if command not in modified_command_string:
-        # required when using sys.argv during normal usage i.e. not test_args
-        modified_command_string.insert(command)
-
-    return modified_command_string
-
-
 def main(test_args=None) -> None:
     parser = pydantic2_argparse.ArgumentParser(
         model=TopLevelParser,
@@ -415,13 +321,13 @@ def main(test_args=None) -> None:
         description="Looper Pydantic Argument Parser",
         add_help=True,
     )
-    if test_args:
-        command_string = create_command_string(args=test_args, command=test_args[0])
-    else:
-        sys_args = sys.argv[1:]
-        command_string = create_command_string(args=sys_args, command=sys_args[0])
 
-    args = parser.parse_typed_args(args=command_string)
+    parser = add_short_arguments(parser)
+
+    if test_args:
+        args = parser.parse_typed_args(args=test_args)
+    else:
+        args = parser.parse_typed_args()
 
     return run_looper(args, parser, test_args=test_args)
 
