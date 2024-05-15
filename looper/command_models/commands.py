@@ -9,6 +9,7 @@ import pydantic.v1 as pydantic
 
 from ..const import MESSAGE_BY_SUBCOMMAND
 from .arguments import Argument, ArgumentEnum
+from pydantic2_argparse import ArgumentParser
 
 
 @dataclass
@@ -234,10 +235,13 @@ InitParserModel = InitParser.create_model()
 InitPifaceParserModel = InitPifaceParser.create_model()
 
 
-def add_short_arguments(parser):
+def add_short_arguments(parser: ArgumentParser) -> ArgumentParser:
     """
     This function takes a parser object created under pydantic argparse and adds the short arguments AFTER the initial creation.
     This is a workaround as pydantic-argparse does not currently support this during initial parser creation.
+
+    :param ArgumentParser
+    :return ArgumentParser
     """
     # Loop through commands, add relevant short arguments
     # Note there are three long form arguments that have 'f' as a short form. However, they are used on 3 separate commands.
