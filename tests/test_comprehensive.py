@@ -149,9 +149,10 @@ def test_comprehensive_looper_pipestat(prep_temp_pep_pipestat):
 
 
 @pytest.mark.skipif(not is_connected(), reason="This test needs internet access.")
+@pytest.mark.skip(reason="user must be logged into pephub otherwise this will fail.")
 def test_comprehensive_looper_pephub(prep_temp_pep_pephub):
     """Basic test to determine if Looper can run a PEP from PEPHub"""
-
+    # TODO need to add way to check if user is logged into pephub and then run test otherwise skip
     path_to_looper_config = prep_temp_pep_pephub
 
     x = ["run", "--looper-config", path_to_looper_config]
