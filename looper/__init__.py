@@ -25,6 +25,7 @@ from .plugins import (
     write_sample_yaml_cwl,
     write_sample_yaml_prj,
     write_custom_template,
+    # write_local_pipestat_config,
 )
 from .const import *
 from .pipeline_interface import PipelineInterface

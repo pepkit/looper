@@ -468,6 +468,128 @@ class Project(peppyProject):
             for pipeline_name, pipestat_vars in pipestat_configs.items()
         }
 
+    def _check_if_pipestat_configured_2(self):
+
+        # First check if pipestat key is in looper_config, if not return false
+
+        if PIPESTAT_KEY not in self[EXTRA_KEY]:
+            return False
+        else:
+            # If pipestat key is available assume user desires pipestat usage
+            # This should return True OR raise an exception at this point.
+            return self._get_pipestat_configuration2()
+
+    def _get_pipestat_configuration2(self):
+
+        # First check if it already exists
+        print("DEBUG!")
+
+        for piface in self.pipeline_interfaces:
+            print(piface)
+            # first check if this piface has a psm?
+
+            if not self._check_for_existing_pipestat_config(piface):
+                self._create_pipestat_config(piface)
+
+        return True
+
+    def _check_for_existing_pipestat_config(self, piface):
+        """
+
+        config files should be in looper output directory and named as:
+
+        pipestat_config_pipelinename.yaml
+
+        """
+
+        # Cannot do much if we cannot retrieve the pipeline_name
+        try:
+            pipeline_name = piface.data["pipeline_name"]
+        except KeyError:
+            raise Exception(
+                "To use pipestat, a pipeline_name must be set in the pipeline interface."
+            )
+
+        config_file_name = f"pipestat_config_{pipeline_name}.yaml"
+        output_dir = expandpath(self.output_dir)
+
+        config_file_path = os.path.join(
+            # os.path.dirname(output_dir), config_file_name
+            output_dir,
+            config_file_name,
+        )
+
+        return os.path.exists(config_file_path)
+
+    def _create_pipestat_config(self, piface):
+        """
+        Each piface needs its own config file and associated psm
+        """
+
+        if PIPESTAT_KEY in self[EXTRA_KEY]:
+            pipestat_config_dict = self[EXTRA_KEY][PIPESTAT_KEY]
+        else:
+            _LOGGER.debug(
+                f"'{PIPESTAT_KEY}' not found in '{LOOPER_KEY}' section of the "
+                f"project configuration file."
+            )
+            # We cannot use pipestat without it being defined in the looper config file.
+            raise ValueError
+
+        # Expand paths in the event ENV variables were used in config files
+        output_dir = expandpath(self.output_dir)
+
+        pipestat_config_dict.update({"output_dir": output_dir})
+
+        if "output_schema" in piface.data:
+            schema_path = expandpath(piface.data["output_schema"])
+            if not os.path.isabs(schema_path):
+                # Get path relative to the pipeline_interface
+                schema_path = os.path.join(
+                    os.path.dirname(piface.pipe_iface_file), schema_path
+                )
+            pipestat_config_dict.update({"schema_path": schema_path})
+        if "pipeline_name" in piface.data:
+            pipeline_name = piface.data["pipeline_name"]
+            pipestat_config_dict.update({"pipeline_name": piface.data["pipeline_name"]})
+        if "pipeline_type" in piface.data:
+            pipestat_config_dict.update({"pipeline_type": piface.data["pipeline_type"]})
+
+        try:
+            # TODO if user gives non-absolute path should we force results to be in a pipeline folder?
+            # TODO otherwise pipelines could write to the same results file!
+            results_file_path = expandpath(pipestat_config_dict["results_file_path"])
+            if not os.path.exists(os.path.dirname(results_file_path)):
+                results_file_path = os.path.join(
+                    os.path.dirname(output_dir), results_file_path
+                )
+            pipestat_config_dict.update({"results_file_path": results_file_path})
+        except KeyError:
+            results_file_path = None
+
+        try:
+            flag_file_dir = expandpath(pipestat_config_dict["flag_file_dir"])
+            if not os.path.isabs(flag_file_dir):
+                flag_file_dir = os.path.join(os.path.dirname(output_dir), flag_file_dir)
+            pipestat_config_dict.update({"flag_file_dir": flag_file_dir})
+        except KeyError:
+            flag_file_dir = None
+
+        # Pipestat_dict_ is now updated from all sources and can be written to a yaml.
+        pipestat_config_path = os.path.join(
+            # os.path.dirname(output_dir), f"pipestat_config_{pipeline_name}.yaml"
+            output_dir,
+            f"pipestat_config_{pipeline_name}.yaml",
+        )
+
+        # Two end goals, create a config file
+        write_pipestat_config(pipestat_config_path, pipestat_config_dict)
+
+        # piface['psm'] = PipestatManager(config_file=pipestat_config_path)
+        piface.psm = PipestatManager(config_file=pipestat_config_path)
+
+        return None
+
     def _check_if_pipestat_configured(self, project_level=False):
         """
         A helper method determining whether pipestat configuration is complete

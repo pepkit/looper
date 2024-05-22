@@ -241,6 +241,10 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
         selector_flag=subcommand_args.sel_flag,
         exclusion_flag=subcommand_args.exc_flag,
     ) as prj:
+
+        # Check at the beginning if user wants to use pipestat and pipestat is configurable
+        is_pipestat_configured = prj._check_if_pipestat_configured_2()
+
         if subcommand_name in ["run", "rerun"]:
             rerun = subcommand_name == "rerun"
             run = Runner(prj)

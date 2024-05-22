@@ -90,6 +90,13 @@ def write_pipestat_config(looper_pipestat_config_path, pipestat_config_dict):
     :param dict pipestat_config_dict: the dict containing key value pairs to be written to the pipestat configutation
     return bool
     """
+
+    if not os.path.exists(os.path.dirname(looper_pipestat_config_path)):
+        try:
+            os.makedirs(os.path.dirname(looper_pipestat_config_path))
+        except FileExistsError:
+            pass
+
     with open(looper_pipestat_config_path, "w") as f:
         yaml.dump(pipestat_config_dict, f)
     _LOGGER.debug(
