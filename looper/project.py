@@ -474,10 +474,13 @@ class Project(peppyProject):
 
         if PIPESTAT_KEY not in self[EXTRA_KEY]:
             return False
-        else:
-            # If pipestat key is available assume user desires pipestat usage
-            # This should return True OR raise an exception at this point.
-            return self._get_pipestat_configuration2()
+        elif PIPESTAT_KEY in self[EXTRA_KEY]:
+            if self[EXTRA_KEY][PIPESTAT_KEY] is None:
+                return False
+            else:
+                # If pipestat key is available assume user desires pipestat usage
+                # This should return True OR raise an exception at this point.
+                return self._get_pipestat_configuration2()
 
     def _get_pipestat_configuration2(self):
 
