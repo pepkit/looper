@@ -263,7 +263,7 @@ class Destroyer(Executor):
         """
 
         use_pipestat = (
-            self.prj.pipestat_configured_project
+            self.prj.pipestat_configured
             if getattr(args, "project", None)
             else self.prj.pipestat_configured
         )
@@ -748,8 +748,12 @@ def destroy_summary(prj, dry_run=False, project_level=False):
     This function is for use with pipestat configured projects.
     """
 
+    psms = {}
     if project_level:
-        psms = prj.get_pipestat_managers(project_level=True)
+        for piface in prj.pipeline_interfaces:
+            if piface.psm.pipeline_type == "project":
+                psms[piface.psm.pipeline_name] = piface.psm
+
         for name, psm in psms.items():
             _remove_or_dry_run(
                 [
@@ -773,35 +777,38 @@ def destroy_summary(prj, dry_run=False, project_level=False):
                 dry_run,
             )
     else:
-        for piface_source_samples in prj._samples_by_piface(prj.piface_key).values():
-            # For each piface_key, we have a list of samples, but we only need one sample from the list to
-            # call the related pipestat manager object which will pull ALL samples when using psm.table
-            first_sample_name = list(piface_source_samples)[0]
-            psms = prj.get_pipestat_managers(
-                sample_name=first_sample_name, project_level=False
+        for piface in prj.pipeline_interfaces:
+            if piface.psm.pipeline_type == "sample":
+                psms[piface.psm.pipeline_name] = piface.psm
+        # for piface_source_samples in prj._samples_by_piface(prj.piface_key).values():
+        #     # For each piface_key, we have a list of samples, but we only need one sample from the list to
+        #     # call the related pipestat manager object which will pull ALL samples when using psm.table
+        #     first_sample_name = list(piface_source_samples)[0]
+        #     psms = prj.get_pipestat_managers(
+        #         sample_name=first_sample_name, project_level=False
+        #     )
+        for name, psm in psms.items():
+            _remove_or_dry_run(
+                [
+                    get_file_for_table(
+                        psm, pipeline_name=psm.pipeline_name, directory="reports"
+                    ),
+                    get_file_for_table(
+                        psm,
+                        pipeline_name=psm.pipeline_name,
+                        appendix="stats_summary.tsv",
+                    ),
+                    get_file_for_table(
+                        psm,
+                        pipeline_name=psm.pipeline_name,
+                        appendix="objs_summary.yaml",
+                    ),
+                    os.path.join(
+                        os.path.dirname(psm.config_path), "aggregate_results.yaml"
+                    ),
+                ],
+                dry_run,
             )
-            for name, psm in psms.items():
-                _remove_or_dry_run(
-                    [
-                        get_file_for_table(
-                            psm, pipeline_name=psm.pipeline_name, directory="reports"
-                        ),
-                        get_file_for_table(
-                            psm,
-                            pipeline_name=psm.pipeline_name,
-                            appendix="stats_summary.tsv",
-                        ),
-                        get_file_for_table(
-                            psm,
-                            pipeline_name=psm.pipeline_name,
-                            appendix="objs_summary.yaml",
-                        ),
-                        os.path.join(
-                            os.path.dirname(psm.config_path), "aggregate_results.yaml"
-                        ),
-                    ],
-                    dry_run,
-                )
 
 
 class LooperCounter(object):
