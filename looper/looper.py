@@ -423,10 +423,8 @@ class Runner(Executor):
             )
             submission_conductors[piface.pipe_iface_file] = conductor
 
-        _LOGGER.info(f"Pipestat compatible: {self.prj.pipestat_configured_project}")
-        self.debug["Pipestat compatible"] = (
-            self.prj.pipestat_configured_project or self.prj.pipestat_configured
-        )
+        _LOGGER.info(f"Pipestat compatible: {self.prj.pipestat_configured}")
+        self.debug["Pipestat compatible"] = self.prj.pipestat_configured
 
         for sample in select_samples(prj=self.prj, args=args):
             pl_fails = []

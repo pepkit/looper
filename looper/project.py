@@ -340,7 +340,7 @@ class Project(peppyProject):
 
         :return bool: whether pipestat configuration is complete
         """
-        return self._check_if_pipestat_configured()
+        return self._check_if_pipestat_configured_2()
 
     @cached_property
     def pipestat_configured_project(self):
@@ -491,8 +491,12 @@ class Project(peppyProject):
             print(piface)
             # first check if this piface has a psm?
 
-            if not self._check_for_existing_pipestat_config(piface):
+            pipestat_config_path = self._check_for_existing_pipestat_config(piface)
+
+            if not pipestat_config_path:
                 self._create_pipestat_config(piface)
+            else:
+                piface.psm = PipestatManager(config_file=pipestat_config_path)
 
         return True
 
@@ -522,7 +526,10 @@ class Project(peppyProject):
             config_file_name,
         )
 
-        return os.path.exists(config_file_path)
+        if os.path.exists(config_file_path):
+            return config_file_path
+        else:
+            return None
 
     def _create_pipestat_config(self, piface):
         """
