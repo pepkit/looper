@@ -66,12 +66,19 @@ def test_comprehensive_looper_pipestat(prep_temp_pep_pipestat):
     # open up the project config and replace the derived attributes with the path to the data. In a way, this simulates using the environment variables.
     pipestat_project_file = get_project_config_path(path_to_looper_config)
 
+    pipestat_pipeline_interface_file = os.path.join(pipestat_dir, "pipeline_pipestat/pipeline_interface.yaml")
+
     with open(pipestat_project_file, "r") as f:
         pipestat_project_data = safe_load(f)
 
     pipestat_project_data["sample_modifiers"]["derive"]["sources"]["source1"] = (
         os.path.join(pipestat_dir, "data/{sample_name}.txt")
     )
+
+    with open(pipestat_pipeline_interface_file, "r") as f:
+        pipestat_piface_data = safe_load(f)
+
+    pipeline_name =  pipestat_piface_data["pipeline_name"]
 
     with open(pipestat_project_file, "w") as f:
         dump(pipestat_project_data, f)
@@ -92,7 +99,8 @@ def test_comprehensive_looper_pipestat(prep_temp_pep_pipestat):
 
     # looper cannot create flags, the pipeline or pipestat does that
     # if you do not specify flag dir, pipestat places them in the same dir as config file
-    path_to_pipestat_config = os.path.join(pipestat_dir, "looper_pipestat_config.yaml")
+    path_to_pipestat_config = os.path.join(pipestat_dir, f"results/pipestat_config_{pipeline_name}.yaml")
+    # pipestat_config_example_pipestat_pipeline.yaml
     psm = PipestatManager(config_file=path_to_pipestat_config)
     psm.set_status(record_identifier="frog_1", status_identifier="completed")
     psm.set_status(record_identifier="frog_2", status_identifier="completed")
