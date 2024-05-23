@@ -642,23 +642,35 @@ class Linker(Executor):
         project_level = getattr(args, "project", None)
         link_dir = getattr(args, "output_dir", None)
 
+        psms = {}
+
         if project_level:
-            psms = self.prj.get_pipestat_managers(project_level=True)
-            for name, psm in psms.items():
-                linked_results_path = psm.link(link_dir=link_dir)
-                print(f"Linked directory: {linked_results_path}")
+            for piface in self.prj.pipeline_interfaces:
+                if piface.psm.pipeline_type == "project":
+                    psms[piface.psm.pipeline_name] = piface.psm
+                    linked_results_path = piface.psm.link(link_dir=link_dir)
+                    print(f"Linked directory: {linked_results_path}")
+            # psms = self.prj.get_pipestat_managers(project_level=True)
+            # for name, psm in psms.items():
+            #     linked_results_path = psm.link(link_dir=link_dir)
+            #     print(f"Linked directory: {linked_results_path}")
         else:
-            for piface_source_samples in self.prj._samples_by_piface(
-                self.prj.piface_key
-            ).values():
-                # For each piface_key, we have a list of samples, but we only need one sample from the list to
-                # call the related pipestat manager object which will pull ALL samples when using psm.summarize
-                first_sample_name = list(piface_source_samples)[0]
-                psms = self.prj.get_pipestat_managers(
-                    sample_name=first_sample_name, project_level=False
-                )
-                for name, psm in psms.items():
-                    linked_results_path = psm.link(link_dir=link_dir)
+            # for piface_source_samples in self.prj._samples_by_piface(
+            #     self.prj.piface_key
+            # ).values():
+            #     # For each piface_key, we have a list of samples, but we only need one sample from the list to
+            #     # call the related pipestat manager object which will pull ALL samples when using psm.summarize
+            #     first_sample_name = list(piface_source_samples)[0]
+            #     psms = self.prj.get_pipestat_managers(
+            #         sample_name=first_sample_name, project_level=False
+            #     )
+            #     for name, psm in psms.items():
+            #         linked_results_path = psm.link(link_dir=link_dir)
+            #         print(f"Linked directory: {linked_results_path}")
+            for piface in self.prj.pipeline_interfaces:
+                if piface.psm.pipeline_type == "sample":
+                    psms[piface.psm.pipeline_name] = piface.psm
+                    linked_results_path = piface.psm.link(link_dir=link_dir)
                     print(f"Linked directory: {linked_results_path}")
 
 
@@ -672,22 +684,31 @@ class Tabulator(Executor):
         # p = self.prj
         project_level = getattr(args, "project", None)
         results = []
+        psms = {}
         if project_level:
-            psms = self.prj.get_pipestat_managers(project_level=True)
-            for name, psm in psms.items():
-                results = psm.table()
+            for piface in self.prj.pipeline_interfaces:
+                if piface.psm.pipeline_type == "project":
+                    psms[piface.psm.pipeline_name] = piface.psm
+                    results = piface.psm.table()
+            # psms = self.prj.get_pipestat_managers(project_level=True)
+            # for name, psm in psms.items():
+            #     results = psm.table()
         else:
-            for piface_source_samples in self.prj._samples_by_piface(
-                self.prj.piface_key
-            ).values():
-                # For each piface_key, we have a list of samples, but we only need one sample from the list to
-                # call the related pipestat manager object which will pull ALL samples when using psm.table
-                first_sample_name = list(piface_source_samples)[0]
-                psms = self.prj.get_pipestat_managers(
-                    sample_name=first_sample_name, project_level=False
-                )
-                for name, psm in psms.items():
-                    results = psm.table()
+            # for piface_source_samples in self.prj._samples_by_piface(
+            #     self.prj.piface_key
+            # ).values():
+            #     # For each piface_key, we have a list of samples, but we only need one sample from the list to
+            #     # call the related pipestat manager object which will pull ALL samples when using psm.table
+            #     first_sample_name = list(piface_source_samples)[0]
+            #     psms = self.prj.get_pipestat_managers(
+            #         sample_name=first_sample_name, project_level=False
+            #     )
+            #     for name, psm in psms.items():
+            #         results = psm.table()
+            for piface in self.prj.pipeline_interfaces:
+                if piface.psm.pipeline_type == "sample":
+                    psms[piface.psm.pipeline_name] = piface.psm
+                    results = piface.psm.table()
         # Results contains paths to stats and object summaries.
         return results
 
