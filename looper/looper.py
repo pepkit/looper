@@ -88,21 +88,41 @@ class Checker(Executor):
 
         # aggregate pipeline status data
         status = {}
+
+        psms = {}
         if getattr(args, "project", None):
-            psms = self.prj.get_pipestat_managers(project_level=True)
-            for pipeline_name, psm in psms.items():
-                s = psm.get_status() or "unknown"
-                status.setdefault(pipeline_name, {})
-                status[pipeline_name][self.prj.name] = s
-                _LOGGER.debug(f"{self.prj.name} ({pipeline_name}): {s}")
+            # psms = self.prj.get_pipestat_managers(project_level=True)
+            # for pipeline_name, psm in psms.items():
+            #     s = psm.get_status() or "unknown"
+            #     status.setdefault(pipeline_name, {})
+            #     status[pipeline_name][self.prj.name] = s
+            #     _LOGGER.debug(f"{self.prj.name} ({pipeline_name}): {s}")
+
+            for piface in self.prj.pipeline_interfaces:
+                if piface.psm.pipeline_type == "project":
+                    psms[piface.psm.pipeline_name] = piface.psm
+                    s = piface.psm.get_status() or "unknown"
+                    status.setdefault(piface.psm.pipeline_name, {})
+                    status[piface.psm.pipeline_name][self.prj.name] = s
+                    _LOGGER.debug(f"{self.prj.name} ({piface.psm.pipeline_name}): {s}")
+
         else:
             for sample in self.prj.samples:
-                psms = self.prj.get_pipestat_managers(sample_name=sample.sample_name)
-                for pipeline_name, psm in psms.items():
-                    s = psm.get_status(record_identifier=sample.sample_name)
-                    status.setdefault(pipeline_name, {})
-                    status[pipeline_name][sample.sample_name] = s
-                    _LOGGER.debug(f"{sample.sample_name} ({pipeline_name}): {s}")
+                for piface in sample.project.pipeline_interfaces:
+                    if piface.psm.pipeline_type == "sample":
+                        psms[piface.psm.pipeline_name] = piface.psm
+                        s = piface.psm.get_status(record_identifier=sample.sample_name)
+                        status.setdefault(piface.psm.pipeline_name, {})
+                        status[piface.psm.pipeline_name][sample.sample_name] = s
+                        _LOGGER.debug(
+                            f"{sample.sample_name} ({piface.psm.pipeline_name}): {s}"
+                        )
+                # psms = self.prj.get_pipestat_managers(sample_name=sample.sample_name)
+                # for pipeline_name, psm in psms.items():
+                #     s = psm.get_status(record_identifier=sample.sample_name)
+                #     status.setdefault(pipeline_name, {})
+                #     status[pipeline_name][sample.sample_name] = s
+                #     _LOGGER.debug(f"{sample.sample_name} ({pipeline_name}): {s}")
 
         console = Console()
 
@@ -116,7 +136,7 @@ class Checker(Executor):
             )
             table.add_column(f"Status", justify="center")
             table.add_column("Jobs count/total jobs", justify="center")
-            for status_id in psm.status_schema.keys():
+            for status_id in psms[pipeline_name].status_schema.keys():
                 status_list = list(pipeline_status.values())
                 if status_id in status_list:
                     status_count = status_list.count(status_id)
@@ -141,7 +161,7 @@ class Checker(Executor):
                 for name, status_id in pipeline_status.items():
                     try:
                         color = Color.from_rgb(
-                            *psm.status_schema[status_id]["color"]
+                            *psms[pipeline_name].status_schema[status_id]["color"]
                         ).name
                     except KeyError:
                         color = "#bcbcbc"
@@ -150,16 +170,17 @@ class Checker(Executor):
                 console.print(table)
 
         if args.describe_codes:
+            # TODO this needs to be redone because it only takes the last psm in the list and gets status code and descriptions
             table = Table(
                 show_header=True,
                 header_style="bold magenta",
                 title=f"Status codes description",
-                width=len(psm.status_schema_source) + 20,
-                caption=f"Descriptions source: {psm.status_schema_source}",
+                width=len(psms[pipeline_name].status_schema_source) + 20,
+                caption=f"Descriptions source: {psms[pipeline_name].status_schema_source}",
             )
             table.add_column("Status code", justify="center")
             table.add_column("Description", justify="left")
-            for status, status_obj in psm.status_schema.items():
+            for status, status_obj in psms[pipeline_name].status_schema.items():
                 if "description" in status_obj:
                     desc = status_obj["description"]
                 else:
