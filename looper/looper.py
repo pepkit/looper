@@ -583,35 +583,53 @@ class Reporter(Executor):
 
         portable = args.portable
 
+        psms = {}
+
         if project_level:
-            psms = self.prj.get_pipestat_managers(project_level=True)
-            print(psms)
-            for name, psm in psms.items():
-                # Summarize will generate the static HTML Report Function
-                report_directory = psm.summarize(
-                    looper_samples=self.prj.samples, portable=portable
-                )
+            # psms = self.prj.get_pipestat_managers(project_level=True)
+            # print(psms)
+            # for name, psm in psms.items():
+            #     # Summarize will generate the static HTML Report Function
+            #     report_directory = psm.summarize(
+            #         looper_samples=self.prj.samples, portable=portable
+            #     )
+
+            for piface in self.prj.pipeline_interfaces:
+                if piface.psm.pipeline_type == "project":
+                    psms[piface.psm.pipeline_name] = piface.psm
+                    report_directory = piface.psm.summarize(
+                        looper_samples=self.prj.samples, portable=portable
+                    )
                 print(f"Report directory: {report_directory}")
                 self.debug["report_directory"] = report_directory
             return self.debug
         else:
-            for piface_source_samples in self.prj._samples_by_piface(
-                self.prj.piface_key
-            ).values():
-                # For each piface_key, we have a list of samples, but we only need one sample from the list to
-                # call the related pipestat manager object which will pull ALL samples when using psm.summarize
-                first_sample_name = list(piface_source_samples)[0]
-                psms = self.prj.get_pipestat_managers(
-                    sample_name=first_sample_name, project_level=False
-                )
-                print(psms)
-                for name, psm in psms.items():
-                    # Summarize will generate the static HTML Report Function
-                    report_directory = psm.summarize(
+            for piface in self.prj.pipeline_interfaces:
+                if piface.psm.pipeline_type == "sample":
+                    psms[piface.psm.pipeline_name] = piface.psm
+                    report_directory = piface.psm.summarize(
                         looper_samples=self.prj.samples, portable=portable
                     )
                     print(f"Report directory: {report_directory}")
                     self.debug["report_directory"] = report_directory
+
+            # for piface_source_samples in self.prj._samples_by_piface(
+            #     self.prj.piface_key
+            # ).values():
+            #     # For each piface_key, we have a list of samples, but we only need one sample from the list to
+            #     # call the related pipestat manager object which will pull ALL samples when using psm.summarize
+            #     first_sample_name = list(piface_source_samples)[0]
+            #     psms = self.prj.get_pipestat_managers(
+            #         sample_name=first_sample_name, project_level=False
+            #     )
+            #     print(psms)
+            #     for name, psm in psms.items():
+            #         # Summarize will generate the static HTML Report Function
+            #         report_directory = psm.summarize(
+            #             looper_samples=self.prj.samples, portable=portable
+            #         )
+            #         print(f"Report directory: {report_directory}")
+            #         self.debug["report_directory"] = report_directory
             return self.debug
 
 
