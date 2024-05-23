@@ -275,11 +275,13 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
         if subcommand_name == "destroy":
             return Destroyer(prj)(subcommand_args)
 
-        use_pipestat = (
-            prj.pipestat_configured_project
-            if getattr(subcommand_args, "project", None)
-            else prj.pipestat_configured
-        )
+        # use_pipestat = (
+        #     prj.pipestat_configured_project
+        #     if getattr(subcommand_args, "project", None)
+        #     else prj.pipestat_configured
+        # )
+
+        use_pipestat = is_pipestat_configured
 
         if subcommand_name == "table":
             if use_pipestat:
