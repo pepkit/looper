@@ -273,8 +273,12 @@ class SubmissionConductor(object):
 
         :param bool frorce: whether to force the project submission (ignore status/flags)
         """
+        psms = {}
         if self.prj.pipestat_configured_project:
-            psm = self.prj.get_pipestat_managers(project_level=True)[self.pl_name]
+            for piface in self.prj.project_pipeline_interfaces:
+                if piface.psm.pipeline_type == "project":
+                    psms[piface.psm.pipeline_name] = piface.psm
+            psm = psms[self.pl_name]
             status = psm.get_status()
             if not force and status is not None:
                 _LOGGER.info(f"> Skipping project. Determined status: {status}")

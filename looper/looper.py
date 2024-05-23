@@ -339,7 +339,7 @@ class Collator(Executor):
         """
         jobs = 0
         self.debug = {}
-        project_pifaces = self.prj.project_pipeline_interface_sources
+        project_pifaces = self.prj.project_pipeline_interfaces
         if not project_pifaces:
             raise MisconfigurationException(
                 "Looper requires a pointer to at least one project pipeline. "
@@ -349,27 +349,27 @@ class Collator(Executor):
             )
         self.counter = LooperCounter(len(project_pifaces))
         for project_piface in project_pifaces:
-            try:
-                project_piface_object = PipelineInterface(
-                    project_piface, pipeline_type="project"
-                )
-            except (IOError, ValidationError) as e:
-                _LOGGER.warning(
-                    "Ignoring invalid pipeline interface source: {}. "
-                    "Caught exception: {}".format(
-                        project_piface, getattr(e, "message", repr(e))
-                    )
-                )
-                continue
+            # try:
+            #     project_piface_object = PipelineInterface(
+            #         project_piface, pipeline_type="project"
+            #     )
+            # except (IOError, ValidationError) as e:
+            #     _LOGGER.warning(
+            #         "Ignoring invalid pipeline interface source: {}. "
+            #         "Caught exception: {}".format(
+            #             project_piface, getattr(e, "message", repr(e))
+            #         )
+            #     )
+            #     continue
             _LOGGER.info(
                 self.counter.show(
                     name=self.prj.name,
                     type="project",
-                    pipeline_name=project_piface_object.pipeline_name,
+                    pipeline_name=project_piface.pipeline_name,
                 )
             )
             conductor = SubmissionConductor(
-                pipeline_interface=project_piface_object,
+                pipeline_interface=project_piface,
                 prj=self.prj,
                 compute_variables=compute_kwargs,
                 delay=getattr(args, "time_delay", None),

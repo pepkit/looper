@@ -349,7 +349,7 @@ class Project(peppyProject):
 
         :return bool: whether pipestat configuration is complete
         """
-        return self._check_if_pipestat_configured(project_level=True)
+        return self._check_if_pipestat_configured_2(pipeline_type="project")
 
     def get_sample_piface(self, sample_name):
         """
@@ -468,7 +468,7 @@ class Project(peppyProject):
             for pipeline_name, pipestat_vars in pipestat_configs.items()
         }
 
-    def _check_if_pipestat_configured_2(self):
+    def _check_if_pipestat_configured_2(self, pipeline_type="sample"):
 
         # First check if pipestat key is in looper_config, if not return false
 
@@ -480,23 +480,39 @@ class Project(peppyProject):
             else:
                 # If pipestat key is available assume user desires pipestat usage
                 # This should return True OR raise an exception at this point.
-                return self._get_pipestat_configuration2()
+                return self._get_pipestat_configuration2(pipeline_type)
 
-    def _get_pipestat_configuration2(self):
+    def _get_pipestat_configuration2(self, pipeline_type="sample"):
 
         # First check if it already exists
         print("DEBUG!")
 
-        for piface in self.pipeline_interfaces:
-            print(piface)
-            # first check if this piface has a psm?
+        if pipeline_type == "sample":
+            for piface in self.pipeline_interfaces:
+                print(piface)
+                # first check if this piface has a psm?
 
-            pipestat_config_path = self._check_for_existing_pipestat_config(piface)
+                pipestat_config_path = self._check_for_existing_pipestat_config(piface)
 
-            if not pipestat_config_path:
-                self._create_pipestat_config(piface)
-            else:
-                piface.psm = PipestatManager(config_file=pipestat_config_path)
+                if not pipestat_config_path:
+                    self._create_pipestat_config(piface)
+                else:
+                    piface.psm = PipestatManager(config_file=pipestat_config_path)
+
+        elif pipeline_type == "project":
+            for prj_piface in self.project_pipeline_interfaces:
+                pipestat_config_path = self._check_for_existing_pipestat_config(
+                    prj_piface
+                )
+
+                if not pipestat_config_path:
+                    self._create_pipestat_config(prj_piface)
+                else:
+                    prj_piface.psm = PipestatManager(config_file=pipestat_config_path)
+        else:
+            _LOGGER.error(
+                msg="No pipeline type specified during pipestat configuration"
+            )
 
         return True
 
