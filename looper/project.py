@@ -3,6 +3,8 @@
 import itertools
 import os
 
+from yaml import safe_load
+
 try:
     from functools import cached_property
 except ImportError:
@@ -579,11 +581,29 @@ class Project(peppyProject):
                     os.path.dirname(piface.pipe_iface_file), schema_path
                 )
             pipestat_config_dict.update({"schema_path": schema_path})
+            try:
+                with open(schema_path, "r") as f:
+                    output_schema_data = safe_load(f)
+                    output_schema_pipeline_name = output_schema_data[
+                        PIPELINE_INTERFACE_PIPELINE_NAME_KEY
+                    ]
+            except Exception:
+                output_schema_pipeline_name = None
+        else:
+            output_schema_pipeline_name = None
         if "pipeline_name" in piface.data:
             pipeline_name = piface.data["pipeline_name"]
             pipestat_config_dict.update({"pipeline_name": piface.data["pipeline_name"]})
+        else:
+            pipeline_name = None
         if "pipeline_type" in piface.data:
             pipestat_config_dict.update({"pipeline_type": piface.data["pipeline_type"]})
+
+        # Warn user if there is a mismatch in pipeline_names from sources!!!
+        if pipeline_name != output_schema_pipeline_name:
+            _LOGGER.warning(
+                msg=f"Pipeline name mismatch detected. Pipeline interface: {pipeline_name}  Output schema: {output_schema_pipeline_name}  Defaulting to pipeline_interface value."
+            )
 
         try:
             # TODO if user gives non-absolute path should we force results to be in a pipeline folder?
