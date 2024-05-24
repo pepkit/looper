@@ -497,7 +497,9 @@ class Project(peppyProject):
                 if not pipestat_config_path:
                     self._create_pipestat_config(piface)
                 else:
-                    piface.psm = PipestatManager(config_file=pipestat_config_path)
+                    piface.psm = PipestatManager(
+                        config_file=pipestat_config_path, multi_pipelines=True
+                    )
 
         elif pipeline_type == "project":
             for prj_piface in self.project_pipeline_interfaces:
@@ -508,7 +510,9 @@ class Project(peppyProject):
                 if not pipestat_config_path:
                     self._create_pipestat_config(prj_piface)
                 else:
-                    prj_piface.psm = PipestatManager(config_file=pipestat_config_path)
+                    prj_piface.psm = PipestatManager(
+                        config_file=pipestat_config_path, multi_pipelines=True
+                    )
         else:
             _LOGGER.error(
                 msg="No pipeline type specified during pipestat configuration"
@@ -612,7 +616,9 @@ class Project(peppyProject):
         write_pipestat_config(pipestat_config_path, pipestat_config_dict)
 
         # piface['psm'] = PipestatManager(config_file=pipestat_config_path)
-        piface.psm = PipestatManager(config_file=pipestat_config_path)
+        piface.psm = PipestatManager(
+            config_file=pipestat_config_path, multi_pipelines=True
+        )
 
         return None
 
