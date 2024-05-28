@@ -2,6 +2,11 @@
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format.
 
+## [1.7.1] -- 2024-05-28
+
+### Fixed
+- pin pipestat version to be between pipestat>=0.8.0,<0.9.0  https://github.com/pepkit/looper/issues/494
+
 ## [1.7.0] -- 2024-01-26
 
 ### Added
