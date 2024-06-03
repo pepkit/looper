@@ -16,6 +16,8 @@ import pandas as _pd
 # Need specific sequence of actions for colorama imports?
 from colorama import init
 
+from .const import PipelineLevel
+
 init()
 from shutil import rmtree
 
@@ -93,7 +95,7 @@ class Checker(Executor):
         if getattr(args, "project", None):
 
             for piface in self.prj.pipeline_interfaces:
-                if piface.psm.pipeline_type == "project":
+                if piface.psm.pipeline_type == PipelineLevel.PROJECT.value:
                     psms[piface.psm.pipeline_name] = piface.psm
                     s = piface.psm.get_status() or "unknown"
                     status.setdefault(piface.psm.pipeline_name, {})
@@ -103,7 +105,7 @@ class Checker(Executor):
         else:
             for sample in self.prj.samples:
                 for piface in sample.project.pipeline_interfaces:
-                    if piface.psm.pipeline_type == "sample":
+                    if piface.psm.pipeline_type == PipelineLevel.SAMPLE.value:
                         psms[piface.psm.pipeline_name] = piface.psm
                         s = piface.psm.get_status(record_identifier=sample.sample_name)
                         status.setdefault(piface.psm.pipeline_name, {})
@@ -275,7 +277,7 @@ class Destroyer(Executor):
             else:
                 if use_pipestat:
                     for piface in sample.project.pipeline_interfaces:
-                        if piface.psm.pipeline_type == "sample":
+                        if piface.psm.pipeline_type == PipelineLevel.SAMPLE.value:
                             psms[piface.psm.pipeline_name] = piface.psm
                     for pipeline_name, psm in psms.items():
                         psm.backend.remove_record(
@@ -564,7 +566,7 @@ class Reporter(Executor):
         if project_level:
 
             for piface in self.prj.pipeline_interfaces:
-                if piface.psm.pipeline_type == "project":
+                if piface.psm.pipeline_type == PipelineLevel.PROJECT.value:
                     psms[piface.psm.pipeline_name] = piface.psm
                     report_directory = piface.psm.summarize(
                         looper_samples=self.prj.samples, portable=portable
@@ -574,7 +576,7 @@ class Reporter(Executor):
             return self.debug
         else:
             for piface in self.prj.pipeline_interfaces:
-                if piface.psm.pipeline_type == "sample":
+                if piface.psm.pipeline_type == PipelineLevel.SAMPLE.value:
                     psms[piface.psm.pipeline_name] = piface.psm
                     report_directory = piface.psm.summarize(
                         looper_samples=self.prj.samples, portable=portable
@@ -597,13 +599,13 @@ class Linker(Executor):
 
         if project_level:
             for piface in self.prj.pipeline_interfaces:
-                if piface.psm.pipeline_type == "project":
+                if piface.psm.pipeline_type == PipelineLevel.PROJECT.value:
                     psms[piface.psm.pipeline_name] = piface.psm
                     linked_results_path = piface.psm.link(link_dir=link_dir)
                     print(f"Linked directory: {linked_results_path}")
         else:
             for piface in self.prj.pipeline_interfaces:
-                if piface.psm.pipeline_type == "sample":
+                if piface.psm.pipeline_type == PipelineLevel.SAMPLE.value:
                     psms[piface.psm.pipeline_name] = piface.psm
                     linked_results_path = piface.psm.link(link_dir=link_dir)
                     print(f"Linked directory: {linked_results_path}")
@@ -622,12 +624,12 @@ class Tabulator(Executor):
         psms = {}
         if project_level:
             for piface in self.prj.pipeline_interfaces:
-                if piface.psm.pipeline_type == "project":
+                if piface.psm.pipeline_type == PipelineLevel.PROJECT.value:
                     psms[piface.psm.pipeline_name] = piface.psm
                     results = piface.psm.table()
         else:
             for piface in self.prj.pipeline_interfaces:
-                if piface.psm.pipeline_type == "sample":
+                if piface.psm.pipeline_type == PipelineLevel.SAMPLE.value:
                     psms[piface.psm.pipeline_name] = piface.psm
                     results = piface.psm.table()
         # Results contains paths to stats and object summaries.
@@ -672,7 +674,7 @@ def destroy_summary(prj, dry_run=False, project_level=False):
     psms = {}
     if project_level:
         for piface in prj.pipeline_interfaces:
-            if piface.psm.pipeline_type == "project":
+            if piface.psm.pipeline_type == PipelineLevel.PROJECT.value:
                 psms[piface.psm.pipeline_name] = piface.psm
 
         for name, psm in psms.items():
@@ -699,7 +701,7 @@ def destroy_summary(prj, dry_run=False, project_level=False):
             )
     else:
         for piface in prj.pipeline_interfaces:
-            if piface.psm.pipeline_type == "sample":
+            if piface.psm.pipeline_type == PipelineLevel.SAMPLE.value:
                 psms[piface.psm.pipeline_name] = piface.psm
         for name, psm in psms.items():
             _remove_or_dry_run(

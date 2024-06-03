@@ -29,6 +29,7 @@ from pydantic2_argparse.argparse.parser import ArgumentParser
 
 from divvy import select_divvy_config
 
+from .const import PipelineLevel
 from . import __version__
 
 from .command_models.arguments import ArgumentEnum
@@ -244,7 +245,7 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
 
         # Check at the beginning if user wants to use pipestat and pipestat is configurable
         is_pipestat_configured = (
-            prj._check_if_pipestat_configured(pipeline_type="project")
+            prj._check_if_pipestat_configured(pipeline_type=PipelineLevel.PROJECT.value)
             if getattr(args, "project", None)
             else prj._check_if_pipestat_configured()
         )

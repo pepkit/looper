@@ -28,6 +28,7 @@ from .exceptions import *
 from .pipeline_interface import PipelineInterface
 from .processed_project import populate_project_paths, populate_sample_paths
 from .utils import *
+from .const import PipelineLevel
 
 __all__ = ["Project"]
 
@@ -308,7 +309,7 @@ class Project(peppyProject):
         :return list[looper.PipelineInterface]: list of pipeline interfaces
         """
         return [
-            PipelineInterface(pi, pipeline_type="project")
+            PipelineInterface(pi, pipeline_type=PipelineLevel.PROJECT.value)
             for pi in self.project_pipeline_interface_sources
         ]
 
@@ -351,7 +352,9 @@ class Project(peppyProject):
 
         :return bool: whether pipestat configuration is complete
         """
-        return self._check_if_pipestat_configured(pipeline_type="project")
+        return self._check_if_pipestat_configured(
+            pipeline_type=PipelineLevel.PROJECT.value
+        )
 
     def get_sample_piface(self, sample_name):
         """
@@ -449,7 +452,7 @@ class Project(peppyProject):
                 schema_set.update([schema_file])
         return list(schema_set)
 
-    def _check_if_pipestat_configured(self, pipeline_type="sample"):
+    def _check_if_pipestat_configured(self, pipeline_type=PipelineLevel.SAMPLE.value):
 
         # First check if pipestat key is in looper_config, if not return false
 
@@ -463,11 +466,11 @@ class Project(peppyProject):
                 # This should return True OR raise an exception at this point.
                 return self._get_pipestat_configuration(pipeline_type)
 
-    def _get_pipestat_configuration(self, pipeline_type="sample"):
+    def _get_pipestat_configuration(self, pipeline_type=PipelineLevel.SAMPLE.value):
 
         # First check if it already exists
 
-        if pipeline_type == "sample":
+        if pipeline_type == PipelineLevel.SAMPLE.value:
             for piface in self.pipeline_interfaces:
 
                 pipestat_config_path = self._check_for_existing_pipestat_config(piface)
@@ -479,7 +482,7 @@ class Project(peppyProject):
                         config_file=pipestat_config_path, multi_pipelines=True
                     )
 
-        elif pipeline_type == "project":
+        elif pipeline_type == PipelineLevel.PROJECT.value:
             for prj_piface in self.project_pipeline_interfaces:
                 pipestat_config_path = self._check_for_existing_pipestat_config(
                     prj_piface
@@ -691,7 +694,7 @@ class Project(peppyProject):
         pifaces_by_sample = {}
         for source, sample_names in self._samples_by_interface.items():
             try:
-                pi = PipelineInterface(source, pipeline_type="sample")
+                pi = PipelineInterface(source, pipeline_type=PipelineLevel.SAMPLE.value)
             except PipelineInterfaceConfigError as e:
                 _LOGGER.debug(f"Skipping pipeline interface creation: {e}")
             else:
@@ -742,7 +745,9 @@ class Project(peppyProject):
                 for source in piface_srcs:
                     source = self._resolve_path_with_cfg(source)
                     try:
-                        PipelineInterface(source, pipeline_type="sample")
+                        PipelineInterface(
+                            source, pipeline_type=PipelineLevel.SAMPLE.value
+                        )
                     except (
                         ValidationError,
                         IOError,

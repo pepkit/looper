@@ -27,6 +27,7 @@ from .const import *
 from .exceptions import JobSubmissionException, SampleFailedException
 from .processed_project import populate_sample_paths
 from .utils import fetch_sample_flags, jinja_render_template_strictly
+from .const import PipelineLevel
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -276,7 +277,7 @@ class SubmissionConductor(object):
         psms = {}
         if self.prj.pipestat_configured_project:
             for piface in self.prj.project_pipeline_interfaces:
-                if piface.psm.pipeline_type == "project":
+                if piface.psm.pipeline_type == PipelineLevel.PROJECT.value:
                     psms[piface.psm.pipeline_name] = piface.psm
             psm = psms[self.pl_name]
             status = psm.get_status()
