@@ -443,35 +443,6 @@ class TestLooperRunPreSubmissionHooks:
         sd = os.path.join(get_outdir(tp), "submission")
         verify_filecount_in_dir(sd, "test.txt", 3)
 
-    # @pytest.mark.parametrize(
-    #     "plugin,appendix",
-    #     [
-    #         ("looper.write_local_pipestat_config", "submission.yaml"),
-    #     ],
-    # )
-    # def test_looper_pipestat_plugins(self, prep_temp_pep_pipestat, plugin, appendix):
-    #     # tp = prep_temp_pep
-    #     tp = prep_temp_pep_pipestat
-    #     pep_dir = os.path.dirname(tp)
-    #     pipeline_interface1 = os.path.join(
-    #         pep_dir, "pipeline_pipestat/pipeline_interface.yaml"
-    #     )
-    #
-    #     with mod_yaml_data(pipeline_interface1) as piface_data:
-    #         piface_data.update({PRE_SUBMIT_HOOK_KEY: {}})
-    #         piface_data[PRE_SUBMIT_HOOK_KEY].update({PRE_SUBMIT_PY_FUN_KEY: {}})
-    #         piface_data[PRE_SUBMIT_HOOK_KEY][PRE_SUBMIT_PY_FUN_KEY] = [plugin]
-    #
-    #     # x = test_args_expansion(tp, "run")
-    #     x = ["run", "--looper-config", tp, "--dry-run"]
-    #     # x.pop(-1)
-    #     try:
-    #         main(test_args=x)
-    #     except Exception as err:
-    #         raise pytest.fail(f"DID RAISE {err}")
-    #     sd = os.path.join(get_outdir(tp), "submission")
-    #     verify_filecount_in_dir(sd, appendix, 3)
-
 
 class TestLooperRunSubmissionScript:
     def test_looper_run_produces_submission_scripts(self, prep_temp_pep):

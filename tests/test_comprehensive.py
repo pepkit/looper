@@ -104,7 +104,7 @@ def test_comprehensive_looper_pipestat(prep_temp_pep_pipestat):
     path_to_pipestat_config = os.path.join(
         pipestat_dir, f"results/pipestat_config_{pipeline_name}.yaml"
     )
-    # pipestat_config_example_pipestat_pipeline.yaml
+
     psm = PipestatManager(config_file=path_to_pipestat_config)
     psm.set_status(record_identifier="frog_1", status_identifier="completed")
     psm.set_status(record_identifier="frog_2", status_identifier="completed")

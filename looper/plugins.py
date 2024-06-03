@@ -158,12 +158,3 @@ def write_sample_yaml(namespaces):
     )
     sample.to_yaml(sample["sample_yaml_path"], add_prj_ref=False)
     return {"sample": sample}
-
-
-# def write_local_pipestat_config(namespaces):
-#
-#     config_path = ""
-#
-#     print(config_path)
-#
-#     return config_path
