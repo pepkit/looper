@@ -277,7 +277,7 @@ class Destroyer(Executor):
             )
 
         _LOGGER.info("Removing results:")
-
+        psms = {}
         for sample in select_samples(prj=self.prj, args=args):
             _LOGGER.info(self.counter.show(sample.sample_name))
             sample_output_folder = sample_folder(self.prj, sample)
@@ -286,9 +286,9 @@ class Destroyer(Executor):
                 _LOGGER.info(str(sample_output_folder))
             else:
                 if use_pipestat:
-                    psms = self.prj.get_pipestat_managers(
-                        sample_name=sample.sample_name
-                    )
+                    for piface in sample.project.pipeline_interfaces:
+                        if piface.psm.pipeline_type == "sample":
+                            psms[piface.psm.pipeline_name] = piface.psm
                     for pipeline_name, psm in psms.items():
                         psm.backend.remove_record(
                             record_identifier=sample.sample_name, rm_record=True
