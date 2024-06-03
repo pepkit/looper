@@ -22,6 +22,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - looper rerun now only runs failed jobs as intended: https://github.com/pepkit/looper/issues/467 
 - looper inspect now inspects the looper config: https://github.com/pepkit/looper/issues/462
 - Load PEP from CSV: https://github.com/pepkit/looper/issues/456
+- looper now works with sample_table_index https://github.com/pepkit/looper/issues/458
 
 
 ## [1.7.0] -- 2024-01-26
