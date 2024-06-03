@@ -342,7 +342,7 @@ class Project(peppyProject):
 
         :return bool: whether pipestat configuration is complete
         """
-        return self._check_if_pipestat_configured_2()
+        return self._check_if_pipestat_configured()
 
     @cached_property
     def pipestat_configured_project(self):
@@ -351,7 +351,7 @@ class Project(peppyProject):
 
         :return bool: whether pipestat configuration is complete
         """
-        return self._check_if_pipestat_configured_2(pipeline_type="project")
+        return self._check_if_pipestat_configured(pipeline_type="project")
 
     def get_sample_piface(self, sample_name):
         """
@@ -449,7 +449,7 @@ class Project(peppyProject):
                 schema_set.update([schema_file])
         return list(schema_set)
 
-    def _check_if_pipestat_configured_2(self, pipeline_type="sample"):
+    def _check_if_pipestat_configured(self, pipeline_type="sample"):
 
         # First check if pipestat key is in looper_config, if not return false
 
@@ -461,12 +461,11 @@ class Project(peppyProject):
             else:
                 # If pipestat key is available assume user desires pipestat usage
                 # This should return True OR raise an exception at this point.
-                return self._get_pipestat_configuration2(pipeline_type)
+                return self._get_pipestat_configuration(pipeline_type)
 
-    def _get_pipestat_configuration2(self, pipeline_type="sample"):
+    def _get_pipestat_configuration(self, pipeline_type="sample"):
 
         # First check if it already exists
-        print("DEBUG!")
 
         if pipeline_type == "sample":
             for piface in self.pipeline_interfaces:
