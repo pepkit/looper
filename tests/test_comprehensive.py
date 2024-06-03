@@ -118,6 +118,15 @@ def test_comprehensive_looper_pipestat(prep_temp_pep_pipestat):
     except Exception:
         raise pytest.fail("DID RAISE {0}".format(Exception))
 
+    # Now use looper check to get project level statuses
+    x = ["check", "--looper-config", path_to_looper_config, "--project"]
+
+    try:
+        result = main(test_args=x)
+        assert result == {}
+    except Exception:
+        raise pytest.fail("DID RAISE {0}".format(Exception))
+
     # TEST LOOPER REPORT
 
     x = ["report", "--looper-config", path_to_looper_config]

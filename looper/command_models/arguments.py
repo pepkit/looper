@@ -192,13 +192,13 @@ class ArgumentEnum(enum.Enum):
         name="sample_pipeline_interfaces",
         alias="-S",
         default=(List, []),
-        description="Paths to looper sample config files",
+        description="Paths to looper sample pipeline interfaces",
     )
     PROJECT_PIPELINE_INTERFACES = Argument(
         name="project_pipeline_interfaces",
         alias="-P",
         default=(List, []),
-        description="Paths to looper project config files",
+        description="Paths to looper project pipeline interfaces",
     )
     AMEND = Argument(
         name="amend", default=(List, []), description="List of amendments to activate"
@@ -275,4 +275,9 @@ class ArgumentEnum(enum.Enum):
         name="portable",
         default=(bool, False),
         description="Makes html report portable.",
+    )
+    PROJECT_LEVEL = Argument(
+        name="project",
+        default=(bool, False),
+        description="Is this command executed for project-level?",
     )
