@@ -469,8 +469,6 @@ class Project(peppyProject):
 
         if pipeline_type == "sample":
             for piface in self.pipeline_interfaces:
-                print(piface)
-                # first check if this piface has a psm?
 
                 pipestat_config_path = self._check_for_existing_pipestat_config(piface)
 
