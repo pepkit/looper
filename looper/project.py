@@ -584,13 +584,23 @@ class Project(peppyProject):
             )
 
         try:
-            # TODO if user gives non-absolute path should we force results to be in a pipeline folder?
-            # TODO otherwise pipelines could write to the same results file!
             results_file_path = expandpath(pipestat_config_dict["results_file_path"])
-            if not os.path.exists(os.path.dirname(results_file_path)):
-                results_file_path = os.path.join(
-                    os.path.dirname(output_dir), results_file_path
-                )
+
+            if not os.path.isabs(results_file_path):
+                # e.g. user configures "results.yaml" as results_file_path
+                if "{record_identifier}" in results_file_path:
+                    # this is specifically to check if the user wishes tro generate a file for EACH record
+                    if not os.path.exists(os.path.dirname(results_file_path)):
+                        results_file_path = os.path.join(output_dir, results_file_path)
+                else:
+                    if not os.path.exists(os.path.dirname(results_file_path)):
+                        results_file_path = os.path.join(
+                            output_dir, f"{pipeline_name}/", results_file_path
+                        )
+            else:
+                # Do nothing because the user has given an absolute file path
+                pass
+
             pipestat_config_dict.update({"results_file_path": results_file_path})
         except KeyError:
             results_file_path = None
