@@ -251,7 +251,7 @@ class Destroyer(Executor):
         """
 
         use_pipestat = (
-            self.prj.pipestat_configured
+            self.prj.pipestat_configured_project
             if getattr(args, "project", None)
             else self.prj.pipestat_configured
         )

@@ -243,7 +243,11 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
     ) as prj:
 
         # Check at the beginning if user wants to use pipestat and pipestat is configurable
-        is_pipestat_configured = prj._check_if_pipestat_configured()
+        is_pipestat_configured = (
+            prj._check_if_pipestat_configured(pipeline_type="project")
+            if getattr(args, "project", None)
+            else prj._check_if_pipestat_configured()
+        )
 
         if subcommand_name in ["run", "rerun"]:
             rerun = subcommand_name == "rerun"
