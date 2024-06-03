@@ -548,12 +548,7 @@ class SubmissionConductor(object):
         :return yacman.YAMLConfigManager: pipestat namespace
         """
         try:
-            psms = (
-                self.prj.get_pipestat_managers(sample_name)
-                if sample_name
-                else self.prj.get_pipestat_managers(project_level=True)
-            )
-            psm = psms[self.pl_iface.pipeline_name]
+            psm = self.pl_iface.psm
         except (PipestatError, AttributeError) as e:
             # pipestat section faulty or not found in project.looper or sample
             # or project is missing required pipestat attributes
