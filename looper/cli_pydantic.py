@@ -275,34 +275,26 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
         if subcommand_name == "destroy":
             return Destroyer(prj)(subcommand_args)
 
-        # use_pipestat = (
-        #     prj.pipestat_configured_project
-        #     if getattr(subcommand_args, "project", None)
-        #     else prj.pipestat_configured
-        # )
-
-        use_pipestat = is_pipestat_configured
-
         if subcommand_name == "table":
-            if use_pipestat:
+            if is_pipestat_configured:
                 return Tabulator(prj)(subcommand_args)
             else:
                 raise PipestatConfigurationException("table")
 
         if subcommand_name == "report":
-            if use_pipestat:
+            if is_pipestat_configured:
                 return Reporter(prj)(subcommand_args)
             else:
                 raise PipestatConfigurationException("report")
 
         if subcommand_name == "link":
-            if use_pipestat:
+            if is_pipestat_configured:
                 Linker(prj)(subcommand_args)
             else:
                 raise PipestatConfigurationException("link")
 
         if subcommand_name == "check":
-            if use_pipestat:
+            if is_pipestat_configured:
                 return Checker(prj)(subcommand_args)
             else:
                 raise PipestatConfigurationException("check")
