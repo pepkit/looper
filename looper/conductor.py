@@ -635,7 +635,6 @@ class SubmissionConductor(object):
                 argstring = jinja_render_template_strictly(
                     template=templ, namespaces=namespaces
                 )
-                print(argstring)
             except UndefinedError as jinja_exception:
                 _LOGGER.warning(NOT_SUB_MSG.format(str(jinja_exception)))
             except KeyError as e:

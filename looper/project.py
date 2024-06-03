@@ -613,7 +613,6 @@ class Project(peppyProject):
 
         # Pipestat_dict_ is now updated from all sources and can be written to a yaml.
         pipestat_config_path = os.path.join(
-            # os.path.dirname(output_dir), f"pipestat_config_{pipeline_name}.yaml"
             output_dir,
             f"pipestat_config_{pipeline_name}.yaml",
         )
@@ -621,7 +620,6 @@ class Project(peppyProject):
         # Two end goals, create a config file
         write_pipestat_config(pipestat_config_path, pipestat_config_dict)
 
-        # piface['psm'] = PipestatManager(config_file=pipestat_config_path)
         piface.psm = PipestatManager(
             config_file=pipestat_config_path, multi_pipelines=True
         )

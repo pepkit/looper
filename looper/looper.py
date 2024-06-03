@@ -493,7 +493,7 @@ class Runner(Executor):
                 len(processed_samples), num_samples
             )
         )
-        _LOGGER.info("Commands submitted: {} of {}".format(cmd_sub_total, max_cmds))
+        _LOGGER.debug("Commands submitted: {} of {}".format(cmd_sub_total, max_cmds))
         self.debug[DEBUG_COMMANDS] = "{} of {}".format(cmd_sub_total, max_cmds)
         if getattr(args, "dry_run", None):
             job_sub_total_if_real = job_sub_total
@@ -501,7 +501,7 @@ class Runner(Executor):
             _LOGGER.info(
                 f"Dry run. No jobs were actually submitted, but {job_sub_total_if_real} would have been."
             )
-        _LOGGER.info("Jobs submitted: {}".format(job_sub_total))
+        _LOGGER.debug("Jobs submitted: {}".format(job_sub_total))
         self.debug[DEBUG_JOBS] = job_sub_total
 
         # Restructure sample/failure data for display.
