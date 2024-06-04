@@ -27,6 +27,7 @@ from .const import *
 from .exceptions import JobSubmissionException, SampleFailedException
 from .processed_project import populate_sample_paths
 from .utils import fetch_sample_flags, jinja_render_template_strictly
+from .const import PipelineLevel
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -90,6 +91,13 @@ def write_pipestat_config(looper_pipestat_config_path, pipestat_config_dict):
     :param dict pipestat_config_dict: the dict containing key value pairs to be written to the pipestat configutation
     return bool
     """
+
+    if not os.path.exists(os.path.dirname(looper_pipestat_config_path)):
+        try:
+            os.makedirs(os.path.dirname(looper_pipestat_config_path))
+        except FileExistsError:
+            pass
+
     with open(looper_pipestat_config_path, "w") as f:
         yaml.dump(pipestat_config_dict, f)
     _LOGGER.debug(
@@ -266,8 +274,12 @@ class SubmissionConductor(object):
 
         :param bool frorce: whether to force the project submission (ignore status/flags)
         """
+        psms = {}
         if self.prj.pipestat_configured_project:
-            psm = self.prj.get_pipestat_managers(project_level=True)[self.pl_name]
+            for piface in self.prj.project_pipeline_interfaces:
+                if piface.psm.pipeline_type == PipelineLevel.PROJECT.value:
+                    psms[piface.psm.pipeline_name] = piface.psm
+            psm = psms[self.pl_name]
             status = psm.get_status()
             if not force and status is not None:
                 _LOGGER.info(f"> Skipping project. Determined status: {status}")
@@ -293,12 +305,11 @@ class SubmissionConductor(object):
             )
         )
         if self.prj.pipestat_configured:
-            psms = self.prj.get_pipestat_managers(sample_name=sample.sample_name)
-            sample_statuses = psms[self.pl_name].get_status(
+            sample_statuses = self.pl_iface.psm.get_status(
                 record_identifier=sample.sample_name
             )
             if sample_statuses == "failed" and rerun is True:
-                psms[self.pl_name].set_status(
+                self.pl_iface.psm.set_status(
                     record_identifier=sample.sample_name, status_identifier="waiting"
                 )
                 sample_statuses = "waiting"
@@ -537,12 +548,7 @@ class SubmissionConductor(object):
         :return yacman.YAMLConfigManager: pipestat namespace
         """
         try:
-            psms = (
-                self.prj.get_pipestat_managers(sample_name)
-                if sample_name
-                else self.prj.get_pipestat_managers(project_level=True)
-            )
-            psm = psms[self.pl_iface.pipeline_name]
+            psm = self.pl_iface.psm
         except (PipestatError, AttributeError) as e:
             # pipestat section faulty or not found in project.looper or sample
             # or project is missing required pipestat attributes
@@ -630,7 +636,6 @@ class SubmissionConductor(object):
                 argstring = jinja_render_template_strictly(
                     template=templ, namespaces=namespaces
                 )
-                print(argstring)
             except UndefinedError as jinja_exception:
                 _LOGGER.warning(NOT_SUB_MSG.format(str(jinja_exception)))
             except KeyError as e:

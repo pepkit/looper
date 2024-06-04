@@ -29,6 +29,7 @@ from pydantic2_argparse.argparse.parser import ArgumentParser
 
 from divvy import select_divvy_config
 
+from .const import PipelineLevel
 from . import __version__
 
 from .command_models.arguments import ArgumentEnum
@@ -241,6 +242,14 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
         selector_flag=subcommand_args.sel_flag,
         exclusion_flag=subcommand_args.exc_flag,
     ) as prj:
+
+        # Check at the beginning if user wants to use pipestat and pipestat is configurable
+        is_pipestat_configured = (
+            prj._check_if_pipestat_configured(pipeline_type=PipelineLevel.PROJECT.value)
+            if getattr(args, "project", None)
+            else prj._check_if_pipestat_configured()
+        )
+
         if subcommand_name in ["run", "rerun"]:
             rerun = subcommand_name == "rerun"
             run = Runner(prj)
@@ -271,32 +280,26 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
         if subcommand_name == "destroy":
             return Destroyer(prj)(subcommand_args)
 
-        use_pipestat = (
-            prj.pipestat_configured_project
-            if getattr(subcommand_args, "project", None)
-            else prj.pipestat_configured
-        )
-
         if subcommand_name == "table":
-            if use_pipestat:
+            if is_pipestat_configured:
                 return Tabulator(prj)(subcommand_args)
             else:
                 raise PipestatConfigurationException("table")
 
         if subcommand_name == "report":
-            if use_pipestat:
+            if is_pipestat_configured:
                 return Reporter(prj)(subcommand_args)
             else:
                 raise PipestatConfigurationException("report")
 
         if subcommand_name == "link":
-            if use_pipestat:
+            if is_pipestat_configured:
                 Linker(prj)(subcommand_args)
             else:
                 raise PipestatConfigurationException("link")
 
         if subcommand_name == "check":
-            if use_pipestat:
+            if is_pipestat_configured:
                 return Checker(prj)(subcommand_args)
             else:
                 raise PipestatConfigurationException("check")
