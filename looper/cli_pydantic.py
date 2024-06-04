@@ -326,6 +326,7 @@ def main(test_args=None) -> None:
         prog="looper",
         description="Looper Pydantic Argument Parser",
         add_help=True,
+        version="1.8.1a1",
     )
 
     parser = add_short_arguments(parser, ArgumentEnum)
