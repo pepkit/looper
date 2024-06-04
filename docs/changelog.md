@@ -2,7 +2,7 @@
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format.
 
-## [1.8.0] -- 2024-03-29
+## [1.8.0] -- 2024-XX-XX
 
 ### Added
 - looper destroy now destroys individual results when pipestat is configured: https://github.com/pepkit/looper/issues/469
