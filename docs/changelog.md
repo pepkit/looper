@@ -6,6 +6,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 - added `-v` and `--version` to the CLI
+- fixed running project level with `--project` argument
 
 ## [1.8.0] -- 2024-06-04
 

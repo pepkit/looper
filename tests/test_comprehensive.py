@@ -123,7 +123,8 @@ def test_comprehensive_looper_pipestat(prep_temp_pep_pipestat):
 
     try:
         result = main(test_args=x)
-        assert result == {}
+        assert result == {"example_pipestat_project_pipeline": {"project": "unknown"}}
+
     except Exception:
         raise pytest.fail("DID RAISE {0}".format(Exception))
 

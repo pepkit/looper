@@ -94,7 +94,7 @@ class Checker(Executor):
         psms = {}
         if getattr(args, "project", None):
 
-            for piface in self.prj.pipeline_interfaces:
+            for piface in self.prj.project_pipeline_interfaces:
                 if piface.psm.pipeline_type == PipelineLevel.PROJECT.value:
                     psms[piface.psm.pipeline_name] = piface.psm
                     s = piface.psm.get_status() or "unknown"
@@ -565,7 +565,7 @@ class Reporter(Executor):
 
         if project_level:
 
-            for piface in self.prj.pipeline_interfaces:
+            for piface in self.prj.project_pipeline_interfaces:
                 if piface.psm.pipeline_type == PipelineLevel.PROJECT.value:
                     psms[piface.psm.pipeline_name] = piface.psm
                     report_directory = piface.psm.summarize(
@@ -598,7 +598,7 @@ class Linker(Executor):
         psms = {}
 
         if project_level:
-            for piface in self.prj.pipeline_interfaces:
+            for piface in self.prj.project_pipeline_interfaces:
                 if piface.psm.pipeline_type == PipelineLevel.PROJECT.value:
                     psms[piface.psm.pipeline_name] = piface.psm
                     linked_results_path = piface.psm.link(link_dir=link_dir)
@@ -623,7 +623,7 @@ class Tabulator(Executor):
         results = []
         psms = {}
         if project_level:
-            for piface in self.prj.pipeline_interfaces:
+            for piface in self.prj.project_pipeline_interfaces:
                 if piface.psm.pipeline_type == PipelineLevel.PROJECT.value:
                     psms[piface.psm.pipeline_name] = piface.psm
                     results = piface.psm.table()

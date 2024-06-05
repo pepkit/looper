@@ -26,16 +26,14 @@ Each task is controlled by one of the following commands: `run`, `rerun`, `runp`
 Here you can see the command-line usage instructions for the main looper command and for each subcommand:
 ## `looper --help`
 ```console
-version: 1.7.0
-usage: looper [-h] [--version] [--logfile LOGFILE] [--dbg] [--silent]
-              [--verbosity V] [--logdev] [--commands]
-              {run,rerun,runp,table,report,destroy,check,clean,inspect,init,init-piface,link}
+usage: looper [-h] [-v] [--silent] [--verbosity VERBOSITY] [--logdev]
+              {run,rerun,runp,table,report,destroy,check,clean,init,init_piface,link,inspect}
               ...
 
-looper - A project job submission engine and project manager.
+Looper Pydantic Argument Parser
 
-positional arguments:
-  {run,rerun,runp,table,report,destroy,check,clean,inspect,init,init-piface,link}
+commands:
+  {run,rerun,runp,table,report,destroy,check,clean,init,init_piface,link,inspect}
     run                 Run or submit sample jobs.
     rerun               Resubmit sample jobs with failed flags.
     runp                Run or submit project jobs.
@@ -44,436 +42,628 @@ positional arguments:
     destroy             Remove output files of the project.
     check               Check flag status of current runs.
     clean               Run clean scripts of already processed jobs.
-    inspect             Print information about a project.
     init                Initialize looper config file.
-    init-piface         Initialize generic pipeline interface.
+    init_piface         Initialize generic pipeline interface.
     link                Create directory of symlinks for reported results.
+    inspect             Print information about a project.
 
-options:
+optional arguments:
+  --silent              Whether to silence logging (default: False)
+  --verbosity VERBOSITY
+                        Alternate mode of expression for logging level that
+                        better accords with intuition about how to convey
+                        this. (default: None)
+  --logdev              Whether to log in development mode; possibly among
+                        other behavioral changes to logs handling, use a more
+                        information-rich message format template. (default:
+                        False)
+
+help:
   -h, --help            show this help message and exit
-  --version             show program's version number and exit
-  --logfile LOGFILE     Optional output file for looper logs (default: None)
-  --dbg                 Turn on debug mode (default: False)
-  --silent              Silence logging. Overrides verbosity.
-  --verbosity V         Set logging level (1-5 or logging module level name)
-  --logdev              Expand content of logging message format.
-  --commands            show program's version number and exit
-
-For subcommand-specific options, type: 'looper <subcommand> -h'
-https://github.com/pepkit/looper
+  -v, --version         show program's version number and exit
 ```
 
 ## `looper run --help`
 ```console
-usage: looper run [-h] [-i] [-d] [-t S] [-x S] [-y S] [-f] [--divvy DIVCFG] [-p P] [-s S]
-                  [-c K [K ...]] [-u X] [-n N] [-j J] [--looper-config LOOPER_CONFIG]
-                  [-S YAML [YAML ...]] [-P YAML [YAML ...]] [-l N] [-k N]
-                  [--sel-attr ATTR] [--sel-excl [E ...] | --sel-incl [I ...]]
-                  [--sel-flag [SELFLAG ...]] [--exc-flag [EXCFLAG ...]] [-a A [A ...]]
-                  [config_file]
+usage: looper run [-h] [-i] [-t TIME_DELAY] [-d] [-x COMMAND_EXTRA]
+                  [-y COMMAND_EXTRA_OVERRIDE] [-u LUMP] [-n LUMP_N]
+                  [-j LUMP_J] [--divvy DIVVY] [-f] [-c COMPUTE [COMPUTE ...]]
+                  [--package PACKAGE] [--settings SETTINGS]
+                  [--exc-flag EXC_FLAG [EXC_FLAG ...]]
+                  [--sel-flag SEL_FLAG [SEL_FLAG ...]] [--sel-attr SEL_ATTR]
+                  [--sel-incl SEL_INCL [SEL_INCL ...]] [--sel-excl SEL_EXCL]
+                  [-l LIMIT] [-k SKIP] [--pep-config PEP_CONFIG]
+                  [-o OUTPUT_DIR] [--config-file CONFIG_FILE]
+                  [--looper-config LOOPER_CONFIG]
+                  [-S SAMPLE_PIPELINE_INTERFACES [SAMPLE_PIPELINE_INTERFACES ...]]
+                  [-P PROJECT_PIPELINE_INTERFACES [PROJECT_PIPELINE_INTERFACES ...]]
+                  [--pipestat PIPESTAT] [--amend AMEND [AMEND ...]]
+                  [--project]
 
-Run or submit sample jobs.
+optional arguments:
+  -i, --ignore-flags    Ignore run status flags (default: False)
+  -t TIME_DELAY, --time-delay TIME_DELAY
+                        Time delay in seconds between job submissions (min: 0,
+                        max: 30) (default: 0)
+  -d, --dry-run         Don't actually submit jobs (default: False)
+  -x COMMAND_EXTRA, --command-extra COMMAND_EXTRA
+                        String to append to every command (default: )
+  -y COMMAND_EXTRA_OVERRIDE, --command-extra-override COMMAND_EXTRA_OVERRIDE
+                        Same as command-extra, but overrides values in PEP
+                        (default: )
+  -u LUMP, --lump LUMP  Total input file size (GB) to batch into one job
+                        (default: None)
+  -n LUMP_N, --lump-n LUMP_N
+                        Number of commands to batch into one job (default:
+                        None)
+  -j LUMP_J, --lump-j LUMP_J
+                        Lump samples into number of jobs. (default: None)
+  --divvy DIVVY         Path to divvy configuration file. Default=$DIVCFG env
+                        variable. Currently: not set (default: None)
+  -f, --skip-file-checks
+                        Do not perform input file checks (default: False)
+  -c COMPUTE [COMPUTE ...], --compute COMPUTE [COMPUTE ...]
+                        List of key-value pairs (k1=v1) (default: [])
+  --package PACKAGE     Name of computing resource package to use (default:
+                        None)
+  --settings SETTINGS   Path to a YAML settings file with compute settings
+                        (default: )
+  --exc-flag EXC_FLAG [EXC_FLAG ...]
+                        Sample exclusion flag (default: [])
+  --sel-flag SEL_FLAG [SEL_FLAG ...]
+                        Sample selection flag (default: [])
+  --sel-attr SEL_ATTR   Attribute for sample exclusion OR inclusion (default:
+                        toggle)
+  --sel-incl SEL_INCL [SEL_INCL ...]
+                        Include only samples with these values (default: [])
+  --sel-excl SEL_EXCL   Exclude samples with these values (default: )
+  -l LIMIT, --limit LIMIT
+                        Limit to n samples (default: None)
+  -k SKIP, --skip SKIP  Skip samples by numerical index (default: None)
+  --pep-config PEP_CONFIG
+                        PEP configuration file (default: None)
+  -o OUTPUT_DIR, --output-dir OUTPUT_DIR
+                        Output directory (default: None)
+  --config-file CONFIG_FILE
+                        Project configuration file (default: None)
+  --looper-config LOOPER_CONFIG
+                        Looper configuration file (YAML) (default: None)
+  -S SAMPLE_PIPELINE_INTERFACES [SAMPLE_PIPELINE_INTERFACES ...], --sample-pipeline-interfaces SAMPLE_PIPELINE_INTERFACES [SAMPLE_PIPELINE_INTERFACES ...]
+                        Paths to looper sample pipeline interfaces (default:
+                        [])
+  -P PROJECT_PIPELINE_INTERFACES [PROJECT_PIPELINE_INTERFACES ...], --project-pipeline-interfaces PROJECT_PIPELINE_INTERFACES [PROJECT_PIPELINE_INTERFACES ...]
+                        Paths to looper project pipeline interfaces (default:
+                        [])
+  --pipestat PIPESTAT   Path to pipestat files. (default: None)
+  --amend AMEND [AMEND ...]
+                        List of amendments to activate (default: [])
+  --project             Is this command executed for project-level? (default:
+                        False)
 
-positional arguments:
-  config_file                        Project configuration file (YAML) or pephub registry
-                                     path.
-
-options:
-  -h, --help                         show this help message and exit
-  -i, --ignore-flags                 Ignore run status flags? Default=False
-  -d, --dry-run                      Don't actually submit the jobs. Default=False
-  -t S, --time-delay S               Time delay in seconds between job submissions
-  -x S, --command-extra S            String to append to every command
-  -y S, --command-extra-override S   Same as command-extra, but overrides values in PEP
-  -f, --skip-file-checks             Do not perform input file checks
-  -u X, --lump-s X                   Lump by size: total input file size (GB) to batch
-                                     into one job
-  -n N, --lump-n N                   Lump by number: number of samples to batch into one
-                                     job
-  -j J, --lump-j J                   Lump samples into number of jobs.
-  --looper-config LOOPER_CONFIG      Looper configuration file (YAML)
-  -S YAML [YAML ...], --sample-pipeline-interfaces YAML [YAML ...]
-                                     Path to looper sample config file
-  -P YAML [YAML ...], --project-pipeline-interfaces YAML [YAML ...]
-                                     Path to looper project config file
-  -a A [A ...], --amend A [A ...]    List of amendments to activate
-
-divvy arguments:
-  Configure divvy to change computing settings
-
-  --divvy DIVCFG                     Path to divvy configuration file. Default=$DIVCFG env
-                                     variable. Currently: not set
-  -p P, --package P                  Name of computing resource package to use
-  -s S, --settings S                 Path to a YAML settings file with compute settings
-  -c K [K ...], --compute K [K ...]  List of key-value pairs (k1=v1)
-
-sample selection arguments:
-  Specify samples to include or exclude based on sample attribute values
-
-  -l N, --limit N                    Limit to n samples
-  -k N, --skip N                     Skip samples by numerical index
-  --sel-attr ATTR                    Attribute for sample exclusion OR inclusion
-  --sel-excl [E ...]                 Exclude samples with these values
-  --sel-incl [I ...]                 Include only samples with these values
-  --sel-flag [SELFLAG ...]           Include samples with this flag status, e.g. completed
-  --exc-flag [EXCFLAG ...]           Exclude samples with this flag status, e.g. completed
+help:
+  -h, --help            show this help message and exit
 ```
 
 ## `looper runp --help`
 ```console
-usage: looper runp [-h] [-i] [-d] [-t S] [-x S] [-y S] [-f] [--divvy DIVCFG] [-p P] [-s S]
-                   [-c K [K ...]] [--looper-config LOOPER_CONFIG] [-S YAML [YAML ...]]
-                   [-P YAML [YAML ...]] [-l N] [-k N] [--sel-attr ATTR]
-                   [--sel-excl [E ...] | --sel-incl [I ...]] [--sel-flag [SELFLAG ...]]
-                   [--exc-flag [EXCFLAG ...]] [-a A [A ...]]
-                   [config_file]
+usage: looper runp [-h] [-i] [-t TIME_DELAY] [-d] [-x COMMAND_EXTRA]
+                   [-y COMMAND_EXTRA_OVERRIDE] [-u LUMP] [-n LUMP_N]
+                   [--divvy DIVVY] [-f] [-c COMPUTE [COMPUTE ...]]
+                   [--package PACKAGE] [--settings SETTINGS]
+                   [--exc-flag EXC_FLAG [EXC_FLAG ...]]
+                   [--sel-flag SEL_FLAG [SEL_FLAG ...]] [--sel-attr SEL_ATTR]
+                   [--sel-incl SEL_INCL [SEL_INCL ...]] [--sel-excl SEL_EXCL]
+                   [-l LIMIT] [-k SKIP] [--pep-config PEP_CONFIG]
+                   [-o OUTPUT_DIR] [--config-file CONFIG_FILE]
+                   [--looper-config LOOPER_CONFIG]
+                   [-S SAMPLE_PIPELINE_INTERFACES [SAMPLE_PIPELINE_INTERFACES ...]]
+                   [-P PROJECT_PIPELINE_INTERFACES [PROJECT_PIPELINE_INTERFACES ...]]
+                   [--pipestat PIPESTAT] [--amend AMEND [AMEND ...]]
+                   [--project]
 
-Run or submit project jobs.
+optional arguments:
+  -i, --ignore-flags    Ignore run status flags (default: False)
+  -t TIME_DELAY, --time-delay TIME_DELAY
+                        Time delay in seconds between job submissions (min: 0,
+                        max: 30) (default: 0)
+  -d, --dry-run         Don't actually submit jobs (default: False)
+  -x COMMAND_EXTRA, --command-extra COMMAND_EXTRA
+                        String to append to every command (default: )
+  -y COMMAND_EXTRA_OVERRIDE, --command-extra-override COMMAND_EXTRA_OVERRIDE
+                        Same as command-extra, but overrides values in PEP
+                        (default: )
+  -u LUMP, --lump LUMP  Total input file size (GB) to batch into one job
+                        (default: None)
+  -n LUMP_N, --lump-n LUMP_N
+                        Number of commands to batch into one job (default:
+                        None)
+  --divvy DIVVY         Path to divvy configuration file. Default=$DIVCFG env
+                        variable. Currently: not set (default: None)
+  -f, --skip-file-checks
+                        Do not perform input file checks (default: False)
+  -c COMPUTE [COMPUTE ...], --compute COMPUTE [COMPUTE ...]
+                        List of key-value pairs (k1=v1) (default: [])
+  --package PACKAGE     Name of computing resource package to use (default:
+                        None)
+  --settings SETTINGS   Path to a YAML settings file with compute settings
+                        (default: )
+  --exc-flag EXC_FLAG [EXC_FLAG ...]
+                        Sample exclusion flag (default: [])
+  --sel-flag SEL_FLAG [SEL_FLAG ...]
+                        Sample selection flag (default: [])
+  --sel-attr SEL_ATTR   Attribute for sample exclusion OR inclusion (default:
+                        toggle)
+  --sel-incl SEL_INCL [SEL_INCL ...]
+                        Include only samples with these values (default: [])
+  --sel-excl SEL_EXCL   Exclude samples with these values (default: )
+  -l LIMIT, --limit LIMIT
+                        Limit to n samples (default: None)
+  -k SKIP, --skip SKIP  Skip samples by numerical index (default: None)
+  --pep-config PEP_CONFIG
+                        PEP configuration file (default: None)
+  -o OUTPUT_DIR, --output-dir OUTPUT_DIR
+                        Output directory (default: None)
+  --config-file CONFIG_FILE
+                        Project configuration file (default: None)
+  --looper-config LOOPER_CONFIG
+                        Looper configuration file (YAML) (default: None)
+  -S SAMPLE_PIPELINE_INTERFACES [SAMPLE_PIPELINE_INTERFACES ...], --sample-pipeline-interfaces SAMPLE_PIPELINE_INTERFACES [SAMPLE_PIPELINE_INTERFACES ...]
+                        Paths to looper sample pipeline interfaces (default:
+                        [])
+  -P PROJECT_PIPELINE_INTERFACES [PROJECT_PIPELINE_INTERFACES ...], --project-pipeline-interfaces PROJECT_PIPELINE_INTERFACES [PROJECT_PIPELINE_INTERFACES ...]
+                        Paths to looper project pipeline interfaces (default:
+                        [])
+  --pipestat PIPESTAT   Path to pipestat files. (default: None)
+  --amend AMEND [AMEND ...]
+                        List of amendments to activate (default: [])
+  --project             Is this command executed for project-level? (default:
+                        False)
 
-positional arguments:
-  config_file                        Project configuration file (YAML) or pephub registry
-                                     path.
-
-options:
-  -h, --help                         show this help message and exit
-  -i, --ignore-flags                 Ignore run status flags? Default=False
-  -d, --dry-run                      Don't actually submit the jobs. Default=False
-  -t S, --time-delay S               Time delay in seconds between job submissions
-  -x S, --command-extra S            String to append to every command
-  -y S, --command-extra-override S   Same as command-extra, but overrides values in PEP
-  -f, --skip-file-checks             Do not perform input file checks
-  --looper-config LOOPER_CONFIG      Looper configuration file (YAML)
-  -S YAML [YAML ...], --sample-pipeline-interfaces YAML [YAML ...]
-                                     Path to looper sample config file
-  -P YAML [YAML ...], --project-pipeline-interfaces YAML [YAML ...]
-                                     Path to looper project config file
-  -a A [A ...], --amend A [A ...]    List of amendments to activate
-
-divvy arguments:
-  Configure divvy to change computing settings
-
-  --divvy DIVCFG                     Path to divvy configuration file. Default=$DIVCFG env
-                                     variable. Currently: not set
-  -p P, --package P                  Name of computing resource package to use
-  -s S, --settings S                 Path to a YAML settings file with compute settings
-  -c K [K ...], --compute K [K ...]  List of key-value pairs (k1=v1)
-
-sample selection arguments:
-  Specify samples to include or exclude based on sample attribute values
-
-  -l N, --limit N                    Limit to n samples
-  -k N, --skip N                     Skip samples by numerical index
-  --sel-attr ATTR                    Attribute for sample exclusion OR inclusion
-  --sel-excl [E ...]                 Exclude samples with these values
-  --sel-incl [I ...]                 Include only samples with these values
-  --sel-flag [SELFLAG ...]           Include samples with this flag status, e.g. completed
-  --exc-flag [EXCFLAG ...]           Exclude samples with this flag status, e.g. completed
+help:
+  -h, --help            show this help message and exit
 ```
 
 ## `looper rerun --help`
 ```console
-usage: looper rerun [-h] [-i] [-d] [-t S] [-x S] [-y S] [-f] [--divvy DIVCFG] [-p P]
-                    [-s S] [-c K [K ...]] [-u X] [-n N] [-j J]
-                    [--looper-config LOOPER_CONFIG] [-S YAML [YAML ...]]
-                    [-P YAML [YAML ...]] [-l N] [-k N] [--sel-attr ATTR]
-                    [--sel-excl [E ...] | --sel-incl [I ...]] [--sel-flag [SELFLAG ...]]
-                    [--exc-flag [EXCFLAG ...]] [-a A [A ...]]
-                    [config_file]
+usage: looper rerun [-h] [-i] [-t TIME_DELAY] [-d] [-x COMMAND_EXTRA]
+                    [-y COMMAND_EXTRA_OVERRIDE] [-u LUMP] [-n LUMP_N]
+                    [-j LUMP_J] [--divvy DIVVY] [-f]
+                    [-c COMPUTE [COMPUTE ...]] [--package PACKAGE]
+                    [--settings SETTINGS] [--exc-flag EXC_FLAG [EXC_FLAG ...]]
+                    [--sel-flag SEL_FLAG [SEL_FLAG ...]] [--sel-attr SEL_ATTR]
+                    [--sel-incl SEL_INCL [SEL_INCL ...]] [--sel-excl SEL_EXCL]
+                    [-l LIMIT] [-k SKIP] [--pep-config PEP_CONFIG]
+                    [-o OUTPUT_DIR] [--config-file CONFIG_FILE]
+                    [--looper-config LOOPER_CONFIG]
+                    [-S SAMPLE_PIPELINE_INTERFACES [SAMPLE_PIPELINE_INTERFACES ...]]
+                    [-P PROJECT_PIPELINE_INTERFACES [PROJECT_PIPELINE_INTERFACES ...]]
+                    [--pipestat PIPESTAT] [--amend AMEND [AMEND ...]]
+                    [--project]
 
-Resubmit sample jobs with failed flags.
+optional arguments:
+  -i, --ignore-flags    Ignore run status flags (default: False)
+  -t TIME_DELAY, --time-delay TIME_DELAY
+                        Time delay in seconds between job submissions (min: 0,
+                        max: 30) (default: 0)
+  -d, --dry-run         Don't actually submit jobs (default: False)
+  -x COMMAND_EXTRA, --command-extra COMMAND_EXTRA
+                        String to append to every command (default: )
+  -y COMMAND_EXTRA_OVERRIDE, --command-extra-override COMMAND_EXTRA_OVERRIDE
+                        Same as command-extra, but overrides values in PEP
+                        (default: )
+  -u LUMP, --lump LUMP  Total input file size (GB) to batch into one job
+                        (default: None)
+  -n LUMP_N, --lump-n LUMP_N
+                        Number of commands to batch into one job (default:
+                        None)
+  -j LUMP_J, --lump-j LUMP_J
+                        Lump samples into number of jobs. (default: None)
+  --divvy DIVVY         Path to divvy configuration file. Default=$DIVCFG env
+                        variable. Currently: not set (default: None)
+  -f, --skip-file-checks
+                        Do not perform input file checks (default: False)
+  -c COMPUTE [COMPUTE ...], --compute COMPUTE [COMPUTE ...]
+                        List of key-value pairs (k1=v1) (default: [])
+  --package PACKAGE     Name of computing resource package to use (default:
+                        None)
+  --settings SETTINGS   Path to a YAML settings file with compute settings
+                        (default: )
+  --exc-flag EXC_FLAG [EXC_FLAG ...]
+                        Sample exclusion flag (default: [])
+  --sel-flag SEL_FLAG [SEL_FLAG ...]
+                        Sample selection flag (default: [])
+  --sel-attr SEL_ATTR   Attribute for sample exclusion OR inclusion (default:
+                        toggle)
+  --sel-incl SEL_INCL [SEL_INCL ...]
+                        Include only samples with these values (default: [])
+  --sel-excl SEL_EXCL   Exclude samples with these values (default: )
+  -l LIMIT, --limit LIMIT
+                        Limit to n samples (default: None)
+  -k SKIP, --skip SKIP  Skip samples by numerical index (default: None)
+  --pep-config PEP_CONFIG
+                        PEP configuration file (default: None)
+  -o OUTPUT_DIR, --output-dir OUTPUT_DIR
+                        Output directory (default: None)
+  --config-file CONFIG_FILE
+                        Project configuration file (default: None)
+  --looper-config LOOPER_CONFIG
+                        Looper configuration file (YAML) (default: None)
+  -S SAMPLE_PIPELINE_INTERFACES [SAMPLE_PIPELINE_INTERFACES ...], --sample-pipeline-interfaces SAMPLE_PIPELINE_INTERFACES [SAMPLE_PIPELINE_INTERFACES ...]
+                        Paths to looper sample pipeline interfaces (default:
+                        [])
+  -P PROJECT_PIPELINE_INTERFACES [PROJECT_PIPELINE_INTERFACES ...], --project-pipeline-interfaces PROJECT_PIPELINE_INTERFACES [PROJECT_PIPELINE_INTERFACES ...]
+                        Paths to looper project pipeline interfaces (default:
+                        [])
+  --pipestat PIPESTAT   Path to pipestat files. (default: None)
+  --amend AMEND [AMEND ...]
+                        List of amendments to activate (default: [])
+  --project             Is this command executed for project-level? (default:
+                        False)
 
-positional arguments:
-  config_file                        Project configuration file (YAML) or pephub registry
-                                     path.
-
-options:
-  -h, --help                         show this help message and exit
-  -i, --ignore-flags                 Ignore run status flags? Default=False
-  -d, --dry-run                      Don't actually submit the jobs. Default=False
-  -t S, --time-delay S               Time delay in seconds between job submissions
-  -x S, --command-extra S            String to append to every command
-  -y S, --command-extra-override S   Same as command-extra, but overrides values in PEP
-  -f, --skip-file-checks             Do not perform input file checks
-  -u X, --lump-s X                   Lump by size: total input file size (GB) to batch
-                                     into one job
-  -n N, --lump-n N                   Lump by number: number of samples to batch into one
-                                     job
-  -j J, --lump-j J                   Lump samples into number of jobs.
-  --looper-config LOOPER_CONFIG      Looper configuration file (YAML)
-  -S YAML [YAML ...], --sample-pipeline-interfaces YAML [YAML ...]
-                                     Path to looper sample config file
-  -P YAML [YAML ...], --project-pipeline-interfaces YAML [YAML ...]
-                                     Path to looper project config file
-  -a A [A ...], --amend A [A ...]    List of amendments to activate
-
-divvy arguments:
-  Configure divvy to change computing settings
-
-  --divvy DIVCFG                     Path to divvy configuration file. Default=$DIVCFG env
-                                     variable. Currently: not set
-  -p P, --package P                  Name of computing resource package to use
-  -s S, --settings S                 Path to a YAML settings file with compute settings
-  -c K [K ...], --compute K [K ...]  List of key-value pairs (k1=v1)
-
-sample selection arguments:
-  Specify samples to include or exclude based on sample attribute values
-
-  -l N, --limit N                    Limit to n samples
-  -k N, --skip N                     Skip samples by numerical index
-  --sel-attr ATTR                    Attribute for sample exclusion OR inclusion
-  --sel-excl [E ...]                 Exclude samples with these values
-  --sel-incl [I ...]                 Include only samples with these values
-  --sel-flag [SELFLAG ...]           Include samples with this flag status, e.g. completed
-  --exc-flag [EXCFLAG ...]           Exclude samples with this flag status, e.g. completed
+help:
+  -h, --help            show this help message and exit
 ```
 
 ## `looper report --help`
 ```console
-usage: looper report [-h] [--looper-config LOOPER_CONFIG] [-S YAML [YAML ...]]
-                     [-P YAML [YAML ...]] [-l N] [-k N] [--sel-attr ATTR]
-                     [--sel-excl [E ...] | --sel-incl [I ...]] [--sel-flag [SELFLAG ...]]
-                     [--exc-flag [EXCFLAG ...]] [-a A [A ...]] [--project] [--portable]
-                     [config_file]
+usage: looper report [-h] [--portable] [--settings SETTINGS]
+                     [--exc-flag EXC_FLAG [EXC_FLAG ...]]
+                     [--sel-flag SEL_FLAG [SEL_FLAG ...]]
+                     [--sel-attr SEL_ATTR]
+                     [--sel-incl SEL_INCL [SEL_INCL ...]]
+                     [--sel-excl SEL_EXCL] [-l LIMIT] [-k SKIP]
+                     [--pep-config PEP_CONFIG] [-o OUTPUT_DIR]
+                     [--config-file CONFIG_FILE]
+                     [--looper-config LOOPER_CONFIG]
+                     [-S SAMPLE_PIPELINE_INTERFACES [SAMPLE_PIPELINE_INTERFACES ...]]
+                     [-P PROJECT_PIPELINE_INTERFACES [PROJECT_PIPELINE_INTERFACES ...]]
+                     [--pipestat PIPESTAT] [--amend AMEND [AMEND ...]]
+                     [--project]
 
-Create browsable HTML report of project results.
+optional arguments:
+  --portable            Makes html report portable. (default: False)
+  --settings SETTINGS   Path to a YAML settings file with compute settings
+                        (default: )
+  --exc-flag EXC_FLAG [EXC_FLAG ...]
+                        Sample exclusion flag (default: [])
+  --sel-flag SEL_FLAG [SEL_FLAG ...]
+                        Sample selection flag (default: [])
+  --sel-attr SEL_ATTR   Attribute for sample exclusion OR inclusion (default:
+                        toggle)
+  --sel-incl SEL_INCL [SEL_INCL ...]
+                        Include only samples with these values (default: [])
+  --sel-excl SEL_EXCL   Exclude samples with these values (default: )
+  -l LIMIT, --limit LIMIT
+                        Limit to n samples (default: None)
+  -k SKIP, --skip SKIP  Skip samples by numerical index (default: None)
+  --pep-config PEP_CONFIG
+                        PEP configuration file (default: None)
+  -o OUTPUT_DIR, --output-dir OUTPUT_DIR
+                        Output directory (default: None)
+  --config-file CONFIG_FILE
+                        Project configuration file (default: None)
+  --looper-config LOOPER_CONFIG
+                        Looper configuration file (YAML) (default: None)
+  -S SAMPLE_PIPELINE_INTERFACES [SAMPLE_PIPELINE_INTERFACES ...], --sample-pipeline-interfaces SAMPLE_PIPELINE_INTERFACES [SAMPLE_PIPELINE_INTERFACES ...]
+                        Paths to looper sample pipeline interfaces (default:
+                        [])
+  -P PROJECT_PIPELINE_INTERFACES [PROJECT_PIPELINE_INTERFACES ...], --project-pipeline-interfaces PROJECT_PIPELINE_INTERFACES [PROJECT_PIPELINE_INTERFACES ...]
+                        Paths to looper project pipeline interfaces (default:
+                        [])
+  --pipestat PIPESTAT   Path to pipestat files. (default: None)
+  --amend AMEND [AMEND ...]
+                        List of amendments to activate (default: [])
+  --project             Is this command executed for project-level? (default:
+                        False)
 
-positional arguments:
-  config_file                        Project configuration file (YAML) or pephub registry
-                                     path.
-
-options:
-  -h, --help                         show this help message and exit
-  --looper-config LOOPER_CONFIG      Looper configuration file (YAML)
-  -S YAML [YAML ...], --sample-pipeline-interfaces YAML [YAML ...]
-                                     Path to looper sample config file
-  -P YAML [YAML ...], --project-pipeline-interfaces YAML [YAML ...]
-                                     Path to looper project config file
-  -a A [A ...], --amend A [A ...]    List of amendments to activate
-  --project                          Process project-level pipelines
-  --portable                         Makes html report portable.
-
-sample selection arguments:
-  Specify samples to include or exclude based on sample attribute values
-
-  -l N, --limit N                    Limit to n samples
-  -k N, --skip N                     Skip samples by numerical index
-  --sel-attr ATTR                    Attribute for sample exclusion OR inclusion
-  --sel-excl [E ...]                 Exclude samples with these values
-  --sel-incl [I ...]                 Include only samples with these values
-  --sel-flag [SELFLAG ...]           Include samples with this flag status, e.g. completed
-  --exc-flag [EXCFLAG ...]           Exclude samples with this flag status, e.g. completed
+help:
+  -h, --help            show this help message and exit
 ```
 
 ## `looper table --help`
 ```console
-usage: looper table [-h] [--looper-config LOOPER_CONFIG] [-S YAML [YAML ...]]
-                    [-P YAML [YAML ...]] [-l N] [-k N] [--sel-attr ATTR]
-                    [--sel-excl [E ...] | --sel-incl [I ...]] [--sel-flag [SELFLAG ...]]
-                    [--exc-flag [EXCFLAG ...]] [-a A [A ...]] [--project]
-                    [config_file]
+usage: looper table [-h] [--settings SETTINGS]
+                    [--exc-flag EXC_FLAG [EXC_FLAG ...]]
+                    [--sel-flag SEL_FLAG [SEL_FLAG ...]] [--sel-attr SEL_ATTR]
+                    [--sel-incl SEL_INCL [SEL_INCL ...]] [--sel-excl SEL_EXCL]
+                    [-l LIMIT] [-k SKIP] [--pep-config PEP_CONFIG]
+                    [-o OUTPUT_DIR] [--config-file CONFIG_FILE]
+                    [--looper-config LOOPER_CONFIG]
+                    [-S SAMPLE_PIPELINE_INTERFACES [SAMPLE_PIPELINE_INTERFACES ...]]
+                    [-P PROJECT_PIPELINE_INTERFACES [PROJECT_PIPELINE_INTERFACES ...]]
+                    [--pipestat PIPESTAT] [--amend AMEND [AMEND ...]]
+                    [--project]
 
-Write summary stats table for project samples.
+optional arguments:
+  --settings SETTINGS   Path to a YAML settings file with compute settings
+                        (default: )
+  --exc-flag EXC_FLAG [EXC_FLAG ...]
+                        Sample exclusion flag (default: [])
+  --sel-flag SEL_FLAG [SEL_FLAG ...]
+                        Sample selection flag (default: [])
+  --sel-attr SEL_ATTR   Attribute for sample exclusion OR inclusion (default:
+                        toggle)
+  --sel-incl SEL_INCL [SEL_INCL ...]
+                        Include only samples with these values (default: [])
+  --sel-excl SEL_EXCL   Exclude samples with these values (default: )
+  -l LIMIT, --limit LIMIT
+                        Limit to n samples (default: None)
+  -k SKIP, --skip SKIP  Skip samples by numerical index (default: None)
+  --pep-config PEP_CONFIG
+                        PEP configuration file (default: None)
+  -o OUTPUT_DIR, --output-dir OUTPUT_DIR
+                        Output directory (default: None)
+  --config-file CONFIG_FILE
+                        Project configuration file (default: None)
+  --looper-config LOOPER_CONFIG
+                        Looper configuration file (YAML) (default: None)
+  -S SAMPLE_PIPELINE_INTERFACES [SAMPLE_PIPELINE_INTERFACES ...], --sample-pipeline-interfaces SAMPLE_PIPELINE_INTERFACES [SAMPLE_PIPELINE_INTERFACES ...]
+                        Paths to looper sample pipeline interfaces (default:
+                        [])
+  -P PROJECT_PIPELINE_INTERFACES [PROJECT_PIPELINE_INTERFACES ...], --project-pipeline-interfaces PROJECT_PIPELINE_INTERFACES [PROJECT_PIPELINE_INTERFACES ...]
+                        Paths to looper project pipeline interfaces (default:
+                        [])
+  --pipestat PIPESTAT   Path to pipestat files. (default: None)
+  --amend AMEND [AMEND ...]
+                        List of amendments to activate (default: [])
+  --project             Is this command executed for project-level? (default:
+                        False)
 
-positional arguments:
-  config_file                        Project configuration file (YAML) or pephub registry
-                                     path.
-
-options:
-  -h, --help                         show this help message and exit
-  --looper-config LOOPER_CONFIG      Looper configuration file (YAML)
-  -S YAML [YAML ...], --sample-pipeline-interfaces YAML [YAML ...]
-                                     Path to looper sample config file
-  -P YAML [YAML ...], --project-pipeline-interfaces YAML [YAML ...]
-                                     Path to looper project config file
-  -a A [A ...], --amend A [A ...]    List of amendments to activate
-  --project                          Process project-level pipelines
-
-sample selection arguments:
-  Specify samples to include or exclude based on sample attribute values
-
-  -l N, --limit N                    Limit to n samples
-  -k N, --skip N                     Skip samples by numerical index
-  --sel-attr ATTR                    Attribute for sample exclusion OR inclusion
-  --sel-excl [E ...]                 Exclude samples with these values
-  --sel-incl [I ...]                 Include only samples with these values
-  --sel-flag [SELFLAG ...]           Include samples with this flag status, e.g. completed
-  --exc-flag [EXCFLAG ...]           Exclude samples with this flag status, e.g. completed
+help:
+  -h, --help            show this help message and exit
 ```
 
 ## `looper inspect --help`
 ```console
-usage: looper inspect [-h] [--looper-config LOOPER_CONFIG] [-S YAML [YAML ...]]
-                      [-P YAML [YAML ...]] [-l N] [-k N] [--sel-attr ATTR]
-                      [--sel-excl [E ...] | --sel-incl [I ...]] [--sel-flag [SELFLAG ...]]
-                      [--exc-flag [EXCFLAG ...]] [-a A [A ...]]
-                      [--sample-names [SAMPLE_NAMES ...]] [--attr-limit ATTR_LIMIT]
-                      [config_file]
+usage: looper inspect [-h] [--settings SETTINGS]
+                      [--exc-flag EXC_FLAG [EXC_FLAG ...]]
+                      [--sel-flag SEL_FLAG [SEL_FLAG ...]]
+                      [--sel-attr SEL_ATTR]
+                      [--sel-incl SEL_INCL [SEL_INCL ...]]
+                      [--sel-excl SEL_EXCL] [-l LIMIT] [-k SKIP]
+                      [--pep-config PEP_CONFIG] [-o OUTPUT_DIR]
+                      [--config-file CONFIG_FILE]
+                      [--looper-config LOOPER_CONFIG]
+                      [-S SAMPLE_PIPELINE_INTERFACES [SAMPLE_PIPELINE_INTERFACES ...]]
+                      [-P PROJECT_PIPELINE_INTERFACES [PROJECT_PIPELINE_INTERFACES ...]]
+                      [--pipestat PIPESTAT] [--amend AMEND [AMEND ...]]
+                      [--project]
 
-Print information about a project.
+optional arguments:
+  --settings SETTINGS   Path to a YAML settings file with compute settings
+                        (default: )
+  --exc-flag EXC_FLAG [EXC_FLAG ...]
+                        Sample exclusion flag (default: [])
+  --sel-flag SEL_FLAG [SEL_FLAG ...]
+                        Sample selection flag (default: [])
+  --sel-attr SEL_ATTR   Attribute for sample exclusion OR inclusion (default:
+                        toggle)
+  --sel-incl SEL_INCL [SEL_INCL ...]
+                        Include only samples with these values (default: [])
+  --sel-excl SEL_EXCL   Exclude samples with these values (default: )
+  -l LIMIT, --limit LIMIT
+                        Limit to n samples (default: None)
+  -k SKIP, --skip SKIP  Skip samples by numerical index (default: None)
+  --pep-config PEP_CONFIG
+                        PEP configuration file (default: None)
+  -o OUTPUT_DIR, --output-dir OUTPUT_DIR
+                        Output directory (default: None)
+  --config-file CONFIG_FILE
+                        Project configuration file (default: None)
+  --looper-config LOOPER_CONFIG
+                        Looper configuration file (YAML) (default: None)
+  -S SAMPLE_PIPELINE_INTERFACES [SAMPLE_PIPELINE_INTERFACES ...], --sample-pipeline-interfaces SAMPLE_PIPELINE_INTERFACES [SAMPLE_PIPELINE_INTERFACES ...]
+                        Paths to looper sample pipeline interfaces (default:
+                        [])
+  -P PROJECT_PIPELINE_INTERFACES [PROJECT_PIPELINE_INTERFACES ...], --project-pipeline-interfaces PROJECT_PIPELINE_INTERFACES [PROJECT_PIPELINE_INTERFACES ...]
+                        Paths to looper project pipeline interfaces (default:
+                        [])
+  --pipestat PIPESTAT   Path to pipestat files. (default: None)
+  --amend AMEND [AMEND ...]
+                        List of amendments to activate (default: [])
+  --project             Is this command executed for project-level? (default:
+                        False)
 
-positional arguments:
-  config_file                        Project configuration file (YAML) or pephub registry
-                                     path.
-
-options:
-  -h, --help                         show this help message and exit
-  --looper-config LOOPER_CONFIG      Looper configuration file (YAML)
-  -S YAML [YAML ...], --sample-pipeline-interfaces YAML [YAML ...]
-                                     Path to looper sample config file
-  -P YAML [YAML ...], --project-pipeline-interfaces YAML [YAML ...]
-                                     Path to looper project config file
-  -a A [A ...], --amend A [A ...]    List of amendments to activate
-  --sample-names [SAMPLE_NAMES ...]  Names of the samples to inspect
-  --attr-limit ATTR_LIMIT            Number of attributes to display
-
-sample selection arguments:
-  Specify samples to include or exclude based on sample attribute values
-
-  -l N, --limit N                    Limit to n samples
-  -k N, --skip N                     Skip samples by numerical index
-  --sel-attr ATTR                    Attribute for sample exclusion OR inclusion
-  --sel-excl [E ...]                 Exclude samples with these values
-  --sel-incl [I ...]                 Include only samples with these values
-  --sel-flag [SELFLAG ...]           Include samples with this flag status, e.g. completed
-  --exc-flag [EXCFLAG ...]           Exclude samples with this flag status, e.g. completed
+help:
+  -h, --help            show this help message and exit
 ```
 
 ## `looper init --help`
 ```console
-usage: looper init [-h] [-f] [-o DIR] [-S YAML [YAML ...]] [-P YAML [YAML ...]] [-p]
-                   pep_config
+usage: looper init [-h] [-f] [-o OUTPUT_DIR] [--pep-config PEP_CONFIG]
+                   [-S SAMPLE_PIPELINE_INTERFACES [SAMPLE_PIPELINE_INTERFACES ...]]
+                   [-P PROJECT_PIPELINE_INTERFACES [PROJECT_PIPELINE_INTERFACES ...]]
 
-Initialize looper config file.
+optional arguments:
+  -f, --force-yes       Provide upfront confirmation of destruction intent, to
+                        skip console query. Default=False (default: False)
+  -o OUTPUT_DIR, --output-dir OUTPUT_DIR
+                        Output directory (default: None)
+  --pep-config PEP_CONFIG
+                        PEP configuration file (default: None)
+  -S SAMPLE_PIPELINE_INTERFACES [SAMPLE_PIPELINE_INTERFACES ...], --sample-pipeline-interfaces SAMPLE_PIPELINE_INTERFACES [SAMPLE_PIPELINE_INTERFACES ...]
+                        Paths to looper sample pipeline interfaces (default:
+                        [])
+  -P PROJECT_PIPELINE_INTERFACES [PROJECT_PIPELINE_INTERFACES ...], --project-pipeline-interfaces PROJECT_PIPELINE_INTERFACES [PROJECT_PIPELINE_INTERFACES ...]
+                        Paths to looper project pipeline interfaces (default:
+                        [])
 
-positional arguments:
-  pep_config                         Project configuration file (PEP)
-
-options:
-  -h, --help                         show this help message and exit
-  -f, --force                        Force overwrite
-  -o DIR, --output-dir DIR
-  -S YAML [YAML ...], --sample-pipeline-interfaces YAML [YAML ...]
-                                     Path to looper sample config file
-  -P YAML [YAML ...], --project-pipeline-interfaces YAML [YAML ...]
-                                     Path to looper project config file
-  -p, --piface                       Generates generic pipeline interface
+help:
+  -h, --help            show this help message and exit
 ```
 
 ## `looper destroy --help`
 ```console
-usage: looper destroy [-h] [-d] [--force-yes] [--looper-config LOOPER_CONFIG]
-                      [-S YAML [YAML ...]] [-P YAML [YAML ...]] [-l N] [-k N]
-                      [--sel-attr ATTR] [--sel-excl [E ...] | --sel-incl [I ...]]
-                      [--sel-flag [SELFLAG ...]] [--exc-flag [EXCFLAG ...]] [-a A [A ...]]
+usage: looper destroy [-h] [-d] [-f] [--settings SETTINGS]
+                      [--exc-flag EXC_FLAG [EXC_FLAG ...]]
+                      [--sel-flag SEL_FLAG [SEL_FLAG ...]]
+                      [--sel-attr SEL_ATTR]
+                      [--sel-incl SEL_INCL [SEL_INCL ...]]
+                      [--sel-excl SEL_EXCL] [-l LIMIT] [-k SKIP]
+                      [--pep-config PEP_CONFIG] [-o OUTPUT_DIR]
+                      [--config-file CONFIG_FILE]
+                      [--looper-config LOOPER_CONFIG]
+                      [-S SAMPLE_PIPELINE_INTERFACES [SAMPLE_PIPELINE_INTERFACES ...]]
+                      [-P PROJECT_PIPELINE_INTERFACES [PROJECT_PIPELINE_INTERFACES ...]]
+                      [--pipestat PIPESTAT] [--amend AMEND [AMEND ...]]
                       [--project]
-                      [config_file]
 
-Remove output files of the project.
+optional arguments:
+  -d, --dry-run         Don't actually submit jobs (default: False)
+  -f, --force-yes       Provide upfront confirmation of destruction intent, to
+                        skip console query. Default=False (default: False)
+  --settings SETTINGS   Path to a YAML settings file with compute settings
+                        (default: )
+  --exc-flag EXC_FLAG [EXC_FLAG ...]
+                        Sample exclusion flag (default: [])
+  --sel-flag SEL_FLAG [SEL_FLAG ...]
+                        Sample selection flag (default: [])
+  --sel-attr SEL_ATTR   Attribute for sample exclusion OR inclusion (default:
+                        toggle)
+  --sel-incl SEL_INCL [SEL_INCL ...]
+                        Include only samples with these values (default: [])
+  --sel-excl SEL_EXCL   Exclude samples with these values (default: )
+  -l LIMIT, --limit LIMIT
+                        Limit to n samples (default: None)
+  -k SKIP, --skip SKIP  Skip samples by numerical index (default: None)
+  --pep-config PEP_CONFIG
+                        PEP configuration file (default: None)
+  -o OUTPUT_DIR, --output-dir OUTPUT_DIR
+                        Output directory (default: None)
+  --config-file CONFIG_FILE
+                        Project configuration file (default: None)
+  --looper-config LOOPER_CONFIG
+                        Looper configuration file (YAML) (default: None)
+  -S SAMPLE_PIPELINE_INTERFACES [SAMPLE_PIPELINE_INTERFACES ...], --sample-pipeline-interfaces SAMPLE_PIPELINE_INTERFACES [SAMPLE_PIPELINE_INTERFACES ...]
+                        Paths to looper sample pipeline interfaces (default:
+                        [])
+  -P PROJECT_PIPELINE_INTERFACES [PROJECT_PIPELINE_INTERFACES ...], --project-pipeline-interfaces PROJECT_PIPELINE_INTERFACES [PROJECT_PIPELINE_INTERFACES ...]
+                        Paths to looper project pipeline interfaces (default:
+                        [])
+  --pipestat PIPESTAT   Path to pipestat files. (default: None)
+  --amend AMEND [AMEND ...]
+                        List of amendments to activate (default: [])
+  --project             Is this command executed for project-level? (default:
+                        False)
 
-positional arguments:
-  config_file                        Project configuration file (YAML) or pephub registry
-                                     path.
-
-options:
-  -h, --help                         show this help message and exit
-  -d, --dry-run                      Don't actually submit the jobs. Default=False
-  --force-yes                        Provide upfront confirmation of destruction intent,
-                                     to skip console query. Default=False
-  --looper-config LOOPER_CONFIG      Looper configuration file (YAML)
-  -S YAML [YAML ...], --sample-pipeline-interfaces YAML [YAML ...]
-                                     Path to looper sample config file
-  -P YAML [YAML ...], --project-pipeline-interfaces YAML [YAML ...]
-                                     Path to looper project config file
-  -a A [A ...], --amend A [A ...]    List of amendments to activate
-  --project                          Process project-level pipelines
-
-sample selection arguments:
-  Specify samples to include or exclude based on sample attribute values
-
-  -l N, --limit N                    Limit to n samples
-  -k N, --skip N                     Skip samples by numerical index
-  --sel-attr ATTR                    Attribute for sample exclusion OR inclusion
-  --sel-excl [E ...]                 Exclude samples with these values
-  --sel-incl [I ...]                 Include only samples with these values
-  --sel-flag [SELFLAG ...]           Include samples with this flag status, e.g. completed
-  --exc-flag [EXCFLAG ...]           Exclude samples with this flag status, e.g. completed
+help:
+  -h, --help            show this help message and exit
 ```
 
 ## `looper check --help`
 ```console
-usage: looper check [-h] [--describe-codes] [--itemized] [-f [F ...]]
-                    [--looper-config LOOPER_CONFIG] [-S YAML [YAML ...]]
-                    [-P YAML [YAML ...]] [-l N] [-k N] [--sel-attr ATTR]
-                    [--sel-excl [E ...] | --sel-incl [I ...]] [--sel-flag [SELFLAG ...]]
-                    [--exc-flag [EXCFLAG ...]] [-a A [A ...]] [--project]
-                    [config_file]
+usage: looper check [-h] [--describe-codes] [--itemized]
+                    [-f FLAGS [FLAGS ...]] [--settings SETTINGS]
+                    [--exc-flag EXC_FLAG [EXC_FLAG ...]]
+                    [--sel-flag SEL_FLAG [SEL_FLAG ...]] [--sel-attr SEL_ATTR]
+                    [--sel-incl SEL_INCL [SEL_INCL ...]] [--sel-excl SEL_EXCL]
+                    [-l LIMIT] [-k SKIP] [--pep-config PEP_CONFIG]
+                    [-o OUTPUT_DIR] [--config-file CONFIG_FILE]
+                    [--looper-config LOOPER_CONFIG]
+                    [-S SAMPLE_PIPELINE_INTERFACES [SAMPLE_PIPELINE_INTERFACES ...]]
+                    [-P PROJECT_PIPELINE_INTERFACES [PROJECT_PIPELINE_INTERFACES ...]]
+                    [--pipestat PIPESTAT] [--amend AMEND [AMEND ...]]
+                    [--project]
 
-Check flag status of current runs.
+optional arguments:
+  --describe-codes      Show status codes description. Default=False (default:
+                        False)
+  --itemized            Show detailed overview of sample statuses.
+                        Default=False (default: False)
+  -f FLAGS [FLAGS ...], --flags FLAGS [FLAGS ...]
+                        Only check samples based on these status flags.
+                        (default: [])
+  --settings SETTINGS   Path to a YAML settings file with compute settings
+                        (default: )
+  --exc-flag EXC_FLAG [EXC_FLAG ...]
+                        Sample exclusion flag (default: [])
+  --sel-flag SEL_FLAG [SEL_FLAG ...]
+                        Sample selection flag (default: [])
+  --sel-attr SEL_ATTR   Attribute for sample exclusion OR inclusion (default:
+                        toggle)
+  --sel-incl SEL_INCL [SEL_INCL ...]
+                        Include only samples with these values (default: [])
+  --sel-excl SEL_EXCL   Exclude samples with these values (default: )
+  -l LIMIT, --limit LIMIT
+                        Limit to n samples (default: None)
+  -k SKIP, --skip SKIP  Skip samples by numerical index (default: None)
+  --pep-config PEP_CONFIG
+                        PEP configuration file (default: None)
+  -o OUTPUT_DIR, --output-dir OUTPUT_DIR
+                        Output directory (default: None)
+  --config-file CONFIG_FILE
+                        Project configuration file (default: None)
+  --looper-config LOOPER_CONFIG
+                        Looper configuration file (YAML) (default: None)
+  -S SAMPLE_PIPELINE_INTERFACES [SAMPLE_PIPELINE_INTERFACES ...], --sample-pipeline-interfaces SAMPLE_PIPELINE_INTERFACES [SAMPLE_PIPELINE_INTERFACES ...]
+                        Paths to looper sample pipeline interfaces (default:
+                        [])
+  -P PROJECT_PIPELINE_INTERFACES [PROJECT_PIPELINE_INTERFACES ...], --project-pipeline-interfaces PROJECT_PIPELINE_INTERFACES [PROJECT_PIPELINE_INTERFACES ...]
+                        Paths to looper project pipeline interfaces (default:
+                        [])
+  --pipestat PIPESTAT   Path to pipestat files. (default: None)
+  --amend AMEND [AMEND ...]
+                        List of amendments to activate (default: [])
+  --project             Is this command executed for project-level? (default:
+                        False)
 
-positional arguments:
-  config_file                        Project configuration file (YAML) or pephub registry
-                                     path.
-
-options:
-  -h, --help                         show this help message and exit
-  --describe-codes                   Show status codes description
-  --itemized                         Show a detailed, by sample statuses
-  -f [F ...], --flags [F ...]        Check on only these flags/status values
-  --looper-config LOOPER_CONFIG      Looper configuration file (YAML)
-  -S YAML [YAML ...], --sample-pipeline-interfaces YAML [YAML ...]
-                                     Path to looper sample config file
-  -P YAML [YAML ...], --project-pipeline-interfaces YAML [YAML ...]
-                                     Path to looper project config file
-  -a A [A ...], --amend A [A ...]    List of amendments to activate
-  --project                          Process project-level pipelines
-
-sample selection arguments:
-  Specify samples to include or exclude based on sample attribute values
-
-  -l N, --limit N                    Limit to n samples
-  -k N, --skip N                     Skip samples by numerical index
-  --sel-attr ATTR                    Attribute for sample exclusion OR inclusion
-  --sel-excl [E ...]                 Exclude samples with these values
-  --sel-incl [I ...]                 Include only samples with these values
-  --sel-flag [SELFLAG ...]           Include samples with this flag status, e.g. completed
-  --exc-flag [EXCFLAG ...]           Exclude samples with this flag status, e.g. completed
+help:
+  -h, --help            show this help message and exit
 ```
 
 ## `looper clean --help`
 ```console
-usage: looper clean [-h] [-d] [--force-yes] [--looper-config LOOPER_CONFIG]
-                    [-S YAML [YAML ...]] [-P YAML [YAML ...]] [-l N] [-k N]
-                    [--sel-attr ATTR] [--sel-excl [E ...] | --sel-incl [I ...]]
-                    [--sel-flag [SELFLAG ...]] [--exc-flag [EXCFLAG ...]] [-a A [A ...]]
-                    [config_file]
+usage: looper clean [-h] [-d] [-f] [--settings SETTINGS]
+                    [--exc-flag EXC_FLAG [EXC_FLAG ...]]
+                    [--sel-flag SEL_FLAG [SEL_FLAG ...]] [--sel-attr SEL_ATTR]
+                    [--sel-incl SEL_INCL [SEL_INCL ...]] [--sel-excl SEL_EXCL]
+                    [-l LIMIT] [-k SKIP] [--pep-config PEP_CONFIG]
+                    [-o OUTPUT_DIR] [--config-file CONFIG_FILE]
+                    [--looper-config LOOPER_CONFIG]
+                    [-S SAMPLE_PIPELINE_INTERFACES [SAMPLE_PIPELINE_INTERFACES ...]]
+                    [-P PROJECT_PIPELINE_INTERFACES [PROJECT_PIPELINE_INTERFACES ...]]
+                    [--pipestat PIPESTAT] [--amend AMEND [AMEND ...]]
+                    [--project]
 
-Run clean scripts of already processed jobs.
+optional arguments:
+  -d, --dry-run         Don't actually submit jobs (default: False)
+  -f, --force-yes       Provide upfront confirmation of destruction intent, to
+                        skip console query. Default=False (default: False)
+  --settings SETTINGS   Path to a YAML settings file with compute settings
+                        (default: )
+  --exc-flag EXC_FLAG [EXC_FLAG ...]
+                        Sample exclusion flag (default: [])
+  --sel-flag SEL_FLAG [SEL_FLAG ...]
+                        Sample selection flag (default: [])
+  --sel-attr SEL_ATTR   Attribute for sample exclusion OR inclusion (default:
+                        toggle)
+  --sel-incl SEL_INCL [SEL_INCL ...]
+                        Include only samples with these values (default: [])
+  --sel-excl SEL_EXCL   Exclude samples with these values (default: )
+  -l LIMIT, --limit LIMIT
+                        Limit to n samples (default: None)
+  -k SKIP, --skip SKIP  Skip samples by numerical index (default: None)
+  --pep-config PEP_CONFIG
+                        PEP configuration file (default: None)
+  -o OUTPUT_DIR, --output-dir OUTPUT_DIR
+                        Output directory (default: None)
+  --config-file CONFIG_FILE
+                        Project configuration file (default: None)
+  --looper-config LOOPER_CONFIG
+                        Looper configuration file (YAML) (default: None)
+  -S SAMPLE_PIPELINE_INTERFACES [SAMPLE_PIPELINE_INTERFACES ...], --sample-pipeline-interfaces SAMPLE_PIPELINE_INTERFACES [SAMPLE_PIPELINE_INTERFACES ...]
+                        Paths to looper sample pipeline interfaces (default:
+                        [])
+  -P PROJECT_PIPELINE_INTERFACES [PROJECT_PIPELINE_INTERFACES ...], --project-pipeline-interfaces PROJECT_PIPELINE_INTERFACES [PROJECT_PIPELINE_INTERFACES ...]
+                        Paths to looper project pipeline interfaces (default:
+                        [])
+  --pipestat PIPESTAT   Path to pipestat files. (default: None)
+  --amend AMEND [AMEND ...]
+                        List of amendments to activate (default: [])
+  --project             Is this command executed for project-level? (default:
+                        False)
 
-positional arguments:
-  config_file                        Project configuration file (YAML) or pephub registry
-                                     path.
-
-options:
-  -h, --help                         show this help message and exit
-  -d, --dry-run                      Don't actually submit the jobs. Default=False
-  --force-yes                        Provide upfront confirmation of destruction intent,
-                                     to skip console query. Default=False
-  --looper-config LOOPER_CONFIG      Looper configuration file (YAML)
-  -S YAML [YAML ...], --sample-pipeline-interfaces YAML [YAML ...]
-                                     Path to looper sample config file
-  -P YAML [YAML ...], --project-pipeline-interfaces YAML [YAML ...]
-                                     Path to looper project config file
-  -a A [A ...], --amend A [A ...]    List of amendments to activate
-
-sample selection arguments:
-  Specify samples to include or exclude based on sample attribute values
-
-  -l N, --limit N                    Limit to n samples
-  -k N, --skip N                     Skip samples by numerical index
-  --sel-attr ATTR                    Attribute for sample exclusion OR inclusion
-  --sel-excl [E ...]                 Exclude samples with these values
-  --sel-incl [I ...]                 Include only samples with these values
-  --sel-flag [SELFLAG ...]           Include samples with this flag status, e.g. completed
-  --exc-flag [EXCFLAG ...]           Exclude samples with this flag status, e.g. completed
+help:
+  -h, --help            show this help message and exit
 ```
 
