@@ -162,6 +162,7 @@ class TestLooperRunBehavior:
         tp = prep_temp_pep
 
         with mod_yaml_data(tp) as config_data:
+
             pifaces = config_data[PIPELINE_INTERFACES_KEY]
             config_data[PIPELINE_INTERFACES_KEY]["sample"] = pifaces["sample"][1]
             del config_data[PIPELINE_INTERFACES_KEY]["project"]
