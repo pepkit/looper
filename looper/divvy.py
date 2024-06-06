@@ -6,11 +6,14 @@ import os
 import sys
 import shutil
 import yaml
-from yaml import SafeLoader
-from shutil import copytree
 
+
+from shutil import copytree
+from yacman import FutureYAMLConfigManager as YAMLConfigManager
+from yacman import write_lock, FILEPATH_KEY, load_yaml, select_config
+from yaml import SafeLoader
 from ubiquerg import is_writable, VersionInHelpParser
-import yacman
+
 
 from .const import (
     COMPUTE_SETTINGS_VARNAME,
@@ -28,7 +31,7 @@ _LOGGER = logging.getLogger(__name__)
 # This is the divvy.py submodule from divvy
 
 
-class ComputingConfiguration(yacman.YAMLConfigManager):
+class ComputingConfiguration(YAMLConfigManager):
     """
     Represents computing configuration objects.
 
@@ -44,36 +47,31 @@ class ComputingConfiguration(yacman.YAMLConfigManager):
         `DIVCFG` file)
     """
 
-    def __init__(self, entries=None, filepath=None):
-        if not entries and not filepath:
-            # Handle the case of an empty one, when we'll use the default
-            filepath = select_divvy_config(None)
-
-        super(ComputingConfiguration, self).__init__(
-            entries=entries,
-            filepath=filepath,
-            schema_source=DEFAULT_CONFIG_SCHEMA,
-            validate_on_write=True,
+    def __init__(
+        self,
+        entries=None,
+        wait_max=None,
+        strict_ro_locks=False,
+        schema_source=None,
+        validate_on_write=False,
+    ):
+        super().__init__(
+            entries, wait_max, strict_ro_locks, schema_source, validate_on_write
         )
 
-        if not "compute_packages" in self:
-            raise Exception(
-                "Your divvy config file is not in divvy config format "
-                "(it lacks a compute_packages section): '{}'".format(filepath)
-            )
-            # We require that compute_packages be present, even if empty
+        if "compute_packages" not in self:
             self["compute_packages"] = {}
-
         # Initialize default compute settings.
         _LOGGER.debug("Establishing project compute settings")
         self.compute = None
         self.setdefault("adapters", None)
         self.activate_package(DEFAULT_COMPUTE_RESOURCES_NAME)
-        self.config_file = self.filepath
 
     def write(self, filename=None):
-        super(ComputingConfiguration, self).write(filepath=filename, exclude_case=True)
-        filename = filename or getattr(self, yacman.FILEPATH_KEY)
+        with write_lock(self) as locked_ym:
+            locked_ym.rebase()
+            locked_ym.write()
+        filename = filename or getattr(self, FILEPATH_KEY)
         filedir = os.path.dirname(filename)
         # For this object, we *also* have to write the template files
         for pkg_name, pkg in self["compute_packages"].items():
@@ -151,12 +149,12 @@ class ComputingConfiguration(yacman.YAMLConfigManager):
             # Augment compute, creating it if needed.
             if self.compute is None:
                 _LOGGER.debug("Creating Project compute")
-                self.compute = yacman.YAMLConfigManager()
+                self.compute = YAMLConfigManager()
                 _LOGGER.debug(
                     "Adding entries for package_name '{}'".format(package_name)
                 )
 
-            self.compute.update(self["compute_packages"][package_name])
+            self.compute.update_from_obj(self["compute_packages"][package_name])
 
             # Ensure submission template is absolute. This *used to be* handled
             # at update (so the paths were stored as absolutes in the packages),
@@ -165,7 +163,7 @@ class ComputingConfiguration(yacman.YAMLConfigManager):
             if not os.path.isabs(self.compute["submission_template"]):
                 try:
                     self.compute["submission_template"] = os.path.join(
-                        os.path.dirname(self.filepath),
+                        os.path.dirname(self.default_config_file),
                         self.compute["submission_template"],
                     )
                 except AttributeError as e:
@@ -200,11 +198,11 @@ class ComputingConfiguration(yacman.YAMLConfigManager):
         self.reset_active_settings()
         return self.activate_package(package_name)
 
-    def get_active_package(self):
+    def get_active_package(self) -> YAMLConfigManager:
         """
         Returns settings for the currently active compute package
 
-        :return yacman.YacAttMap: data defining the active compute package
+        :return YAMLConfigManager: data defining the active compute package
         """
         return self.compute
 
@@ -222,7 +220,7 @@ class ComputingConfiguration(yacman.YAMLConfigManager):
 
         :return bool: success flag
         """
-        self.compute = yacman.YacAttMap()
+        self.compute = YAMLConfigManager()
         return True
 
     def update_packages(self, config_file):
@@ -235,11 +233,11 @@ class ComputingConfiguration(yacman.YAMLConfigManager):
 
         :param str config_file: path to file with new divvy configuration data
         """
-        entries = yacman.load_yaml(config_file)
+        entries = load_yaml(config_file)
         self.update(entries)
         return True
 
-    def get_adapters(self):
+    def get_adapters(self) -> YAMLConfigManager:
         """
         Get current adapters, if defined.
 
@@ -248,9 +246,9 @@ class ComputingConfiguration(yacman.YAMLConfigManager):
         package-specific set of adapters, if any defined in 'adapters' section
         under currently active compute package.
 
-        :return yacman.YAMLConfigManager: current adapters mapping
+        :return YAMLConfigManager: current adapters mapping
         """
-        adapters = yacman.YAMLConfigManager()
+        adapters = YAMLConfigManager()
         if "adapters" in self and self["adapters"] is not None:
             adapters.update(self["adapters"])
         if "compute" in self and "adapters" in self.compute:
@@ -376,7 +374,7 @@ def select_divvy_config(filepath):
     :param str | NoneType filepath: direct file path specification
     :return str: path to the config file to read
     """
-    divcfg = yacman.select_config(
+    divcfg = select_config(
         config_filepath=filepath,
         config_env_vars=COMPUTE_SETTINGS_VARNAME,
         default_config_filepath=DEFAULT_CONFIG_FILEPATH,

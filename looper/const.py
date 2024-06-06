@@ -1,6 +1,7 @@
 """ Shared project constants """
 
 import os
+from enum import Enum
 
 __author__ = "Databio lab"
 __email__ = "nathan@code.databio.org"
@@ -268,3 +269,10 @@ MESSAGE_BY_SUBCOMMAND = {
     "init-piface": "Initialize generic pipeline interface.",
     "link": "Create directory of symlinks for reported results.",
 }
+
+# Add project/sample enum
+
+
+class PipelineLevel(Enum):
+    SAMPLE = "sample"
+    PROJECT = "project"

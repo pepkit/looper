@@ -1,0 +1,10 @@
+pep_config: project/project_config.yaml
+output_dir: "results"
+pipeline_interfaces:
+  sample:
+    - ../pipeline/pipeline_interface1_sample.yaml
+    - ../pipeline/pipeline_interface2_sample.yaml
+  project:
+    - ../pipeline/pipeline_interface1_project.yaml
+    - ../pipeline/pipeline_interface2_project.yaml
+

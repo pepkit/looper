@@ -1,0 +1,4 @@
+pep_config: ./project/project_config.yaml # pephub registry path or local path
+output_dir: "./results"
+pipeline_interfaces:
+  sample:  ../pipeline/pipeline_interface.yaml

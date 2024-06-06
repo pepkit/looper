@@ -6,6 +6,7 @@ Looper: a pipeline submission engine. https://github.com/pepkit/looper
 import abc
 import argparse
 import csv
+import glob
 import logging
 import subprocess
 import yaml
@@ -14,6 +15,8 @@ import pandas as _pd
 
 # Need specific sequence of actions for colorama imports?
 from colorama import init
+
+from .const import PipelineLevel
 
 init()
 from shutil import rmtree
@@ -45,7 +48,6 @@ from .utils import (
     sample_folder,
 )
 from pipestat.reports import get_file_for_table
-from pipestat.reports import get_file_for_project
 
 _PKGNAME = "looper"
 _LOGGER = logging.getLogger(_PKGNAME)
@@ -88,21 +90,29 @@ class Checker(Executor):
 
         # aggregate pipeline status data
         status = {}
-        if args.project:
-            psms = self.prj.get_pipestat_managers(project_level=True)
-            for pipeline_name, psm in psms.items():
-                s = psm.get_status() or "unknown"
-                status.setdefault(pipeline_name, {})
-                status[pipeline_name][self.prj.name] = s
-                _LOGGER.debug(f"{self.prj.name} ({pipeline_name}): {s}")
+
+        psms = {}
+        if getattr(args, "project", None):
+
+            for piface in self.prj.project_pipeline_interfaces:
+                if piface.psm.pipeline_type == PipelineLevel.PROJECT.value:
+                    psms[piface.psm.pipeline_name] = piface.psm
+                    s = piface.psm.get_status() or "unknown"
+                    status.setdefault(piface.psm.pipeline_name, {})
+                    status[piface.psm.pipeline_name][self.prj.name] = s
+                    _LOGGER.debug(f"{self.prj.name} ({piface.psm.pipeline_name}): {s}")
+
         else:
             for sample in self.prj.samples:
-                psms = self.prj.get_pipestat_managers(sample_name=sample.sample_name)
-                for pipeline_name, psm in psms.items():
-                    s = psm.get_status(record_identifier=sample.sample_name)
-                    status.setdefault(pipeline_name, {})
-                    status[pipeline_name][sample.sample_name] = s
-                    _LOGGER.debug(f"{sample.sample_name} ({pipeline_name}): {s}")
+                for piface in sample.project.pipeline_interfaces:
+                    if piface.psm.pipeline_type == PipelineLevel.SAMPLE.value:
+                        psms[piface.psm.pipeline_name] = piface.psm
+                        s = piface.psm.get_status(record_identifier=sample.sample_name)
+                        status.setdefault(piface.psm.pipeline_name, {})
+                        status[piface.psm.pipeline_name][sample.sample_name] = s
+                        _LOGGER.debug(
+                            f"{sample.sample_name} ({piface.psm.pipeline_name}): {s}"
+                        )
 
         console = Console()
 
@@ -116,14 +126,14 @@ class Checker(Executor):
             )
             table.add_column(f"Status", justify="center")
             table.add_column("Jobs count/total jobs", justify="center")
-            for status_id in psm.status_schema.keys():
+            for status_id in psms[pipeline_name].status_schema.keys():
                 status_list = list(pipeline_status.values())
                 if status_id in status_list:
                     status_count = status_list.count(status_id)
                     table.add_row(status_id, f"{status_count}/{len(status_list)}")
             console.print(table)
 
-        if args.itemized:
+        if getattr(args, "itemized", None):
             for pipeline_name, pipeline_status in status.items():
                 table_title = f"Pipeline: '{pipeline_name}'"
                 table = Table(
@@ -141,7 +151,7 @@ class Checker(Executor):
                 for name, status_id in pipeline_status.items():
                     try:
                         color = Color.from_rgb(
-                            *psm.status_schema[status_id]["color"]
+                            *psms[pipeline_name].status_schema[status_id]["color"]
                         ).name
                     except KeyError:
                         color = "#bcbcbc"
@@ -150,16 +160,17 @@ class Checker(Executor):
                 console.print(table)
 
         if args.describe_codes:
+            # TODO this needs to be redone because it only takes the last psm in the list and gets status code and descriptions
             table = Table(
                 show_header=True,
                 header_style="bold magenta",
                 title=f"Status codes description",
-                width=len(psm.status_schema_source) + 20,
-                caption=f"Descriptions source: {psm.status_schema_source}",
+                width=len(psms[pipeline_name].status_schema_source) + 20,
+                caption=f"Descriptions source: {psms[pipeline_name].status_schema_source}",
             )
             table.add_column("Status code", justify="center")
             table.add_column("Description", justify="left")
-            for status, status_obj in psm.status_schema.items():
+            for status, status_obj in psms[pipeline_name].status_schema.items():
                 if "description" in status_obj:
                     desc = status_obj["description"]
                 else:
@@ -199,10 +210,10 @@ class Cleaner(Executor):
         if not preview_flag:
             _LOGGER.info("Clean complete.")
             return 0
-        if args.dry_run:
+        if getattr(args, "dry_run", None):
             _LOGGER.info("Dry run. No files cleaned.")
             return 0
-        if not args.force_yes and not query_yes_no(
+        if not getattr(args, "force_yes", None) and not query_yes_no(
             "Are you sure you want to permanently delete all "
             "intermediate pipeline results for this project?"
         ):
@@ -241,8 +252,22 @@ class Destroyer(Executor):
         :param bool preview_flag: whether to halt before actually removing files
         """
 
-        _LOGGER.info("Removing results:")
+        use_pipestat = (
+            self.prj.pipestat_configured_project
+            if getattr(args, "project", None)
+            else self.prj.pipestat_configured
+        )
 
+        if use_pipestat:
+            _LOGGER.info("Removing summary:")
+            destroy_summary(
+                self.prj,
+                dry_run=preview_flag,
+                project_level=getattr(args, "project", None),
+            )
+
+        _LOGGER.info("Removing results:")
+        psms = {}
         for sample in select_samples(prj=self.prj, args=args):
             _LOGGER.info(self.counter.show(sample.sample_name))
             sample_output_folder = sample_folder(self.prj, sample)
@@ -250,30 +275,26 @@ class Destroyer(Executor):
                 # Preview: Don't actually delete, just show files.
                 _LOGGER.info(str(sample_output_folder))
             else:
-                _remove_or_dry_run(sample_output_folder, args.dry_run)
-
-        _LOGGER.info("Removing summary:")
-        use_pipestat = (
-            self.prj.pipestat_configured_project
-            if args.project
-            else self.prj.pipestat_configured
-        )
-        if use_pipestat:
-            destroy_summary(self.prj, args.dry_run, args.project)
-        else:
-            _LOGGER.warning(
-                "Pipestat must be configured to destroy any created summaries."
-            )
+                if use_pipestat:
+                    for piface in sample.project.pipeline_interfaces:
+                        if piface.psm.pipeline_type == PipelineLevel.SAMPLE.value:
+                            psms[piface.psm.pipeline_name] = piface.psm
+                    for pipeline_name, psm in psms.items():
+                        psm.backend.remove_record(
+                            record_identifier=sample.sample_name, rm_record=True
+                        )
+                else:
+                    _remove_or_dry_run(sample_output_folder, args.dry_run)
 
         if not preview_flag:
             _LOGGER.info("Destroy complete.")
             return 0
 
-        if args.dry_run:
+        if getattr(args, "dry_run", None):
             _LOGGER.info("Dry run. No files destroyed.")
             return 0
 
-        if not args.force_yes and not query_yes_no(
+        if not getattr(args, "force_yes", None) and not query_yes_no(
             "Are you sure you want to permanently delete all pipeline "
             "results for this project?"
         ):
@@ -308,7 +329,7 @@ class Collator(Executor):
         """
         jobs = 0
         self.debug = {}
-        project_pifaces = self.prj.project_pipeline_interface_sources
+        project_pifaces = self.prj.project_pipeline_interfaces
         if not project_pifaces:
             raise MisconfigurationException(
                 "Looper requires a pointer to at least one project pipeline. "
@@ -318,36 +339,26 @@ class Collator(Executor):
             )
         self.counter = LooperCounter(len(project_pifaces))
         for project_piface in project_pifaces:
-            try:
-                project_piface_object = PipelineInterface(
-                    project_piface, pipeline_type="project"
-                )
-            except (IOError, ValidationError) as e:
-                _LOGGER.warning(
-                    "Ignoring invalid pipeline interface source: {}. "
-                    "Caught exception: {}".format(
-                        project_piface, getattr(e, "message", repr(e))
-                    )
-                )
-                continue
             _LOGGER.info(
                 self.counter.show(
                     name=self.prj.name,
                     type="project",
-                    pipeline_name=project_piface_object.pipeline_name,
+                    pipeline_name=project_piface.pipeline_name,
                 )
             )
             conductor = SubmissionConductor(
-                pipeline_interface=project_piface_object,
+                pipeline_interface=project_piface,
                 prj=self.prj,
                 compute_variables=compute_kwargs,
-                delay=args.time_delay,
-                extra_args=args.command_extra,
-                extra_args_override=args.command_extra_override,
-                ignore_flags=args.ignore_flags,
+                delay=getattr(args, "time_delay", None),
+                extra_args=getattr(args, "command_extra", None),
+                extra_args_override=getattr(args, "command_extra_override", None),
+                ignore_flags=getattr(args, "ignore_flags", None),
                 collate=True,
             )
-            if conductor.is_project_submittable(force=args.ignore_flags):
+            if conductor.is_project_submittable(
+                force=getattr(args, "ignore_flags", None)
+            ):
                 conductor._pool = [None]
                 conductor.submit()
                 jobs += conductor.num_job_submissions
@@ -360,7 +371,7 @@ class Collator(Executor):
 class Runner(Executor):
     """The true submitter of pipelines"""
 
-    def __call__(self, args, rerun=False, **compute_kwargs):
+    def __call__(self, args, top_level_args=None, rerun=False, **compute_kwargs):
         """
         Do the Sample submission.
 
@@ -395,25 +406,24 @@ class Runner(Executor):
                 )
 
         submission_conductors = {}
+
         for piface in self.prj.pipeline_interfaces:
             conductor = SubmissionConductor(
                 pipeline_interface=piface,
                 prj=self.prj,
                 compute_variables=comp_vars,
-                delay=args.time_delay,
-                extra_args=args.command_extra,
-                extra_args_override=args.command_extra_override,
-                ignore_flags=args.ignore_flags,
-                max_cmds=args.lump_n,
-                max_size=args.lump_s,
-                max_jobs=args.lump_j,
+                delay=getattr(args, "time_delay", None),
+                extra_args=getattr(args, "command_extra", None),
+                extra_args_override=getattr(args, "command_extra_override", None),
+                ignore_flags=getattr(args, "ignore_flags", None),
+                max_cmds=getattr(args, "lump_n", None),
+                max_size=getattr(args, "lump", None),
+                max_jobs=getattr(args, "lump_j", None),
             )
             submission_conductors[piface.pipe_iface_file] = conductor
 
-        _LOGGER.info(f"Pipestat compatible: {self.prj.pipestat_configured_project}")
-        self.debug["Pipestat compatible"] = (
-            self.prj.pipestat_configured_project or self.prj.pipestat_configured
-        )
+        _LOGGER.debug(f"Pipestat compatible: {self.prj.pipestat_configured}")
+        self.debug["Pipestat compatible"] = self.prj.pipestat_configured
 
         for sample in select_samples(prj=self.prj, args=args):
             pl_fails = []
@@ -485,15 +495,15 @@ class Runner(Executor):
                 len(processed_samples), num_samples
             )
         )
-        _LOGGER.info("Commands submitted: {} of {}".format(cmd_sub_total, max_cmds))
+        _LOGGER.debug("Commands submitted: {} of {}".format(cmd_sub_total, max_cmds))
         self.debug[DEBUG_COMMANDS] = "{} of {}".format(cmd_sub_total, max_cmds)
-        if args.dry_run:
+        if getattr(args, "dry_run", None):
             job_sub_total_if_real = job_sub_total
             job_sub_total = 0
             _LOGGER.info(
                 f"Dry run. No jobs were actually submitted, but {job_sub_total_if_real} would have been."
             )
-        _LOGGER.info("Jobs submitted: {}".format(job_sub_total))
+        _LOGGER.debug("Jobs submitted: {}".format(job_sub_total))
         self.debug[DEBUG_JOBS] = job_sub_total
 
         # Restructure sample/failure data for display.
@@ -545,37 +555,35 @@ class Reporter(Executor):
 
     def __call__(self, args):
         # initialize the report builder
+        self.debug = {}
         p = self.prj
-        project_level = args.project
+        project_level = getattr(args, "project", None)
 
         portable = args.portable
 
+        psms = {}
+
         if project_level:
-            psms = self.prj.get_pipestat_managers(project_level=True)
-            print(psms)
-            for name, psm in psms.items():
-                # Summarize will generate the static HTML Report Function
-                report_directory = psm.summarize(
-                    looper_samples=self.prj.samples, portable=portable
-                )
+
+            for piface in self.prj.project_pipeline_interfaces:
+                if piface.psm.pipeline_type == PipelineLevel.PROJECT.value:
+                    psms[piface.psm.pipeline_name] = piface.psm
+                    report_directory = piface.psm.summarize(
+                        looper_samples=self.prj.samples, portable=portable
+                    )
                 print(f"Report directory: {report_directory}")
+                self.debug["report_directory"] = report_directory
+            return self.debug
         else:
-            for piface_source_samples in self.prj._samples_by_piface(
-                self.prj.piface_key
-            ).values():
-                # For each piface_key, we have a list of samples, but we only need one sample from the list to
-                # call the related pipestat manager object which will pull ALL samples when using psm.summarize
-                first_sample_name = list(piface_source_samples)[0]
-                psms = self.prj.get_pipestat_managers(
-                    sample_name=first_sample_name, project_level=False
-                )
-                print(psms)
-                for name, psm in psms.items():
-                    # Summarize will generate the static HTML Report Function
-                    report_directory = psm.summarize(
+            for piface in self.prj.pipeline_interfaces:
+                if piface.psm.pipeline_type == PipelineLevel.SAMPLE.value:
+                    psms[piface.psm.pipeline_name] = piface.psm
+                    report_directory = piface.psm.summarize(
                         looper_samples=self.prj.samples, portable=portable
                     )
                     print(f"Report directory: {report_directory}")
+                    self.debug["report_directory"] = report_directory
+            return self.debug
 
 
 class Linker(Executor):
@@ -584,26 +592,22 @@ class Linker(Executor):
     def __call__(self, args):
         # initialize the report builder
         p = self.prj
-        project_level = args.project
-        link_dir = args.output_dir
+        project_level = getattr(args, "project", None)
+        link_dir = getattr(args, "output_dir", None)
+
+        psms = {}
 
         if project_level:
-            psms = self.prj.get_pipestat_managers(project_level=True)
-            for name, psm in psms.items():
-                linked_results_path = psm.link(link_dir=link_dir)
-                print(f"Linked directory: {linked_results_path}")
+            for piface in self.prj.project_pipeline_interfaces:
+                if piface.psm.pipeline_type == PipelineLevel.PROJECT.value:
+                    psms[piface.psm.pipeline_name] = piface.psm
+                    linked_results_path = piface.psm.link(link_dir=link_dir)
+                    print(f"Linked directory: {linked_results_path}")
         else:
-            for piface_source_samples in self.prj._samples_by_piface(
-                self.prj.piface_key
-            ).values():
-                # For each piface_key, we have a list of samples, but we only need one sample from the list to
-                # call the related pipestat manager object which will pull ALL samples when using psm.summarize
-                first_sample_name = list(piface_source_samples)[0]
-                psms = self.prj.get_pipestat_managers(
-                    sample_name=first_sample_name, project_level=False
-                )
-                for name, psm in psms.items():
-                    linked_results_path = psm.link(link_dir=link_dir)
+            for piface in self.prj.pipeline_interfaces:
+                if piface.psm.pipeline_type == PipelineLevel.SAMPLE.value:
+                    psms[piface.psm.pipeline_name] = piface.psm
+                    linked_results_path = piface.psm.link(link_dir=link_dir)
                     print(f"Linked directory: {linked_results_path}")
 
 
@@ -615,24 +619,19 @@ class Tabulator(Executor):
 
     def __call__(self, args):
         # p = self.prj
-        project_level = args.project
+        project_level = getattr(args, "project", None)
         results = []
+        psms = {}
         if project_level:
-            psms = self.prj.get_pipestat_managers(project_level=True)
-            for name, psm in psms.items():
-                results = psm.table()
+            for piface in self.prj.project_pipeline_interfaces:
+                if piface.psm.pipeline_type == PipelineLevel.PROJECT.value:
+                    psms[piface.psm.pipeline_name] = piface.psm
+                    results = piface.psm.table()
         else:
-            for piface_source_samples in self.prj._samples_by_piface(
-                self.prj.piface_key
-            ).values():
-                # For each piface_key, we have a list of samples, but we only need one sample from the list to
-                # call the related pipestat manager object which will pull ALL samples when using psm.table
-                first_sample_name = list(piface_source_samples)[0]
-                psms = self.prj.get_pipestat_managers(
-                    sample_name=first_sample_name, project_level=False
-                )
-                for name, psm in psms.items():
-                    results = psm.table()
+            for piface in self.prj.pipeline_interfaces:
+                if piface.psm.pipeline_type == PipelineLevel.SAMPLE.value:
+                    psms[piface.psm.pipeline_name] = piface.psm
+                    results = piface.psm.table()
         # Results contains paths to stats and object summaries.
         return results
 
@@ -672,64 +671,60 @@ def destroy_summary(prj, dry_run=False, project_level=False):
     This function is for use with pipestat configured projects.
     """
 
+    psms = {}
     if project_level:
-        psms = prj.get_pipestat_managers(project_level=True)
+        for piface in prj.pipeline_interfaces:
+            if piface.psm.pipeline_type == PipelineLevel.PROJECT.value:
+                psms[piface.psm.pipeline_name] = piface.psm
+
         for name, psm in psms.items():
             _remove_or_dry_run(
                 [
-                    get_file_for_project(
-                        psm,
-                        pipeline_name=psm["_pipeline_name"],
-                        directory="reports",
+                    get_file_for_table(
+                        psm, pipeline_name=psm.pipeline_name, directory="reports"
                     ),
                     get_file_for_table(
                         psm,
-                        pipeline_name=psm["_pipeline_name"],
+                        pipeline_name=psm.pipeline_name,
                         appendix="stats_summary.tsv",
                     ),
                     get_file_for_table(
                         psm,
-                        pipeline_name=psm["_pipeline_name"],
+                        pipeline_name=psm.pipeline_name,
                         appendix="objs_summary.yaml",
                     ),
-                    get_file_for_table(
-                        psm, pipeline_name=psm["_pipeline_name"], appendix="reports"
+                    os.path.join(
+                        os.path.dirname(psm.config_path), "aggregate_results.yaml"
                     ),
                 ],
                 dry_run,
             )
     else:
-        for piface_source_samples in prj._samples_by_piface(prj.piface_key).values():
-            # For each piface_key, we have a list of samples, but we only need one sample from the list to
-            # call the related pipestat manager object which will pull ALL samples when using psm.table
-            first_sample_name = list(piface_source_samples)[0]
-            psms = prj.get_pipestat_managers(
-                sample_name=first_sample_name, project_level=False
+        for piface in prj.pipeline_interfaces:
+            if piface.psm.pipeline_type == PipelineLevel.SAMPLE.value:
+                psms[piface.psm.pipeline_name] = piface.psm
+        for name, psm in psms.items():
+            _remove_or_dry_run(
+                [
+                    get_file_for_table(
+                        psm, pipeline_name=psm.pipeline_name, directory="reports"
+                    ),
+                    get_file_for_table(
+                        psm,
+                        pipeline_name=psm.pipeline_name,
+                        appendix="stats_summary.tsv",
+                    ),
+                    get_file_for_table(
+                        psm,
+                        pipeline_name=psm.pipeline_name,
+                        appendix="objs_summary.yaml",
+                    ),
+                    os.path.join(
+                        os.path.dirname(psm.config_path), "aggregate_results.yaml"
+                    ),
+                ],
+                dry_run,
             )
-            for name, psm in psms.items():
-                _remove_or_dry_run(
-                    [
-                        get_file_for_project(
-                            psm,
-                            pipeline_name=psm["_pipeline_name"],
-                            directory="reports",
-                        ),
-                        get_file_for_table(
-                            psm,
-                            pipeline_name=psm["_pipeline_name"],
-                            appendix="stats_summary.tsv",
-                        ),
-                        get_file_for_table(
-                            psm,
-                            pipeline_name=psm["_pipeline_name"],
-                            appendix="objs_summary.yaml",
-                        ),
-                        get_file_for_table(
-                            psm, pipeline_name=psm["_pipeline_name"], appendix="reports"
-                        ),
-                    ],
-                    dry_run,
-                )
 
 
 class LooperCounter(object):

@@ -21,12 +21,13 @@ from peppy.exceptions import RemoteYAMLError
 from pipestat import PipestatError
 from ubiquerg import expandpath, is_command_callable
 from yaml import dump
-from yacman import YAMLConfigManager
+from yacman import FutureYAMLConfigManager as YAMLConfigManager
 
 from .const import *
 from .exceptions import JobSubmissionException, SampleFailedException
 from .processed_project import populate_sample_paths
 from .utils import fetch_sample_flags, jinja_render_template_strictly
+from .const import PipelineLevel
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -85,11 +86,23 @@ def _get_yaml_path(namespaces, template_key, default_name_appendix="", filename=
 
 def write_pipestat_config(looper_pipestat_config_path, pipestat_config_dict):
     """
-    This is run at the project level, not at the sample level.
+    This writes a combined configuration file to be passed to a PipestatManager.
+    :param str looper_pipestat_config_path: path to the created pipestat configuration file
+    :param dict pipestat_config_dict: the dict containing key value pairs to be written to the pipestat configutation
+    return bool
     """
+
+    if not os.path.exists(os.path.dirname(looper_pipestat_config_path)):
+        try:
+            os.makedirs(os.path.dirname(looper_pipestat_config_path))
+        except FileExistsError:
+            pass
+
     with open(looper_pipestat_config_path, "w") as f:
         yaml.dump(pipestat_config_dict, f)
-    print(f"Initialized looper config file: {looper_pipestat_config_path}")
+    _LOGGER.debug(
+        msg=f"Initialized pipestat config file: {looper_pipestat_config_path}"
+    )
 
     return True
 
@@ -261,8 +274,12 @@ class SubmissionConductor(object):
 
         :param bool frorce: whether to force the project submission (ignore status/flags)
         """
+        psms = {}
         if self.prj.pipestat_configured_project:
-            psm = self.prj.get_pipestat_managers(project_level=True)[self.pl_name]
+            for piface in self.prj.project_pipeline_interfaces:
+                if piface.psm.pipeline_type == PipelineLevel.PROJECT.value:
+                    psms[piface.psm.pipeline_name] = piface.psm
+            psm = psms[self.pl_name]
             status = psm.get_status()
             if not force and status is not None:
                 _LOGGER.info(f"> Skipping project. Determined status: {status}")
@@ -288,12 +305,11 @@ class SubmissionConductor(object):
             )
         )
         if self.prj.pipestat_configured:
-            psms = self.prj.get_pipestat_managers(sample_name=sample.sample_name)
-            sample_statuses = psms[self.pl_name].get_status(
+            sample_statuses = self.pl_iface.psm.get_status(
                 record_identifier=sample.sample_name
             )
             if sample_statuses == "failed" and rerun is True:
-                psms[self.pl_name].set_status(
+                self.pl_iface.psm.set_status(
                     record_identifier=sample.sample_name, status_identifier="waiting"
                 )
                 sample_statuses = "waiting"
@@ -303,23 +319,27 @@ class SubmissionConductor(object):
 
         use_this_sample = True  # default to running this sample
         msg = None
+        if rerun and sample_statuses == []:
+            msg = f"> Skipping sample because rerun requested, but no failed or waiting flag found."
+            use_this_sample = False
         if sample_statuses:
             status_str = ", ".join(sample_statuses)
             failed_flag = any("failed" in x for x in sample_statuses)
+            waiting_flag = any("waiting" in x for x in sample_statuses)
             if self.ignore_flags:
                 msg = f"> Found existing status: {status_str}. Ignoring."
             else:  # this pipeline already has a status
                 msg = f"> Found existing status: {status_str}. Skipping sample."
-                if failed_flag:
+                if failed_flag and not rerun:
                     msg += " Use rerun to ignore failed status."  # help guidance
                 use_this_sample = False
             if rerun:
                 # Rescue the sample if rerun requested, and failed flag is found
-                if failed_flag:
-                    msg = f"> Re-running failed sample. Status: {status_str}"
+                if failed_flag or waiting_flag:
+                    msg = f"> Re-running sample. Status: {status_str}"
                     use_this_sample = True
                 else:
-                    msg = f"> Skipping sample because rerun requested, but no failed flag found. Status: {status_str}"
+                    msg = f"> Skipping sample because rerun requested, but no failed or waiting flag found. Status: {status_str}"
                     use_this_sample = False
         if msg:
             _LOGGER.info(msg)
@@ -528,12 +548,7 @@ class SubmissionConductor(object):
         :return yacman.YAMLConfigManager: pipestat namespace
         """
         try:
-            psms = (
-                self.prj.get_pipestat_managers(sample_name)
-                if sample_name
-                else self.prj.get_pipestat_managers(project_level=True)
-            )
-            psm = psms[self.pl_iface.pipeline_name]
+            psm = self.pl_iface.psm
         except (PipestatError, AttributeError) as e:
             # pipestat section faulty or not found in project.looper or sample
             # or project is missing required pipestat attributes
@@ -621,7 +636,6 @@ class SubmissionConductor(object):
                 argstring = jinja_render_template_strictly(
                     template=templ, namespaces=namespaces
                 )
-                print(argstring)
             except UndefinedError as jinja_exception:
                 _LOGGER.warning(NOT_SUB_MSG.format(str(jinja_exception)))
             except KeyError as e:

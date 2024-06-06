@@ -3,6 +3,8 @@
 import itertools
 import os
 
+from yaml import safe_load
+
 try:
     from functools import cached_property
 except ImportError:
@@ -26,6 +28,7 @@ from .exceptions import *
 from .pipeline_interface import PipelineInterface
 from .processed_project import populate_project_paths, populate_sample_paths
 from .utils import *
+from .const import PipelineLevel
 
 __all__ = ["Project"]
 
@@ -126,6 +129,12 @@ class Project(peppyProject):
 
         self[EXTRA_KEY] = {}
 
+        try:
+            # For loading PEPs via CSV, Peppy cannot infer project name.
+            name = self.name
+        except NotImplementedError:
+            self.name = None
+
         # add sample pipeline interface to the project
         if kwargs.get(SAMPLE_PL_ARG):
             self.set_sample_piface(kwargs.get(SAMPLE_PL_ARG))
@@ -144,7 +153,7 @@ class Project(peppyProject):
         self.dcc = (
             None
             if divcfg_path is None
-            else ComputingConfiguration(filepath=divcfg_path)
+            else ComputingConfiguration.from_yaml_file(filepath=divcfg_path)
         )
         if DRY_RUN_KEY in self and not self[DRY_RUN_KEY]:
             _LOGGER.debug("Ensuring project directories exist")
@@ -300,7 +309,7 @@ class Project(peppyProject):
         :return list[looper.PipelineInterface]: list of pipeline interfaces
         """
         return [
-            PipelineInterface(pi, pipeline_type="project")
+            PipelineInterface(pi, pipeline_type=PipelineLevel.PROJECT.value)
             for pi in self.project_pipeline_interface_sources
         ]
 
@@ -343,7 +352,9 @@ class Project(peppyProject):
 
         :return bool: whether pipestat configuration is complete
         """
-        return self._check_if_pipestat_configured(project_level=True)
+        return self._check_if_pipestat_configured(
+            pipeline_type=PipelineLevel.PROJECT.value
+        )
 
     def get_sample_piface(self, sample_name):
         """
@@ -441,72 +452,90 @@ class Project(peppyProject):
                 schema_set.update([schema_file])
         return list(schema_set)
 
-    def get_pipestat_managers(self, sample_name=None, project_level=False):
-        """
-        Get a collection of pipestat managers for the selected sample or project.
+    def _check_if_pipestat_configured(self, pipeline_type=PipelineLevel.SAMPLE.value):
 
-        The number of pipestat managers corresponds to the number of unique
-        output schemas in the pipeline interfaces specified by the sample or project.
+        # First check if pipestat key is in looper_config, if not return false
 
-        :param str sample_name: sample name to get pipestat managers for
-        :param bool project_level: whether the project PipestatManagers
-            should be returned
-        :return dict[str, pipestat.PipestatManager]: a mapping of pipestat
-            managers by pipeline interface name
-        """
-        pipestat_configs = self._get_pipestat_configuration(
-            sample_name=sample_name, project_level=project_level
-        )
-        return {
-            pipeline_name: PipestatManager(**pipestat_vars)
-            for pipeline_name, pipestat_vars in pipestat_configs.items()
-        }
-
-    def _check_if_pipestat_configured(self, project_level=False):
-        """
-        A helper method determining whether pipestat configuration is complete
-
-        :param bool project_level: whether the project pipestat config should be checked
-        :return bool: whether pipestat configuration is complete
-        """
-        try:
-            if project_level:
-                pipestat_configured = self._get_pipestat_configuration(
-                    sample_name=None, project_level=project_level
-                )
-            else:
-                for s in self.samples:
-                    pipestat_configured = self._get_pipestat_configuration(
-                        sample_name=s.sample_name
-                    )
-        except Exception as e:
-            context = (
-                f"Project '{self.name}'"
-                if project_level
-                else f"Sample '{s.sample_name}'"
-            )
-            _LOGGER.debug(
-                f"Pipestat configuration incomplete for {context}; "
-                f"caught exception: {getattr(e, 'message', repr(e))}"
-            )
+        if PIPESTAT_KEY not in self[EXTRA_KEY]:
             return False
-        else:
-            if pipestat_configured is not None and pipestat_configured != {}:
-                return True
-            else:
+        elif PIPESTAT_KEY in self[EXTRA_KEY]:
+            if self[EXTRA_KEY][PIPESTAT_KEY] is None:
                 return False
+            else:
+                # If pipestat key is available assume user desires pipestat usage
+                # This should return True OR raise an exception at this point.
+                return self._get_pipestat_configuration(pipeline_type)
 
-    def _get_pipestat_configuration(self, sample_name=None, project_level=False):
-        """
-        Get all required pipestat configuration variables from looper_config file
-        """
+    def _get_pipestat_configuration(self, pipeline_type=PipelineLevel.SAMPLE.value):
 
-        ret = {}
-        if not project_level and sample_name is None:
-            raise ValueError(
-                "Must provide the sample_name to determine the "
-                "sample to get the PipestatManagers for"
+        # First check if it already exists
+
+        if pipeline_type == PipelineLevel.SAMPLE.value:
+            for piface in self.pipeline_interfaces:
+
+                pipestat_config_path = self._check_for_existing_pipestat_config(piface)
+
+                if not pipestat_config_path:
+                    self._create_pipestat_config(piface)
+                else:
+                    piface.psm = PipestatManager(
+                        config_file=pipestat_config_path, multi_pipelines=True
+                    )
+
+        elif pipeline_type == PipelineLevel.PROJECT.value:
+            for prj_piface in self.project_pipeline_interfaces:
+                pipestat_config_path = self._check_for_existing_pipestat_config(
+                    prj_piface
+                )
+
+                if not pipestat_config_path:
+                    self._create_pipestat_config(prj_piface)
+                else:
+                    prj_piface.psm = PipestatManager(
+                        config_file=pipestat_config_path, multi_pipelines=True
+                    )
+        else:
+            _LOGGER.error(
+                msg="No pipeline type specified during pipestat configuration"
             )
+
+        return True
+
+    def _check_for_existing_pipestat_config(self, piface):
+        """
+
+        config files should be in looper output directory and named as:
+
+        pipestat_config_pipelinename.yaml
+
+        """
+
+        # Cannot do much if we cannot retrieve the pipeline_name
+        try:
+            pipeline_name = piface.data["pipeline_name"]
+        except KeyError:
+            raise Exception(
+                "To use pipestat, a pipeline_name must be set in the pipeline interface."
+            )
+
+        config_file_name = f"pipestat_config_{pipeline_name}.yaml"
+        output_dir = expandpath(self.output_dir)
+
+        config_file_path = os.path.join(
+            # os.path.dirname(output_dir), config_file_name
+            output_dir,
+            config_file_name,
+        )
+
+        if os.path.exists(config_file_path):
+            return config_file_path
+        else:
+            return None
+
+    def _create_pipestat_config(self, piface):
+        """
+        Each piface needs its own config file and associated psm
+        """
 
         if PIPESTAT_KEY in self[EXTRA_KEY]:
             pipestat_config_dict = self[EXTRA_KEY][PIPESTAT_KEY]
@@ -521,13 +550,58 @@ class Project(peppyProject):
         # Expand paths in the event ENV variables were used in config files
         output_dir = expandpath(self.output_dir)
 
-        # Get looper user configured items first and update the pipestat_config_dict
+        pipestat_config_dict.update({"output_dir": output_dir})
+
+        if "output_schema" in piface.data:
+            schema_path = expandpath(piface.data["output_schema"])
+            if not os.path.isabs(schema_path):
+                # Get path relative to the pipeline_interface
+                schema_path = os.path.join(
+                    os.path.dirname(piface.pipe_iface_file), schema_path
+                )
+            pipestat_config_dict.update({"schema_path": schema_path})
+            try:
+                with open(schema_path, "r") as f:
+                    output_schema_data = safe_load(f)
+                    output_schema_pipeline_name = output_schema_data[
+                        PIPELINE_INTERFACE_PIPELINE_NAME_KEY
+                    ]
+            except Exception:
+                output_schema_pipeline_name = None
+        else:
+            output_schema_pipeline_name = None
+        if "pipeline_name" in piface.data:
+            pipeline_name = piface.data["pipeline_name"]
+            pipestat_config_dict.update({"pipeline_name": piface.data["pipeline_name"]})
+        else:
+            pipeline_name = None
+        if "pipeline_type" in piface.data:
+            pipestat_config_dict.update({"pipeline_type": piface.data["pipeline_type"]})
+
+        # Warn user if there is a mismatch in pipeline_names from sources!!!
+        if pipeline_name != output_schema_pipeline_name:
+            _LOGGER.warning(
+                msg=f"Pipeline name mismatch detected. Pipeline interface: {pipeline_name}  Output schema: {output_schema_pipeline_name}  Defaulting to pipeline_interface value."
+            )
+
         try:
             results_file_path = expandpath(pipestat_config_dict["results_file_path"])
-            if not os.path.exists(os.path.dirname(results_file_path)):
-                results_file_path = os.path.join(
-                    os.path.dirname(output_dir), results_file_path
-                )
+
+            if not os.path.isabs(results_file_path):
+                # e.g. user configures "results.yaml" as results_file_path
+                if "{record_identifier}" in results_file_path:
+                    # this is specifically to check if the user wishes tro generate a file for EACH record
+                    if not os.path.exists(os.path.dirname(results_file_path)):
+                        results_file_path = os.path.join(output_dir, results_file_path)
+                else:
+                    if not os.path.exists(os.path.dirname(results_file_path)):
+                        results_file_path = os.path.join(
+                            output_dir, f"{pipeline_name}/", results_file_path
+                        )
+            else:
+                # Do nothing because the user has given an absolute file path
+                pass
+
             pipestat_config_dict.update({"results_file_path": results_file_path})
         except KeyError:
             results_file_path = None
@@ -540,57 +614,20 @@ class Project(peppyProject):
         except KeyError:
             flag_file_dir = None
 
-        if sample_name:
-            pipestat_config_dict.update({"record_identifier": sample_name})
-
-        if project_level and "project_name" in pipestat_config_dict:
-            pipestat_config_dict.update(
-                {"project_name": pipestat_config_dict["project_name"]}
-            )
-
-        if project_level and "{record_identifier}" in results_file_path:
-            # if project level and using {record_identifier}, pipestat needs some sort of record_identifier during creation
-            pipestat_config_dict.update(
-                {"record_identifier": "default_project_record_identifier"}
-            )
-
-        pipestat_config_dict.update({"output_dir": output_dir})
-
-        pifaces = (
-            self.project_pipeline_interfaces
-            if project_level
-            else self._interfaces_by_sample[sample_name]
+        # Pipestat_dict_ is now updated from all sources and can be written to a yaml.
+        pipestat_config_path = os.path.join(
+            output_dir,
+            f"pipestat_config_{pipeline_name}.yaml",
         )
 
-        for piface in pifaces:
-            # We must also obtain additional pipestat items from the pipeline author's piface
-            if "output_schema" in piface.data:
-                schema_path = expandpath(piface.data["output_schema"])
-                if not os.path.isabs(schema_path):
-                    # Get path relative to the pipeline_interface
-                    schema_path = os.path.join(
-                        os.path.dirname(piface.pipe_iface_file), schema_path
-                    )
-                pipestat_config_dict.update({"schema_path": schema_path})
-            if "pipeline_name" in piface.data:
-                pipestat_config_dict.update(
-                    {"pipeline_name": piface.data["pipeline_name"]}
-                )
-            if "pipeline_type" in piface.data:
-                pipestat_config_dict.update(
-                    {"pipeline_type": piface.data["pipeline_type"]}
-                )
+        # Two end goals, create a config file
+        write_pipestat_config(pipestat_config_path, pipestat_config_dict)
 
-            # Pipestat_dict_ is now updated from all sources and can be written to a yaml.
-            looper_pipestat_config_path = os.path.join(
-                os.path.dirname(output_dir), "looper_pipestat_config.yaml"
-            )
-            write_pipestat_config(looper_pipestat_config_path, pipestat_config_dict)
+        piface.psm = PipestatManager(
+            config_file=pipestat_config_path, multi_pipelines=True
+        )
 
-            ret[piface.pipeline_name] = {
-                "config_file": looper_pipestat_config_path,
-            }
-        return ret
+        return None
 
     def populate_pipeline_outputs(self):
         """
@@ -657,7 +694,7 @@ class Project(peppyProject):
         pifaces_by_sample = {}
         for source, sample_names in self._samples_by_interface.items():
             try:
-                pi = PipelineInterface(source, pipeline_type="sample")
+                pi = PipelineInterface(source, pipeline_type=PipelineLevel.SAMPLE.value)
             except PipelineInterfaceConfigError as e:
                 _LOGGER.debug(f"Skipping pipeline interface creation: {e}")
             else:
@@ -708,7 +745,9 @@ class Project(peppyProject):
                 for source in piface_srcs:
                     source = self._resolve_path_with_cfg(source)
                     try:
-                        PipelineInterface(source, pipeline_type="sample")
+                        PipelineInterface(
+                            source, pipeline_type=PipelineLevel.SAMPLE.value
+                        )
                     except (
                         ValidationError,
                         IOError,

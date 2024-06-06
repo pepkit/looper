@@ -1,7 +1,8 @@
+import shutil
 from contextlib import contextmanager
 import os
 import subprocess
-from shutil import copyfile, rmtree
+from shutil import copyfile, rmtree, copytree
 import tempfile
 from typing import *
 
@@ -11,6 +12,8 @@ from peppy.const import *
 from yaml import dump, safe_load
 
 from looper.const import *
+
+REPO_URL = "https://github.com/pepkit/hello_looper.git"
 
 CFG = "project_config.yaml"
 PIPESTAT_CONFIG = "global_pipestat_config.yaml"
@@ -43,7 +46,23 @@ def get_outdir(pth):
     """
     with open(pth, "r") as conf_file:
         config_data = safe_load(conf_file)
-    return config_data[LOOPER_KEY][OUTDIR_KEY]
+
+    output_path = config_data[OUTDIR_KEY]
+    dirname = os.path.dirname(pth)
+
+    return os.path.join(dirname, output_path)
+
+
+def get_project_config_path(looper_config_pth):
+    """
+    Get project config file path from a looper config file path, since they are relative
+
+    :param str pth:
+    :return str: output directory
+    """
+    dirname = os.path.dirname(looper_config_pth)
+
+    return os.path.join(dirname, "project/project_config.yaml")
 
 
 def _assert_content_in_files(fs: Union[str, Iterable[str]], query: str, negate: bool):
@@ -116,9 +135,16 @@ def test_args_expansion(pth=None, cmd=None, appendix=list(), dry=True) -> List[s
     :param bool dry: whether to append dry run flag
     :return list of strings to pass to looper.main for testing
     """
-    x = [cmd, "-d" if dry else ""]
+    # --looper-config .looper.yaml run --dry-run
+    # x = [cmd, "-d" if dry else ""]
+    x = []
+    if cmd:
+        x.append(cmd)
     if pth:
+        x.append("--looper-config")
         x.append(pth)
+    if dry:
+        x.append("--dry-run")
     x.extend(appendix)
     return x
 
@@ -170,61 +196,50 @@ def example_pep_piface_path_cfg(example_pep_piface_path):
 
 @pytest.fixture
 def prep_temp_pep(example_pep_piface_path):
-    # temp dir
-    td = tempfile.mkdtemp()
-    out_td = os.path.join(td, "output")
-    # ori paths
 
-    cfg_path = os.path.join(example_pep_piface_path, CFG)
-    output_schema_path = os.path.join(example_pep_piface_path, OS)
-    sample_table_path = os.path.join(example_pep_piface_path, ST)
-    piface1p_path = os.path.join(example_pep_piface_path, PIP.format("1"))
-    piface2p_path = os.path.join(example_pep_piface_path, PIP.format("2"))
-    piface1s_path = os.path.join(example_pep_piface_path, PIS.format("1"))
-    piface2s_path = os.path.join(example_pep_piface_path, PIS.format("2"))
+    # Get Path to local copy of hello_looper
+    hello_looper_dir_path = os.path.join(example_pep_piface_path, "hello_looper-dev")
 
-    res_proj_path = os.path.join(example_pep_piface_path, RES.format("project"))
-    res_samp_path = os.path.join(example_pep_piface_path, RES.format("sample"))
-    # temp copies
-    temp_path_cfg = os.path.join(td, CFG)
-    temp_path_output_schema = os.path.join(td, OS)
-    temp_path_sample_table = os.path.join(td, ST)
-    temp_path_piface1s = os.path.join(td, PIS.format("1"))
-    temp_path_piface2s = os.path.join(td, PIS.format("2"))
-    temp_path_piface1p = os.path.join(td, PIP.format("1"))
-    temp_path_piface2p = os.path.join(td, PIP.format("2"))
-    temp_path_res_proj = os.path.join(td, RES.format("project"))
-    temp_path_res_samp = os.path.join(td, RES.format("sample"))
-    # copying
-    copyfile(cfg_path, temp_path_cfg)
-    copyfile(sample_table_path, temp_path_sample_table)
-    copyfile(piface1s_path, temp_path_piface1s)
-    copyfile(piface2s_path, temp_path_piface2s)
-    copyfile(piface1p_path, temp_path_piface1p)
-    copyfile(piface2p_path, temp_path_piface2p)
-    copyfile(output_schema_path, temp_path_output_schema)
-    copyfile(res_proj_path, temp_path_res_proj)
-    copyfile(res_samp_path, temp_path_res_samp)
-    # modififactions
-    from yaml import dump, safe_load
+    # Make local temp copy of hello_looper
+    d = tempfile.mkdtemp()
+    shutil.copytree(hello_looper_dir_path, d, dirs_exist_ok=True)
 
-    with open(temp_path_cfg, "r") as f:
-        piface_data = safe_load(f)
-    piface_data[LOOPER_KEY][OUTDIR_KEY] = out_td
-    piface_data[LOOPER_KEY][CLI_KEY] = {}
-    piface_data[LOOPER_KEY][CLI_KEY]["runp"] = {}
-    piface_data[LOOPER_KEY][CLI_KEY]["runp"][PIPELINE_INTERFACES_KEY] = [
-        temp_path_piface1p,
-        temp_path_piface2p,
-    ]
-    piface_data[SAMPLE_MODS_KEY][CONSTANT_KEY][PIPELINE_INTERFACES_KEY] = [
-        temp_path_piface1s,
-        temp_path_piface2s,
-    ]
-    with open(temp_path_cfg, "w") as f:
-        dump(piface_data, f)
+    advanced_dir = os.path.join(d, "advanced")
+    path_to_looper_config = os.path.join(advanced_dir, ".looper.yaml")
 
-    return temp_path_cfg
+    return path_to_looper_config
+
+
+@pytest.fixture
+def prep_temp_pep_basic(example_pep_piface_path):
+
+    # Get Path to local copy of hello_looper
+    hello_looper_dir_path = os.path.join(example_pep_piface_path, "hello_looper-dev")
+
+    # Make local temp copy of hello_looper
+    d = tempfile.mkdtemp()
+    shutil.copytree(hello_looper_dir_path, d, dirs_exist_ok=True)
+
+    advanced_dir = os.path.join(d, "intermediate")
+    path_to_looper_config = os.path.join(advanced_dir, ".looper.yaml")
+
+    return path_to_looper_config
+
+
+@pytest.fixture
+def prep_temp_pep_csv(example_pep_piface_path):
+
+    # Get Path to local copy of hello_looper
+    hello_looper_dir_path = os.path.join(example_pep_piface_path, "hello_looper-dev")
+
+    # Make local temp copy of hello_looper
+    d = tempfile.mkdtemp()
+    shutil.copytree(hello_looper_dir_path, d, dirs_exist_ok=True)
+
+    advanced_dir = os.path.join(d, "csv")
+    path_to_looper_config = os.path.join(advanced_dir, ".looper.yaml")
+
+    return path_to_looper_config
 
 
 @pytest.fixture
@@ -249,99 +264,51 @@ def prep_temp_config_with_pep(example_pep_piface_path):
 
 
 @pytest.fixture
-def prepare_pep_with_dot_file(prep_temp_pep):
-    pep_config = prep_temp_pep
-    with open(pep_config) as f:
-        pep_data = safe_load(f)
+def prep_temp_pep_pipestat(example_pep_piface_path):
 
-    output_dir = pep_data["looper"]["output_dir"]
-    project_piface = pep_data["looper"]["cli"]["runp"]["pipeline_interfaces"]
-    sample_piface = pep_data["sample_modifiers"]["append"]["pipeline_interfaces"]
+    # Get Path to local copy of hello_looper
 
-    pep_data.pop("looper")
-    pep_data["sample_modifiers"].pop("append")
+    hello_looper_dir_path = os.path.join(example_pep_piface_path, "hello_looper-dev")
 
-    with open(pep_config, "w") as f:
-        config = dump(pep_data, f)
+    # Make local temp copy of hello_looper
+    d = tempfile.mkdtemp()
+    shutil.copytree(hello_looper_dir_path, d, dirs_exist_ok=True)
 
-    looper_config = {
-        "pep_config": pep_config,
-        "output_dir": output_dir,
-        "pipeline_interfaces": {
-            "sample": sample_piface,
-            "project": project_piface,
-        },
-    }
+    advanced_dir = os.path.join(d, "pipestat")
+    path_to_looper_config = os.path.join(advanced_dir, ".looper.yaml")
 
-    # looper_config_path = os.path.join(os.path.dirname(pep_config), "looper_config.yaml")
-    #
-    # with open(looper_config_path, "w") as f:
-    #     config = dump(looper_config, f)
-    #
-    # looper_dot_file_content = {"looper_config": looper_config_path}
-
-    dot_file_path = ".looper.yaml"
-    with open(dot_file_path, "w") as f:
-        config = dump(looper_config, f)
-
-    return dot_file_path
+    return path_to_looper_config
 
 
 @pytest.fixture
-def prep_temp_pep_pipestat(example_pep_piface_path):
-    # TODO this should be combined with the other prep_temp_pep
-    # temp dir
-    td = tempfile.mkdtemp()
-    out_td = os.path.join(td, "output")
-    # ori paths
+def prep_temp_pep_pipestat_advanced(example_pep_piface_path):
 
-    cfg_path = os.path.join(example_pep_piface_path, LOOPER_CFG)
-    project_cfg_pipestat_path = os.path.join(
-        example_pep_piface_path, PROJECT_CFG_PIPESTAT
-    )
-    output_schema_path = os.path.join(example_pep_piface_path, PIPESTAT_OS)
+    # Get Path to local copy of hello_looper
 
-    sample_table_path = os.path.join(example_pep_piface_path, ST)
-    piface1s_path = os.path.join(example_pep_piface_path, PIPESTAT_PI)
-    piface1p_path = os.path.join(example_pep_piface_path, PIPESTAT_PI_PRJ)
+    hello_looper_dir_path = os.path.join(example_pep_piface_path, "hello_looper-dev")
 
-    res_proj_path = os.path.join(example_pep_piface_path, RES.format("project"))
-    res_samp_path = os.path.join(example_pep_piface_path, RES.format("sample"))
-    # temp copies
-    temp_path_cfg = os.path.join(td, LOOPER_CFG)
-    temp_path_project_cfg_pipestat = os.path.join(td, PROJECT_CFG_PIPESTAT)
-    temp_path_output_schema = os.path.join(td, PIPESTAT_OS)
+    # Make local temp copy of hello_looper
+    d = tempfile.mkdtemp()
+    shutil.copytree(hello_looper_dir_path, d, dirs_exist_ok=True)
 
-    temp_path_sample_table = os.path.join(td, ST)
-    temp_path_piface1s = os.path.join(td, PIPESTAT_PI)
-    temp_path_piface1p = os.path.join(td, PIPESTAT_PI_PRJ)
-    temp_path_res_proj = os.path.join(td, RES.format("project"))
-    temp_path_res_samp = os.path.join(td, RES.format("sample"))
-    # copying
-    copyfile(cfg_path, temp_path_cfg)
-    copyfile(project_cfg_pipestat_path, temp_path_project_cfg_pipestat)
+    advanced_dir = os.path.join(d, "advanced")
+    path_to_looper_config = os.path.join(advanced_dir, ".looper_advanced_pipestat.yaml")
 
-    copyfile(sample_table_path, temp_path_sample_table)
-    copyfile(piface1s_path, temp_path_piface1s)
-    copyfile(piface1p_path, temp_path_piface1p)
-    copyfile(output_schema_path, temp_path_output_schema)
-    copyfile(res_proj_path, temp_path_res_proj)
-    copyfile(res_samp_path, temp_path_res_samp)
-    # modifications
-    from yaml import dump, safe_load
+    return path_to_looper_config
 
-    with open(temp_path_cfg, "r") as f:
-        piface_data = safe_load(f)
-    piface_data[LOOPER_KEY][OUTDIR_KEY] = out_td
-    piface_data[LOOPER_KEY][CLI_KEY] = {}
-    piface_data[LOOPER_KEY][CLI_KEY]["runp"] = {}
-    piface_data[LOOPER_KEY][CLI_KEY]["runp"][PIPELINE_INTERFACES_KEY] = [
-        temp_path_piface1p,
-    ]
-    piface_data[SAMPLE_MODS_KEY][CONSTANT_KEY][PIPELINE_INTERFACES_KEY] = [
-        temp_path_piface1s,
-    ]
-    with open(temp_path_cfg, "w") as f:
-        dump(piface_data, f)
 
-    return temp_path_cfg
+@pytest.fixture
+def prep_temp_pep_pephub(example_pep_piface_path):
+
+    # Get Path to local copy of hello_looper
+
+    hello_looper_dir_path = os.path.join(example_pep_piface_path, "hello_looper-dev")
+
+    # Make local temp copy of hello_looper
+    d = tempfile.mkdtemp()
+    shutil.copytree(hello_looper_dir_path, d, dirs_exist_ok=True)
+
+    advanced_dir = os.path.join(d, "pephub")
+    path_to_looper_config = os.path.join(advanced_dir, ".looper.yaml")
+
+    return path_to_looper_config
