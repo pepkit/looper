@@ -328,9 +328,9 @@ def main(test_args=None) -> None:
     parser = pydantic2_argparse.ArgumentParser(
         model=TopLevelParser,
         prog="looper",
-        description="Looper Pydantic Argument Parser",
+        description="Looper: A job submitter for Portable Encapsulated Projects",
         add_help=True,
-        version="1.8.1a1",
+        version="1.8.1",
     )
 
     parser = add_short_arguments(parser, ArgumentEnum)
