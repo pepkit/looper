@@ -12,7 +12,7 @@ import yaml
 from math import ceil
 from copy import copy, deepcopy
 from json import loads
-from subprocess import check_output
+from subprocess import check_output, PIPE
 from typing import *
 
 from eido import read_schema, get_input_files_size
@@ -429,11 +429,11 @@ class SubmissionConductor(object):
                 submission_command = "{} {}".format(sub_cmd, script)
                 # Capture submission command return value so that we can
                 # intercept and report basic submission failures; #167
-                try:
-                    process = subprocess.Popen(submission_command, shell=True)
-                    self.process_id = process.pid
-                    return_code = process.wait()
-                except subprocess.CalledProcessError:
+
+                process = subprocess.Popen(submission_command, stderr=PIPE, shell=True)
+                self.process_id = process.pid
+                output, errors = process.communicate()
+                if errors:
                     fails = (
                         "" if self.collate else [s.sample_name for s in self._samples]
                     )
