@@ -214,7 +214,7 @@ class SubmissionConductor(object):
         self._curr_size = 0
         self._failed_sample_names = []
         self._curr_skip_pool = []
-        self.process_id = None  # this is used for a submitted subprocess
+        self.process_id = None  # this is used for currently submitted subprocess
 
         if self.extra_pipe_args:
             _LOGGER.debug(
