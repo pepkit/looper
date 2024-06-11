@@ -2,4 +2,4 @@ pipeline_name: example_pipestat_pipeline
 pipeline_type: sample
 output_schema: pipestat_output_schema.yaml
 command_template: >
-  python {looper.piface_dir}/count_lines.py {sample.file} {sample.sample_name} {pipestat.results_file} {pipestat.output_schema}
+  python3 {looper.piface_dir}/count_lines.py {sample.file} {sample.sample_name} {pipestat.results_file} {pipestat.output_schema}
