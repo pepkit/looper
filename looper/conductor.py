@@ -519,6 +519,7 @@ class SubmissionConductor(object):
         sys.exit(1)
 
     def _terminate_current_subprocess(self):
+        """This terminates the current sub process associated with self.process_id"""
 
         def pskill(proc_pid, sig=signal.SIGINT):
             parent_process = psutil.Process(proc_pid)
