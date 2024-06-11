@@ -167,6 +167,7 @@ def test_comprehensive_looper_pipestat(prep_temp_pep_pipestat):
     tsv_list = [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".tsv")]
     assert len(tsv_list) == 0
     with pytest.raises(RecordNotFoundError):
+        psm = PipestatManager(config_file=path_to_pipestat_config)
         retrieved_result = psm.retrieve_one(record_identifier="frog_2")
 
 

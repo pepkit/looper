@@ -1,3 +1,5 @@
+import os.path
+
 import pipestat
 import sys
 
@@ -8,14 +10,17 @@ text_file = sys.argv[
 ]  # this is the sample we wish to process by reading the number of lines
 sample_name = sys.argv[2]
 results_file = sys.argv[3]
+schema_path = sys.argv[4]
 
 # Create pipestat manager and then report values
 psm = pipestat.PipestatManager(
-    schema_path="pipeline_pipestat/pipestat_output_schema.yaml",
+    schema_path=schema_path,
     results_file_path=results_file,
     record_identifier=sample_name,
 )
 
+
+text_file = os.path.abspath(text_file)
 # Read text file and count lines
 with open(text_file, "r") as f:
     result = {"number_of_lines": len(f.readlines())}

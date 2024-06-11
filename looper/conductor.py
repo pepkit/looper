@@ -429,11 +429,11 @@ class SubmissionConductor(object):
                 submission_command = "{} {}".format(sub_cmd, script)
                 # Capture submission command return value so that we can
                 # intercept and report basic submission failures; #167
-
                 process = subprocess.Popen(submission_command, stderr=PIPE, shell=True)
                 self.process_id = process.pid
                 output, errors = process.communicate()
-                if errors:
+                _LOGGER.debug(msg=errors)
+                if process.returncode != 0:
                     fails = (
                         "" if self.collate else [s.sample_name for s in self._samples]
                     )
@@ -654,6 +654,7 @@ class SubmissionConductor(object):
                 "results_file": psm.file,
                 "record_identifier": psm.record_identifier,
                 "config_file": psm.config_path,
+                "output_schema": psm.cfg["_schema_path"],
             }
             filtered_namespace = {k: v for k, v in full_namespace.items() if v}
             return YAMLConfigManager(filtered_namespace)

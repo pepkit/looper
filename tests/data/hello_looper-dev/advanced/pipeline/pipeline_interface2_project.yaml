@@ -2,12 +2,10 @@ pipeline_name: OTHER_PIPELINE2
 pipeline_type: project
 output_schema: output_schema.yaml
 var_templates:
-  path: "{looper.piface_dir}/pipelines/col_pipeline2.py"
+  path: "{looper.piface_dir}/col_pipeline2.py"
 command_template: >
-  {pipeline.var_templates.path} --project-name {project.name}
+  python3 {pipeline.var_templates.path} --project-name {project.name}
 compute:
   size_dependent_variables: resources-project.tsv
 
-bioconductor:
-  readFunName: readData
-  readFunPath: readData.R
+

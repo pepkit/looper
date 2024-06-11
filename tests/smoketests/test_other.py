@@ -95,6 +95,30 @@ class TestLooperRerun:
         """Verify that rerun works with either failed or waiting flags"""
         tp = prep_temp_pep_pipestat
         _make_flags_pipestat(tp, flags, pipeline_name)
+        path_to_looper_config = prep_temp_pep_pipestat
+        pipestat_dir = os.path.dirname(path_to_looper_config)
+
+        # open up the project config and replace the derived attributes with the path to the data. In a way, this simulates using the environment variables.
+        pipestat_project_file = get_project_config_path(path_to_looper_config)
+
+        pipestat_pipeline_interface_file = os.path.join(
+            pipestat_dir, "pipeline_pipestat/pipeline_interface.yaml"
+        )
+
+        with open(pipestat_project_file, "r") as f:
+            pipestat_project_data = safe_load(f)
+
+        pipestat_project_data["sample_modifiers"]["derive"]["sources"]["source1"] = (
+            os.path.join(pipestat_dir, "data/{sample_name}.txt")
+        )
+
+        with open(pipestat_pipeline_interface_file, "r") as f:
+            pipestat_piface_data = safe_load(f)
+
+        pipeline_name = pipestat_piface_data["pipeline_name"]
+
+        with open(pipestat_project_file, "w") as f:
+            dump(pipestat_project_data, f)
 
         x = ["rerun", "--looper-config", tp]
         try:
