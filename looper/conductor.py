@@ -429,10 +429,16 @@ class SubmissionConductor(object):
                 submission_command = "{} {}".format(sub_cmd, script)
                 # Capture submission command return value so that we can
                 # intercept and report basic submission failures; #167
-                process = subprocess.Popen(submission_command, stderr=PIPE, shell=True)
+                process = subprocess.Popen(
+                    submission_command, stdout=PIPE, stderr=PIPE, shell=True
+                )
                 self.process_id = process.pid
                 output, errors = process.communicate()
-                _LOGGER.debug(msg=errors)
+                if output:
+                    # TODO this is ugly and needs to be formatted better before being presented to user.
+                    _LOGGER.info(msg=output)
+                if errors:
+                    _LOGGER.info(msg=errors)
                 if process.returncode != 0:
                     fails = (
                         "" if self.collate else [s.sample_name for s in self._samples]
