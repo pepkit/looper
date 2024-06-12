@@ -10,9 +10,8 @@ import sys
 import time
 import yaml
 from math import ceil
-from copy import copy, deepcopy
 from json import loads
-from subprocess import check_output, PIPE
+from subprocess import check_output
 from typing import *
 
 from eido import read_schema, get_input_files_size
@@ -22,12 +21,12 @@ from jinja2.exceptions import UndefinedError
 from peppy.const import CONFIG_KEY, SAMPLE_NAME_ATTR, SAMPLE_YAML_EXT
 from peppy.exceptions import RemoteYAMLError
 from pipestat import PipestatError
-from ubiquerg import expandpath, is_command_callable
+from ubiquerg import expandpath
 from yaml import dump
 from yacman import FutureYAMLConfigManager as YAMLConfigManager
 
 from .const import *
-from .exceptions import JobSubmissionException, SampleFailedException
+from .exceptions import JobSubmissionException
 from .processed_project import populate_sample_paths
 from .utils import fetch_sample_flags, jinja_render_template_strictly
 from .const import PipelineLevel
@@ -429,16 +428,9 @@ class SubmissionConductor(object):
                 submission_command = "{} {}".format(sub_cmd, script)
                 # Capture submission command return value so that we can
                 # intercept and report basic submission failures; #167
-                process = subprocess.Popen(
-                    submission_command, stdout=PIPE, stderr=PIPE, shell=True
-                )
+                process = subprocess.Popen(submission_command, shell=True)
                 self.process_id = process.pid
-                output, errors = process.communicate()
-                if output:
-                    # TODO this is ugly and needs to be formatted better before being presented to user.
-                    _LOGGER.info(msg=output)
-                if errors:
-                    _LOGGER.info(msg=errors)
+                process.wait()
                 if process.returncode != 0:
                     fails = (
                         "" if self.collate else [s.sample_name for s in self._samples]
