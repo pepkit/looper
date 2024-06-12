@@ -685,6 +685,13 @@ class SubmissionConductor(object):
                 else EXTRA_SAMPLE_CMD_TEMPLATE
             )
             templ += extras_template
+        if (
+            "bulker" in self.pl_iface.exp
+            and "bulker_crate" in self.pl_iface.exp["bulker"]
+        ):
+            _LOGGER.warning(self.pl_iface.exp["bulker"]["bulker_crate"])
+            templ = f"bulker run {self.pl_iface.exp['bulker']['bulker_crate']} " + templ
+
         for sample in pool:
             # cascading compute settings determination:
             # divcfg < pipeline interface < config <  CLI
