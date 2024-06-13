@@ -419,6 +419,7 @@ class Runner(Executor):
                 max_cmds=getattr(args, "lump_n", None),
                 max_size=getattr(args, "lump", None),
                 max_jobs=getattr(args, "lump_j", None),
+                bulker=getattr(args, "bulker", None),
             )
             submission_conductors[piface.pipe_iface_file] = conductor
 

@@ -79,6 +79,7 @@ RunParser = Command(
         ArgumentEnum.SKIP_FILE_CHECKS.value,
         ArgumentEnum.COMPUTE.value,
         ArgumentEnum.PACKAGE.value,
+        ArgumentEnum.BULKER.value,
     ],
 )
 

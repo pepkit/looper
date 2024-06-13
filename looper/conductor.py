@@ -151,6 +151,7 @@ class SubmissionConductor(object):
         max_jobs=None,
         automatic=True,
         collate=False,
+        bulker=False,
     ):
         """
         Create a job submission manager.
@@ -214,6 +215,22 @@ class SubmissionConductor(object):
         self._failed_sample_names = []
         self._curr_skip_pool = []
         self.process_id = None  # this is used for currently submitted subprocess
+        self.bulker = bulker
+        self.bulker_commands = None
+
+        if bulker:
+            if "bulker_crate" in self.pl_iface.exp:
+                crates = []
+                self.bulker_commands = []
+                if isinstance(self.pl_iface.exp["bulker_crate"], str):
+                    crates = [self.pl_iface.exp["bulker_crate"]]
+                elif isinstance(self.pl_iface.exp["bulker_crate"], list):
+                    crates = self.pl_iface.exp["bulker_crate"]
+                for crate in crates:
+                    bulker_load_cmd = f"bulker load -b -f {crate}"
+                    bulker_load_process = subprocess.Popen(bulker_load_cmd, shell=True)
+                    bulker_load_process.wait()
+                    self.bulker_commands.append(f"bulker run {crate} ")
 
         if self.extra_pipe_args:
             _LOGGER.debug(
@@ -685,12 +702,10 @@ class SubmissionConductor(object):
                 else EXTRA_SAMPLE_CMD_TEMPLATE
             )
             templ += extras_template
-        if (
-            "bulker" in self.pl_iface.exp
-            and "bulker_crate" in self.pl_iface.exp["bulker"]
-        ):
-            _LOGGER.warning(self.pl_iface.exp["bulker"]["bulker_crate"])
-            templ = f"bulker run {self.pl_iface.exp['bulker']['bulker_crate']} " + templ
+
+        if self.bulker_commands:
+            for bulker_command in self.bulker_commands:
+                templ = bulker_command + templ
 
         for sample in pool:
             # cascading compute settings determination:

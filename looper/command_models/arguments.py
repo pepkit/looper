@@ -281,3 +281,9 @@ class ArgumentEnum(enum.Enum):
         default=(bool, False),
         description="Is this command executed for project-level?",
     )
+
+    BULKER = Argument(
+        name="bulker",
+        default=(bool, False),
+        description="Run bulker",
+    )
