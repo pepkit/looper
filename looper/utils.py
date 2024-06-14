@@ -543,6 +543,12 @@ def read_looper_config_file(looper_config_path: str) -> dict:
     if PIPESTAT_KEY in dp_data:
         return_dict[PIPESTAT_KEY] = dp_data[PIPESTAT_KEY]
 
+    if SAMPLE_MODS_KEY in dp_data:
+        return_dict[SAMPLE_MODS_KEY] = dp_data[SAMPLE_MODS_KEY]
+
+    if PROJ_MODS_KEY in dp_data:
+        return_dict[PROJ_MODS_KEY] = dp_data[PROJ_MODS_KEY]
+
     if PIPELINE_INTERFACES_KEY in dp_data:
         dp_data.setdefault(PIPELINE_INTERFACES_KEY, {})
         return_dict[SAMPLE_PL_ARG] = dp_data.get(PIPELINE_INTERFACES_KEY).get("sample")
