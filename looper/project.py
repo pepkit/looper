@@ -136,6 +136,16 @@ class Project(peppyProject):
             self.name = None
 
         # add sample pipeline interface to the project
+        if kwargs.get(SAMPLE_MODS_KEY) and self._modifier_exists():
+            _LOGGER.warning(
+                "Sample modifiers were provided in Looper config. Overwriting those in  PEP."
+            )
+            self.config.setdefault("sample_modifiers", {})
+            self.config["sample_modifiers"] = kwargs.get(SAMPLE_MODS_KEY)
+        elif kwargs.get(SAMPLE_MODS_KEY):
+            self.config.setdefault("sample_modifiers", {})
+            self.config["sample_modifiers"] = kwargs.get(SAMPLE_MODS_KEY)
+
         if kwargs.get(SAMPLE_PL_ARG):
             self.set_sample_piface(kwargs.get(SAMPLE_PL_ARG))
 

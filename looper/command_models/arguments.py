@@ -281,3 +281,13 @@ class ArgumentEnum(enum.Enum):
         default=(bool, False),
         description="Is this command executed for project-level?",
     )
+    SAMPLE_MODIFIERS = Argument(
+        name="sample_modifiers",
+        default=(dict, None),
+        description="sample modifiers. Note: add these via looper config file. Not the CLI.",
+    )
+    PROJECT_MODIFIERS = Argument(
+        name="project_modifiers",
+        default=(dict, None),
+        description="project modifiers. Note: add these via looper config file. Not the CLI",
+    )

@@ -61,6 +61,8 @@ SHARED_ARGUMENTS = [
     ArgumentEnum.SETTINGS.value,
     ArgumentEnum.AMEND.value,
     ArgumentEnum.PROJECT_LEVEL.value,
+    ArgumentEnum.SAMPLE_MODIFIERS.value,
+    ArgumentEnum.PROJECT_MODIFIERS.value,
 ]
 
 RunParser = Command(

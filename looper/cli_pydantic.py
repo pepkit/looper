@@ -151,6 +151,8 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
                 looper_config_dict = read_looper_dotfile()
                 _LOGGER.info(f"Using looper config ({looper_cfg_path}).")
 
+            # subcommand_args.sample_modifiers = {}
+            # subcommand_args.project_modifiers = {}
             for looper_config_key, looper_config_item in looper_config_dict.items():
                 setattr(subcommand_args, looper_config_key, looper_config_item)
 

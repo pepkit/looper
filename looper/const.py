@@ -2,6 +2,7 @@
 
 import os
 from enum import Enum
+from peppy.const import SAMPLE_MODS_KEY, PROJ_MODS_KEY
 
 __author__ = "Databio lab"
 __email__ = "nathan@code.databio.org"
@@ -237,6 +238,8 @@ CLI_PROJ_ATTRS = [
     PIPESTAT_KEY,
     DEFAULT_PIPESTAT_CONFIG_ATTR,
     PEP_CONFIG_KEY,
+    SAMPLE_MODS_KEY,
+    PROJ_MODS_KEY,
 ]
 
 # resource package TSV-related consts
