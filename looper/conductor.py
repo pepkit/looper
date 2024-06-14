@@ -216,7 +216,6 @@ class SubmissionConductor(object):
         self._curr_skip_pool = []
         self.process_id = None  # this is used for currently submitted subprocess
         self.bulker = bulker
-        self.bulker_commands = None
 
         if bulker:
             if "bulker_crate" in self.pl_iface.exp:
@@ -230,7 +229,6 @@ class SubmissionConductor(object):
                     bulker_load_cmd = f"bulker load -b -f {crate}"
                     bulker_load_process = subprocess.Popen(bulker_load_cmd, shell=True)
                     bulker_load_process.wait()
-                    self.bulker_commands.append(f"bulker run {crate} ")
 
         if self.extra_pipe_args:
             _LOGGER.debug(
@@ -702,10 +700,6 @@ class SubmissionConductor(object):
                 else EXTRA_SAMPLE_CMD_TEMPLATE
             )
             templ += extras_template
-
-        if self.bulker_commands:
-            for bulker_command in self.bulker_commands:
-                templ = bulker_command + templ
 
         for sample in pool:
             # cascading compute settings determination:
