@@ -718,7 +718,13 @@ class SubmissionConductor(object):
 
             namespaces["pipeline"]["var_templates"] = pl_iface[VAR_TEMPL_KEY] or {}
             for k, v in namespaces["pipeline"]["var_templates"].items():
-                namespaces["pipeline"]["var_templates"][k] = expandpath(v)
+                if isinstance(v, dict):
+                    for key, value in v.items():
+                        namespaces["pipeline"]["var_templates"][k][key] = (
+                            jinja_render_template_strictly(value, namespaces)
+                        )
+                else:
+                    namespaces["pipeline"]["var_templates"][k] = expandpath(v)
 
             # pre_submit hook namespace updates
             namespaces = _exec_pre_submit(pl_iface, namespaces)

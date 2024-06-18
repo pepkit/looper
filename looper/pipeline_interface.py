@@ -90,7 +90,13 @@ class PipelineInterface(YAMLConfigManager):
             if curr_data:
                 var_templates.update(curr_data)
                 for k, v in var_templates.items():
-                    var_templates[k] = jinja_render_template_strictly(v, namespaces)
+                    if isinstance(v, dict):
+                        for key, value in v.items():
+                            var_templates[k][key] = jinja_render_template_strictly(
+                                value, namespaces
+                            )
+                    else:
+                        var_templates[k] = jinja_render_template_strictly(v, namespaces)
             return var_templates
 
     def get_pipeline_schemas(self, schema_key=INPUT_SCHEMA_KEY):
