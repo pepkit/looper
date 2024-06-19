@@ -20,7 +20,9 @@ def write_sample_yaml_prj(namespaces):
     """
     sample = namespaces["sample"]
     sample.to_yaml(
-        _get_yaml_path(namespaces, SAMPLE_YAML_PRJ_PATH_KEY, "_sample_prj"),
+        _get_yaml_path(
+            namespaces, "write_sample_yaml_prj", SAMPLE_YAML_PRJ_PATH_KEY, "_sample_prj"
+        ),
         add_prj_ref=True,
     )
     return {"sample": sample}
@@ -54,7 +56,7 @@ def write_custom_template(namespaces):
 
     tpl = load_template(namespaces["pipeline"])
     content = tpl.render(namespaces)
-    pth = _get_yaml_path(namespaces, "custom_template_output", "config")
+    pth = _get_yaml_path(namespaces, "custom_template_output", None, "config")
     namespaces["sample"]["custom_template_output"] = pth
     with open(pth, "wb") as fh:
         # print(content)
@@ -95,7 +97,7 @@ def write_sample_yaml_cwl(namespaces):
     # File and Directory object types directly.
     sample = namespaces["sample"]
     sample.sample_yaml_cwl = _get_yaml_path(
-        namespaces, SAMPLE_CWL_YAML_PATH_KEY, "_sample_cwl"
+        namespaces, "write_sample_yaml_cwl", SAMPLE_CWL_YAML_PATH_KEY, "_sample_cwl"
     )
 
     if "input_schema" in namespaces["pipeline"]:
@@ -154,7 +156,7 @@ def write_sample_yaml(namespaces):
     """
     sample = namespaces["sample"]
     sample["sample_yaml_path"] = _get_yaml_path(
-        namespaces, SAMPLE_YAML_PATH_KEY, "_sample"
+        namespaces, "write_sample_yaml", SAMPLE_YAML_PATH_KEY, "_sample"
     )
     sample.to_yaml(sample["sample_yaml_path"], add_prj_ref=False)
     return {"sample": sample}
