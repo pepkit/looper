@@ -825,3 +825,33 @@ def inspect_looper_config_file(looper_config_dict) -> None:
     print("LOOPER INSPECT")
     for key, value in looper_config_dict.items():
         print(f"{key} {value}")
+
+
+def expand_nested_var_templates(var_templates_dict, namespaces):
+
+    "Takes all var_templates as a dict and recursively expands any paths."
+
+    result = {}
+
+    for k, v in var_templates_dict.items():
+        if isinstance(v, dict):
+            result[k] = expand_nested_var_templates(v, namespaces)
+        else:
+            result[k] = expandpath(v)
+
+    return result
+
+
+def render_nested_var_templates(var_templates_dict, namespaces):
+
+    "Takes all var_templates as a dict and recursively renders the jinja templates."
+
+    result = {}
+
+    for k, v in var_templates_dict.items():
+        if isinstance(v, dict):
+            result[k] = expand_nested_var_templates(v, namespaces)
+        else:
+            result[k] = jinja_render_template_strictly(v, namespaces)
+
+    return result
