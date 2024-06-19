@@ -35,21 +35,13 @@ from .const import PipelineLevel
 _LOGGER = logging.getLogger(__name__)
 
 
-def _get_yaml_path(
-    namespaces,
-    template_key,
-    template_subkey=None,
-    default_name_appendix="",
-    filename=None,
-):
+def _get_yaml_path(namespaces, template_key, default_name_appendix="", filename=None):
     """
     Get a path to a YAML file for the sample.
 
     :param dict[dict]] namespaces: namespaces mapping
     :param str template_key: the name of the key in 'var_templates' piface
         section that points to a template to render to get the
-        user-provided target YAML path OR it is a 1st level key.
-    :param str template_subkey: the name of the key nested under template_key that that points to a template to render to get the
         user-provided target YAML path
     :param str default_name_appendix: a string to append to insert in target
         YAML file name: '{sample.sample_name}<>.yaml'
@@ -60,33 +52,11 @@ def _get_yaml_path(
     if (
         VAR_TEMPL_KEY in namespaces["pipeline"]
         and template_key in namespaces["pipeline"][VAR_TEMPL_KEY]
-        and template_subkey in namespaces["pipeline"][VAR_TEMPL_KEY][template_key]
     ):
         _LOGGER.debug(f"Sample namespace: {namespaces['sample']}")
         x = jinja_render_template_strictly("{sample.sample_name}", namespaces)
         _LOGGER.debug(f"x: {x}")
-        cpy = namespaces["pipeline"][VAR_TEMPL_KEY][template_key][template_subkey]
-        _LOGGER.debug(f"cpy: {cpy}")
-        path = expandpath(jinja_render_template_strictly(cpy, namespaces))
-        _LOGGER.debug(f"path: {path}")
-
-        if not path.endswith(SAMPLE_YAML_EXT) and not filename:
-            raise ValueError(
-                f"{template_key} is not a valid target YAML file path. "
-                f"It needs to end with: {' or '.join(SAMPLE_YAML_EXT)}"
-            )
-        final_path = os.path.join(path, filename) if filename else path
-        if not os.path.exists(os.path.dirname(final_path)):
-            os.makedirs(os.path.dirname(final_path), exist_ok=True)
-
-    elif (
-        VAR_TEMPL_KEY in namespaces["pipeline"]
-        and template_subkey in namespaces["pipeline"][VAR_TEMPL_KEY]
-    ):
-        _LOGGER.debug(f"Sample namespace: {namespaces['sample']}")
-        x = jinja_render_template_strictly("{sample.sample_name}", namespaces)
-        _LOGGER.debug(f"x: {x}")
-        cpy = namespaces["pipeline"][VAR_TEMPL_KEY][template_subkey]
+        cpy = namespaces["pipeline"][VAR_TEMPL_KEY][template_key]
         _LOGGER.debug(f"cpy: {cpy}")
         path = expandpath(jinja_render_template_strictly(cpy, namespaces))
         _LOGGER.debug(f"path: {path}")
@@ -146,9 +116,7 @@ def write_submission_yaml(namespaces):
     :param dict namespaces: variable namespaces dict
     :return dict: sample namespace dict
     """
-    path = _get_yaml_path(
-        namespaces, "write_submission_yaml", SAMPLE_CWL_YAML_PATH_KEY, "_submission"
-    )
+    path = _get_yaml_path(namespaces, SAMPLE_CWL_YAML_PATH_KEY, "_submission")
     my_namespaces = {}
     for namespace, values in namespaces.items():
         my_namespaces.update({str(namespace): dict(values)})
