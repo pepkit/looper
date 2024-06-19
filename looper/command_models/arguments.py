@@ -286,8 +286,8 @@ class ArgumentEnum(enum.Enum):
         default=(dict, None),
         description="sample modifiers. Note: add these via looper config file. Not the CLI.",
     )
-    PROJECT_MODIFIERS = Argument(
-        name="project_modifiers",
+    CLI_MODIFIERS = Argument(
+        name="cli_modifiers",
         default=(dict, None),
-        description="project modifiers. Note: add these via looper config file. Not the CLI",
+        description="cli modifiers. Note: add these via looper config file. Not the CLI",
     )

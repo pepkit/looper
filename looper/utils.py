@@ -14,7 +14,7 @@ import jinja2
 import yaml
 from peppy import Project as peppyProject
 from peppy.const import *
-from ubiquerg import convert_value, expandpath, parse_registry_path
+from ubiquerg import convert_value, expandpath, parse_registry_path, deep_update
 from pephubclient.constants import RegistryPath
 from pydantic import ValidationError
 
@@ -270,6 +270,31 @@ def enrich_args_via_cfg(subcommand_name, parser_args, aux_parser, test_args=None
         if os.path.exists(parser_args.config_file)
         else dict()
     )
+
+    # If user provided project-level modifiers in the looper config, they are prioritized
+    if cfg_args_all:
+        for key, value in cfg_args_all.items():
+            if getattr(parser_args, key, None):
+                new_value = getattr(parser_args, key)
+                cfg_args_all[key] = new_value
+
+    looper_config_cli_modifiers = None
+    if getattr(parser_args, "cli_modifiers", None):
+        if str(subcommand_name) in parser_args.cli_modifiers:
+            looper_config_cli_modifiers = parser_args.cli_modifiers[subcommand_name]
+            looper_config_cli_modifiers = (
+                {k.replace("-", "_"): v for k, v in looper_config_cli_modifiers.items()}
+                if looper_config_cli_modifiers
+                else None
+            )
+
+    if looper_config_cli_modifiers:
+        _LOGGER.warning(
+            "CLI modifiers were provided in Looper Config and in PEP Project Config. Merging..."
+        )
+        deep_update(cfg_args_all, looper_config_cli_modifiers)
+        _LOGGER.debug(msg=f"Merged CLI modifiers: {cfg_args_all}")
+
     result = argparse.Namespace()
     if test_args:
         cli_args, _ = aux_parser.parse_known_args(args=test_args)
@@ -546,8 +571,8 @@ def read_looper_config_file(looper_config_path: str) -> dict:
     if SAMPLE_MODS_KEY in dp_data:
         return_dict[SAMPLE_MODS_KEY] = dp_data[SAMPLE_MODS_KEY]
 
-    if PROJ_MODS_KEY in dp_data:
-        return_dict[PROJ_MODS_KEY] = dp_data[PROJ_MODS_KEY]
+    if "cli_modifiers" in dp_data:
+        return_dict["cli_modifiers"] = dp_data["cli_modifiers"]
 
     if PIPELINE_INTERFACES_KEY in dp_data:
         dp_data.setdefault(PIPELINE_INTERFACES_KEY, {})
