@@ -17,7 +17,7 @@ from .exceptions import (
     InvalidResourceSpecificationException,
     PipelineInterfaceConfigError,
 )
-from .utils import jinja_render_template_strictly
+from .utils import jinja_render_template_strictly, render_nested_var_templates
 
 __author__ = "Michal Stolarczyk"
 __email__ = "michal@virginia.edu"
@@ -89,8 +89,7 @@ class PipelineInterface(YAMLConfigManager):
             var_templates = {}
             if curr_data:
                 var_templates.update(curr_data)
-                for k, v in var_templates.items():
-                    var_templates[k] = jinja_render_template_strictly(v, namespaces)
+                var_templates = render_nested_var_templates(var_templates, namespaces)
             return var_templates
 
     def get_pipeline_schemas(self, schema_key=INPUT_SCHEMA_KEY):

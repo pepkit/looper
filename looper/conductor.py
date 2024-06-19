@@ -28,7 +28,11 @@ from yacman import FutureYAMLConfigManager as YAMLConfigManager
 from .const import *
 from .exceptions import JobSubmissionException
 from .processed_project import populate_sample_paths
-from .utils import fetch_sample_flags, jinja_render_template_strictly
+from .utils import (
+    fetch_sample_flags,
+    jinja_render_template_strictly,
+    expand_nested_var_templates,
+)
 from .const import PipelineLevel
 
 
@@ -717,8 +721,10 @@ class SubmissionConductor(object):
             _LOGGER.debug(f"namespace pipelines: { pl_iface }")
 
             namespaces["pipeline"]["var_templates"] = pl_iface[VAR_TEMPL_KEY] or {}
-            for k, v in namespaces["pipeline"]["var_templates"].items():
-                namespaces["pipeline"]["var_templates"][k] = expandpath(v)
+
+            namespaces["pipeline"]["var_templates"] = expand_nested_var_templates(
+                namespaces["pipeline"]["var_templates"], namespaces
+            )
 
             # pre_submit hook namespace updates
             namespaces = _exec_pre_submit(pl_iface, namespaces)
