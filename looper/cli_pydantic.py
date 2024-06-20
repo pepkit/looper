@@ -151,10 +151,15 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
                 looper_config_dict = read_looper_dotfile()
                 _LOGGER.info(f"Using looper config ({looper_cfg_path}).")
 
-            # subcommand_args.sample_modifiers = {}
-            # subcommand_args.project_modifiers = {}
+            sample_modifiers_dict = None
+            cli_modifiers_dict = None
             for looper_config_key, looper_config_item in looper_config_dict.items():
-                setattr(subcommand_args, looper_config_key, looper_config_item)
+                if looper_config_key == SAMPLE_MODS_KEY:
+                    sample_modifiers_dict = looper_config_item
+                elif looper_config_key == CLI_MODS_KEY:
+                    cli_modifiers_dict = looper_config_item
+                else:
+                    setattr(subcommand_args, looper_config_key, looper_config_item)
 
         except OSError:
             parser.print_help(sys.stderr)
@@ -170,7 +175,11 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
         )
 
     subcommand_args = enrich_args_via_cfg(
-        subcommand_name, subcommand_args, parser, test_args=test_args
+        subcommand_name,
+        subcommand_args,
+        parser,
+        test_args=test_args,
+        cli_modifiers=cli_modifiers_dict,
     )
 
     # If project pipeline interface defined in the cli, change name to: "pipeline_interface"
@@ -196,6 +205,7 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
                 amendments=subcommand_args.amend,
                 divcfg_path=divcfg,
                 runp=subcommand_name == "runp",
+                sample_modifiers=sample_modifiers_dict,
                 **{
                     attr: getattr(subcommand_args, attr)
                     for attr in CLI_PROJ_ATTRS
@@ -211,6 +221,7 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
                 amendments=subcommand_args.amend,
                 divcfg_path=divcfg,
                 runp=subcommand_name == "runp",
+                sample_modifiers=sample_modifiers_dict,
                 project_dict=PEPHubClient()._load_raw_pep(
                     registry_path=subcommand_args.config_file
                 ),

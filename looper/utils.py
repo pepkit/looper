@@ -253,7 +253,13 @@ def read_yaml_file(filepath):
     return data
 
 
-def enrich_args_via_cfg(subcommand_name, parser_args, aux_parser, test_args=None):
+def enrich_args_via_cfg(
+    subcommand_name,
+    parser_args,
+    aux_parser,
+    test_args=None,
+    cli_modifiers=None,
+):
     """
     Read in a looper dotfile and set arguments.
 
@@ -279,9 +285,9 @@ def enrich_args_via_cfg(subcommand_name, parser_args, aux_parser, test_args=None
                 cfg_args_all[key] = new_value
 
     looper_config_cli_modifiers = None
-    if getattr(parser_args, "cli_modifiers", None):
-        if str(subcommand_name) in parser_args.cli_modifiers:
-            looper_config_cli_modifiers = parser_args.cli_modifiers[subcommand_name]
+    if cli_modifiers:
+        if str(subcommand_name) in cli_modifiers:
+            looper_config_cli_modifiers = cli_modifiers[subcommand_name]
             looper_config_cli_modifiers = (
                 {k.replace("-", "_"): v for k, v in looper_config_cli_modifiers.items()}
                 if looper_config_cli_modifiers

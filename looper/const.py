@@ -2,7 +2,7 @@
 
 import os
 from enum import Enum
-from peppy.const import SAMPLE_MODS_KEY, PROJ_MODS_KEY
+from peppy.const import SAMPLE_MODS_KEY
 
 __author__ = "Databio lab"
 __email__ = "nathan@code.databio.org"
@@ -94,6 +94,7 @@ __all__ = [
     "DEBUG_EIDO_VALIDATION",
     "LOOPER_GENERIC_OUTPUT_SCHEMA",
     "LOOPER_GENERIC_COUNT_LINES",
+    "CLI_MODS_KEY",
 ]
 
 FLAGS = ["completed", "running", "failed", "waiting", "partial"]
@@ -223,6 +224,8 @@ ALL_SUBCMD_KEY = "all"
 SAMPLE_PL_ARG = "sample_pipeline_interfaces"
 PROJECT_PL_ARG = "project_pipeline_interfaces"
 
+CLI_MODS_KEY = "cli_modifiers"
+
 
 DEFAULT_CFG_PATH = os.path.join(os.getcwd(), LOOPER_DOTFILE_NAME)
 CLI_PROJ_ATTRS = [
@@ -238,8 +241,6 @@ CLI_PROJ_ATTRS = [
     PIPESTAT_KEY,
     DEFAULT_PIPESTAT_CONFIG_ATTR,
     PEP_CONFIG_KEY,
-    SAMPLE_MODS_KEY,
-    PROJ_MODS_KEY,
 ]
 
 # resource package TSV-related consts
