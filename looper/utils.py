@@ -577,8 +577,8 @@ def read_looper_config_file(looper_config_path: str) -> dict:
     if SAMPLE_MODS_KEY in dp_data:
         return_dict[SAMPLE_MODS_KEY] = dp_data[SAMPLE_MODS_KEY]
 
-    if "cli_modifiers" in dp_data:
-        return_dict["cli_modifiers"] = dp_data["cli_modifiers"]
+    if CLI_MODS_KEY in dp_data:
+        return_dict[CLI_MODS_KEY] = dp_data[CLI_MODS_KEY]
 
     if PIPELINE_INTERFACES_KEY in dp_data:
         dp_data.setdefault(PIPELINE_INTERFACES_KEY, {})
