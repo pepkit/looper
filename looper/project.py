@@ -20,7 +20,7 @@ from peppy import CONFIG_KEY, OUTDIR_KEY
 from peppy import Project as peppyProject
 from peppy.utils import make_abs_via_cfg
 from pipestat import PipestatError, PipestatManager
-from ubiquerg import expandpath, is_command_callable
+from ubiquerg import expandpath, is_command_callable, deep_update
 from yacman import YAMLConfigManager
 from .conductor import write_pipestat_config
 
@@ -134,6 +134,19 @@ class Project(peppyProject):
             name = self.name
         except NotImplementedError:
             self.name = None
+
+        # consolidate sample modifiers
+        if kwargs.get(SAMPLE_MODS_KEY) and self._modifier_exists():
+            _LOGGER.warning(
+                "Sample modifiers were provided in Looper Config and in PEP Project Config. Merging..."
+            )
+            deep_update(self.config["sample_modifiers"], kwargs.get(SAMPLE_MODS_KEY))
+            _LOGGER.debug(
+                msg=f"Merged sample modifiers: {self.config['sample_modifiers']}"
+            )
+        elif kwargs.get(SAMPLE_MODS_KEY):
+            self.config.setdefault("sample_modifiers", {})
+            self.config["sample_modifiers"] = kwargs.get(SAMPLE_MODS_KEY)
 
         # add sample pipeline interface to the project
         if kwargs.get(SAMPLE_PL_ARG):
