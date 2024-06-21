@@ -21,7 +21,7 @@ import os
 import sys
 
 import logmuse
-import pydantic2_argparse
+import pydantic_argparse
 import yaml
 from eido import inspect_project
 from pephubclient import PEPHubClient
@@ -338,7 +338,7 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
 
 
 def main(test_args=None) -> None:
-    parser = pydantic2_argparse.ArgumentParser(
+    parser = pydantic_argparse.ArgumentParser(
         model=TopLevelParser,
         prog="looper",
         description="Looper: A job submitter for Portable Encapsulated Projects",
