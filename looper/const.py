@@ -2,7 +2,6 @@
 
 import os
 from enum import Enum
-from peppy.const import SAMPLE_MODS_KEY
 
 __author__ = "Databio lab"
 __email__ = "nathan@code.databio.org"

@@ -1,18 +1,13 @@
 """ Computing configuration representation """
 
 import logging
-import logmuse
 import os
-import sys
 import shutil
-import yaml
 
 
 from shutil import copytree
 from yacman import FutureYAMLConfigManager as YAMLConfigManager
 from yacman import write_lock, FILEPATH_KEY, load_yaml, select_config
-from yaml import SafeLoader
-from ubiquerg import is_writable, VersionInHelpParser
 
 
 from .const import (
@@ -24,7 +19,6 @@ from .const import (
 )
 from .utils import write_submit_script
 
-# from . import __version__
 
 _LOGGER = logging.getLogger(__name__)
 

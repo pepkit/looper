@@ -17,7 +17,7 @@ from .exceptions import (
     InvalidResourceSpecificationException,
     PipelineInterfaceConfigError,
 )
-from .utils import jinja_render_template_strictly, render_nested_var_templates
+from .utils import render_nested_var_templates
 
 __author__ = "Michal Stolarczyk"
 __email__ = "michal@virginia.edu"

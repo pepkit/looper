@@ -10,18 +10,14 @@ try:
 except ImportError:
     # cached_property was introduced in python 3.8
     cached_property = property
-from logging import getLogger
 
 from .divvy import ComputingConfiguration
 from eido import PathAttrNotFoundError, read_schema
 from jsonschema import ValidationError
 from pandas.core.common import flatten
-from peppy import CONFIG_KEY, OUTDIR_KEY
-from peppy import Project as peppyProject
 from peppy.utils import make_abs_via_cfg
-from pipestat import PipestatError, PipestatManager
-from ubiquerg import expandpath, is_command_callable, deep_update
-from yacman import YAMLConfigManager
+from pipestat import PipestatManager
+
 from .conductor import write_pipestat_config
 
 from .exceptions import *

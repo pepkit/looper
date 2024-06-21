@@ -33,14 +33,12 @@ from rich.color import Color
 from rich.console import Console
 from rich.table import Table
 from ubiquerg.cli_tools import query_yes_no
-from ubiquerg.collection import uniqify
 
 
 from .conductor import SubmissionConductor
 
 from .exceptions import *
 from .const import *
-from .pipeline_interface import PipelineInterface
 from .project import Project
 from .utils import (
     desired_samples_range_skipped,

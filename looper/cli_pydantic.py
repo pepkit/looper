@@ -17,7 +17,6 @@ It is well possible that this script will be removed again.
 # with types.
 from __future__ import annotations
 
-import os
 import sys
 
 import logmuse
@@ -29,7 +28,6 @@ from pydantic_argparse.argparse.parser import ArgumentParser
 
 from divvy import select_divvy_config
 
-from .const import PipelineLevel
 from . import __version__
 
 from .command_models.arguments import ArgumentEnum

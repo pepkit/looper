@@ -1,12 +1,11 @@
 """ Helpers without an obvious logical home. """
 
 import argparse
-from collections import defaultdict, namedtuple
+from collections import defaultdict
 import glob
 import itertools
 from logging import getLogger
 import os
-import sys
 from typing import *
 import re
 
@@ -21,7 +20,7 @@ from yacman import load_yaml
 
 from .const import *
 from .command_models.commands import SUPPORTED_COMMANDS
-from .exceptions import MisconfigurationException, RegistryPathException
+from .exceptions import MisconfigurationException
 
 _LOGGER = getLogger(__name__)
 
