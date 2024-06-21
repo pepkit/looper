@@ -95,6 +95,7 @@ __all__ = [
     "LOOPER_GENERIC_OUTPUT_SCHEMA",
     "LOOPER_GENERIC_COUNT_LINES",
     "CLI_MODS_KEY",
+    "PipelineLevel",
 ]
 
 FLAGS = ["completed", "running", "failed", "waiting", "partial"]
