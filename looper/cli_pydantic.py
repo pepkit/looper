@@ -25,7 +25,7 @@ import pydantic2_argparse
 import yaml
 from eido import inspect_project
 from pephubclient import PEPHubClient
-from pydantic2_argparse.argparse.parser import ArgumentParser
+from pydantic_argparse.argparse.parser import ArgumentParser
 
 from divvy import select_divvy_config
 
