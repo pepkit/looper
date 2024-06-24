@@ -111,7 +111,31 @@ class Project(peppyProject):
     """
 
     def __init__(self, cfg=None, amendments=None, divcfg_path=None, **kwargs):
-        super(Project, self).__init__(cfg=cfg, amendments=amendments)
+
+        if kwargs.get("pep_update"):
+
+            _LOGGER.warning(
+                "Pep update key supplied in looper config. Merging with PEP Project"
+            )
+
+            pep_update_dict = kwargs.get("pep_update")
+            temp_pep = peppyProject(cfg=cfg, amendments=amendments)
+            dict_obj_pep = temp_pep.to_dict(extended=True)  # to make this a real PEP
+
+            if SAMPLE_MODS_KEY in pep_update_dict:
+                dict_obj_pep.setdefault(SAMPLE_MODS_KEY, {})
+                deep_update(
+                    dict_obj_pep[SAMPLE_MODS_KEY], pep_update_dict[SAMPLE_MODS_KEY]
+                )
+            if PROJ_MODS_KEY in pep_update_dict:
+                dict_obj_pep.setdefault(PROJ_MODS_KEY, {})
+                deep_update(dict_obj_pep[PROJ_MODS_KEY], pep_update_dict[PROJ_MODS_KEY])
+
+            super(Project, self).from_dict(pep_dictionary=dict_obj_pep)
+
+        else:
+            super(Project, self).__init__(cfg=cfg, amendments=amendments)
+
         prj_dict = kwargs.get("project_dict")
         pep_config = kwargs.get("pep_config", None)
         if pep_config:
@@ -132,17 +156,17 @@ class Project(peppyProject):
             self.name = None
 
         # consolidate sample modifiers
-        if kwargs.get(SAMPLE_MODS_KEY) and self._modifier_exists():
-            _LOGGER.warning(
-                "Sample modifiers were provided in Looper Config and in PEP Project Config. Merging..."
-            )
-            deep_update(self.config["sample_modifiers"], kwargs.get(SAMPLE_MODS_KEY))
-            _LOGGER.debug(
-                msg=f"Merged sample modifiers: {self.config['sample_modifiers']}"
-            )
-        elif kwargs.get(SAMPLE_MODS_KEY):
-            self.config.setdefault("sample_modifiers", {})
-            self.config["sample_modifiers"] = kwargs.get(SAMPLE_MODS_KEY)
+        # if kwargs.get(SAMPLE_MODS_KEY) and self._modifier_exists():
+        #     _LOGGER.warning(
+        #         "Sample modifiers were provided in Looper Config and in PEP Project Config. Merging..."
+        #     )
+        #     deep_update(self.config["sample_modifiers"], kwargs.get(SAMPLE_MODS_KEY))
+        #     _LOGGER.debug(
+        #         msg=f"Merged sample modifiers: {self.config['sample_modifiers']}"
+        #     )
+        # elif kwargs.get(SAMPLE_MODS_KEY):
+        #     self.config.setdefault("sample_modifiers", {})
+        #     self.config["sample_modifiers"] = kwargs.get(SAMPLE_MODS_KEY)
 
         # add sample pipeline interface to the project
         if kwargs.get(SAMPLE_PL_ARG):

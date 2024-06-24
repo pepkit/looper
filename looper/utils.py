@@ -603,8 +603,8 @@ def read_looper_config_file(looper_config_path: str) -> dict:
     if PIPESTAT_KEY in dp_data:
         return_dict[PIPESTAT_KEY] = dp_data[PIPESTAT_KEY]
 
-    if SAMPLE_MODS_KEY in dp_data:
-        return_dict[SAMPLE_MODS_KEY] = dp_data[SAMPLE_MODS_KEY]
+    if PEP_UPDATE_KEY in dp_data:
+        return_dict[PEP_UPDATE_KEY] = dp_data[PEP_UPDATE_KEY]
 
     if CLI_KEY in dp_data:
         return_dict[CLI_KEY] = dp_data[CLI_KEY]
