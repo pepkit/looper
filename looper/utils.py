@@ -606,8 +606,8 @@ def read_looper_config_file(looper_config_path: str) -> dict:
     if SAMPLE_MODS_KEY in dp_data:
         return_dict[SAMPLE_MODS_KEY] = dp_data[SAMPLE_MODS_KEY]
 
-    if CLI_MODS_KEY in dp_data:
-        return_dict[CLI_MODS_KEY] = dp_data[CLI_MODS_KEY]
+    if CLI_KEY in dp_data:
+        return_dict[CLI_KEY] = dp_data[CLI_KEY]
 
     if PIPELINE_INTERFACES_KEY in dp_data:
 

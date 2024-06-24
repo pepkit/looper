@@ -154,7 +154,7 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
             for looper_config_key, looper_config_item in looper_config_dict.items():
                 if looper_config_key == SAMPLE_MODS_KEY:
                     sample_modifiers_dict = looper_config_item
-                elif looper_config_key == CLI_MODS_KEY:
+                elif looper_config_key == CLI_KEY:
                     cli_modifiers_dict = looper_config_item
                 else:
                     setattr(subcommand_args, looper_config_key, looper_config_item)

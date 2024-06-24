@@ -93,7 +93,6 @@ __all__ = [
     "DEBUG_EIDO_VALIDATION",
     "LOOPER_GENERIC_OUTPUT_SCHEMA",
     "LOOPER_GENERIC_COUNT_LINES",
-    "CLI_MODS_KEY",
     "PipelineLevel",
 ]
 
@@ -224,7 +223,6 @@ ALL_SUBCMD_KEY = "all"
 SAMPLE_PL_ARG = "sample_pipeline_interfaces"
 PROJECT_PL_ARG = "project_pipeline_interfaces"
 
-CLI_MODS_KEY = "cli"
 
 
 DEFAULT_CFG_PATH = os.path.join(os.getcwd(), LOOPER_DOTFILE_NAME)
