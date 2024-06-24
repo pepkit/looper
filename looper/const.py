@@ -224,7 +224,7 @@ ALL_SUBCMD_KEY = "all"
 SAMPLE_PL_ARG = "sample_pipeline_interfaces"
 PROJECT_PL_ARG = "project_pipeline_interfaces"
 
-CLI_MODS_KEY = "cli_modifiers"
+CLI_MODS_KEY = "cli"
 
 
 DEFAULT_CFG_PATH = os.path.join(os.getcwd(), LOOPER_DOTFILE_NAME)
