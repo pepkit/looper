@@ -283,6 +283,8 @@ def enrich_args_via_cfg(
             if getattr(parser_args, key, None):
                 new_value = getattr(parser_args, key)
                 cfg_args_all[key] = new_value
+    else:
+        cfg_args_all = {}
 
     looper_config_cli_modifiers = None
     if cli_modifiers:
