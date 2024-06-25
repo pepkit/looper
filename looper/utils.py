@@ -273,7 +273,7 @@ def enrich_args_via_cfg(
     """
     cfg_args_all = (
         _get_subcommand_args(subcommand_name, parser_args)
-        if os.path.exists(parser_args.config_file)
+        if os.path.exists(parser_args.pep_config)
         else dict()
     )
 
@@ -360,7 +360,7 @@ def _get_subcommand_args(subcommand_name, parser_args):
     """
     args = dict()
     cfg = peppyProject(
-        parser_args.config_file,
+        parser_args.pep_config,
         defer_samples_creation=True,
         amendments=parser_args.amend,
     )
@@ -579,14 +579,7 @@ def read_looper_config_file(looper_config_path: str) -> dict:
         dp_data = yaml.safe_load(dotfile)
 
     if PEP_CONFIG_KEY in dp_data:
-        # Looper expects the config path to live at looper.config_file
-        # However, user may wish to access the pep at looper.pep_config
-        return_dict[PEP_CONFIG_FILE_KEY] = dp_data[PEP_CONFIG_KEY]
         return_dict[PEP_CONFIG_KEY] = dp_data[PEP_CONFIG_KEY]
-
-    # TODO: delete it in looper 2.0
-    elif DOTFILE_CFG_PTH_KEY in dp_data:
-        return_dict[PEP_CONFIG_FILE_KEY] = dp_data[DOTFILE_CFG_PTH_KEY]
 
     else:
         raise MisconfigurationException(

@@ -162,11 +162,6 @@ class ArgumentEnum(enum.Enum):
         default=(int, None),
         description="Skip samples by numerical index",
     )
-    CONFIG_FILE = Argument(
-        name="config_file",
-        default=(str, None),
-        description="Project configuration file",
-    )
     CONFIG = Argument(
         name="config",
         alias="-c",

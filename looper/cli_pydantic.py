@@ -182,12 +182,12 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
         subcommand_args.ignore_flags = True
 
     # Initialize project
-    if is_PEP_file_type(subcommand_args.config_file) and os.path.exists(
-        subcommand_args.config_file
+    if is_PEP_file_type(subcommand_args.pep_config) and os.path.exists(
+        subcommand_args.pep_config
     ):
         try:
             p = Project(
-                cfg=subcommand_args.config_file,
+                cfg=subcommand_args.pep_config,
                 amendments=subcommand_args.amend,
                 divcfg_path=divcfg,
                 runp=subcommand_name == "runp",
@@ -200,14 +200,14 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
         except yaml.parser.ParserError as e:
             _LOGGER.error(f"Project config parse failed -- {e}")
             sys.exit(1)
-    elif is_pephub_registry_path(subcommand_args.config_file):
+    elif is_pephub_registry_path(subcommand_args.pep_config):
         if vars(subcommand_args)[SAMPLE_PL_ARG]:
             p = Project(
                 amendments=subcommand_args.amend,
                 divcfg_path=divcfg,
                 runp=subcommand_name == "runp",
                 project_dict=PEPHubClient()._load_raw_pep(
-                    registry_path=subcommand_args.config_file
+                    registry_path=subcommand_args.pep_config
                 ),
                 **{
                     attr: getattr(subcommand_args, attr)

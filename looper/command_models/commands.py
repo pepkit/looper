@@ -53,7 +53,6 @@ SHARED_ARGUMENTS = [
     ArgumentEnum.SKIP.value,
     ArgumentEnum.PEP_CONFIG.value,
     ArgumentEnum.OUTPUT_DIR.value,
-    ArgumentEnum.CONFIG_FILE.value,
     ArgumentEnum.CONFIG.value,
     ArgumentEnum.SAMPLE_PIPELINE_INTERFACES.value,
     ArgumentEnum.PROJECT_PIPELINE_INTERFACES.value,
