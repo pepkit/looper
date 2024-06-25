@@ -94,7 +94,6 @@ __all__ = [
     "LOOPER_GENERIC_OUTPUT_SCHEMA",
     "LOOPER_GENERIC_COUNT_LINES",
     "PipelineLevel",
-    "PEP_UPDATE_KEY",
 ]
 
 FLAGS = ["completed", "running", "failed", "waiting", "partial"]
@@ -223,7 +222,7 @@ EXTRA_KEY = "_cli_extra"
 ALL_SUBCMD_KEY = "all"
 SAMPLE_PL_ARG = "sample_pipeline_interfaces"
 PROJECT_PL_ARG = "project_pipeline_interfaces"
-PEP_UPDATE_KEY = "pep_update"
+
 
 
 DEFAULT_CFG_PATH = os.path.join(os.getcwd(), LOOPER_DOTFILE_NAME)

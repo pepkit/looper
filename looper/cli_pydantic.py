@@ -149,11 +149,11 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
                 looper_config_dict = read_looper_dotfile()
                 _LOGGER.info(f"Using looper config ({looper_cfg_path}).")
 
-            pep_update_dict = None
+            sample_modifiers_dict = None
             cli_modifiers_dict = None
             for looper_config_key, looper_config_item in looper_config_dict.items():
-                if looper_config_key == PEP_UPDATE_KEY:
-                    pep_update_dict = looper_config_item
+                if looper_config_key == SAMPLE_MODS_KEY:
+                    sample_modifiers_dict = looper_config_item
                 elif looper_config_key == CLI_KEY:
                     cli_modifiers_dict = looper_config_item
                 else:
@@ -203,7 +203,7 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
                 amendments=subcommand_args.amend,
                 divcfg_path=divcfg,
                 runp=subcommand_name == "runp",
-                pep_update=pep_update_dict,
+                sample_modifiers=sample_modifiers_dict,
                 **{
                     attr: getattr(subcommand_args, attr)
                     for attr in CLI_PROJ_ATTRS
@@ -219,7 +219,7 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
                 amendments=subcommand_args.amend,
                 divcfg_path=divcfg,
                 runp=subcommand_name == "runp",
-                pep_update=pep_update_dict,
+                sample_modifiers=sample_modifiers_dict,
                 project_dict=PEPHubClient()._load_raw_pep(
                     registry_path=subcommand_args.config_file
                 ),
