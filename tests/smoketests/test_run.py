@@ -16,7 +16,7 @@ CMD_STRS = ["string", " --string", " --sjhsjd 212", "7867#$@#$cc@@"]
 def test_cli(prep_temp_pep):
     tp = prep_temp_pep
 
-    x = ["run", "--looper-config", tp, "--dry-run"]
+    x = ["run", "--config", tp, "--dry-run"]
     try:
         main(test_args=x)
     except Exception:
@@ -26,20 +26,20 @@ def test_cli(prep_temp_pep):
 def test_cli_shortform(prep_temp_pep):
     tp = prep_temp_pep
 
-    x = ["run", "--looper-config", tp, "-d"]
+    x = ["run", "--config", tp, "-d"]
     try:
         main(test_args=x)
     except Exception:
         raise pytest.fail("DID RAISE {0}".format(Exception))
 
-    x = ["run", "--looper-config", tp, "-d", "-l", "2"]
+    x = ["run", "--config", tp, "-d", "-l", "2"]
     try:
         main(test_args=x)
     except Exception:
         raise pytest.fail("DID RAISE {0}".format(Exception))
 
     tp = prep_temp_pep
-    x = ["run", "--looper-config", tp, "-d", "-n", "2"]
+    x = ["run", "--config", tp, "-d", "-n", "2"]
     try:
         main(test_args=x)
     except Exception:
@@ -49,7 +49,7 @@ def test_cli_shortform(prep_temp_pep):
 def test_running_csv_pep(prep_temp_pep_csv):
     tp = prep_temp_pep_csv
 
-    x = ["run", "--looper-config", tp, "--dry-run"]
+    x = ["run", "--config", tp, "--dry-run"]
     try:
         main(test_args=x)
     except Exception:
@@ -83,9 +83,7 @@ class TestLooperBothRuns:
     def test_looper_cfg_invalid(self, cmd):
         """Verify looper does not accept invalid cfg paths"""
 
-        x = test_args_expansion(
-            cmd, "--looper-config", "jdfskfds/dsjfklds/dsjklsf.yaml"
-        )
+        x = test_args_expansion(cmd, "--config", "jdfskfds/dsjfklds/dsjklsf.yaml")
         with pytest.raises(SystemExit):
             result = main(test_args=x)
             print(result)

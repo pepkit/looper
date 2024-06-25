@@ -140,8 +140,8 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
 
     looper_cfg_path = os.path.relpath(dotfile_path(), start=os.curdir)
     try:
-        if subcommand_args.looper_config:
-            looper_config_dict = read_looper_config_file(subcommand_args.looper_config)
+        if subcommand_args.config:
+            looper_config_dict = read_looper_config_file(subcommand_args.config)
         else:
             looper_config_dict = read_looper_dotfile()
             _LOGGER.info(f"Using looper config ({looper_cfg_path}).")

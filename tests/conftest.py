@@ -141,7 +141,7 @@ def test_args_expansion(pth=None, cmd=None, appendix=list(), dry=True) -> List[s
     if cmd:
         x.append(cmd)
     if pth:
-        x.append("--looper-config")
+        x.append("--config")
         x.append(pth)
     if dry:
         x.append("--dry-run")
