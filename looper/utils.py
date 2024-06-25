@@ -283,6 +283,8 @@ def enrich_args_via_cfg(
             if getattr(parser_args, key, None):
                 new_value = getattr(parser_args, key)
                 cfg_args_all[key] = new_value
+    else:
+        cfg_args_all = {}
 
     looper_config_cli_modifiers = None
     if cli_modifiers:
@@ -604,8 +606,8 @@ def read_looper_config_file(looper_config_path: str) -> dict:
     if SAMPLE_MODS_KEY in dp_data:
         return_dict[SAMPLE_MODS_KEY] = dp_data[SAMPLE_MODS_KEY]
 
-    if CLI_MODS_KEY in dp_data:
-        return_dict[CLI_MODS_KEY] = dp_data[CLI_MODS_KEY]
+    if CLI_KEY in dp_data:
+        return_dict[CLI_KEY] = dp_data[CLI_KEY]
 
     if PIPELINE_INTERFACES_KEY in dp_data:
 

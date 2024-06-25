@@ -131,19 +131,6 @@ class Project(peppyProject):
         except NotImplementedError:
             self.name = None
 
-        # consolidate sample modifiers
-        if kwargs.get(SAMPLE_MODS_KEY) and self._modifier_exists():
-            _LOGGER.warning(
-                "Sample modifiers were provided in Looper Config and in PEP Project Config. Merging..."
-            )
-            deep_update(self.config["sample_modifiers"], kwargs.get(SAMPLE_MODS_KEY))
-            _LOGGER.debug(
-                msg=f"Merged sample modifiers: {self.config['sample_modifiers']}"
-            )
-        elif kwargs.get(SAMPLE_MODS_KEY):
-            self.config.setdefault("sample_modifiers", {})
-            self.config["sample_modifiers"] = kwargs.get(SAMPLE_MODS_KEY)
-
         # add sample pipeline interface to the project
         if kwargs.get(SAMPLE_PL_ARG):
             self.set_sample_piface(kwargs.get(SAMPLE_PL_ARG))
