@@ -138,36 +138,27 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
 
     _LOGGER.info("Looper version: {}\nCommand: {}".format(__version__, subcommand_name))
 
-    if subcommand_args.config_file is None:
-        looper_cfg_path = os.path.relpath(dotfile_path(), start=os.curdir)
-        try:
-            if subcommand_args.looper_config:
-                looper_config_dict = read_looper_config_file(
-                    subcommand_args.looper_config
-                )
+    looper_cfg_path = os.path.relpath(dotfile_path(), start=os.curdir)
+    try:
+        if subcommand_args.looper_config:
+            looper_config_dict = read_looper_config_file(subcommand_args.looper_config)
+        else:
+            looper_config_dict = read_looper_dotfile()
+            _LOGGER.info(f"Using looper config ({looper_cfg_path}).")
+
+        cli_modifiers_dict = None
+        for looper_config_key, looper_config_item in looper_config_dict.items():
+            if looper_config_key == CLI_KEY:
+                cli_modifiers_dict = looper_config_item
             else:
-                looper_config_dict = read_looper_dotfile()
-                _LOGGER.info(f"Using looper config ({looper_cfg_path}).")
+                setattr(subcommand_args, looper_config_key, looper_config_item)
 
-            cli_modifiers_dict = None
-            for looper_config_key, looper_config_item in looper_config_dict.items():
-                if looper_config_key == CLI_KEY:
-                    cli_modifiers_dict = looper_config_item
-                else:
-                    setattr(subcommand_args, looper_config_key, looper_config_item)
-
-        except OSError:
-            parser.print_help(sys.stderr)
-            _LOGGER.warning(
-                f"Looper config file does not exist. Use looper init to create one at {looper_cfg_path}."
-            )
-            sys.exit(1)
-    else:
+    except OSError:
+        parser.print_help(sys.stderr)
         _LOGGER.warning(
-            "This PEP configures looper through the project config. This approach is deprecated and will "
-            "be removed in future versions. Please use a looper config file. For more information see "
-            "looper.databio.org/en/latest/looper-config"
+            f"Looper config file does not exist. Use looper init to create one at {looper_cfg_path}."
         )
+        sys.exit(1)
 
     subcommand_args = enrich_args_via_cfg(
         subcommand_name,
