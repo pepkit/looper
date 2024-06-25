@@ -224,7 +224,6 @@ SAMPLE_PL_ARG = "sample_pipeline_interfaces"
 PROJECT_PL_ARG = "project_pipeline_interfaces"
 
 
-
 DEFAULT_CFG_PATH = os.path.join(os.getcwd(), LOOPER_DOTFILE_NAME)
 CLI_PROJ_ATTRS = [
     OUTDIR_KEY,
