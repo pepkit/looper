@@ -3,11 +3,13 @@
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format.
 
 
-## [2.0.0] -- 2024-07-xx
+## [1.9.0] -- 2024-06-26
 
 ### Added
-- user can now add sample modifiers and cli modifiers to looper config instead of PEP project [#270](https://github.com/pepkit/looper/issues/270)
+- user can now add cli modifiers to looper config instead of PEP project [#270](https://github.com/pepkit/looper/issues/270)
 - pipeline interfaces no longer must be nested under sample and project keys within looper config file [#465](https://github.com/pepkit/looper/issues/465)
+- var_templates can now be hierarchical [#334](https://github.com/pepkit/looper/issues/334)
+- looper can now gracefully halt spawned subprocesses when the user sends a keyboard interrupt [#37](https://github.com/pepkit/looper/issues/37)
 
 ## [1.8.1] -- 2024-06-06
 
