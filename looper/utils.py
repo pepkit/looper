@@ -1,12 +1,11 @@
 """ Helpers without an obvious logical home. """
 
 import argparse
-from collections import defaultdict, namedtuple
+from collections import defaultdict
 import glob
 import itertools
 from logging import getLogger
 import os
-import sys
 from typing import *
 import re
 
@@ -14,13 +13,14 @@ import jinja2
 import yaml
 from peppy import Project as peppyProject
 from peppy.const import *
-from ubiquerg import convert_value, expandpath, parse_registry_path
+from ubiquerg import convert_value, expandpath, parse_registry_path, deep_update
 from pephubclient.constants import RegistryPath
 from pydantic import ValidationError
+from yacman import load_yaml
 
 from .const import *
 from .command_models.commands import SUPPORTED_COMMANDS
-from .exceptions import MisconfigurationException, RegistryPathException
+from .exceptions import MisconfigurationException
 
 _LOGGER = getLogger(__name__)
 
@@ -253,7 +253,13 @@ def read_yaml_file(filepath):
     return data
 
 
-def enrich_args_via_cfg(subcommand_name, parser_args, aux_parser, test_args=None):
+def enrich_args_via_cfg(
+    subcommand_name,
+    parser_args,
+    aux_parser,
+    test_args=None,
+    cli_modifiers=None,
+):
     """
     Read in a looper dotfile and set arguments.
 
@@ -270,6 +276,33 @@ def enrich_args_via_cfg(subcommand_name, parser_args, aux_parser, test_args=None
         if os.path.exists(parser_args.config_file)
         else dict()
     )
+
+    # If user provided project-level modifiers in the looper config, they are prioritized
+    if cfg_args_all:
+        for key, value in cfg_args_all.items():
+            if getattr(parser_args, key, None):
+                new_value = getattr(parser_args, key)
+                cfg_args_all[key] = new_value
+    else:
+        cfg_args_all = {}
+
+    looper_config_cli_modifiers = None
+    if cli_modifiers:
+        if str(subcommand_name) in cli_modifiers:
+            looper_config_cli_modifiers = cli_modifiers[subcommand_name]
+            looper_config_cli_modifiers = (
+                {k.replace("-", "_"): v for k, v in looper_config_cli_modifiers.items()}
+                if looper_config_cli_modifiers
+                else None
+            )
+
+    if looper_config_cli_modifiers:
+        _LOGGER.warning(
+            "CLI modifiers were provided in Looper Config and in PEP Project Config. Merging..."
+        )
+        deep_update(cfg_args_all, looper_config_cli_modifiers)
+        _LOGGER.debug(msg=f"Merged CLI modifiers: {cfg_args_all}")
+
     result = argparse.Namespace()
     if test_args:
         cli_args, _ = aux_parser.parse_known_args(args=test_args)
@@ -503,6 +536,33 @@ def initiate_looper_config(
     return True
 
 
+def determine_pipeline_type(piface_path: str, looper_config_path: str):
+    """
+    Read pipeline interface from disk and determine if pipeline type is sample or project-level
+
+
+    :param str piface_path: path to pipeline_interface
+    :param str looper_config_path: path to looper config file
+    :return Tuple[Union[str,None],Union[str,None]] : (pipeline type, resolved path) or (None, None)
+    """
+
+    if piface_path is None:
+        return None, None
+    piface_path = expandpath(piface_path)
+    if not os.path.isabs(piface_path):
+        piface_path = os.path.realpath(
+            os.path.join(os.path.dirname(looper_config_path), piface_path)
+        )
+    try:
+        piface_dict = load_yaml(piface_path)
+    except FileNotFoundError:
+        return None, None
+
+    pipeline_type = piface_dict.get("pipeline_type", None)
+
+    return pipeline_type, piface_path
+
+
 def read_looper_config_file(looper_config_path: str) -> dict:
     """
     Read Looper config file which includes:
@@ -543,12 +603,46 @@ def read_looper_config_file(looper_config_path: str) -> dict:
     if PIPESTAT_KEY in dp_data:
         return_dict[PIPESTAT_KEY] = dp_data[PIPESTAT_KEY]
 
+    if SAMPLE_MODS_KEY in dp_data:
+        return_dict[SAMPLE_MODS_KEY] = dp_data[SAMPLE_MODS_KEY]
+
+    if CLI_KEY in dp_data:
+        return_dict[CLI_KEY] = dp_data[CLI_KEY]
+
     if PIPELINE_INTERFACES_KEY in dp_data:
+
         dp_data.setdefault(PIPELINE_INTERFACES_KEY, {})
-        return_dict[SAMPLE_PL_ARG] = dp_data.get(PIPELINE_INTERFACES_KEY).get("sample")
-        return_dict[PROJECT_PL_ARG] = dp_data.get(PIPELINE_INTERFACES_KEY).get(
-            "project"
-        )
+
+        if isinstance(dp_data.get(PIPELINE_INTERFACES_KEY), dict) and (
+            dp_data.get(PIPELINE_INTERFACES_KEY).get("sample")
+            or dp_data.get(PIPELINE_INTERFACES_KEY).get("project")
+        ):
+            # Support original nesting of pipeline interfaces under "sample" and "project"
+            return_dict[SAMPLE_PL_ARG] = dp_data.get(PIPELINE_INTERFACES_KEY).get(
+                "sample"
+            )
+            return_dict[PROJECT_PL_ARG] = dp_data.get(PIPELINE_INTERFACES_KEY).get(
+                "project"
+            )
+        else:
+            # infer pipeline type based from interface instead of nested keys: https://github.com/pepkit/looper/issues/465
+            all_pipeline_interfaces = dp_data.get(PIPELINE_INTERFACES_KEY)
+            sample_pifaces = []
+            project_pifaces = []
+            if isinstance(all_pipeline_interfaces, str):
+                all_pipeline_interfaces = [all_pipeline_interfaces]
+            for piface in all_pipeline_interfaces:
+                pipeline_type, piface_path = determine_pipeline_type(
+                    piface, looper_config_path
+                )
+                if pipeline_type == PipelineLevel.SAMPLE.value:
+                    sample_pifaces.append(piface_path)
+                elif pipeline_type == PipelineLevel.PROJECT.value:
+                    project_pifaces.append(piface_path)
+            if len(sample_pifaces) > 0:
+                return_dict[SAMPLE_PL_ARG] = sample_pifaces
+            if len(project_pifaces) > 0:
+                return_dict[PROJECT_PL_ARG] = project_pifaces
 
     else:
         _LOGGER.warning(
@@ -819,3 +913,33 @@ def inspect_looper_config_file(looper_config_dict) -> None:
     print("LOOPER INSPECT")
     for key, value in looper_config_dict.items():
         print(f"{key} {value}")
+
+
+def expand_nested_var_templates(var_templates_dict, namespaces):
+
+    "Takes all var_templates as a dict and recursively expands any paths."
+
+    result = {}
+
+    for k, v in var_templates_dict.items():
+        if isinstance(v, dict):
+            result[k] = expand_nested_var_templates(v, namespaces)
+        else:
+            result[k] = expandpath(v)
+
+    return result
+
+
+def render_nested_var_templates(var_templates_dict, namespaces):
+
+    "Takes all var_templates as a dict and recursively renders the jinja templates."
+
+    result = {}
+
+    for k, v in var_templates_dict.items():
+        if isinstance(v, dict):
+            result[k] = expand_nested_var_templates(v, namespaces)
+        else:
+            result[k] = jinja_render_template_strictly(v, namespaces)
+
+    return result

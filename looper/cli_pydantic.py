@@ -17,19 +17,17 @@ It is well possible that this script will be removed again.
 # with types.
 from __future__ import annotations
 
-import os
 import sys
 
 import logmuse
-import pydantic2_argparse
+import pydantic_argparse
 import yaml
 from eido import inspect_project
 from pephubclient import PEPHubClient
-from pydantic2_argparse.argparse.parser import ArgumentParser
+from pydantic_argparse.argparse.parser import ArgumentParser
 
 from divvy import select_divvy_config
 
-from .const import PipelineLevel
 from . import __version__
 
 from .command_models.arguments import ArgumentEnum
@@ -151,8 +149,12 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
                 looper_config_dict = read_looper_dotfile()
                 _LOGGER.info(f"Using looper config ({looper_cfg_path}).")
 
+            cli_modifiers_dict = None
             for looper_config_key, looper_config_item in looper_config_dict.items():
-                setattr(subcommand_args, looper_config_key, looper_config_item)
+                if looper_config_key == CLI_KEY:
+                    cli_modifiers_dict = looper_config_item
+                else:
+                    setattr(subcommand_args, looper_config_key, looper_config_item)
 
         except OSError:
             parser.print_help(sys.stderr)
@@ -168,7 +170,11 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
         )
 
     subcommand_args = enrich_args_via_cfg(
-        subcommand_name, subcommand_args, parser, test_args=test_args
+        subcommand_name,
+        subcommand_args,
+        parser,
+        test_args=test_args,
+        cli_modifiers=cli_modifiers_dict,
     )
 
     # If project pipeline interface defined in the cli, change name to: "pipeline_interface"
@@ -325,12 +331,12 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
 
 
 def main(test_args=None) -> None:
-    parser = pydantic2_argparse.ArgumentParser(
+    parser = pydantic_argparse.ArgumentParser(
         model=TopLevelParser,
         prog="looper",
         description="Looper: A job submitter for Portable Encapsulated Projects",
         add_help=True,
-        version="1.8.1",
+        version="1.9.0",
     )
 
     parser = add_short_arguments(parser, ArgumentEnum)

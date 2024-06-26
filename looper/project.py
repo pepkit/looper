@@ -10,18 +10,14 @@ try:
 except ImportError:
     # cached_property was introduced in python 3.8
     cached_property = property
-from logging import getLogger
 
 from .divvy import ComputingConfiguration
 from eido import PathAttrNotFoundError, read_schema
 from jsonschema import ValidationError
 from pandas.core.common import flatten
-from peppy import CONFIG_KEY, OUTDIR_KEY
-from peppy import Project as peppyProject
 from peppy.utils import make_abs_via_cfg
-from pipestat import PipestatError, PipestatManager
-from ubiquerg import expandpath, is_command_callable
-from yacman import YAMLConfigManager
+from pipestat import PipestatManager
+
 from .conductor import write_pipestat_config
 
 from .exceptions import *
@@ -373,65 +369,6 @@ class Project(peppyProject):
             return self._interfaces_by_sample[sample_name]
         except KeyError:
             return None
-
-    def build_submission_bundles(self, protocol, priority=True):
-        """
-        Create pipelines to submit for each sample of a particular protocol.
-
-        With the argument (flag) to the priority parameter, there's control
-        over whether to submit pipeline(s) from only one of the project's
-        known pipeline locations with a match for the protocol, or whether to
-        submit pipelines created from all locations with a match for the
-        protocol.
-
-        :param str protocol: name of the protocol/library for which to
-            create pipeline(s)
-        :param bool priority: to only submit pipeline(s) from the first of the
-            pipelines location(s) (indicated in the project config file) that
-            has a match for the given protocol; optional, default True
-        :return Iterable[(PipelineInterface, type, str, str)]:
-        :raises AssertionError: if there's a failure in the attempt to
-            partition an interface's pipeline scripts into disjoint subsets of
-            those already mapped and those not yet mapped
-        """
-
-        if not priority:
-            raise NotImplementedError(
-                "Currently, only prioritized protocol mapping is supported "
-                "(i.e., pipeline interfaces collection is a prioritized list, "
-                "so only the first interface with a protocol match is used.)"
-            )
-
-        # Pull out the collection of interfaces (potentially one from each of
-        # the locations indicated in the project configuration file) as a
-        # sort of pool of information about possible ways in which to submit
-        # pipeline(s) for sample(s) of the indicated protocol.
-        pifaces = self.interfaces.get_pipeline_interface(protocol)
-        if not pifaces:
-            raise PipelineInterfaceConfigError(
-                "No interfaces for protocol: {}".format(protocol)
-            )
-
-        # coonvert to a list, in the future we might allow to match multiple
-        pifaces = pifaces if isinstance(pifaces, str) else [pifaces]
-
-        job_submission_bundles = []
-        new_jobs = []
-
-        _LOGGER.debug("Building pipelines matched by protocol: {}".format(protocol))
-
-        for pipe_iface in pifaces:
-            # Determine how to reference the pipeline and where it is.
-            path = pipe_iface["path"]
-            if not (os.path.exists(path) or is_command_callable(path)):
-                _LOGGER.warning("Missing pipeline script: {}".format(path))
-                continue
-
-            # Add this bundle to the collection of ones relevant for the
-            # current PipelineInterface.
-            new_jobs.append(pipe_iface)
-            job_submission_bundles.append(new_jobs)
-        return list(itertools.chain(*job_submission_bundles))
 
     @staticmethod
     def get_schemas(pifaces, schema_key=INPUT_SCHEMA_KEY):

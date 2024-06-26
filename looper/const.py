@@ -93,6 +93,7 @@ __all__ = [
     "DEBUG_EIDO_VALIDATION",
     "LOOPER_GENERIC_OUTPUT_SCHEMA",
     "LOOPER_GENERIC_COUNT_LINES",
+    "PipelineLevel",
 ]
 
 FLAGS = ["completed", "running", "failed", "waiting", "partial"]

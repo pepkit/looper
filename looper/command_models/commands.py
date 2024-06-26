@@ -9,7 +9,7 @@ import pydantic.v1 as pydantic
 
 from ..const import MESSAGE_BY_SUBCOMMAND
 from .arguments import Argument, ArgumentEnum
-from pydantic2_argparse import ArgumentParser
+from pydantic_argparse import ArgumentParser
 
 
 @dataclass
