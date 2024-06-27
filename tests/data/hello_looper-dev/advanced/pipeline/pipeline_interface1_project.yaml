@@ -1,9 +1,9 @@
 pipeline_name: PIPELINE1
-pipeline_type: project
 output_schema: output_schema.yaml
 var_templates:
   path: "{looper.piface_dir}/col_pipeline1.py"
-command_template: >
-  python3 {pipeline.var_templates.path} --project-name {project.name}
+project_interface:
+  command_template: >
+    python3 {pipeline.var_templates.path} --project-name {project.name}
 
 
