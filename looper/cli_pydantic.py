@@ -243,7 +243,7 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
         # Check at the beginning if user wants to use pipestat and pipestat is configurable
         is_pipestat_configured = (
             prj._check_if_pipestat_configured(pipeline_type=PipelineLevel.PROJECT.value)
-            if getattr(subcommand_args, "project", None)
+            if getattr(subcommand_args, "project", None) or subcommand_name == "runp"
             else prj._check_if_pipestat_configured()
         )
 

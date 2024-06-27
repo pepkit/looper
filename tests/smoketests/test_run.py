@@ -162,8 +162,7 @@ class TestLooperRunBehavior:
         with mod_yaml_data(tp) as config_data:
 
             pifaces = config_data[PIPELINE_INTERFACES_KEY]
-            config_data[PIPELINE_INTERFACES_KEY]["sample"] = pifaces["sample"][1]
-            del config_data[PIPELINE_INTERFACES_KEY]["project"]
+            config_data[PIPELINE_INTERFACES_KEY] = pifaces[0]
 
         x = test_args_expansion(tp, "run")
         try:
@@ -193,7 +192,7 @@ class TestLooperRunBehavior:
         tp = prep_temp_pep
         with mod_yaml_data(tp) as config_data:
             pifaces = config_data[PIPELINE_INTERFACES_KEY]
-            pi_pth = pifaces["sample"][1]
+            pi_pth = pifaces[1]
         x = test_args_expansion(tp, "run", ["--sample-pipeline-interfaces", pi_pth])
         try:
             result = main(test_args=x)
@@ -224,7 +223,7 @@ class TestLooperRunBehavior:
         """
         tp = prep_temp_pep
         with mod_yaml_data(tp) as config_data:
-            config_data[PIPELINE_INTERFACES_KEY]["sample"] = ["bogus"]
+            config_data[PIPELINE_INTERFACES_KEY] = ["bogus"]
         x = test_args_expansion(tp, "run")
         try:
             result = main(test_args=x)
@@ -344,10 +343,9 @@ class TestLooperRunpBehavior:
 
         with mod_yaml_data(tp) as config_data:
             # Modifying in this way due to https://github.com/pepkit/looper/issues/474
-            config_data[PIPELINE_INTERFACES_KEY]["project"] = os.path.join(
+            config_data[PIPELINE_INTERFACES_KEY] = os.path.join(
                 os.path.dirname(tp), "pipeline/pipeline_interface1_project.yaml"
             )
-            del config_data[PIPELINE_INTERFACES_KEY]["sample"]
 
         print(tp)
         x = test_args_expansion(tp, "runp")
