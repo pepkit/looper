@@ -20,7 +20,7 @@ from yacman import load_yaml
 
 from .const import *
 from .command_models.commands import SUPPORTED_COMMANDS
-from .exceptions import MisconfigurationException
+from .exceptions import MisconfigurationException, PipelineInterfaceConfigError
 
 _LOGGER = getLogger(__name__)
 
@@ -538,7 +538,7 @@ def initiate_looper_config(
 
 def determine_pipeline_type(piface_path: str, looper_config_path: str):
     """
-    Read pipeline interface from disk and determine if pipeline type is sample or project-level
+    Read pipeline interface from disk and determine if it contains "sample_interface", "project_interface" or both
 
 
     :param str piface_path: path to pipeline_interface
@@ -558,9 +558,17 @@ def determine_pipeline_type(piface_path: str, looper_config_path: str):
     except FileNotFoundError:
         return None, None
 
-    pipeline_type = piface_dict.get("pipeline_type", None)
+    pipeline_types = []
+    if piface_dict.get("sample_interface", None):
+        pipeline_types.append(PipelineLevel.SAMPLE.value)
+    if piface_dict.get("project_interface", None):
+        pipeline_types.append(PipelineLevel.PROJECT.value)
 
-    return pipeline_type, piface_path
+    if pipeline_types == []:
+        # TODO WARN USER THEY MUST GIVE EITHER A SAMPLE OR PROJECT INTERFACE
+        return None, None
+
+    return pipeline_types, piface_path
 
 
 def read_looper_config_file(looper_config_path: str) -> dict:
@@ -606,36 +614,31 @@ def read_looper_config_file(looper_config_path: str) -> dict:
 
         dp_data.setdefault(PIPELINE_INTERFACES_KEY, {})
 
-        if isinstance(dp_data.get(PIPELINE_INTERFACES_KEY), dict) and (
-            dp_data.get(PIPELINE_INTERFACES_KEY).get("sample")
-            or dp_data.get(PIPELINE_INTERFACES_KEY).get("project")
-        ):
-            # Support original nesting of pipeline interfaces under "sample" and "project"
-            return_dict[SAMPLE_PL_ARG] = dp_data.get(PIPELINE_INTERFACES_KEY).get(
-                "sample"
+        all_pipeline_interfaces = dp_data.get(PIPELINE_INTERFACES_KEY)
+        sample_pifaces = []
+        project_pifaces = []
+        if isinstance(all_pipeline_interfaces, str):
+            all_pipeline_interfaces = [all_pipeline_interfaces]
+        for piface in all_pipeline_interfaces:
+            pipeline_types, piface_path = determine_pipeline_type(
+                piface, looper_config_path
             )
-            return_dict[PROJECT_PL_ARG] = dp_data.get(PIPELINE_INTERFACES_KEY).get(
-                "project"
-            )
-        else:
-            # infer pipeline type based from interface instead of nested keys: https://github.com/pepkit/looper/issues/465
-            all_pipeline_interfaces = dp_data.get(PIPELINE_INTERFACES_KEY)
-            sample_pifaces = []
-            project_pifaces = []
-            if isinstance(all_pipeline_interfaces, str):
-                all_pipeline_interfaces = [all_pipeline_interfaces]
-            for piface in all_pipeline_interfaces:
-                pipeline_type, piface_path = determine_pipeline_type(
-                    piface, looper_config_path
-                )
-                if pipeline_type == PipelineLevel.SAMPLE.value:
+            # if pipeline_types is None:
+            #     raise PipelineInterfaceConfigError(
+            #         f"'sample_interface and/or project_interface must be defined in each pipeline interface."
+            #     )
+            # This will append the same, consolidated piface to two different lists
+            # In reality only the command templates are the differentiator
+            if pipeline_types is not None:
+                # TODO should we raise an exception here? I guess you can amend samples with interfaces...
+                if PipelineLevel.SAMPLE.value in pipeline_types:
                     sample_pifaces.append(piface_path)
-                elif pipeline_type == PipelineLevel.PROJECT.value:
+                if PipelineLevel.PROJECT.value in pipeline_types:
                     project_pifaces.append(piface_path)
-            if len(sample_pifaces) > 0:
-                return_dict[SAMPLE_PL_ARG] = sample_pifaces
-            if len(project_pifaces) > 0:
-                return_dict[PROJECT_PL_ARG] = project_pifaces
+        if len(sample_pifaces) > 0:
+            return_dict[SAMPLE_PL_ARG] = sample_pifaces
+        if len(project_pifaces) > 0:
+            return_dict[PROJECT_PL_ARG] = project_pifaces
 
     else:
         _LOGGER.warning(
