@@ -53,10 +53,11 @@ from .utils import (
     init_generic_pipeline,
     read_yaml_file,
     inspect_looper_config_file,
-    is_PEP_file_type,
+    is_PEP_file_type, looper_config_tutorial,
 )
 
 from typing import List, Tuple
+from rich.console import Console
 
 
 def opt_attr_pair(name: str) -> Tuple[str, str]:
@@ -122,16 +123,30 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
         sys.exit(1)
 
     if subcommand_name == "init":
-        return int(
-            not initiate_looper_config(
-                dotfile_path(),
-                subcommand_args.pep_config,
-                subcommand_args.output_dir,
-                subcommand_args.sample_pipeline_interfaces,
-                subcommand_args.project_pipeline_interfaces,
-                subcommand_args.force_yes,
+
+        console = Console()
+        console.clear()
+        console.rule(f"\n[dark_goldenrod]Looper initialization[/dark_goldenrod]")
+        console.print("[bold]Would you like to follow a guided tutorial?[/bold]  [green]Y[/green] / [red]n[/red]...")
+
+        selection = None
+        while selection not in ['y','Y','n','N']:
+            selection = console.input("\nSelection: ")
+
+        if selection in ['n', 'N']:
+
+            return int(
+                not initiate_looper_config(
+                    dotfile_path(),
+                    subcommand_args.pep_config,
+                    subcommand_args.output_dir,
+                    subcommand_args.sample_pipeline_interfaces,
+                    subcommand_args.project_pipeline_interfaces,
+                    subcommand_args.force_yes,
+                )
             )
-        )
+        else:
+            return int(looper_config_tutorial())
 
     if subcommand_name == "init_piface":
         sys.exit(int(not init_generic_pipeline()))
