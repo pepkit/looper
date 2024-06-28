@@ -127,7 +127,7 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
 
         console = Console()
         console.clear()
-        console.rule(f"\n[dark_goldenrod]Looper initialization[/dark_goldenrod]")
+        console.rule(f"\n[magenta]Looper initialization[/magenta]")
         console.print(
             "[bold]Would you like to follow a guided tutorial?[/bold]  [green]Y[/green] / [red]n[/red]..."
         )
@@ -137,7 +137,7 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
             selection = console.input("\nSelection: ")
 
         if selection in ["n", "N"]:
-
+            console.clear()
             return int(
                 not initiate_looper_config(
                     dotfile_path(),
@@ -149,6 +149,7 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
                 )
             )
         else:
+            console.clear()
             return int(looper_config_tutorial())
 
     if subcommand_name == "init_piface":

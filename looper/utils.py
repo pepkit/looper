@@ -22,6 +22,7 @@ from .const import *
 from .command_models.commands import SUPPORTED_COMMANDS
 from .exceptions import MisconfigurationException, PipelineInterfaceConfigError
 from rich.console import Console
+from rich.pretty import pprint
 
 _LOGGER = getLogger(__name__)
 
@@ -407,6 +408,8 @@ def init_generic_pipeline():
     """
     Create generic pipeline interface
     """
+    console = Console()
+
     try:
         os.makedirs("pipeline")
     except FileExistsError:
@@ -418,21 +421,26 @@ def init_generic_pipeline():
     # Create Generic Pipeline Interface
     generic_pipeline_dict = {
         "pipeline_name": "default_pipeline_name",
-        "pipeline_type": "sample",
         "output_schema": "output_schema.yaml",
-        "var_templates": {"pipeline": "{looper.piface_dir}/pipeline.sh"},
-        "command_template": "{pipeline.var_templates.pipeline} {sample.file} "
-        "--output-parent {looper.sample_output_folder}",
+        "var_templates": {"pipeline": "{looper.piface_dir}/count_lines.sh"},
+        "sample_interface": {
+            "command_template": "{pipeline.var_templates.pipeline} {sample.file} "
+            "--output-parent {looper.sample_output_folder}"
+        },
     }
 
+    console.rule(f"\n[magenta]Pipeline Interface[/magenta]")
     # Write file
     if not os.path.exists(dest_file):
+        pprint(generic_pipeline_dict, expand_all=True)
         with open(dest_file, "w") as file:
             yaml.dump(generic_pipeline_dict, file)
-        print(f"Pipeline interface successfully created at: {dest_file}")
+        console.print(
+            f"Pipeline interface successfully created at: [yellow]{dest_file}[/yellow]"
+        )
     else:
-        print(
-            f"Pipeline interface file already exists `{dest_file}`. Skipping creation.."
+        console.print(
+            f"Pipeline interface file already exists [yellow]`{dest_file}`[/yellow]. Skipping creation.."
         )
 
     # Create Generic Output Schema
@@ -446,14 +454,22 @@ def init_generic_pipeline():
             }
         },
     }
+
+    console.rule(f"\n[magenta]Output Schema[/magenta]")
     # Write file
     if not os.path.exists(dest_file):
+        pprint(generic_output_schema_dict, expand_all=True)
         with open(dest_file, "w") as file:
             yaml.dump(generic_output_schema_dict, file)
-        print(f"Output schema successfully created at: {dest_file}")
+        console.print(
+            f"Output schema successfully created at: [yellow]{dest_file}[/yellow]"
+        )
     else:
-        print(f"Output schema file already exists `{dest_file}`. Skipping creation..")
+        console.print(
+            f"Output schema file already exists [yellow]`{dest_file}`[/yellow]. Skipping creation.."
+        )
 
+    console.rule(f"\n[magenta]Example Pipeline Shell Script[/magenta]")
     # Create Generic countlines.sh
     dest_file = os.path.join(os.getcwd(), "pipeline", LOOPER_GENERIC_COUNT_LINES)
     shell_code = """#!/bin/bash
@@ -462,11 +478,16 @@ pipestat report -r $2 -i 'number_of_lines' -v $linecount -c $3
 echo "Number of lines: $linecount"
     """
     if not os.path.exists(dest_file):
+        console.print(shell_code)
         with open(dest_file, "w") as file:
             file.write(shell_code)
-        print(f"count_lines.sh successfully created at: {dest_file}")
+        console.print(
+            f"count_lines.sh successfully created at: [yellow]{dest_file}[/yellow]"
+        )
     else:
-        print(f"count_lines.sh file already exists `{dest_file}`. Skipping creation..")
+        console.print(
+            f"count_lines.sh file already exists [yellow]`{dest_file}`[/yellow]. Skipping creation.."
+        )
 
     return True
 
@@ -501,8 +522,14 @@ def initiate_looper_config(
     :param bool force: whether the existing file should be overwritten
     :return bool: whether the file was initialized
     """
+    console = Console()
+    console.clear()
+    console.rule(f"\n[magenta]Looper initialization[/magenta]")
+
     if os.path.exists(looper_config_path) and not force:
-        print(f"Can't initialize, file exists: {looper_config_path}")
+        console.print(
+            f"[red]Can't initialize, file exists:[/red] [yellow]{looper_config_path}[/yellow]"
+        )
         return False
 
     if pep_path:
@@ -522,18 +549,29 @@ def initiate_looper_config(
     if not output_dir:
         output_dir = "."
 
+    if sample_pipeline_interfaces is None or sample_pipeline_interfaces == []:
+        sample_pipeline_interfaces = "pipeline_interface1.yaml"
+
+    if project_pipeline_interfaces is None or project_pipeline_interfaces == []:
+        project_pipeline_interfaces = "pipeline_interface2.yaml"
+
     looper_config_dict = {
         "pep_config": os.path.relpath(pep_path),
         "output_dir": output_dir,
-        "pipeline_interfaces": {
-            "sample": sample_pipeline_interfaces,
-            "project": project_pipeline_interfaces,
-        },
+        "pipeline_interfaces": [
+            sample_pipeline_interfaces,
+            project_pipeline_interfaces,
+        ],
     }
+
+    pprint(looper_config_dict, expand_all=True)
 
     with open(looper_config_path, "w") as dotfile:
         yaml.dump(looper_config_dict, dotfile)
-    print(f"Initialized looper config file: {looper_config_path}")
+    console.print(
+        f"Initialized looper config file: [yellow]{looper_config_path}[/yellow]"
+    )
+
     return True
 
 
@@ -543,7 +581,7 @@ def looper_config_tutorial():
 
     console = Console()
     console.clear()
-    console.rule(f"\n[dark_goldenrod]Looper initialization[/dark_goldenrod]")
+    console.rule(f"\n[magenta]Looper initialization[/magenta]")
 
     looper_cfg_path = ".looper.yaml"  # not changeable
 
@@ -567,7 +605,7 @@ def looper_config_tutorial():
     DEFAULTS = {  # What you get if you just press enter
         "pep_config": "databio/example",
         "output_dir": "results",
-        "piface_path": "pipeline_interface.yaml",
+        "piface_path": "pipeline/pipeline_interface.yaml",
         "project_name": os.path.basename(os.getcwd()),
     }
 
@@ -634,7 +672,7 @@ def looper_config_tutorial():
 
     if not os.path.exists(piface_path):
         console.print(
-            f"[bold red]Warning:[/bold red] file does not exist at [yellow]{piface_path}[/yellow]"
+            f"[bold red]Warning:[/bold red] File does not exist at [yellow]{piface_path}[/yellow]\nUse command [yellow]`looper init_piface`[/yellow] to create a generic pipeline interface."
         )
 
     console.print(f"Writing config file to [yellow]{looper_cfg_path}[/yellow]")
