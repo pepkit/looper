@@ -53,7 +53,8 @@ from .utils import (
     init_generic_pipeline,
     read_yaml_file,
     inspect_looper_config_file,
-    is_PEP_file_type, looper_config_tutorial,
+    is_PEP_file_type,
+    looper_config_tutorial,
 )
 
 from typing import List, Tuple
@@ -127,13 +128,15 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
         console = Console()
         console.clear()
         console.rule(f"\n[dark_goldenrod]Looper initialization[/dark_goldenrod]")
-        console.print("[bold]Would you like to follow a guided tutorial?[/bold]  [green]Y[/green] / [red]n[/red]...")
+        console.print(
+            "[bold]Would you like to follow a guided tutorial?[/bold]  [green]Y[/green] / [red]n[/red]..."
+        )
 
         selection = None
-        while selection not in ['y','Y','n','N']:
+        while selection not in ["y", "Y", "n", "N"]:
             selection = console.input("\nSelection: ")
 
-        if selection in ['n', 'N']:
+        if selection in ["n", "N"]:
 
             return int(
                 not initiate_looper_config(

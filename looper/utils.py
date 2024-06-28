@@ -536,6 +536,7 @@ def initiate_looper_config(
     print(f"Initialized looper config file: {looper_config_path}")
     return True
 
+
 def looper_config_tutorial():
     # Prompt a user through configuring a .looper.yaml file for a new project.
     # To be used in as an option for `looper init`.
@@ -547,12 +548,16 @@ def looper_config_tutorial():
     looper_cfg_path = ".looper.yaml"  # not changeable
 
     if os.path.exists(looper_cfg_path):
-        console.print(f"[bold red]File exists at '{looper_cfg_path}'. Delete it to re-initialize. \n[/bold red]")
+        console.print(
+            f"[bold red]File exists at '{looper_cfg_path}'. Delete it to re-initialize. \n[/bold red]"
+        )
         raise SystemExit
 
     cfg = {}
 
-    console.print("This utility will walk you through creating a [yellow].looper.yaml[/yellow] file.")
+    console.print(
+        "This utility will walk you through creating a [yellow].looper.yaml[/yellow] file."
+    )
     console.print("See [yellow]`looper init --help`[/yellow] for details.")
     console.print("Use [yellow]`looper run`[/yellow] afterwards to run the pipeline.")
     console.print("Press [yellow]^C[/yellow] at any time to quit.\n")
@@ -570,50 +575,67 @@ def looper_config_tutorial():
 
     while creating:
         cfg["project_name"] = (
-                console.input(f"Project name: [yellow]({DEFAULTS['project_name']})[/yellow] >") or DEFAULTS["project_name"]
+            console.input(
+                f"Project name: [yellow]({DEFAULTS['project_name']})[/yellow] >"
+            )
+            or DEFAULTS["project_name"]
         )
 
         cfg["pep_config"] = (
-                console.input(f"Registry path or file path to PEP: [yellow]({DEFAULTS['pep_config']})[/yellow] >")
-                or DEFAULTS["pep_config"]
+            console.input(
+                f"Registry path or file path to PEP: [yellow]({DEFAULTS['pep_config']})[/yellow] >"
+            )
+            or DEFAULTS["pep_config"]
         )
 
         if not os.path.exists(cfg["pep_config"]):
-            console.print(f"Warning: PEP file does not exist at [yellow]'{cfg['pep_config']}[/yellow]'")
+            console.print(
+                f"Warning: PEP file does not exist at [yellow]'{cfg['pep_config']}[/yellow]'"
+            )
 
         cfg["output_dir"] = (
-                console.input(f"Path to output directory: [yellow]({DEFAULTS['output_dir']})[/yellow] >")
-                or DEFAULTS["output_dir"]
+            console.input(
+                f"Path to output directory: [yellow]({DEFAULTS['output_dir']})[/yellow] >"
+            )
+            or DEFAULTS["output_dir"]
         )
 
         # TODO: Right now this assumes you will have one pipeline interface, and a sample pipeline
         # but this is not the only way you could configure things.
 
         piface_path = (
-                console.input("Path to sample pipeline interface: [yellow](pipeline_interface.yaml)[/yellow] >")
-                or DEFAULTS["piface_path"]
+            console.input(
+                "Path to sample pipeline interface: [yellow](pipeline_interface.yaml)[/yellow] >"
+            )
+            or DEFAULTS["piface_path"]
         )
         console.print("\n")
 
-        console.print(            f"""\
+        console.print(
+            f"""\
     [yellow]pep_config:[/yellow] {cfg['pep_config']}
     [yellow]output_dir:[/yellow] {cfg['output_dir']}
     [yellow]pipeline_interfaces:[/yellow]
       - {piface_path}
-    """)
+    """
+        )
 
-        console.print("[bold]Does this look good?[/bold]  [bold green]Y[/bold green]/[red]n[/red]...")
+        console.print(
+            "[bold]Does this look good?[/bold]  [bold green]Y[/bold green]/[red]n[/red]..."
+        )
         selection = None
-        while selection not in ['y','Y','n','N']:
+        while selection not in ["y", "Y", "n", "N"]:
             selection = console.input("\nSelection: ")
-        if selection in ['n', 'N']:
+        if selection in ["n", "N"]:
             console.print("Starting over...")
             pass
-        if selection in ['y', 'Y']:
-            creating=False
+        if selection in ["y", "Y"]:
+            creating = False
 
     if not os.path.exists(piface_path):
-        console.print(f"[bold red]Warning:[/bold red] file does not exist at [yellow]{piface_path}[/yellow]")
+        console.print(
+            f"[bold red]Warning:[/bold red] file does not exist at [yellow]{piface_path}[/yellow]"
+        )
 
     console.print(f"Writing config file to [yellow]{looper_cfg_path}[/yellow]")
     # print(f"PEP path: {cfg['pep_config']}")
@@ -630,6 +652,7 @@ def looper_config_tutorial():
         )
 
     return True
+
 
 def determine_pipeline_type(piface_path: str, looper_config_path: str):
     """

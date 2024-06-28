@@ -588,7 +588,10 @@ class TestLooperCompute:
         subs_list = [os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")]
         assert_content_not_in_any_files(subs_list, "testin_mem")
 
-@pytest.mark.skip(reason="This functionality requires input from the user. Causing pytest to error if run without -s flag")
+
+@pytest.mark.skip(
+    reason="This functionality requires input from the user. Causing pytest to error if run without -s flag"
+)
 class TestLooperConfig:
 
     def test_init_config_file(self, prep_temp_pep):
