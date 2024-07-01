@@ -717,8 +717,9 @@ def determine_pipeline_type(piface_path: str, looper_config_path: str):
         pipeline_types.append(PipelineLevel.PROJECT.value)
 
     if pipeline_types == []:
-        # TODO WARN USER THEY MUST GIVE EITHER A SAMPLE OR PROJECT INTERFACE
-        return None, None
+        raise PipelineInterfaceConfigError(
+            f"sample_interface and/or project_interface must be defined in each pipeline interface."
+        )
 
     return pipeline_types, piface_path
 
@@ -767,6 +768,7 @@ def read_looper_config_file(looper_config_path: str) -> dict:
         dp_data.setdefault(PIPELINE_INTERFACES_KEY, {})
 
         all_pipeline_interfaces = dp_data.get(PIPELINE_INTERFACES_KEY)
+
         sample_pifaces = []
         project_pifaces = []
         if isinstance(all_pipeline_interfaces, str):
@@ -775,14 +777,7 @@ def read_looper_config_file(looper_config_path: str) -> dict:
             pipeline_types, piface_path = determine_pipeline_type(
                 piface, looper_config_path
             )
-            # if pipeline_types is None:
-            #     raise PipelineInterfaceConfigError(
-            #         f"'sample_interface and/or project_interface must be defined in each pipeline interface."
-            #     )
-            # This will append the same, consolidated piface to two different lists
-            # In reality only the command templates are the differentiator
             if pipeline_types is not None:
-                # TODO should we raise an exception here? I guess you can amend samples with interfaces...
                 if PipelineLevel.SAMPLE.value in pipeline_types:
                     sample_pifaces.append(piface_path)
                 if PipelineLevel.PROJECT.value in pipeline_types:

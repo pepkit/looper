@@ -519,7 +519,6 @@ class Project(peppyProject):
 
         # Warn user if there is a mismatch in pipeline_names from sources!!!
         if pipeline_name != output_schema_pipeline_name:
-            # TODO Raise exception here.
             _LOGGER.warning(
                 msg=f"Pipeline name mismatch detected. Pipeline interface: {pipeline_name}  Output schema: {output_schema_pipeline_name}  Defaulting to pipeline_interface value."
             )
