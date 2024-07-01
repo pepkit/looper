@@ -136,7 +136,7 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
         while selection not in ["y", "n"]:
             selection = console.input("\nSelection: ").lower().strip()
 
-        if selection in ["n", "N"]:
+        if selection == "n":
             console.clear()
             return int(
                 not initiate_looper_config(
