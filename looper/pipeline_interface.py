@@ -56,15 +56,6 @@ class PipelineInterface(YAMLConfigManager):
             )
         self.update(config)
         self._validate(schema_src=PIFACE_SCHEMA_SRC)
-        if "path" in self:
-            warn(
-                message="'path' specification as a top-level pipeline "
-                "interface key is deprecated and will be removed with "
-                "the next release. Please use 'paths' section "
-                "from now on.",
-                category=DeprecationWarning,
-            )
-            self._expand_paths(["path"])
         self._expand_paths(["compute", "dynamic_variables_script_path"])
 
     @property

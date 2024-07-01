@@ -2,4 +2,4 @@ pep_config: project/project_config.yaml # local path to pep config
 # pep_config: pepkit/hello_looper:default  # you can also use a pephub registry path
 output_dir: "results"
 pipeline_interfaces:
-  sample: pipeline/pipeline_interface.yaml
+  - pipeline/pipeline_interface.yaml

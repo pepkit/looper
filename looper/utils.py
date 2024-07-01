@@ -20,7 +20,9 @@ from yacman import load_yaml
 
 from .const import *
 from .command_models.commands import SUPPORTED_COMMANDS
-from .exceptions import MisconfigurationException
+from .exceptions import MisconfigurationException, PipelineInterfaceConfigError
+from rich.console import Console
+from rich.pretty import pprint
 
 _LOGGER = getLogger(__name__)
 
@@ -406,6 +408,8 @@ def init_generic_pipeline():
     """
     Create generic pipeline interface
     """
+    console = Console()
+
     try:
         os.makedirs("pipeline")
     except FileExistsError:
@@ -417,21 +421,26 @@ def init_generic_pipeline():
     # Create Generic Pipeline Interface
     generic_pipeline_dict = {
         "pipeline_name": "default_pipeline_name",
-        "pipeline_type": "sample",
         "output_schema": "output_schema.yaml",
-        "var_templates": {"pipeline": "{looper.piface_dir}/pipeline.sh"},
-        "command_template": "{pipeline.var_templates.pipeline} {sample.file} "
-        "--output-parent {looper.sample_output_folder}",
+        "var_templates": {"pipeline": "{looper.piface_dir}/count_lines.sh"},
+        "sample_interface": {
+            "command_template": "{pipeline.var_templates.pipeline} {sample.file} "
+            "--output-parent {looper.sample_output_folder}"
+        },
     }
 
+    console.rule(f"\n[magenta]Pipeline Interface[/magenta]")
     # Write file
     if not os.path.exists(dest_file):
+        pprint(generic_pipeline_dict, expand_all=True)
         with open(dest_file, "w") as file:
             yaml.dump(generic_pipeline_dict, file)
-        print(f"Pipeline interface successfully created at: {dest_file}")
+        console.print(
+            f"Pipeline interface successfully created at: [yellow]{dest_file}[/yellow]"
+        )
     else:
-        print(
-            f"Pipeline interface file already exists `{dest_file}`. Skipping creation.."
+        console.print(
+            f"Pipeline interface file already exists [yellow]`{dest_file}`[/yellow]. Skipping creation.."
         )
 
     # Create Generic Output Schema
@@ -445,14 +454,22 @@ def init_generic_pipeline():
             }
         },
     }
+
+    console.rule(f"\n[magenta]Output Schema[/magenta]")
     # Write file
     if not os.path.exists(dest_file):
+        pprint(generic_output_schema_dict, expand_all=True)
         with open(dest_file, "w") as file:
             yaml.dump(generic_output_schema_dict, file)
-        print(f"Output schema successfully created at: {dest_file}")
+        console.print(
+            f"Output schema successfully created at: [yellow]{dest_file}[/yellow]"
+        )
     else:
-        print(f"Output schema file already exists `{dest_file}`. Skipping creation..")
+        console.print(
+            f"Output schema file already exists [yellow]`{dest_file}`[/yellow]. Skipping creation.."
+        )
 
+    console.rule(f"\n[magenta]Example Pipeline Shell Script[/magenta]")
     # Create Generic countlines.sh
     dest_file = os.path.join(os.getcwd(), "pipeline", LOOPER_GENERIC_COUNT_LINES)
     shell_code = """#!/bin/bash
@@ -461,11 +478,16 @@ pipestat report -r $2 -i 'number_of_lines' -v $linecount -c $3
 echo "Number of lines: $linecount"
     """
     if not os.path.exists(dest_file):
+        console.print(shell_code)
         with open(dest_file, "w") as file:
             file.write(shell_code)
-        print(f"count_lines.sh successfully created at: {dest_file}")
+        console.print(
+            f"count_lines.sh successfully created at: [yellow]{dest_file}[/yellow]"
+        )
     else:
-        print(f"count_lines.sh file already exists `{dest_file}`. Skipping creation..")
+        console.print(
+            f"count_lines.sh file already exists [yellow]`{dest_file}`[/yellow]. Skipping creation.."
+        )
 
     return True
 
@@ -500,8 +522,14 @@ def initiate_looper_config(
     :param bool force: whether the existing file should be overwritten
     :return bool: whether the file was initialized
     """
+    console = Console()
+    console.clear()
+    console.rule(f"\n[magenta]Looper initialization[/magenta]")
+
     if os.path.exists(looper_config_path) and not force:
-        print(f"Can't initialize, file exists: {looper_config_path}")
+        console.print(
+            f"[red]Can't initialize, file exists:[/red] [yellow]{looper_config_path}[/yellow]"
+        )
         return False
 
     if pep_path:
@@ -521,24 +549,148 @@ def initiate_looper_config(
     if not output_dir:
         output_dir = "."
 
+    if sample_pipeline_interfaces is None or sample_pipeline_interfaces == []:
+        sample_pipeline_interfaces = "pipeline_interface1.yaml"
+
+    if project_pipeline_interfaces is None or project_pipeline_interfaces == []:
+        project_pipeline_interfaces = "pipeline_interface2.yaml"
+
     looper_config_dict = {
         "pep_config": os.path.relpath(pep_path),
         "output_dir": output_dir,
-        "pipeline_interfaces": {
-            "sample": sample_pipeline_interfaces,
-            "project": project_pipeline_interfaces,
-        },
+        "pipeline_interfaces": [
+            sample_pipeline_interfaces,
+            project_pipeline_interfaces,
+        ],
     }
+
+    pprint(looper_config_dict, expand_all=True)
 
     with open(looper_config_path, "w") as dotfile:
         yaml.dump(looper_config_dict, dotfile)
-    print(f"Initialized looper config file: {looper_config_path}")
+    console.print(
+        f"Initialized looper config file: [yellow]{looper_config_path}[/yellow]"
+    )
+
+    return True
+
+
+def looper_config_tutorial():
+    """
+    Prompt a user through configuring a .looper.yaml file for a new project.
+
+    :return bool: whether the file was initialized
+    """
+
+    console = Console()
+    console.clear()
+    console.rule(f"\n[magenta]Looper initialization[/magenta]")
+
+    looper_cfg_path = ".looper.yaml"  # not changeable
+
+    if os.path.exists(looper_cfg_path):
+        console.print(
+            f"[bold red]File exists at '{looper_cfg_path}'. Delete it to re-initialize. \n[/bold red]"
+        )
+        raise SystemExit
+
+    cfg = {}
+
+    console.print(
+        "This utility will walk you through creating a [yellow].looper.yaml[/yellow] file."
+    )
+    console.print("See [yellow]`looper init --help`[/yellow] for details.")
+    console.print("Use [yellow]`looper run`[/yellow] afterwards to run the pipeline.")
+    console.print("Press [yellow]^C[/yellow] at any time to quit.\n")
+
+    console.input("> ... ")
+
+    DEFAULTS = {  # What you get if you just press enter
+        "pep_config": "databio/example",
+        "output_dir": "results",
+        "piface_path": "pipeline/pipeline_interface.yaml",
+        "project_name": os.path.basename(os.getcwd()),
+    }
+
+    creating = True
+
+    while creating:
+        cfg["project_name"] = (
+            console.input(
+                f"Project name: [yellow]({DEFAULTS['project_name']})[/yellow] >"
+            )
+            or DEFAULTS["project_name"]
+        )
+
+        cfg["pep_config"] = (
+            console.input(
+                f"Registry path or file path to PEP: [yellow]({DEFAULTS['pep_config']})[/yellow] >"
+            )
+            or DEFAULTS["pep_config"]
+        )
+
+        if not os.path.exists(cfg["pep_config"]):
+            console.print(
+                f"Warning: PEP file does not exist at [yellow]'{cfg['pep_config']}[/yellow]'"
+            )
+
+        cfg["output_dir"] = (
+            console.input(
+                f"Path to output directory: [yellow]({DEFAULTS['output_dir']})[/yellow] >"
+            )
+            or DEFAULTS["output_dir"]
+        )
+
+        piface_path = (
+            console.input(
+                "Path to sample pipeline interface: [yellow](pipeline_interface.yaml)[/yellow] >"
+            )
+            or DEFAULTS["piface_path"]
+        )
+        console.print("\n")
+
+        console.print(
+            f"""\
+    [yellow]pep_config:[/yellow] {cfg['pep_config']}
+    [yellow]output_dir:[/yellow] {cfg['output_dir']}
+    [yellow]pipeline_interfaces:[/yellow]
+      - {piface_path}
+    """
+        )
+
+        console.print(
+            "[bold]Does this look good?[/bold]  [bold green]Y[/bold green]/[red]n[/red]..."
+        )
+        selection = None
+        while selection not in ["y", "n"]:
+            selection = console.input("\nSelection: ").lower().strip()
+        if selection == "n":
+            console.print("Starting over...")
+            pass
+        if selection == "y":
+            creating = False
+
+    if not os.path.exists(piface_path):
+        console.print(
+            f"[bold red]Warning:[/bold red] File does not exist at [yellow]{piface_path}[/yellow]\nUse command [yellow]`looper init_piface`[/yellow] to create a generic pipeline interface."
+        )
+
+    console.print(f"Writing config file to [yellow]{looper_cfg_path}[/yellow]")
+
+    looper_config_dict = {}
+    looper_config_dict["pep_config"] = cfg["pep_config"]
+    looper_config_dict["output_dir"] = cfg["output_dir"]
+    looper_config_dict["pipeline_interfaces"] = [piface_path]
+
+    with open(looper_cfg_path, "w") as fp:
+        yaml.dump(looper_config_dict, fp)
+
     return True
 
 
 def determine_pipeline_type(piface_path: str, looper_config_path: str):
     """
-    Read pipeline interface from disk and determine if pipeline type is sample or project-level
+    Read pipeline interface from disk and determine if it contains "sample_interface", "project_interface" or both
 
 
     :param str piface_path: path to pipeline_interface
@@ -558,9 +710,18 @@ def determine_pipeline_type(piface_path: str, looper_config_path: str):
     except FileNotFoundError:
         return None, None
 
-    pipeline_type = piface_dict.get("pipeline_type", None)
+    pipeline_types = []
+    if piface_dict.get("sample_interface", None):
+        pipeline_types.append(PipelineLevel.SAMPLE.value)
+    if piface_dict.get("project_interface", None):
+        pipeline_types.append(PipelineLevel.PROJECT.value)
 
-    return pipeline_type, piface_path
+    if pipeline_types == []:
+        raise PipelineInterfaceConfigError(
+            f"sample_interface and/or project_interface must be defined in each pipeline interface."
+        )
+
+    return pipeline_types, piface_path
 
 
 def read_looper_config_file(looper_config_path: str) -> dict:
@@ -606,36 +767,25 @@ def read_looper_config_file(looper_config_path: str) -> dict:
 
         dp_data.setdefault(PIPELINE_INTERFACES_KEY, {})
 
-        if isinstance(dp_data.get(PIPELINE_INTERFACES_KEY), dict) and (
-            dp_data.get(PIPELINE_INTERFACES_KEY).get("sample")
-            or dp_data.get(PIPELINE_INTERFACES_KEY).get("project")
-        ):
-            # Support original nesting of pipeline interfaces under "sample" and "project"
-            return_dict[SAMPLE_PL_ARG] = dp_data.get(PIPELINE_INTERFACES_KEY).get(
-                "sample"
+        all_pipeline_interfaces = dp_data.get(PIPELINE_INTERFACES_KEY)
+
+        sample_pifaces = []
+        project_pifaces = []
+        if isinstance(all_pipeline_interfaces, str):
+            all_pipeline_interfaces = [all_pipeline_interfaces]
+        for piface in all_pipeline_interfaces:
+            pipeline_types, piface_path = determine_pipeline_type(
+                piface, looper_config_path
             )
-            return_dict[PROJECT_PL_ARG] = dp_data.get(PIPELINE_INTERFACES_KEY).get(
-                "project"
-            )
-        else:
-            # infer pipeline type based from interface instead of nested keys: https://github.com/pepkit/looper/issues/465
-            all_pipeline_interfaces = dp_data.get(PIPELINE_INTERFACES_KEY)
-            sample_pifaces = []
-            project_pifaces = []
-            if isinstance(all_pipeline_interfaces, str):
-                all_pipeline_interfaces = [all_pipeline_interfaces]
-            for piface in all_pipeline_interfaces:
-                pipeline_type, piface_path = determine_pipeline_type(
-                    piface, looper_config_path
-                )
-                if pipeline_type == PipelineLevel.SAMPLE.value:
+            if pipeline_types is not None:
+                if PipelineLevel.SAMPLE.value in pipeline_types:
                     sample_pifaces.append(piface_path)
-                elif pipeline_type == PipelineLevel.PROJECT.value:
+                if PipelineLevel.PROJECT.value in pipeline_types:
                     project_pifaces.append(piface_path)
-            if len(sample_pifaces) > 0:
-                return_dict[SAMPLE_PL_ARG] = sample_pifaces
-            if len(project_pifaces) > 0:
-                return_dict[PROJECT_PL_ARG] = project_pifaces
+        if len(sample_pifaces) > 0:
+            return_dict[SAMPLE_PL_ARG] = sample_pifaces
+        if len(project_pifaces) > 0:
+            return_dict[PROJECT_PL_ARG] = project_pifaces
 
     else:
         _LOGGER.warning(
