@@ -641,9 +641,6 @@ def looper_config_tutorial():
             or DEFAULTS["output_dir"]
         )
 
-        # TODO: Right now this assumes you will have one pipeline interface, and a sample pipeline
-        # but this is not the only way you could configure things.
-
         piface_path = (
             console.input(
                 "Path to sample pipeline interface: [yellow](pipeline_interface.yaml)[/yellow] >"
@@ -679,18 +676,14 @@ def looper_config_tutorial():
         )
 
     console.print(f"Writing config file to [yellow]{looper_cfg_path}[/yellow]")
-    # print(f"PEP path: {cfg['pep_config']}")
-    # print(f"Pipeline interface path: {piface_path}")
+
+    looper_config_dict = {}
+    looper_config_dict["pep_config"] = cfg["pep_config"]
+    looper_config_dict["output_dir"] = cfg["output_dir"]
+    looper_config_dict["pipeline_interfaces"] = [piface_path]
 
     with open(looper_cfg_path, "w") as fp:
-        fp.write(
-            f"""\
-    pep_config: {cfg['pep_config']}
-    output_dir: {cfg['output_dir']}
-    pipeline_interfaces:
-      - {piface_path}
-    """
-        )
+        yaml.dump(looper_config_dict, fp)
 
     return True
 
