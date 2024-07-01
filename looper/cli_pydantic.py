@@ -133,8 +133,8 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
         )
 
         selection = None
-        while selection not in ["y", "Y", "n", "N"]:
-            selection = console.input("\nSelection: ")
+        while selection not in ["y", "n"]:
+            selection = console.input("\nSelection: ").lower().strip()
 
         if selection in ["n", "N"]:
             console.clear()
