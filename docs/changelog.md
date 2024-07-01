@@ -2,6 +2,12 @@
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format.
 
+## [2.0.0] -- 2024-08-XX
+
+### Changed
+- refactored some CLI arguments  [455](https://github.com/pepkit/looper/issues/455)
+- consolidate sample and project interfaces under a single pipeline interface [493](https://github.com/pepkit/looper/issues/493)
+- added guided tutorial for initializing looper config file [466](https://github.com/pepkit/looper/issues/466)
 
 ## [1.9.0] -- 2024-06-26
 

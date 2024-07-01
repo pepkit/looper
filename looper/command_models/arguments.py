@@ -162,13 +162,9 @@ class ArgumentEnum(enum.Enum):
         default=(int, None),
         description="Skip samples by numerical index",
     )
-    CONFIG_FILE = Argument(
-        name="config_file",
-        default=(str, None),
-        description="Project configuration file",
-    )
-    LOOPER_CONFIG = Argument(
-        name="looper_config",
+    CONFIG = Argument(
+        name="config",
+        alias="-c",
         default=(str, None),
         description="Looper configuration file (YAML)",
     )
@@ -237,7 +233,6 @@ class ArgumentEnum(enum.Enum):
     )
     COMPUTE = Argument(
         name="compute",
-        alias="-c",
         default=(List, []),
         description="List of key-value pairs (k1=v1)",
     )
