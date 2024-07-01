@@ -11,7 +11,9 @@ import logging
 import subprocess
 import yaml
 import os
-import pandas as _pd
+
+# import pandas as _pd
+import polars as pl
 
 # Need specific sequence of actions for colorama imports?
 from colorama import init

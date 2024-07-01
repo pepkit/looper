@@ -6,7 +6,9 @@ from logging import getLogger
 from warnings import warn
 
 import jsonschema
-import pandas as pd
+
+# import pandas as pd
+import polars as pl
 from eido import read_schema
 from peppy import utils as peputil
 from ubiquerg import expandpath, is_url
@@ -210,7 +212,7 @@ class PipelineInterface(YAMLConfigManager):
                     resources_tsv_path = os.path.join(
                         os.path.dirname(piface.pipe_iface_file), resources_tsv_path
                     )
-                df = pd.read_csv(resources_tsv_path, sep="\t", header=0).fillna(
+                df = pl.read_csv(resources_tsv_path, sep="\t", header=0).fillna(
                     float("inf")
                 )
                 df[ID_COLNAME] = df.index

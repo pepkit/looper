@@ -14,7 +14,10 @@ except ImportError:
 from .divvy import ComputingConfiguration
 from eido import PathAttrNotFoundError, read_schema
 from jsonschema import ValidationError
-from pandas.core.common import flatten
+
+# from pandas.core.common import flatten
+# from polars
+import polars as pl
 from peppy.utils import make_abs_via_cfg
 from pipestat import PipestatManager
 
@@ -182,7 +185,7 @@ class Project(peppyProject):
         """
         x = self._extra_cli_or_cfg(self.piface_key)
         return (
-            list(flatten([x] if not isinstance(x, list) else x))
+            list(pl.Expr.flatten([x] if not isinstance(x, list) else x))
             if x is not None
             else None
         )
