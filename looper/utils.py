@@ -576,8 +576,11 @@ def initiate_looper_config(
 
 
 def looper_config_tutorial():
-    # Prompt a user through configuring a .looper.yaml file for a new project.
-    # To be used in as an option for `looper init`.
+    """
+    Prompt a user through configuring a .looper.yaml file for a new project.
+
+    :return bool: whether the file was initialized
+    """
 
     console = Console()
     console.clear()
