@@ -662,12 +662,12 @@ def looper_config_tutorial():
             "[bold]Does this look good?[/bold]  [bold green]Y[/bold green]/[red]n[/red]..."
         )
         selection = None
-        while selection not in ["y", "Y", "n", "N"]:
-            selection = console.input("\nSelection: ")
-        if selection in ["n", "N"]:
+        while selection not in ["y", "n"]:
+            selection = console.input("\nSelection: ").lower().strip()
+        if selection == "n":
             console.print("Starting over...")
             pass
-        if selection in ["y", "Y"]:
+        if selection == "y":
             creating = False
 
     if not os.path.exists(piface_path):
