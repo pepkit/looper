@@ -54,9 +54,11 @@ from .utils import (
     read_yaml_file,
     inspect_looper_config_file,
     is_PEP_file_type,
+    looper_config_tutorial,
 )
 
 from typing import List, Tuple
+from rich.console import Console
 
 
 def opt_attr_pair(name: str) -> Tuple[str, str]:
@@ -122,52 +124,60 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
         sys.exit(1)
 
     if subcommand_name == "init":
-        return int(
-            not initiate_looper_config(
-                dotfile_path(),
-                subcommand_args.pep_config,
-                subcommand_args.output_dir,
-                subcommand_args.sample_pipeline_interfaces,
-                subcommand_args.project_pipeline_interfaces,
-                subcommand_args.force_yes,
-            )
+
+        console = Console()
+        console.clear()
+        console.rule(f"\n[magenta]Looper initialization[/magenta]")
+        console.print(
+            "[bold]Would you like to follow a guided tutorial?[/bold]  [green]Y[/green] / [red]n[/red]..."
         )
+
+        selection = None
+        while selection not in ["y", "n"]:
+            selection = console.input("\nSelection: ").lower().strip()
+
+        if selection == "n":
+            console.clear()
+            return int(
+                not initiate_looper_config(
+                    dotfile_path(),
+                    subcommand_args.pep_config,
+                    subcommand_args.output_dir,
+                    subcommand_args.sample_pipeline_interfaces,
+                    subcommand_args.project_pipeline_interfaces,
+                    subcommand_args.force_yes,
+                )
+            )
+        else:
+            console.clear()
+            return int(looper_config_tutorial())
 
     if subcommand_name == "init_piface":
         sys.exit(int(not init_generic_pipeline()))
 
     _LOGGER.info("Looper version: {}\nCommand: {}".format(__version__, subcommand_name))
 
-    if subcommand_args.config_file is None:
-        looper_cfg_path = os.path.relpath(dotfile_path(), start=os.curdir)
-        try:
-            if subcommand_args.looper_config:
-                looper_config_dict = read_looper_config_file(
-                    subcommand_args.looper_config
-                )
+    looper_cfg_path = os.path.relpath(dotfile_path(), start=os.curdir)
+    try:
+        if subcommand_args.config:
+            looper_config_dict = read_looper_config_file(subcommand_args.config)
+        else:
+            looper_config_dict = read_looper_dotfile()
+            _LOGGER.info(f"Using looper config ({looper_cfg_path}).")
+
+        cli_modifiers_dict = None
+        for looper_config_key, looper_config_item in looper_config_dict.items():
+            if looper_config_key == CLI_KEY:
+                cli_modifiers_dict = looper_config_item
             else:
-                looper_config_dict = read_looper_dotfile()
-                _LOGGER.info(f"Using looper config ({looper_cfg_path}).")
+                setattr(subcommand_args, looper_config_key, looper_config_item)
 
-            cli_modifiers_dict = None
-            for looper_config_key, looper_config_item in looper_config_dict.items():
-                if looper_config_key == CLI_KEY:
-                    cli_modifiers_dict = looper_config_item
-                else:
-                    setattr(subcommand_args, looper_config_key, looper_config_item)
-
-        except OSError:
-            parser.print_help(sys.stderr)
-            _LOGGER.warning(
-                f"Looper config file does not exist. Use looper init to create one at {looper_cfg_path}."
-            )
-            sys.exit(1)
-    else:
+    except OSError:
+        parser.print_help(sys.stderr)
         _LOGGER.warning(
-            "This PEP configures looper through the project config. This approach is deprecated and will "
-            "be removed in future versions. Please use a looper config file. For more information see "
-            "looper.databio.org/en/latest/looper-config"
+            f"Looper config file does not exist. Use looper init to create one at {looper_cfg_path}."
         )
+        sys.exit(1)
 
     subcommand_args = enrich_args_via_cfg(
         subcommand_name,
@@ -191,12 +201,12 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
         subcommand_args.ignore_flags = True
 
     # Initialize project
-    if is_PEP_file_type(subcommand_args.config_file) and os.path.exists(
-        subcommand_args.config_file
+    if is_PEP_file_type(subcommand_args.pep_config) and os.path.exists(
+        subcommand_args.pep_config
     ):
         try:
             p = Project(
-                cfg=subcommand_args.config_file,
+                cfg=subcommand_args.pep_config,
                 amendments=subcommand_args.amend,
                 divcfg_path=divcfg,
                 runp=subcommand_name == "runp",
@@ -209,14 +219,14 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
         except yaml.parser.ParserError as e:
             _LOGGER.error(f"Project config parse failed -- {e}")
             sys.exit(1)
-    elif is_pephub_registry_path(subcommand_args.config_file):
+    elif is_pephub_registry_path(subcommand_args.pep_config):
         if vars(subcommand_args)[SAMPLE_PL_ARG]:
             p = Project(
                 amendments=subcommand_args.amend,
                 divcfg_path=divcfg,
                 runp=subcommand_name == "runp",
                 project_dict=PEPHubClient()._load_raw_pep(
-                    registry_path=subcommand_args.config_file
+                    registry_path=subcommand_args.pep_config
                 ),
                 **{
                     attr: getattr(subcommand_args, attr)
@@ -252,7 +262,7 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
         # Check at the beginning if user wants to use pipestat and pipestat is configurable
         is_pipestat_configured = (
             prj._check_if_pipestat_configured(pipeline_type=PipelineLevel.PROJECT.value)
-            if getattr(subcommand_args, "project", None)
+            if getattr(subcommand_args, "project", None) or subcommand_name == "runp"
             else prj._check_if_pipestat_configured()
         )
 

@@ -413,10 +413,12 @@ class Project(peppyProject):
                 pipestat_config_path = self._check_for_existing_pipestat_config(piface)
 
                 if not pipestat_config_path:
-                    self._create_pipestat_config(piface)
+                    self._create_pipestat_config(piface, pipeline_type)
                 else:
                     piface.psm = PipestatManager(
-                        config_file=pipestat_config_path, multi_pipelines=True
+                        config_file=pipestat_config_path,
+                        multi_pipelines=True,
+                        pipeline_type="sample",
                     )
 
         elif pipeline_type == PipelineLevel.PROJECT.value:
@@ -426,10 +428,12 @@ class Project(peppyProject):
                 )
 
                 if not pipestat_config_path:
-                    self._create_pipestat_config(prj_piface)
+                    self._create_pipestat_config(prj_piface, pipeline_type)
                 else:
                     prj_piface.psm = PipestatManager(
-                        config_file=pipestat_config_path, multi_pipelines=True
+                        config_file=pipestat_config_path,
+                        multi_pipelines=True,
+                        pipeline_type="project",
                     )
         else:
             _LOGGER.error(
@@ -469,7 +473,7 @@ class Project(peppyProject):
         else:
             return None
 
-    def _create_pipestat_config(self, piface):
+    def _create_pipestat_config(self, piface, pipeline_type):
         """
         Each piface needs its own config file and associated psm
         """
@@ -512,8 +516,6 @@ class Project(peppyProject):
             pipestat_config_dict.update({"pipeline_name": piface.data["pipeline_name"]})
         else:
             pipeline_name = None
-        if "pipeline_type" in piface.data:
-            pipestat_config_dict.update({"pipeline_type": piface.data["pipeline_type"]})
 
         # Warn user if there is a mismatch in pipeline_names from sources!!!
         if pipeline_name != output_schema_pipeline_name:

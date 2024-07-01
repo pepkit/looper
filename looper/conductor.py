@@ -198,6 +198,9 @@ class SubmissionConductor(object):
 
         self.collate = collate
         self.section_key = PROJECT_PL_KEY if self.collate else SAMPLE_PL_KEY
+        self.pipeline_interface_type = (
+            "project_interface" if self.collate else "sample_interface"
+        )
         self.pl_iface = pipeline_interface
         self.pl_name = self.pl_iface.pipeline_name
         self.prj = prj
@@ -681,7 +684,11 @@ class SubmissionConductor(object):
             pipeline=self.pl_iface,
             compute=self.prj.dcc.compute,
         )
-        templ = self.pl_iface["command_template"]
+
+        if self.pipeline_interface_type is None:
+            templ = self.pl_iface["command_template"]
+        else:
+            templ = self.pl_iface[self.pipeline_interface_type]["command_template"]
         if not self.override_extra:
             extras_template = (
                 EXTRA_PROJECT_CMD_TEMPLATE
