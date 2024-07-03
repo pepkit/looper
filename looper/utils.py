@@ -672,8 +672,20 @@ def looper_config_tutorial():
 
     if not os.path.exists(piface_path):
         console.print(
-            f"[bold red]Warning:[/bold red] File does not exist at [yellow]{piface_path}[/yellow]\nUse command [yellow]`looper init_piface`[/yellow] to create a generic pipeline interface."
+            f"[bold red]Warning:[/bold red] File does not exist at [yellow]{piface_path}[/yellow]"
         )
+        console.print(
+            "Do you wish to initialize a generic pipeline interface? [bold green]Y[/bold green]/[red]n[/red]..."
+        )
+        selection = None
+        while selection not in ["y", "n"]:
+            selection = console.input("\nSelection: ").lower().strip()
+        if selection == "n":
+            console.print(
+                "Use command [yellow]`looper init_piface`[/yellow] to create a generic pipeline interface."
+            )
+        if selection == "y":
+            init_generic_pipeline()
 
     console.print(f"Writing config file to [yellow]{looper_cfg_path}[/yellow]")
 
