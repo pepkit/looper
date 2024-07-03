@@ -404,19 +404,29 @@ def _get_subcommand_args(subcommand_name, parser_args):
     return args
 
 
-def init_generic_pipeline():
+def init_generic_pipeline(pipelinepath: Optional[str] = None):
     """
     Create generic pipeline interface
     """
     console = Console()
 
-    try:
-        os.makedirs("pipeline")
-    except FileExistsError:
-        pass
-
     # Destination one level down from CWD in pipeline folder
-    dest_file = os.path.join(os.getcwd(), "pipeline", LOOPER_GENERIC_PIPELINE)
+    if not pipelinepath:
+        try:
+            os.makedirs("pipeline")
+        except FileExistsError:
+            pass
+
+        dest_file = os.path.join(os.getcwd(), "pipeline", LOOPER_GENERIC_PIPELINE)
+    else:
+        if os.path.isabs(pipelinepath):
+            dest_file = pipelinepath
+        else:
+            dest_file = os.path.join(os.getcwd(), os.path.relpath(pipelinepath))
+        try:
+            os.makedirs(os.path.dirname(dest_file))
+        except FileExistsError:
+            pass
 
     # Create Generic Pipeline Interface
     generic_pipeline_dict = {
@@ -433,18 +443,27 @@ def init_generic_pipeline():
     # Write file
     if not os.path.exists(dest_file):
         pprint(generic_pipeline_dict, expand_all=True)
+
         with open(dest_file, "w") as file:
             yaml.dump(generic_pipeline_dict, file)
+
         console.print(
             f"Pipeline interface successfully created at: [yellow]{dest_file}[/yellow]"
         )
+
     else:
         console.print(
             f"Pipeline interface file already exists [yellow]`{dest_file}`[/yellow]. Skipping creation.."
         )
 
     # Create Generic Output Schema
-    dest_file = os.path.join(os.getcwd(), "pipeline", LOOPER_GENERIC_OUTPUT_SCHEMA)
+    if not pipelinepath:
+        dest_file = os.path.join(os.getcwd(), "pipeline", LOOPER_GENERIC_OUTPUT_SCHEMA)
+    else:
+        dest_file = os.path.join(
+            os.path.dirname(dest_file), LOOPER_GENERIC_OUTPUT_SCHEMA
+        )
+
     generic_output_schema_dict = {
         "pipeline_name": "default_pipeline_name",
         "samples": {
@@ -471,7 +490,12 @@ def init_generic_pipeline():
 
     console.rule(f"\n[magenta]Example Pipeline Shell Script[/magenta]")
     # Create Generic countlines.sh
-    dest_file = os.path.join(os.getcwd(), "pipeline", LOOPER_GENERIC_COUNT_LINES)
+
+    if not pipelinepath:
+        dest_file = os.path.join(os.getcwd(), "pipeline", LOOPER_GENERIC_COUNT_LINES)
+    else:
+        dest_file = os.path.join(os.path.dirname(dest_file), LOOPER_GENERIC_COUNT_LINES)
+
     shell_code = """#!/bin/bash
 linecount=`wc -l $1 | sed -E 's/^[[:space:]]+//' | cut -f1 -d' '`
 pipestat report -r $2 -i 'number_of_lines' -v $linecount -c $3
@@ -680,22 +704,23 @@ def looper_config_tutorial():
         if selection == "y":
             creating = False
 
-    if not os.path.exists(piface_paths[0]):
-        console.print(
-            f"[bold red]Warning:[/bold red] File does not exist at [yellow]{piface_paths[0]}[/yellow]"
-        )
-        console.print(
-            "Do you wish to initialize a generic pipeline interface? [bold green]Y[/bold green]/[red]n[/red]..."
-        )
-        selection = None
-        while selection not in ["y", "n"]:
-            selection = console.input("\nSelection: ").lower().strip()
-        if selection == "n":
+    for piface_path in piface_paths:
+        if not os.path.exists(piface_path):
             console.print(
-                "Use command [yellow]`looper init_piface`[/yellow] to create a generic pipeline interface."
+                f"[bold red]Warning:[/bold red] File does not exist at [yellow]{piface_path}[/yellow]"
             )
-        if selection == "y":
-            init_generic_pipeline()
+            console.print(
+                "Do you wish to initialize a generic pipeline interface? [bold green]Y[/bold green]/[red]n[/red]..."
+            )
+            selection = None
+            while selection not in ["y", "n"]:
+                selection = console.input("\nSelection: ").lower().strip()
+            if selection == "n":
+                console.print(
+                    "Use command [yellow]`looper init_piface`[/yellow] to create a generic pipeline interface."
+                )
+            if selection == "y":
+                init_generic_pipeline(pipelinepath=piface_path)
 
     console.print(f"Writing config file to [yellow]{looper_cfg_path}[/yellow]")
 
