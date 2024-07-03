@@ -1,4 +1,0 @@
-pep_config: project/project_config.yaml # local path to pep config
-output_dir: "results"
-pipeline_interfaces:
-  project: pipeline/pipeline_interface_project.yaml

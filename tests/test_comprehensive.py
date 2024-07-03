@@ -23,7 +23,7 @@ def test_comprehensive_advanced_looper_no_pipestat(prep_temp_pep):
 
     path_to_looper_config = prep_temp_pep
 
-    x = ["run", "--looper-config", path_to_looper_config]
+    x = ["run", "--config", path_to_looper_config]
 
     try:
         results = main(test_args=x)
@@ -48,7 +48,7 @@ def test_comprehensive_looper_no_pipestat(prep_temp_pep_basic):
     with open(basic_project_file, "w") as f:
         dump(basic_project_data, f)
 
-    x = ["run", "--looper-config", path_to_looper_config]
+    x = ["run", "--config", path_to_looper_config]
 
     try:
         results = main(test_args=x)
@@ -85,7 +85,7 @@ def test_comprehensive_looper_pipestat(prep_temp_pep_pipestat):
     with open(pipestat_project_file, "w") as f:
         dump(pipestat_project_data, f)
 
-    x = [cmd, "--looper-config", path_to_looper_config]
+    x = [cmd, "--config", path_to_looper_config]
 
     try:
         result = main(test_args=x)
@@ -110,7 +110,7 @@ def test_comprehensive_looper_pipestat(prep_temp_pep_pipestat):
     psm.set_status(record_identifier="frog_2", status_identifier="completed")
 
     # Now use looper check to get statuses
-    x = ["check", "--looper-config", path_to_looper_config]
+    x = ["check", "--config", path_to_looper_config]
 
     try:
         result = main(test_args=x)
@@ -119,18 +119,18 @@ def test_comprehensive_looper_pipestat(prep_temp_pep_pipestat):
         raise pytest.fail("DID RAISE {0}".format(Exception))
 
     # Now use looper check to get project level statuses
-    x = ["check", "--looper-config", path_to_looper_config, "--project"]
+    x = ["check", "--config", path_to_looper_config, "--project"]
 
     try:
         result = main(test_args=x)
-        assert result == {"example_pipestat_project_pipeline": {"project": "unknown"}}
+        assert result == {"example_pipestat_pipeline": {"project": "unknown"}}
 
     except Exception:
         raise pytest.fail("DID RAISE {0}".format(Exception))
 
     # TEST LOOPER REPORT
 
-    x = ["report", "--looper-config", path_to_looper_config]
+    x = ["report", "--config", path_to_looper_config]
 
     try:
         result = main(test_args=x)
@@ -140,7 +140,7 @@ def test_comprehensive_looper_pipestat(prep_temp_pep_pipestat):
 
     # TEST LOOPER Table
 
-    x = ["table", "--looper-config", path_to_looper_config]
+    x = ["table", "--config", path_to_looper_config]
 
     try:
         result = main(test_args=x)
@@ -153,7 +153,7 @@ def test_comprehensive_looper_pipestat(prep_temp_pep_pipestat):
 
     x = [
         "destroy",
-        "--looper-config",
+        "--config",
         path_to_looper_config,
         "--force-yes",
     ]  # Must force yes or pytest will throw an exception "OSError: pytest: reading from stdin while output is captured!"
@@ -178,7 +178,7 @@ def test_comprehensive_looper_pephub(prep_temp_pep_pephub):
     # TODO need to add way to check if user is logged into pephub and then run test otherwise skip
     path_to_looper_config = prep_temp_pep_pephub
 
-    x = ["run", "--looper-config", path_to_looper_config]
+    x = ["run", "--config", path_to_looper_config]
 
     try:
         results = main(test_args=x)

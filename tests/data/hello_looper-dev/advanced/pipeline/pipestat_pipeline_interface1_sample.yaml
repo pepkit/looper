@@ -1,5 +1,4 @@
 pipeline_name: example_pipestat_pipeline
-pipeline_type: sample
 input_schema: https://schema.databio.org/pep/2.0.0.yaml
 output_schema: pipestat_output_schema.yaml
 var_templates:
@@ -7,7 +6,8 @@ var_templates:
 pre_submit:
     python_functions:
       - looper.write_sample_yaml
-command_template: >
-  python3 {pipeline.var_templates.path} --sample-name {sample.sample_name} --req-attr {sample.attr}
+sample_interface:
+  command_template: >
+    python3 {pipeline.var_templates.path} --sample-name {sample.sample_name} --req-attr {sample.attr}
 
 

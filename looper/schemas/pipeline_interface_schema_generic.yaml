@@ -9,12 +9,20 @@ properties:
     type: string
     enum: ["project", "sample"]
     description: "type of the pipeline, either 'project' or 'sample'"
-  command_template:
-    type: string
-    description: "Jinja2-like template to construct the command to run"
-  path:
-    type: string
-    description: "path to the pipeline program. Relative to pipeline interface file or absolute."
+  sample_interface:
+    type: object
+    description: "Section that defines compute environment settings"
+    properties:
+      command_template:
+        type: string
+        description: "Jinja2-like template to construct the command to run"
+  project_interface:
+    type: object
+    description: "Section that defines compute environment settings"
+    properties:
+      command_template:
+        type: string
+        description: "Jinja2-like template to construct the command to run"
   compute:
     type: object
     description: "Section that defines compute environment settings"
