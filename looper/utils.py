@@ -641,12 +641,22 @@ def looper_config_tutorial():
             or DEFAULTS["output_dir"]
         )
 
-        piface_path = (
-            console.input(
-                "Path to sample pipeline interface: [yellow](pipeline_interface.yaml)[/yellow] >"
+        add_more_pifaces = True
+        piface_paths = []
+        while add_more_pifaces:
+            piface_path = (
+                console.input(
+                    "Add each path to a pipeline interface: [yellow](pipeline_interface.yaml)[/yellow] >"
+                )
+                or None
             )
-            or DEFAULTS["piface_path"]
-        )
+            if piface_path is None:
+                if piface_paths == []:
+                    piface_paths.append(DEFAULTS["piface_path"])
+                add_more_pifaces = False
+            else:
+                piface_paths.append(piface_path)
+
         console.print("\n")
 
         console.print(
@@ -654,7 +664,7 @@ def looper_config_tutorial():
     [yellow]pep_config:[/yellow] {cfg['pep_config']}
     [yellow]output_dir:[/yellow] {cfg['output_dir']}
     [yellow]pipeline_interfaces:[/yellow]
-      - {piface_path}
+      - {piface_paths}
     """
         )
 
@@ -670,9 +680,9 @@ def looper_config_tutorial():
         if selection == "y":
             creating = False
 
-    if not os.path.exists(piface_path):
+    if not os.path.exists(piface_paths[0]):
         console.print(
-            f"[bold red]Warning:[/bold red] File does not exist at [yellow]{piface_path}[/yellow]"
+            f"[bold red]Warning:[/bold red] File does not exist at [yellow]{piface_paths[0]}[/yellow]"
         )
         console.print(
             "Do you wish to initialize a generic pipeline interface? [bold green]Y[/bold green]/[red]n[/red]..."
@@ -692,7 +702,7 @@ def looper_config_tutorial():
     looper_config_dict = {}
     looper_config_dict["pep_config"] = cfg["pep_config"]
     looper_config_dict["output_dir"] = cfg["output_dir"]
-    looper_config_dict["pipeline_interfaces"] = [piface_path]
+    looper_config_dict["pipeline_interfaces"] = [piface_paths]
 
     with open(looper_cfg_path, "w") as fp:
         yaml.dump(looper_config_dict, fp)
