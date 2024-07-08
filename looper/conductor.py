@@ -20,7 +20,7 @@ from jinja2.exceptions import UndefinedError
 
 from peppy.const import CONFIG_KEY, SAMPLE_NAME_ATTR, SAMPLE_YAML_EXT
 from peppy.exceptions import RemoteYAMLError
-from pipestat import PipestatError
+
 from ubiquerg import expandpath
 from yaml import dump
 from yacman import FutureYAMLConfigManager as YAMLConfigManager
@@ -644,6 +644,8 @@ class SubmissionConductor(object):
             be determined based on the Project
         :return yacman.YAMLConfigManager: pipestat namespace
         """
+        from pipestat import PipestatError
+
         try:
             psm = self.pl_iface.psm
         except (PipestatError, AttributeError) as e:

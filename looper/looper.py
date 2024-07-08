@@ -11,7 +11,6 @@ import logging
 import subprocess
 import yaml
 import os
-import pandas as _pd
 
 # Need specific sequence of actions for colorama imports?
 from colorama import init
@@ -45,7 +44,7 @@ from .utils import (
     desired_samples_range_limited,
     sample_folder,
 )
-from pipestat.reports import get_file_for_table
+
 
 _PKGNAME = "looper"
 _LOGGER = logging.getLogger(_PKGNAME)
@@ -668,6 +667,7 @@ def destroy_summary(prj, dry_run=False, project_level=False):
     Delete the summary files if not in dry run mode
     This function is for use with pipestat configured projects.
     """
+    from pipestat.reports import get_file_for_table
 
     psms = {}
     if project_level:

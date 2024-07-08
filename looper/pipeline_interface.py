@@ -6,7 +6,7 @@ from logging import getLogger
 from warnings import warn
 
 import jsonschema
-import pandas as pd
+
 from eido import read_schema
 from peppy import utils as peputil
 from ubiquerg import expandpath, is_url
@@ -203,6 +203,8 @@ class PipelineInterface(YAMLConfigManager):
             :param str section: section of pipeline interface to process
             :return pandas.DataFrame: resources
             """
+            import pandas as pd
+
             df = None
             if COMPUTE_KEY in piface and SIZE_DEP_VARS_KEY in piface[COMPUTE_KEY]:
                 resources_tsv_path = piface[COMPUTE_KEY][SIZE_DEP_VARS_KEY]

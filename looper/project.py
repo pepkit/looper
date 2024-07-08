@@ -14,9 +14,9 @@ except ImportError:
 from .divvy import ComputingConfiguration
 from eido import PathAttrNotFoundError, read_schema
 from jsonschema import ValidationError
-from pandas.core.common import flatten
+
 from peppy.utils import make_abs_via_cfg
-from pipestat import PipestatManager
+
 
 from .conductor import write_pipestat_config
 
@@ -180,6 +180,8 @@ class Project(peppyProject):
 
         :return list[str]: collection of pipeline interface sources
         """
+        from pandas.core.common import flatten
+
         x = self._extra_cli_or_cfg(self.piface_key)
         return (
             list(flatten([x] if not isinstance(x, list) else x))
@@ -396,16 +398,19 @@ class Project(peppyProject):
         if PIPESTAT_KEY not in self[EXTRA_KEY]:
             return False
         elif PIPESTAT_KEY in self[EXTRA_KEY]:
+
             if self[EXTRA_KEY][PIPESTAT_KEY] is None:
                 return False
             else:
                 # If pipestat key is available assume user desires pipestat usage
                 # This should return True OR raise an exception at this point.
+
                 return self._get_pipestat_configuration(pipeline_type)
 
     def _get_pipestat_configuration(self, pipeline_type=PipelineLevel.SAMPLE.value):
 
         # First check if it already exists
+        from pipestat import PipestatManager
 
         if pipeline_type == PipelineLevel.SAMPLE.value:
             for piface in self.pipeline_interfaces:
@@ -477,6 +482,7 @@ class Project(peppyProject):
         """
         Each piface needs its own config file and associated psm
         """
+        from pipestat import PipestatManager
 
         if PIPESTAT_KEY in self[EXTRA_KEY]:
             pipestat_config_dict = self[EXTRA_KEY][PIPESTAT_KEY]

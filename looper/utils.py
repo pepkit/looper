@@ -360,6 +360,8 @@ def _get_subcommand_args(subcommand_name, parser_args):
     :param argparser.Namespace parser_args: argument namespace
     :return dict: mapping of argument destinations to their values
     """
+    from peppy import Project as peppyProject
+
     args = dict()
     cfg = peppyProject(
         parser_args.pep_config,
