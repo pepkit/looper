@@ -2,6 +2,10 @@
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format.
 
+## [1.9.1] -- 2024-07-18
+
+### Changed
+- ensure peppy requirement peppy>=0.40.0,<=0.40.2
 
 ## [1.9.0] -- 2024-06-26
 

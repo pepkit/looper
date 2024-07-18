@@ -336,7 +336,7 @@ def main(test_args=None) -> None:
         prog="looper",
         description="Looper: A job submitter for Portable Encapsulated Projects",
         add_help=True,
-        version="1.9.0",
+        version="1.9.1",
     )
 
     parser = add_short_arguments(parser, ArgumentEnum)
