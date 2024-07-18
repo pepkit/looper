@@ -265,7 +265,7 @@ class TestLooperRunBehavior:
         project_config_path = get_project_config_path(tp)
 
         with mod_yaml_data(project_config_path) as project_config_data:
-            project_config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][SAMPLE_TOGGLE_ATTR] = 0
+            project_config_data[SAMPLE_MODS_KEY][APPEND_KEY][SAMPLE_TOGGLE_ATTR] = 0
 
         x = test_args_expansion(tp, "run")
         x.pop(-1)  # remove dry run for this test
@@ -286,7 +286,7 @@ class TestLooperRunBehavior:
         project_config_path = get_project_config_path(tp)
 
         with mod_yaml_data(project_config_path) as project_config_data:
-            project_config_data[SAMPLE_MODS_KEY][CONSTANT_KEY]["command_extra"] = arg
+            project_config_data[SAMPLE_MODS_KEY][APPEND_KEY]["command_extra"] = arg
         x = test_args_expansion(tp, "run")
         try:
             main(test_args=x)
@@ -307,7 +307,7 @@ class TestLooperRunBehavior:
         project_config_path = get_project_config_path(tp)
 
         with mod_yaml_data(project_config_path) as project_config_data:
-            project_config_data[SAMPLE_MODS_KEY][CONSTANT_KEY]["command_extra"] = arg
+            project_config_data[SAMPLE_MODS_KEY][APPEND_KEY]["command_extra"] = arg
 
         x = test_args_expansion(tp, "run", ["--command-extra-override='different'"])
         try:
