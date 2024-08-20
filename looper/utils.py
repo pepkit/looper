@@ -627,8 +627,6 @@ def looper_config_tutorial():
     console.print("Use [yellow]`looper run`[/yellow] afterwards to run the pipeline.")
     console.print("Press [yellow]^C[/yellow] at any time to quit.\n")
 
-    console.input("> ... ")
-
     DEFAULTS = {  # What you get if you just press enter
         "pep_config": "databio/example",
         "output_dir": "results",
@@ -653,7 +651,9 @@ def looper_config_tutorial():
             or DEFAULTS["pep_config"]
         )
 
-        if not os.path.exists(cfg["pep_config"]):
+        if not os.path.exists(cfg["pep_config"]) and not is_pephub_registry_path(
+            cfg["pep_config"]
+        ):
             console.print(
                 f"Warning: PEP file does not exist at [yellow]'{cfg['pep_config']}[/yellow]'"
             )
