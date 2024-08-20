@@ -187,6 +187,7 @@ InitParser = Command(
         ArgumentEnum.PEP_CONFIG.value,
         ArgumentEnum.SAMPLE_PIPELINE_INTERFACES.value,
         ArgumentEnum.PROJECT_PIPELINE_INTERFACES.value,
+        ArgumentEnum.GENERIC.value,
     ],
 )
 

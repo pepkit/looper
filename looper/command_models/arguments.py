@@ -184,6 +184,14 @@ class ArgumentEnum(enum.Enum):
         default=(str, None),
         description="Output directory",
     )
+
+    GENERIC = Argument(
+        name="generic",
+        alias="-g",
+        default=(bool, False),
+        description="Use generic looper config?",
+    )
+
     SAMPLE_PIPELINE_INTERFACES = Argument(
         name="sample_pipeline_interfaces",
         alias="-S",

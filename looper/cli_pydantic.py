@@ -128,15 +128,8 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
         console = Console()
         console.clear()
         console.rule(f"\n[magenta]Looper initialization[/magenta]")
-        console.print(
-            "[bold]Would you like to follow a guided tutorial?[/bold]  [green]Y[/green] / [red]n[/red]..."
-        )
-
-        selection = None
-        while selection not in ["y", "n"]:
-            selection = console.input("\nSelection: ").lower().strip()
-
-        if selection == "n":
+        selection = subcommand_args.generic
+        if selection is True:
             console.clear()
             return int(
                 not initiate_looper_config(
