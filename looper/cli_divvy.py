@@ -126,7 +126,7 @@ def main():
     _LOGGER.debug("Divvy config: {}".format(args.config))
     divcfg = select_divvy_config(args.config)
     _LOGGER.info("Using divvy config: {}".format(divcfg))
-    dcc = ComputingConfiguration(filepath=divcfg)
+    dcc = ComputingConfiguration.from_yaml_file(filepath=divcfg)
 
     if args.command == "list":
         # Output header via logger and content via print so the user can
