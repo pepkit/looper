@@ -634,75 +634,58 @@ def looper_config_tutorial():
         "project_name": os.path.basename(os.getcwd()),
     }
 
-    creating = True
+    cfg["project_name"] = (
+        console.input(f"Project name: [yellow]({DEFAULTS['project_name']})[/yellow] >")
+        or DEFAULTS["project_name"]
+    )
 
-    while creating:
-        cfg["project_name"] = (
-            console.input(
-                f"Project name: [yellow]({DEFAULTS['project_name']})[/yellow] >"
-            )
-            or DEFAULTS["project_name"]
+    cfg["pep_config"] = (
+        console.input(
+            f"Registry path or file path to PEP: [yellow]({DEFAULTS['pep_config']})[/yellow] >"
         )
+        or DEFAULTS["pep_config"]
+    )
 
-        cfg["pep_config"] = (
-            console.input(
-                f"Registry path or file path to PEP: [yellow]({DEFAULTS['pep_config']})[/yellow] >"
-            )
-            or DEFAULTS["pep_config"]
-        )
-
-        if not os.path.exists(cfg["pep_config"]) and not is_pephub_registry_path(
-            cfg["pep_config"]
-        ):
-            console.print(
-                f"Warning: PEP file does not exist at [yellow]'{cfg['pep_config']}[/yellow]'"
-            )
-
-        cfg["output_dir"] = (
-            console.input(
-                f"Path to output directory: [yellow]({DEFAULTS['output_dir']})[/yellow] >"
-            )
-            or DEFAULTS["output_dir"]
-        )
-
-        add_more_pifaces = True
-        piface_paths = []
-        while add_more_pifaces:
-            piface_path = (
-                console.input(
-                    "Add each path to a pipeline interface: [yellow](pipeline_interface.yaml)[/yellow] >"
-                )
-                or None
-            )
-            if piface_path is None:
-                if piface_paths == []:
-                    piface_paths.append(DEFAULTS["piface_path"])
-                add_more_pifaces = False
-            else:
-                piface_paths.append(piface_path)
-
-        console.print("\n")
-
+    if not os.path.exists(cfg["pep_config"]) and not is_pephub_registry_path(
+        cfg["pep_config"]
+    ):
         console.print(
-            f"""\
-    [yellow]pep_config:[/yellow] {cfg['pep_config']}
-    [yellow]output_dir:[/yellow] {cfg['output_dir']}
-    [yellow]pipeline_interfaces:[/yellow]
-      - {piface_paths}
-    """
+            f"Warning: PEP file does not exist at [yellow]'{cfg['pep_config']}[/yellow]'"
         )
 
-        console.print(
-            "[bold]Does this look good?[/bold]  [bold green]Y[/bold green]/[red]n[/red]..."
+    cfg["output_dir"] = (
+        console.input(
+            f"Path to output directory: [yellow]({DEFAULTS['output_dir']})[/yellow] >"
         )
-        selection = None
-        while selection not in ["y", "n"]:
-            selection = console.input("\nSelection: ").lower().strip()
-        if selection == "n":
-            console.print("Starting over...")
-            pass
-        if selection == "y":
-            creating = False
+        or DEFAULTS["output_dir"]
+    )
+
+    add_more_pifaces = True
+    piface_paths = []
+    while add_more_pifaces:
+        piface_path = (
+            console.input(
+                "Add each path to a pipeline interface: [yellow](pipeline_interface.yaml)[/yellow] >"
+            )
+            or None
+        )
+        if piface_path is None:
+            if piface_paths == []:
+                piface_paths.append(DEFAULTS["piface_path"])
+            add_more_pifaces = False
+        else:
+            piface_paths.append(piface_path)
+
+    console.print("\n")
+
+    console.print(
+        f"""\
+[yellow]pep_config:[/yellow] {cfg['pep_config']}
+[yellow]output_dir:[/yellow] {cfg['output_dir']}
+[yellow]pipeline_interfaces:[/yellow]
+  - {piface_paths}
+"""
+    )
 
     for piface_path in piface_paths:
         if not os.path.exists(piface_path):
