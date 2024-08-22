@@ -378,6 +378,10 @@ def _proc_resources_spec(args):
         settings_data = {}
     if not spec:
         return settings_data
+    if isinstance(
+        spec, str
+    ):  # compute: "partition=standard time='01-00:00:00' cores='32' mem='32000'"
+        spec = spec.split(sep=" ")
     if isinstance(spec, list):
         pairs = [(kv, kv.split("=")) for kv in spec]
         bads = []
