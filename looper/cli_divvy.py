@@ -142,11 +142,13 @@ def main():
         for pkg_name, pkg in dcc.compute_packages.items():
             if pkg_name == args.package:
                 found = True
-                with open(pkg.submission_template, "r") as f:
+                with open(pkg["submission_template"], "r") as f:
                     print(f.read())
-                _LOGGER.info("Submission command is: " + pkg.submission_command + "\n")
+                _LOGGER.info(
+                    "Submission command is: " + pkg["submission_command"] + "\n"
+                )
                 if pkg_name == "docker":
-                    print("Docker args are: " + pkg.docker_args)
+                    print("Docker args are: " + pkg["docker_args"])
 
         if not found:
             _LOGGER.info("Package not found. Use 'divvy list' to see list of packages.")

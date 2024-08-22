@@ -200,6 +200,11 @@ class ComputingConfiguration(YAMLConfigManager):
         """
         return self.compute
 
+    @property
+    def compute_packages(self):
+
+        return self["compute_packages"]
+
     def list_compute_packages(self):
         """
         Returns a list of available compute packages.
