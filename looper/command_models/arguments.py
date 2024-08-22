@@ -236,6 +236,7 @@ class ArgumentEnum(enum.Enum):
     )
     PACKAGE = Argument(
         name="package",
+        alias="-p",
         default=(str, None),
         description="Name of computing resource package to use",
     )
