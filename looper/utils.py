@@ -710,7 +710,7 @@ def looper_config_tutorial():
     looper_config_dict = {}
     looper_config_dict["pep_config"] = cfg["pep_config"]
     looper_config_dict["output_dir"] = cfg["output_dir"]
-    looper_config_dict["pipeline_interfaces"] = [piface_paths]
+    looper_config_dict["pipeline_interfaces"] = piface_paths
 
     with open(looper_cfg_path, "w") as fp:
         yaml.dump(looper_config_dict, fp)
