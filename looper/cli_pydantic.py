@@ -378,20 +378,25 @@ def _proc_resources_spec(args):
         settings_data = {}
     if not spec:
         return settings_data
-    pairs = [(kv, kv.split("=")) for kv in spec]
-    bads = []
-    for orig, pair in pairs:
-        try:
-            k, v = pair
-        except ValueError:
-            bads.append(orig)
-        else:
-            settings_data[k] = v
-    if bads:
-        raise ValueError(
-            "Could not correctly parse itemized compute specification. "
-            "Correct format: " + EXAMPLE_COMPUTE_SPEC_FMT
-        )
+    if isinstance(spec, list):
+        pairs = [(kv, kv.split("=")) for kv in spec]
+        bads = []
+        for orig, pair in pairs:
+            try:
+                k, v = pair
+            except ValueError:
+                bads.append(orig)
+            else:
+                settings_data[k] = v
+        if bads:
+            raise ValueError(
+                "Could not correctly parse itemized compute specification. "
+                "Correct format: " + EXAMPLE_COMPUTE_SPEC_FMT
+            )
+    elif isinstance(spec, dict):
+        for key, value in spec.items():
+            settings_data[key] = value
+
     return settings_data
 
 

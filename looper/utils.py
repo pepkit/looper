@@ -324,6 +324,8 @@ def enrich_args_via_cfg(
             elif cfg_args_all is not None and argname in cfg_args_all:
                 if isinstance(cfg_args_all[argname], list):
                     r = [convert_value(i) for i in cfg_args_all[argname]]
+                elif isinstance(cfg_args_all[argname], dict):
+                    r = cfg_args_all[argname]
                 else:
                     r = convert_value(cfg_args_all[argname])
             else:
