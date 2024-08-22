@@ -53,10 +53,10 @@ def build_argparser():
 
     for sp in [sps["list"], sps["write"], sps["submit"], sps["inspect"]]:
         sp.add_argument(
-            "config", nargs="?", default=None, help="Divvy configuration file."
+            "--config", nargs="?", default=None, help="Divvy configuration file."
         )
 
-    sps["init"].add_argument("config", default=None, help="Divvy configuration file.")
+    sps["init"].add_argument("--config", default=None, help="Divvy configuration file.")
 
     for sp in [sps["inspect"]]:
         sp.add_argument(
@@ -124,7 +124,9 @@ def main():
         sys.exit(0)
 
     _LOGGER.debug("Divvy config: {}".format(args.config))
+
     divcfg = select_divvy_config(args.config)
+
     _LOGGER.info("Using divvy config: {}".format(divcfg))
     dcc = ComputingConfiguration.from_yaml_file(filepath=divcfg)
 
