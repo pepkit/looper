@@ -737,7 +737,15 @@ def determine_pipeline_type(piface_path: str, looper_config_path: str):
 
     if piface_path is None:
         return None, None
-    piface_path = expandpath(piface_path)
+    try:
+        piface_path = expandpath(piface_path)
+    except TypeError as e:
+        _LOGGER.warning(
+            f"Pipeline interface not found at given path: {piface_path}. Type Error: "
+            + str(e)
+        )
+        return None, None
+
     if not os.path.isabs(piface_path):
         piface_path = os.path.realpath(
             os.path.join(os.path.dirname(looper_config_path), piface_path)
@@ -745,6 +753,7 @@ def determine_pipeline_type(piface_path: str, looper_config_path: str):
     try:
         piface_dict = load_yaml(piface_path)
     except FileNotFoundError:
+        _LOGGER.warning(f"Pipeline interface not found at given path: {piface_path}")
         return None, None
 
     pipeline_types = []
@@ -836,6 +845,7 @@ def read_looper_config_file(looper_config_path: str) -> dict:
     for k, v in return_dict.items():
         if k == SAMPLE_PL_ARG or k == PROJECT_PL_ARG:
             # Pipeline interfaces are resolved at a later point. Do it there only to maintain consistency. #474
+
             pass
         if isinstance(v, str):
             v = expandpath(v)
