@@ -263,31 +263,29 @@ def enrich_args_via_cfg(
     cli_modifiers=None,
 ):
     """
-    Read in a looper dotfile and set arguments.
+    Read in a looper dotfile, pep config and set arguments.
 
-    Priority order: CLI > dotfile/config > parser default
+    Priority order: CLI > dotfile/config > pep_config > parser default
 
     :param subcommand name: the name of the command used
     :param argparse.Namespace parser_args: parsed args by the original parser
-    :param argparse.Namespace aux_parser: parsed args by the a parser
+    :param argparse.Namespace aux_parser: parsed args by the argument parser
         with defaults suppressed
+    :param dict test_args: dict of args used for pytesting
+    :param dict cli_modifiers: dict of args existing if user supplied cli args in looper config file
     :return argparse.Namespace: selected argument values
     """
+
+    # Did the user provide arguments in the PEP config?
     cfg_args_all = (
         _get_subcommand_args(subcommand_name, parser_args)
         if os.path.exists(parser_args.pep_config)
         else dict()
     )
-
-    # If user provided project-level modifiers in the looper config, they are prioritized
-    if cfg_args_all:
-        for key, value in cfg_args_all.items():
-            if getattr(parser_args, key, None):
-                new_value = getattr(parser_args, key)
-                cfg_args_all[key] = new_value
-    else:
+    if not cfg_args_all:
         cfg_args_all = {}
 
+    # Did the user provide arguments/modifiers in the looper config file?
     looper_config_cli_modifiers = None
     if cli_modifiers:
         if str(subcommand_name) in cli_modifiers:
@@ -311,6 +309,13 @@ def enrich_args_via_cfg(
 
     else:
         cli_args, _ = aux_parser.parse_known_args()
+
+    # If any CLI args were provided, make sure they take priority
+    if cli_args:
+        r = getattr(cli_args, subcommand_name)
+        for k, v in cfg_args_all.items():
+            if k in r:
+                cfg_args_all[k] = getattr(r, k)
 
     def set_single_arg(argname, default_source_namespace, result_namespace):
         if argname not in POSITIONAL or not hasattr(result, argname):
