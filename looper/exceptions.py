@@ -31,7 +31,7 @@ class SampleFailedException(LooperError):
 
 
 class MisconfigurationException(LooperError):
-    """Duplication of pipeline identifier precludes unique pipeline ref."""
+    """Looper not properly configured"""
 
     def __init__(self, key):
         super(MisconfigurationException, self).__init__(key)

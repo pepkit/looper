@@ -17,6 +17,7 @@ from ubiquerg import convert_value, expandpath, parse_registry_path, deep_update
 from pephubclient.constants import RegistryPath
 from pydantic import ValidationError
 from yacman import load_yaml
+from yaml.parser import ParserError
 
 from .const import *
 from .command_models.commands import SUPPORTED_COMMANDS
@@ -782,12 +783,18 @@ def read_looper_config_file(looper_config_path: str) -> dict:
     :raise MisconfigurationException: incorrect configuration.
     """
     return_dict = {}
-    with open(looper_config_path, "r") as dotfile:
-        dp_data = yaml.safe_load(dotfile)
+
+    try:
+        with open(looper_config_path, "r") as dotfile:
+            dp_data = yaml.safe_load(dotfile)
+    except ParserError as e:
+        _LOGGER.warning(
+            "Could not load looper config file due to the following exception"
+        )
+        raise ParserError(context=str(e))
 
     if PEP_CONFIG_KEY in dp_data:
         return_dict[PEP_CONFIG_KEY] = dp_data[PEP_CONFIG_KEY]
-
     else:
         raise MisconfigurationException(
             f"Looper dotfile ({looper_config_path}) is missing '{PEP_CONFIG_KEY}' key"
