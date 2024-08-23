@@ -166,11 +166,14 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
             else:
                 setattr(subcommand_args, looper_config_key, looper_config_item)
 
-    except OSError:
-        parser.print_help(sys.stderr)
-        _LOGGER.warning(
-            f"Looper config file does not exist. Use looper init to create one at {looper_cfg_path}."
-        )
+    except OSError as e:
+        if subcommand_args.config:
+            _LOGGER.warning(
+                f"\nLooper config file does not exist at given path {subcommand_args.config}. Use looper init to create one at {looper_cfg_path}."
+            )
+        else:
+            _LOGGER.warning(e)
+
         sys.exit(1)
 
     subcommand_args = enrich_args_via_cfg(
