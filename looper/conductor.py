@@ -661,6 +661,7 @@ class SubmissionConductor(object):
                 "record_identifier": psm.record_identifier,
                 "config_file": psm.config_path,
                 "output_schema": psm.cfg["_schema_path"],
+                "pephub_path": psm.cfg["pephub_path"],
             }
             filtered_namespace = {k: v for k, v in full_namespace.items() if v}
             return YAMLConfigManager(filtered_namespace)
