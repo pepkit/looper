@@ -221,7 +221,7 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
                 amendments=subcommand_args.amend,
                 divcfg_path=divcfg,
                 runp=subcommand_name == "runp",
-                project_dict=PEPHubClient()._load_raw_pep(
+                project_dict=PEPHubClient().load_raw_pep(
                     registry_path=subcommand_args.pep_config
                 ),
                 **{
