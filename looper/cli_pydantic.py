@@ -340,7 +340,7 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
                 _LOGGER.warning("No looper configuration was supplied.")
 
 
-def main(test_args=None) -> None:
+def main(test_args=None) -> dict:
     parser = pydantic_argparse.ArgumentParser(
         model=TopLevelParser,
         prog="looper",
@@ -357,6 +357,9 @@ def main(test_args=None) -> None:
         args = parser.parse_typed_args()
 
     return run_looper(args, parser, test_args=test_args)
+
+def main_cli() -> None:
+    main()
 
 
 def _proc_resources_spec(args):

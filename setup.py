@@ -79,7 +79,7 @@ setup(
     license="BSD2",
     entry_points={
         "console_scripts": [
-            "looper = looper.cli_pydantic:main",
+            "looper = looper.cli_pydantic:main_cli",
             "divvy = looper.__main__:divvy_main",
         ],
     },
