@@ -44,15 +44,6 @@ class RegistryPathException(LooperError):
         super(RegistryPathException, self).__init__(msg)
 
 
-class PEPhubException(LooperError):
-    """For pephub client connections"""
-
-    def __init__(self, msg):
-        super(PEPhubException, self).__init__(
-            msg + "\n You may need to login by running `phc login`"
-        )
-
-
 class DuplicatePipelineKeyException(LooperError):
     """Duplication of pipeline identifier precludes unique pipeline ref."""
 

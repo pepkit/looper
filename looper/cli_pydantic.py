@@ -20,7 +20,6 @@ from __future__ import annotations
 import sys
 
 import logmuse
-import pephubclient.exceptions
 import pydantic_argparse
 import yaml
 from eido import inspect_project
@@ -218,22 +217,19 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
             sys.exit(1)
     elif is_pephub_registry_path(subcommand_args.pep_config):
         if vars(subcommand_args)[SAMPLE_PL_ARG]:
-            try:
-                p = Project(
-                    amendments=subcommand_args.amend,
-                    divcfg_path=divcfg,
-                    runp=subcommand_name == "runp",
-                    project_dict=PEPHubClient()._load_raw_pep(
-                        registry_path=subcommand_args.pep_config
-                    ),
-                    **{
-                        attr: getattr(subcommand_args, attr)
-                        for attr in CLI_PROJ_ATTRS
-                        if attr in subcommand_args
-                    },
-                )
-            except pephubclient.exceptions.ResponseError as e:
-                raise PEPhubException(msg=e.message)
+            p = Project(
+                amendments=subcommand_args.amend,
+                divcfg_path=divcfg,
+                runp=subcommand_name == "runp",
+                project_dict=PEPHubClient()._load_raw_pep(
+                    registry_path=subcommand_args.pep_config
+                ),
+                **{
+                    attr: getattr(subcommand_args, attr)
+                    for attr in CLI_PROJ_ATTRS
+                    if attr in subcommand_args
+                },
+            )
         else:
             raise MisconfigurationException(
                 f"`sample_pipeline_interface` is missing. Provide it in the parameters."
