@@ -26,8 +26,6 @@ from eido import inspect_project
 from pephubclient import PEPHubClient
 from pydantic_argparse.argparse.parser import ArgumentParser
 
-from divvy import select_divvy_config
-
 from . import __version__
 
 from .command_models.arguments import ArgumentEnum
@@ -353,6 +351,7 @@ def main(test_args=None) -> dict:
         args = parser.parse_typed_args()
 
     return run_looper(args, parser, test_args=test_args)
+
 
 def main_cli() -> None:
     main()

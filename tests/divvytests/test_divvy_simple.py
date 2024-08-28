@@ -4,7 +4,7 @@ import pytest
 from collections import OrderedDict
 
 from yacman import YacAttMap
-from divvy import select_divvy_config
+from looper.divvy import select_divvy_config
 
 # For interactive debugging:
 # import logmuse

@@ -401,11 +401,13 @@ def divvy_init(config_path, template_config_path):
         _LOGGER.error("You must specify a template config file path.")
         return
 
+    if not os.path.isabs(config_path):
+        config_path = os.path.abspath(config_path)
+
     if config_path and not os.path.exists(config_path):
-        # dcc.write(config_path)
         # Init should *also* write the templates.
         dest_folder = os.path.dirname(config_path)
-        copytree(os.path.dirname(template_config_path), dest_folder)
+        copytree(os.path.dirname(template_config_path), dest_folder, dirs_exist_ok=True)
         template_subfolder = os.path.join(dest_folder, "divvy_templates")
         _LOGGER.info("Wrote divvy templates to folder: {}".format(template_subfolder))
         new_template = os.path.join(
