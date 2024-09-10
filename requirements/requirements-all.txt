@@ -1,11 +1,11 @@
 colorama>=0.3.9
-eido>=0.2.1
+eido>=0.2.3
 jinja2
 logmuse>=0.2.0
 pandas>=2.0.2
 pephubclient>=0.4.0
 pipestat>=0.10.2
-peppy>=0.40.4
+peppy>=0.40.6
 pyyaml>=3.12
 rich>=9.10.0
 ubiquerg>=0.8.1a1
