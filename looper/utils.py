@@ -440,9 +440,8 @@ def init_generic_pipeline(pipelinepath: Optional[str] = None):
     generic_pipeline_dict = {
         "pipeline_name": "default_pipeline_name",
         "output_schema": "output_schema.yaml",
-        "var_templates": {"pipeline": "{looper.piface_dir}/count_lines.sh"},
         "sample_interface": {
-            "command_template": "{pipeline.var_templates.pipeline} {sample.file} "
+            "command_template": "{looper.piface_dir}/count_lines.sh {sample.file} "
             "--output-parent {looper.sample_output_folder}"
         },
     }
