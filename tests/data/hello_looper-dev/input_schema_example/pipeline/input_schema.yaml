@@ -1,0 +1,26 @@
+description: An input schema for count_lines pipeline pipeline.
+properties:
+  samples:
+    type: array
+    items:
+      type: object
+      properties:
+        sample_name: 
+          type: string
+          description: "Name of the sample"
+        file_path: 
+          type: string
+          description: "Path to the input file to count"
+        area_type:
+          type: string
+          description: "Name of the components of the country"
+      tangible:
+        - file_path
+      sizing:
+        - file_path
+      required:
+        - sample_name
+        - area_type
+        - file_path
+required:
+  - samples

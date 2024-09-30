@@ -1,0 +1,5 @@
+pipeline_name: count_lines
+output_schema: pipestat_output_schema.yaml
+sample_interface:
+  command_template: >
+    {looper.piface_dir}/count_lines.sh {sample.file_path} {sample.sample_name} {pipestat.config_file}
