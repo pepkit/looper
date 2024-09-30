@@ -1,4 +1,4 @@
-pep_config: databio/hello_looper:default 
+pep_config: metadata/sample_table.csv
 output_dir: results
 pipeline_interfaces:
   - pipeline/pipeline_interface.yaml

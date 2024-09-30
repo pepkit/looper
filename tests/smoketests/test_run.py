@@ -634,4 +634,4 @@ class TestLooperPEPhub:
         pep_config_csv = os.path.join(os.path.dirname(tp), pep_config_csv)
         init_project = Project(cfg=pep_config_csv)
 
-        assert len(init_project.samples) == 2
+        assert len(init_project.samples) == 3
