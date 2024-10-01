@@ -15,6 +15,7 @@ properties:
     type: object
     properties:
       regions_plot:
+        type: object
         description: "This a path to the output image"
         image:
           type: object
