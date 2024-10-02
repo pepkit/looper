@@ -15,19 +15,17 @@ properties:
     type: object
     properties:
       regions_plot:
-        type: object
         description: "This a path to the output image"
-        image:
-          type: object
-          object_type: image
-          properties:
-            path:
-              type: string
-            thumbnail_path:
-              type: string
-            title:
-              type: string
-          required:
-            - path
-            - thumbnail_path
-            - title
+        type: object
+        object_type: image
+        properties:
+          path:
+            type: string
+          thumbnail_path:
+            type: string
+          title:
+            type: string
+        required:
+          - path
+          - thumbnail_path
+          - title
