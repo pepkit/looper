@@ -111,9 +111,12 @@ class ComputingConfiguration(YAMLConfigManager):
 
         :return str: path to folder with default submission templates
         """
-        return os.path.join(
-            os.path.dirname(__file__), "default_config", "divvy_templates"
-        )
+        if self.filepath:
+            return os.path.join(os.path.dirname(self.filepath), "divvy_templates")
+        else:
+            return os.path.join(
+                os.path.dirname(__file__), "default_config", "divvy_templates"
+            )
 
     def activate_package(self, package_name):
         """
@@ -155,11 +158,18 @@ class ComputingConfiguration(YAMLConfigManager):
             # but now, it makes more sense to do it here so we can piggyback on
             # the default update() method and not even have to do that.
             if not os.path.isabs(self.compute["submission_template"]):
+                
                 try:
-                    self.compute["submission_template"] = os.path.join(
-                        os.path.dirname(self.default_config_file),
-                        self.compute["submission_template"],
-                    )
+                    if self.filepath:
+                        self.compute["submission_template"] = os.path.join(
+                            os.path.dirname(self.filepath),
+                            self.compute["submission_template"],
+                        )
+                    else:
+                        self.compute["submission_template"] = os.path.join(
+                            os.path.dirname(self.default_config_file),
+                            self.compute["submission_template"],
+                        )
                 except AttributeError as e:
                     # Environment and environment compute should at least have been
                     # set as null-valued attributes, so execution here is an error.
