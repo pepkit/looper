@@ -46,6 +46,7 @@ from .utils import (
     sample_folder,
 )
 from pipestat.reports import get_file_for_table
+from pipestat.exceptions import PipestatSummarizeError
 
 _PKGNAME = "looper"
 _LOGGER = logging.getLogger(_PKGNAME)
@@ -566,9 +567,12 @@ class Reporter(Executor):
             for piface in self.prj.project_pipeline_interfaces:
                 if piface.psm.pipeline_type == PipelineLevel.PROJECT.value:
                     psms[piface.psm.pipeline_name] = piface.psm
-                    report_directory = piface.psm.summarize(
-                        looper_samples=self.prj.samples, portable=portable
-                    )
+                    try:
+                        report_directory = piface.psm.summarize(
+                            looper_samples=self.prj.samples, portable=portable
+                        )
+                    except PipestatSummarizeError as e:
+                        raise LooperReportError(f"Looper report error due to the following exception: {e}")
                 print(f"Report directory: {report_directory}")
                 self.debug["report_directory"] = report_directory
             return self.debug
@@ -576,9 +580,12 @@ class Reporter(Executor):
             for piface in self.prj.pipeline_interfaces:
                 if piface.psm.pipeline_type == PipelineLevel.SAMPLE.value:
                     psms[piface.psm.pipeline_name] = piface.psm
-                    report_directory = piface.psm.summarize(
-                        looper_samples=self.prj.samples, portable=portable
-                    )
+                    try:
+                        report_directory = piface.psm.summarize(
+                            looper_samples=self.prj.samples, portable=portable
+                        )
+                    except PipestatSummarizeError as e:
+                        raise LooperReportError(f"Looper report error due to the following exception: {e}")
                     print(f"Report directory: {report_directory}")
                     self.debug["report_directory"] = report_directory
             return self.debug
