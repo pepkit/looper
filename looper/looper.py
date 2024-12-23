@@ -95,11 +95,15 @@ class Checker(Executor):
 
             for piface in self.prj.project_pipeline_interfaces:
                 if piface.psm.pipeline_type == PipelineLevel.PROJECT.value:
-                    psms[piface.psm.pipeline_name] = piface.psm
-                    s = piface.psm.get_status() or "unknown"
+                    if piface.psm.pipeline_name not in psms:
+                        psms[piface.psm.pipeline_name] = piface.psm
+            for pl_name, psm in psms.items():
+                all_project_level_records = psm.select_records()
+                for record in all_project_level_records['records']:
+                    s = piface.psm.get_status(record_identifier=record['record_identifier'])
                     status.setdefault(piface.psm.pipeline_name, {})
-                    status[piface.psm.pipeline_name][self.prj.name] = s
-                    _LOGGER.debug(f"{self.prj.name} ({piface.psm.pipeline_name}): {s}")
+                    status[piface.psm.pipeline_name][record['record_identifier']] = s
+                    _LOGGER.debug(f"{self.prj.name} ({record['record_identifier']}): {s}")
 
         else:
             for sample in self.prj.samples:
@@ -566,28 +570,32 @@ class Reporter(Executor):
 
             for piface in self.prj.project_pipeline_interfaces:
                 if piface.psm.pipeline_type == PipelineLevel.PROJECT.value:
-                    psms[piface.psm.pipeline_name] = piface.psm
-                    try:
-                        report_directory = piface.psm.summarize(
-                            looper_samples=self.prj.samples, portable=portable
-                        )
-                    except PipestatSummarizeError as e:
-                        raise LooperReportError(f"Looper report error due to the following exception: {e}")
+                    if piface.psm.pipeline_name not in psms:
+                        psms[piface.psm.pipeline_name] = piface.psm
+            for pl_name, psm in psms.items():
+                try:
+                    report_directory = psm.summarize(
+                        looper_samples=self.prj.samples, portable=portable
+                    )
+                except PipestatSummarizeError as e:
+                    raise LooperReportError(f"Looper report error due to the following exception: {e}")
                 print(f"Report directory: {report_directory}")
                 self.debug["report_directory"] = report_directory
             return self.debug
         else:
             for piface in self.prj.pipeline_interfaces:
                 if piface.psm.pipeline_type == PipelineLevel.SAMPLE.value:
-                    psms[piface.psm.pipeline_name] = piface.psm
-                    try:
-                        report_directory = piface.psm.summarize(
-                            looper_samples=self.prj.samples, portable=portable
-                        )
-                    except PipestatSummarizeError as e:
-                        raise LooperReportError(f"Looper report error due to the following exception: {e}")
-                    print(f"Report directory: {report_directory}")
-                    self.debug["report_directory"] = report_directory
+                    if piface.psm.pipeline_name not in psms:
+                        psms[piface.psm.pipeline_name] = piface.psm
+            for pl_name, psm in psms.items():
+                try:
+                    report_directory = psm.summarize(
+                        looper_samples=self.prj.samples, portable=portable
+                    )
+                except PipestatSummarizeError as e:
+                    raise LooperReportError(f"Looper report error due to the following exception: {e}")
+                print(f"Report directory: {report_directory}")
+                self.debug["report_directory"] = report_directory
             return self.debug
 
 
@@ -630,13 +638,17 @@ class Tabulator(Executor):
         if project_level:
             for piface in self.prj.project_pipeline_interfaces:
                 if piface.psm.pipeline_type == PipelineLevel.PROJECT.value:
-                    psms[piface.psm.pipeline_name] = piface.psm
-                    results = piface.psm.table()
+                    if piface.psm.pipeline_name not in psms:
+                        psms[piface.psm.pipeline_name] = piface.psm
+            for pl_name, psm in psms.items():
+                results = psm.table()
         else:
             for piface in self.prj.pipeline_interfaces:
                 if piface.psm.pipeline_type == PipelineLevel.SAMPLE.value:
-                    psms[piface.psm.pipeline_name] = piface.psm
-                    results = piface.psm.table()
+                    if piface.psm.pipeline_name not in psms:
+                        psms[piface.psm.pipeline_name] = piface.psm
+            for pl_name, psm in psms.items():
+                results = psm.table()
         # Results contains paths to stats and object summaries.
         return results
 
