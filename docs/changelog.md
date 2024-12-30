@@ -2,6 +2,13 @@
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format.
 
+## [2.0.0a3] -- 2024-12-30
+
+- fix [#536](https://github.com/pepkit/looper/issues/536)
+- fix [#522](https://github.com/pepkit/looper/issues/522)
+- fix [#537](https://github.com/pepkit/looper/issues/537)
+- fix [#534](https://github.com/pepkit/looper/issues/534)
+
 ## [2.0.0a2] -- 2024-09-30
 
 This release breaks backwards compatibility for Looper versions < 2.0.0
