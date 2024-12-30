@@ -184,6 +184,12 @@ class ArgumentEnum(enum.Enum):
         default=(str, None),
         description="Output directory",
     )
+    REPORT_OUTPUT_DIR = Argument(
+        name="report_dir",
+        alias="-r",
+        default=(str, None),
+        description="Set location for looper report and looper table outputs",
+    )
 
     GENERIC = Argument(
         name="generic",

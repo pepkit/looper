@@ -111,6 +111,7 @@ class PipelineInterfaceRequirementsError(LooperError):
         )
         self.error_specs = typename_by_requirement
 
+
 class LooperReportError(LooperError):
     """Looper reporting errors"""
 

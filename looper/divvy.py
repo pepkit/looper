@@ -158,7 +158,7 @@ class ComputingConfiguration(YAMLConfigManager):
             # but now, it makes more sense to do it here so we can piggyback on
             # the default update() method and not even have to do that.
             if not os.path.isabs(self.compute["submission_template"]):
-                
+
                 try:
                     if self.filepath:
                         self.compute["submission_template"] = os.path.join(

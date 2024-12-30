@@ -3,7 +3,11 @@ import os.path
 import pytest
 from peppy import Project
 
-from looper.exceptions import PipestatConfigurationException, MisconfigurationException, LooperReportError
+from looper.exceptions import (
+    PipestatConfigurationException,
+    MisconfigurationException,
+    LooperReportError,
+)
 from tests.conftest import *
 from looper.cli_pydantic import main
 import pandas as pd
@@ -86,10 +90,10 @@ class TestLooperPipestat:
             except Exception:
                 raise pytest.fail("DID RAISE {0}".format(Exception))
         else:
-            with pytest.raises(expected_exception=LooperReportError): # Looper report will and should raise exception if there are no results reported.
+            with pytest.raises(
+                expected_exception=LooperReportError
+            ):  # Looper report will and should raise exception if there are no results reported.
                 result = main(test_args=x)
-
-
 
 
 class TestLooperRerun:

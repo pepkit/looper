@@ -99,11 +99,15 @@ class Checker(Executor):
                         psms[piface.psm.pipeline_name] = piface.psm
             for pl_name, psm in psms.items():
                 all_project_level_records = psm.select_records()
-                for record in all_project_level_records['records']:
-                    s = piface.psm.get_status(record_identifier=record['record_identifier'])
+                for record in all_project_level_records["records"]:
+                    s = piface.psm.get_status(
+                        record_identifier=record["record_identifier"]
+                    )
                     status.setdefault(piface.psm.pipeline_name, {})
-                    status[piface.psm.pipeline_name][record['record_identifier']] = s
-                    _LOGGER.debug(f"{self.prj.name} ({record['record_identifier']}): {s}")
+                    status[piface.psm.pipeline_name][record["record_identifier"]] = s
+                    _LOGGER.debug(
+                        f"{self.prj.name} ({record['record_identifier']}): {s}"
+                    )
 
         else:
             for sample in self.prj.samples:
@@ -564,6 +568,8 @@ class Reporter(Executor):
 
         portable = args.portable
 
+        report_dir = getattr(args, "report_dir", None)
+
         psms = {}
 
         if project_level:
@@ -575,10 +581,14 @@ class Reporter(Executor):
             for pl_name, psm in psms.items():
                 try:
                     report_directory = psm.summarize(
-                        looper_samples=self.prj.samples, portable=portable
+                        looper_samples=self.prj.samples,
+                        portable=portable,
+                        output_dir=report_dir,
                     )
                 except PipestatSummarizeError as e:
-                    raise LooperReportError(f"Looper report error due to the following exception: {e}")
+                    raise LooperReportError(
+                        f"Looper report error due to the following exception: {e}"
+                    )
                 print(f"Report directory: {report_directory}")
                 self.debug["report_directory"] = report_directory
             return self.debug
@@ -590,10 +600,14 @@ class Reporter(Executor):
             for pl_name, psm in psms.items():
                 try:
                     report_directory = psm.summarize(
-                        looper_samples=self.prj.samples, portable=portable
+                        looper_samples=self.prj.samples,
+                        portable=portable,
+                        output_dir=report_dir,
                     )
                 except PipestatSummarizeError as e:
-                    raise LooperReportError(f"Looper report error due to the following exception: {e}")
+                    raise LooperReportError(
+                        f"Looper report error due to the following exception: {e}"
+                    )
                 print(f"Report directory: {report_directory}")
                 self.debug["report_directory"] = report_directory
             return self.debug
@@ -633,6 +647,7 @@ class Tabulator(Executor):
     def __call__(self, args):
         # p = self.prj
         project_level = getattr(args, "project", None)
+        report_dir = getattr(args, "report_dir", None)
         results = []
         psms = {}
         if project_level:
@@ -641,14 +656,14 @@ class Tabulator(Executor):
                     if piface.psm.pipeline_name not in psms:
                         psms[piface.psm.pipeline_name] = piface.psm
             for pl_name, psm in psms.items():
-                results = psm.table()
+                results = psm.table(output_dir=report_dir)
         else:
             for piface in self.prj.pipeline_interfaces:
                 if piface.psm.pipeline_type == PipelineLevel.SAMPLE.value:
                     if piface.psm.pipeline_name not in psms:
                         psms[piface.psm.pipeline_name] = piface.psm
             for pl_name, psm in psms.items():
-                results = psm.table()
+                results = psm.table(output_dir=report_dir)
         # Results contains paths to stats and object summaries.
         return results
 
