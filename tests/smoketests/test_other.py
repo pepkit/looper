@@ -3,7 +3,11 @@ import os.path
 import pytest
 from peppy import Project
 
-from looper.exceptions import PipestatConfigurationException, MisconfigurationException
+from looper.exceptions import (
+    PipestatConfigurationException,
+    MisconfigurationException,
+    LooperReportError,
+)
 from tests.conftest import *
 from looper.cli_pydantic import main
 import pandas as pd
@@ -78,12 +82,18 @@ class TestLooperPipestat:
             # Not every command supports dry run
             x = [cmd, "--config", tp]
 
-        try:
-            result = main(test_args=x)
-            if cmd == "run":
-                assert result["Pipestat compatible"] is True
-        except Exception:
-            raise pytest.fail("DID RAISE {0}".format(Exception))
+        if cmd not in ["report"]:
+            try:
+                result = main(test_args=x)
+                if cmd == "run":
+                    assert result["Pipestat compatible"] is True
+            except Exception:
+                raise pytest.fail("DID RAISE {0}".format(Exception))
+        else:
+            with pytest.raises(
+                expected_exception=LooperReportError
+            ):  # Looper report will and should raise exception if there are no results reported.
+                result = main(test_args=x)
 
 
 class TestLooperRerun:

@@ -124,7 +124,9 @@ RunProjectParser = Command(
 TableParser = Command(
     "table",
     MESSAGE_BY_SUBCOMMAND["table"],
-    [],
+    [
+        ArgumentEnum.REPORT_OUTPUT_DIR.value,
+    ],
 )
 
 
@@ -134,6 +136,7 @@ ReportParser = Command(
     MESSAGE_BY_SUBCOMMAND["report"],
     [
         ArgumentEnum.PORTABLE.value,
+        ArgumentEnum.REPORT_OUTPUT_DIR.value,
     ],
 )
 
