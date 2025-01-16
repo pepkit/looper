@@ -2,6 +2,34 @@
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format.
 
+## [2.0.0] -- 2025-01-16
+
+This release breaks backwards compatibility for Looper versions < 2.0.0
+
+### Fixed
+- divvy init [#520](https://github.com/pepkit/looper/issues/520)
+- replaced deprecated PEPHubClient function, `_load_raw_pep` with `.load_raw_pep`
+- looper cli parameters now take priority as originally intended [#518](https://github.com/pepkit/looper/issues/518)
+- fix divvy inspect
+- remove printed dictionary at looper finish [#511](https://github.com/pepkit/looper/issues/511)
+- fix [#536](https://github.com/pepkit/looper/issues/536)
+- fix [#522](https://github.com/pepkit/looper/issues/522)
+- fix [#537](https://github.com/pepkit/looper/issues/537)
+- fix [#534](https://github.com/pepkit/looper/issues/534)
+
+### Changed
+- `--looper-config` is now `--config`, `-c`. [#455](https://github.com/pepkit/looper/issues/455)
+- A pipeline interface now consolidates a `sample_interface` and a `project_interface` [#493](https://github.com/pepkit/looper/issues/493)
+- Updated documentation for Looper 2.0.0, removing previous versions [pepspec PR #34](https://github.com/pepkit/pepspec/pull/34)
+- remove position based argument for divvy config, must use --config or run as default config
+
+### Added
+- `looper init` tutorial [#466](https://github.com/pepkit/looper/issues/466)
+- looper config allows for `pephub_path` in pipestat config section of `.looper.yaml` [#519](https://github.com/pepkit/looper/issues/519)
+- improve error messaging for bad/malformed looper configurations [#515](https://github.com/pepkit/looper/issues/515)
+- add shortform argument for --package (alias is now -p)
+
+
 ## [1.9.1] -- 2024-07-18
 
 ### Changed

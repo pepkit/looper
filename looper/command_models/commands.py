@@ -53,8 +53,7 @@ SHARED_ARGUMENTS = [
     ArgumentEnum.SKIP.value,
     ArgumentEnum.PEP_CONFIG.value,
     ArgumentEnum.OUTPUT_DIR.value,
-    ArgumentEnum.CONFIG_FILE.value,
-    ArgumentEnum.LOOPER_CONFIG.value,
+    ArgumentEnum.CONFIG.value,
     ArgumentEnum.SAMPLE_PIPELINE_INTERFACES.value,
     ArgumentEnum.PROJECT_PIPELINE_INTERFACES.value,
     ArgumentEnum.PIPESTAT.value,
@@ -125,7 +124,9 @@ RunProjectParser = Command(
 TableParser = Command(
     "table",
     MESSAGE_BY_SUBCOMMAND["table"],
-    [],
+    [
+        ArgumentEnum.REPORT_OUTPUT_DIR.value,
+    ],
 )
 
 
@@ -135,6 +136,7 @@ ReportParser = Command(
     MESSAGE_BY_SUBCOMMAND["report"],
     [
         ArgumentEnum.PORTABLE.value,
+        ArgumentEnum.REPORT_OUTPUT_DIR.value,
     ],
 )
 
@@ -188,6 +190,7 @@ InitParser = Command(
         ArgumentEnum.PEP_CONFIG.value,
         ArgumentEnum.SAMPLE_PIPELINE_INTERFACES.value,
         ArgumentEnum.PROJECT_PIPELINE_INTERFACES.value,
+        ArgumentEnum.GENERIC.value,
     ],
 )
 

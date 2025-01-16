@@ -162,13 +162,9 @@ class ArgumentEnum(enum.Enum):
         default=(int, None),
         description="Skip samples by numerical index",
     )
-    CONFIG_FILE = Argument(
-        name="config_file",
-        default=(str, None),
-        description="Project configuration file",
-    )
-    LOOPER_CONFIG = Argument(
-        name="looper_config",
+    CONFIG = Argument(
+        name="config",
+        alias="-c",
         default=(str, None),
         description="Looper configuration file (YAML)",
     )
@@ -188,6 +184,20 @@ class ArgumentEnum(enum.Enum):
         default=(str, None),
         description="Output directory",
     )
+    REPORT_OUTPUT_DIR = Argument(
+        name="report_dir",
+        alias="-r",
+        default=(str, None),
+        description="Set location for looper report and looper table outputs",
+    )
+
+    GENERIC = Argument(
+        name="generic",
+        alias="-g",
+        default=(bool, False),
+        description="Use generic looper config?",
+    )
+
     SAMPLE_PIPELINE_INTERFACES = Argument(
         name="sample_pipeline_interfaces",
         alias="-S",
@@ -232,12 +242,12 @@ class ArgumentEnum(enum.Enum):
     )
     PACKAGE = Argument(
         name="package",
+        alias="-p",
         default=(str, None),
         description="Name of computing resource package to use",
     )
     COMPUTE = Argument(
         name="compute",
-        alias="-c",
         default=(List, []),
         description="List of key-value pairs (k1=v1)",
     )

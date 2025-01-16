@@ -1,0 +1,8 @@
+pep_config: project/project_config.yaml
+output_dir: "results"
+pipeline_interfaces:
+    - pipeline/pipestat_pipeline_interface1_sample.yaml
+    - pipeline/pipestat_pipeline_interface2_sample.yaml
+pipestat:
+  results_file_path: results.yaml
+  flag_file_dir: results/flags

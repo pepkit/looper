@@ -53,10 +53,10 @@ def build_argparser():
 
     for sp in [sps["list"], sps["write"], sps["submit"], sps["inspect"]]:
         sp.add_argument(
-            "config", nargs="?", default=None, help="Divvy configuration file."
+            "--config", nargs="?", default=None, help="Divvy configuration file."
         )
 
-    sps["init"].add_argument("config", default=None, help="Divvy configuration file.")
+    sps["init"].add_argument("--config", default=None, help="Divvy configuration file.")
 
     for sp in [sps["inspect"]]:
         sp.add_argument(
@@ -124,9 +124,11 @@ def main():
         sys.exit(0)
 
     _LOGGER.debug("Divvy config: {}".format(args.config))
+
     divcfg = select_divvy_config(args.config)
+
     _LOGGER.info("Using divvy config: {}".format(divcfg))
-    dcc = ComputingConfiguration(filepath=divcfg)
+    dcc = ComputingConfiguration.from_yaml_file(filepath=divcfg)
 
     if args.command == "list":
         # Output header via logger and content via print so the user can
@@ -142,11 +144,13 @@ def main():
         for pkg_name, pkg in dcc.compute_packages.items():
             if pkg_name == args.package:
                 found = True
-                with open(pkg.submission_template, "r") as f:
+                with open(pkg["submission_template"], "r") as f:
                     print(f.read())
-                _LOGGER.info("Submission command is: " + pkg.submission_command + "\n")
+                _LOGGER.info(
+                    "Submission command is: " + pkg["submission_command"] + "\n"
+                )
                 if pkg_name == "docker":
-                    print("Docker args are: " + pkg.docker_args)
+                    print("Docker args are: " + pkg["docker_args"])
 
         if not found:
             _LOGGER.info("Package not found. Use 'divvy list' to see list of packages.")

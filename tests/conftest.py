@@ -141,7 +141,7 @@ def test_args_expansion(pth=None, cmd=None, appendix=list(), dry=True) -> List[s
     if cmd:
         x.append(cmd)
     if pth:
-        x.append("--looper-config")
+        x.append("--config")
         x.append(pth)
     if dry:
         x.append("--dry-run")
@@ -204,7 +204,7 @@ def prep_temp_pep(example_pep_piface_path):
     d = tempfile.mkdtemp()
     shutil.copytree(hello_looper_dir_path, d, dirs_exist_ok=True)
 
-    advanced_dir = os.path.join(d, "advanced")
+    advanced_dir = os.path.join(d, "pytesting/advanced_test")
     path_to_looper_config = os.path.join(advanced_dir, ".looper.yaml")
 
     return path_to_looper_config
@@ -220,7 +220,7 @@ def prep_temp_pep_basic(example_pep_piface_path):
     d = tempfile.mkdtemp()
     shutil.copytree(hello_looper_dir_path, d, dirs_exist_ok=True)
 
-    advanced_dir = os.path.join(d, "intermediate")
+    advanced_dir = os.path.join(d, "pytesting/intermediate_test")
     path_to_looper_config = os.path.join(advanced_dir, ".looper.yaml")
 
     return path_to_looper_config
@@ -236,7 +236,7 @@ def prep_temp_pep_csv(example_pep_piface_path):
     d = tempfile.mkdtemp()
     shutil.copytree(hello_looper_dir_path, d, dirs_exist_ok=True)
 
-    advanced_dir = os.path.join(d, "csv")
+    advanced_dir = os.path.join(d, "looper_csv_example")
     path_to_looper_config = os.path.join(advanced_dir, ".looper.yaml")
 
     return path_to_looper_config
@@ -274,7 +274,7 @@ def prep_temp_pep_pipestat(example_pep_piface_path):
     d = tempfile.mkdtemp()
     shutil.copytree(hello_looper_dir_path, d, dirs_exist_ok=True)
 
-    advanced_dir = os.path.join(d, "pipestat")
+    advanced_dir = os.path.join(d, "pytesting/pipestat_test")
     path_to_looper_config = os.path.join(advanced_dir, ".looper.yaml")
 
     return path_to_looper_config
@@ -291,7 +291,7 @@ def prep_temp_pep_pipestat_advanced(example_pep_piface_path):
     d = tempfile.mkdtemp()
     shutil.copytree(hello_looper_dir_path, d, dirs_exist_ok=True)
 
-    advanced_dir = os.path.join(d, "advanced")
+    advanced_dir = os.path.join(d, "pytesting/advanced_test")
     path_to_looper_config = os.path.join(advanced_dir, ".looper_advanced_pipestat.yaml")
 
     return path_to_looper_config

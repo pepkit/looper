@@ -1,0 +1,31 @@
+title: Pipestat output schema for counting lines
+description: A pipeline that uses pipestat to report sample level results.
+type: object
+properties:
+  pipeline_name: count_lines
+  samples:
+    type: array
+    items:
+      type: object
+      properties:
+        number_of_lines:
+          type: integer
+          description: "Number of lines in the input file."
+  project:
+    type: object
+    properties:
+      regions_plot:
+        description: "This a path to the output image"
+        type: object
+        object_type: image
+        properties:
+          path:
+            type: string
+          thumbnail_path:
+            type: string
+          title:
+            type: string
+        required:
+          - path
+          - thumbnail_path
+          - title

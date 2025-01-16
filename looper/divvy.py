@@ -111,9 +111,12 @@ class ComputingConfiguration(YAMLConfigManager):
 
         :return str: path to folder with default submission templates
         """
-        return os.path.join(
-            os.path.dirname(__file__), "default_config", "divvy_templates"
-        )
+        if self.filepath:
+            return os.path.join(os.path.dirname(self.filepath), "divvy_templates")
+        else:
+            return os.path.join(
+                os.path.dirname(__file__), "default_config", "divvy_templates"
+            )
 
     def activate_package(self, package_name):
         """
@@ -155,11 +158,18 @@ class ComputingConfiguration(YAMLConfigManager):
             # but now, it makes more sense to do it here so we can piggyback on
             # the default update() method and not even have to do that.
             if not os.path.isabs(self.compute["submission_template"]):
+
                 try:
-                    self.compute["submission_template"] = os.path.join(
-                        os.path.dirname(self.default_config_file),
-                        self.compute["submission_template"],
-                    )
+                    if self.filepath:
+                        self.compute["submission_template"] = os.path.join(
+                            os.path.dirname(self.filepath),
+                            self.compute["submission_template"],
+                        )
+                    else:
+                        self.compute["submission_template"] = os.path.join(
+                            os.path.dirname(self.default_config_file),
+                            self.compute["submission_template"],
+                        )
                 except AttributeError as e:
                     # Environment and environment compute should at least have been
                     # set as null-valued attributes, so execution here is an error.
@@ -199,6 +209,11 @@ class ComputingConfiguration(YAMLConfigManager):
         :return YAMLConfigManager: data defining the active compute package
         """
         return self.compute
+
+    @property
+    def compute_packages(self):
+
+        return self["compute_packages"]
 
     def list_compute_packages(self):
         """
@@ -396,11 +411,13 @@ def divvy_init(config_path, template_config_path):
         _LOGGER.error("You must specify a template config file path.")
         return
 
+    if not os.path.isabs(config_path):
+        config_path = os.path.abspath(config_path)
+
     if config_path and not os.path.exists(config_path):
-        # dcc.write(config_path)
         # Init should *also* write the templates.
         dest_folder = os.path.dirname(config_path)
-        copytree(os.path.dirname(template_config_path), dest_folder)
+        copytree(os.path.dirname(template_config_path), dest_folder, dirs_exist_ok=True)
         template_subfolder = os.path.join(dest_folder, "divvy_templates")
         _LOGGER.info("Wrote divvy templates to folder: {}".format(template_subfolder))
         new_template = os.path.join(

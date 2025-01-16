@@ -1,0 +1,4 @@
+pep_config: metadata/pep_config.yaml
+output_dir: results
+pipeline_interfaces:
+  - pipeline/pipeline_interface.yaml

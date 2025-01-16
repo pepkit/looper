@@ -1,4 +1,4 @@
-pep_config: pepkit/hello_looper:default # pephub registry path or local path
+pep_config: databio/hello_looper:default 
 output_dir: results
 pipeline_interfaces:
-  sample: pipeline/pipeline_interface.yaml
+  - pipeline/pipeline_interface.yaml

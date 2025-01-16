@@ -198,6 +198,9 @@ class SubmissionConductor(object):
 
         self.collate = collate
         self.section_key = PROJECT_PL_KEY if self.collate else SAMPLE_PL_KEY
+        self.pipeline_interface_type = (
+            "project_interface" if self.collate else "sample_interface"
+        )
         self.pl_iface = pipeline_interface
         self.pl_name = self.pl_iface.pipeline_name
         self.prj = prj
@@ -658,6 +661,7 @@ class SubmissionConductor(object):
                 "record_identifier": psm.record_identifier,
                 "config_file": psm.config_path,
                 "output_schema": psm.cfg["_schema_path"],
+                "pephub_path": psm.cfg["pephub_path"],
             }
             filtered_namespace = {k: v for k, v in full_namespace.items() if v}
             return YAMLConfigManager(filtered_namespace)
@@ -681,7 +685,11 @@ class SubmissionConductor(object):
             pipeline=self.pl_iface,
             compute=self.prj.dcc.compute,
         )
-        templ = self.pl_iface["command_template"]
+
+        if self.pipeline_interface_type is None:
+            templ = self.pl_iface["command_template"]
+        else:
+            templ = self.pl_iface[self.pipeline_interface_type]["command_template"]
         if not self.override_extra:
             extras_template = (
                 EXTRA_PROJECT_CMD_TEMPLATE

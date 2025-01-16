@@ -3,7 +3,11 @@ import os.path
 import pytest
 from peppy import Project
 
-from looper.exceptions import PipestatConfigurationException, MisconfigurationException
+from looper.exceptions import (
+    PipestatConfigurationException,
+    MisconfigurationException,
+    LooperReportError,
+)
 from tests.conftest import *
 from looper.cli_pydantic import main
 import pandas as pd
@@ -64,7 +68,7 @@ class TestLooperPipestat:
     def test_fail_no_pipestat_config(self, prep_temp_pep, cmd):
         "report, table, and check should fail if pipestat is NOT configured."
         tp = prep_temp_pep
-        x = [cmd, "--looper-config", tp]
+        x = [cmd, "--config", tp]
         with pytest.raises(PipestatConfigurationException):
             main(test_args=x)
 
@@ -73,17 +77,23 @@ class TestLooperPipestat:
         tp = prep_temp_pep_pipestat
 
         if cmd in ["run", "runp"]:
-            x = [cmd, "--looper-config", tp, "--dry-run"]
+            x = [cmd, "--config", tp, "--dry-run"]
         else:
             # Not every command supports dry run
-            x = [cmd, "--looper-config", tp]
+            x = [cmd, "--config", tp]
 
-        try:
-            result = main(test_args=x)
-            if cmd == "run":
-                assert result["Pipestat compatible"] is True
-        except Exception:
-            raise pytest.fail("DID RAISE {0}".format(Exception))
+        if cmd not in ["report"]:
+            try:
+                result = main(test_args=x)
+                if cmd == "run":
+                    assert result["Pipestat compatible"] is True
+            except Exception:
+                raise pytest.fail("DID RAISE {0}".format(Exception))
+        else:
+            with pytest.raises(
+                expected_exception=LooperReportError
+            ):  # Looper report will and should raise exception if there are no results reported.
+                result = main(test_args=x)
 
 
 class TestLooperRerun:
@@ -120,7 +130,7 @@ class TestLooperRerun:
         with open(pipestat_project_file, "w") as f:
             dump(pipestat_project_data, f)
 
-        x = ["rerun", "--looper-config", tp]
+        x = ["rerun", "--config", tp]
         try:
             result = main(test_args=x)
         except Exception:
@@ -137,7 +147,7 @@ class TestLooperRerun:
         tp = prep_temp_pep
         _make_flags(tp, flags, pipeline_name)
 
-        x = ["rerun", "--looper-config", tp]
+        x = ["rerun", "--config", tp]
         try:
             result = main(test_args=x)
         except Exception:
@@ -157,7 +167,7 @@ class TestLooperCheck:
         tp = prep_temp_pep_pipestat
         _make_flags_pipestat(tp, flag_id, pipeline_name)
 
-        x = ["check", "--looper-config", tp]
+        x = ["check", "--config", tp]
 
         try:
             results = main(test_args=x)
@@ -176,7 +186,7 @@ class TestLooperCheck:
         _make_flags_pipestat(tp, flag_id, pipeline_name)
         _make_flags_pipestat(tp, FLAGS[1], pipeline_name)
 
-        x = ["check", "--looper-config", tp]
+        x = ["check", "--config", tp]
         # Multiple flag files SHOULD cause pipestat to throw an assertion error
         if flag_id != FLAGS[1]:
             with pytest.raises(AssertionError):
@@ -189,7 +199,7 @@ class TestLooperCheck:
         tp = prep_temp_pep_pipestat
         _make_flags_pipestat(tp, flag_id, pipeline_name)
 
-        x = ["check", "--looper-config", tp]
+        x = ["check", "--config", tp]
         try:
             results = main(test_args=x)
             result_key = list(results.keys())[0]
@@ -232,7 +242,7 @@ class TestSelector:
                 f.write(FLAGS[count])
             count += 1
 
-        x = ["run", "--looper-config", tp, "--sel-flag", "completed", "--dry-run"]
+        x = ["run", "--config", tp, "--sel-flag", "completed", "--dry-run"]
 
         try:
             results = main(test_args=x)
@@ -273,7 +283,7 @@ class TestSelector:
                 f.write(FLAGS[count])
             count += 1
 
-        x = ["run", "--looper-config", tp, "--exc-flag", "running", "--dry-run"]
+        x = ["run", "--config", tp, "--exc-flag", "running", "--dry-run"]
 
         try:
             results = main(test_args=x)
@@ -318,7 +328,7 @@ class TestSelector:
 
         x = [
             "run",
-            "--looper-config",
+            "--config",
             tp,
             "--exc-flag",
             "completed",
@@ -368,7 +378,7 @@ class TestSelector:
         x = [
             "run",
             "--dry-run",
-            "--looper-config",
+            "--config",
             tp,
             "--sel-flag",
             "completed",
@@ -419,7 +429,7 @@ class TestSelector:
         x = [
             "run",
             "--dry-run",
-            "--looper-config",
+            "--config",
             tp,
             "--sel-flag",
             "completed",
@@ -472,7 +482,7 @@ class TestSelector:
         x = [
             "run",
             "--dry-run",
-            "--looper-config",
+            "--config",
             tp,
             "--exc-flag",
             "completed",
@@ -534,7 +544,7 @@ class TestSelector:
         x = [
             "run",
             "--dry-run",
-            "--looper-config",
+            "--config",
             tp,
             "--sel-attr",
             "toggle",
@@ -596,7 +606,7 @@ class TestSelector:
         x = [
             "run",
             "--dry-run",
-            "--looper-config",
+            "--config",
             tp,
             "--sel-attr",
             "toggle",
@@ -620,7 +630,7 @@ class TestLooperInspect:
     def test_inspect_config(self, prep_temp_pep, cmd):
         "Checks inspect command"
         tp = prep_temp_pep
-        x = [cmd, "--looper-config", tp]
+        x = [cmd, "--config", tp]
         try:
             results = main(test_args=x)
         except Exception:

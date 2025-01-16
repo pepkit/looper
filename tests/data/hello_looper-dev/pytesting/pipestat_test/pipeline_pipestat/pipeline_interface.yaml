@@ -1,0 +1,8 @@
+pipeline_name: example_pipestat_pipeline
+output_schema: pipestat_output_schema.yaml
+sample_interface:
+  command_template: >
+    python3 {looper.piface_dir}/count_lines.py {sample.file} {sample.sample_name} {pipestat.results_file} {pipestat.output_schema}
+project_interface:
+  command_template: >
+    {pipeline.var_templates.pipeline} "data/*.txt"

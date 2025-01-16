@@ -26,8 +26,6 @@ from eido import inspect_project
 from pephubclient import PEPHubClient
 from pydantic_argparse.argparse.parser import ArgumentParser
 
-from divvy import select_divvy_config
-
 from . import __version__
 
 from .command_models.arguments import ArgumentEnum
@@ -54,9 +52,11 @@ from .utils import (
     read_yaml_file,
     inspect_looper_config_file,
     is_PEP_file_type,
+    looper_config_tutorial,
 )
 
 from typing import List, Tuple
+from rich.console import Console
 
 
 def opt_attr_pair(name: str) -> Tuple[str, str]:
@@ -122,52 +122,56 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
         sys.exit(1)
 
     if subcommand_name == "init":
-        return int(
-            not initiate_looper_config(
-                dotfile_path(),
-                subcommand_args.pep_config,
-                subcommand_args.output_dir,
-                subcommand_args.sample_pipeline_interfaces,
-                subcommand_args.project_pipeline_interfaces,
-                subcommand_args.force_yes,
+
+        console = Console()
+        console.clear()
+        console.rule(f"\n[magenta]Looper initialization[/magenta]")
+        selection = subcommand_args.generic
+        if selection is True:
+            console.clear()
+            return int(
+                not initiate_looper_config(
+                    dotfile_path(),
+                    subcommand_args.pep_config,
+                    subcommand_args.output_dir,
+                    subcommand_args.sample_pipeline_interfaces,
+                    subcommand_args.project_pipeline_interfaces,
+                    subcommand_args.force_yes,
+                )
             )
-        )
+        else:
+            console.clear()
+            return int(looper_config_tutorial())
 
     if subcommand_name == "init_piface":
         sys.exit(int(not init_generic_pipeline()))
 
     _LOGGER.info("Looper version: {}\nCommand: {}".format(__version__, subcommand_name))
 
-    if subcommand_args.config_file is None:
-        looper_cfg_path = os.path.relpath(dotfile_path(), start=os.curdir)
-        try:
-            if subcommand_args.looper_config:
-                looper_config_dict = read_looper_config_file(
-                    subcommand_args.looper_config
-                )
+    looper_cfg_path = os.path.relpath(dotfile_path(), start=os.curdir)
+    try:
+        if subcommand_args.config:
+            looper_config_dict = read_looper_config_file(subcommand_args.config)
+        else:
+            looper_config_dict = read_looper_dotfile()
+            _LOGGER.info(f"Using looper config ({looper_cfg_path}).")
+
+        cli_modifiers_dict = None
+        for looper_config_key, looper_config_item in looper_config_dict.items():
+            if looper_config_key == CLI_KEY:
+                cli_modifiers_dict = looper_config_item
             else:
-                looper_config_dict = read_looper_dotfile()
-                _LOGGER.info(f"Using looper config ({looper_cfg_path}).")
+                setattr(subcommand_args, looper_config_key, looper_config_item)
 
-            cli_modifiers_dict = None
-            for looper_config_key, looper_config_item in looper_config_dict.items():
-                if looper_config_key == CLI_KEY:
-                    cli_modifiers_dict = looper_config_item
-                else:
-                    setattr(subcommand_args, looper_config_key, looper_config_item)
-
-        except OSError:
-            parser.print_help(sys.stderr)
+    except OSError as e:
+        if subcommand_args.config:
             _LOGGER.warning(
-                f"Looper config file does not exist. Use looper init to create one at {looper_cfg_path}."
+                f"\nLooper config file does not exist at given path {subcommand_args.config}. Use looper init to create one at {looper_cfg_path}."
             )
-            sys.exit(1)
-    else:
-        _LOGGER.warning(
-            "This PEP configures looper through the project config. This approach is deprecated and will "
-            "be removed in future versions. Please use a looper config file. For more information see "
-            "looper.databio.org/en/latest/looper-config"
-        )
+        else:
+            _LOGGER.warning(e)
+
+        sys.exit(1)
 
     subcommand_args = enrich_args_via_cfg(
         subcommand_name,
@@ -191,12 +195,12 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
         subcommand_args.ignore_flags = True
 
     # Initialize project
-    if is_PEP_file_type(subcommand_args.config_file) and os.path.exists(
-        subcommand_args.config_file
+    if is_PEP_file_type(subcommand_args.pep_config) and os.path.exists(
+        subcommand_args.pep_config
     ):
         try:
             p = Project(
-                cfg=subcommand_args.config_file,
+                cfg=subcommand_args.pep_config,
                 amendments=subcommand_args.amend,
                 divcfg_path=divcfg,
                 runp=subcommand_name == "runp",
@@ -209,14 +213,14 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
         except yaml.parser.ParserError as e:
             _LOGGER.error(f"Project config parse failed -- {e}")
             sys.exit(1)
-    elif is_pephub_registry_path(subcommand_args.config_file):
+    elif is_pephub_registry_path(subcommand_args.pep_config):
         if vars(subcommand_args)[SAMPLE_PL_ARG]:
             p = Project(
                 amendments=subcommand_args.amend,
                 divcfg_path=divcfg,
                 runp=subcommand_name == "runp",
-                project_dict=PEPHubClient()._load_raw_pep(
-                    registry_path=subcommand_args.config_file
+                project_dict=PEPHubClient().load_raw_pep(
+                    registry_path=subcommand_args.pep_config
                 ),
                 **{
                     attr: getattr(subcommand_args, attr)
@@ -252,7 +256,7 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
         # Check at the beginning if user wants to use pipestat and pipestat is configurable
         is_pipestat_configured = (
             prj._check_if_pipestat_configured(pipeline_type=PipelineLevel.PROJECT.value)
-            if getattr(subcommand_args, "project", None)
+            if getattr(subcommand_args, "project", None) or subcommand_name == "runp"
             else prj._check_if_pipestat_configured()
         )
 
@@ -330,13 +334,13 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
                 _LOGGER.warning("No looper configuration was supplied.")
 
 
-def main(test_args=None) -> None:
+def main(test_args=None) -> dict:
     parser = pydantic_argparse.ArgumentParser(
         model=TopLevelParser,
         prog="looper",
         description="Looper: A job submitter for Portable Encapsulated Projects",
         add_help=True,
-        version="1.9.1",
+        version="2.0.0",
     )
 
     parser = add_short_arguments(parser, ArgumentEnum)
@@ -347,6 +351,10 @@ def main(test_args=None) -> None:
         args = parser.parse_typed_args()
 
     return run_looper(args, parser, test_args=test_args)
+
+
+def main_cli() -> None:
+    main()
 
 
 def _proc_resources_spec(args):
@@ -375,20 +383,29 @@ def _proc_resources_spec(args):
         settings_data = {}
     if not spec:
         return settings_data
-    pairs = [(kv, kv.split("=")) for kv in spec]
-    bads = []
-    for orig, pair in pairs:
-        try:
-            k, v = pair
-        except ValueError:
-            bads.append(orig)
-        else:
-            settings_data[k] = v
-    if bads:
-        raise ValueError(
-            "Could not correctly parse itemized compute specification. "
-            "Correct format: " + EXAMPLE_COMPUTE_SPEC_FMT
-        )
+    if isinstance(
+        spec, str
+    ):  # compute: "partition=standard time='01-00:00:00' cores='32' mem='32000'"
+        spec = spec.split(sep=" ")
+    if isinstance(spec, list):
+        pairs = [(kv, kv.split("=")) for kv in spec]
+        bads = []
+        for orig, pair in pairs:
+            try:
+                k, v = pair
+            except ValueError:
+                bads.append(orig)
+            else:
+                settings_data[k] = v
+        if bads:
+            raise ValueError(
+                "Could not correctly parse itemized compute specification. "
+                "Correct format: " + EXAMPLE_COMPUTE_SPEC_FMT
+            )
+    elif isinstance(spec, dict):
+        for key, value in spec.items():
+            settings_data[key] = value
+
     return settings_data
 
 
