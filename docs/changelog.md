@@ -26,12 +26,12 @@ This release breaks backwards compatibility for Looper versions < 2.0.0
 - Updated documentation for Looper 2.0.0, removing previous versions [pepspec PR #34](https://github.com/pepkit/pepspec/pull/34)
 - remove position based argument for divvy config, must use --config or run as default config
 
-
 ### Added
 - `looper init` tutorial [#466](https://github.com/pepkit/looper/issues/466)
 - looper config allows for `pephub_path` in pipestat config section of `.looper.yaml` [#519](https://github.com/pepkit/looper/issues/519)
 - improve error messaging for bad/malformed looper configurations [#515](https://github.com/pepkit/looper/issues/515)
 - add shortform argument for --package (alias is now -p)
+
 
 ## [1.9.1] -- 2024-07-18
 
