@@ -1,5 +1,5 @@
 colorama>=0.3.9
-eido>=0.2.3
+eido>=0.2.4
 jinja2
 logmuse>=0.2.0
 pandas>=2.0.2
