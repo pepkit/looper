@@ -1,4 +1,4 @@
-""" Pipeline job submission orchestration """
+"""Pipeline job submission orchestration"""
 
 import importlib
 import logging
