@@ -1,4 +1,4 @@
-""" Exceptions for specific looper issues. """
+"""Exceptions for specific looper issues."""
 
 from abc import ABCMeta
 from collections.abc import Iterable

@@ -2,6 +2,14 @@
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format.
 
+## [2.0.1] -- 2025-03-05
+
+### Changed
+- update ubiquerg>=0.8.1
+
+### Fixed
+- [#541](https://github.com/pepkit/looper/issues/541)
+
 ## [2.0.0] -- 2025-01-16
 
 This release breaks backwards compatibility for Looper versions < 2.0.0

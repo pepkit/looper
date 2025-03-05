@@ -1,4 +1,4 @@
-""" Specific case tests for writing submission script """
+"""Specific case tests for writing submission script"""
 
 from copy import deepcopy
 import random

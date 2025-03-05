@@ -1,4 +1,4 @@
-""" Pipeline job submission orchestration """
+"""Pipeline job submission orchestration"""
 
 import importlib
 import logging
@@ -18,7 +18,7 @@ from eido import read_schema, get_input_files_size
 from eido.const import INPUT_FILE_SIZE_KEY, MISSING_KEY
 from jinja2.exceptions import UndefinedError
 
-from peppy.const import CONFIG_KEY, SAMPLE_NAME_ATTR, SAMPLE_YAML_EXT
+from peppy.const import CONFIG_KEY, SAMPLE_YAML_EXT
 from peppy.exceptions import RemoteYAMLError
 from pipestat import PipestatError
 from ubiquerg import expandpath
@@ -77,7 +77,7 @@ def _get_yaml_path(namespaces, template_key, default_name_appendix="", filename=
         # default YAML location
         f = (
             filename
-            or f"{namespaces['sample'][SAMPLE_NAME_ATTR]}"
+            or f"{namespaces['sample'][namespaces['sample']['_project'].sample_table_index]}"
             f"{default_name_appendix}"
             f"{SAMPLE_YAML_EXT[0]}"
         )

@@ -8,7 +8,7 @@ pipestat>=0.12.0a1
 peppy>=0.40.6
 pyyaml>=3.12
 rich>=9.10.0
-ubiquerg>=0.8.1a1
+ubiquerg>=0.8.1
 yacman==0.9.3
 pydantic-argparse>=0.9.0
 psutil

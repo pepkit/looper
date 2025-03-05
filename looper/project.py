@@ -1,4 +1,4 @@
-""" Looper version of NGS project model. """
+"""Looper version of NGS project model."""
 
 import itertools
 import os

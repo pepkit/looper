@@ -1,4 +1,4 @@
-""" Assorted divvy tests """
+"""Assorted divvy tests"""
 
 import pytest
 from yacman import YacAttMap, load_yaml

@@ -1,4 +1,4 @@
-""" Model the connection between a pipeline and a project or executor. """
+"""Model the connection between a pipeline and a project or executor."""
 
 import os
 from collections.abc import Mapping

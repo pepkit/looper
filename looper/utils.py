@@ -1,4 +1,4 @@
-""" Helpers without an obvious logical home. """
+"""Helpers without an obvious logical home."""
 
 import argparse
 from collections import defaultdict
@@ -1112,7 +1112,6 @@ def inspect_looper_config_file(looper_config_dict) -> None:
 
 
 def expand_nested_var_templates(var_templates_dict, namespaces):
-
     "Takes all var_templates as a dict and recursively expands any paths."
 
     result = {}
@@ -1127,7 +1126,6 @@ def expand_nested_var_templates(var_templates_dict, namespaces):
 
 
 def render_nested_var_templates(var_templates_dict, namespaces):
-
     "Takes all var_templates as a dict and recursively renders the jinja templates."
 
     result = {}

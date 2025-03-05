@@ -1,4 +1,4 @@
-""" Definitions of the parser argument types """
+"""Definitions of the parser argument types"""
 
 from yacman import YAMLConfigManager
 

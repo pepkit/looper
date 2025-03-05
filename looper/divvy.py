@@ -1,4 +1,4 @@
-""" Computing configuration representation """
+"""Computing configuration representation"""
 
 import logging
 import os

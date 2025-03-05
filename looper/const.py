@@ -1,4 +1,4 @@
-""" Shared project constants """
+"""Shared project constants"""
 
 import os
 from enum import Enum
