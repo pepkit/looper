@@ -340,7 +340,7 @@ def main(test_args=None) -> dict:
         prog="looper",
         description="Looper: A job submitter for Portable Encapsulated Projects",
         add_help=True,
-        version="2.0.0",
+        version="2.0.1",
     )
 
     parser = add_short_arguments(parser, ArgumentEnum)
