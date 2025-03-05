@@ -7,6 +7,9 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### Changed
 - update ubiquerg>=0.8.1
 
+### Fixed
+- [#541](https://github.com/pepkit/looper/issues/541)
+
 ## [2.0.0] -- 2025-01-16
 
 This release breaks backwards compatibility for Looper versions < 2.0.0
