@@ -558,7 +558,9 @@ class Project(peppyProject):
             if is_pephub_registry_path(pephub_path):
                 pipestat_config_dict.update({"pephub_path": pephub_path})
             else:
-                _LOGGER.warning(msg=f"Warning: PEPhub path provided is NOT a PEPhub registry {pephub_path}")
+                _LOGGER.warning(
+                    msg=f"Warning: PEPhub path provided is NOT a PEPhub registry {pephub_path}"
+                )
         except KeyError:
             pephub_path = None
 
