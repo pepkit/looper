@@ -889,11 +889,10 @@ def fetch_samples(
 
 
 def make_set(items):
-    try:
-        # Check if user input single integer value for inclusion/exclusion criteria
-        if len(items) == 1:
-            items = list(map(str, items))  # list(int(items[0]))
-    except:
-        if isinstance(items, str):
-            items = [items]
+    if isinstance(items, str):
+        items = [items]
+    elif len(items) == 1:
+        items = list(map(str, items))  # list(int(items[0]))
+    else:
+        pass
     return items
