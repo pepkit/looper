@@ -553,6 +553,17 @@ class Project(peppyProject):
         except KeyError:
             flag_file_dir = None
 
+        try:
+            pephub_path = expandpath(pipestat_config_dict["pephub_path"])
+            if is_pephub_registry_path(pephub_path):
+                pipestat_config_dict.update({"pephub_path": pephub_path})
+            else:
+                _LOGGER.warning(
+                    msg=f"Warning: PEPhub path provided is NOT a PEPhub registry {pephub_path}"
+                )
+        except KeyError:
+            pephub_path = None
+
         # Pipestat_dict_ is now updated from all sources and can be written to a yaml.
         pipestat_config_path = os.path.join(
             output_dir,
@@ -889,11 +900,10 @@ def fetch_samples(
 
 
 def make_set(items):
-    try:
-        # Check if user input single integer value for inclusion/exclusion criteria
-        if len(items) == 1:
-            items = list(map(str, items))  # list(int(items[0]))
-    except:
-        if isinstance(items, str):
-            items = [items]
+    if isinstance(items, str):
+        items = [items]
+    elif len(items) == 1:
+        items = list(map(str, items))  # list(int(items[0]))
+    else:
+        pass
     return items
