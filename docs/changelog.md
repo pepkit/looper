@@ -6,7 +6,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### Fixed
 - Fixed [#543](https://github.com/pepkit/looper/issues/543)
 - Fixed [#547](https://github.com/pepkit/looper/issues/547)
-
+- Fixed [#548](https://github.com/pepkit/looper/issues/548)
 
 
 ## [2.0.2] -- 2025-09-22
