@@ -2,6 +2,12 @@
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format.
 
+## [2.0.3] -- 2025-09-23
+### Fixed
+- Fixed [#543](https://github.com/pepkit/looper/issues/543)
+
+
+
 ## [2.0.2] -- 2025-09-22
 ### Changed
 - Remove veracitools dependency from the requirements.
