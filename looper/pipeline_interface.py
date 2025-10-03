@@ -58,7 +58,10 @@ class PipelineInterface(YAMLConfigManager):
                 f"'{PIPELINE_INTERFACE_PIPELINE_NAME_KEY}' is required in pipeline interface config data."
             )
         self.update(config)
-        self._validate(schema_src=PIFACE_SCHEMA_SRC)
+        if loaded:
+            self._validate(schema_src=loaded) #TODO needs to be preloaded inpit schema?
+        else:
+            self._validate(schema_src=PIFACE_SCHEMA_SRC)
         self._expand_paths(["compute", "dynamic_variables_script_path"])
 
     @property
@@ -353,13 +356,26 @@ class PipelineInterface(YAMLConfigManager):
             from the error. Useful when used ith large projects
         :param str flavor: type of the pipeline schema to use
         """
-        schema_source = schema_src.format(flavor)
-        for schema in read_schema(schema_source):
+
+        if not isinstance(schema_src, dict):
+            schema_source = schema_src.format(flavor)
+            for schema in read_schema(schema_source):
+                try:
+                    jsonschema.validate(self, schema)
+                    _LOGGER.debug(
+                        f"Successfully validated {self.__class__.__name__} "
+                        f"against schema: {schema_source}"
+                    )
+                except jsonschema.exceptions.ValidationError as e:
+                    if not exclude_case:
+                        raise e
+                    raise jsonschema.exceptions.ValidationError(e.message)
+        elif isinstance(schema_src, dict):
             try:
-                jsonschema.validate(self, schema)
+                jsonschema.validate(self, schema_src)
                 _LOGGER.debug(
                     f"Successfully validated {self.__class__.__name__} "
-                    f"against schema: {schema_source}"
+                    f"against schema: {schema_src}"
                 )
             except jsonschema.exceptions.ValidationError as e:
                 if not exclude_case:
