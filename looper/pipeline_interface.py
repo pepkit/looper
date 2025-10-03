@@ -39,17 +39,20 @@ class PipelineInterface(YAMLConfigManager):
         must be either 'sample' or 'project'.
     """
 
-    def __init__(self, config, pipeline_type=None):
+    def __init__(self, config=None, pipeline_type=None, loaded=None):
         super(PipelineInterface, self).__init__()
 
-        if isinstance(config, Mapping):
-            self.pipe_iface_file = None
-            self.source = None
-        else:
-            _LOGGER.debug("Reading {} from: {}".format(self.__class__.__name__, config))
-            self.pipe_iface_file = config
-            self.source = config
-            config = load_yaml(config)
+        if config is not None:
+            if isinstance(config, Mapping):
+                self.pipe_iface_file = None
+                self.source = None
+            else:
+                _LOGGER.debug("Reading {} from: {}".format(self.__class__.__name__, config))
+                self.pipe_iface_file = config
+                self.source = config
+                config = load_yaml(config)
+        elif loaded is not None:
+            config = loaded
         if PIPELINE_INTERFACE_PIPELINE_NAME_KEY not in config:
             raise PipelineInterfaceConfigError(
                 f"'{PIPELINE_INTERFACE_PIPELINE_NAME_KEY}' is required in pipeline interface config data."

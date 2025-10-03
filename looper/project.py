@@ -686,6 +686,7 @@ class Project(peppyProject):
             source
         """
         samples_by_piface = {}
+        cached_pifaces = {}
         msgs = set()
         for sample in self.samples:
             if piface_key in sample and sample[piface_key]:
@@ -693,10 +694,16 @@ class Project(peppyProject):
                 if isinstance(piface_srcs, str):
                     piface_srcs = [piface_srcs]
                 for source in piface_srcs:
-                    source = self._resolve_path_with_cfg(source)
+                    if source not in cached_pifaces:
+                        full_path = self._resolve_path_with_cfg(source)
+                        cached_pifaces[source] = load_yaml(full_path)
+                        loaded_piface = cached_pifaces[source]
+                    else:
+                        loaded_piface = cached_pifaces[source]
+                    #source = self._resolve_path_with_cfg(source)
                     try:
                         PipelineInterface(
-                            source, pipeline_type=PipelineLevel.SAMPLE.value
+                            config=None, pipeline_type=PipelineLevel.SAMPLE.value, loaded=loaded_piface
                         )
                     except (
                         ValidationError,
@@ -712,6 +719,7 @@ class Project(peppyProject):
                         msgs.add(msg)
                         continue
                     else:
+                        #TODO
                         samples_by_piface.setdefault(source, set())
                         samples_by_piface[source].add(sample[self.sample_table_index])
         for msg in msgs:
