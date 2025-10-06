@@ -687,6 +687,9 @@ class Project(peppyProject):
         """
         samples_by_piface = {}
         cached_pifaces = {}
+        # go ahead and preload input schema for later validation to minimize disk reads
+        schema_source = PIFACE_SCHEMA_SRC.format("generic")
+        cached_input_schema = read_schema(schema_source)[0] # read schema returns a list
         msgs = set()
         for sample in self.samples:
             if piface_key in sample and sample[piface_key]:
@@ -703,7 +706,7 @@ class Project(peppyProject):
                     #source = self._resolve_path_with_cfg(source)
                     try:
                         PipelineInterface(
-                            config=None, pipeline_type=PipelineLevel.SAMPLE.value, loaded=loaded_piface
+                            config=None, pipeline_type=PipelineLevel.SAMPLE.value, loaded_piface=loaded_piface, input_schema = cached_input_schema
                         )
                     except (
                         ValidationError,

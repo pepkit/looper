@@ -39,7 +39,7 @@ class PipelineInterface(YAMLConfigManager):
         must be either 'sample' or 'project'.
     """
 
-    def __init__(self, config=None, pipeline_type=None, loaded=None):
+    def __init__(self, config=None, pipeline_type=None, loaded_piface=None, input_schema=None):
         super(PipelineInterface, self).__init__()
 
         if config is not None:
@@ -51,15 +51,15 @@ class PipelineInterface(YAMLConfigManager):
                 self.pipe_iface_file = config
                 self.source = config
                 config = load_yaml(config)
-        elif loaded is not None:
-            config = loaded
+        elif loaded_piface is not None:
+            config = loaded_piface
         if PIPELINE_INTERFACE_PIPELINE_NAME_KEY not in config:
             raise PipelineInterfaceConfigError(
                 f"'{PIPELINE_INTERFACE_PIPELINE_NAME_KEY}' is required in pipeline interface config data."
             )
         self.update(config)
-        if loaded:
-            self._validate(schema_src=loaded) #TODO needs to be preloaded inpit schema?
+        if input_schema:
+            self._validate(schema_src=input_schema)
         else:
             self._validate(schema_src=PIFACE_SCHEMA_SRC)
         self._expand_paths(["compute", "dynamic_variables_script_path"])
