@@ -12,7 +12,19 @@ from peppy import utils as peputil
 from ubiquerg import expandpath, is_url
 from yacman import load_yaml, YAMLConfigManager
 
-from .const import *
+from .const import (
+    COMPUTE_KEY,
+    DYN_VARS_KEY,
+    FILE_SIZE_COLNAME,
+    ID_COLNAME,
+    INPUT_SCHEMA_KEY,
+    LOOPER_KEY,
+    PIFACE_SCHEMA_SRC,
+    PIPELINE_INTERFACE_PIPELINE_NAME_KEY,
+    RESOURCES_KEY,
+    SIZE_DEP_VARS_KEY,
+    VAR_TEMPL_KEY,
+)
 from .exceptions import (
     InvalidResourceSpecificationException,
     PipelineInterfaceConfigError,

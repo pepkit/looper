@@ -128,8 +128,6 @@ Processed Project manipulation functions, required pipelines with no pipestat su
 import os
 from logging import getLogger
 
-from eido.const import *
-from eido.exceptions import *
 from peppy.project import Project
 from peppy.sample import Sample
 
