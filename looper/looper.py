@@ -27,7 +27,6 @@ from colorama import Fore, Style
 from eido import validate_config, validate_sample
 from eido.exceptions import EidoValidationError
 from jsonschema import ValidationError
-from peppy.const import *
 from peppy.exceptions import RemoteYAMLError
 from rich.color import Color
 from rich.console import Console
@@ -37,8 +36,19 @@ from ubiquerg.cli_tools import query_yes_no
 
 from .conductor import SubmissionConductor
 
-from .exceptions import *
-from .const import *
+from .exceptions import (
+    JobSubmissionException,
+    LooperReportError,
+    MisconfigurationException,
+    SampleFailedException,
+)
+from .const import (
+    DEBUG_COMMANDS,
+    DEBUG_EIDO_VALIDATION,
+    DEBUG_JOBS,
+    NOT_SUB_MSG,
+    SUBMISSION_FAILURE_MESSAGE,
+)
 from .project import Project
 from .utils import (
     desired_samples_range_skipped,

@@ -12,7 +12,7 @@ import yaml
 from math import ceil
 from json import loads
 from subprocess import check_output
-from typing import *
+from typing import Optional
 
 from eido import read_schema, get_input_files_size
 from eido.const import INPUT_FILE_SIZE_KEY, MISSING_KEY
@@ -25,7 +25,24 @@ from ubiquerg import expandpath
 from yaml import dump
 from yacman import FutureYAMLConfigManager as YAMLConfigManager
 
-from .const import *
+from .const import (
+    EXTRA_PROJECT_CMD_TEMPLATE,
+    EXTRA_SAMPLE_CMD_TEMPLATE,
+    JOB_NAME_KEY,
+    NOT_SUB_MSG,
+    OUTDIR_KEY,
+    OUTPUT_SCHEMA_KEY,
+    PipelineLevel,
+    PRE_SUBMIT_CMD_KEY,
+    PRE_SUBMIT_HOOK_KEY,
+    PRE_SUBMIT_PY_FUN_KEY,
+    PROJECT_PL_KEY,
+    RESULTS_SUBDIR_KEY,
+    SAMPLE_CWL_YAML_PATH_KEY,
+    SAMPLE_PL_KEY,
+    SUBMISSION_SUBDIR_KEY,
+    VAR_TEMPL_KEY,
+)
 from .exceptions import JobSubmissionException
 from .processed_project import populate_sample_paths
 from .utils import (
@@ -33,7 +50,6 @@ from .utils import (
     jinja_render_template_strictly,
     expand_nested_var_templates,
 )
-from .const import PipelineLevel
 
 
 _LOGGER = logging.getLogger(__name__)

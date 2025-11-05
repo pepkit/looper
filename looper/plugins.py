@@ -1,6 +1,10 @@
 import logging
 import os
-from .const import *
+from .const import (
+    SAMPLE_CWL_YAML_PATH_KEY,
+    SAMPLE_YAML_PATH_KEY,
+    SAMPLE_YAML_PRJ_PATH_KEY,
+)
 from .conductor import _get_yaml_path
 
 _LOGGER = logging.getLogger(__name__)
