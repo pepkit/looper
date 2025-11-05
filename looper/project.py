@@ -34,8 +34,6 @@ from .utils import (
     is_pephub_registry_path,
 )
 from .const import (
-    ALL_SUBCMD_KEY,
-    CLI_KEY,
     CLI_PROJ_ATTRS,
     COMPUTE_PACKAGE_KEY,
     DRY_RUN_KEY,
@@ -45,7 +43,6 @@ from .const import (
     LOOPER_KEY,
     OUTDIR_KEY,
     OUTPUT_SCHEMA_KEY,
-    PEP_CONFIG_KEY,
     PIFACE_KEY_SELECTOR,
     PIPELINE_INTERFACE_PIPELINE_NAME_KEY,
     PIPELINE_INTERFACES_KEY,
