@@ -2,6 +2,7 @@
 
 import itertools
 import os
+from typing import Iterable, List, NoReturn, Union
 
 from yaml import safe_load
 
@@ -15,7 +16,9 @@ from .divvy import ComputingConfiguration
 from eido import PathAttrNotFoundError, read_schema
 from jsonschema import ValidationError
 from pandas.core.common import flatten
+from peppy import Project as peppyProject
 from peppy.utils import make_abs_via_cfg
+from peppy.const import CONFIG_KEY
 from pipestat import PipestatManager
 
 from .conductor import write_pipestat_config
@@ -35,7 +38,6 @@ from .const import (
     CLI_KEY,
     CLI_PROJ_ATTRS,
     COMPUTE_PACKAGE_KEY,
-    CONFIG_KEY,
     DRY_RUN_KEY,
     EXTRA_KEY,
     FILE_CHECKS_KEY,
