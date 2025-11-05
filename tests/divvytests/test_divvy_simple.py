@@ -3,7 +3,7 @@ import os
 import pytest
 from collections import OrderedDict
 
-from yacman import YacAttMap
+from yacman import YAMLConfigManager
 from looper.divvy import select_divvy_config
 
 # For interactive debugging:
@@ -49,7 +49,7 @@ class TestWriting:
 #         "compute",
 #         [
 #             dict({"mem": 1000, "test": 0}),
-#             YacAttMap({"mem": 1000, "test": 0}),
+#             YAMLConfigManager({"mem": 1000, "test": 0}),
 #             OrderedDict({"mem": 1000, "test": 0}),
 #         ],
 #     )
@@ -68,7 +68,7 @@ class TestWriting:
 #     def test_adapters_overwitten_by_others(self):
 #         dcc = divvy.ComputingConfiguration()
 #         dcc.activate_package("singularity_slurm")
-#         compute = YacAttMap({"mem": 1000})
+#         compute = YAMLConfigManager({"mem": 1000})
 #         extra_vars = [{"compute": compute}, {"MEM": 333}]
 #         dcc.write_script("test1.sub", extra_vars)
 #         with open("test1.sub", "r") as f:
