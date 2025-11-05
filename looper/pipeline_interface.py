@@ -40,15 +40,15 @@ _LOGGER = getLogger(__name__)
 @peputil.copy
 class PipelineInterface(YAMLConfigManager):
     """
-    This class parses, holds, and returns information for a yaml file that
-    specifies how to interact with each individual pipeline. This
-    includes both resources to request for cluster job submission, as well as
-    arguments to be passed from the sample annotation metadata to the pipeline
+    This class parses, holds, and returns information for a yaml file that specifies how to interact with each individual pipeline.
 
-    :param str | Mapping config: path to file from which to parse
-        configuration data, or pre-parsed configuration data.
-    :param str pipeline_type: type of the pipeline,
-        must be either 'sample' or 'project'.
+    This includes both resources to request for cluster job submission, as well as
+    arguments to be passed from the sample annotation metadata to the pipeline.
+
+    Args:
+        config (str | Mapping): Path to file from which to parse configuration data,
+            or pre-parsed configuration data.
+        pipeline_type (str): Type of the pipeline, must be either 'sample' or 'project'.
     """
 
     def __init__(self, config, pipeline_type=None):
@@ -78,7 +78,8 @@ class PipelineInterface(YAMLConfigManager):
         """
         Render path templates under 'var_templates' in this pipeline interface.
 
-        :param dict namespaces: namespaces to use for rendering
+        Args:
+            namespaces (dict): Namespaces to use for rendering.
         """
         try:
             curr_data = self[VAR_TEMPL_KEY]
@@ -99,8 +100,11 @@ class PipelineInterface(YAMLConfigManager):
         """
         Get path to the pipeline schema.
 
-        :param str schema_key: where to look for schemas in the pipeline iface
-        :return str: absolute path to the pipeline schema file
+        Args:
+            schema_key (str): Where to look for schemas in the pipeline iface.
+
+        Returns:
+            str: Absolute path to the pipeline schema file.
         """
         schema_source = None
         if schema_key in self:
@@ -119,15 +123,19 @@ class PipelineInterface(YAMLConfigManager):
         """
         Select resource bundle for given input file size to given pipeline.
 
-        :param float file_size: Size of input data (in gigabytes).
-        :param Mapping[Mapping[str]] namespaces: namespaced variables to pass
-            as a context for fluid attributes command rendering
-        :return MutableMapping: resource bundle appropriate for given pipeline,
-            for given input file size
-        :raises ValueError: if indicated file size is negative, or if the
-            file size value specified for any resource package is negative
-        :raises InvalidResourceSpecificationException: if no default
-            resource package specification is provided
+        Args:
+            file_size (float): Size of input data (in gigabytes).
+            namespaces (Mapping[Mapping[str]]): Namespaced variables to pass as a context
+                for fluid attributes command rendering.
+
+        Returns:
+            MutableMapping: Resource bundle appropriate for given pipeline, for given input file size.
+
+        Raises:
+            ValueError: If indicated file size is negative, or if the file size value
+                specified for any resource package is negative.
+            InvalidResourceSpecificationException: If no default resource package
+                specification is provided.
         """
 
         def _file_size_ante(name, data):
@@ -157,12 +165,13 @@ class PipelineInterface(YAMLConfigManager):
 
         def _load_dynamic_vars(pipeline):
             """
-            Render command string (jinja2 template), execute it in a subprocess
-            and return its result (JSON object) as a dict
+            Render command string (jinja2 template), execute it in a subprocess and return its result (JSON object) as a dict.
 
-            :param Mapping pipeline: pipeline dict
-            :return Mapping: a dict with attributes returned in the JSON
-                by called command
+            Args:
+                pipeline (Mapping): Pipeline dict.
+
+            Returns:
+                Mapping: A dict with attributes returned in the JSON by called command.
             """
 
             def _log_raise_latest():
@@ -209,11 +218,14 @@ class PipelineInterface(YAMLConfigManager):
 
         def _load_size_dep_vars(piface):
             """
-            Read the resources from a TSV provided in the pipeline interface
+            Read the resources from a TSV provided in the pipeline interface.
 
-            :param looper.PipelineInterface piface: currently processed piface
-            :param str section: section of pipeline interface to process
-            :return pandas.DataFrame: resources
+            Args:
+                piface (looper.PipelineInterface): Currently processed piface.
+                section (str): Section of pipeline interface to process.
+
+            Returns:
+                pandas.DataFrame: Resources.
             """
             df = None
             if COMPUTE_KEY in piface and SIZE_DEP_VARS_KEY in piface[COMPUTE_KEY]:
@@ -291,20 +303,23 @@ class PipelineInterface(YAMLConfigManager):
 
     def _expand_paths(self, keys):
         """
-        Expand paths defined in the pipeline interface file
+        Expand paths defined in the pipeline interface file.
 
-        :param list keys: list of keys resembling the nested structure to get
-            to the pipeline interface attributre to expand
+        Args:
+            keys (list): List of keys resembling the nested structure to get to the
+                pipeline interface attribute to expand.
         """
 
         def _get_from_dict(map, attrs):
             """
-            Get value from a possibly nested mapping using a list of its attributes
+            Get value from a possibly nested mapping using a list of its attributes.
 
-            :param collections.Mapping map: mapping to retrieve values from
-            :param Iterable[str] attrs: a list of attributes
-            :return: value found in the the requested attribute or
-                None if one of the keys does not exist
+            Args:
+                map (collections.Mapping): Mapping to retrieve values from.
+                attrs (Iterable[str]): A list of attributes.
+
+            Returns:
+                Value found in the requested attribute or None if one of the keys does not exist.
             """
             for a in attrs:
                 try:
@@ -315,13 +330,15 @@ class PipelineInterface(YAMLConfigManager):
 
         def _set_in_dict(map, attrs, val):
             """
-            Set value in a mapping, creating a possibly nested structure
+            Set value in a mapping, creating a possibly nested structure.
 
-            :param collections.Mapping map: mapping to retrieve values from
-            :param Iterable[str] attrs: a list of attributes
-            :param val: value to set
-            :return: value found in the the requested attribute or
-                None if one of the keys does not exist
+            Args:
+                map (collections.Mapping): Mapping to retrieve values from.
+                attrs (Iterable[str]): A list of attributes.
+                val: Value to set.
+
+            Returns:
+                Value found in the requested attribute or None if one of the keys does not exist.
             """
             for a in attrs:
                 if a == attrs[-1]:
@@ -355,12 +372,13 @@ class PipelineInterface(YAMLConfigManager):
 
     def _validate(self, schema_src, exclude_case=False, flavor="generic"):
         """
-        Generic function to validate the object against a schema
+        Generic function to validate the object against a schema.
 
-        :param str schema_src: schema source to validate against, URL or path
-        :param bool exclude_case: whether to exclude validated objects
-            from the error. Useful when used ith large projects
-        :param str flavor: type of the pipeline schema to use
+        Args:
+            schema_src (str): Schema source to validate against, URL or path.
+            exclude_case (bool): Whether to exclude validated objects from the error.
+                Useful when used with large projects.
+            flavor (str): Type of the pipeline schema to use.
         """
         schema_source = schema_src.format(flavor)
         for schema in read_schema(schema_source):

@@ -74,10 +74,10 @@ class Executor(object):
     __metaclass__ = abc.ABCMeta
 
     def __init__(self, prj):
-        """
-        The Project defines the instance; establish an iteration counter.
+        """The Project defines the instance; establish an iteration counter.
 
-        :param Project prj: Project with which to work/operate on
+        Args:
+            prj (Project): Project with which to work/operate on.
         """
         super(Executor, self).__init__()
         self.prj = prj
@@ -91,10 +91,10 @@ class Executor(object):
 
 class Checker(Executor):
     def __call__(self, args):
-        """
-        Check Project status, using pipestat.
+        """Check Project status, using pipestat.
 
-        :param argparse.Namespace: arguments provided to the command
+        Args:
+            args (argparse.Namespace): Arguments provided to the command.
         """
 
         # aggregate pipeline status data
@@ -201,11 +201,11 @@ class Cleaner(Executor):
     """Remove all intermediate files (defined by pypiper clean scripts)."""
 
     def __call__(self, args, preview_flag=True):
-        """
-        Execute the file cleaning process.
+        """Execute the file cleaning process.
 
-        :param argparse.Namespace args: command-line options and arguments
-        :param bool preview_flag: whether to halt before actually removing files
+        Args:
+            args (argparse.Namespace): Command-line options and arguments.
+            preview_flag (bool): Whether to halt before actually removing files.
         """
         self.counter.show(name=self.prj.name, type="project")
         for sample in self.prj.samples:
@@ -262,11 +262,11 @@ class Destroyer(Executor):
     """Destroyer of files and folders associated with Project's Samples"""
 
     def __call__(self, args, preview_flag=True):
-        """
-        Completely remove all output produced by any pipelines.
+        """Completely remove all output produced by any pipelines.
 
-        :param argparse.Namespace args: command-line options and arguments
-        :param bool preview_flag: whether to halt before actually removing files
+        Args:
+            args (argparse.Namespace): Command-line options and arguments.
+            preview_flag (bool): Whether to halt before actually removing files.
         """
 
         use_pipestat = (
@@ -328,21 +328,19 @@ class Collator(Executor):
     """Submitter for project-level pipelines"""
 
     def __init__(self, prj):
-        """
-        Initializes an instance
+        """Initializes an instance.
 
-        :param Project prj: Project with which to work/operate on
+        Args:
+            prj (Project): Project with which to work/operate on.
         """
         super(Executor, self).__init__()
         self.prj = prj
 
     def __call__(self, args, **compute_kwargs):
-        """
-        Matches collators by protocols, creates submission scripts
-        and submits them
+        """Matches collators by protocols, creates submission scripts and submits them.
 
-        :param argparse.Namespace args: parsed command-line options and
-            arguments, recognized by looper
+        Args:
+            args (argparse.Namespace): Parsed command-line options and arguments, recognized by looper.
         """
         jobs = 0
         self.debug = {}
@@ -389,15 +387,12 @@ class Runner(Executor):
     """The true submitter of pipelines"""
 
     def __call__(self, args, top_level_args=None, rerun=False, **compute_kwargs):
-        """
-        Do the Sample submission.
+        """Do the Sample submission.
 
-        :param argparse.Namespace args: parsed command-line options and
-            arguments, recognized by looper
-        :param list remaining_args: command-line options and arguments not
-            recognized by looper, germane to samples/pipelines
-        :param bool rerun: whether the given sample is being rerun rather than
-            run for the first time
+        Args:
+            args (argparse.Namespace): Parsed command-line options and arguments, recognized by looper.
+            remaining_args (list): Command-line options and arguments not recognized by looper, germane to samples/pipelines.
+            rerun (bool): Whether the given sample is being rerun rather than run for the first time.
         """
         self.debug = {}  # initialize empty dict for return values
         max_cmds = sum(list(map(len, self.prj._samples_by_interface.values())))
@@ -649,9 +644,10 @@ class Linker(Executor):
 
 
 class Tabulator(Executor):
-    """Project/Sample statistics and table output generator
+    """Project/Sample statistics and table output generator.
 
-    :return list[str|any] results: list containing output file paths of stats and objects
+    Returns:
+        list[str|any]: List containing output file paths of stats and objects.
     """
 
     def __call__(self, args):
@@ -684,13 +680,11 @@ def _create_failure_message(reason, samples):
 
 
 def _remove_or_dry_run(paths, dry_run=False):
-    """
-    Remove file or directory or just inform what would be removed in
-    case of dry run
+    """Remove file or directory or just inform what would be removed in case of dry run.
 
-    :param list|str paths: list of paths to files/dirs to be removed
-    :param bool dry_run: logical indicating whether the files should remain
-        untouched and message printed
+    Args:
+        paths (list|str): List of paths to files/dirs to be removed.
+        dry_run (bool): Logical indicating whether the files should remain untouched and message printed.
     """
     paths = paths if isinstance(paths, list) else [paths]
     for path in paths:
@@ -770,11 +764,10 @@ def destroy_summary(prj, dry_run=False, project_level=False):
 
 
 class LooperCounter(object):
-    """
-    Count samples as you loop through them, and create text for the
-    subcommand logging status messages.
+    """Count samples as you loop through them, and create text for the subcommand logging status messages.
 
-    :param int total: number of jobs to process
+    Args:
+        total (int): Number of jobs to process.
     """
 
     def __init__(self, total):
@@ -782,17 +775,18 @@ class LooperCounter(object):
         self.total = total
 
     def show(self, name, type="sample", pipeline_name=None):
-        """
-        Display sample counts status for a particular protocol type.
+        """Display sample counts status for a particular protocol type.
 
         The counts are running vs. total for the protocol within the Project,
         and as a side-effect of the call, the running count is incremented.
 
-        :param str name: name of the sample
-        :param str type: the name of the level of entity being displayed,
-            either project or sample
-        :param str pipeline_name: name of the pipeline
-        :return str: message suitable for logging a status update
+        Args:
+            name (str): Name of the sample.
+            type (str): The name of the level of entity being displayed, either project or sample.
+            pipeline_name (str): Name of the pipeline.
+
+        Returns:
+            str: Message suitable for logging a status update.
         """
         self.count += 1
         return _submission_status_text(
