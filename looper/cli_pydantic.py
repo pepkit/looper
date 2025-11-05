@@ -17,6 +17,7 @@ It is well possible that this script will be removed again.
 # with types.
 from __future__ import annotations
 
+import os
 import sys
 
 import logmuse
