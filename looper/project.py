@@ -2,7 +2,7 @@
 
 import itertools
 import os
-from typing import Iterable, List, NoReturn, Union
+from typing import List, NoReturn, Union
 
 from yaml import safe_load
 
