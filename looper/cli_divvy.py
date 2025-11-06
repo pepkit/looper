@@ -12,10 +12,10 @@ from .divvy import select_divvy_config, ComputingConfiguration, divvy_init
 
 
 def build_argparser():
-    """
-    Builds argument parser.
+    """Builds argument parser.
 
-    :return argparse.ArgumentParser
+    Returns:
+        argparse.ArgumentParser: The argument parser.
     """
 
     banner = (

@@ -140,26 +140,31 @@ PATH_LIKE = [PATH_KEY, THUMB_PATH_KEY]
 
 
 def _get_path_sect_keys(mapping, keys=[PATH_KEY]):
-    """
-    Get names of subsections in a mapping that contain collection of keys
+    """Get names of subsections in a mapping that contain collection of keys.
 
-    :param Mapping mapping: schema subsection to search for paths
-    :param  Iterable[str] keys: collection of keys to check for
-    :return Iterable[str]: collection of keys to path-like sections
+    Args:
+        mapping (Mapping): Schema subsection to search for paths.
+        keys (Iterable[str]): Collection of keys to check for.
+
+    Returns:
+        Iterable[str]: Collection of keys to path-like sections.
     """
     return [k for k, v in mapping.items() if bool(set(keys) & set(mapping[k]))]
 
 
 def _populate_paths(object, schema, check_exist):
-    """
-    Populate path-like object attributes with other object attributes
-    based on a defined template, e.g. '/Users/x/test_{name}/{genome}_file.txt'
+    """Populate path-like object attributes with other object attributes.
 
-    :param Mapping object: object with attributes to populate path template with
-    :param dict schema: schema with path attributes defined, e.g.
-        output of read_schema function
-    :param bool check_exist: whether the paths should be check for existence
-    :return Mapping: object with path templates populated
+    Based on a defined template, e.g. '/Users/x/test_{name}/{genome}_file.txt'
+
+    Args:
+        object (Mapping): Object with attributes to populate path template with.
+        schema (dict): Schema with path attributes defined, e.g.
+            output of read_schema function.
+        check_exist (bool): Whether the paths should be check for existence.
+
+    Returns:
+        Mapping: Object with path templates populated.
     """
     if PROP_KEY not in schema:
         raise EidoSchemaInvalidError("Schema is missing properties section.")
@@ -189,15 +194,18 @@ def _populate_paths(object, schema, check_exist):
 
 
 def populate_sample_paths(sample, schema, check_exist=False):
-    """
-    Populate path-like Sample attributes with other object attributes
-    based on a defined template, e.g. '/Users/x/test_{name}/{genome}_file.txt'
+    """Populate path-like Sample attributes with other object attributes.
 
-    :param peppy.Sample sample: sample to populate paths in
-    :param Iterable[dict] schema: schema with path attributes defined, e.g.
-        output of read_schema function
-    :param bool check_exist: whether the paths should be check for existence
-    :return Mapping: Sample with path templates populated
+    Based on a defined template, e.g. '/Users/x/test_{name}/{genome}_file.txt'
+
+    Args:
+        sample (peppy.Sample): Sample to populate paths in.
+        schema (Iterable[dict]): Schema with path attributes defined, e.g.
+            output of read_schema function.
+        check_exist (bool): Whether the paths should be check for existence.
+
+    Returns:
+        Mapping: Sample with path templates populated.
     """
     if not isinstance(sample, Sample):
         raise TypeError("Can only populate paths in peppy.Sample objects")
@@ -207,15 +215,18 @@ def populate_sample_paths(sample, schema, check_exist=False):
 
 
 def populate_project_paths(project, schema, check_exist=False):
-    """
-    Populate path-like Project attributes with other object attributes
-    based on a defined template, e.g. '/Users/x/test_{name}/{genome}_file.txt'
+    """Populate path-like Project attributes with other object attributes.
 
-    :param peppy.Project project: project to populate paths in
-    :param dict schema: schema with path attributes defined, e.g.
-        output of read_schema function
-    :param bool check_exist: whether the paths should be check for existence
-    :return Mapping: Project with path templates populated
+    Based on a defined template, e.g. '/Users/x/test_{name}/{genome}_file.txt'
+
+    Args:
+        project (peppy.Project): Project to populate paths in.
+        schema (dict): Schema with path attributes defined, e.g.
+            output of read_schema function.
+        check_exist (bool): Whether the paths should be check for existence.
+
+    Returns:
+        Mapping: Project with path templates populated.
     """
     if not isinstance(project, Project):
         raise TypeError("Can only populate paths in peppy.Project objects")
@@ -223,13 +234,14 @@ def populate_project_paths(project, schema, check_exist=False):
 
 
 def get_project_outputs(project, schema):
-    """
-    Get project level outputs with path-like attributes populated with
-    project attributes
+    """Get project level outputs with path-like attributes populated with project attributes.
 
-    :param peppy.Project project:
-    :param Iterable[dict] schema:
-    :return yacman.YAMLConfigManager: mapping with populated path-like attributes
+    Args:
+        project (peppy.Project): Project to get outputs for.
+        schema (Iterable[dict]): Schema to source the outputs from.
+
+    Returns:
+        yacman.YAMLConfigManager: Mapping with populated path-like attributes.
     """
     from yacman import YAMLConfigManager
 

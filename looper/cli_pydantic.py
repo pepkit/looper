@@ -380,18 +380,23 @@ def main_cli() -> None:
 
 
 def _proc_resources_spec(args):
-    """
-    Process CLI-sources compute setting specification. There are two sources
-    of compute settings in the CLI alone:
+    """Process CLI-sources compute setting specification.
+
+    There are two sources of compute settings in the CLI alone:
         * YAML file (--settings argument)
         * itemized compute settings (--compute argument)
 
-    The itemized compute specification is given priority
+    The itemized compute specification is given priority.
 
-    :param argparse.Namespace: arguments namespace
-    :return Mapping[str, str]: binding between resource setting name and value
-    :raise ValueError: if interpretation of the given specification as encoding
-        of key-value pairs fails
+    Args:
+        args (argparse.Namespace): Arguments namespace.
+
+    Returns:
+        Mapping[str, str]: Binding between resource setting name and value.
+
+    Raises:
+        ValueError: If interpretation of the given specification as encoding
+            of key-value pairs fails.
     """
     spec = getattr(args, "compute", None)
     settings = args.settings

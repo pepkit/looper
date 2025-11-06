@@ -14,12 +14,12 @@ from pydantic_argparse import ArgumentParser
 
 @dataclass
 class Command:
-    """
-    Representation of a command
+    """Representation of a command.
 
-    :param str name: command name
-    :param str description: command description
-    :param list[Argument] arguments: list of arguments supported by this command
+    Args:
+        name (str): Command name.
+        description (str): Command description.
+        arguments (list[Argument]): List of arguments supported by this command.
     """
 
     name: str
@@ -242,13 +242,19 @@ InitPifaceParserModel = InitPifaceParser.create_model()
 def add_short_arguments(
     parser: ArgumentParser, argument_enums: Type[ArgumentEnum]
 ) -> ArgumentParser:
-    """
-    This function takes a parser object created under pydantic argparse and adds the short arguments AFTER the initial creation.
-    This is a workaround as pydantic-argparse does not currently support this during initial parser creation.
+    """Add short arguments to parser after initial creation.
 
-    :param ArgumentParser parser: parser before adding short arguments
-    :param Type[ArgumentEnum] argument_enums:  enumeration of arguments that contain names and aliases
-    :return ArgumentParser parser: parser after short arguments have been added
+    This function takes a parser object created under pydantic argparse and adds
+    the short arguments AFTER the initial creation. This is a workaround as
+    pydantic-argparse does not currently support this during initial parser creation.
+
+    Args:
+        parser (ArgumentParser): Parser before adding short arguments.
+        argument_enums (Type[ArgumentEnum]): Enumeration of arguments that contain
+            names and aliases.
+
+    Returns:
+        ArgumentParser: Parser after short arguments have been added.
     """
 
     for cmd in parser._subcommands.choices.keys():

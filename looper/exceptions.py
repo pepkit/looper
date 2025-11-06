@@ -90,10 +90,10 @@ class PipelineInterfaceConfigError(LooperError):
     """Error with PipelineInterface config data during construction."""
 
     def __init__(self, context):
-        """
-        For exception context, provide message or collection of missing sections.
+        """For exception context, provide message or collection of missing sections.
 
-        :param str | Iterable[str] context:
+        Args:
+            context (str | Iterable[str]): Message or collection of missing sections.
         """
         if not isinstance(context, str) and isinstance(context, Iterable):
             context = "Missing section(s): {}".format(", ".join(context))

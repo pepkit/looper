@@ -11,8 +11,7 @@ import pydantic.v1 as pydantic
 
 
 class Argument(pydantic.fields.FieldInfo):
-    """
-    CLI argument / flag definition
+    """CLI argument / flag definition.
 
     This class is designed to define CLI arguments or flags. It leverages
     Pydantic for data validation and serves as a source of truth for multiple
@@ -24,13 +23,14 @@ class Argument(pydantic.fields.FieldInfo):
     so we instead subclass `FieldInfo` directly and validate it in the
     constructor.
 
-    :param str name: argument name, e.g. "ignore-args"
-    :param Any default: a tuple of the form (type, default_value). If the
-        default value is `...` (Ellipsis), then the argument is required.
-    :param str description: argument description, which will appear as the
-        help text for this argument
-    :param dict kwargs: additional keyword arguments supported by
-        `FieldInfo`. These are passed along as they are.
+    Args:
+        name (str): Argument name, e.g. "ignore-args".
+        default (Any): A tuple of the form (type, default_value). If the
+            default value is `...` (Ellipsis), then the argument is required.
+        description (str): Argument description, which will appear as the
+            help text for this argument.
+        kwargs (dict): Additional keyword arguments supported by
+            `FieldInfo`. These are passed along as they are.
     """
 
     def __init__(

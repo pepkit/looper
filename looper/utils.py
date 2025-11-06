@@ -46,22 +46,26 @@ _LOGGER = getLogger(__name__)
 
 
 def fetch_flag_files(prj=None, results_folder="", flags=FLAGS):
-    """
-    Find all flag file paths for the given project.
+    """Find all flag file paths for the given project.
 
-    :param Project | AttributeDict prj: full Project or AttributeDict with
-        similar metadata and access/usage pattern
-    :param str results_folder: path to results folder, corresponding to the
-        1:1 sample:folder notion that a looper Project has. That is, this
-        function uses the assumption that if results_folder rather than project
-        is provided, the structure of the file tree rooted at results_folder is
-        such that any flag files to be found are not directly within rootdir but
-        are directly within on of its first layer of subfolders.
-    :param Iterable[str] | str flags: Collection of flag names or single flag
-        name for which to fetch files
-    :return Mapping[str, list[str]]: collection of filepaths associated with
-        particular flag for samples within the given project
-    :raise TypeError: if neither or both of project and rootdir are given
+    Args:
+        prj (Project | AttributeDict): Full Project or AttributeDict with
+            similar metadata and access/usage pattern.
+        results_folder (str): Path to results folder, corresponding to the
+            1:1 sample:folder notion that a looper Project has. That is, this
+            function uses the assumption that if results_folder rather than project
+            is provided, the structure of the file tree rooted at results_folder is
+            such that any flag files to be found are not directly within rootdir but
+            are directly within one of its first layer of subfolders.
+        flags (Iterable[str] | str): Collection of flag names or single flag
+            name for which to fetch files.
+
+    Returns:
+        Mapping[str, list[str]]: Collection of filepaths associated with
+            particular flag for samples within the given project.
+
+    Raises:
+        TypeError: If neither or both of project and rootdir are given.
     """
 
     if not (prj or results_folder) or (prj and results_folder):
@@ -94,14 +98,17 @@ def fetch_flag_files(prj=None, results_folder="", flags=FLAGS):
 
 
 def fetch_sample_flags(prj, sample, pl_name, flag_dir=None):
-    """
-    Find any flag files present for a sample associated with a project
+    """Find any flag files present for a sample associated with a project.
 
-    :param looper.Project prj: project of interest
-    :param peppy.Sample sample: sample object of interest
-    :param str pl_name: name of the pipeline for which flag(s) should be found
-    :return Iterable[str]: collection of flag file path(s) associated with the
-        given sample for the given project
+    Args:
+        prj (looper.Project): Project of interest.
+        sample (peppy.Sample): Sample object of interest.
+        pl_name (str): Name of the pipeline for which flag(s) should be found.
+        flag_dir: Flag directory path.
+
+    Returns:
+        Iterable[str]: Collection of flag file path(s) associated with the
+            given sample for the given project.
     """
     sfolder = flag_dir or sample_folder(prj=prj, sample=sample)
     if not os.path.isdir(sfolder):
@@ -122,9 +129,14 @@ def fetch_sample_flags(prj, sample, pl_name, flag_dir=None):
 
 
 def get_sample_status(sample, flags):
-    """
-    get a sample status
+    """Get a sample status.
 
+    Args:
+        sample: Sample identifier.
+        flags: Collection of flag file paths.
+
+    Returns:
+        str or None: Status string if found, None otherwise.
     """
 
     statuses = []
@@ -145,8 +157,7 @@ def get_sample_status(sample, flags):
 
 
 def grab_project_data(prj):
-    """
-    From the given Project, grab Sample-independent data.
+    """From the given Project, grab Sample-independent data.
 
     There are some aspects of a Project of which it's beneficial for a Sample
     to be aware, particularly for post-hoc analysis. Since Sample objects
@@ -155,8 +166,11 @@ def grab_project_data(prj):
     so for each Sample knowledge of Project data is limited. This method
     facilitates adoption of that conceptual model.
 
-    :param Project prj: Project from which to grab data
-    :return Mapping: Sample-independent data sections from given Project
+    Args:
+        prj (Project): Project from which to grab data.
+
+    Returns:
+        Mapping: Sample-independent data sections from given Project.
     """
     if not prj:
         return {}
@@ -168,30 +182,36 @@ def grab_project_data(prj):
 
 
 def sample_folder(prj, sample):
-    """
-    Get the path to this Project's root folder for the given Sample.
+    """Get the path to this Project's root folder for the given Sample.
 
-    :param AttributeDict | Project prj: project with which sample is associated
-    :param Mapping sample: Sample or sample data for which to get root output
-        folder path.
-    :return str: this Project's root folder for the given Sample
+    Args:
+        prj (AttributeDict | Project): Project with which sample is associated.
+        sample (Mapping): Sample or sample data for which to get root output
+            folder path.
+
+    Returns:
+        str: This Project's root folder for the given Sample.
     """
     return os.path.join(prj.results_folder, sample[prj.sample_table_index])
 
 
 def get_file_for_project(prj, pipeline_name, appendix=None, directory=None):
-    """
-    Create a path to the file for the current project.
-    Takes the possibility of amendment being activated at the time
+    """Create a path to the file for the current project.
+
+    Takes the possibility of amendment being activated at the time.
 
     Format of the output path:
     {output_dir}/{directory}/{p.name}_{pipeline_name}_{active_amendments}_{appendix}
 
-    :param looper.Project prj: project object
-    :param str pipeline_name: name of the pipeline to get the file for
-    :param str appendix: the appendix of the file to create the path for,
-        like 'objs_summary.tsv' for objects summary file
-    :return str: path to the file
+    Args:
+        prj (looper.Project): Project object.
+        pipeline_name (str): Name of the pipeline to get the file for.
+        appendix (str): The appendix of the file to create the path for,
+            like 'objs_summary.tsv' for objects summary file.
+        directory (str): Directory path component.
+
+    Returns:
+        str: Path to the file.
     """
     fp = os.path.join(
         prj.output_dir, directory or "", f"{prj[NAME_KEY]}_{pipeline_name}"
@@ -203,14 +223,17 @@ def get_file_for_project(prj, pipeline_name, appendix=None, directory=None):
 
 
 def get_file_for_project_old(prj, appendix):
-    """
-    Create a path to the file for the current project.
-    Takes the possibility of amendment being activated at the time
+    """Create a path to the file for the current project.
 
-    :param looper.Project prj: project object
-    :param str appendix: the appendix of the file to create the path for,
-        like 'objs_summary.tsv' for objects summary file
-    :return str: path to the file
+    Takes the possibility of amendment being activated at the time.
+
+    Args:
+        prj (looper.Project): Project object.
+        appendix (str): The appendix of the file to create the path for,
+            like 'objs_summary.tsv' for objects summary file.
+
+    Returns:
+        str: Path to the file.
     """
     fp = os.path.join(prj.output_dir, prj[NAME_KEY])
     if hasattr(prj, AMENDMENTS_KEY) and getattr(prj, AMENDMENTS_KEY):
@@ -220,18 +243,20 @@ def get_file_for_project_old(prj, appendix):
 
 
 def jinja_render_template_strictly(template, namespaces):
-    """
-    Render a command string in the provided namespaces context.
+    """Render a command string in the provided namespaces context.
 
     Strictly, which means that all the requested attributes must be
-    available in the namespaces
+    available in the namespaces.
 
-    :param str template: command template do be filled in with the
-        variables in the provided namespaces. For example:
-        "prog.py --name {project.name} --len {sample.len}"
-    :param Mapping[Mapping[str] namespaces: context for command rendering.
-        Possible namespaces are: looper, project, sample, pipeline
-    :return str: rendered command
+    Args:
+        template (str): Command template to be filled in with the
+            variables in the provided namespaces. For example:
+            "prog.py --name {project.name} --len {sample.len}".
+        namespaces (Mapping[Mapping[str]]): Context for command rendering.
+            Possible namespaces are: looper, project, sample, pipeline.
+
+    Returns:
+        str: Rendered command.
     """
 
     def _finfun(x):
@@ -260,11 +285,13 @@ def jinja_render_template_strictly(template, namespaces):
 
 
 def read_yaml_file(filepath):
-    """
-    Read a YAML file
+    """Read a YAML file.
 
-    :param str filepath: path to the file to read
-    :return dict: read data
+    Args:
+        filepath (str): Path to the file to read.
+
+    Returns:
+        dict: Read data.
     """
     data = None
     if os.path.exists(filepath):
@@ -280,18 +307,21 @@ def enrich_args_via_cfg(
     test_args=None,
     cli_modifiers=None,
 ):
-    """
-    Read in a looper dotfile, pep config and set arguments.
+    """Read in a looper dotfile, pep config and set arguments.
 
     Priority order: CLI > dotfile/config > pep_config > parser default
 
-    :param subcommand name: the name of the command used
-    :param argparse.Namespace parser_args: parsed args by the original parser
-    :param argparse.Namespace aux_parser: parsed args by the argument parser
-        with defaults suppressed
-    :param dict test_args: dict of args used for pytesting
-    :param dict cli_modifiers: dict of args existing if user supplied cli args in looper config file
-    :return argparse.Namespace: selected argument values
+    Args:
+        subcommand_name: The name of the command used.
+        parser_args (argparse.Namespace): Parsed args by the original parser.
+        aux_parser (argparse.Namespace): Parsed args by the argument parser
+            with defaults suppressed.
+        test_args (dict): Dict of args used for pytesting.
+        cli_modifiers (dict): Dict of args existing if user supplied cli args
+            in looper config file.
+
+    Returns:
+        argparse.Namespace: Selected argument values.
     """
 
     # Did the user provide arguments in the PEP config?
@@ -373,7 +403,8 @@ def enrich_args_via_cfg(
 
 
 def _get_subcommand_args(subcommand_name, parser_args):
-    """
+    """Get the union of values for the subcommand arguments.
+
     Get the union of values for the subcommand arguments from
     Project.looper, Project.looper.cli.<subcommand> and Project.looper.cli.all.
     If any are duplicated, the above is the selection priority order.
@@ -382,8 +413,11 @@ def _get_subcommand_args(subcommand_name, parser_args):
     with '_'), which strongly relies on argument parser using default
     destinations.
 
-    :param argparser.Namespace parser_args: argument namespace
-    :return dict: mapping of argument destinations to their values
+    Args:
+        parser_args (argparser.Namespace): Argument namespace.
+
+    Returns:
+        dict: Mapping of argument destinations to their values.
     """
     args = dict()
     cfg = peppyProject(
@@ -430,8 +464,13 @@ def _get_subcommand_args(subcommand_name, parser_args):
 
 
 def init_generic_pipeline(pipelinepath: Optional[str] = None):
-    """
-    Create generic pipeline interface
+    """Create generic pipeline interface.
+
+    Args:
+        pipelinepath (str, optional): Path to pipeline directory.
+
+    Returns:
+        bool: True if successful.
     """
     console = Console()
 
@@ -541,11 +580,14 @@ echo "Number of lines: $linecount"
 
 
 def read_looper_dotfile():
-    """
-    Read looper config file
-    :return str: path to the config file read from the dotfile
-    :raise MisconfigurationException: if the dotfile does not consist of the
-        required key pointing to the PEP
+    """Read looper config file.
+
+    Returns:
+        str: Path to the config file read from the dotfile.
+
+    Raises:
+        MisconfigurationException: If the dotfile does not consist of the
+            required key pointing to the PEP.
     """
     dot_file_path = dotfile_path(must_exist=True)
     return read_looper_config_file(looper_config_path=dot_file_path)
@@ -559,16 +601,20 @@ def initiate_looper_config(
     project_pipeline_interfaces: Union[List[str], str] = None,
     force=False,
 ):
-    """
-    Initialize looper config file
+    """Initialize looper config file.
 
-    :param str looper_config_path: absolute path to the file to initialize
-    :param str pep_path: path to the PEP to be used in pipeline
-    :param str output_dir: path to the output directory
-    :param str|list sample_pipeline_interfaces: path or list of paths to sample pipeline interfaces
-    :param str|list project_pipeline_interfaces: path or list of paths to project pipeline interfaces
-    :param bool force: whether the existing file should be overwritten
-    :return bool: whether the file was initialized
+    Args:
+        looper_config_path (str): Absolute path to the file to initialize.
+        pep_path (str): Path to the PEP to be used in pipeline.
+        output_dir (str): Path to the output directory.
+        sample_pipeline_interfaces (str | list): Path or list of paths to
+            sample pipeline interfaces.
+        project_pipeline_interfaces (str | list): Path or list of paths to
+            project pipeline interfaces.
+        force (bool): Whether the existing file should be overwritten.
+
+    Returns:
+        bool: Whether the file was initialized.
     """
     console = Console()
     console.clear()
@@ -624,10 +670,10 @@ def initiate_looper_config(
 
 
 def looper_config_tutorial():
-    """
-    Prompt a user through configuring a .looper.yaml file for a new project.
+    """Prompt a user through configuring a .looper.yaml file for a new project.
 
-    :return bool: whether the file was initialized
+    Returns:
+        bool: Whether the file was initialized.
     """
 
     console = Console()
@@ -743,13 +789,18 @@ def looper_config_tutorial():
 
 
 def determine_pipeline_type(piface_path: str, looper_config_path: str):
-    """
-    Read pipeline interface from disk and determine if it contains "sample_interface", "project_interface" or both
+    """Read pipeline interface and determine its type.
 
+    Read pipeline interface from disk and determine if it contains
+    "sample_interface", "project_interface" or both.
 
-    :param str piface_path: path to pipeline_interface
-    :param str looper_config_path: path to looper config file
-    :return Tuple[Union[str,None],Union[str,None]] : (pipeline type, resolved path) or (None, None)
+    Args:
+        piface_path (str): Path to pipeline_interface.
+        looper_config_path (str): Path to looper config file.
+
+    Returns:
+        Tuple[Union[str, None], Union[str, None]]: (pipeline type, resolved path)
+            or (None, None).
     """
 
     if piface_path is None:
@@ -788,15 +839,21 @@ def determine_pipeline_type(piface_path: str, looper_config_path: str):
 
 
 def read_looper_config_file(looper_config_path: str) -> dict:
-    """
+    """Read Looper config file.
+
     Read Looper config file which includes:
     - PEP config (local path or pephub registry path)
     - looper output dir
     - looper pipeline interfaces
 
-    :param str looper_config_path: path to looper config path
-    :return dict: looper config file content
-    :raise MisconfigurationException: incorrect configuration.
+    Args:
+        looper_config_path (str): Path to looper config path.
+
+    Returns:
+        dict: Looper config file content.
+
+    Raises:
+        MisconfigurationException: Incorrect configuration.
     """
     return_dict = {}
 
@@ -891,16 +948,20 @@ def read_looper_config_file(looper_config_path: str) -> dict:
 
 
 def dotfile_path(directory=os.getcwd(), must_exist=False):
-    """
-    Get the path to the looper dotfile
+    """Get the path to the looper dotfile.
 
     If file existence is forced this function will look for it in
-    the directory parents
+    the directory parents.
 
-    :param str directory: directory path to start the search in
-    :param bool must_exist: whether the file must exist
-    :return str: path to the dotfile
-    :raise OSError: if the file does not exist
+    Args:
+        directory (str): Directory path to start the search in.
+        must_exist (bool): Whether the file must exist.
+
+    Returns:
+        str: Path to the dotfile.
+
+    Raises:
+        OSError: If the file does not exist.
     """
     cur_dir = directory
     if not must_exist:
@@ -919,8 +980,13 @@ def dotfile_path(directory=os.getcwd(), must_exist=False):
 
 
 def is_PEP_file_type(input_string: str) -> bool:
-    """
-    Determines if the provided path is actually a file type that Looper can use for loading PEP
+    """Determines if the provided path is a file type that Looper can use for loading PEP.
+
+    Args:
+        input_string (str): Path to check.
+
+    Returns:
+        bool: True if the path is a valid PEP file type.
     """
 
     PEP_FILE_TYPES = ["yaml", "csv"]
@@ -930,10 +996,13 @@ def is_PEP_file_type(input_string: str) -> bool:
 
 
 def is_pephub_registry_path(input_string: str) -> bool:
-    """
-    Check if input is a registry path to pephub
-    :param str input_string: path to the PEP (or registry path)
-    :return bool: True if input is a registry path
+    """Check if input is a registry path to pephub.
+
+    Args:
+        input_string (str): Path to the PEP (or registry path).
+
+    Returns:
+        bool: True if input is a registry path.
     """
     try:
         registry_path = RegistryPath(**parse_registry_path(input_string))
@@ -997,11 +1066,14 @@ class NatIntervalInclusive(object):
 
     @classmethod
     def from_string(cls, s: str, upper_bound: int) -> "IntRange":
-        """
-        Create an instance from a string, e.g. command-line argument.
+        """Create an instance from a string, e.g. command-line argument.
 
-        :param str s: The string to parse as an interval
-        :param int upper_bound: the default upper bound
+        Args:
+            s (str): The string to parse as an interval.
+            upper_bound (int): The default upper bound.
+
+        Returns:
+            IntRange: New instance created from the string.
         """
         if upper_bound < 1:
             raise NatIntervalException(f"Upper bound must be positive: {upper_bound}")
@@ -1035,18 +1107,20 @@ class NatIntervalInclusive(object):
 
 
 def desired_samples_range_limited(arg: str, num_samples: int) -> Iterable[int]:
-    """
-    Create a contiguous interval of natural numbers. Used for _positive_ selection of samples.
+    """Create a contiguous interval of natural numbers for positive selection of samples.
 
     Interpret given arg as upper bound (1-based) if it's a single value, but take the
     minimum of that and the given number of samples. If arg is parseable as a range,
     use that.
 
-    :param str arg: CLI specification of a range of samples to use, or as the greatest
-        1-based index of a sample to include
-    :param int num_samples: what to use as the upper bound on the 1-based index interval
-        if the given arg isn't a range but rather a single value.
-    :return: an iterable of 1-based indices into samples to select
+    Args:
+        arg (str): CLI specification of a range of samples to use, or as the greatest
+            1-based index of a sample to include.
+        num_samples (int): What to use as the upper bound on the 1-based index interval
+            if the given arg isn't a range but rather a single value.
+
+    Returns:
+        Iterable[int]: An iterable of 1-based indices into samples to select.
     """
     try:
         upper_bound = min(int(arg), num_samples)
@@ -1059,13 +1133,15 @@ def desired_samples_range_limited(arg: str, num_samples: int) -> Iterable[int]:
 
 
 def desired_samples_range_skipped(arg: str, num_samples: int) -> Iterable[int]:
-    """
-    Create a contiguous interval of natural numbers. Used for _negative_ selection of samples.
+    """Create a contiguous interval of natural numbers for negative selection of samples.
 
-    :param str arg: CLI specification of a range of samples to use, or as the lowest
-        1-based index of a sample to skip
-    :param int num_samples: highest 1-based index of samples to include
-    :return: an iterable of 1-based indices into samples to select
+    Args:
+        arg (str): CLI specification of a range of samples to use, or as the lowest
+            1-based index of a sample to skip.
+        num_samples (int): Highest 1-based index of samples to include.
+
+    Returns:
+        Iterable[int]: An iterable of 1-based indices into samples to select.
     """
     try:
         lower_bound = int(arg)
@@ -1082,14 +1158,17 @@ def desired_samples_range_skipped(arg: str, num_samples: int) -> Iterable[int]:
 
 
 def write_submit_script(fp, content, data):
-    """
-    Write a submission script for divvy by populating a template with data.
-    :param str fp: Path to the file to which to create/write submissions script.
-    :param str content: Template for submission script, defining keys that
-        will be filled by given data
-    :param Mapping data: a "pool" from which values are available to replace
-        keys in the template
-    :return str: Path to the submission script
+    """Write a submission script for divvy by populating a template with data.
+
+    Args:
+        fp (str): Path to the file to which to create/write submissions script.
+        content (str): Template for submission script, defining keys that
+            will be filled by given data.
+        data (Mapping): A "pool" from which values are available to replace
+            keys in the template.
+
+    Returns:
+        str: Path to the submission script.
     """
 
     for k, v in data.items():
@@ -1117,10 +1196,10 @@ def write_submit_script(fp, content, data):
 
 
 def inspect_looper_config_file(looper_config_dict) -> None:
-    """
-    Inspects looper config by printing it to terminal.
-    param dict looper_config_dict: dict representing looper_config
+    """Inspects looper config by printing it to terminal.
 
+    Args:
+        looper_config_dict (dict): Dict representing looper_config.
     """
     # Simply print this to terminal
     print("LOOPER INSPECT")
