@@ -224,7 +224,7 @@ class Project(peppyProject):
         return self._extra_cli_or_cfg(OUTDIR_KEY, strict=True)
 
     def _extra_cli_or_cfg(self, attr_name, strict=False):
-        """Get attribute value provided in kwargs in object constructor of from looper section in the configuration file.
+        """Get attribute value provided in kwargs in object constructor or from looper section in the configuration file.
 
         Args:
             attr_name (str): Name of the attribute to get value for.
