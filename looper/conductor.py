@@ -484,7 +484,7 @@ class SubmissionConductor(object):
 
         Instances of this class maintain a sort of 'pool' of commands that
         expands as each new command is added, until a time that it's deemed
-        'full' and th
+        'full'. 
 
         :return bool: Whether this conductor's pool of commands is 'full' and
             ready for submission, as determined by its parameterization
