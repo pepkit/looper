@@ -56,7 +56,7 @@ def fetch_flag_files(prj=None, results_folder="", flags=FLAGS):
             function uses the assumption that if results_folder rather than project
             is provided, the structure of the file tree rooted at results_folder is
             such that any flag files to be found are not directly within rootdir but
-            are directly within on of its first layer of subfolders.
+            are directly within one of its first layer of subfolders.
         flags (Iterable[str] | str): Collection of flag names or single flag
             name for which to fetch files.
 
