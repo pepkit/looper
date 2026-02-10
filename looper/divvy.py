@@ -46,12 +46,8 @@ class ComputingConfiguration(YAMLConfigManager):
         entries=None,
         wait_max=None,
         strict_ro_locks=False,
-        schema_source=None,
-        validate_on_write=False,
     ):
-        super().__init__(
-            entries, wait_max, strict_ro_locks, schema_source, validate_on_write
-        )
+        super().__init__(entries, wait_max, strict_ro_locks)
 
         if "compute_packages" not in self:
             self["compute_packages"] = {}
