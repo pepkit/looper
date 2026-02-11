@@ -125,13 +125,17 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
 
     cli_use_errors = validate_post_parse(subcommand_args)
     if cli_use_errors:
-        parser.print_help(sys.stderr)
-        parser.error(
-            f"{len(cli_use_errors)} CLI use problem(s): {', '.join(cli_use_errors)}"
-        )
+        if parser:
+            parser.print_help(sys.stderr)
+            parser.error(
+                f"{len(cli_use_errors)} CLI use problem(s): {', '.join(cli_use_errors)}"
+            )
+        else:
+            raise ValueError(f"CLI use problem(s): {', '.join(cli_use_errors)}")
 
     if subcommand_name is None:
-        parser.print_help(sys.stderr)
+        if parser:
+            parser.print_help(sys.stderr)
         sys.exit(1)
 
     if subcommand_name == "init":

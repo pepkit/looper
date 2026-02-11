@@ -45,6 +45,7 @@ Homepage = "https://github.com/pepkit/looper"
 
 [project.scripts]
 looper = "looper.cli_pydantic:main_cli"
+looper-serve = "looper.api.main:main"
 divvy = "looper.__main__:divvy_main"
 
 [build-system]
@@ -52,6 +53,10 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project.optional-dependencies]
+api = [
+    "fastapi>=0.100.0",
+    "uvicorn>=0.22.0",
+]
 test = [
     "hypothesis>=6.84.3",
     "mock",
