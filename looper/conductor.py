@@ -23,7 +23,7 @@ from peppy.exceptions import RemoteYAMLError
 from pipestat import PipestatError
 from ubiquerg import expandpath
 from yaml import dump
-from yacman import FutureYAMLConfigManager as YAMLConfigManager
+from yacman import YAMLConfigManager
 
 from .const import (
     EXTRA_PROJECT_CMD_TEMPLATE,

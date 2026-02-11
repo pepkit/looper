@@ -9,6 +9,6 @@ peppy>=0.40.6
 pyyaml>=3.12
 rich>=9.10.0
 ubiquerg>=0.8.1
-yacman==0.9.3
+yacman>=0.9.5
 pydantic-argparse>=0.9.0
 psutil

@@ -344,7 +344,7 @@ class PipelineInterface(YAMLConfigManager):
                 if a == attrs[-1]:
                     map[a] = val
                     break
-                map.setdefault(a, PXAM())
+                map.setdefault(a, {})
                 map = map[a]
 
         raw_path = _get_from_dict(self, keys)

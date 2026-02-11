@@ -6,8 +6,7 @@ import shutil
 
 
 from shutil import copytree
-from yacman import FutureYAMLConfigManager as YAMLConfigManager
-from yacman import write_lock, FILEPATH_KEY, load_yaml, select_config
+from yacman import YAMLConfigManager, write_lock, load_yaml, select_config
 
 
 from .const import (
@@ -61,7 +60,7 @@ class ComputingConfiguration(YAMLConfigManager):
         with write_lock(self) as locked_ym:
             locked_ym.rebase()
             locked_ym.write()
-        filename = filename or getattr(self, FILEPATH_KEY)
+        filename = filename or self.filepath
         filedir = os.path.dirname(filename)
         # For this object, we *also* have to write the template files
         for pkg_name, pkg in self["compute_packages"].items():

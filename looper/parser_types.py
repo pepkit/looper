@@ -42,7 +42,7 @@ def html_checkbox(caravel=False, checked=False):
     """
     caravel_data = YAMLConfigManager({"element_type": "checkbox", "element_args": {}})
     if checked:
-        caravel_data.add_entries({"element_args": {"checked": True}})
+        caravel_data.update({"element_args": {"checked": True}})
 
     def fun(x=None, caravel_data=caravel_data, caravel=caravel):
         return caravel_data if caravel else eval(x)
