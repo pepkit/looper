@@ -35,7 +35,7 @@ dependencies = [
     "pyyaml>=3.12",
     "rich>=9.10.0",
     "ubiquerg>=0.8.1",
-    "yacman>=0.9.5",
+    "yacman @ git+https://github.com/databio/yacman.git@dev",  # TODO: revert to yacman>=0.9.5 after release
     "pydantic-argparse>=0.9.0",
     "psutil",
 ]

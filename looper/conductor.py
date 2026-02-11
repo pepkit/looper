@@ -3,6 +3,7 @@
 import importlib
 import logging
 import os
+import shlex
 import signal
 import subprocess
 import sys
@@ -470,10 +471,23 @@ class SubmissionConductor(object):
                 _LOGGER.info("Dry run, not submitted")
             elif self._rendered_ok:
                 sub_cmd = self.prj.dcc.compute["submission_command"]
-                submission_command = "{} {}".format(sub_cmd, script)
+
+                # Detect shell metacharacters that require shell=True
+                shell_chars = set('|&;<>()$`\\"\' \t\n*?[#~')
+                needs_shell = any(c in sub_cmd for c in shell_chars) and sub_cmd != "."
+
                 # Capture submission command return value so that we can
                 # intercept and report basic submission failures; #167
-                process = subprocess.Popen(submission_command, shell=True)
+                if sub_cmd == ".":
+                    # Direct execution: run script through bash without a submission wrapper
+                    _LOGGER.debug("Direct execution via bash: %s", script)
+                    process = subprocess.Popen(["/bin/bash", script])
+                elif needs_shell:
+                    _LOGGER.debug("Shell execution (detected shell syntax): %s %s", sub_cmd, script)
+                    process = subprocess.Popen(f"{sub_cmd} {script}", shell=True, executable="/bin/bash")
+                else:
+                    _LOGGER.debug("Direct execution: %s %s", sub_cmd, script)
+                    process = subprocess.Popen(shlex.split(sub_cmd) + [script])
                 self.process_id = process.pid
                 process.wait()
                 if process.returncode != 0:
