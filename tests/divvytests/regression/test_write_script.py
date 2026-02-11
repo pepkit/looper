@@ -1,8 +1,10 @@
 """Specific case tests for writing submission script"""
 
-from copy import deepcopy
 import random
+from copy import deepcopy
+
 import pytest
+
 from looper.divvy import ComputingConfiguration, select_divvy_config
 from tests.divvytests.helpers import get_random_key
 

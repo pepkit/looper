@@ -2,19 +2,15 @@ import os.path
 
 import pytest
 from peppy.const import *
-from yaml import dump
-
-from looper.const import *
-from looper.project import Project
-from tests.conftest import *
-from looper.utils import *
-from looper.cli_pydantic import main
-from tests.smoketests.test_run import is_connected
-from tempfile import TemporaryDirectory
 from pipestat import PipestatManager
 from pipestat.exceptions import RecordNotFoundError
-
 from yaml import dump, safe_load
+
+from looper.cli_pydantic import main
+from looper.const import *
+from looper.utils import *
+from tests.conftest import *
+from tests.smoketests.test_run import is_connected
 
 CMD_STRS = ["string", " --string", " --sjhsjd 212", "7867#$@#$cc@@"]
 

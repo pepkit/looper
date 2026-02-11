@@ -1,7 +1,8 @@
-import matplotlib.pyplot as plt  # be sure to `pip install matplotlib`
 import os
-import pipestat
 import sys
+
+import matplotlib.pyplot as plt  # be sure to `pip install matplotlib`
+import pipestat
 
 # A pipeline that retrieves previously reported pipestat results
 # and plots them in a bar chart

@@ -1,9 +1,6 @@
-import looper.divvy as divvy
 import os
-import pytest
-from collections import OrderedDict
 
-from yacman import YAMLConfigManager
+import looper.divvy as divvy
 from looper.divvy import select_divvy_config
 
 # For interactive debugging:

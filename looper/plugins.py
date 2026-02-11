@@ -1,16 +1,17 @@
 import logging
 import os
+
+from .conductor import _get_yaml_path
 from .const import (
     SAMPLE_CWL_YAML_PATH_KEY,
     SAMPLE_YAML_PATH_KEY,
     SAMPLE_YAML_PRJ_PATH_KEY,
 )
-from .conductor import _get_yaml_path
 
 _LOGGER = logging.getLogger(__name__)
 
 
-def write_sample_yaml_prj(namespaces):
+def write_sample_yaml_prj(namespaces: dict) -> dict:
     """Plugin: saves sample representation with project reference to YAML.
 
     This plugin can be parametrized by providing the path value/template in
@@ -32,7 +33,7 @@ def write_sample_yaml_prj(namespaces):
     return {"sample": sample}
 
 
-def write_custom_template(namespaces):
+def write_custom_template(namespaces: dict) -> dict | None:
     """
     Plugin: Populates a user-provided jinja template
 
@@ -69,7 +70,7 @@ def write_custom_template(namespaces):
     return {"sample": namespaces["sample"]}
 
 
-def write_sample_yaml_cwl(namespaces):
+def write_sample_yaml_cwl(namespaces: dict) -> dict:
     """Plugin: Produce a cwl-compatible yaml representation of the sample.
 
     Also adds the 'cwl_yaml' attribute to sample objects, which points
@@ -140,15 +141,14 @@ def write_sample_yaml_cwl(namespaces):
             sample[dir_attr] = {"class": "Directory", "location": dir_attr_value}
     else:
         _LOGGER.warning(
-            "No 'input_schema' defined, producing a regular "
-            "sample YAML representation"
+            "No 'input_schema' defined, producing a regular sample YAML representation"
         )
     _LOGGER.info("Writing sample yaml to {}".format(sample.sample_yaml_cwl))
     sample.to_yaml(sample.sample_yaml_cwl)
     return {"sample": sample}
 
 
-def write_sample_yaml(namespaces):
+def write_sample_yaml(namespaces: dict) -> dict:
     """Plugin: saves sample representation to YAML.
 
     This plugin can be parametrized by providing the path value/template in

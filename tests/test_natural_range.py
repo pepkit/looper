@@ -1,10 +1,12 @@
 """Tests for the natural numbers range data type"""
 
 from typing import *
-import pytest
-from hypothesis import given, strategies as st
-from looper.utils import NatIntervalException, NatIntervalInclusive
 
+import pytest
+from hypothesis import given
+from hypothesis import strategies as st
+
+from looper.utils import NatIntervalException, NatIntervalInclusive
 
 gen_pos_int = st.integers(min_value=1)
 gen_opt_int = st.one_of(st.integers(), st.none())
@@ -71,8 +73,9 @@ def test_from_string__just_delimiter__does_not_parse(legit_delim, upper_bound):
 
 @given(
     lo_hi_upper=st.tuples(gen_opt_int, gen_opt_int, st.integers()).filter(
-        lambda t: (t[0] is not None or t[1] is not None)
-        and any(is_non_pos(n) for n in t)
+        lambda t: (
+            (t[0] is not None or t[1] is not None) and any(is_non_pos(n) for n in t)
+        )
     )
 )
 def test_from_string__nonpositive_values__fail_with_expected_error(

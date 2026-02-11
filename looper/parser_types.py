@@ -3,7 +3,13 @@
 from yacman import YAMLConfigManager
 
 
-def html_range(caravel=False, min_val=0, max_val=10, step=1, value=0):
+def html_range(
+    caravel: bool = False,
+    min_val: int = 0,
+    max_val: int = 10,
+    step: int = 1,
+    value: int = 0,
+) -> callable:
     caravel_data = YAMLConfigManager(
         {
             "element_type": "range",
@@ -28,7 +34,7 @@ def html_range(caravel=False, min_val=0, max_val=10, step=1, value=0):
     return fun
 
 
-def html_checkbox(caravel=False, checked=False):
+def html_checkbox(caravel: bool = False, checked: bool = False) -> callable:
     """Create argument for type parameter on argparse.ArgumentParser.add_argument.
 
     Args:
@@ -50,7 +56,7 @@ def html_checkbox(caravel=False, checked=False):
     return fun
 
 
-def html_select(choices, caravel=False):
+def html_select(choices: list, caravel: bool = False) -> callable:
     """Create argument for type parameter on argparse.ArgumentParser.add_argument.
 
     Args:

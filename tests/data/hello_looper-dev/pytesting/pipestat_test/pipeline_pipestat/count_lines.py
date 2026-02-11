@@ -1,7 +1,7 @@
 import os.path
+import sys
 
 import pipestat
-import sys
 
 # Very simple pipeline that calls pipestat
 # takes arguments invoked during looper submission via command templates

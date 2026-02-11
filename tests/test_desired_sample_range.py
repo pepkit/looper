@@ -1,8 +1,9 @@
 """Tests for determination of desired sample range"""
 
 from itertools import chain
+
 import pytest
-from hypothesis import given, strategies as st
+
 from looper.utils import (
     NatIntervalException,
     desired_samples_range_limited,

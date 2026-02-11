@@ -1,10 +1,10 @@
-import os
 import glob
-import looper.divvy as divvy
+import os
+
 import pytest
 
-from looper.divvy import select_divvy_config, DEFAULT_CONFIG_SCHEMA
-
+import looper.divvy as divvy
+from looper.divvy import select_divvy_config
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(THIS_DIR, "data/divcfg-master")

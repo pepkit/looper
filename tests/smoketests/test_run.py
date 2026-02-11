@@ -4,11 +4,11 @@ import pytest
 from peppy.const import *
 from yaml import dump
 
+from looper.cli_pydantic import main
 from looper.const import *
 from looper.project import Project
-from tests.conftest import *
 from looper.utils import *
-from looper.cli_pydantic import main
+from tests.conftest import *
 
 CMD_STRS = ["string", " --string", " --sjhsjd 212", "7867#$@#$cc@@"]
 
@@ -160,7 +160,6 @@ class TestLooperRunBehavior:
         tp = prep_temp_pep
 
         with mod_yaml_data(tp) as config_data:
-
             pifaces = config_data[PIPELINE_INTERFACES_KEY]
             config_data[PIPELINE_INTERFACES_KEY] = pifaces[0]
 
@@ -593,7 +592,6 @@ class TestLooperCompute:
     reason="This functionality requires input from the user. Causing pytest to error if run without -s flag"
 )
 class TestLooperConfig:
-
     def test_init_config_file(self, prep_temp_pep):
         tp = prep_temp_pep
         x = ["init", "--force-yes"]

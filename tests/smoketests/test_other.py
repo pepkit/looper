@@ -1,16 +1,16 @@
 import os.path
 
+import pandas as pd
 import pytest
 from peppy import Project
 
+from looper.cli_pydantic import main
 from looper.exceptions import (
-    PipestatConfigurationException,
-    MisconfigurationException,
     LooperReportError,
+    MisconfigurationException,
+    PipestatConfigurationException,
 )
 from tests.conftest import *
-from looper.cli_pydantic import main
-import pandas as pd
 
 
 def _make_flags_pipestat(cfg, type, pipeline_name):
@@ -63,7 +63,6 @@ def _make_flags(cfg, type, pipeline_name):
 
 
 class TestLooperPipestat:
-
     @pytest.mark.parametrize("cmd", ["report", "table", "check"])
     def test_fail_no_pipestat_config(self, prep_temp_pep, cmd):
         "report, table, and check should fail if pipestat is NOT configured."
