@@ -7,12 +7,11 @@ import os
 from copy import copy
 from typing import Any, List
 
-import pydantic
+import pydantic.v1 as pydantic
 
 
 class Argument(pydantic.fields.FieldInfo):
-    """
-    CLI argument / flag definition
+    """CLI argument / flag definition.
 
     This class is designed to define CLI arguments or flags. It leverages
     Pydantic for data validation and serves as a source of truth for multiple
@@ -24,18 +23,23 @@ class Argument(pydantic.fields.FieldInfo):
     so we instead subclass `FieldInfo` directly and validate it in the
     constructor.
 
-    :param str name: argument name, e.g. "ignore-args"
-    :param Any default: a tuple of the form (type, default_value). If the
-        default value is `...` (Ellipsis), then the argument is required.
-    :param str description: argument description, which will appear as the
-        help text for this argument
-    :param dict kwargs: additional keyword arguments supported by
-        `FieldInfo`. These are passed along as they are.
+    Args:
+        name (str): Argument name, e.g. "ignore-args".
+        default (Any): A tuple of the form (type, default_value). If the
+            default value is `...` (Ellipsis), then the argument is required.
+        description (str): Argument description, which will appear as the
+            help text for this argument.
+        kwargs (dict): Additional keyword arguments supported by
+            `FieldInfo`. These are passed along as they are.
     """
 
-    def __init__(self, name: str, default: Any, description: str, **kwargs) -> None:
+    def __init__(
+        self, name: str, default: Any, description: str, alias: str = None, **kwargs
+    ) -> None:
         self._name = name
-        super().__init__(default=default, description=description, **kwargs)
+        super().__init__(
+            default=default, description=description, alias=alias, **kwargs
+        )
         self._validate()
 
     @property
@@ -77,50 +81,90 @@ class ArgumentEnum(enum.Enum):
 
     IGNORE_FLAGS = Argument(
         name="ignore_flags",
+        alias="-i",
         default=(bool, False),
         description="Ignore run status flags",
     )
+    FORCE_YES = Argument(
+        name="force_yes",
+        alias="-f",
+        default=(bool, False),
+        description="Provide upfront confirmation of destruction intent, to skip console query. Default=False",
+    )
+
+    DESCRIBE_CODES = Argument(
+        name="describe_codes",
+        default=(bool, False),
+        description="Show status codes description. Default=False",
+    )
+
+    ITEMIZED = Argument(
+        name="itemized",
+        default=(bool, False),
+        description="Show detailed overview of sample statuses. Default=False",
+    )
+
+    FLAGS = Argument(
+        name="flags",
+        alias="-f",
+        default=(List, []),
+        description="Only check samples based on these status flags.",
+    )
+
     TIME_DELAY = Argument(
         name="time_delay",
+        alias="-t",
         default=(int, 0),
         description="Time delay in seconds between job submissions (min: 0, max: 30)",
     )
     DRY_RUN = Argument(
-        name="dry_run", default=(bool, False), description="Don't actually submit jobs"
+        name="dry_run",
+        alias="-d",
+        default=(bool, False),
+        description="Don't actually submit jobs",
     )
     COMMAND_EXTRA = Argument(
         name="command_extra",
+        alias="-x",
         default=(str, ""),
         description="String to append to every command",
     )
     COMMAND_EXTRA_OVERRIDE = Argument(
         name="command_extra_override",
+        alias="-y",
         default=(str, ""),
         description="Same as command-extra, but overrides values in PEP",
     )
     LUMP = Argument(
         name="lump",
+        alias="-u",
         default=(float, None),
         description="Total input file size (GB) to batch into one job",
     )
     LUMPN = Argument(
-        name="lumpn",
+        name="lump_n",
+        alias="-n",
         default=(int, None),
         description="Number of commands to batch into one job",
     )
+    LUMPJ = Argument(
+        name="lump_j",
+        alias="-j",
+        default=(int, None),
+        description="Lump samples into number of jobs.",
+    )
     LIMIT = Argument(
-        name="limit", default=(int, None), description="Limit to n samples"
+        name="limit", alias="-l", default=(int, None), description="Limit to n samples"
     )
     SKIP = Argument(
-        name="skip", default=(int, None), description="Skip samples by numerical index"
+        name="skip",
+        alias="-k",
+        default=(int, None),
+        description="Skip samples by numerical index",
     )
-    CONFIG_FILE = Argument(
-        name="config_file",
-        default=(str, None),
-        description="Project configuration file",
-    )
-    LOOPER_CONFIG = Argument(
-        name="looper_config",
+    CONFIG = Argument(
+        name="config",
+        alias="-c",
         default=(str, None),
         description="Looper configuration file (YAML)",
     )
@@ -136,18 +180,35 @@ class ArgumentEnum(enum.Enum):
     )
     OUTPUT_DIR = Argument(
         name="output_dir",
+        alias="-o",
         default=(str, None),
         description="Output directory",
     )
+    REPORT_OUTPUT_DIR = Argument(
+        name="report_dir",
+        alias="-r",
+        default=(str, None),
+        description="Set location for looper report and looper table outputs",
+    )
+
+    GENERIC = Argument(
+        name="generic",
+        alias="-g",
+        default=(bool, False),
+        description="Use generic looper config?",
+    )
+
     SAMPLE_PIPELINE_INTERFACES = Argument(
         name="sample_pipeline_interfaces",
+        alias="-S",
         default=(List, []),
-        description="Paths to looper sample config files",
+        description="Paths to looper sample pipeline interfaces",
     )
     PROJECT_PIPELINE_INTERFACES = Argument(
         name="project_pipeline_interfaces",
+        alias="-P",
         default=(List, []),
-        description="Paths to looper project config files",
+        description="Paths to looper project pipeline interfaces",
     )
     AMEND = Argument(
         name="amend", default=(List, []), description="List of amendments to activate"
@@ -159,7 +220,7 @@ class ArgumentEnum(enum.Enum):
     )
     SEL_INCL = Argument(
         name="sel_incl",
-        default=(str, ""),
+        default=(List, []),
         description="Include only samples with these values",
     )
     SEL_EXCL = Argument(
@@ -168,18 +229,20 @@ class ArgumentEnum(enum.Enum):
         description="Exclude samples with these values",
     )
     SEL_FLAG = Argument(
-        name="sel_flag", default=(str, ""), description="Sample selection flag"
+        name="sel_flag", default=(List, []), description="Sample selection flag"
     )
     EXC_FLAG = Argument(
-        name="exc_flag", default=(str, ""), description="Sample exclusion flag"
+        name="exc_flag", default=(List, []), description="Sample exclusion flag"
     )
     SKIP_FILE_CHECKS = Argument(
         name="skip_file_checks",
+        alias="-f",
         default=(bool, False),
         description="Do not perform input file checks",
     )
     PACKAGE = Argument(
         name="package",
+        alias="-p",
         default=(str, None),
         description="Name of computing resource package to use",
     )
@@ -217,4 +280,14 @@ class ArgumentEnum(enum.Enum):
         name="pipestat",
         default=(str, None),
         description="Path to pipestat files.",
+    )
+    PORTABLE = Argument(
+        name="portable",
+        default=(bool, False),
+        description="Makes html report portable.",
+    )
+    PROJECT_LEVEL = Argument(
+        name="project",
+        default=(bool, False),
+        description="Is this command executed for project-level?",
     )

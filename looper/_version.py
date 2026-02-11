@@ -1,1 +1,2 @@
-__version__ = "1.6.0"
+__version__ = "2.0.3"
+# You must change the version in parser = pydantic_argparse.ArgumentParser in cli_pydantic.py!!!

@@ -1,0 +1,4 @@
+pep_config: databio/hello_looper:default 
+output_dir: results
+pipeline_interfaces:
+  - pipeline/pipeline_interface.yaml

@@ -1,0 +1,4 @@
+pipeline_name: count_lines
+sample_interface:
+  command_template: >
+    pipeline/count_lines.sh {sample.file_path}

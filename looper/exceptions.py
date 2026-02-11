@@ -1,4 +1,4 @@
-""" Exceptions for specific looper issues. """
+"""Exceptions for specific looper issues."""
 
 from abc import ABCMeta
 from collections.abc import Iterable
@@ -15,6 +15,7 @@ _all__ = [
     "PipelineInterfaceConfigError",
     "PipelineInterfaceRequirementsError",
     "MisconfigurationException",
+    "LooperReportError",
 ]
 
 
@@ -31,7 +32,7 @@ class SampleFailedException(LooperError):
 
 
 class MisconfigurationException(LooperError):
-    """Duplication of pipeline identifier precludes unique pipeline ref."""
+    """Looper not properly configured"""
 
     def __init__(self, key):
         super(MisconfigurationException, self).__init__(key)
@@ -89,10 +90,10 @@ class PipelineInterfaceConfigError(LooperError):
     """Error with PipelineInterface config data during construction."""
 
     def __init__(self, context):
-        """
-        For exception context, provide message or collection of missing sections.
+        """For exception context, provide message or collection of missing sections.
 
-        :param str | Iterable[str] context:
+        Args:
+            context (str | Iterable[str]): Message or collection of missing sections.
         """
         if not isinstance(context, str) and isinstance(context, Iterable):
             context = "Missing section(s): {}".format(", ".join(context))
@@ -109,3 +110,10 @@ class PipelineInterfaceRequirementsError(LooperError):
             )
         )
         self.error_specs = typename_by_requirement
+
+
+class LooperReportError(LooperError):
+    """Looper reporting errors"""
+
+    def __init__(self, reason):
+        super(LooperReportError, self).__init__(reason)

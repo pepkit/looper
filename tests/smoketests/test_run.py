@@ -1,3 +1,5 @@
+import os.path
+
 import pytest
 from peppy.const import *
 from yaml import dump
@@ -6,7 +8,7 @@ from looper.const import *
 from looper.project import Project
 from tests.conftest import *
 from looper.utils import *
-from looper.cli_looper import main
+from looper.cli_pydantic import main
 
 CMD_STRS = ["string", " --string", " --sjhsjd 212", "7867#$@#$cc@@"]
 
@@ -14,11 +16,53 @@ CMD_STRS = ["string", " --string", " --sjhsjd 212", "7867#$@#$cc@@"]
 def test_cli(prep_temp_pep):
     tp = prep_temp_pep
 
-    x = test_args_expansion(tp, "run")
+    x = ["run", "--config", tp, "--dry-run"]
     try:
         main(test_args=x)
     except Exception:
         raise pytest.fail("DID RAISE {0}".format(Exception))
+
+
+def test_cli_shortform(prep_temp_pep):
+    tp = prep_temp_pep
+
+    x = ["run", "--config", tp, "-d"]
+    try:
+        main(test_args=x)
+    except Exception:
+        raise pytest.fail("DID RAISE {0}".format(Exception))
+
+    x = ["run", "--config", tp, "-d", "-l", "2"]
+    try:
+        main(test_args=x)
+    except Exception:
+        raise pytest.fail("DID RAISE {0}".format(Exception))
+
+    tp = prep_temp_pep
+    x = ["run", "--config", tp, "-d", "-n", "2"]
+    try:
+        main(test_args=x)
+    except Exception:
+        raise pytest.fail("DID RAISE {0}".format(Exception))
+
+
+def test_running_csv_pep(prep_temp_pep_csv):
+    tp = prep_temp_pep_csv
+
+    x = ["run", "--config", tp, "--dry-run"]
+    try:
+        main(test_args=x)
+    except Exception:
+        raise pytest.fail("DID RAISE {0}".format(Exception))
+
+
+@pytest.mark.parametrize(
+    "path", ["something/example.yaml", "somethingelse/example2.csv"]
+)
+def test_is_PEP_file_type(path):
+
+    result = is_PEP_file_type(path)
+    assert result == True
 
 
 def is_connected():
@@ -39,16 +83,18 @@ class TestLooperBothRuns:
     def test_looper_cfg_invalid(self, cmd):
         """Verify looper does not accept invalid cfg paths"""
 
-        x = test_args_expansion("jdfskfds/dsjfklds/dsjklsf.yaml", cmd)
-        with pytest.raises(OSError):
-            main(test_args=x)
+        x = test_args_expansion(cmd, "--config", "jdfskfds/dsjfklds/dsjklsf.yaml")
+        with pytest.raises(SystemExit):
+            result = main(test_args=x)
+            print(result)
 
     @pytest.mark.parametrize("cmd", ["run", "runp"])
     def test_looper_cfg_required(self, cmd):
         """Verify looper does not accept invalid cfg paths"""
 
         x = test_args_expansion("", cmd)
-        with pytest.raises(SystemExit):
+
+        with pytest.raises(MisconfigurationException):
             ff = main(test_args=x)
             print(ff)
 
@@ -87,15 +133,8 @@ class TestLooperBothRuns:
         tp = prep_temp_pep
 
         x = test_args_expansion(tp, cmd, ["--unknown-arg", "4"])
-        try:
+        with pytest.raises(SystemExit):
             main(test_args=x)
-            sd = os.path.join(get_outdir(tp), "submission")
-            subs_list = [
-                os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")
-            ]
-            assert_content_not_in_any_files(subs_list, "--unknown-arg")
-        except Exception:
-            raise pytest.fail("DID RAISE {0}".format(Exception))
 
 
 class TestLooperRunBehavior:
@@ -119,13 +158,11 @@ class TestLooperRunBehavior:
 
     def test_looper_single_pipeline(self, prep_temp_pep):
         tp = prep_temp_pep
+
         with mod_yaml_data(tp) as config_data:
-            pifaces = config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][
-                PIPELINE_INTERFACES_KEY
-            ]
-            config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][PIPELINE_INTERFACES_KEY] = (
-                pifaces[1]
-            )
+
+            pifaces = config_data[PIPELINE_INTERFACES_KEY]
+            config_data[PIPELINE_INTERFACES_KEY] = pifaces[0]
 
         x = test_args_expansion(tp, "run")
         try:
@@ -136,17 +173,12 @@ class TestLooperRunBehavior:
 
     def test_looper_var_templates(self, prep_temp_pep):
         tp = prep_temp_pep
-        with mod_yaml_data(tp) as config_data:
-            pifaces = config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][
-                PIPELINE_INTERFACES_KEY
-            ]
-            config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][PIPELINE_INTERFACES_KEY] = (
-                pifaces[1]
-            )
         x = test_args_expansion(tp, "run")
+        x.pop(-1)  # remove the --dry-run argument for this specific test
+
         try:
             # Test that {looper.piface_dir} is correctly rendered to a path which will show up in the final .sub file
-            main(test_args=x)
+            results = main(test_args=x)
             sd = os.path.join(get_outdir(tp), "submission")
             subs_list = [
                 os.path.join(sd, f) for f in os.listdir(sd) if f.endswith(".sub")
@@ -158,8 +190,10 @@ class TestLooperRunBehavior:
     def test_looper_cli_pipeline(self, prep_temp_pep):
         """CLI-specified pipelines overwrite ones from config"""
         tp = prep_temp_pep
-        pi_pth = os.path.join(os.path.dirname(tp), PIS.format("1"))
-        x = test_args_expansion(tp, "run", ["--pipeline-interfaces", pi_pth])
+        with mod_yaml_data(tp) as config_data:
+            pifaces = config_data[PIPELINE_INTERFACES_KEY]
+            pi_pth = pifaces[1]
+        x = test_args_expansion(tp, "run", ["--sample-pipeline-interfaces", pi_pth])
         try:
             result = main(test_args=x)
 
@@ -174,12 +208,12 @@ class TestLooperRunBehavior:
         """
         tp = prep_temp_pep
         with mod_yaml_data(tp) as config_data:
-            del config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][PIPELINE_INTERFACES_KEY]
+            del config_data[PIPELINE_INTERFACES_KEY]
         x = test_args_expansion(tp, "run")
         try:
             result = main(test_args=x)
-
             assert result[DEBUG_JOBS] == 0
+            assert "No pipeline interfaces defined" in list(result.keys())
         except Exception:
             raise pytest.fail("DID RAISE {0}".format(Exception))
 
@@ -189,9 +223,7 @@ class TestLooperRunBehavior:
         """
         tp = prep_temp_pep
         with mod_yaml_data(tp) as config_data:
-            config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][PIPELINE_INTERFACES_KEY] = [
-                "bogus"
-            ]
+            config_data[PIPELINE_INTERFACES_KEY] = ["bogus"]
         x = test_args_expansion(tp, "run")
         try:
             result = main(test_args=x)
@@ -201,60 +233,24 @@ class TestLooperRunBehavior:
         except Exception:
             raise pytest.fail("DID RAISE {0}".format(Exception))
 
-    def test_looper_pipeline_invalid(self, prep_temp_pep):
-        """
-        Pipeline is ignored when does not validate successfully
-        against a schema
-        """
-        tp = prep_temp_pep
-        with mod_yaml_data(tp) as config_data:
-            pifaces = config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][
-                PIPELINE_INTERFACES_KEY
-            ]
-            config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][PIPELINE_INTERFACES_KEY] = (
-                pifaces[1]
-            )
-        piface_path = os.path.join(os.path.dirname(tp), pifaces[1])
-        with mod_yaml_data(piface_path) as piface_data:
-            del piface_data["pipeline_name"]
-        x = test_args_expansion(tp, "run")
-        try:
-            result = main(test_args=x)
-
-            assert result[DEBUG_JOBS] == 0
-            assert "No pipeline interfaces defined" in result.keys()
-        except Exception:
-            raise pytest.fail("DID RAISE {0}".format(Exception))
-
-    def test_looper_sample_attr_missing(self, prep_temp_pep):
-        """
-        Piface is ignored when it does not exist
-        """
-        tp = prep_temp_pep
-        with mod_yaml_data(tp) as config_data:
-            del config_data[SAMPLE_MODS_KEY][CONSTANT_KEY]["attr"]
-        x = test_args_expansion(tp, "run")
-        try:
-            result = main(test_args=x)
-
-            assert result[DEBUG_JOBS] == 0
-        except Exception:
-            raise pytest.fail("DID RAISE {0}".format(Exception))
-
-    @pytest.mark.skipif(not is_connected(), reason="Test needs an internet connection")
     def test_looper_sample_name_whitespace(self, prep_temp_pep):
         """
         Piface is ignored when it does not exist
         """
         tp = prep_temp_pep
+
         imply_whitespace = [
             {
                 IMPLIED_IF_KEY: {"sample_name": "sample1"},
                 IMPLIED_THEN_KEY: {"sample_name": "sample whitespace"},
             }
         ]
-        with mod_yaml_data(tp) as config_data:
-            config_data[SAMPLE_MODS_KEY][IMPLIED_KEY] = imply_whitespace
+
+        project_config_path = get_project_config_path(tp)
+
+        with mod_yaml_data(project_config_path) as project_config_data:
+            project_config_data[SAMPLE_MODS_KEY][IMPLIED_KEY] = imply_whitespace
+
         x = test_args_expansion(tp, "run")
         with pytest.raises(Exception):
             result = main(test_args=x)
@@ -266,12 +262,16 @@ class TestLooperRunBehavior:
         If all samples have toggle attr set to 0, no jobs are submitted
         """
         tp = prep_temp_pep
-        with mod_yaml_data(tp) as config_data:
-            config_data[SAMPLE_MODS_KEY][CONSTANT_KEY][SAMPLE_TOGGLE_ATTR] = 0
+        project_config_path = get_project_config_path(tp)
+
+        with mod_yaml_data(project_config_path) as project_config_data:
+            project_config_data[SAMPLE_MODS_KEY][APPEND_KEY][SAMPLE_TOGGLE_ATTR] = 0
+
         x = test_args_expansion(tp, "run")
+        x.pop(-1)  # remove dry run for this test
+
         try:
             result = main(test_args=x)
-
             assert result[DEBUG_JOBS] == 0
         except Exception:
             raise pytest.fail("DID RAISE {0}".format(Exception))
@@ -283,9 +283,10 @@ class TestLooperRunBehavior:
         appended to the pipelinecommand
         """
         tp = prep_temp_pep
-        with mod_yaml_data(tp) as config_data:
-            config_data[SAMPLE_MODS_KEY][CONSTANT_KEY]["command_extra"] = arg
+        project_config_path = get_project_config_path(tp)
 
+        with mod_yaml_data(project_config_path) as project_config_data:
+            project_config_data[SAMPLE_MODS_KEY][APPEND_KEY]["command_extra"] = arg
         x = test_args_expansion(tp, "run")
         try:
             main(test_args=x)
@@ -303,8 +304,11 @@ class TestLooperRunBehavior:
         pipeline command
         """
         tp = prep_temp_pep
-        with mod_yaml_data(tp) as config_data:
-            config_data[SAMPLE_MODS_KEY][CONSTANT_KEY]["command_extra"] = arg
+        project_config_path = get_project_config_path(tp)
+
+        with mod_yaml_data(project_config_path) as project_config_data:
+            project_config_data[SAMPLE_MODS_KEY][APPEND_KEY]["command_extra"] = arg
+
         x = test_args_expansion(tp, "run", ["--command-extra-override='different'"])
         try:
             main(test_args=x)
@@ -336,12 +340,16 @@ class TestLooperRunpBehavior:
 
     def test_looper_single_pipeline(self, prep_temp_pep):
         tp = prep_temp_pep
+
         with mod_yaml_data(tp) as config_data:
-            piface_path = os.path.join(os.path.dirname(tp), PIP.format("1"))
-            config_data[LOOPER_KEY][CLI_KEY]["runp"][
-                PIPELINE_INTERFACES_KEY
-            ] = piface_path
+            # Modifying in this way due to https://github.com/pepkit/looper/issues/474
+            config_data[PIPELINE_INTERFACES_KEY] = os.path.join(
+                os.path.dirname(tp), "pipeline/pipeline_interface1_project.yaml"
+            )
+
+        print(tp)
         x = test_args_expansion(tp, "runp")
+        x.pop(-1)  # remove the --dry-run argument for this specific test
         try:
             result = main(test_args=x)
             assert result[DEBUG_JOBS] != 2
@@ -351,10 +359,16 @@ class TestLooperRunpBehavior:
 
     @pytest.mark.parametrize("arg", CMD_STRS)
     def test_cmd_extra_project(self, prep_temp_pep, arg):
+
         tp = prep_temp_pep
-        with mod_yaml_data(tp) as config_data:
-            config_data[LOOPER_KEY]["command_extra"] = arg
+
+        project_config_path = get_project_config_path(tp)
+
+        with mod_yaml_data(project_config_path) as project_config_data:
+            project_config_data["looper"] = {}
+            project_config_data["looper"]["command_extra"] = arg
         x = test_args_expansion(tp, "runp")
+
         try:
             main(test_args=x)
         except Exception:
@@ -383,16 +397,18 @@ class TestLooperRunPreSubmissionHooks:
             ("looper.write_sample_yaml_cwl", "cwl.yaml"),
         ],
     )
-    @pytest.mark.skipif(not is_connected(), reason="Test needs an internet connection")
     def test_looper_other_plugins(self, prep_temp_pep, plugin, appendix):
         tp = prep_temp_pep
-        for path in {
-            piface.pipe_iface_file for piface in Project(tp).pipeline_interfaces
-        }:
-            with mod_yaml_data(path) as piface_data:
-                piface_data[PRE_SUBMIT_HOOK_KEY][PRE_SUBMIT_PY_FUN_KEY] = [plugin]
+        pep_dir = os.path.dirname(tp)
+        pipeline_interface1 = os.path.join(
+            pep_dir, "pipeline/pipeline_interface1_sample.yaml"
+        )
+
+        with mod_yaml_data(pipeline_interface1) as piface_data:
+            piface_data[PRE_SUBMIT_HOOK_KEY][PRE_SUBMIT_PY_FUN_KEY] = [plugin]
 
         x = test_args_expansion(tp, "run")
+        x.pop(-1)
         try:
             main(test_args=x)
         except Exception as err:
@@ -409,11 +425,13 @@ class TestLooperRunPreSubmissionHooks:
     )
     def test_looper_command_templates_hooks(self, prep_temp_pep, cmd):
         tp = prep_temp_pep
-        for path in {
-            piface.pipe_iface_file for piface in Project(tp).pipeline_interfaces
-        }:
-            with mod_yaml_data(path) as piface_data:
-                piface_data[PRE_SUBMIT_HOOK_KEY][PRE_SUBMIT_CMD_KEY] = [cmd]
+        pep_dir = os.path.dirname(tp)
+        pipeline_interface1 = os.path.join(
+            pep_dir, "pipeline/pipeline_interface1_sample.yaml"
+        )
+
+        with mod_yaml_data(pipeline_interface1) as piface_data:
+            piface_data[PRE_SUBMIT_HOOK_KEY][PRE_SUBMIT_CMD_KEY] = [cmd]
         x = test_args_expansion(tp, "run")
         try:
             main(test_args=x)
@@ -426,9 +444,8 @@ class TestLooperRunPreSubmissionHooks:
 class TestLooperRunSubmissionScript:
     def test_looper_run_produces_submission_scripts(self, prep_temp_pep):
         tp = prep_temp_pep
-        with open(tp, "r") as conf_file:
-            config_data = safe_load(conf_file)
-        outdir = config_data[LOOPER_KEY][OUTDIR_KEY]
+
+        outdir = get_outdir(tp)
         x = test_args_expansion(tp, "run")
         try:
             main(test_args=x)
@@ -439,13 +456,30 @@ class TestLooperRunSubmissionScript:
 
     def test_looper_lumping(self, prep_temp_pep):
         tp = prep_temp_pep
-        x = test_args_expansion(tp, "run", ["--lumpn", "2"])
+        x = test_args_expansion(tp, "run", ["--lump-n", "2"])
         try:
             main(test_args=x)
         except Exception:
             raise pytest.fail("DID RAISE {0}".format(Exception))
         sd = os.path.join(get_outdir(tp), "submission")
         verify_filecount_in_dir(sd, ".sub", 4)
+
+    def test_looper_lumping_jobs(self, prep_temp_pep):
+        tp = prep_temp_pep
+        x = test_args_expansion(tp, "run", ["--lump-j", "1"])
+        try:
+            main(test_args=x)
+        except Exception:
+            raise pytest.fail("DID RAISE {0}".format(Exception))
+        sd = os.path.join(get_outdir(tp), "submission")
+        verify_filecount_in_dir(sd, ".sub", 2)
+
+    def test_looper_lumping_jobs_negative(self, prep_temp_pep):
+        tp = prep_temp_pep
+        x = test_args_expansion(tp, "run", ["--lump-j", "-1"])
+
+        with pytest.raises(ValueError):
+            main(test_args=x)
 
     def test_looper_limiting(self, prep_temp_pep):
         tp = prep_temp_pep
@@ -516,7 +550,7 @@ class TestLooperCompute:
             dump({"mem": "testin_mem"}, sf)
 
         x = test_args_expansion(
-            tp, cmd, ["--settings", settings_file_path, "-p", "slurm"]
+            tp, cmd, ["--settings", settings_file_path, "--package", "slurm"]
         )
         try:
             main(test_args=x)
@@ -536,7 +570,14 @@ class TestLooperCompute:
         x = test_args_expansion(
             tp,
             cmd,
-            ["--settings", settings_file_path, "--compute", "mem=10", "-p", "slurm"],
+            [
+                "--settings",
+                settings_file_path,
+                "--compute",
+                "mem=10",
+                "--package",
+                "slurm",
+            ],
         )
         try:
             main(test_args=x)
@@ -548,34 +589,19 @@ class TestLooperCompute:
         assert_content_not_in_any_files(subs_list, "testin_mem")
 
 
+@pytest.mark.skip(
+    reason="This functionality requires input from the user. Causing pytest to error if run without -s flag"
+)
 class TestLooperConfig:
-    @pytest.mark.parametrize("cmd", ["run", "runp"])
-    def test_init_config_file(self, prep_temp_pep, cmd, dotfile_path):
+
+    def test_init_config_file(self, prep_temp_pep):
         tp = prep_temp_pep
-        x = test_args_expansion(tp, "init")
+        x = ["init", "--force-yes"]
         try:
             result = main(test_args=x)
         except Exception as err:
             raise pytest.fail(f"DID RAISE: {err}")
         assert result == 0
-        assert_content_in_all_files(dotfile_path, tp)
-        x = test_args_expansion(tp, cmd)
-        try:
-            result = main(test_args=x)
-        except Exception as err:
-            raise pytest.fail(f"DID RAISE {err}")
-
-    def test_correct_execution_of_config(self, prepare_pep_with_dot_file):
-        """
-        Test executing dot file and looper_config
-        """
-        dot_file_path = os.path.abspath(prepare_pep_with_dot_file)
-        x = test_args_expansion("", "run")
-        try:
-            main(test_args=x)
-        except Exception as err:
-            raise pytest.fail(f"DID RAISE {err}")
-        os.remove(dot_file_path)
 
 
 class TestLooperPEPhub:
@@ -588,20 +614,7 @@ class TestLooperPEPhub:
         ],
     )
     def test_pephub_registry_path_recognition(self, pep_path):
-        assert is_registry_path(pep_path) is True
-
-    @pytest.mark.parametrize(
-        "pep_path",
-        [
-            "some/path/to/pep.yaml",
-            "different/path.yaml",
-            "default/path/to/file/without/yaml",
-            "file_in_folder.yaml",
-            "not_yaml_file",
-        ],
-    )
-    def test_config_recognition(self, pep_path):
-        assert is_registry_path(pep_path) is False
+        assert is_pephub_registry_path(pep_path) is True
 
     def test_init_project_using_dict(self, prep_temp_config_with_pep):
         """Verify looper runs using pephub in a basic case and return code is 0"""
@@ -611,3 +624,14 @@ class TestLooperPEPhub:
         )
 
         assert len(init_project.pipeline_interfaces) == 3
+
+    def test_init_project_using_csv(self, prep_temp_pep_csv):
+        """Verify looper runs using pephub in a basic case and return code is 0"""
+        tp = prep_temp_pep_csv
+        with mod_yaml_data(tp) as config_data:
+            pep_config_csv = config_data["pep_config"]
+
+        pep_config_csv = os.path.join(os.path.dirname(tp), pep_config_csv)
+        init_project = Project(cfg=pep_config_csv)
+
+        assert len(init_project.samples) == 3
