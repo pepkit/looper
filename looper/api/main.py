@@ -1,17 +1,15 @@
-from argparse import ArgumentParser, Namespace
 import secrets
-from typing import Dict, TypeAlias
+from argparse import ArgumentParser, Namespace
+from typing import Dict
 
 import fastapi
 import pydantic
 import uvicorn
-
-from fastapi import FastAPI
-
-from looper.cli_pydantic import run_looper
-from looper.command_models.commands import SUPPORTED_COMMANDS, TopLevelParser
+from fastapi import FastAPI, HTTPException
 
 from looper.api import stdout_redirects
+from looper.cli_pydantic import run_looper
+from looper.command_models.commands import SUPPORTED_COMMANDS, TopLevelParser
 
 stdout_redirects.enable_proxy()
 
@@ -23,11 +21,15 @@ class Job(pydantic.BaseModel):
     )
     status: str = pydantic.Field(
         default="in_progress",
-        description="The current status of the job. Can be either `in_progress` or `completed`.",
+        description="The current status of the job. Can be `in_progress`, `completed`, or `failed`.",
     )
     console_output: str | None = pydantic.Field(
         default=None,
         description="Console output produced by `looper` while performing the requested action",
+    )
+    error: str | None = pydantic.Field(
+        default=None,
+        description="Error message if the job failed",
     )
 
 
@@ -39,13 +41,17 @@ def background_async(top_level_model: TopLevelParser, job_id: str) -> None:
     argparse_namespace = create_argparse_namespace(top_level_model)
     output_stream = stdout_redirects.redirect()
 
-    run_looper(argparse_namespace, None, True)
-
-    # Here, we should call `stdout_redirects.stop_redirect()`, but that fails for reasons discussed
-    # in the following issue: https://github.com/python/cpython/issues/80374
-    # But this *seems* not to pose any problems.
-    jobs[job_id].status = "completed"
-    jobs[job_id].console_output = output_stream.getvalue()
+    try:
+        run_looper(argparse_namespace, parser=None)
+        jobs[job_id].status = "completed"
+    except Exception as e:
+        jobs[job_id].status = "failed"
+        jobs[job_id].error = str(e)
+    finally:
+        # Here, we should call `stdout_redirects.stop_redirect()`, but that fails for reasons discussed
+        # in the following issue: https://github.com/python/cpython/issues/80374
+        # But this *seems* not to pose any problems.
+        jobs[job_id].console_output = output_stream.getvalue()
 
 
 def create_argparse_namespace(top_level_model: TopLevelParser) -> Namespace:
@@ -103,7 +109,18 @@ async def main_endpoint(
     description="Retrieve the status of a job based on its unique identifier.",
 )
 async def get_status(job_id: str) -> Job:
+    if job_id not in jobs:
+        raise HTTPException(status_code=404, detail=f"Job '{job_id}' not found")
     return jobs[job_id]
+
+
+@app.get(
+    "/jobs",
+    summary="List all jobs",
+    description="Retrieve a list of all submitted jobs with their IDs and statuses.",
+)
+async def list_jobs() -> Dict:
+    return {"jobs": [{"id": job.id, "status": job.status} for job in jobs.values()]}
 
 
 def main() -> None:

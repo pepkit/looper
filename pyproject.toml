@@ -45,7 +45,6 @@ Homepage = "https://github.com/pepkit/looper"
 
 [project.scripts]
 looper = "looper.cli_pydantic:main_cli"
-looper-serve = "looper.api.main:main"
 divvy = "looper.__main__:divvy_main"
 
 [build-system]
