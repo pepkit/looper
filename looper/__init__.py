@@ -26,7 +26,6 @@ from .plugins import (
     write_sample_yaml_prj,
     write_custom_template,
 )
-from .const import *
 from .pipeline_interface import PipelineInterface
 from .project import Project
 

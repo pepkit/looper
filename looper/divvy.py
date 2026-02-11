@@ -1,16 +1,13 @@
-""" Computing configuration representation """
+"""Computing configuration representation"""
 
 import logging
-import logmuse
 import os
-import sys
 import shutil
-import yaml
-from yaml import SafeLoader
-from shutil import copytree
 
-from ubiquerg import is_writable, VersionInHelpParser
-import yacman
+
+from shutil import copytree
+from yacman import YAMLConfigManager, write_lock, load_yaml, select_config
+
 
 from .const import (
     COMPUTE_SETTINGS_VARNAME,
@@ -21,16 +18,14 @@ from .const import (
 )
 from .utils import write_submit_script
 
-# from . import __version__
 
 _LOGGER = logging.getLogger(__name__)
 
 # This is the divvy.py submodule from divvy
 
 
-class ComputingConfiguration(yacman.YAMLConfigManager):
-    """
-    Represents computing configuration objects.
+class ComputingConfiguration(YAMLConfigManager):
+    """Represents computing configuration objects.
 
     The ComputingConfiguration class provides a computing configuration object
     that is an *in memory* representation of a `divvy` computing configuration
@@ -38,42 +33,34 @@ class ComputingConfiguration(yacman.YAMLConfigManager):
     and retrieve computing configuration files, and use these values to populate
     job submission script templates.
 
-    :param str | Iterable[(str, object)] | Mapping[str, object] entries: config
-        Collection of key-value pairs.
-    :param str filepath: YAML file specifying computing package data. (the
-        `DIVCFG` file)
+    Args:
+        entries (str | Iterable[(str, object)] | Mapping[str, object]): Config
+            collection of key-value pairs.
+        filepath (str): YAML file specifying computing package data (the
+            `DIVCFG` file).
     """
 
-    def __init__(self, entries=None, filepath=None):
-        if not entries and not filepath:
-            # Handle the case of an empty one, when we'll use the default
-            filepath = select_divvy_config(None)
+    def __init__(
+        self,
+        entries=None,
+        wait_max=None,
+        strict_ro_locks=False,
+    ):
+        super().__init__(entries, wait_max, strict_ro_locks)
 
-        super(ComputingConfiguration, self).__init__(
-            entries=entries,
-            filepath=filepath,
-            schema_source=DEFAULT_CONFIG_SCHEMA,
-            validate_on_write=True,
-        )
-
-        if not "compute_packages" in self:
-            raise Exception(
-                "Your divvy config file is not in divvy config format "
-                "(it lacks a compute_packages section): '{}'".format(filepath)
-            )
-            # We require that compute_packages be present, even if empty
+        if "compute_packages" not in self:
             self["compute_packages"] = {}
-
         # Initialize default compute settings.
         _LOGGER.debug("Establishing project compute settings")
         self.compute = None
         self.setdefault("adapters", None)
         self.activate_package(DEFAULT_COMPUTE_RESOURCES_NAME)
-        self.config_file = self.filepath
 
     def write(self, filename=None):
-        super(ComputingConfiguration, self).write(filepath=filename, exclude_case=True)
-        filename = filename or getattr(self, yacman.FILEPATH_KEY)
+        with write_lock(self) as locked_ym:
+            locked_ym.rebase()
+            locked_ym.write()
+        filename = filename or self.filepath
         filedir = os.path.dirname(filename)
         # For this object, we *also* have to write the template files
         for pkg_name, pkg in self["compute_packages"].items():
@@ -83,20 +70,20 @@ class ComputingConfiguration(yacman.YAMLConfigManager):
 
     @property
     def compute_env_var(self):
-        """
-        Environment variable through which to access compute settings.
+        """Environment variable through which to access compute settings.
 
-        :return list[str]: names of candidate environment variables, for which
-            value may be path to compute settings file; first found is used.
+        Returns:
+            list[str]: Names of candidate environment variables, for which
+                value may be path to compute settings file; first found is used.
         """
         return COMPUTE_SETTINGS_VARNAME
 
     @property
     def default_config_file(self):
-        """
-        Path to default compute environment settings file.
+        """Path to default compute environment settings file.
 
-        :return str: Path to default compute settings file
+        Returns:
+            str: Path to default compute settings file.
         """
         return DEFAULT_CONFIG_FILEPATH
 
@@ -104,36 +91,41 @@ class ComputingConfiguration(yacman.YAMLConfigManager):
     # it will get treated as a PathExAttMap treats all properties, which
     # is that it will turn any double-slashes into single slashes.
     def template(self):
-        """
-        Get the currently active submission template.
+        """Get the currently active submission template.
 
-        :return str: submission script content template for current state
+        Returns:
+            str: Submission script content template for current state.
         """
         with open(self.compute["submission_template"], "r") as f:
             return f.read()
 
     @property
     def templates_folder(self):
-        """
-        Path to folder with default submission templates.
+        """Path to folder with default submission templates.
 
-        :return str: path to folder with default submission templates
+        Returns:
+            str: Path to folder with default submission templates.
         """
-        return os.path.join(
-            os.path.dirname(__file__), "default_config", "divvy_templates"
-        )
+        if self.filepath:
+            return os.path.join(os.path.dirname(self.filepath), "divvy_templates")
+        else:
+            return os.path.join(
+                os.path.dirname(__file__), "default_config", "divvy_templates"
+            )
 
     def activate_package(self, package_name):
-        """
-        Activates a compute package.
+        """Activates a compute package.
 
         This copies the computing attributes from the configuration file into
         the `compute` attribute, where the class stores current compute
         settings.
 
-        :param str package_name: name for non-resource compute bundle,
-            the name of a subsection in an environment configuration file
-        :return bool: success flag for attempt to establish compute settings
+        Args:
+            package_name (str): Name for non-resource compute bundle,
+                the name of a subsection in an environment configuration file.
+
+        Returns:
+            bool: Success flag for attempt to establish compute settings.
         """
 
         # Hope that environment & environment compute are present.
@@ -151,23 +143,30 @@ class ComputingConfiguration(yacman.YAMLConfigManager):
             # Augment compute, creating it if needed.
             if self.compute is None:
                 _LOGGER.debug("Creating Project compute")
-                self.compute = yacman.YAMLConfigManager()
+                self.compute = YAMLConfigManager()
                 _LOGGER.debug(
                     "Adding entries for package_name '{}'".format(package_name)
                 )
 
-            self.compute.update(self["compute_packages"][package_name])
+            self.compute.update_from_obj(self["compute_packages"][package_name])
 
             # Ensure submission template is absolute. This *used to be* handled
             # at update (so the paths were stored as absolutes in the packages),
             # but now, it makes more sense to do it here so we can piggyback on
             # the default update() method and not even have to do that.
             if not os.path.isabs(self.compute["submission_template"]):
+
                 try:
-                    self.compute["submission_template"] = os.path.join(
-                        os.path.dirname(self.filepath),
-                        self.compute["submission_template"],
-                    )
+                    if self.filepath:
+                        self.compute["submission_template"] = os.path.join(
+                            os.path.dirname(self.filepath),
+                            self.compute["submission_template"],
+                        )
+                    else:
+                        self.compute["submission_template"] = os.path.join(
+                            os.path.dirname(self.default_config_file),
+                            self.compute["submission_template"],
+                        )
                 except AttributeError as e:
                     # Environment and environment compute should at least have been
                     # set as null-valued attributes, so execution here is an error.
@@ -191,66 +190,73 @@ class ComputingConfiguration(yacman.YAMLConfigManager):
         return False
 
     def clean_start(self, package_name):
-        """
-        Clear current active settings and then activate the given package.
+        """Clear current active settings and then activate the given package.
 
-        :param str package_name: name of the resource package to activate
-        :return bool: success flag
+        Args:
+            package_name (str): Name of the resource package to activate.
+
+        Returns:
+            bool: Success flag.
         """
         self.reset_active_settings()
         return self.activate_package(package_name)
 
-    def get_active_package(self):
-        """
-        Returns settings for the currently active compute package
+    def get_active_package(self) -> YAMLConfigManager:
+        """Returns settings for the currently active compute package.
 
-        :return yacman.YacAttMap: data defining the active compute package
+        Returns:
+            YAMLConfigManager: Data defining the active compute package.
         """
         return self.compute
 
-    def list_compute_packages(self):
-        """
-        Returns a list of available compute packages.
+    @property
+    def compute_packages(self):
 
-        :return set[str]: names of available compute packages
+        return self["compute_packages"]
+
+    def list_compute_packages(self):
+        """Returns a list of available compute packages.
+
+        Returns:
+            set[str]: Names of available compute packages.
         """
         return set(self["compute_packages"].keys())
 
     def reset_active_settings(self):
-        """
-        Clear out current compute settings.
+        """Clear out current compute settings.
 
-        :return bool: success flag
+        Returns:
+            bool: Success flag.
         """
-        self.compute = yacman.YacAttMap()
+        self.compute = YAMLConfigManager()
         return True
 
     def update_packages(self, config_file):
-        """
-        Parse data from divvy configuration file.
+        """Parse data from divvy configuration file.
 
         Given a divvy configuration file, this function will update (not
         overwrite) existing compute packages with existing values. It does not
         affect any currently active settings.
 
-        :param str config_file: path to file with new divvy configuration data
+        Args:
+            config_file (str): Path to file with new divvy configuration data.
         """
-        entries = yacman.load_yaml(config_file)
+        entries = load_yaml(config_file)
         self.update(entries)
         return True
 
-    def get_adapters(self):
-        """
-        Get current adapters, if defined.
+    def get_adapters(self) -> YAMLConfigManager:
+        """Get current adapters, if defined.
 
         Adapters are sourced from the 'adapters' section in the root of the
         divvy configuration file and updated with an active compute
         package-specific set of adapters, if any defined in 'adapters' section
         under currently active compute package.
 
-        :return yacman.YAMLConfigManager: current adapters mapping
+        Returns:
+            YAMLConfigManager: Current adapters mapping.
         """
-        adapters = yacman.YAMLConfigManager()
+        adapters = YAMLConfigManager()
         if "adapters" in self and self["adapters"] is not None:
             adapters.update(self["adapters"])
         if "compute" in self and "adapters" in self.compute:
@@ -277,26 +283,31 @@ class ComputingConfiguration(yacman.YAMLConfigManager):
             os.system(submission_command)
 
     def write_script(self, output_path, extra_vars=None):
-        """
-        Given currently active settings, populate the active template to write a
-         submission script. Additionally use the current adapters to adjust
-         the select of the provided variables
+        """Given currently active settings, populate the active template to write a submission script.
 
-        :param str output_path: Path to file to write as submission script
-        :param Iterable[Mapping] extra_vars: A list of Dict objects with
-            key-value pairs with which to populate template fields. These will
-            override any values in the currently active compute package.
-        :return str: Path to the submission script file
+        Additionally use the current adapters to adjust the select of the
+        provided variables.
+
+        Args:
+            output_path (str): Path to file to write as submission script.
+            extra_vars (Iterable[Mapping]): A list of Dict objects with
+                key-value pairs with which to populate template fields. These will
+                override any values in the currently active compute package.
+
+        Returns:
+            str: Path to the submission script file.
         """
 
         def _get_from_dict(map, attrs):
-            """
-            Get value from a possibly mapping using a list of its attributes
+            """Get value from a possibly mapping using a list of its attributes.
 
-            :param collections.Mapping map: mapping to retrieve values from
-            :param Iterable[str] attrs: a list of attributes
-            :return: value found in the the requested attribute or
-                None if one of the keys does not exist
+            Args:
+                map (collections.Mapping): Mapping to retrieve values from.
+                attrs (Iterable[str]): A list of attributes.
+
+            Returns:
+                Value found in the the requested attribute or None if one of the
+                keys does not exist.
             """
             for a in attrs:
                 try:
@@ -365,18 +376,20 @@ class ComputingConfiguration(yacman.YAMLConfigManager):
 
 
 def select_divvy_config(filepath):
-    """
-    Selects the divvy config file path to load.
+    """Selects the divvy config file path to load.
 
     This uses a priority ordering to first choose a config file path if
     it's given, but if not, then look in a priority list of environment
     variables and choose the first available file path to return. If none of
     these options succeed, the default config path will be returned.
 
-    :param str | NoneType filepath: direct file path specification
-    :return str: path to the config file to read
+    Args:
+        filepath (str | NoneType): Direct file path specification.
+
+    Returns:
+        str: Path to the config file to read.
     """
-    divcfg = yacman.select_config(
+    divcfg = select_config(
         config_filepath=filepath,
         config_env_vars=COMPUTE_SETTINGS_VARNAME,
         default_config_filepath=DEFAULT_CONFIG_FILEPATH,
@@ -388,13 +401,13 @@ def select_divvy_config(filepath):
 
 
 def divvy_init(config_path, template_config_path):
-    """
-    Initialize a genome config file.
+    """Initialize a genome config file.
 
-    :param str config_path: path to divvy configuration file to
-        create/initialize
-    :param str template_config_path: path to divvy configuration file to
-        copy FROM
+    Args:
+        config_path (str): Path to divvy configuration file to
+            create/initialize.
+        template_config_path (str): Path to divvy configuration file to
+            copy FROM.
     """
     if not config_path:
         _LOGGER.error("You must specify a file path to initialize.")
@@ -404,11 +417,13 @@ def divvy_init(config_path, template_config_path):
         _LOGGER.error("You must specify a template config file path.")
         return
 
+    if not os.path.isabs(config_path):
+        config_path = os.path.abspath(config_path)
+
     if config_path and not os.path.exists(config_path):
-        # dcc.write(config_path)
         # Init should *also* write the templates.
         dest_folder = os.path.dirname(config_path)
-        copytree(os.path.dirname(template_config_path), dest_folder)
+        copytree(os.path.dirname(template_config_path), dest_folder, dirs_exist_ok=True)
         template_subfolder = os.path.join(dest_folder, "divvy_templates")
         _LOGGER.info("Wrote divvy templates to folder: {}".format(template_subfolder))
         new_template = os.path.join(

@@ -1,0 +1,5 @@
+pep_config: example/pep/path
+output_dir: .
+pipeline_interfaces:
+  sample: []
+  project: []

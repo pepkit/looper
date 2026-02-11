@@ -2,6 +2,109 @@
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format.
 
+## [2.0.3] -- 2025-09-23
+### Fixed
+- Fixed [#543](https://github.com/pepkit/looper/issues/543)
+- Fixed [#547](https://github.com/pepkit/looper/issues/547)
+- Fixed [#548](https://github.com/pepkit/looper/issues/548)
+
+
+## [2.0.2] -- 2025-09-22
+### Changed
+- Remove veracitools dependency from the requirements.
+
+## [2.0.1] -- 2025-03-05
+
+### Changed
+- update ubiquerg>=0.8.1
+
+### Fixed
+- [#541](https://github.com/pepkit/looper/issues/541)
+
+## [2.0.0] -- 2025-01-16
+
+This release breaks backwards compatibility for Looper versions < 2.0.0
+
+### Fixed
+- divvy init [#520](https://github.com/pepkit/looper/issues/520)
+- replaced deprecated PEPHubClient function, `_load_raw_pep` with `.load_raw_pep`
+- looper cli parameters now take priority as originally intended [#518](https://github.com/pepkit/looper/issues/518)
+- fix divvy inspect
+- remove printed dictionary at looper finish [#511](https://github.com/pepkit/looper/issues/511)
+- fix [#536](https://github.com/pepkit/looper/issues/536)
+- fix [#522](https://github.com/pepkit/looper/issues/522)
+- fix [#537](https://github.com/pepkit/looper/issues/537)
+- fix [#534](https://github.com/pepkit/looper/issues/534)
+
+### Changed
+- `--looper-config` is now `--config`, `-c`. [#455](https://github.com/pepkit/looper/issues/455)
+- A pipeline interface now consolidates a `sample_interface` and a `project_interface` [#493](https://github.com/pepkit/looper/issues/493)
+- Updated documentation for Looper 2.0.0, removing previous versions [pepspec PR #34](https://github.com/pepkit/pepspec/pull/34)
+- remove position based argument for divvy config, must use --config or run as default config
+
+### Added
+- `looper init` tutorial [#466](https://github.com/pepkit/looper/issues/466)
+- looper config allows for `pephub_path` in pipestat config section of `.looper.yaml` [#519](https://github.com/pepkit/looper/issues/519)
+- improve error messaging for bad/malformed looper configurations [#515](https://github.com/pepkit/looper/issues/515)
+- add shortform argument for --package (alias is now -p)
+
+
+## [1.9.1] -- 2024-07-18
+
+### Changed
+- ensure peppy requirement peppy>=0.40.0,<=0.40.2
+
+## [1.9.0] -- 2024-06-26
+
+### Added
+- user can now add cli modifiers to looper config instead of PEP project [#270](https://github.com/pepkit/looper/issues/270)
+- pipeline interfaces no longer must be nested under sample and project keys within looper config file [#465](https://github.com/pepkit/looper/issues/465)
+- var_templates can now be hierarchical [#334](https://github.com/pepkit/looper/issues/334)
+- looper can now gracefully halt spawned subprocesses when the user sends a keyboard interrupt [#37](https://github.com/pepkit/looper/issues/37)
+
+## [1.8.1] -- 2024-06-06
+
+### Fixed
+- added `-v` and `--version` to the CLI
+- fixed running project level with `--project` argument
+
+## [1.8.0] -- 2024-06-04
+
+### Added
+- looper destroy now destroys individual results when pipestat is configured: https://github.com/pepkit/looper/issues/469
+- comprehensive smoketests: https://github.com/pepkit/looper/issues/464
+- allow rerun to work on both failed or waiting flags: https://github.com/pepkit/looper/issues/463
+
+### Changed
+- Migrated `argparse` CLI definition to a pydantic basis for all commands. See: https://github.com/pepkit/looper/issues/438
+- during project load, check if PEP file path is a file first, then check if it is a registry path: https://github.com/pepkit/looper/issues/456 
+- Looper now uses FutureYamlConfigManager due to the yacman refactor v0.9.3: https://github.com/pepkit/looper/issues/452
+
+### Fixed
+- inferring project name when loading PEP from csv: https://github.com/pepkit/looper/issues/484
+- fix inconsistency resolving pipeline interface paths if multiple paths are supplied: https://github.com/pepkit/looper/issues/474
+- fix bug with checking for completed flags: https://github.com/pepkit/looper/issues/470
+- fix looper destroy not properly destroying all related files: https://github.com/pepkit/looper/issues/468
+- looper rerun now only runs failed jobs as intended: https://github.com/pepkit/looper/issues/467 
+- looper inspect now inspects the looper config: https://github.com/pepkit/looper/issues/462
+- Load PEP from CSV: https://github.com/pepkit/looper/issues/456
+- looper now works with sample_table_index https://github.com/pepkit/looper/issues/458
+
+## [1.7.1] -- 2024-05-28
+
+### Fixed
+- pin pipestat version to be between pipestat>=0.8.0,<0.9.0  https://github.com/pepkit/looper/issues/494
+
+## [1.7.0] -- 2024-01-26
+
+### Added
+- `--portable` flag to `looper report` to create a portable version of the html report
+- `--lump-j` allows grouping samples into a defined number of jobs
+
+### Changed
+- `--lumpn` is now `--lump-n`
+- `--lump` is now `--lump-s`
+
 ## [1.6.0] -- 2023-12-22
 
 ### Added

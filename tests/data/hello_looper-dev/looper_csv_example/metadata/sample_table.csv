@@ -1,0 +1,4 @@
+sample_name,area_type,file_path
+mexico,state,data/mexico.txt
+switzerland,canton,data/switzerland.txt
+canada,province,data/canada.txt

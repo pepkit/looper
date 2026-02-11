@@ -64,7 +64,7 @@ open_pipelines/
 .coverage*
 .pytest_cache
 .vscode/
-.looper.yaml
+/tests/data/hello_looper-dev/.gitignore
 
 # Reserved files for comparison
 *RESERVE*
