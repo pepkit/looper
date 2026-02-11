@@ -754,14 +754,12 @@ def looper_config_tutorial() -> bool:
 
     console.print("\n")
 
-    console.print(
-        f"""\
+    console.print(f"""\
 [yellow]pep_config:[/yellow] {cfg["pep_config"]}
 [yellow]output_dir:[/yellow] {cfg["output_dir"]}
 [yellow]pipeline_interfaces:[/yellow]
   - {piface_paths}
-"""
-    )
+""")
 
     for piface_path in piface_paths:
         if not os.path.exists(piface_path):

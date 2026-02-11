@@ -52,6 +52,10 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project.optional-dependencies]
+api = [
+    "fastapi>=0.100.0",
+    "uvicorn>=0.22.0",
+]
 test = [
     "hypothesis>=6.84.3",
     "mock",
