@@ -473,7 +473,7 @@ class SubmissionConductor(object):
                 sub_cmd = self.prj.dcc.compute["submission_command"]
 
                 # Detect shell metacharacters that require shell=True
-                shell_chars = set('|&;<>()$`\\"\' \t\n*?[#~')
+                shell_chars = set("|&;<>()$`\\\"' \t\n*?[#~")
                 needs_shell = any(c in sub_cmd for c in shell_chars) and sub_cmd != "."
 
                 # Capture submission command return value so that we can
@@ -483,8 +483,14 @@ class SubmissionConductor(object):
                     _LOGGER.debug("Direct execution via bash: %s", script)
                     process = subprocess.Popen(["/bin/bash", script])
                 elif needs_shell:
-                    _LOGGER.debug("Shell execution (detected shell syntax): %s %s", sub_cmd, script)
-                    process = subprocess.Popen(f"{sub_cmd} {script}", shell=True, executable="/bin/bash")
+                    _LOGGER.debug(
+                        "Shell execution (detected shell syntax): %s %s",
+                        sub_cmd,
+                        script,
+                    )
+                    process = subprocess.Popen(
+                        f"{sub_cmd} {script}", shell=True, executable="/bin/bash"
+                    )
                 else:
                     _LOGGER.debug("Direct execution: %s %s", sub_cmd, script)
                     process = subprocess.Popen(shlex.split(sub_cmd) + [script])
