@@ -3,13 +3,13 @@
 """
 
 from dataclasses import dataclass
-from typing import List, Optional, Type, Union
+from typing import Optional
 
 import pydantic.v1 as pydantic
+from pydantic_argparse import ArgumentParser
 
 from ..const import MESSAGE_BY_SUBCOMMAND
 from .arguments import Argument, ArgumentEnum
-from pydantic_argparse import ArgumentParser
 
 
 @dataclass
@@ -24,9 +24,9 @@ class Command:
 
     name: str
     description: str
-    arguments: List[Argument]
+    arguments: list[Argument]
 
-    def create_model(self) -> Type[pydantic.BaseModel]:
+    def create_model(self) -> type[pydantic.BaseModel]:
         """
         Creates a `pydantic` model for this command
         """
@@ -240,7 +240,7 @@ InitPifaceParserModel = InitPifaceParser.create_model()
 
 
 def add_short_arguments(
-    parser: ArgumentParser, argument_enums: Type[ArgumentEnum]
+    parser: ArgumentParser, argument_enums: type[ArgumentEnum]
 ) -> ArgumentParser:
     """Add short arguments to parser after initial creation.
 
@@ -258,13 +258,12 @@ def add_short_arguments(
     """
 
     for cmd in parser._subcommands.choices.keys():
-
         for argument_enum in list(argument_enums):
             # First check there is an alias for the argument otherwise skip
             if argument_enum.value.alias:
                 short_key = argument_enum.value.alias
-                long_key = "--" + argument_enum.value.name.replace(
-                    "_", "-"
+                long_key = (
+                    "--" + argument_enum.value.name.replace("_", "-")
                 )  # We must do this because the ArgumentEnum names are transformed during parser creation
                 if long_key in parser._subcommands.choices[cmd]._option_string_actions:
                     argument = parser._subcommands.choices[cmd]._option_string_actions[

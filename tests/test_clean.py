@@ -1,9 +1,11 @@
 """Tests for looper's cleaning functionality"""
 
 import argparse
+
 import pytest
-from looper.looper import Cleaner
+
 from looper import Project
+from looper.looper import Cleaner
 
 
 def build_namespace(**kwargs):

@@ -3,10 +3,6 @@
 import os
 from enum import Enum
 
-__author__ = "Databio lab"
-__email__ = "nathan@code.databio.org"
-
-
 __all__ = [
     "BUTTON_APPEARANCE_BY_FLAG",
     "TABLE_APPEARANCE_BY_FLAG",
@@ -107,7 +103,7 @@ APPEARANCE_BY_FLAG = {
 }
 
 
-def _get_apperance_dict(type, templ=APPEARANCE_BY_FLAG):
+def _get_apperance_dict(type: str, templ: dict = APPEARANCE_BY_FLAG) -> dict:
     """Construct the appearance mapping using the template.
 
     Based on the type of the HTML element provided construct the appearance

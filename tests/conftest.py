@@ -1,9 +1,9 @@
-import shutil
-from contextlib import contextmanager
 import os
+import shutil
 import subprocess
-from shutil import copyfile, rmtree, copytree
 import tempfile
+from contextlib import contextmanager
+from shutil import copyfile
 from typing import *
 
 import peppy

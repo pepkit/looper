@@ -2,8 +2,9 @@
 
 import pytest
 from yacman import YAMLConfigManager, load_yaml
+
 from looper.divvy import DEFAULT_COMPUTE_RESOURCES_NAME
-from tests.divvytests.conftest import DCC_ATTRIBUTES, FILES, mock_env_missing
+from tests.divvytests.conftest import DCC_ATTRIBUTES, FILES
 
 
 class TestDefaultDCC:

@@ -3,21 +3,17 @@
 import logging
 import os
 import shutil
-
-
 from shutil import copytree
-from yacman import YAMLConfigManager, write_lock, load_yaml, select_config
 
+from yacman import YAMLConfigManager, load_yaml, select_config, write_lock
 
 from .const import (
     COMPUTE_SETTINGS_VARNAME,
     DEFAULT_COMPUTE_RESOURCES_NAME,
-    NEW_COMPUTE_KEY,
     DEFAULT_CONFIG_FILEPATH,
-    DEFAULT_CONFIG_SCHEMA,
+    NEW_COMPUTE_KEY,
 )
 from .utils import write_submit_script
-
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -44,8 +40,8 @@ class ComputingConfiguration(YAMLConfigManager):
         self,
         entries=None,
         wait_max=None,
-        strict_ro_locks=False,
-    ):
+        strict_ro_locks: bool = False,
+    ) -> None:
         super().__init__(entries, wait_max, strict_ro_locks)
 
         if "compute_packages" not in self:
@@ -56,7 +52,7 @@ class ComputingConfiguration(YAMLConfigManager):
         self.setdefault("adapters", None)
         self.activate_package(DEFAULT_COMPUTE_RESOURCES_NAME)
 
-    def write(self, filename=None):
+    def write(self, filename: str | None = None) -> None:
         with write_lock(self) as locked_ym:
             locked_ym.rebase()
             locked_ym.write()
@@ -69,7 +65,7 @@ class ComputingConfiguration(YAMLConfigManager):
             shutil.copyfile(pkg.submission_template, destfile)
 
     @property
-    def compute_env_var(self):
+    def compute_env_var(self) -> list[str]:
         """Environment variable through which to access compute settings.
 
         Returns:
@@ -79,7 +75,7 @@ class ComputingConfiguration(YAMLConfigManager):
         return COMPUTE_SETTINGS_VARNAME
 
     @property
-    def default_config_file(self):
+    def default_config_file(self) -> str:
         """Path to default compute environment settings file.
 
         Returns:
@@ -90,7 +86,7 @@ class ComputingConfiguration(YAMLConfigManager):
     # Warning: template cannot be a property, because otherwise
     # it will get treated as a PathExAttMap treats all properties, which
     # is that it will turn any double-slashes into single slashes.
-    def template(self):
+    def template(self) -> str:
         """Get the currently active submission template.
 
         Returns:
@@ -100,7 +96,7 @@ class ComputingConfiguration(YAMLConfigManager):
             return f.read()
 
     @property
-    def templates_folder(self):
+    def templates_folder(self) -> str:
         """Path to folder with default submission templates.
 
         Returns:
@@ -113,7 +109,7 @@ class ComputingConfiguration(YAMLConfigManager):
                 os.path.dirname(__file__), "default_config", "divvy_templates"
             )
 
-    def activate_package(self, package_name):
+    def activate_package(self, package_name: str) -> bool:
         """Activates a compute package.
 
         This copies the computing attributes from the configuration file into
@@ -155,7 +151,6 @@ class ComputingConfiguration(YAMLConfigManager):
             # but now, it makes more sense to do it here so we can piggyback on
             # the default update() method and not even have to do that.
             if not os.path.isabs(self.compute["submission_template"]):
-
                 try:
                     if self.filepath:
                         self.compute["submission_template"] = os.path.join(
@@ -189,7 +184,7 @@ class ComputingConfiguration(YAMLConfigManager):
 
         return False
 
-    def clean_start(self, package_name):
+    def clean_start(self, package_name: str) -> bool:
         """Clear current active settings and then activate the given package.
 
         Args:
@@ -210,11 +205,11 @@ class ComputingConfiguration(YAMLConfigManager):
         return self.compute
 
     @property
-    def compute_packages(self):
+    def compute_packages(self) -> dict:
 
         return self["compute_packages"]
 
-    def list_compute_packages(self):
+    def list_compute_packages(self) -> set[str]:
         """Returns a list of available compute packages.
 
         Returns:
@@ -222,7 +217,7 @@ class ComputingConfiguration(YAMLConfigManager):
         """
         return set(self["compute_packages"].keys())
 
-    def reset_active_settings(self):
+    def reset_active_settings(self) -> bool:
         """Clear out current compute settings.
 
         Returns:
@@ -231,7 +226,7 @@ class ComputingConfiguration(YAMLConfigManager):
         self.compute = YAMLConfigManager()
         return True
 
-    def update_packages(self, config_file):
+    def update_packages(self, config_file: str) -> bool:
         """Parse data from divvy configuration file.
 
         Given a divvy configuration file, this function will update (not
@@ -265,7 +260,7 @@ class ComputingConfiguration(YAMLConfigManager):
             _LOGGER.debug("No adapters determined in divvy configuration file.")
         return adapters
 
-    def submit(self, output_path, extra_vars=None):
+    def submit(self, output_path: str | None, extra_vars: list | None = None) -> None:
         if not output_path:
             import tempfile
 
@@ -282,7 +277,7 @@ class ComputingConfiguration(YAMLConfigManager):
             _LOGGER.info(submission_command)
             os.system(submission_command)
 
-    def write_script(self, output_path, extra_vars=None):
+    def write_script(self, output_path: str, extra_vars: list | None = None) -> str:
         """Given currently active settings, populate the active template to write a submission script.
 
         Additionally use the current adapters to adjust the select of the
@@ -357,7 +352,7 @@ class ComputingConfiguration(YAMLConfigManager):
 
         return write_submit_script(output_path, self.template(), variables)
 
-    def _handle_missing_env_attrs(self, config_file, when_missing):
+    def _handle_missing_env_attrs(self, config_file: str, when_missing) -> None:
         """Default environment settings aren't required; warn, though."""
         missing_env_attrs = [
             attr
@@ -375,7 +370,7 @@ class ComputingConfiguration(YAMLConfigManager):
             when_missing(message)
 
 
-def select_divvy_config(filepath):
+def select_divvy_config(filepath: str | None) -> str:
     """Selects the divvy config file path to load.
 
     This uses a priority ordering to first choose a config file path if
@@ -400,7 +395,7 @@ def select_divvy_config(filepath):
     return divcfg
 
 
-def divvy_init(config_path, template_config_path):
+def divvy_init(config_path: str, template_config_path: str) -> None:
     """Initialize a genome config file.
 
     Args:

@@ -11,22 +11,27 @@ import logmuse
 
 logmuse.init_logger("looper")
 
-from .divvy import ComputingConfiguration, select_divvy_config
-from .divvy import DEFAULT_COMPUTE_RESOURCES_NAME
+from importlib.metadata import version
+
+from .divvy import (
+    DEFAULT_COMPUTE_RESOURCES_NAME,
+    ComputingConfiguration,
+    select_divvy_config,
+)
 from .divvy import NEW_COMPUTE_KEY as COMPUTE_KEY
 
-from ._version import __version__
+__version__ = version("looper")
 from .conductor import (
     SubmissionConductor,
     write_submission_yaml,
 )
+from .pipeline_interface import PipelineInterface
 from .plugins import (
+    write_custom_template,
     write_sample_yaml,
     write_sample_yaml_cwl,
     write_sample_yaml_prj,
-    write_custom_template,
 )
-from .pipeline_interface import PipelineInterface
 from .project import Project
 
 # Not used here, but make this the main import interface between peppy and

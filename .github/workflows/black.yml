@@ -1,14 +1,15 @@
 name: Lint
 
-on: [pull_request]
+on: [push, pull_request]
 
 jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
-      - uses: psf/black@stable
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-            options: "--check --diff --color --verbose"
-            jupyter: true
+          python-version: "3.12"
+      - run: pip install ruff
+      - run: ruff check .
+      - run: ruff format --check .

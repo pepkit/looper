@@ -4,9 +4,6 @@ These functions are used to process pipestat-compatible schema,
 but the report generation approach has changed.
 """
 
-__author__ = "Michal Stolarczyk"
-__email__ = "michal@virginia.edu"
-
 # import os
 # from collections.abc import Mapping
 # from copy import copy
@@ -139,7 +136,7 @@ THUMB_PATH_KEY = "thumbnail_path"
 PATH_LIKE = [PATH_KEY, THUMB_PATH_KEY]
 
 
-def _get_path_sect_keys(mapping, keys=[PATH_KEY]):
+def _get_path_sect_keys(mapping: dict, keys: list[str] = [PATH_KEY]) -> list[str]:
     """Get names of subsections in a mapping that contain collection of keys.
 
     Args:
@@ -152,7 +149,7 @@ def _get_path_sect_keys(mapping, keys=[PATH_KEY]):
     return [k for k, v in mapping.items() if bool(set(keys) & set(mapping[k]))]
 
 
-def _populate_paths(object, schema, check_exist):
+def _populate_paths(object, schema: dict, check_exist: bool) -> None:
     """Populate path-like object attributes with other object attributes.
 
     Based on a defined template, e.g. '/Users/x/test_{name}/{genome}_file.txt'
@@ -177,8 +174,7 @@ def _populate_paths(object, schema, check_exist):
             populated = templ.format(**dict(object.items()))
         except Exception as e:
             _LOGGER.warning(
-                "Caught exception: {}.\n"
-                "Could not populate path: {}".format(
+                "Caught exception: {}.\nCould not populate path: {}".format(
                     getattr(e, "message", repr(e)), templ
                 )
             )
@@ -193,7 +189,7 @@ def _populate_paths(object, schema, check_exist):
         )
 
 
-def populate_sample_paths(sample, schema, check_exist=False):
+def populate_sample_paths(sample, schema: dict, check_exist: bool = False) -> None:
     """Populate path-like Sample attributes with other object attributes.
 
     Based on a defined template, e.g. '/Users/x/test_{name}/{genome}_file.txt'
@@ -214,7 +210,7 @@ def populate_sample_paths(sample, schema, check_exist=False):
         _populate_paths(sample, schema, check_exist)
 
 
-def populate_project_paths(project, schema, check_exist=False):
+def populate_project_paths(project, schema: dict, check_exist: bool = False) -> None:
     """Populate path-like Project attributes with other object attributes.
 
     Based on a defined template, e.g. '/Users/x/test_{name}/{genome}_file.txt'
@@ -233,7 +229,7 @@ def populate_project_paths(project, schema, check_exist=False):
     _populate_paths(project, schema, check_exist)
 
 
-def get_project_outputs(project, schema):
+def get_project_outputs(project, schema: list[dict]):
     """Get project level outputs with path-like attributes populated with project attributes.
 
     Args:
@@ -262,7 +258,8 @@ def get_project_outputs(project, schema):
                 res[ps][p] = s[ps][p].format(**dict(project.items()))
             except Exception as e:
                 _LOGGER.debug(
-                    "Caught exception: {}.\n Could not populate {} "
-                    "path".format(p, str(e))
+                    "Caught exception: {}.\n Could not populate {} path".format(
+                        p, str(e)
+                    )
                 )
     return YAMLConfigManager(res)

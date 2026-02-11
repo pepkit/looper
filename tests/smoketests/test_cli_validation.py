@@ -1,17 +1,16 @@
 """Tests for the validation of looper CLI use"""
 
-import argparse
 from typing import *
 
 import pytest
+
+from looper.cli_pydantic import main
 from looper.const import (
-    SAMPLE_SELECTION_ATTRIBUTE_OPTNAME,
     SAMPLE_EXCLUSION_OPTNAME,
     SAMPLE_INCLUSION_OPTNAME,
+    SAMPLE_SELECTION_ATTRIBUTE_OPTNAME,
 )
-from tests.conftest import print_standard_stream, subp_exec, test_args_expansion
-from looper.cli_pydantic import main
-
+from tests.conftest import test_args_expansion
 
 SUBCOMMANDS_WHICH_SUPPORT_SKIP_XOR_LIMIT = ["run", "destroy"]
 

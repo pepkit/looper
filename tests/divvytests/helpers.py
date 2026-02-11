@@ -12,7 +12,7 @@ def get_random_key(n=10):
     :return str: Randomize text key
     """
     if not isinstance(n, int):
-        raise TypeError("Non-integral key size".format(n))
+        raise TypeError("Non-integral key size")
     if n < 1:
         raise ValueError("Non-positive key size: {}".format(n))
     return "".join(random.choice(string.ascii_letters) for _ in range(n))

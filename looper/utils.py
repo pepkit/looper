@@ -1,24 +1,27 @@
 """Helpers without an obvious logical home."""
 
 import argparse
-from collections import defaultdict
 import glob
 import itertools
-from logging import getLogger
 import os
-from typing import Iterable, List, Optional, Tuple, Union
 import re
+from collections import defaultdict
+from collections.abc import Iterable
+from logging import getLogger
 
 import jinja2
 import yaml
+from pephubclient.constants import RegistryPath
 from peppy import Project as peppyProject
 from peppy.const import AMENDMENTS_KEY, CONFIG_KEY, NAME_KEY, SAMPLE_MODS_KEY
-from ubiquerg import convert_value, expandpath, parse_registry_path, deep_update
-from pephubclient.constants import RegistryPath
 from pydantic import ValidationError
+from rich.console import Console
+from rich.pretty import pprint
+from ubiquerg import convert_value, deep_update, expandpath, parse_registry_path
 from yacman import load_yaml
 from yaml.parser import ParserError
 
+from .command_models.commands import SUPPORTED_COMMANDS
 from .const import (
     ALL_SUBCMD_KEY,
     CLI_KEY,
@@ -34,18 +37,17 @@ from .const import (
     PIPESTAT_KEY,
     POSITIONAL,
     PROJECT_PL_ARG,
-    PipelineLevel,
     SAMPLE_PL_ARG,
+    PipelineLevel,
 )
-from .command_models.commands import SUPPORTED_COMMANDS
 from .exceptions import MisconfigurationException, PipelineInterfaceConfigError
-from rich.console import Console
-from rich.pretty import pprint
 
 _LOGGER = getLogger(__name__)
 
 
-def fetch_flag_files(prj=None, results_folder="", flags=FLAGS):
+def fetch_flag_files(
+    prj=None, results_folder: str = "", flags: Iterable[str] | str = FLAGS
+) -> dict[str, list[str]]:
     """Find all flag file paths for the given project.
 
     Args:
@@ -97,7 +99,9 @@ def fetch_flag_files(prj=None, results_folder="", flags=FLAGS):
     return files_by_flag
 
 
-def fetch_sample_flags(prj, sample, pl_name, flag_dir=None):
+def fetch_sample_flags(
+    prj, sample, pl_name: str, flag_dir: str | None = None
+) -> list[str]:
     """Find any flag files present for a sample associated with a project.
 
     Args:
@@ -128,7 +132,7 @@ def fetch_sample_flags(prj, sample, pl_name, flag_dir=None):
     ]
 
 
-def get_sample_status(sample, flags):
+def get_sample_status(sample: str, flags: list[str]) -> str | None:
     """Get a sample status.
 
     Args:
@@ -156,7 +160,7 @@ def get_sample_status(sample, flags):
     return statuses[0]
 
 
-def grab_project_data(prj):
+def grab_project_data(prj) -> dict:
     """From the given Project, grab Sample-independent data.
 
     There are some aspects of a Project of which it's beneficial for a Sample
@@ -181,7 +185,7 @@ def grab_project_data(prj):
         _LOGGER.debug("Project lacks section '%s', skipping", CONFIG_KEY)
 
 
-def sample_folder(prj, sample):
+def sample_folder(prj, sample) -> str:
     """Get the path to this Project's root folder for the given Sample.
 
     Args:
@@ -195,7 +199,9 @@ def sample_folder(prj, sample):
     return os.path.join(prj.results_folder, sample[prj.sample_table_index])
 
 
-def get_file_for_project(prj, pipeline_name, appendix=None, directory=None):
+def get_file_for_project(
+    prj, pipeline_name: str, appendix: str | None = None, directory: str | None = None
+) -> str:
     """Create a path to the file for the current project.
 
     Takes the possibility of amendment being activated at the time.
@@ -222,7 +228,7 @@ def get_file_for_project(prj, pipeline_name, appendix=None, directory=None):
     return fp
 
 
-def get_file_for_project_old(prj, appendix):
+def get_file_for_project_old(prj, appendix: str) -> str:
     """Create a path to the file for the current project.
 
     Takes the possibility of amendment being activated at the time.
@@ -242,7 +248,7 @@ def get_file_for_project_old(prj, appendix):
     return fp
 
 
-def jinja_render_template_strictly(template, namespaces):
+def jinja_render_template_strictly(template: str, namespaces: dict) -> str:
     """Render a command string in the provided namespaces context.
 
     Strictly, which means that all the requested attributes must be
@@ -284,7 +290,7 @@ def jinja_render_template_strictly(template, namespaces):
     return rendered
 
 
-def read_yaml_file(filepath):
+def read_yaml_file(filepath: str) -> dict | None:
     """Read a YAML file.
 
     Args:
@@ -301,12 +307,12 @@ def read_yaml_file(filepath):
 
 
 def enrich_args_via_cfg(
-    subcommand_name,
+    subcommand_name: str,
     parser_args,
     aux_parser,
-    test_args=None,
-    cli_modifiers=None,
-):
+    test_args: dict | None = None,
+    cli_modifiers: dict | None = None,
+) -> argparse.Namespace:
     """Read in a looper dotfile, pep config and set arguments.
 
     Priority order: CLI > dotfile/config > pep_config > parser default
@@ -402,7 +408,7 @@ def enrich_args_via_cfg(
     return result
 
 
-def _get_subcommand_args(subcommand_name, parser_args):
+def _get_subcommand_args(subcommand_name: str, parser_args) -> dict | None:
     """Get the union of values for the subcommand arguments.
 
     Get the union of values for the subcommand arguments from
@@ -463,7 +469,7 @@ def _get_subcommand_args(subcommand_name, parser_args):
     return args
 
 
-def init_generic_pipeline(pipelinepath: Optional[str] = None):
+def init_generic_pipeline(pipelinepath: str | None = None):
     """Create generic pipeline interface.
 
     Args:
@@ -502,7 +508,7 @@ def init_generic_pipeline(pipelinepath: Optional[str] = None):
         },
     }
 
-    console.rule(f"\n[magenta]Pipeline Interface[/magenta]")
+    console.rule("\n[magenta]Pipeline Interface[/magenta]")
     # Write file
     if not os.path.exists(dest_file):
         pprint(generic_pipeline_dict, expand_all=True)
@@ -537,7 +543,7 @@ def init_generic_pipeline(pipelinepath: Optional[str] = None):
         },
     }
 
-    console.rule(f"\n[magenta]Output Schema[/magenta]")
+    console.rule("\n[magenta]Output Schema[/magenta]")
     # Write file
     if not os.path.exists(dest_file):
         pprint(generic_output_schema_dict, expand_all=True)
@@ -551,7 +557,7 @@ def init_generic_pipeline(pipelinepath: Optional[str] = None):
             f"Output schema file already exists [yellow]`{dest_file}`[/yellow]. Skipping creation.."
         )
 
-    console.rule(f"\n[magenta]Example Pipeline Shell Script[/magenta]")
+    console.rule("\n[magenta]Example Pipeline Shell Script[/magenta]")
     # Create Generic countlines.sh
 
     if not pipelinepath:
@@ -579,7 +585,7 @@ echo "Number of lines: $linecount"
     return True
 
 
-def read_looper_dotfile():
+def read_looper_dotfile() -> dict:
     """Read looper config file.
 
     Returns:
@@ -597,10 +603,10 @@ def initiate_looper_config(
     looper_config_path: str,
     pep_path: str = None,
     output_dir: str = None,
-    sample_pipeline_interfaces: Union[List[str], str] = None,
-    project_pipeline_interfaces: Union[List[str], str] = None,
-    force=False,
-):
+    sample_pipeline_interfaces: list[str] | str = None,
+    project_pipeline_interfaces: list[str] | str = None,
+    force: bool = False,
+) -> bool:
     """Initialize looper config file.
 
     Args:
@@ -618,7 +624,7 @@ def initiate_looper_config(
     """
     console = Console()
     console.clear()
-    console.rule(f"\n[magenta]Looper initialization[/magenta]")
+    console.rule("\n[magenta]Looper initialization[/magenta]")
 
     if os.path.exists(looper_config_path) and not force:
         console.print(
@@ -669,7 +675,7 @@ def initiate_looper_config(
     return True
 
 
-def looper_config_tutorial():
+def looper_config_tutorial() -> bool:
     """Prompt a user through configuring a .looper.yaml file for a new project.
 
     Returns:
@@ -678,7 +684,7 @@ def looper_config_tutorial():
 
     console = Console()
     console.clear()
-    console.rule(f"\n[magenta]Looper initialization[/magenta]")
+    console.rule("\n[magenta]Looper initialization[/magenta]")
 
     looper_cfg_path = ".looper.yaml"  # not changeable
 
@@ -750,8 +756,8 @@ def looper_config_tutorial():
 
     console.print(
         f"""\
-[yellow]pep_config:[/yellow] {cfg['pep_config']}
-[yellow]output_dir:[/yellow] {cfg['output_dir']}
+[yellow]pep_config:[/yellow] {cfg["pep_config"]}
+[yellow]output_dir:[/yellow] {cfg["output_dir"]}
 [yellow]pipeline_interfaces:[/yellow]
   - {piface_paths}
 """
@@ -788,7 +794,9 @@ def looper_config_tutorial():
     return True
 
 
-def determine_pipeline_type(piface_path: str, looper_config_path: str):
+def determine_pipeline_type(
+    piface_path: str, looper_config_path: str
+) -> tuple[list[str] | None, str | None]:
     """Read pipeline interface and determine its type.
 
     Read pipeline interface from disk and determine if it contains
@@ -832,7 +840,7 @@ def determine_pipeline_type(piface_path: str, looper_config_path: str):
 
     if pipeline_types == []:
         raise PipelineInterfaceConfigError(
-            f"sample_interface and/or project_interface must be defined in each pipeline interface."
+            "sample_interface and/or project_interface must be defined in each pipeline interface."
         )
 
     return pipeline_types, piface_path
@@ -890,7 +898,6 @@ def read_looper_config_file(looper_config_path: str) -> dict:
         return_dict[CLI_KEY] = dp_data[CLI_KEY]
 
     if PIPELINE_INTERFACES_KEY in dp_data:
-
         dp_data.setdefault(PIPELINE_INTERFACES_KEY, {})
 
         all_pipeline_interfaces = dp_data.get(PIPELINE_INTERFACES_KEY)
@@ -947,7 +954,7 @@ def read_looper_config_file(looper_config_path: str) -> dict:
     return return_dict
 
 
-def dotfile_path(directory=os.getcwd(), must_exist=False):
+def dotfile_path(directory: str = os.getcwd(), must_exist: bool = False) -> str:
     """Get the path to the looper dotfile.
 
     If file existence is forced this function will look for it in
@@ -973,8 +980,9 @@ def dotfile_path(directory=os.getcwd(), must_exist=False):
         if cur_dir == parent_dir:
             # root, file does not exist
             raise OSError(
-                "Looper dotfile ({}) not found in '{}' and all "
-                "its parents".format(LOOPER_DOTFILE_NAME, directory)
+                "Looper dotfile ({}) not found in '{}' and all its parents".format(
+                    LOOPER_DOTFILE_NAME, directory
+                )
             )
         cur_dir = parent_dir
 
@@ -1005,7 +1013,7 @@ def is_pephub_registry_path(input_string: str) -> bool:
         bool: True if input is a registry path.
     """
     try:
-        registry_path = RegistryPath(**parse_registry_path(input_string))
+        RegistryPath(**parse_registry_path(input_string))
     except (ValidationError, TypeError):
         return False
     return True
@@ -1029,7 +1037,7 @@ class NatIntervalInclusive(object):
             )
 
     def __eq__(self, other) -> bool:
-        return type(other) == type(self) and self.to_tuple() == other.to_tuple()
+        return type(other) is type(self) and self.to_tuple() == other.to_tuple()
 
     def __hash__(self) -> int:
         return hash(self.to_tuple())
@@ -1040,7 +1048,7 @@ class NatIntervalInclusive(object):
     def __str__(self) -> str:
         return f"{self.__class__.__name__}: {self.to_tuple()}"
 
-    def to_tuple(self) -> Tuple[int, int]:
+    def to_tuple(self) -> tuple[int, int]:
         return self.lo, self.hi
 
     @property
@@ -1051,7 +1059,7 @@ class NatIntervalInclusive(object):
     def hi(self) -> int:
         return self._hi
 
-    def _invalidations(self) -> Iterable[str]:
+    def _invalidations(self) -> list[str]:
         problems = []
         if self.lo < 1:
             problems.append(f"Interval must be on natural numbers: {self.lo}")
@@ -1065,7 +1073,7 @@ class NatIntervalInclusive(object):
         return range(self.lo, self.hi + 1)
 
     @classmethod
-    def from_string(cls, s: str, upper_bound: int) -> "IntRange":
+    def from_string(cls, s: str, upper_bound: int) -> "NatIntervalInclusive":
         """Create an instance from a string, e.g. command-line argument.
 
         Args:
@@ -1157,7 +1165,7 @@ def desired_samples_range_skipped(arg: str, num_samples: int) -> Iterable[int]:
         return intv.to_range()
 
 
-def write_submit_script(fp, content, data):
+def write_submit_script(fp: str, content: str, data: dict) -> str:
     """Write a submission script for divvy by populating a template with data.
 
     Args:
@@ -1178,7 +1186,7 @@ def write_submit_script(fp, content, data):
     keys_left = re.findall(r"!$\{(.+?)\}", content)
     if len(keys_left) > 0:
         _LOGGER.warning(
-            "> Warning: %d submission template variables are not " "populated: '%s'",
+            "> Warning: %d submission template variables are not populated: '%s'",
             len(keys_left),
             str(keys_left),
         )
@@ -1207,7 +1215,7 @@ def inspect_looper_config_file(looper_config_dict) -> None:
         print(f"{key} {value}")
 
 
-def expand_nested_var_templates(var_templates_dict, namespaces):
+def expand_nested_var_templates(var_templates_dict: dict, namespaces: dict) -> dict:
     "Takes all var_templates as a dict and recursively expands any paths."
 
     result = {}
@@ -1221,7 +1229,7 @@ def expand_nested_var_templates(var_templates_dict, namespaces):
     return result
 
 
-def render_nested_var_templates(var_templates_dict, namespaces):
+def render_nested_var_templates(var_templates_dict: dict, namespaces: dict) -> dict:
     "Takes all var_templates as a dict and recursively renders the jinja templates."
 
     result = {}

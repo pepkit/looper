@@ -3,14 +3,13 @@
 import os
 from collections.abc import Mapping
 from logging import getLogger
-from warnings import warn
 
 import jsonschema
 import pandas as pd
 from eido import read_schema
 from peppy import utils as peputil
 from ubiquerg import expandpath, is_url
-from yacman import load_yaml, YAMLConfigManager
+from yacman import YAMLConfigManager, load_yaml
 
 from .const import (
     COMPUTE_KEY,
@@ -31,9 +30,6 @@ from .exceptions import (
 )
 from .utils import render_nested_var_templates
 
-__author__ = "Michal Stolarczyk"
-__email__ = "michal@virginia.edu"
-
 _LOGGER = getLogger(__name__)
 
 
@@ -51,7 +47,7 @@ class PipelineInterface(YAMLConfigManager):
         pipeline_type (str): Type of the pipeline, must be either 'sample' or 'project'.
     """
 
-    def __init__(self, config, pipeline_type=None):
+    def __init__(self, config: str | Mapping, pipeline_type: str | None = None) -> None:
         super(PipelineInterface, self).__init__()
 
         if isinstance(config, Mapping):
@@ -71,10 +67,10 @@ class PipelineInterface(YAMLConfigManager):
         self._expand_paths(["compute", "dynamic_variables_script_path"])
 
     @property
-    def pipeline_name(self):
+    def pipeline_name(self) -> str:
         return self[PIPELINE_INTERFACE_PIPELINE_NAME_KEY]
 
-    def render_var_templates(self, namespaces):
+    def render_var_templates(self, namespaces: dict) -> dict:
         """
         Render path templates under 'var_templates' in this pipeline interface.
 
@@ -96,7 +92,7 @@ class PipelineInterface(YAMLConfigManager):
                 var_templates = render_nested_var_templates(var_templates, namespaces)
             return var_templates
 
-    def get_pipeline_schemas(self, schema_key=INPUT_SCHEMA_KEY):
+    def get_pipeline_schemas(self, schema_key: str = INPUT_SCHEMA_KEY) -> str | None:
         """
         Get path to the pipeline schema.
 
@@ -119,7 +115,7 @@ class PipelineInterface(YAMLConfigManager):
                 )
         return schema_source
 
-    def choose_resource_package(self, namespaces, file_size):
+    def choose_resource_package(self, namespaces: dict, file_size: float) -> dict:
         """
         Select resource bundle for given input file size to given pipeline.
 
@@ -152,7 +148,8 @@ class PipelineInterface(YAMLConfigManager):
             if fsize < 0:
                 raise InvalidResourceSpecificationException(
                     "Found negative value () in '{}' column; package '{}'".format(
-                        fsize, FILE_SIZE_COLNAME, name
+                        fsize,
+                        FILE_SIZE_COLNAME,
                     )
                 )
             return fsize
@@ -251,8 +248,9 @@ class PipelineInterface(YAMLConfigManager):
         # Ensure that we have a numeric value before attempting comparison.
         file_size = float(file_size)
         assert file_size >= 0, ValueError(
-            "Attempted selection of resource "
-            "package for negative file size: {}".format(file_size)
+            "Attempted selection of resource package for negative file size: {}".format(
+                file_size
+            )
         )
 
         fluid_resources = _load_dynamic_vars(self)
@@ -301,7 +299,7 @@ class PipelineInterface(YAMLConfigManager):
             resources_data.update(project[LOOPER_KEY][COMPUTE_KEY][RESOURCES_KEY])
         return resources_data
 
-    def _expand_paths(self, keys):
+    def _expand_paths(self, keys: list[str]) -> None:
         """
         Expand paths defined in the pipeline interface file.
 
@@ -370,7 +368,9 @@ class PipelineInterface(YAMLConfigManager):
             _LOGGER.debug("Expanded path: {}".format(pipe_path))
             _set_in_dict(self, keys, pipe_path)
 
-    def _validate(self, schema_src, exclude_case=False, flavor="generic"):
+    def _validate(
+        self, schema_src: str, exclude_case: bool = False, flavor: str = "generic"
+    ) -> None:
         """
         Generic function to validate the object against a schema.
 

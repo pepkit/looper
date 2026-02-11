@@ -12,11 +12,6 @@ written library is not yet clear.
 It is well possible that this script will be removed again.
 """
 
-# Note: The following import is used for forward annotations (Python 3.8)
-# to prevent potential 'TypeError' related to the use of the '|' operator
-# with types.
-from __future__ import annotations
-
 import os
 import sys
 
@@ -26,11 +21,10 @@ import yaml
 from eido import inspect_project
 from pephubclient import PEPHubClient
 from pydantic_argparse.argparse.parser import ArgumentParser
+from rich.console import Console
 
 from . import __version__
-
 from .command_models.arguments import ArgumentEnum
-
 from .command_models.commands import (
     SUPPORTED_COMMANDS,
     TopLevelParser,
@@ -40,11 +34,11 @@ from .const import (
     CLI_KEY,
     CLI_PROJ_ATTRS,
     EXAMPLE_COMPUTE_SPEC_FMT,
-    PipelineLevel,
     PROJECT_PL_ARG,
     SAMPLE_EXCLUSION_OPTNAME,
     SAMPLE_INCLUSION_OPTNAME,
     SAMPLE_PL_ARG,
+    PipelineLevel,
 )
 from .divvy import DEFAULT_COMPUTE_RESOURCES_NAME, select_divvy_config
 from .exceptions import (
@@ -66,27 +60,24 @@ from .project import Project, ProjectContext
 from .utils import (
     dotfile_path,
     enrich_args_via_cfg,
-    is_pephub_registry_path,
-    read_looper_config_file,
-    read_looper_dotfile,
-    initiate_looper_config,
     init_generic_pipeline,
-    read_yaml_file,
+    initiate_looper_config,
     inspect_looper_config_file,
     is_PEP_file_type,
+    is_pephub_registry_path,
     looper_config_tutorial,
+    read_looper_config_file,
+    read_looper_dotfile,
+    read_yaml_file,
 )
 
-from typing import List, Tuple
-from rich.console import Console
 
-
-def opt_attr_pair(name: str) -> Tuple[str, str]:
+def opt_attr_pair(name: str) -> tuple[str, str]:
     """Takes argument as attribute and returns as tuple of top-level or subcommand used."""
     return f"--{name}", name.replace("-", "_")
 
 
-def validate_post_parse(args: argparse.Namespace) -> List[str]:
+def validate_post_parse(args) -> list[str]:
     """Checks if user is attempting to use mutually exclusive options."""
     problems = []
     used_exclusives = [
@@ -144,10 +135,9 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
         sys.exit(1)
 
     if subcommand_name == "init":
-
         console = Console()
         console.clear()
-        console.rule(f"\n[magenta]Looper initialization[/magenta]")
+        console.rule("\n[magenta]Looper initialization[/magenta]")
         selection = subcommand_args.generic
         if selection is True:
             console.clear()
@@ -252,18 +242,19 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
             )
         else:
             raise MisconfigurationException(
-                f"`sample_pipeline_interface` is missing. Provide it in the parameters."
+                "`sample_pipeline_interface` is missing. Provide it in the parameters."
             )
     else:
         raise MisconfigurationException(
-            f"Cannot load PEP. Check file path or registry path to pep."
+            "Cannot load PEP. Check file path or registry path to pep."
         )
 
     selected_compute_pkg = p.selected_compute_package or DEFAULT_COMPUTE_RESOURCES_NAME
     if p.dcc is not None and not p.dcc.activate_package(selected_compute_pkg):
         _LOGGER.info(
-            "Failed to activate '{}' computing package. "
-            "Using the default one".format(selected_compute_pkg)
+            "Failed to activate '{}' computing package. Using the default one".format(
+                selected_compute_pkg
+            )
         )
 
     with ProjectContext(
@@ -274,7 +265,6 @@ def run_looper(args: TopLevelParser, parser: ArgumentParser, test_args=None):
         selector_flag=subcommand_args.sel_flag,
         exclusion_flag=subcommand_args.exc_flag,
     ) as prj:
-
         # Check at the beginning if user wants to use pipestat and pipestat is configurable
         is_pipestat_configured = (
             prj._check_if_pipestat_configured(pipeline_type=PipelineLevel.PROJECT.value)
@@ -362,7 +352,7 @@ def main(test_args=None) -> dict:
         prog="looper",
         description="Looper: A job submitter for Portable Encapsulated Projects",
         add_help=True,
-        version="2.0.3",
+        version=__version__,
     )
 
     parser = add_short_arguments(parser, ArgumentEnum)
@@ -379,7 +369,7 @@ def main_cli() -> None:
     main()
 
 
-def _proc_resources_spec(args):
+def _proc_resources_spec(args) -> dict[str, str]:
     """Process CLI-sources compute setting specification.
 
     There are two sources of compute settings in the CLI alone:
@@ -404,8 +394,9 @@ def _proc_resources_spec(args):
         settings_data = read_yaml_file(settings) or {}
     except yaml.YAMLError:
         _LOGGER.warning(
-            "Settings file ({}) does not follow YAML format,"
-            " disregarding".format(settings)
+            "Settings file ({}) does not follow YAML format, disregarding".format(
+                settings
+            )
         )
         settings_data = {}
     if not spec:

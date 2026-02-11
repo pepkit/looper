@@ -34,7 +34,12 @@ class Argument(pydantic.fields.FieldInfo):
     """
 
     def __init__(
-        self, name: str, default: Any, description: str, alias: str = None, **kwargs
+        self,
+        name: str,
+        default: Any,
+        description: str,
+        alias: str | None = None,
+        **kwargs,
     ) -> None:
         self._name = name
         super().__init__(
@@ -43,7 +48,7 @@ class Argument(pydantic.fields.FieldInfo):
         self._validate()
 
     @property
-    def name(self):
+    def name(self) -> str:
         """
         Argument name as used in the CLI, e.g. "ignore-args"
         """
