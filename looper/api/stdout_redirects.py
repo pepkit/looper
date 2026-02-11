@@ -1,3 +1,4 @@
+# ruff: noqa: E731
 # Copied from https://gitlab.com/yquemener/stdout-redirects
 #
 # copied from https://stackoverflow.com/a/43667367/1193986
@@ -12,6 +13,7 @@
 # I guess that means the result is CC-by-SA
 
 
+import copy
 import sys
 import threading
 from io import StringIO
@@ -55,7 +57,7 @@ class LocalProxy:
 
     def __init__(
         self,
-        local: Union[Any, "LocalProxy", "LocalStack"],
+        local: Union[Any, "LocalProxy"],
         name: Optional[str] = None,
     ) -> None:
         object.__setattr__(self, "_LocalProxy__local", local)
