@@ -1,4 +1,4 @@
-""" Test helpers """
+"""Test helpers"""
 
 import random
 import string

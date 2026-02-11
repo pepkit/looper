@@ -1,22 +1,28 @@
 import logging
 import os
-from .const import *
+from .const import (
+    SAMPLE_CWL_YAML_PATH_KEY,
+    SAMPLE_YAML_PATH_KEY,
+    SAMPLE_YAML_PRJ_PATH_KEY,
+)
 from .conductor import _get_yaml_path
 
 _LOGGER = logging.getLogger(__name__)
 
 
 def write_sample_yaml_prj(namespaces):
-    """
-    Plugin: saves sample representation with project reference to YAML.
+    """Plugin: saves sample representation with project reference to YAML.
 
     This plugin can be parametrized by providing the path value/template in
     'pipeline.var_templates.sample_yaml_prj_path'. This needs to be a complete and
     absolute path to the file where sample YAML representation is to be
     stored.
 
-    :param dict namespaces: variable namespaces dict
-    :return dict: sample namespace dict
+    Args:
+        namespaces (dict): Variable namespaces dict.
+
+    Returns:
+        dict: Sample namespace dict.
     """
     sample = namespaces["sample"]
     sample.to_yaml(
@@ -64,8 +70,7 @@ def write_custom_template(namespaces):
 
 
 def write_sample_yaml_cwl(namespaces):
-    """
-    Plugin: Produce a cwl-compatible yaml representation of the sample
+    """Plugin: Produce a cwl-compatible yaml representation of the sample.
 
     Also adds the 'cwl_yaml' attribute to sample objects, which points
     to the file produced.
@@ -75,8 +80,11 @@ def write_sample_yaml_cwl(namespaces):
     absolute path to the file where sample YAML representation is to be
     stored.
 
-    :param dict namespaces: variable namespaces dict
-    :return dict: updated variable namespaces dict
+    Args:
+        namespaces (dict): Variable namespaces dict.
+
+    Returns:
+        dict: Updated variable namespaces dict.
     """
     from eido import read_schema
     from ubiquerg import is_url
@@ -141,16 +149,18 @@ def write_sample_yaml_cwl(namespaces):
 
 
 def write_sample_yaml(namespaces):
-    """
-    Plugin: saves sample representation to YAML.
+    """Plugin: saves sample representation to YAML.
 
     This plugin can be parametrized by providing the path value/template in
     'pipeline.var_templates.sample_yaml_path'. This needs to be a complete and
     absolute path to the file where sample YAML representation is to be
     stored.
 
-    :param dict namespaces: variable namespaces dict
-    :return dict: sample namespace dict
+    Args:
+        namespaces (dict): Variable namespaces dict.
+
+    Returns:
+        dict: Sample namespace dict.
     """
     sample = namespaces["sample"]
     sample["sample_yaml_path"] = _get_yaml_path(

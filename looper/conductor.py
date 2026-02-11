@@ -1,49 +1,75 @@
-""" Pipeline job submission orchestration """
+"""Pipeline job submission orchestration"""
 
 import importlib
 import logging
 import os
 import subprocess
+import signal
+import psutil
+import sys
 import time
 import yaml
-from copy import copy, deepcopy
+from math import ceil
 from json import loads
 from subprocess import check_output
-from typing import *
+from typing import Optional
 
 from eido import read_schema, get_input_files_size
 from eido.const import INPUT_FILE_SIZE_KEY, MISSING_KEY
 from jinja2.exceptions import UndefinedError
 
-from peppy.const import CONFIG_KEY, SAMPLE_NAME_ATTR, SAMPLE_YAML_EXT
+from peppy.const import CONFIG_KEY, SAMPLE_YAML_EXT
 from peppy.exceptions import RemoteYAMLError
 from pipestat import PipestatError
-from ubiquerg import expandpath, is_command_callable
+from ubiquerg import expandpath
 from yaml import dump
 from yacman import YAMLConfigManager
 
-from .const import *
-from .exceptions import JobSubmissionException, SampleFailedException
+from .const import (
+    EXTRA_PROJECT_CMD_TEMPLATE,
+    EXTRA_SAMPLE_CMD_TEMPLATE,
+    JOB_NAME_KEY,
+    NOT_SUB_MSG,
+    OUTDIR_KEY,
+    OUTPUT_SCHEMA_KEY,
+    PipelineLevel,
+    PRE_SUBMIT_CMD_KEY,
+    PRE_SUBMIT_HOOK_KEY,
+    PRE_SUBMIT_PY_FUN_KEY,
+    PROJECT_PL_KEY,
+    RESULTS_SUBDIR_KEY,
+    SAMPLE_CWL_YAML_PATH_KEY,
+    SAMPLE_PL_KEY,
+    SUBMISSION_SUBDIR_KEY,
+    VAR_TEMPL_KEY,
+)
+from .exceptions import JobSubmissionException
 from .processed_project import populate_sample_paths
-from .utils import fetch_sample_flags, jinja_render_template_strictly
+from .utils import (
+    fetch_sample_flags,
+    jinja_render_template_strictly,
+    expand_nested_var_templates,
+)
 
 
 _LOGGER = logging.getLogger(__name__)
 
 
 def _get_yaml_path(namespaces, template_key, default_name_appendix="", filename=None):
-    """
-    Get a path to a YAML file for the sample.
+    """Get a path to a YAML file for the sample.
 
-    :param dict[dict]] namespaces: namespaces mapping
-    :param str template_key: the name of the key in 'var_templates' piface
-        section that points to a template to render to get the
-        user-provided target YAML path
-    :param str default_name_appendix: a string to append to insert in target
-        YAML file name: '{sample.sample_name}<>.yaml'
-    :param str filename: A filename without folders. If not provided, a
-        default name of sample_name.yaml will be used.
-    :return str: sample YAML file path
+    Args:
+        namespaces (dict[dict]): Namespaces mapping.
+        template_key (str): The name of the key in 'var_templates' piface
+            section that points to a template to render to get the
+            user-provided target YAML path.
+        default_name_appendix (str): A string to append to insert in target
+            YAML file name: '{sample.sample_name}<>.yaml'.
+        filename (str): A filename without folders. If not provided, a
+            default name of sample_name.yaml will be used.
+
+    Returns:
+        str: Sample YAML file path.
     """
     if (
         VAR_TEMPL_KEY in namespaces["pipeline"]
@@ -69,7 +95,7 @@ def _get_yaml_path(namespaces, template_key, default_name_appendix="", filename=
         # default YAML location
         f = (
             filename
-            or f"{namespaces['sample'][SAMPLE_NAME_ATTR]}"
+            or f"{namespaces['sample'][namespaces['sample']['_project'].sample_table_index]}"
             f"{default_name_appendix}"
             f"{SAMPLE_YAML_EXT[0]}"
         )
@@ -83,22 +109,41 @@ def _get_yaml_path(namespaces, template_key, default_name_appendix="", filename=
 
 
 def write_pipestat_config(looper_pipestat_config_path, pipestat_config_dict):
+    """Write a combined configuration file to be passed to a PipestatManager.
+
+    Args:
+        looper_pipestat_config_path (str): Path to the created pipestat
+            configuration file.
+        pipestat_config_dict (dict): The dict containing key value pairs to be
+            written to the pipestat configuration.
+
+    Returns:
+        bool: True if successful.
     """
-    This is run at the project level, not at the sample level.
-    """
+
+    if not os.path.exists(os.path.dirname(looper_pipestat_config_path)):
+        try:
+            os.makedirs(os.path.dirname(looper_pipestat_config_path))
+        except FileExistsError:
+            pass
+
     with open(looper_pipestat_config_path, "w") as f:
         yaml.dump(pipestat_config_dict, f)
-    print(f"Initialized looper config file: {looper_pipestat_config_path}")
+    _LOGGER.debug(
+        msg=f"Initialized pipestat config file: {looper_pipestat_config_path}"
+    )
 
     return True
 
 
 def write_submission_yaml(namespaces):
-    """
-    Save all namespaces to YAML.
+    """Save all namespaces to YAML.
 
-    :param dict namespaces: variable namespaces dict
-    :return dict: sample namespace dict
+    Args:
+        namespaces (dict): Variable namespaces dict.
+
+    Returns:
+        dict: Sample namespace dict.
     """
     path = _get_yaml_path(namespaces, SAMPLE_CWL_YAML_PATH_KEY, "_submission")
     my_namespaces = {}
@@ -132,48 +177,55 @@ class SubmissionConductor(object):
         compute_variables=None,
         max_cmds=None,
         max_size=None,
+        max_jobs=None,
         automatic=True,
         collate=False,
     ):
-        """
-        Create a job submission manager.
+        """Create a job submission manager.
 
         The most critical inputs are the pipeline interface and the pipeline
         key, which together determine which provide critical pipeline
         information like resource allocation packages and which pipeline will
         be overseen by this instance, respectively.
 
-        :param PipelineInterface pipeline_interface: Collection of important
-            data for one or more pipelines, like resource allocation packages
-            and option/argument specifications
-        :param prj: Project with which each sample being considered is
-            associated (what generated each sample)
-        :param float delay: Time (in seconds) to wait before submitting a job
-            once it's ready
-        :param str extra_args: string to pass to each job generated,
-            for example additional pipeline arguments
-        :param str extra_args_override: string to pass to each job generated,
-            for example additional pipeline arguments. This deactivates the
-            'extra' functionality that appends strings defined in
-            Sample.command_extra and Project.looper.command_extra to the
-            command template.
-        :param bool ignore_flags: Whether to ignore flag files present in
-            the sample folder for each sample considered for submission
-        :param dict[str] compute_variables: A dict with variables that will be made
-            available to the compute package. For example, this should include
-            the name of the cluster partition to which job or jobs will be submitted
-        :param int | NoneType max_cmds: Upper bound on number of commands to
-            include in a single job script.
-        :param int | float | NoneType max_size: Upper bound on total file
-            size of inputs used by the commands lumped into single job script.
-        :param bool automatic: Whether the submission should be automatic once
-            the pool reaches capacity.
-        :param bool collate: Whether a collate job is to be submitted (runs on
-            the project level, rather that on the sample level)
+        Args:
+            pipeline_interface (PipelineInterface): Collection of important
+                data for one or more pipelines, like resource allocation packages
+                and option/argument specifications.
+            prj: Project with which each sample being considered is
+                associated (what generated each sample).
+            delay (float): Time (in seconds) to wait before submitting a job
+                once it's ready.
+            extra_args (str): String to pass to each job generated,
+                for example additional pipeline arguments.
+            extra_args_override (str): String to pass to each job generated,
+                for example additional pipeline arguments. This deactivates the
+                'extra' functionality that appends strings defined in
+                Sample.command_extra and Project.looper.command_extra to the
+                command template.
+            ignore_flags (bool): Whether to ignore flag files present in
+                the sample folder for each sample considered for submission.
+            compute_variables (dict[str]): A dict with variables that will be made
+                available to the compute package. For example, this should include
+                the name of the cluster partition to which job or jobs will be submitted.
+            max_cmds (int | None): Upper bound on number of commands to
+                include in a single job script.
+            max_size (int | float | None): Upper bound on total file
+                size of inputs used by the commands lumped into single job script.
+            max_jobs (int | float | None): Upper bound on total number of jobs to
+                group samples for submission.
+            automatic (bool): Whether the submission should be automatic once
+                the pool reaches capacity.
+            collate (bool): Whether a collate job is to be submitted (runs on
+                the project level, rather that on the sample level).
         """
         super(SubmissionConductor, self).__init__()
+
         self.collate = collate
         self.section_key = PROJECT_PL_KEY if self.collate else SAMPLE_PL_KEY
+        self.pipeline_interface_type = (
+            "project_interface" if self.collate else "sample_interface"
+        )
         self.pl_iface = pipeline_interface
         self.pl_name = self.pl_iface.pipeline_name
         self.prj = prj
@@ -193,12 +245,23 @@ class SubmissionConductor(object):
         self._curr_size = 0
         self._failed_sample_names = []
         self._curr_skip_pool = []
+        self.process_id = None  # this is used for currently submitted subprocess
 
         if self.extra_pipe_args:
             _LOGGER.debug(
                 "String appended to every pipeline command: "
                 "{}".format(self.extra_pipe_args)
             )
+
+        if max_jobs:
+            if max_jobs == 0 or max_jobs < 0:
+                raise ValueError(
+                    "If specified, max job command count must be a positive integer, greater than zero."
+                )
+
+            num_samples = len(self.prj.samples)
+            samples_per_job = num_samples / max_jobs
+            max_cmds = ceil(samples_per_job)
 
         if not self.collate:
             self.automatic = automatic
@@ -225,30 +288,37 @@ class SubmissionConductor(object):
 
     @property
     def num_cmd_submissions(self):
-        """
-        Return the number of commands that this conductor has submitted.
+        """Return the number of commands that this conductor has submitted.
 
-        :return int: Number of commands submitted so far.
+        Returns:
+            int: Number of commands submitted so far.
         """
         return self._num_cmds_submitted
 
     @property
     def num_job_submissions(self):
-        """
-        Return the number of jobs that this conductor has submitted.
+        """Return the number of jobs that this conductor has submitted.
 
-        :return int: Number of jobs submitted so far.
+        Returns:
+            int: Number of jobs submitted so far.
         """
         return self._num_good_job_submissions
 
     def is_project_submittable(self, force=False):
-        """
-        Check whether the current project has been already submitted
+        """Check whether the current project has been already submitted.
 
-        :param bool frorce: whether to force the project submission (ignore status/flags)
+        Args:
+            force (bool): Whether to force the project submission (ignore status/flags).
+
+        Returns:
+            bool: True if the project is submittable, False otherwise.
         """
+        psms = {}
         if self.prj.pipestat_configured_project:
-            psm = self.prj.get_pipestat_managers(project_level=True)[self.pl_name]
+            for piface in self.prj.project_pipeline_interfaces:
+                if piface.psm.pipeline_type == PipelineLevel.PROJECT.value:
+                    psms[piface.psm.pipeline_name] = piface.psm
+            psm = psms[self.pl_name]
             status = psm.get_status()
             if not force and status is not None:
                 _LOGGER.info(f"> Skipping project. Determined status: {status}")
@@ -256,17 +326,20 @@ class SubmissionConductor(object):
         return True
 
     def add_sample(self, sample, rerun=False):
-        """
-        Add a sample for submission to this conductor.
+        """Add a sample for submission to this conductor.
 
-        :param peppy.Sample sample: sample to be included with this conductor's
-            currently growing collection of command submissions
-        :param bool rerun: whether the given sample is being rerun rather than
-            run for the first time
-        :return bool: Indication of whether the given sample was added to
-            the current 'pool.'
-        :raise TypeError: If sample subtype is provided but does not extend
-            the base Sample class, raise a TypeError.
+        Args:
+            sample (peppy.Sample): Sample to be included with this conductor's
+                currently growing collection of command submissions.
+            rerun (bool): Whether the given sample is being rerun rather than
+                run for the first time.
+
+        Returns:
+            list: List of skip reasons if sample was not added.
+
+        Raises:
+            TypeError: If sample subtype is provided but does not extend
+                the base Sample class.
         """
         _LOGGER.debug(
             "Adding {} to conductor for {} to {}run".format(
@@ -274,12 +347,11 @@ class SubmissionConductor(object):
             )
         )
         if self.prj.pipestat_configured:
-            psms = self.prj.get_pipestat_managers(sample_name=sample.sample_name)
-            sample_statuses = psms[self.pl_name].get_status(
+            sample_statuses = self.pl_iface.psm.get_status(
                 record_identifier=sample.sample_name
             )
             if sample_statuses == "failed" and rerun is True:
-                psms[self.pl_name].set_status(
+                self.pl_iface.psm.set_status(
                     record_identifier=sample.sample_name, status_identifier="waiting"
                 )
                 sample_statuses = "waiting"
@@ -289,23 +361,27 @@ class SubmissionConductor(object):
 
         use_this_sample = True  # default to running this sample
         msg = None
+        if rerun and sample_statuses == []:
+            msg = f"> Skipping sample because rerun requested, but no failed or waiting flag found."
+            use_this_sample = False
         if sample_statuses:
             status_str = ", ".join(sample_statuses)
             failed_flag = any("failed" in x for x in sample_statuses)
+            waiting_flag = any("waiting" in x for x in sample_statuses)
             if self.ignore_flags:
                 msg = f"> Found existing status: {status_str}. Ignoring."
             else:  # this pipeline already has a status
                 msg = f"> Found existing status: {status_str}. Skipping sample."
-                if failed_flag:
+                if failed_flag and not rerun:
                     msg += " Use rerun to ignore failed status."  # help guidance
                 use_this_sample = False
             if rerun:
                 # Rescue the sample if rerun requested, and failed flag is found
-                if failed_flag:
-                    msg = f"> Re-running failed sample. Status: {status_str}"
+                if failed_flag or waiting_flag:
+                    msg = f"> Re-running sample. Status: {status_str}"
                     use_this_sample = True
                 else:
-                    msg = f"> Skipping sample because rerun requested, but no failed flag found. Status: {status_str}"
+                    msg = f"> Skipping sample because rerun requested, but no failed or waiting flag found. Status: {status_str}"
                     use_this_sample = False
         if msg:
             _LOGGER.info(msg)
@@ -345,19 +421,25 @@ class SubmissionConductor(object):
         return skip_reasons
 
     def submit(self, force=False):
-        """
-        Submit one or more commands as a job.
+        """Submit one or more commands as a job.
 
         This call will submit the commands corresponding to the current pool
         of samples if and only if the argument to 'force' evaluates to a
         true value, or the pool of samples is full.
 
-        :param bool force: Whether submission should be done/simulated even
-            if this conductor's pool isn't full.
-        :return bool: Whether a job was submitted (or would've been if
-            not for dry run)
+        Args:
+            force (bool): Whether submission should be done/simulated even
+                if this conductor's pool isn't full.
+
+        Returns:
+            bool: Whether a job was submitted (or would've been if
+                not for dry run).
         """
         submitted = False
+
+        # Override signal handler so that Ctrl+C can be used to gracefully terminate child process
+        signal.signal(signal.SIGINT, self._signal_int_handler)
+
         if not self._pool:
             _LOGGER.debug("No submission (no pooled samples): %s", self.pl_name)
             # submitted = False
@@ -386,9 +468,10 @@ class SubmissionConductor(object):
                 submission_command = "{} {}".format(sub_cmd, script)
                 # Capture submission command return value so that we can
                 # intercept and report basic submission failures; #167
-                try:
-                    subprocess.check_call(submission_command, shell=True)
-                except subprocess.CalledProcessError:
+                process = subprocess.Popen(submission_command, shell=True)
+                self.process_id = process.pid
+                process.wait()
+                if process.returncode != 0:
                     fails = (
                         "" if self.collate else [s.sample_name for s in self._samples]
                     )
@@ -413,25 +496,29 @@ class SubmissionConductor(object):
         return submitted
 
     def _is_full(self, pool, size):
-        """
-        Determine whether it's time to submit a job for the pool of commands.
+        """Determine whether it's time to submit a job for the pool of commands.
 
         Instances of this class maintain a sort of 'pool' of commands that
         expands as each new command is added, until a time that it's deemed
-        'full' and th
+        'full'.
 
-        :return bool: Whether this conductor's pool of commands is 'full' and
-            ready for submission, as determined by its parameterization
+        Args:
+            pool: Collection of samples/commands.
+            size: Current total size.
+
+        Returns:
+            bool: Whether this conductor's pool of commands is 'full' and
+                ready for submission, as determined by its parameterization.
         """
         return self.max_cmds == len(pool) or size >= self.max_size
 
     @property
     def _samples(self):
-        """
-        Return a collection of pooled samples.
+        """Return a collection of pooled samples.
 
-        :return Iterable[str]: collection of samples currently in the active
-            pool for this submission conductor
+        Returns:
+            Iterable[str]: Collection of samples currently in the active
+                pool for this submission conductor.
         """
         return [s for s in self._pool]
 
@@ -455,19 +542,112 @@ class SubmissionConductor(object):
             # name concordant with 1-based, not 0-based indexing.
             return "lump{}".format(self._num_total_job_submissions + 1)
 
+    def _signal_int_handler(self, signal, frame):
+        """For catching interrupt (Ctrl +C) signals. Fails gracefully.
+
+        Args:
+            signal: Signal received.
+            frame: Current stack frame.
+        """
+        signal_type = "SIGINT"
+        self._generic_signal_handler(signal_type)
+
+    def _generic_signal_handler(self, signal_type):
+        """Function for handling both SIGTERM and SIGINT.
+
+        Args:
+            signal_type (str): Type of signal received (SIGTERM or SIGINT).
+        """
+        message = "Received " + signal_type + ". Failing gracefully..."
+        _LOGGER.warning(msg=message)
+
+        self._terminate_current_subprocess()
+
+        sys.exit(1)
+
+    def _terminate_current_subprocess(self):
+        """This terminates the current sub process associated with self.process_id"""
+
+        def pskill(proc_pid, sig=signal.SIGINT):
+            parent_process = psutil.Process(proc_pid)
+            for child_proc in parent_process.children(recursive=True):
+                child_proc.send_signal(sig)
+            parent_process.send_signal(sig)
+
+        if self.process_id is None:
+            return
+
+        # Gently wait for the subprocess before attempting to kill it
+        sys.stdout.flush()
+        still_running = self._attend_process(psutil.Process(self.process_id), 0)
+        sleeptime = 0.25
+        time_waiting = 0
+
+        while still_running and time_waiting < 3:
+            try:
+                if time_waiting > 2:
+                    pskill(self.process_id, signal.SIGKILL)
+                elif time_waiting > 1:
+                    pskill(self.process_id, signal.SIGTERM)
+                else:
+                    pskill(self.process_id, signal.SIGINT)
+
+            except OSError:
+                # This would happen if the child process ended between the check
+                # and the next kill step
+                still_running = False
+                time_waiting = time_waiting + sleeptime
+
+            # Now see if it's still running
+            time_waiting = time_waiting + sleeptime
+            if not self._attend_process(psutil.Process(self.process_id), sleeptime):
+                still_running = False
+
+        if still_running:
+            _LOGGER.warning(f"Unable to halt child process: {self.process_id}")
+        else:
+            if time_waiting > 0:
+                note = f"terminated after {time_waiting} sec"
+            else:
+                note = "was already terminated"
+            _LOGGER.warning(msg=f"Child process {self.process_id} {note}.")
+
+    def _attend_process(self, proc, sleeptime):
+        """Wait on a process for a given time to see if it finishes.
+
+        Returns True if it's still running after the given time or False as
+        soon as it returns.
+
+        Args:
+            proc (psutil.Process): Process object opened by psutil.Popen().
+            sleeptime (float): Time to wait.
+
+        Returns:
+            bool: True if process is still running; otherwise false.
+        """
+        try:
+            proc.wait(timeout=int(sleeptime))
+        except psutil.TimeoutExpired:
+            return True
+        return False
+
     def _jobname(self, pool):
         """Create the name for a job submission."""
         return "{}_{}".format(self.pl_iface.pipeline_name, self._sample_lump_name(pool))
 
     def _build_looper_namespace(self, pool, size):
-        """
+        """Compile a mapping of looper/submission related settings.
+
         Compile a mapping of looper/submission related settings for use in
         the command templates and in submission script creation
         in divvy (via adapters).
 
-        :param Iterable[peppy.Sample] pool: collection of sample instances
-        :param float size: cumulative size of the given pool
-        :return yacman.YAMLConfigManager: looper/submission related settings
+        Args:
+            pool (Iterable[peppy.Sample]): Collection of sample instances.
+            size (float): Cumulative size of the given pool.
+
+        Returns:
+            yacman.YAMLConfigManager: Looper/submission related settings.
         """
         settings = YAMLConfigManager()
         settings["config_file"] = self.prj.config_file
@@ -504,22 +684,21 @@ class SubmissionConductor(object):
     def _set_pipestat_namespace(
         self, sample_name: Optional[str] = None
     ) -> YAMLConfigManager:
-        """
+        """Compile a mapping of pipestat-related settings.
+
         Compile a mapping of pipestat-related settings for use in
         the command templates. Accessible via: {pipestat.attrname}
 
-        :param str sample_name: name of the sample to get the pipestat
-            namespace for. If not provided the pipestat namespace will
-            be determined based on the Project
-        :return yacman.YAMLConfigManager: pipestat namespace
+        Args:
+            sample_name (str): Name of the sample to get the pipestat
+                namespace for. If not provided the pipestat namespace will
+                be determined based on the Project.
+
+        Returns:
+            yacman.YAMLConfigManager: Pipestat namespace.
         """
         try:
-            psms = (
-                self.prj.get_pipestat_managers(sample_name)
-                if sample_name
-                else self.prj.get_pipestat_managers(project_level=True)
-            )
-            psm = psms[self.pl_iface.pipeline_name]
+            psm = self.pl_iface.psm
         except (PipestatError, AttributeError) as e:
             # pipestat section faulty or not found in project.looper or sample
             # or project is missing required pipestat attributes
@@ -534,17 +713,22 @@ class SubmissionConductor(object):
                 "results_file": psm.file,
                 "record_identifier": psm.record_identifier,
                 "config_file": psm.config_path,
+                "output_schema": psm.cfg["_schema_path"],
+                "pephub_path": psm.cfg["pephub_path"],
+                "flag_file_dir": psm.cfg["_config"].data.get("flag_file_dir"),
             }
             filtered_namespace = {k: v for k, v in full_namespace.items() if v}
             return YAMLConfigManager(filtered_namespace)
 
     def write_script(self, pool, size):
-        """
-        Create the script for job submission.
+        """Create the script for job submission.
 
-        :param Iterable[peppy.Sample] pool: collection of sample instances
-        :param float size: cumulative size of the given pool
-        :return str: Path to the job submission script created.
+        Args:
+            pool (Iterable[peppy.Sample]): Collection of sample instances.
+            size (float): Cumulative size of the given pool.
+
+        Returns:
+            str: Path to the job submission script created.
         """
         # looper settings determination
         if self.collate:
@@ -557,7 +741,11 @@ class SubmissionConductor(object):
             pipeline=self.pl_iface,
             compute=self.prj.dcc.compute,
         )
-        templ = self.pl_iface["command_template"]
+
+        if self.pipeline_interface_type is None:
+            templ = self.pl_iface["command_template"]
+        else:
+            templ = self.pl_iface[self.pipeline_interface_type]["command_template"]
         if not self.override_extra:
             extras_template = (
                 EXTRA_PROJECT_CMD_TEMPLATE
@@ -597,8 +785,10 @@ class SubmissionConductor(object):
             _LOGGER.debug(f"namespace pipelines: { pl_iface }")
 
             namespaces["pipeline"]["var_templates"] = pl_iface[VAR_TEMPL_KEY] or {}
-            for k, v in namespaces["pipeline"]["var_templates"].items():
-                namespaces["pipeline"]["var_templates"][k] = expandpath(v)
+
+            namespaces["pipeline"]["var_templates"] = expand_nested_var_templates(
+                namespaces["pipeline"]["var_templates"], namespaces
+            )
 
             # pre_submit hook namespace updates
             namespaces = _exec_pre_submit(pl_iface, namespaces)
@@ -607,7 +797,6 @@ class SubmissionConductor(object):
                 argstring = jinja_render_template_strictly(
                     template=templ, namespaces=namespaces
                 )
-                print(argstring)
             except UndefinedError as jinja_exception:
                 _LOGGER.warning(NOT_SUB_MSG.format(str(jinja_exception)))
             except KeyError as e:
@@ -656,23 +845,27 @@ def _use_sample(flag, skips):
 
 
 def _exec_pre_submit(piface, namespaces):
-    """
-    Execute pre submission hooks defined in the pipeline interface
+    """Execute pre submission hooks defined in the pipeline interface.
 
-    :param PipelineInterface piface: piface, a source of pre_submit hooks to execute
-    :param dict[dict[]] namespaces: namspaces mapping
-    :return dict[dict[]]: updated namspaces mapping
+    Args:
+        piface (PipelineInterface): Piface, a source of pre_submit hooks to execute.
+        namespaces (dict[dict]): Namespaces mapping.
+
+    Returns:
+        dict[dict]: Updated namespaces mapping.
     """
 
     def _update_namespaces(x, y, cmd=False):
-        """
+        """Update namespaces mapping with new values.
+
         Update namespaces mapping with a dictionary of the same structure,
         that includes just the values that need to be updated.
 
-        :param dict[dict] x: namespaces mapping
-        :param dict[dict] y: mapping to update namespaces with
-        :param bool cmd: whether the mapping to update with comes from the
-            command template, used for messaging
+        Args:
+            x (dict[dict]): Namespaces mapping.
+            y (dict[dict]): Mapping to update namespaces with.
+            cmd (bool): Whether the mapping to update with comes from the
+                command template, used for messaging.
         """
         if not y:
             return

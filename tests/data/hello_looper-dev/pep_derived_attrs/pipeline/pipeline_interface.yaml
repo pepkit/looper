@@ -1,0 +1,7 @@
+pipeline_name: count_lines
+sample_interface:
+  command_template: >
+    pipeline/count_lines.sh {sample.file_path}
+project_interface:
+  command_template: >
+    python3 {looper.piface_dir}/count_lines_plot.py {looper.output_dir}/submission/

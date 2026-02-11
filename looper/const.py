@@ -1,6 +1,7 @@
-""" Shared project constants """
+"""Shared project constants"""
 
 import os
+from enum import Enum
 
 __author__ = "Databio lab"
 __email__ = "nathan@code.databio.org"
@@ -92,6 +93,7 @@ __all__ = [
     "DEBUG_EIDO_VALIDATION",
     "LOOPER_GENERIC_OUTPUT_SCHEMA",
     "LOOPER_GENERIC_COUNT_LINES",
+    "PipelineLevel",
 ]
 
 FLAGS = ["completed", "running", "failed", "waiting", "partial"]
@@ -106,13 +108,17 @@ APPEARANCE_BY_FLAG = {
 
 
 def _get_apperance_dict(type, templ=APPEARANCE_BY_FLAG):
-    """
-    Based on the type of the HTML element provided construct the appearence
-     mapping using the template
+    """Construct the appearance mapping using the template.
 
-    :param dict templ: appearance template to populate
-    :param str type: type of HTML element to populate template with
-    :return dict: populated appearance template
+    Based on the type of the HTML element provided construct the appearance
+    mapping using the template.
+
+    Args:
+        type (str): Type of HTML element to populate template with.
+        templ (dict): Appearance template to populate.
+
+    Returns:
+        dict: Populated appearance template.
     """
     from copy import deepcopy
 
@@ -268,3 +274,10 @@ MESSAGE_BY_SUBCOMMAND = {
     "init-piface": "Initialize generic pipeline interface.",
     "link": "Create directory of symlinks for reported results.",
 }
+
+# Add project/sample enum
+
+
+class PipelineLevel(Enum):
+    SAMPLE = "sample"
+    PROJECT = "project"

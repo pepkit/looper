@@ -1,0 +1,10 @@
+pipeline_name: count_lines
+input_schema: input_schema.yaml
+sample_interface:
+  command_template: >
+    pipeline/count_lines.sh {sample.file_path} {sample.area_type}
+project_interface:
+  command_template: >
+    python3 {looper.piface_dir}/count_lines_plot.py {looper.output_dir}/submission/
+compute:
+  size_dependent_variables: resources-sample.tsv
