@@ -18,6 +18,7 @@ from .const import (
     ID_COLNAME,
     INPUT_SCHEMA_KEY,
     LOOPER_KEY,
+    OUTPUT_SCHEMA_KEY,
     PIFACE_SCHEMA_SRC,
     PIPELINE_INTERFACE_PIPELINE_NAME_KEY,
     RESOURCES_KEY,
@@ -65,10 +66,52 @@ class PipelineInterface(YAMLConfigManager):
         self.update(config)
         self._validate(schema_src=PIFACE_SCHEMA_SRC)
         self._expand_paths(["compute", "dynamic_variables_script_path"])
+        self._validate_pipestat_handoff()
 
     @property
     def pipeline_name(self) -> str:
         return self[PIPELINE_INTERFACE_PIPELINE_NAME_KEY]
+
+    def _validate_pipestat_handoff(self) -> None:
+        """Validate that pipestat-enabled interfaces pass config to pipeline.
+
+        Raises:
+            PipelineInterfaceConfigError: If output_schema present but no handoff mechanism.
+        """
+        if OUTPUT_SCHEMA_KEY not in self:
+            return  # Not pipestat-enabled, nothing to validate
+
+        if self.get("pipestat_config_required") is False:
+            return  # Explicitly disabled
+
+        # Check for CLI handoff: {pipestat.config_file} or {pipestat.*} in command_template
+        cmd_template = self.get("command_template", "")
+        # Also check sample_interface and project_interface sections
+        sample_iface = self.get("sample_interface", {})
+        project_iface = self.get("project_interface", {})
+        sample_cmd = sample_iface.get("command_template", "") if sample_iface else ""
+        project_cmd = project_iface.get("command_template", "") if project_iface else ""
+
+        has_cli_handoff = (
+            "{pipestat." in cmd_template
+            or "{pipestat." in sample_cmd
+            or "{pipestat." in project_cmd
+        )
+
+        # Check for env var handoff: PIPESTAT_CONFIG in inject_env_vars
+        inject_env_vars = self.get("inject_env_vars", {})
+        has_env_handoff = "PIPESTAT_CONFIG" in inject_env_vars
+
+        if not has_cli_handoff and not has_env_handoff:
+            raise PipelineInterfaceConfigError(
+                f"Pipeline '{self.pipeline_name}' has output_schema but no pipestat config handoff.\n\n"
+                f"Add one of:\n"
+                f"  1. In command_template: --pipestat-config {{pipestat.config_file}}\n"
+                f"  2. In inject_env_vars:\n"
+                f"       inject_env_vars:\n"
+                f'         PIPESTAT_CONFIG: "{{pipestat.config_file}}"\n\n'
+                f"Or set 'pipestat_config_required: false' to disable this check."
+            )
 
     def render_var_templates(self, namespaces: dict) -> dict:
         """

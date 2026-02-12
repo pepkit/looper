@@ -1,5 +1,6 @@
 pipeline_name: OTHER_PIPELINE2
 output_schema: output_schema.yaml
+pipestat_config_required: false
 var_templates:
   path: "{looper.piface_dir}/col_pipeline2.py"
 project_interface:
