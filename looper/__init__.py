@@ -7,37 +7,45 @@ local level, but this will at least provide a foundation.
 
 """
 
+from importlib.metadata import version
+
 import logmuse
 
 logmuse.init_logger("looper")
-
-from importlib.metadata import version
-
-from .divvy import (
-    DEFAULT_COMPUTE_RESOURCES_NAME,
-    ComputingConfiguration,
-    select_divvy_config,
-)
-from .divvy import NEW_COMPUTE_KEY as COMPUTE_KEY
-
 __version__ = version("looper")
-from .conductor import (
-    SubmissionConductor,
-    write_submission_yaml,
-)
-from .pipeline_interface import PipelineInterface
-from .plugins import (
-    write_custom_template,
-    write_sample_yaml,
-    write_sample_yaml_cwl,
-    write_sample_yaml_prj,
-)
-from .project import Project
 
-# Not used here, but make this the main import interface between peppy and
-# looper, so that other modules within this package need not worry about
-# the locations of some of the peppy declarations. Effectively, concentrate
-# the connection between peppy and looper here, to the extent possible.
+# Lazy imports - only loaded when accessed
+_lazy_imports = {
+    "DEFAULT_COMPUTE_RESOURCES_NAME": ".divvy",
+    "ComputingConfiguration": ".divvy",
+    "select_divvy_config": ".divvy",
+    "COMPUTE_KEY": ".divvy",  # NEW_COMPUTE_KEY
+    "SubmissionConductor": ".conductor",
+    "write_submission_yaml": ".conductor",
+    "PipelineInterface": ".pipeline_interface",
+    "write_custom_template": ".plugins",
+    "write_sample_yaml": ".plugins",
+    "write_sample_yaml_cwl": ".plugins",
+    "write_sample_yaml_prj": ".plugins",
+    "Project": ".project",
+}
+
+
+def __getattr__(name):
+    if name in _lazy_imports:
+        module_path = _lazy_imports[name]
+        import importlib
+
+        module = importlib.import_module(module_path, __package__)
+        value = getattr(module, name if name != "COMPUTE_KEY" else "NEW_COMPUTE_KEY")
+        globals()[name] = value  # Cache for subsequent access
+        return value
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
+def __dir__():
+    return list(_lazy_imports.keys()) + ["__version__"]
+
 
 __all__ = [
     "Project",

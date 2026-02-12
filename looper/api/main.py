@@ -42,7 +42,7 @@ def background_async(top_level_model: TopLevelParser, job_id: str) -> None:
     output_stream = stdout_redirects.redirect()
 
     try:
-        run_looper(argparse_namespace, parser=None)
+        run_looper(argparse_namespace)
         jobs[job_id].status = "completed"
     except Exception as e:
         jobs[job_id].status = "failed"
@@ -59,31 +59,32 @@ def create_argparse_namespace(top_level_model: TopLevelParser) -> Namespace:
     Converts a TopLevelParser instance into an argparse.Namespace object.
 
     This function takes a TopLevelParser instance, and converts it into an
-    argparse.Namespace object. It includes handling for supported commands
-    specified in SUPPORTED_COMMANDS.
+    argparse.Namespace object compatible with run_looper().
 
-    :param TopLevelParser top_level_model: An instance of the TopLevelParser
-        model
+    :param TopLevelParser top_level_model: An instance of the TopLevelParser model
     :return argparse.Namespace: An argparse.Namespace object representing
         the parsed command-line arguments.
     """
     namespace = Namespace()
 
-    for argname, value in vars(top_level_model).items():
-        if argname not in [cmd.name for cmd in SUPPORTED_COMMANDS]:
-            setattr(namespace, argname, value)
-        else:
-            command_namespace = Namespace()
-            command_namespace_args = value
-            for command_argname, command_arg_value in vars(
-                command_namespace_args
-            ).items():
-                setattr(
-                    command_namespace,
-                    command_argname,
-                    command_arg_value,
-                )
-            setattr(namespace, argname, command_namespace)
+    # Find which command was specified and set it
+    command_name = None
+    for cmd in SUPPORTED_COMMANDS:
+        cmd_value = getattr(top_level_model, cmd.name, None)
+        if cmd_value is not None:
+            command_name = cmd.name
+            # Add all command arguments to the namespace
+            for argname, value in vars(cmd_value).items():
+                setattr(namespace, argname, value)
+            break
+
+    namespace.command = command_name
+
+    # Add top-level arguments
+    namespace.silent = top_level_model.silent
+    namespace.verbosity = top_level_model.verbosity
+    namespace.logdev = top_level_model.logdev
+
     return namespace
 
 

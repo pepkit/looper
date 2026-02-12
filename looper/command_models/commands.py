@@ -1,15 +1,47 @@
 """
 `pydantic` models for `looper` commands and a wrapper class.
+
+Uses native pydantic v2 for model definitions. The CLI is built from
+these models using argparse in cli_pydantic.py.
 """
 
+import json
 from dataclasses import dataclass
-from typing import Optional
+from typing import Annotated
 
-import pydantic.v1 as pydantic
-from pydantic_argparse import ArgumentParser
+import pydantic
+from pydantic import AliasChoices, BeforeValidator, Field
+from pydantic_settings import BaseSettings, CliSubCommand, SettingsConfigDict
 
-from ..const import MESSAGE_BY_SUBCOMMAND
 from .arguments import Argument, ArgumentEnum
+from .messages import MESSAGE_BY_SUBCOMMAND  # Local import, no looper/__init__.py
+
+
+def deserialize_cli_list(v):
+    """Deserialize list values from pydantic-settings CLI parsing.
+
+    pydantic-settings internally serializes all list values as JSON strings
+    (e.g., ["a"] becomes '["a"]') before passing to CliSubCommand models.
+    Since subcommands are instantiated directly (not through settings sources),
+    the automatic JSON deserialization doesn't happen.
+
+    This is a pydantic-settings limitation, not a bug in our code.
+    See: https://github.com/pydantic/pydantic-settings/issues/335
+    """
+    if isinstance(v, list):
+        return v
+    if isinstance(v, str):
+        try:
+            parsed = json.loads(v)
+            if isinstance(parsed, list):
+                return parsed
+        except json.JSONDecodeError:
+            pass
+        return [x.strip() for x in v.split(",") if x.strip()]
+    return v
+
+
+CliList = Annotated[list, BeforeValidator(deserialize_cli_list)]
 
 
 @dataclass
@@ -28,17 +60,32 @@ class Command:
 
     def create_model(self) -> type[pydantic.BaseModel]:
         """
-        Creates a `pydantic` model for this command
+        Creates a `pydantic` model for this command.
+
+        Uses AliasChoices to support kebab-case CLI flags (--dry-run) while
+        keeping underscore field names in Python (dry_run).
         """
-        arguments = dict()
+        arguments = {}
         for arg in self.arguments:
-            # These gymnastics are necessary because of
-            # https://github.com/pydantic/pydantic/issues/2248#issuecomment-757448447
             arg_type, arg_default_value = arg.default
-            arguments[arg.name] = (
-                arg_type,
-                pydantic.Field(arg_default_value, description=arg.description),
-            )
+            if arg_type is list:
+                arg_type = CliList
+            # kebab-case version of the name for --dry-run style
+            long_name = arg.name.replace("_", "-")
+            if arg.alias:
+                field = pydantic.Field(
+                    arg_default_value,
+                    description=arg.description,
+                    validation_alias=AliasChoices(arg.alias, long_name),
+                )
+            else:
+                # Even without alias, include kebab-case for CLI compatibility
+                field = pydantic.Field(
+                    arg_default_value,
+                    description=arg.description,
+                    validation_alias=AliasChoices(long_name),
+                )
+            arguments[arg.name] = (arg_type, field)
         return pydantic.create_model(self.name, **arguments)
 
 
@@ -57,7 +104,6 @@ SHARED_ARGUMENTS = [
     ArgumentEnum.SAMPLE_PIPELINE_INTERFACES.value,
     ArgumentEnum.PROJECT_PIPELINE_INTERFACES.value,
     ArgumentEnum.PIPESTAT.value,
-    ArgumentEnum.SETTINGS.value,
     ArgumentEnum.AMEND.value,
     ArgumentEnum.PROJECT_LEVEL.value,
 ]
@@ -224,7 +270,7 @@ for arg in SHARED_ARGUMENTS:
     LinkParser.arguments.append(arg)
     InspectParser.arguments.append(arg)
 
-# Create all Models
+# Create all Models (for use with FastAPI)
 RunParserModel = RunParser.create_model()
 RerunParserModel = RerunParser.create_model()
 RunProjectParserModel = RunProjectParser.create_model()
@@ -237,44 +283,6 @@ LinkParserModel = LinkParser.create_model()
 InspectParserModel = InspectParser.create_model()
 InitParserModel = InitParser.create_model()
 InitPifaceParserModel = InitPifaceParser.create_model()
-
-
-def add_short_arguments(
-    parser: ArgumentParser, argument_enums: type[ArgumentEnum]
-) -> ArgumentParser:
-    """Add short arguments to parser after initial creation.
-
-    This function takes a parser object created under pydantic argparse and adds
-    the short arguments AFTER the initial creation. This is a workaround as
-    pydantic-argparse does not currently support this during initial parser creation.
-
-    Args:
-        parser (ArgumentParser): Parser before adding short arguments.
-        argument_enums (Type[ArgumentEnum]): Enumeration of arguments that contain
-            names and aliases.
-
-    Returns:
-        ArgumentParser: Parser after short arguments have been added.
-    """
-
-    for cmd in parser._subcommands.choices.keys():
-        for argument_enum in list(argument_enums):
-            # First check there is an alias for the argument otherwise skip
-            if argument_enum.value.alias:
-                short_key = argument_enum.value.alias
-                long_key = (
-                    "--" + argument_enum.value.name.replace("_", "-")
-                )  # We must do this because the ArgumentEnum names are transformed during parser creation
-                if long_key in parser._subcommands.choices[cmd]._option_string_actions:
-                    argument = parser._subcommands.choices[cmd]._option_string_actions[
-                        long_key
-                    ]
-                    argument.option_strings = (short_key, long_key)
-                    parser._subcommands.choices[cmd]._option_string_actions[
-                        short_key
-                    ] = argument
-
-    return parser
 
 
 SUPPORTED_COMMANDS = [
@@ -293,48 +301,54 @@ SUPPORTED_COMMANDS = [
 ]
 
 
-class TopLevelParser(pydantic.BaseModel):
-    """
-    Top level parser that takes
-    - commands (run, runp, check...)
-    - arguments that are required no matter the subcommand
-    """
+class TopLevelParser(BaseSettings):
+    """A pipeline submission engine for PEP-formatted projects."""
 
-    # commands
-    run: Optional[RunParserModel] = pydantic.Field(description=RunParser.description)
-    rerun: Optional[RerunParserModel] = pydantic.Field(
-        description=RerunParser.description
-    )
-    runp: Optional[RunProjectParserModel] = pydantic.Field(
-        description=RunProjectParser.description
-    )
-    table: Optional[TableParserModel] = pydantic.Field(
-        description=TableParser.description
-    )
-    report: Optional[ReportParserModel] = pydantic.Field(
-        description=ReportParser.description
-    )
-    destroy: Optional[DestroyParserModel] = pydantic.Field(
-        description=DestroyParser.description
-    )
-    check: Optional[CheckParserModel] = pydantic.Field(
-        description=CheckParser.description
-    )
-    clean: Optional[CleanParserModel] = pydantic.Field(
-        description=CleanParser.description
-    )
-    init: Optional[InitParserModel] = pydantic.Field(description=InitParser.description)
-    init_piface: Optional[InitPifaceParserModel] = pydantic.Field(
-        description=InitPifaceParser.description
-    )
-    link: Optional[LinkParserModel] = pydantic.Field(description=LinkParser.description)
-
-    inspect: Optional[InspectParserModel] = pydantic.Field(
-        description=InspectParser.description
+    model_config = SettingsConfigDict(
+        cli_parse_args=True,
+        cli_prog_name="looper",
+        cli_kebab_case=True,  # Use --dry-run not --dry_run
+        cli_implicit_flags=True,  # Allow --dry-run without value (instead of --dry-run true)
+        cli_hide_none_type=True,  # Hide {bool,null} type hints in help
     )
 
-    # Additional arguments for logging, added to ALL commands
-    # These must be used before the command
-    silent: Optional[bool] = ArgumentEnum.SILENT.value.with_reduced_default()
-    verbosity: Optional[int] = ArgumentEnum.VERBOSITY.value.with_reduced_default()
-    logdev: Optional[bool] = ArgumentEnum.LOGDEV.value.with_reduced_default()
+    # commands (CliSubCommand creates argparse subparsers - only one is used at a time)
+    run: CliSubCommand[RunParserModel] = Field(description=MESSAGE_BY_SUBCOMMAND["run"])
+    rerun: CliSubCommand[RerunParserModel] = Field(
+        description=MESSAGE_BY_SUBCOMMAND["rerun"]
+    )
+    runp: CliSubCommand[RunProjectParserModel] = Field(
+        description=MESSAGE_BY_SUBCOMMAND["runp"]
+    )
+    table: CliSubCommand[TableParserModel] = Field(
+        description=MESSAGE_BY_SUBCOMMAND["table"]
+    )
+    report: CliSubCommand[ReportParserModel] = Field(
+        description=MESSAGE_BY_SUBCOMMAND["report"]
+    )
+    destroy: CliSubCommand[DestroyParserModel] = Field(
+        description=MESSAGE_BY_SUBCOMMAND["destroy"]
+    )
+    check: CliSubCommand[CheckParserModel] = Field(
+        description=MESSAGE_BY_SUBCOMMAND["check"]
+    )
+    clean: CliSubCommand[CleanParserModel] = Field(
+        description=MESSAGE_BY_SUBCOMMAND["clean"]
+    )
+    init: CliSubCommand[InitParserModel] = Field(
+        description=MESSAGE_BY_SUBCOMMAND["init"]
+    )
+    init_piface: CliSubCommand[InitPifaceParserModel] = Field(
+        description=MESSAGE_BY_SUBCOMMAND["init-piface"]
+    )
+    link: CliSubCommand[LinkParserModel] = Field(
+        description=MESSAGE_BY_SUBCOMMAND["link"]
+    )
+    inspect: CliSubCommand[InspectParserModel] = Field(
+        description=MESSAGE_BY_SUBCOMMAND["inspect"]
+    )
+
+    # Additional arguments for logging
+    silent: bool | None = ArgumentEnum.SILENT.value.with_reduced_default()
+    verbosity: int | None = ArgumentEnum.VERBOSITY.value.with_reduced_default()
+    logdev: bool | None = ArgumentEnum.LOGDEV.value.with_reduced_default()

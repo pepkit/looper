@@ -13,7 +13,7 @@ import jinja2
 import yaml
 from pephubclient.constants import RegistryPath
 from peppy import Project as peppyProject
-from peppy.const import AMENDMENTS_KEY, CONFIG_KEY, NAME_KEY, SAMPLE_MODS_KEY
+from peppy.const import CONFIG_KEY, NAME_KEY, SAMPLE_MODS_KEY
 from pydantic import ValidationError
 from rich.console import Console
 from rich.pretty import pprint
@@ -21,7 +21,6 @@ from ubiquerg import convert_value, deep_update, expandpath, parse_registry_path
 from yacman import load_yaml
 from yaml.parser import ParserError
 
-from .command_models.commands import SUPPORTED_COMMANDS
 from .const import (
     ALL_SUBCMD_KEY,
     CLI_KEY,
@@ -35,7 +34,6 @@ from .const import (
     PEP_CONFIG_KEY,
     PIPELINE_INTERFACES_KEY,
     PIPESTAT_KEY,
-    POSITIONAL,
     PROJECT_PL_ARG,
     SAMPLE_PL_ARG,
     PipelineLevel,
@@ -228,26 +226,6 @@ def get_file_for_project(
     return fp
 
 
-def get_file_for_project_old(prj, appendix: str) -> str:
-    """Create a path to the file for the current project.
-
-    Takes the possibility of amendment being activated at the time.
-
-    Args:
-        prj (looper.Project): Project object.
-        appendix (str): The appendix of the file to create the path for,
-            like 'objs_summary.tsv' for objects summary file.
-
-    Returns:
-        str: Path to the file.
-    """
-    fp = os.path.join(prj.output_dir, prj[NAME_KEY])
-    if hasattr(prj, AMENDMENTS_KEY) and getattr(prj, AMENDMENTS_KEY):
-        fp += "_" + "_".join(getattr(prj, AMENDMENTS_KEY))
-    fp += "_" + appendix
-    return fp
-
-
 def jinja_render_template_strictly(template: str, namespaces: dict) -> str:
     """Render a command string in the provided namespaces context.
 
@@ -325,7 +303,6 @@ def read_yaml_file(filepath: str) -> dict | None:
 def enrich_args_via_cfg(
     subcommand_name: str,
     parser_args,
-    aux_parser,
     test_args: dict | None = None,
     cli_modifiers: dict | None = None,
 ) -> argparse.Namespace:
@@ -336,8 +313,6 @@ def enrich_args_via_cfg(
     Args:
         subcommand_name: The name of the command used.
         parser_args (argparse.Namespace): Parsed args by the original parser.
-        aux_parser (argparse.Namespace): Parsed args by the argument parser
-            with defaults suppressed.
         test_args (dict): Dict of args used for pytesting.
         cli_modifiers (dict): Dict of args existing if user supplied cli args
             in looper config file.
@@ -374,53 +349,47 @@ def enrich_args_via_cfg(
         _LOGGER.debug(msg=f"Merged CLI modifiers: {cfg_args_all}")
 
     result = argparse.Namespace()
-    if test_args:
-        cli_args, _ = aux_parser.parse_known_args(args=test_args)
-
-    else:
-        cli_args, _ = aux_parser.parse_known_args()
-
-    # If any CLI args were provided, make sure they take priority
-    if cli_args:
-        r = getattr(cli_args, subcommand_name)
-        for k, v in cfg_args_all.items():
-            if k in r:
-                cfg_args_all[k] = getattr(r, k)
+    cli_args = parser_args  # Use parser_args directly, already parsed
 
     def set_single_arg(argname, default_source_namespace, result_namespace):
-        if argname not in POSITIONAL or not hasattr(result, argname):
-            if argname in cli_args:
-                cli_provided_value = getattr(cli_args, argname)
-                r = (
-                    convert_value(cli_provided_value)
-                    if isinstance(cli_provided_value, str)
-                    else cli_provided_value
-                )
-            elif cfg_args_all is not None and argname in cfg_args_all:
-                if isinstance(cfg_args_all[argname], list):
-                    r = [convert_value(i) for i in cfg_args_all[argname]]
-                elif isinstance(cfg_args_all[argname], dict):
-                    r = cfg_args_all[argname]
-                else:
-                    r = convert_value(cfg_args_all[argname])
-            else:
-                r = getattr(default_source_namespace, argname)
-            setattr(result_namespace, argname, r)
+        # Priority: CLI > cfg_args_all (PEP config) > parser default
+        cli_value = getattr(cli_args, argname, None)
+        cfg_value = cfg_args_all.get(argname) if cfg_args_all else None
+        default_value = getattr(default_source_namespace, argname, None)
 
-    for top_level_argname in vars(parser_args):
-        if top_level_argname not in [cmd.name for cmd in SUPPORTED_COMMANDS]:
-            # this argument is a top-level argument
-            set_single_arg(top_level_argname, parser_args, result)
+        if cli_value is not None and cli_value != default_value:
+            # CLI provided a non-default value - use it
+            r = convert_value(cli_value) if isinstance(cli_value, str) else cli_value
+        elif cfg_value is not None:
+            # PEP config provided a value
+            if isinstance(cfg_value, list):
+                r = [convert_value(i) for i in cfg_value]
+            elif isinstance(cfg_value, dict):
+                r = cfg_value
+            else:
+                r = convert_value(cfg_value)
         else:
-            # this argument actually is a subcommand
-            enriched_command_namespace = argparse.Namespace()
-            command_namespace = getattr(parser_args, top_level_argname)
-            if command_namespace:
-                for argname in vars(command_namespace):
-                    set_single_arg(
-                        argname, command_namespace, enriched_command_namespace
-                    )
-            setattr(result, top_level_argname, enriched_command_namespace)
+            # Use default
+            r = default_value
+        setattr(result_namespace, argname, r)
+
+    # Copy all arguments from parser_args to result
+    for argname in vars(parser_args):
+        set_single_arg(argname, parser_args, result)
+
+    # Also add any cfg_args that weren't in parser_args
+    if cfg_args_all:
+        for argname in cfg_args_all:
+            if not hasattr(result, argname):
+                cfg_value = cfg_args_all[argname]
+                if isinstance(cfg_value, list):
+                    r = [convert_value(i) for i in cfg_value]
+                elif isinstance(cfg_value, dict):
+                    r = cfg_value
+                else:
+                    r = convert_value(cfg_value)
+                setattr(result, argname, r)
+
     return result
 
 
