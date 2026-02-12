@@ -17,34 +17,31 @@ from .arguments import Argument, ArgumentEnum
 from .messages import MESSAGE_BY_SUBCOMMAND  # Local import, no looper/__init__.py
 
 
-def _parse_cli_list(v):
-    """Parse list values from CLI.
+def deserialize_cli_list(v):
+    """Deserialize list values from pydantic-settings CLI parsing.
 
-    Handles:
-    - JSON arrays from pydantic-settings serialization: '["a","b"]'
-    - Comma-separated strings from user input: 'a,b'
-    - Single values: 'a'
+    pydantic-settings internally serializes all list values as JSON strings
+    (e.g., ["a"] becomes '["a"]') before passing to CliSubCommand models.
+    Since subcommands are instantiated directly (not through settings sources),
+    the automatic JSON deserialization doesn't happen.
+
+    This is a pydantic-settings limitation, not a bug in our code.
+    See: https://github.com/pydantic/pydantic-settings/issues/335
     """
+    if isinstance(v, list):
+        return v
     if isinstance(v, str):
-        # Try JSON first (pydantic-settings serialization)
         try:
             parsed = json.loads(v)
             if isinstance(parsed, list):
                 return parsed
         except json.JSONDecodeError:
             pass
-        # Fall back to comma-separated
-        if "," in v:
-            return [item.strip() for item in v.split(",")]
-        # Single non-empty value as single-item list
-        if v.strip():
-            return [v.strip()]
-        return []
+        return [x.strip() for x in v.split(",") if x.strip()]
     return v
 
 
-# Annotated type for list fields that handles CLI JSON serialization
-CliList = Annotated[list, BeforeValidator(_parse_cli_list)]
+CliList = Annotated[list, BeforeValidator(deserialize_cli_list)]
 
 
 @dataclass
@@ -71,7 +68,6 @@ class Command:
         arguments = {}
         for arg in self.arguments:
             arg_type, arg_default_value = arg.default
-            # Use CliList for list fields to handle pydantic-settings JSON serialization
             if arg_type is list:
                 arg_type = CliList
             # kebab-case version of the name for --dry-run style

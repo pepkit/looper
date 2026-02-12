@@ -156,34 +156,34 @@ class ArgumentEnum(enum.Enum):
     LUMP = Argument(
         name="lump",
         alias="u",
-        default=(float, None),
+        default=(float | None, None),
         description="Total input file size (GB) to batch into one job",
     )
     LUMPN = Argument(
         name="lump_n",
         alias="n",
-        default=(int, None),
+        default=(int | None, None),
         description="Number of commands to batch into one job",
     )
     LUMPJ = Argument(
         name="lump_j",
         alias="j",
-        default=(int, None),
+        default=(int | None, None),
         description="Lump samples into number of jobs.",
     )
     LIMIT = Argument(
-        name="limit", alias="l", default=(int, None), description="Limit to n samples"
+        name="limit", alias="l", default=(int | None, None), description="Limit to n samples"
     )
     SKIP = Argument(
         name="skip",
         alias="k",
-        default=(int, None),
+        default=(int | None, None),
         description="Skip samples by numerical index",
     )
     CONFIG = Argument(
         name="config",
         alias="c",
-        default=(str, None),
+        default=(str | None, None),
         description="Looper configuration file (YAML)",
     )
     SETTINGS = Argument(
@@ -193,19 +193,19 @@ class ArgumentEnum(enum.Enum):
     )
     PEP_CONFIG = Argument(
         name="pep_config",
-        default=(str, None),
+        default=(str | None, None),
         description="PEP configuration file",
     )
     OUTPUT_DIR = Argument(
         name="output_dir",
         alias="o",
-        default=(str, None),
+        default=(str | None, None),
         description="Output directory",
     )
     REPORT_OUTPUT_DIR = Argument(
         name="report_dir",
         alias="r",
-        default=(str, None),
+        default=(str | None, None),
         description="Set location for looper report and looper table outputs",
     )
 
@@ -267,7 +267,7 @@ class ArgumentEnum(enum.Enum):
     PACKAGE = Argument(
         name="package",
         alias="p",
-        default=(str, None),
+        default=(str | None, None),
         description="Name of computing resource package to use",
     )
     COMPUTE = Argument(
@@ -289,7 +289,7 @@ class ArgumentEnum(enum.Enum):
     )
     VERBOSITY = Argument(
         name="verbosity",
-        default=(int, None),
+        default=(int | None, None),
         description="Alternate mode of expression for logging level that better "
         "accords with intuition about how to convey this.",
     )
@@ -302,7 +302,7 @@ class ArgumentEnum(enum.Enum):
     )
     PIPESTAT = Argument(
         name="pipestat",
-        default=(str, None),
+        default=(str | None, None),
         description="Path to pipestat files.",
     )
     PORTABLE = Argument(
