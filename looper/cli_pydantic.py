@@ -51,7 +51,9 @@ def opt_attr_pair(name: str) -> tuple[str, str]:
     return f"--{name}", name.replace("-", "_")
 
 
-def validate_post_parse(args, sample_exclusion_optname: str, sample_inclusion_optname: str) -> list[str]:
+def validate_post_parse(
+    args, sample_exclusion_optname: str, sample_inclusion_optname: str
+) -> list[str]:
     """Checks if user is attempting to use mutually exclusive options."""
     problems = []
     used_exclusives = [
@@ -140,7 +142,9 @@ def run_looper(args: Namespace, test_args=None):
         print("No command specified. Use --help for usage.", file=sys.stderr)
         sys.exit(1)
 
-    cli_use_errors = validate_post_parse(args, SAMPLE_EXCLUSION_OPTNAME, SAMPLE_INCLUSION_OPTNAME)
+    cli_use_errors = validate_post_parse(
+        args, SAMPLE_EXCLUSION_OPTNAME, SAMPLE_INCLUSION_OPTNAME
+    )
     if cli_use_errors:
         print(f"Error: {', '.join(cli_use_errors)}", file=sys.stderr)
         print("Run 'looper <command> --help' for usage information.", file=sys.stderr)
@@ -286,7 +290,9 @@ def run_looper(args: Namespace, test_args=None):
             rerun = subcommand_name == "rerun"
             run = Runner(prj)
             try:
-                compute_kwargs = _proc_resources_spec(args, read_yaml_file, EXAMPLE_COMPUTE_SPEC_FMT, _LOGGER)
+                compute_kwargs = _proc_resources_spec(
+                    args, read_yaml_file, EXAMPLE_COMPUTE_SPEC_FMT, _LOGGER
+                )
 
                 return run(args, rerun=rerun, **compute_kwargs)
             except SampleFailedException:
@@ -300,7 +306,9 @@ def run_looper(args: Namespace, test_args=None):
                 raise
 
         if subcommand_name == "runp":
-            compute_kwargs = _proc_resources_spec(args, read_yaml_file, EXAMPLE_COMPUTE_SPEC_FMT, _LOGGER)
+            compute_kwargs = _proc_resources_spec(
+                args, read_yaml_file, EXAMPLE_COMPUTE_SPEC_FMT, _LOGGER
+            )
             collate = Collator(prj)
             collate(args, **compute_kwargs)
             return collate.debug
@@ -372,7 +380,9 @@ def main_cli() -> None:
     main()
 
 
-def _proc_resources_spec(args, read_yaml_file, example_compute_spec_fmt, logger) -> dict[str, str]:
+def _proc_resources_spec(
+    args, read_yaml_file, example_compute_spec_fmt, logger
+) -> dict[str, str]:
     """Process CLI-sources compute setting specification.
 
     There are two sources of compute settings in the CLI alone:
