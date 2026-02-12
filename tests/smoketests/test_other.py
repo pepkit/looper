@@ -330,8 +330,7 @@ class TestSelector:
             "--config",
             tp,
             "--exc-flag",
-            "completed",
-            "running",
+            "completed,running",  # pydantic-settings uses comma-separated for lists
             "--dry-run",
         ]
 
@@ -380,8 +379,7 @@ class TestSelector:
             "--config",
             tp,
             "--sel-flag",
-            "completed",
-            "running",
+            "completed,running",
         ]
 
         try:
@@ -488,8 +486,7 @@ class TestSelector:
             "--sel-attr",
             "protocol",
             "--sel-incl",
-            "PROTO1",
-            "PROTO2",
+            "PROTO1,PROTO2",
         ]
 
         try:

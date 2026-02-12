@@ -1,27 +1,24 @@
 """
-Argument definitions via a thin wrapper around `pydantic.fields.FieldInfo`
+Argument definitions for CLI arguments/flags.
+
+Stores CLI argument metadata (name, type, default, description, alias)
+for use in both pydantic-settings CLI and FastAPI interfaces.
 """
 
 import enum
 import os
-from copy import copy
-from typing import Any, List
+from typing import Any
 
-import pydantic.v1 as pydantic
+import pydantic
+from pydantic import AliasChoices
 
 
-class Argument(pydantic.fields.FieldInfo):
+class Argument:
     """CLI argument / flag definition.
 
-    This class is designed to define CLI arguments or flags. It leverages
-    Pydantic for data validation and serves as a source of truth for multiple
-    interfaces, including a CLI.
-
-    Naively, one would think one could just subclass `pydantic.Field`,
-    but actually `pydantic.Field` is a function, and not a class.
-    `pydantic.Field()` returns a validated `FieldInfo` instance,
-    so we instead subclass `FieldInfo` directly and validate it in the
-    constructor.
+    This class stores CLI argument metadata for use in multiple interfaces:
+    - pydantic-settings CLI (via CliSubCommand)
+    - FastAPI HTTP API (via pydantic models)
 
     Args:
         name (str): Argument name, e.g. "ignore-args".
@@ -29,8 +26,7 @@ class Argument(pydantic.fields.FieldInfo):
             default value is `...` (Ellipsis), then the argument is required.
         description (str): Argument description, which will appear as the
             help text for this argument.
-        kwargs (dict): Additional keyword arguments supported by
-            `FieldInfo`. These are passed along as they are.
+        alias (str | None): Short argument alias, e.g. "-i".
     """
 
     def __init__(
@@ -39,40 +35,57 @@ class Argument(pydantic.fields.FieldInfo):
         default: Any,
         description: str,
         alias: str | None = None,
-        **kwargs,
     ) -> None:
         self._name = name
-        super().__init__(
-            default=default, description=description, alias=alias, **kwargs
-        )
-        self._validate()
+        self._default = default  # tuple: (type, default_value)
+        self._description = description
+        self._alias = alias
 
     @property
     def name(self) -> str:
-        """
-        Argument name as used in the CLI, e.g. "ignore-args"
-        """
+        """Argument name as used in the CLI, e.g. "ignore-args"."""
         return self._name
+
+    @property
+    def default(self) -> Any:
+        """Default value tuple (type, default_value)."""
+        return self._default
+
+    @property
+    def description(self) -> str:
+        """Argument description / help text."""
+        return self._description
+
+    @property
+    def alias(self) -> str | None:
+        """Short argument alias, e.g. "-i"."""
+        return self._alias
 
     def with_reduced_default(self) -> pydantic.fields.FieldInfo:
         """
-        Convert to a `FieldInfo` instance with reduced default value
+        Create a FieldInfo instance with the default value (not the type tuple).
 
-        Returns a copy of an instance, but with the `default` attribute
-        replaced by only the default value, without the type information.
-        This is required when using an instance in a direct `pydantic`
-        model definition, instead of creating a model dynamically using
-        `pydantic.create_model`.
+        This is used when defining pydantic model fields directly,
+        where only the default value (not the type) is needed.
 
-        TODO: this is due to this issue:
-        https://github.com/pydantic/pydantic/issues/2248#issuecomment-757448447
-        and it's a bit tedious.
-
+        Uses AliasChoices to support kebab-case CLI flags (--dry-run) while
+        keeping underscore field names in Python (dry_run).
         """
-        c = copy(self)
-        _, default_value = self.default
-        c.default = default_value
-        return c
+        _, default_value = self._default
+        # kebab-case version of the name for --dry-run style
+        long_name = self._name.replace("_", "-")
+        if self._alias:
+            return pydantic.Field(
+                default=default_value,
+                description=self._description,
+                validation_alias=AliasChoices(self._alias, long_name),
+            )
+        # Even without alias, include kebab-case for CLI compatibility
+        return pydantic.Field(
+            default=default_value,
+            description=self._description,
+            validation_alias=AliasChoices(long_name),
+        )
 
 
 class ArgumentEnum(enum.Enum):
@@ -86,13 +99,13 @@ class ArgumentEnum(enum.Enum):
 
     IGNORE_FLAGS = Argument(
         name="ignore_flags",
-        alias="-i",
+        alias="i",
         default=(bool, False),
         description="Ignore run status flags",
     )
     FORCE_YES = Argument(
         name="force_yes",
-        alias="-f",
+        alias="f",
         default=(bool, False),
         description="Provide upfront confirmation of destruction intent, to skip console query. Default=False",
     )
@@ -111,65 +124,65 @@ class ArgumentEnum(enum.Enum):
 
     FLAGS = Argument(
         name="flags",
-        alias="-f",
-        default=(List, []),
+        alias="f",
+        default=(list, []),
         description="Only check samples based on these status flags.",
     )
 
     TIME_DELAY = Argument(
         name="time_delay",
-        alias="-t",
+        alias="t",
         default=(int, 0),
         description="Time delay in seconds between job submissions (min: 0, max: 30)",
     )
     DRY_RUN = Argument(
         name="dry_run",
-        alias="-d",
+        alias="d",
         default=(bool, False),
         description="Don't actually submit jobs",
     )
     COMMAND_EXTRA = Argument(
         name="command_extra",
-        alias="-x",
+        alias="x",
         default=(str, ""),
         description="String to append to every command",
     )
     COMMAND_EXTRA_OVERRIDE = Argument(
         name="command_extra_override",
-        alias="-y",
+        alias="y",
         default=(str, ""),
         description="Same as command-extra, but overrides values in PEP",
     )
     LUMP = Argument(
         name="lump",
-        alias="-u",
+        alias="u",
         default=(float, None),
         description="Total input file size (GB) to batch into one job",
     )
     LUMPN = Argument(
         name="lump_n",
-        alias="-n",
+        alias="n",
         default=(int, None),
         description="Number of commands to batch into one job",
     )
     LUMPJ = Argument(
         name="lump_j",
-        alias="-j",
+        alias="j",
         default=(int, None),
         description="Lump samples into number of jobs.",
     )
     LIMIT = Argument(
-        name="limit", alias="-l", default=(int, None), description="Limit to n samples"
+        name="limit", alias="l", default=(int, None), description="Limit to n samples"
     )
     SKIP = Argument(
         name="skip",
-        alias="-k",
+        alias="k",
         default=(int, None),
         description="Skip samples by numerical index",
     )
     CONFIG = Argument(
         name="config",
-        alias="-c",
+        alias="c",
         default=(str, None),
         description="Looper configuration file (YAML)",
     )
@@ -185,38 +198,38 @@ class ArgumentEnum(enum.Enum):
     )
     OUTPUT_DIR = Argument(
         name="output_dir",
-        alias="-o",
+        alias="o",
         default=(str, None),
         description="Output directory",
     )
     REPORT_OUTPUT_DIR = Argument(
         name="report_dir",
-        alias="-r",
+        alias="r",
         default=(str, None),
         description="Set location for looper report and looper table outputs",
     )
 
     GENERIC = Argument(
         name="generic",
-        alias="-g",
+        alias="g",
         default=(bool, False),
         description="Use generic looper config?",
     )
 
     SAMPLE_PIPELINE_INTERFACES = Argument(
         name="sample_pipeline_interfaces",
-        alias="-S",
-        default=(List, []),
+        alias="spi",
+        default=(list, []),
         description="Paths to looper sample pipeline interfaces",
     )
     PROJECT_PIPELINE_INTERFACES = Argument(
         name="project_pipeline_interfaces",
-        alias="-P",
-        default=(List, []),
+        alias="ppi",
+        default=(list, []),
         description="Paths to looper project pipeline interfaces",
     )
     AMEND = Argument(
-        name="amend", default=(List, []), description="List of amendments to activate"
+        name="amend", default=(list, []), description="List of amendments to activate"
     )
     SEL_ATTR = Argument(
         name="sel_attr",
@@ -225,7 +238,7 @@ class ArgumentEnum(enum.Enum):
     )
     SEL_INCL = Argument(
         name="sel_incl",
-        default=(List, []),
+        default=(list, []),
         description="Include only samples with these values",
     )
     SEL_EXCL = Argument(
@@ -234,26 +247,25 @@ class ArgumentEnum(enum.Enum):
         description="Exclude samples with these values",
     )
     SEL_FLAG = Argument(
-        name="sel_flag", default=(List, []), description="Sample selection flag"
+        name="sel_flag", default=(list, []), description="Sample selection flag"
     )
     EXC_FLAG = Argument(
-        name="exc_flag", default=(List, []), description="Sample exclusion flag"
+        name="exc_flag", default=(list, []), description="Sample exclusion flag"
     )
     SKIP_FILE_CHECKS = Argument(
         name="skip_file_checks",
-        alias="-f",
         default=(bool, False),
         description="Do not perform input file checks",
     )
     PACKAGE = Argument(
         name="package",
-        alias="-p",
+        alias="p",
         default=(str, None),
         description="Name of computing resource package to use",
     )
     COMPUTE = Argument(
         name="compute",
-        default=(List, []),
+        default=(list, []),
         description="List of key-value pairs (k1=v1)",
     )
     DIVVY = Argument(

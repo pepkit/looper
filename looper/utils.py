@@ -358,22 +358,78 @@ def enrich_args_via_cfg(
         _LOGGER.debug(msg=f"Merged CLI modifiers: {cfg_args_all}")
 
     result = argparse.Namespace()
+
+    # Check if we have the old nested structure or new flat structure
+    # New structure: parser_args has 'command' attribute with subcommand name
+    # Old structure: parser_args has subcommand as attribute name
+    is_flat_structure = hasattr(parser_args, "command")
+
+    if is_flat_structure:
+        # New flat argparse structure - arguments are directly on the namespace
+        cli_args = parser_args  # Use parser_args directly, already parsed
+
+        def set_single_arg(argname, default_source_namespace, result_namespace):
+            # Priority: CLI > cfg_args_all (PEP config) > parser default
+            cli_value = getattr(cli_args, argname, None)
+            cfg_value = cfg_args_all.get(argname) if cfg_args_all else None
+            default_value = getattr(default_source_namespace, argname, None)
+
+            if cli_value is not None and cli_value != default_value:
+                # CLI provided a non-default value - use it
+                r = (
+                    convert_value(cli_value)
+                    if isinstance(cli_value, str)
+                    else cli_value
+                )
+            elif cfg_value is not None:
+                # PEP config provided a value
+                if isinstance(cfg_value, list):
+                    r = [convert_value(i) for i in cfg_value]
+                elif isinstance(cfg_value, dict):
+                    r = cfg_value
+                else:
+                    r = convert_value(cfg_value)
+            else:
+                # Use default
+                r = default_value
+            setattr(result_namespace, argname, r)
+
+        # Copy all arguments from parser_args to result
+        for argname in vars(parser_args):
+            set_single_arg(argname, parser_args, result)
+
+        # Also add any cfg_args that weren't in parser_args
+        if cfg_args_all:
+            for argname in cfg_args_all:
+                if not hasattr(result, argname):
+                    cfg_value = cfg_args_all[argname]
+                    if isinstance(cfg_value, list):
+                        r = [convert_value(i) for i in cfg_value]
+                    elif isinstance(cfg_value, dict):
+                        r = cfg_value
+                    else:
+                        r = convert_value(cfg_value)
+                    setattr(result, argname, r)
+
+        return result
+
+    # Old nested structure (pydantic-argparse) - kept for backwards compatibility
     if test_args:
         cli_args, _ = aux_parser.parse_known_args(args=test_args)
-
     else:
         cli_args, _ = aux_parser.parse_known_args()
 
     # If any CLI args were provided, make sure they take priority
     if cli_args:
-        r = getattr(cli_args, subcommand_name)
-        for k, v in cfg_args_all.items():
-            if k in r:
-                cfg_args_all[k] = getattr(r, k)
+        r = getattr(cli_args, subcommand_name, None)
+        if r:
+            for k, v in cfg_args_all.items():
+                if hasattr(r, k):
+                    cfg_args_all[k] = getattr(r, k)
 
     def set_single_arg(argname, default_source_namespace, result_namespace):
         if argname not in POSITIONAL or not hasattr(result, argname):
-            if argname in cli_args:
+            if hasattr(cli_args, argname):
                 cli_provided_value = getattr(cli_args, argname)
                 r = (
                     convert_value(cli_provided_value)
