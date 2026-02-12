@@ -204,7 +204,6 @@ def run_looper(args: Namespace, test_args=None):
     args = enrich_args_via_cfg(
         subcommand_name,
         args,
-        None,  # No parser in pydantic-settings mode
         test_args=test_args,
         cli_modifiers=cli_modifiers_dict,
     )

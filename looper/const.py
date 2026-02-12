@@ -136,7 +136,6 @@ DEBUG_EIDO_VALIDATION = "EidoValidationError"
 # Compute-related (for divvy)
 COMPUTE_SETTINGS_VARNAME = ["DIVCFG"]
 DEFAULT_COMPUTE_RESOURCES_NAME = "default"
-OLD_COMPUTE_KEY = "compute"
 NEW_COMPUTE_KEY = "compute_packages"
 DEFAULT_CONFIG_FILEPATH = os.path.join(
     os.path.dirname(__file__), "default_config", "divvy_config.yaml"
