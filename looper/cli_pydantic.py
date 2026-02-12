@@ -7,145 +7,43 @@ allowing for type-checking and validation of arguments.
 
 import os
 import sys
+from argparse import Namespace
 
-import logmuse
-import yaml
-from eido import inspect_project
-from pephubclient import PEPHubClient
 from pydantic_settings import get_subcommand
-from rich.console import Console
 
-from . import __version__
-from .command_models.commands import TopLevelParser
-from .const import (
-    CLI_KEY,
-    CLI_PROJ_ATTRS,
-    EXAMPLE_COMPUTE_SPEC_FMT,
-    PROJECT_PL_ARG,
-    SAMPLE_EXCLUSION_OPTNAME,
-    SAMPLE_INCLUSION_OPTNAME,
-    SAMPLE_PL_ARG,
-    PipelineLevel,
-)
-from .divvy import DEFAULT_COMPUTE_RESOURCES_NAME, select_divvy_config
-from .exceptions import (
-    MisconfigurationException,
-    PipestatConfigurationException,
-    SampleFailedException,
-)
-from .looper import (
-    Checker,
-    Cleaner,
-    Collator,
-    Destroyer,
-    Linker,
-    Reporter,
-    Runner,
-    Tabulator,
-)
-from .project import Project, ProjectContext
-from .utils import (
-    dotfile_path,
-    enrich_args_via_cfg,
-    init_generic_pipeline,
-    initiate_looper_config,
-    inspect_looper_config_file,
-    is_PEP_file_type,
-    is_pephub_registry_path,
-    looper_config_tutorial,
-    read_looper_config_file,
-    read_looper_dotfile,
-    read_yaml_file,
-)
-
-SUBCOMMAND_NAMES = {
-    "run": "run",
-    "rerun": "rerun",
-    "runp": "runp",
-    "table": "table",
-    "report": "report",
-    "destroy": "destroy",
-    "check": "check",
-    "clean": "clean",
-    "init": "init",
-    "init_piface": "init_piface",
-    "link": "link",
-    "inspect": "inspect",
-}
+from .command_models.commands import SUPPORTED_COMMANDS, TopLevelParser
 
 
-class FlatArgs:
-    """Adapter that presents pydantic model args in a flat namespace-like structure.
+def flatten_args(args: TopLevelParser) -> Namespace:
+    """Convert pydantic-settings args to argparse.Namespace for compatibility.
 
-    Converts from pydantic-settings structure (top-level + subcommand model)
-    to flat namespace expected by run_looper and other functions.
+    pydantic-settings produces a nested structure where subcommand args are
+    accessed via args.run.dry_run, args.check.flags, etc. The rest of looper
+    expects flat access (args.dry_run, args.flags). This function flattens
+    the active subcommand's arguments into a standard Namespace.
 
-    Implements __dict__ property so vars() works correctly.
+    Only one subcommand is ever active at a time, so there are no conflicts
+    between arguments with the same name on different subcommands.
     """
-
-    def __init__(self, top_level: TopLevelParser, command: str | None, subcmd_args):
-        # Use object.__setattr__ to avoid triggering our custom __setattr__
-        object.__setattr__(self, "_top_level", top_level)
-        object.__setattr__(self, "_subcmd_args", subcmd_args)
-        object.__setattr__(self, "_extra", {})  # For storing extra attributes
-        object.__setattr__(self, "command", command)
-        # Copy top-level logging args
-        object.__setattr__(self, "silent", top_level.silent)
-        object.__setattr__(self, "verbosity", top_level.verbosity)
-        object.__setattr__(self, "logdev", top_level.logdev)
-
-    def __getattr__(self, name: str):
-        # Check _extra first (for attributes set via setattr)
-        extra = object.__getattribute__(self, "_extra")
-        if name in extra:
-            return extra[name]
-        # Then check subcommand args
-        subcmd_args = object.__getattribute__(self, "_subcmd_args")
-        if subcmd_args is not None and hasattr(subcmd_args, name):
-            return getattr(subcmd_args, name)
-        # Fall back to top-level (for non-subcommand fields)
-        top_level = object.__getattribute__(self, "_top_level")
-        # Only check for non-subcommand attributes on top_level
-        if name in ("silent", "verbosity", "logdev"):
-            return getattr(top_level, name)
-        raise AttributeError(f"'{type(self).__name__}' has no attribute '{name}'")
-
-    def __setattr__(self, name: str, value):
-        if name.startswith("_") or name in ("command", "silent", "verbosity", "logdev"):
-            object.__setattr__(self, name, value)
-        else:
-            # Store in _extra dict for later retrieval
-            extra = object.__getattribute__(self, "_extra")
-            extra[name] = value
-
-    @property
-    def __dict__(self):
-        """Return all attributes as a dict for vars() compatibility."""
-        result = {}
-        # Add command and logging args
-        result["command"] = self.command
-        result["silent"] = self.silent
-        result["verbosity"] = self.verbosity
-        result["logdev"] = self.logdev
-        # Add subcommand args
-        if self._subcmd_args is not None:
-            for name, value in self._subcmd_args.model_dump().items():
-                result[name] = value
-        # Add extra attributes (set via setattr)
-        result.update(self._extra)
-        return result
-
-
-def flatten_args(args: TopLevelParser) -> FlatArgs:
-    """Convert pydantic-settings args to flat namespace for compatibility."""
     subcmd_args = get_subcommand(args, is_required=True)
-    # Determine command name from the subcommand model type
+
+    # Determine command name from the subcommand model
     command = None
-    for name in SUBCOMMAND_NAMES:
-        if getattr(args, name, None) is subcmd_args:
-            command = name
+    for cmd in SUPPORTED_COMMANDS:
+        if getattr(args, cmd.name, None) is subcmd_args:
+            command = cmd.name
             break
-    return FlatArgs(args, command, subcmd_args)
+
+    ns = Namespace(
+        command=command,
+        silent=args.silent,
+        verbosity=args.verbosity,
+        logdev=args.logdev,
+    )
+    if subcmd_args is not None:
+        for k, v in subcmd_args.model_dump().items():
+            setattr(ns, k, v)
+    return ns
 
 
 def opt_attr_pair(name: str) -> tuple[str, str]:
@@ -153,7 +51,7 @@ def opt_attr_pair(name: str) -> tuple[str, str]:
     return f"--{name}", name.replace("-", "_")
 
 
-def validate_post_parse(args) -> list[str]:
+def validate_post_parse(args, sample_exclusion_optname: str, sample_inclusion_optname: str) -> list[str]:
     """Checks if user is attempting to use mutually exclusive options."""
     problems = []
     used_exclusives = [
@@ -163,8 +61,8 @@ def validate_post_parse(args) -> list[str]:
             [
                 "skip",
                 "limit",
-                SAMPLE_EXCLUSION_OPTNAME,
-                SAMPLE_INCLUSION_OPTNAME,
+                sample_exclusion_optname,
+                sample_inclusion_optname,
             ],
         )
         if getattr(args, attr, None)
@@ -176,13 +74,62 @@ def validate_post_parse(args) -> list[str]:
     return problems
 
 
-def run_looper(args: FlatArgs, test_args=None):
+def run_looper(args: Namespace, test_args=None):
     """Run looper with parsed arguments.
 
     Args:
         args: Flattened arguments from pydantic-settings
         test_args: Optional test arguments for testing purposes
     """
+    # Lazy imports - only load when actually running commands
+    import logmuse
+    import yaml
+    from eido import inspect_project
+    from pephubclient import PEPHubClient
+    from rich.console import Console
+
+    from . import __version__
+    from .const import (
+        CLI_KEY,
+        CLI_PROJ_ATTRS,
+        EXAMPLE_COMPUTE_SPEC_FMT,
+        PROJECT_PL_ARG,
+        SAMPLE_EXCLUSION_OPTNAME,
+        SAMPLE_INCLUSION_OPTNAME,
+        SAMPLE_PL_ARG,
+        PipelineLevel,
+    )
+    from .divvy import DEFAULT_COMPUTE_RESOURCES_NAME, select_divvy_config
+    from .exceptions import (
+        MisconfigurationException,
+        PipestatConfigurationException,
+        SampleFailedException,
+    )
+    from .looper import (
+        Checker,
+        Cleaner,
+        Collator,
+        Destroyer,
+        Linker,
+        Reporter,
+        Runner,
+        Tabulator,
+    )
+    from .project import Project, ProjectContext
+    from .utils import (
+        dotfile_path,
+        enrich_args_via_cfg,
+        init_generic_pipeline,
+        initiate_looper_config,
+        inspect_looper_config_file,
+        is_PEP_file_type,
+        is_pephub_registry_path,
+        looper_config_tutorial,
+        read_looper_config_file,
+        read_looper_dotfile,
+        read_yaml_file,
+    )
+
     global _LOGGER
 
     _LOGGER = logmuse.logger_via_cli(args, make_root=True)
@@ -193,9 +140,10 @@ def run_looper(args: FlatArgs, test_args=None):
         print("No command specified. Use --help for usage.", file=sys.stderr)
         sys.exit(1)
 
-    cli_use_errors = validate_post_parse(args)
+    cli_use_errors = validate_post_parse(args, SAMPLE_EXCLUSION_OPTNAME, SAMPLE_INCLUSION_OPTNAME)
     if cli_use_errors:
-        print(f"CLI use problem(s): {', '.join(cli_use_errors)}", file=sys.stderr)
+        print(f"Error: {', '.join(cli_use_errors)}", file=sys.stderr)
+        print("Run 'looper <command> --help' for usage information.", file=sys.stderr)
         sys.exit(1)
 
     if subcommand_name == "init":
@@ -338,7 +286,7 @@ def run_looper(args: FlatArgs, test_args=None):
             rerun = subcommand_name == "rerun"
             run = Runner(prj)
             try:
-                compute_kwargs = _proc_resources_spec(args)
+                compute_kwargs = _proc_resources_spec(args, read_yaml_file, EXAMPLE_COMPUTE_SPEC_FMT, _LOGGER)
 
                 return run(args, rerun=rerun, **compute_kwargs)
             except SampleFailedException:
@@ -352,7 +300,7 @@ def run_looper(args: FlatArgs, test_args=None):
                 raise
 
         if subcommand_name == "runp":
-            compute_kwargs = _proc_resources_spec(args)
+            compute_kwargs = _proc_resources_spec(args, read_yaml_file, EXAMPLE_COMPUTE_SPEC_FMT, _LOGGER)
             collate = Collator(prj)
             collate(args, **compute_kwargs)
             return collate.debug
@@ -424,7 +372,7 @@ def main_cli() -> None:
     main()
 
 
-def _proc_resources_spec(args) -> dict[str, str]:
+def _proc_resources_spec(args, read_yaml_file, example_compute_spec_fmt, logger) -> dict[str, str]:
     """Process CLI-sources compute setting specification.
 
     There are two sources of compute settings in the CLI alone:
@@ -435,6 +383,9 @@ def _proc_resources_spec(args) -> dict[str, str]:
 
     Args:
         args (argparse.Namespace): Arguments namespace.
+        read_yaml_file: Function to read YAML files.
+        example_compute_spec_fmt: Example format string for error messages.
+        logger: Logger instance.
 
     Returns:
         Mapping[str, str]: Binding between resource setting name and value.
@@ -443,12 +394,14 @@ def _proc_resources_spec(args) -> dict[str, str]:
         ValueError: If interpretation of the given specification as encoding
             of key-value pairs fails.
     """
+    import yaml
+
     spec = getattr(args, "compute", None)
     settings = args.settings
     try:
         settings_data = read_yaml_file(settings) or {}
     except yaml.YAMLError:
-        _LOGGER.warning(
+        logger.warning(
             "Settings file ({}) does not follow YAML format, disregarding".format(
                 settings
             )
@@ -473,7 +426,7 @@ def _proc_resources_spec(args) -> dict[str, str]:
         if bads:
             raise ValueError(
                 "Could not correctly parse itemized compute specification. "
-                "Correct format: " + EXAMPLE_COMPUTE_SPEC_FMT
+                "Correct format: " + example_compute_spec_fmt
             )
     elif isinstance(spec, dict):
         for key, value in spec.items():

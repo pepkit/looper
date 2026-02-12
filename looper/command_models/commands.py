@@ -13,23 +13,33 @@ import pydantic
 from pydantic import AliasChoices, BeforeValidator, Field
 from pydantic_settings import BaseSettings, CliSubCommand, SettingsConfigDict
 
-from ..const import MESSAGE_BY_SUBCOMMAND
 from .arguments import Argument, ArgumentEnum
+from .messages import MESSAGE_BY_SUBCOMMAND  # Local import, no looper/__init__.py
 
 
 def _parse_cli_list(v):
     """Parse list values from CLI.
 
-    pydantic-settings with AliasChoices serializes list values to JSON strings.
-    This validator deserializes them back to lists.
+    Handles:
+    - JSON arrays from pydantic-settings serialization: '["a","b"]'
+    - Comma-separated strings from user input: 'a,b'
+    - Single values: 'a'
     """
     if isinstance(v, str):
+        # Try JSON first (pydantic-settings serialization)
         try:
             parsed = json.loads(v)
             if isinstance(parsed, list):
                 return parsed
         except json.JSONDecodeError:
             pass
+        # Fall back to comma-separated
+        if "," in v:
+            return [item.strip() for item in v.split(",")]
+        # Single non-empty value as single-item list
+        if v.strip():
+            return [v.strip()]
+        return []
     return v
 
 

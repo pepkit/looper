@@ -218,12 +218,18 @@ class ArgumentEnum(enum.Enum):
 
     SAMPLE_PIPELINE_INTERFACES = Argument(
         name="sample_pipeline_interfaces",
+        # Backwards compatibility note: Changed from -S to spi with pydantic-settings
+        # migration. Single-letter aliases are case-insensitive in pydantic-settings,
+        # causing conflicts with other arguments.
         alias="spi",
         default=(list, []),
         description="Paths to looper sample pipeline interfaces",
     )
     PROJECT_PIPELINE_INTERFACES = Argument(
         name="project_pipeline_interfaces",
+        # Backwards compatibility note: Changed from -P to ppi with pydantic-settings
+        # migration. Single-letter aliases are case-insensitive in pydantic-settings,
+        # causing conflicts with other arguments.
         alias="ppi",
         default=(list, []),
         description="Paths to looper project pipeline interfaces",
@@ -254,6 +260,7 @@ class ArgumentEnum(enum.Enum):
     )
     SKIP_FILE_CHECKS = Argument(
         name="skip_file_checks",
+        alias="f",  # Restored: no conflict since run/rerun/runp don't use FORCE_YES
         default=(bool, False),
         description="Do not perform input file checks",
     )
