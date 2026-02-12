@@ -45,4 +45,13 @@ properties:
       singularity_image:
         type: string
         description: "Singularity image identifier"
+  inject_env_vars:
+    type: object
+    description: "Environment variables to inject into submission scripts. Keys are variable names, values are Jinja2 templates."
+    additionalProperties:
+      type: string
+  pipestat_config_required:
+    type: boolean
+    description: "If false, disables validation that pipestat config is passed to pipeline. Default true."
+    default: true
 required: [pipeline_name, pipeline_type, command_template]

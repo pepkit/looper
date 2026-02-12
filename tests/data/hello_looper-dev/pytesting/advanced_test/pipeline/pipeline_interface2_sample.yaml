@@ -1,5 +1,4 @@
 pipeline_name: OTHER_PIPELINE2
-output_schema: output_schema.yaml
 var_templates:
   path: "{looper.piface_dir}/other_pipeline2.py"
 pre_submit:

@@ -48,6 +48,7 @@ from .utils import (
     expand_nested_var_templates,
     fetch_sample_flags,
     jinja_render_template_strictly,
+    render_inject_env_vars,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -834,7 +835,19 @@ class SubmissionConductor(object):
                     self._num_good_job_submissions += 1
                     self._num_total_job_submissions += 1
 
-        looper["command"] = "\n".join(commands)
+        # Render inject_env_vars and prepend export statements to command
+        inject_env_vars = self.pl_iface.get("inject_env_vars", {})
+        env_exports = []
+        if inject_env_vars:
+            rendered_env_vars = render_inject_env_vars(inject_env_vars, namespaces)
+            for var_name, var_value in rendered_env_vars.items():
+                env_exports.append(f"export {var_name}={shlex.quote(var_value)}")
+            _LOGGER.debug("Injected env vars:\n{}".format("\n".join(env_exports)))
+
+        # Build final command with env exports prepended
+        all_lines = env_exports + commands
+        looper["command"] = "\n".join(all_lines)
+
         if self.collate:
             _LOGGER.debug("samples namespace:\n{}".format(self.prj.samples))
         else:

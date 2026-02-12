@@ -290,6 +290,22 @@ def jinja_render_template_strictly(template: str, namespaces: dict) -> str:
     return rendered
 
 
+def render_inject_env_vars(inject_env_vars: dict, namespaces: dict) -> dict[str, str]:
+    """Render inject_env_vars templates to concrete values.
+
+    Args:
+        inject_env_vars (dict): Mapping of variable names to Jinja2 templates.
+        namespaces (dict): Namespaces to use for rendering.
+
+    Returns:
+        dict[str, str]: Rendered environment variable name-value pairs.
+    """
+    rendered = {}
+    for var_name, template in inject_env_vars.items():
+        rendered[var_name] = jinja_render_template_strictly(template, namespaces)
+    return rendered
+
+
 def read_yaml_file(filepath: str) -> dict | None:
     """Read a YAML file.
 

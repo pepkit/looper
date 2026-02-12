@@ -1,6 +1,5 @@
 pipeline_name: example_pipestat_pipeline
 input_schema: https://schema.databio.org/pep/2.0.0.yaml
-output_schema: pipestat_output_schema.yaml
 var_templates:
   path: "{looper.piface_dir}/other_pipeline2.py"
 pre_submit:
