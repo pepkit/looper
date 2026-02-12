@@ -172,7 +172,10 @@ class ArgumentEnum(enum.Enum):
         description="Lump samples into number of jobs.",
     )
     LIMIT = Argument(
-        name="limit", alias="l", default=(int | None, None), description="Limit to n samples"
+        name="limit",
+        alias="l",
+        default=(int | None, None),
+        description="Limit to n samples",
     )
     SKIP = Argument(
         name="skip",
