@@ -6,9 +6,19 @@ from yaml import dump
 
 from looper.cli_pydantic import main
 from looper.const import *
+from looper.exceptions import MisconfigurationException
 from looper.project import Project
-from looper.utils import *
-from tests.conftest import *
+from looper.utils import is_PEP_file_type, is_pephub_registry_path
+
+from tests.integration.conftest import (
+    assert_content_in_all_files,
+    assert_content_not_in_any_files,
+    get_outdir,
+    get_project_config_path,
+    mod_yaml_data,
+    test_args_expansion,
+    verify_filecount_in_dir,
+)
 
 CMD_STRS = ["string", " --string", " --sjhsjd 212", "7867#$@#$cc@@"]
 
@@ -63,19 +73,6 @@ def test_is_PEP_file_type(path):
 
     result = is_PEP_file_type(path)
     assert result == True
-
-
-def is_connected():
-    """Determines if local machine can connect to the internet."""
-    import socket
-
-    try:
-        host = socket.gethostbyname("www.databio.org")
-        socket.create_connection((host, 80), 2)
-        return True
-    except:
-        pass
-    return False
 
 
 class TestLooperBothRuns:
@@ -519,10 +516,9 @@ class TestLooperCompute:
         assert_content_in_all_files(subs_list, "#SBATCH --mem='12345'")
 
     @pytest.mark.parametrize("cmd", ["run", "runp"])
-    def test_cli_yaml_settings_general(self, prep_temp_pep, cmd):
+    def test_cli_yaml_settings_general(self, prep_temp_pep, cmd, tmp_path):
         tp = prep_temp_pep
-        td = tempfile.mkdtemp()
-        settings_file_path = os.path.join(td, "settings.yaml")
+        settings_file_path = str(tmp_path / "settings.yaml")
         with open(settings_file_path, "w") as sf:
             dump({"mem": "testin_mem"}, sf)
         x = test_args_expansion(tp, cmd, ["--settings", settings_file_path])
@@ -541,10 +537,9 @@ class TestLooperCompute:
             raise pytest.fail("DID RAISE {0}".format(Exception))
 
     @pytest.mark.parametrize("cmd", ["run", "runp"])
-    def test_cli_yaml_settings_passes_settings(self, prep_temp_pep, cmd):
+    def test_cli_yaml_settings_passes_settings(self, prep_temp_pep, cmd, tmp_path):
         tp = prep_temp_pep
-        td = tempfile.mkdtemp()
-        settings_file_path = os.path.join(td, "settings.yaml")
+        settings_file_path = str(tmp_path / "settings.yaml")
         with open(settings_file_path, "w") as sf:
             dump({"mem": "testin_mem"}, sf)
 
@@ -560,10 +555,9 @@ class TestLooperCompute:
         assert_content_in_all_files(subs_list, "testin_mem")
 
     @pytest.mark.parametrize("cmd", ["run", "runp"])
-    def test_cli_compute_overwrites_yaml_settings_spec(self, prep_temp_pep, cmd):
+    def test_cli_compute_overwrites_yaml_settings_spec(self, prep_temp_pep, cmd, tmp_path):
         tp = prep_temp_pep
-        td = tempfile.mkdtemp()
-        settings_file_path = os.path.join(td, "settings.yaml")
+        settings_file_path = str(tmp_path / "settings.yaml")
         with open(settings_file_path, "w") as sf:
             dump({"mem": "testin_mem"}, sf)
         x = test_args_expansion(

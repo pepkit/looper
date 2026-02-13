@@ -3,14 +3,17 @@ import os.path
 import pandas as pd
 import pytest
 from peppy import Project
+from yaml import dump, safe_load
 
 from looper.cli_pydantic import main
+from looper.const import FLAGS, OUTDIR_KEY, PIPESTAT_KEY
 from looper.exceptions import (
     LooperReportError,
     MisconfigurationException,
     PipestatConfigurationException,
 )
-from tests.conftest import *
+
+from tests.integration.conftest import get_outdir, get_project_config_path
 
 
 def _make_flags_pipestat(cfg, type, pipeline_name):

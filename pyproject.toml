@@ -1,6 +1,6 @@
 [project]
 name = "looper"
-version = "2.0.3"
+version = "2.1.0"
 description = "A pipeline submission engine that parses sample inputs and submits pipelines for each sample."
 readme = "README.md"
 license = "BSD-2-Clause"
@@ -71,7 +71,11 @@ test = [
 
 [tool.pytest.ini_options]
 addopts = "-rfE"
-testpaths = ["tests"]
+testpaths = ["tests/unit", "tests/divvytests"]  # Fast tests only by default
+# Integration tests: RUN_INTEGRATION_TESTS=true pytest tests/integration
+python_files = ["test_*.py"]
+python_classes = ["Test*", "*Test", "*Tests", "*Tester"]
+python_functions = ["test_*"]
 
 [tool.ruff]
 line-length = 88

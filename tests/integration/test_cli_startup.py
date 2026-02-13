@@ -3,6 +3,11 @@
 import subprocess
 import time
 
+import pytest
+
+# These tests are fast and should run by default (not require RUN_INTEGRATION_TESTS)
+pytestmark = pytest.mark.integration_fast
+
 
 def test_cli_help_startup_time():
     """Ensure --help responds quickly without loading heavy dependencies."""

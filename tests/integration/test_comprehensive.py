@@ -9,8 +9,9 @@ from yaml import dump, safe_load
 from looper.cli_pydantic import main
 from looper.const import *
 from looper.utils import *
-from tests.conftest import *
-from tests.smoketests.test_run import is_connected
+
+from tests.integration.conftest import get_project_config_path, is_connected
+
 
 CMD_STRS = ["string", " --string", " --sjhsjd 212", "7867#$@#$cc@@"]
 

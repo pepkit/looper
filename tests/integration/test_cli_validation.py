@@ -10,7 +10,7 @@ from looper.const import (
     SAMPLE_INCLUSION_OPTNAME,
     SAMPLE_SELECTION_ATTRIBUTE_OPTNAME,
 )
-from tests.conftest import test_args_expansion
+from tests.integration.conftest import test_args_expansion
 
 SUBCOMMANDS_WHICH_SUPPORT_SKIP_XOR_LIMIT = ["run", "destroy"]
 
