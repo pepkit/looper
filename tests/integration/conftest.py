@@ -13,6 +13,7 @@ from yaml import dump, safe_load
 
 from looper.const import LOOPER_DOTFILE_NAME, OUTDIR_KEY, PIPESTAT_KEY
 
+
 # Skip all integration tests unless explicitly enabled
 def pytest_collection_modifyitems(config, items):
     """Skip integration tests unless RUN_INTEGRATION_TESTS=true."""
@@ -26,6 +27,7 @@ def pytest_collection_modifyitems(config, items):
         if "integration" in str(item.fspath):
             if not any(mark.name == "integration_fast" for mark in item.iter_markers()):
                 item.add_marker(skip_marker)
+
 
 # File constants
 CFG = "project_config.yaml"
@@ -149,7 +151,9 @@ def mod_yaml_data(path):
 @pytest.fixture
 def example_pep_piface_path():
     """Path to test data directory."""
-    return os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data")
+    return os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data"
+    )
 
 
 @pytest.fixture

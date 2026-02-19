@@ -555,7 +555,9 @@ class TestLooperCompute:
         assert_content_in_all_files(subs_list, "testin_mem")
 
     @pytest.mark.parametrize("cmd", ["run", "runp"])
-    def test_cli_compute_overwrites_yaml_settings_spec(self, prep_temp_pep, cmd, tmp_path):
+    def test_cli_compute_overwrites_yaml_settings_spec(
+        self, prep_temp_pep, cmd, tmp_path
+    ):
         tp = prep_temp_pep
         settings_file_path = str(tmp_path / "settings.yaml")
         with open(settings_file_path, "w") as sf:
