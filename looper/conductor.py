@@ -7,6 +7,7 @@ import shlex
 import signal
 import subprocess
 import sys
+import threading
 import time
 from json import loads
 from math import ceil
@@ -445,7 +446,8 @@ class SubmissionConductor(object):
         submitted = False
 
         # Override signal handler so that Ctrl+C can be used to gracefully terminate child process
-        signal.signal(signal.SIGINT, self._signal_int_handler)
+        if threading.current_thread() is threading.main_thread():
+            signal.signal(signal.SIGINT, self._signal_int_handler)
 
         if not self._pool:
             _LOGGER.debug("No submission (no pooled samples): %s", self.pl_name)
