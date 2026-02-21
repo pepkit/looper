@@ -457,8 +457,8 @@ class Project(peppyProject):
                 if not pipestat_config_path:
                     self._create_pipestat_config(piface, pipeline_type)
                 else:
-                    piface.psm = PipestatManager(
-                        config_file=pipestat_config_path,
+                    piface.psm = PipestatManager.from_config(
+                        config=pipestat_config_path,
                         multi_pipelines=True,
                         pipeline_type="sample",
                     )
@@ -472,8 +472,8 @@ class Project(peppyProject):
                 if not pipestat_config_path:
                     self._create_pipestat_config(prj_piface, pipeline_type)
                 else:
-                    prj_piface.psm = PipestatManager(
-                        config_file=pipestat_config_path,
+                    prj_piface.psm = PipestatManager.from_config(
+                        config=pipestat_config_path,
                         multi_pipelines=True,
                         pipeline_type="project",
                     )
@@ -615,8 +615,8 @@ class Project(peppyProject):
         # Two end goals, create a config file
         write_pipestat_config(pipestat_config_path, pipestat_config_dict)
 
-        piface.psm = PipestatManager(
-            config_file=pipestat_config_path, multi_pipelines=True
+        piface.psm = PipestatManager.from_config(
+            config=pipestat_config_path, multi_pipelines=True
         )
 
         return None
