@@ -4,14 +4,14 @@ import os
 import shutil
 import socket
 from contextlib import contextmanager
+from shutil import copyfile
 from typing import Iterable
 
 import peppy
 import pytest
-from shutil import copyfile
 from yaml import dump, safe_load
 
-from looper.const import LOOPER_DOTFILE_NAME, OUTDIR_KEY, PIPESTAT_KEY
+from looper.const import LOOPER_DOTFILE_NAME, OUTDIR_KEY
 
 
 # Skip all integration tests unless explicitly enabled

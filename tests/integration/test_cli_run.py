@@ -9,7 +9,6 @@ from looper.const import *
 from looper.exceptions import MisconfigurationException
 from looper.project import Project
 from looper.utils import is_PEP_file_type, is_pephub_registry_path
-
 from tests.integration.conftest import (
     assert_content_in_all_files,
     assert_content_not_in_any_files,

@@ -12,7 +12,6 @@ from looper.exceptions import (
     MisconfigurationException,
     PipestatConfigurationException,
 )
-
 from tests.integration.conftest import get_outdir, get_project_config_path
 
 

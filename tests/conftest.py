@@ -11,7 +11,6 @@ Run commands:
 - ./tests/scripts/test-integration.sh  # Integration tests via script
 """
 
-import pytest
 
 
 # Register custom markers
