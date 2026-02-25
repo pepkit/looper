@@ -4,7 +4,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [2.1.0] -- 2026-02-25
 ### Changed
-- Migrated to yacman v1 API (`YAMLConfigManager.from_yaml_file()`, `write_lock`/`read_lock` context managers)
+- Migrated to new yacman API (`YAMLConfigManager.from_yaml_file()`, `write_lock`/`read_lock` context managers); requires yacman >=0.9.5
 - Migrated CLI configuration to pydantic-settings
 - Improved CLI startup time by deferring heavy imports to module level
 - Made signal handling thread-safe
