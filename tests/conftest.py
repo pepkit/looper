@@ -12,7 +12,6 @@ Run commands:
 """
 
 
-
 # Register custom markers
 def pytest_configure(config):
     config.addinivalue_line(
