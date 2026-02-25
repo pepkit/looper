@@ -1,7 +1,7 @@
 """Looper version of NGS project model."""
 
-import itertools
 import os
+from typing import NoReturn
 
 from yaml import safe_load
 
@@ -11,20 +11,45 @@ except ImportError:
     # cached_property was introduced in python 3.8
     cached_property = property
 
-from .divvy import ComputingConfiguration
-from eido import PathAttrNotFoundError, read_schema
+from eido import read_schema
 from jsonschema import ValidationError
 from pandas.core.common import flatten
+from peppy import Project as peppyProject
+from peppy.const import CONFIG_KEY
 from peppy.utils import make_abs_via_cfg
 from pipestat import PipestatManager
 
 from .conductor import write_pipestat_config
-
-from .exceptions import *
+from .const import (
+    CLI_PROJ_ATTRS,
+    COMPUTE_PACKAGE_KEY,
+    DRY_RUN_KEY,
+    EXTRA_KEY,
+    FILE_CHECKS_KEY,
+    INPUT_SCHEMA_KEY,
+    LOOPER_KEY,
+    OUTDIR_KEY,
+    OUTPUT_SCHEMA_KEY,
+    PIFACE_KEY_SELECTOR,
+    PIPELINE_INTERFACE_PIPELINE_NAME_KEY,
+    PIPELINE_INTERFACES_KEY,
+    PIPESTAT_KEY,
+    RESULTS_SUBDIR_KEY,
+    SAMPLE_PL_ARG,
+    SUBMISSION_SUBDIR_KEY,
+    PipelineLevel,
+)
+from .divvy import ComputingConfiguration
+from .exceptions import MisconfigurationException, PipelineInterfaceConfigError
 from .pipeline_interface import PipelineInterface
 from .processed_project import populate_project_paths, populate_sample_paths
-from .utils import *
-from .const import PipelineLevel
+from .utils import (
+    expandpath,
+    fetch_sample_flags,
+    get_sample_status,
+    getLogger,
+    is_pephub_registry_path,
+)
 
 __all__ = ["Project"]
 
@@ -37,17 +62,18 @@ class ProjectContext(object):
     def __init__(
         self,
         prj,
-        selector_attribute=None,
-        selector_include=None,
-        selector_exclude=None,
-        selector_flag=None,
-        exclusion_flag=None,
-    ):
+        selector_attribute: str | None = None,
+        selector_include: list | str | None = None,
+        selector_exclude: list | str | None = None,
+        selector_flag: list | str | None = None,
+        exclusion_flag: list | str | None = None,
+    ) -> None:
         """Project and what to include/exclude defines the context."""
         if not isinstance(selector_attribute, str):
             raise TypeError(
-                "Name of attribute for sample selection isn't a string: {} "
-                "({})".format(selector_attribute, type(selector_attribute))
+                "Name of attribute for sample selection isn't a string: {} ({})".format(
+                    selector_attribute, type(selector_attribute)
+                )
             )
         self.prj = prj
         self.include = selector_include
@@ -96,21 +122,27 @@ class ProjectContext(object):
 
 
 class Project(peppyProject):
-    """
-    Looper-specific Project.
+    """Looper-specific Project.
 
-    :param str cfg: path to configuration file with data from
-        which Project is to be built
-    :param Iterable[str] amendments: name indicating amendment to use, optional
-    :param str divcfg_path: path to an environment configuration YAML file
-        specifying compute settings.
-    :param bool permissive: Whether a error should be thrown if
-        a sample input file(s) do not exist or cannot be open.
-    :param str compute_env_file: Environment configuration YAML file specifying
-        compute settings.
+    Args:
+        cfg (str): Path to configuration file with data from which Project is
+            to be built.
+        amendments (Iterable[str]): Name indicating amendment to use, optional.
+        divcfg_path (str): Path to an environment configuration YAML file
+            specifying compute settings.
+        permissive (bool): Whether a error should be thrown if a sample input
+            file(s) do not exist or cannot be open.
+        compute_env_file (str): Environment configuration YAML file specifying
+            compute settings.
     """
 
-    def __init__(self, cfg=None, amendments=None, divcfg_path=None, **kwargs):
+    def __init__(
+        self,
+        cfg: str | None = None,
+        amendments=None,
+        divcfg_path: str | None = None,
+        **kwargs,
+    ) -> None:
         super(Project, self).__init__(cfg=cfg, amendments=amendments)
         prj_dict = kwargs.get("project_dict")
         pep_config = kwargs.get("pep_config", None)
@@ -127,7 +159,7 @@ class Project(peppyProject):
 
         try:
             # For loading PEPs via CSV, Peppy cannot infer project name.
-            name = self.name
+            self.name  # noqa: B018
         except NotImplementedError:
             self.name = None
 
@@ -156,29 +188,29 @@ class Project(peppyProject):
             self.make_project_dirs()
 
     @property
-    def piface_key(self):
-        """
-        Name of the pipeline interface attribute for this project
+    def piface_key(self) -> str:
+        """Name of the pipeline interface attribute for this project.
 
-        :return str: name of the pipeline interface attribute
+        Returns:
+            str: Name of the pipeline interface attribute.
         """
         return self._extra_cli_or_cfg(PIFACE_KEY_SELECTOR) or PIPELINE_INTERFACES_KEY
 
     @property
-    def selected_compute_package(self):
-        """
-        Compute package name specified in object constructor
+    def selected_compute_package(self) -> str | None:
+        """Compute package name specified in object constructor.
 
-        :return str: compute package name
+        Returns:
+            str: Compute package name.
         """
         return self._extra_cli_or_cfg(COMPUTE_PACKAGE_KEY)
 
     @property
-    def cli_pifaces(self):
-        """
-        Collection of pipeline interface sources specified in object constructor
+    def cli_pifaces(self) -> list[str] | None:
+        """Collection of pipeline interface sources specified in object constructor.
 
-        :return list[str]: collection of pipeline interface sources
+        Returns:
+            list[str]: Collection of pipeline interface sources.
         """
         x = self._extra_cli_or_cfg(self.piface_key)
         return (
@@ -188,23 +220,23 @@ class Project(peppyProject):
         )
 
     @property
-    def output_dir(self):
-        """
-        Output directory for the project, specified in object constructor
+    def output_dir(self) -> str:
+        """Output directory for the project, specified in object constructor.
 
-        :return str: path to the output directory
+        Returns:
+            str: Path to the output directory.
         """
         return self._extra_cli_or_cfg(OUTDIR_KEY, strict=True)
 
-    def _extra_cli_or_cfg(self, attr_name, strict=False):
-        """
-        Get attribute value provided in kwargs in object constructor of from
-        looper section in the configuration file
+    def _extra_cli_or_cfg(self, attr_name: str, strict: bool = False):
+        """Get attribute value provided in kwargs in object constructor or from looper section in the configuration file.
 
-        :param str attr_name: name of the attribute to get value for
-        :param bool strict: whether a non-existent attribute is exceptional
-        :raise MisconfigurationException: in strict mode, when no attribute
-         found
+        Args:
+            attr_name (str): Name of the attribute to get value for.
+            strict (bool): Whether a non-existent attribute is exceptional.
+
+        Raises:
+            MisconfigurationException: In strict mode, when no attribute found.
         """
         try:
             result = self[EXTRA_KEY][attr_name]
@@ -229,38 +261,41 @@ class Project(peppyProject):
             return
 
     @property
-    def results_folder(self):
-        """
-        Path to the results folder for the project
+    def results_folder(self) -> str:
+        """Path to the results folder for the project.
 
-        :return str: path to the results folder in the output folder
+        Returns:
+            str: Path to the results folder in the output folder.
         """
         return self._out_subdir_path(RESULTS_SUBDIR_KEY, default="results_pipeline")
 
     @property
-    def submission_folder(self):
-        """
-        Path to the submission folder for the project
+    def submission_folder(self) -> str:
+        """Path to the submission folder for the project.
 
-        :return str: path to the submission in the output folder
+        Returns:
+            str: Path to the submission in the output folder.
         """
         return self._out_subdir_path(SUBMISSION_SUBDIR_KEY, default="submission")
 
     def _out_subdir_path(self, key: str, default: str) -> str:
-        """
-        Create a system path relative to the project output directory.
+        """Create a system path relative to the project output directory.
+
         The values for the names of the subdirectories are sourced from
         kwargs passed to the object constructor.
 
-        :param str key: name of the attribute mapped to the value of interest
-        :param str default: if key not specified, a default to use
-        :return str: path to the folder
+        Args:
+            key (str): Name of the attribute mapped to the value of interest.
+            default (str): If key not specified, a default to use.
+
+        Returns:
+            str: Path to the folder.
         """
         parent = getattr(self, OUTDIR_KEY)
         child = getattr(self[EXTRA_KEY], key, default) or default
         return os.path.join(parent, child)
 
-    def make_project_dirs(self):
+    def make_project_dirs(self) -> None:
         """
         Create project directory structure if it doesn't exist.
         """
@@ -279,12 +314,13 @@ class Project(peppyProject):
                     )
 
     @cached_property
-    def project_pipeline_interface_sources(self):
-        """
-        Get a list of all valid project-level pipeline interface sources
-        associated with this project. Sources that are file paths are expanded
+    def project_pipeline_interface_sources(self) -> list[str]:
+        """Get a list of all valid project-level pipeline interface sources associated with this project.
 
-        :return list[str]: collection of valid pipeline interface sources:
+        Sources that are file paths are expanded.
+
+        Returns:
+            list[str]: Collection of valid pipeline interface sources.
         """
         return (
             [self._resolve_path_with_cfg(src) for src in self.cli_pifaces]
@@ -293,16 +329,15 @@ class Project(peppyProject):
         )
 
     @cached_property
-    def project_pipeline_interfaces(self):
-        """
-        Flat list of all valid project-level interface objects associated
-        with this Project
+    def project_pipeline_interfaces(self) -> list:
+        """Flat list of all valid project-level interface objects associated with this Project.
 
         Note that only valid pipeline interfaces will show up in the
         result (ones that exist on disk/remotely and validate successfully
-        against the schema)
+        against the schema).
 
-        :return list[looper.PipelineInterface]: list of pipeline interfaces
+        Returns:
+            list[looper.PipelineInterface]: List of pipeline interfaces.
         """
         return [
             PipelineInterface(pi, pipeline_type=PipelineLevel.PROJECT.value)
@@ -310,60 +345,63 @@ class Project(peppyProject):
         ]
 
     @cached_property
-    def pipeline_interfaces(self):
-        """
-        Flat list of all valid interface objects associated with this Project
+    def pipeline_interfaces(self) -> list:
+        """Flat list of all valid interface objects associated with this Project.
 
         Note that only valid pipeline interfaces will show up in the
         result (ones that exist on disk/remotely and validate successfully
-        against the schema)
+        against the schema).
 
-        :return list[looper.PipelineInterface]: list of pipeline interfaces
+        Returns:
+            list[looper.PipelineInterface]: List of pipeline interfaces.
         """
         return [pi for ifaces in self._interfaces_by_sample.values() for pi in ifaces]
 
     @cached_property
     def pipeline_interface_sources(self):
-        """
-        Get a list of all valid pipeline interface sources associated
-        with this project. Sources that are file paths are expanded
+        """Get a list of all valid pipeline interface sources associated with this project.
 
-        :return list[str]: collection of valid pipeline interface sources
+        Sources that are file paths are expanded.
+
+        Returns:
+            list[str]: Collection of valid pipeline interface sources.
         """
         return self._samples_by_interface.keys()
 
     @cached_property
-    def pipestat_configured(self):
-        """
-        Whether pipestat configuration is complete for all sample pipelines
+    def pipestat_configured(self) -> bool:
+        """Whether pipestat configuration is complete for all sample pipelines.
 
-        :return bool: whether pipestat configuration is complete
+        Returns:
+            bool: Whether pipestat configuration is complete.
         """
         return self._check_if_pipestat_configured()
 
     @cached_property
-    def pipestat_configured_project(self):
-        """
-        Whether pipestat configuration is complete for all project pipelines
+    def pipestat_configured_project(self) -> bool:
+        """Whether pipestat configuration is complete for all project pipelines.
 
-        :return bool: whether pipestat configuration is complete
+        Returns:
+            bool: Whether pipestat configuration is complete.
         """
         return self._check_if_pipestat_configured(
             pipeline_type=PipelineLevel.PROJECT.value
         )
 
-    def get_sample_piface(self, sample_name):
-        """
-        Get a list of pipeline interfaces associated with the specified sample.
+    def get_sample_piface(self, sample_name: str) -> list | None:
+        """Get a list of pipeline interfaces associated with the specified sample.
 
         Note that only valid pipeline interfaces will show up in the
         result (ones that exist on disk/remotely and validate successfully
-        against the schema)
+        against the schema).
 
-        :param str sample_name: name of the sample to retrieve list of
-            pipeline interfaces for
-        :return list[looper.PipelineInterface]: collection of valid
-            pipeline interfaces associated with selected sample
+        Args:
+            sample_name (str): Name of the sample to retrieve list of pipeline
+                interfaces for.
+
+        Returns:
+            list[looper.PipelineInterface]: Collection of valid pipeline
+                interfaces associated with selected sample.
         """
         try:
             return self._interfaces_by_sample[sample_name]
@@ -371,14 +409,15 @@ class Project(peppyProject):
             return None
 
     @staticmethod
-    def get_schemas(pifaces, schema_key=INPUT_SCHEMA_KEY):
-        """
-        Get the list of unique schema paths for a list of pipeline interfaces
+    def get_schemas(pifaces, schema_key: str = INPUT_SCHEMA_KEY) -> list[str]:
+        """Get the list of unique schema paths for a list of pipeline interfaces.
 
-        :param str | Iterable[str] pifaces: pipeline interfaces to search
-            schemas for
-        :param str schema_key: where to look for schemas in the piface
-        :return Iterable[str]: unique list of schema file paths
+        Args:
+            pifaces (str | Iterable[str]): Pipeline interfaces to search schemas for.
+            schema_key (str): Where to look for schemas in the piface.
+
+        Returns:
+            Iterable[str]: Unique list of schema file paths.
         """
         if isinstance(pifaces, str):
             pifaces = [pifaces]
@@ -389,7 +428,9 @@ class Project(peppyProject):
                 schema_set.update([schema_file])
         return list(schema_set)
 
-    def _check_if_pipestat_configured(self, pipeline_type=PipelineLevel.SAMPLE.value):
+    def _check_if_pipestat_configured(
+        self, pipeline_type: str = PipelineLevel.SAMPLE.value
+    ) -> bool:
 
         # First check if pipestat key is in looper_config, if not return false
 
@@ -403,20 +444,21 @@ class Project(peppyProject):
                 # This should return True OR raise an exception at this point.
                 return self._get_pipestat_configuration(pipeline_type)
 
-    def _get_pipestat_configuration(self, pipeline_type=PipelineLevel.SAMPLE.value):
+    def _get_pipestat_configuration(
+        self, pipeline_type: str = PipelineLevel.SAMPLE.value
+    ) -> bool:
 
         # First check if it already exists
 
         if pipeline_type == PipelineLevel.SAMPLE.value:
             for piface in self.pipeline_interfaces:
-
                 pipestat_config_path = self._check_for_existing_pipestat_config(piface)
 
                 if not pipestat_config_path:
                     self._create_pipestat_config(piface, pipeline_type)
                 else:
-                    piface.psm = PipestatManager(
-                        config_file=pipestat_config_path,
+                    piface.psm = PipestatManager.from_config(
+                        config=pipestat_config_path,
                         multi_pipelines=True,
                         pipeline_type="sample",
                     )
@@ -430,8 +472,8 @@ class Project(peppyProject):
                 if not pipestat_config_path:
                     self._create_pipestat_config(prj_piface, pipeline_type)
                 else:
-                    prj_piface.psm = PipestatManager(
-                        config_file=pipestat_config_path,
+                    prj_piface.psm = PipestatManager.from_config(
+                        config=pipestat_config_path,
                         multi_pipelines=True,
                         pipeline_type="project",
                     )
@@ -442,7 +484,7 @@ class Project(peppyProject):
 
         return True
 
-    def _check_for_existing_pipestat_config(self, piface):
+    def _check_for_existing_pipestat_config(self, piface) -> str | None:
         """
 
         config files should be in looper output directory and named as:
@@ -473,7 +515,7 @@ class Project(peppyProject):
         else:
             return None
 
-    def _create_pipestat_config(self, piface, pipeline_type):
+    def _create_pipestat_config(self, piface, pipeline_type: str) -> None:
         """
         Each piface needs its own config file and associated psm
         """
@@ -573,13 +615,13 @@ class Project(peppyProject):
         # Two end goals, create a config file
         write_pipestat_config(pipestat_config_path, pipestat_config_dict)
 
-        piface.psm = PipestatManager(
-            config_file=pipestat_config_path, multi_pipelines=True
+        piface.psm = PipestatManager.from_config(
+            config=pipestat_config_path, multi_pipelines=True
         )
 
         return None
 
-    def populate_pipeline_outputs(self):
+    def populate_pipeline_outputs(self) -> None:
         """
         Populate project and sample output attributes based on output schemas
         that pipeline interfaces point to.
@@ -597,17 +639,17 @@ class Project(peppyProject):
         for schema in schemas:
             populate_project_paths(self, read_schema(schema)[0])
 
-    def _get_linked_pifaces(self):
-        """
-        Get linked sample pipeline interfaces by project pipeline interface.
+    def _get_linked_pifaces(self) -> dict[str, list[str]]:
+        """Get linked sample pipeline interfaces by project pipeline interface.
 
         These are indicated in project pipeline interface by
         'linked_pipeline_interfaces' key. If a project pipeline interface
-         does not have such key defined, an empty list is returned for that
-         pipeline interface.
+        does not have such key defined, an empty list is returned for that
+        pipeline interface.
 
-        :return dict[list[str]]: mapping of sample pipeline interfaces
-            by project pipeline interfaces
+        Returns:
+            dict[list[str]]: Mapping of sample pipeline interfaces by project
+                pipeline interfaces.
         """
 
         def _process_linked_piface(p, piface, prj_piface):
@@ -634,12 +676,12 @@ class Project(peppyProject):
             )
         return linked_pifaces
 
-    def _piface_by_samples(self):
-        """
-        Create a mapping of all defined interfaces in this Project by samples.
+    def _piface_by_samples(self) -> dict:
+        """Create a mapping of all defined interfaces in this Project by samples.
 
-        :return dict[str, list[PipelineInterface]]: a collection of pipeline
-            interfaces keyed by sample name
+        Returns:
+            dict[str, list[PipelineInterface]]: A collection of pipeline
+                interfaces keyed by sample name.
         """
         pifaces_by_sample = {}
         for source, sample_names in self._samples_by_interface.items():
@@ -652,21 +694,23 @@ class Project(peppyProject):
                     pifaces_by_sample.setdefault(sample_name, []).append(pi)
         return pifaces_by_sample
 
-    def _omit_from_repr(self, k, cls):
-        """
-        Exclude the interfaces from representation.
+    def _omit_from_repr(self, k: str, cls: type) -> bool:
+        """Exclude the interfaces from representation.
 
-        :param str k: key of item to consider for omission
-        :param type cls: placeholder to comply with superclass signature
+        Args:
+            k (str): Key of item to consider for omission.
+            cls (type): Placeholder to comply with superclass signature.
         """
         return super(Project, self)._omit_from_repr(k, cls) or k == "interfaces"
 
-    def _resolve_path_with_cfg(self, pth):
-        """
-        Expand provided path and make it absolute using project config path
+    def _resolve_path_with_cfg(self, pth: str | None) -> str | None:
+        """Expand provided path and make it absolute using project config path.
 
-        :param str pth: path, possibly including env vars and/or relative
-        :return str: absolute path
+        Args:
+            pth (str): Path, possibly including env vars and/or relative.
+
+        Returns:
+            str: Absolute path.
         """
         if pth is None:
             return
@@ -676,14 +720,14 @@ class Project(peppyProject):
             _LOGGER.debug("Relative path made absolute: {}".format(pth))
         return pth
 
-    def _samples_by_piface(self, piface_key):
-        """
-        Create a collection of all samples with valid pipeline interfaces
+    def _samples_by_piface(self, piface_key: str) -> dict[str, set[str]]:
+        """Create a collection of all samples with valid pipeline interfaces.
 
-        :param str piface_key: name of the attribute that holds pipeline
-         interfaces
-        :return list[str]: a collection of samples keyed by pipeline interface
-            source
+        Args:
+            piface_key (str): Name of the attribute that holds pipeline interfaces.
+
+        Returns:
+            list[str]: A collection of samples keyed by pipeline interface source.
         """
         samples_by_piface = {}
         msgs = set()
@@ -718,11 +762,11 @@ class Project(peppyProject):
             _LOGGER.warning(msg)
         return samples_by_piface
 
-    def set_sample_piface(self, sample_piface: Union[List[str], str]) -> NoReturn:
-        """
-        Add sample pipeline interfaces variable to object
+    def set_sample_piface(self, sample_piface: list[str] | str) -> NoReturn:
+        """Add sample pipeline interfaces variable to object.
 
-        :param list | str sample_piface: sample pipeline interface
+        Args:
+            sample_piface (list | str): Sample pipeline interface.
         """
         self.config.setdefault("sample_modifiers", {})
         self.config["sample_modifiers"].setdefault("append", {})
@@ -733,43 +777,43 @@ class Project(peppyProject):
 
 def fetch_samples(
     prj,
-    selector_attribute=None,
-    selector_include=None,
-    selector_exclude=None,
-    selector_flag=None,
-    exclusion_flag=None,
-):
-    """
-    Collect samples of particular protocol(s).
+    selector_attribute: str | None = None,
+    selector_include: list | str | None = None,
+    selector_exclude: list | str | None = None,
+    selector_flag: list | str | None = None,
+    exclusion_flag: list | str | None = None,
+) -> list:
+    """Collect samples of particular protocol(s).
 
     Protocols can't be both positively selected for and negatively
     selected against. That is, it makes no sense and is not allowed to
     specify both selector_include and selector_exclude protocols. On the
-    other hand, if
-    neither is provided, all of the Project's Samples are returned.
+    other hand, if neither is provided, all of the Project's Samples are returned.
     If selector_include is specified, Samples without a protocol will be
-    excluded,
-    but if selector_exclude is specified, protocol-less Samples will be
+    excluded, but if selector_exclude is specified, protocol-less Samples will be
     included.
 
-    :param Project prj: the Project with Samples to fetch
-    :param str selector_attribute: name of attribute on which to base the
-    fetch
-    :param Iterable[str] | str selector_include: protocol(s) of interest;
-        if specified, a Sample must
-    :param Iterable[str] | str selector_exclude: protocol(s) to include
-    :param Iterable[str] | str selector_flag: flag to select on, e.g. FAILED, COMPLETED
-    :param Iterable[str] | str exclusion_flag: flag to exclude on, e.g. FAILED, COMPLETED
-    :return list[Sample]: Collection of this Project's samples with
-        protocol that either matches one of those in selector_include,
-        or either
-        lacks a protocol or does not match one of those in selector_exclude
-    :raise TypeError: if both selector_include and selector_exclude
-    protocols are
-        specified; TypeError since it's basically providing two arguments
-        when only one is accepted, so remain consistent with vanilla
-        Python2;
-        also possible if name of attribute for selection isn't a string
+    Args:
+        prj (Project): The Project with Samples to fetch.
+        selector_attribute (str): Name of attribute on which to base the fetch.
+        selector_include (Iterable[str] | str): Protocol(s) of interest; if
+            specified, a Sample must.
+        selector_exclude (Iterable[str] | str): Protocol(s) to include.
+        selector_flag (Iterable[str] | str): Flag to select on, e.g. FAILED,
+            COMPLETED.
+        exclusion_flag (Iterable[str] | str): Flag to exclude on, e.g. FAILED,
+            COMPLETED.
+
+    Returns:
+        list[Sample]: Collection of this Project's samples with protocol that
+            either matches one of those in selector_include, or either lacks a
+            protocol or does not match one of those in selector_exclude.
+
+    Raises:
+        TypeError: If both selector_include and selector_exclude protocols are
+            specified; TypeError since it's basically providing two arguments
+            when only one is accepted, so remain consistent with vanilla Python2;
+            also possible if name of attribute for selection isn't a string.
     """
 
     kept_samples = prj.samples
@@ -796,7 +840,7 @@ def fetch_samples(
     # nonsense user error.
     if selector_include and selector_exclude:
         raise TypeError(
-            "Specify only selector_include or selector_exclude parameter, " "not both."
+            "Specify only selector_include or selector_exclude parameter, not both."
         )
 
     if not isinstance(selector_attribute, str):
@@ -899,7 +943,7 @@ def fetch_samples(
     return kept_samples
 
 
-def make_set(items):
+def make_set(items) -> list:
     if isinstance(items, str):
         items = [items]
     elif len(items) == 1:

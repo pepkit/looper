@@ -1,7 +1,7 @@
 import os.path
+import sys
 
 import pipestat
-import sys
 
 # Very simple pipeline that calls pipestat
 # takes arguments invoked during looper submission via command templates
@@ -13,9 +13,9 @@ results_file = sys.argv[3]
 schema_path = sys.argv[4]
 
 # Create pipestat manager and then report values
-psm = pipestat.PipestatManager(
-    schema_path=schema_path,
+psm = pipestat.PipestatManager.from_file_backend(
     results_file_path=results_file,
+    schema_path=schema_path,
     record_identifier=sample_name,
 )
 

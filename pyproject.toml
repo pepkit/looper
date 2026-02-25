@@ -1,0 +1,95 @@
+[project]
+name = "looper"
+version = "2.1.0"
+description = "A pipeline submission engine that parses sample inputs and submits pipelines for each sample."
+readme = "README.md"
+license = "BSD-2-Clause"
+requires-python = ">=3.10"
+authors = [
+    { name = "Nathan Sheffield" },
+    { name = "Vince Reuter" },
+    { name = "Michal Stolarczyk" },
+    { name = "Johanna Klughammer" },
+    { name = "Andre Rendeiro" },
+    { name = "Donald Campbell" },
+]
+keywords = ["bioinformatics", "sequencing", "ngs"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "License :: OSI Approved :: BSD License",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+]
+dependencies = [
+    "colorama>=0.3.9",
+    "eido>=0.2.4",
+    "jinja2",
+    "logmuse>=0.2.0",
+    "pandas>=2.0.2",
+    "pephubclient>=0.4.0",
+    "pipestat>=0.12.0a1",
+    "peppy>=0.40.6",
+    "pyyaml>=3.12",
+    "rich>=9.10.0",
+    "ubiquerg>=0.8.1",
+    "yacman @ git+https://github.com/databio/yacman.git@dev",  # TODO: revert to yacman>=0.9.5 after release
+    "pydantic-settings>=2.0.0",
+    "psutil",
+]
+
+[project.urls]
+Homepage = "https://github.com/pepkit/looper"
+
+[project.scripts]
+looper = "looper.cli_pydantic:main_cli"
+divvy = "looper.__main__:divvy_main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[project.optional-dependencies]
+api = [
+    "fastapi>=0.100.0",
+    "uvicorn>=0.22.0",
+]
+test = [
+    "hypothesis>=6.84.3",
+    "mock",
+    "pytest",
+    "pytest-cov",
+    "pytest-remotedata",
+    "GitPython",
+    "psutil",
+]
+
+[tool.pytest.ini_options]
+addopts = "-rfE"
+testpaths = ["tests/unit", "tests/divvytests"]  # Fast tests only by default
+# Integration tests: RUN_INTEGRATION_TESTS=true pytest tests/integration
+python_files = ["test_*.py"]
+python_classes = ["Test*", "*Test", "*Tests", "*Tester"]
+python_functions = ["test_*"]
+
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+ignore = ["F403", "F405", "E501"]
+
+[tool.ruff.lint.per-file-ignores]
+"looper/__init__.py" = ["E402", "F401"]
+"looper/looper.py" = ["E402"]
+"looper/processed_project.py" = ["E402", "F821"]
+"tests/**" = ["F841", "E712", "E722"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["looper"]

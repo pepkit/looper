@@ -3,9 +3,8 @@
 import os
 from enum import Enum
 
-__author__ = "Databio lab"
-__email__ = "nathan@code.databio.org"
-
+# Re-exported from command_models.messages for backwards compatibility
+from .command_models.messages import MESSAGE_BY_SUBCOMMAND
 
 __all__ = [
     "BUTTON_APPEARANCE_BY_FLAG",
@@ -107,14 +106,18 @@ APPEARANCE_BY_FLAG = {
 }
 
 
-def _get_apperance_dict(type, templ=APPEARANCE_BY_FLAG):
-    """
-    Based on the type of the HTML element provided construct the appearence
-     mapping using the template
+def _get_apperance_dict(type: str, templ: dict = APPEARANCE_BY_FLAG) -> dict:
+    """Construct the appearance mapping using the template.
 
-    :param dict templ: appearance template to populate
-    :param str type: type of HTML element to populate template with
-    :return dict: populated appearance template
+    Based on the type of the HTML element provided construct the appearance
+    mapping using the template.
+
+    Args:
+        type (str): Type of HTML element to populate template with.
+        templ (dict): Appearance template to populate.
+
+    Returns:
+        dict: Populated appearance template.
     """
     from copy import deepcopy
 
@@ -133,7 +136,6 @@ DEBUG_EIDO_VALIDATION = "EidoValidationError"
 # Compute-related (for divvy)
 COMPUTE_SETTINGS_VARNAME = ["DIVCFG"]
 DEFAULT_COMPUTE_RESOURCES_NAME = "default"
-OLD_COMPUTE_KEY = "compute"
 NEW_COMPUTE_KEY = "compute_packages"
 DEFAULT_CONFIG_FILEPATH = os.path.join(
     os.path.dirname(__file__), "default_config", "divvy_config.yaml"
@@ -255,21 +257,6 @@ SAMPLE_EXCLUSION_OPTNAME = "sel-excl"
 SAMPLE_INCLUSION_OPTNAME = "sel-incl"
 SAMPLE_SELECTION_FLAG_OPTNAME = "sel-flag"
 SAMPLE_EXCLUSION_FLAG_OPTNAME = "exc-flag"
-
-MESSAGE_BY_SUBCOMMAND = {
-    "run": "Run or submit sample jobs.",
-    "rerun": "Resubmit sample jobs with failed flags.",
-    "runp": "Run or submit project jobs.",
-    "table": "Write summary stats table for project samples.",
-    "report": "Create browsable HTML report of project results.",
-    "destroy": "Remove output files of the project.",
-    "check": "Check flag status of current runs.",
-    "clean": "Run clean scripts of already processed jobs.",
-    "inspect": "Print information about a project.",
-    "init": "Initialize looper config file.",
-    "init-piface": "Initialize generic pipeline interface.",
-    "link": "Create directory of symlinks for reported results.",
-}
 
 # Add project/sample enum
 

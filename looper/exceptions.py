@@ -3,9 +3,6 @@
 from abc import ABCMeta
 from collections.abc import Iterable
 
-__author__ = "Vince Reuter"
-__email__ = "vreuter@virginia.edu"
-
 _all__ = [
     "DuplicatePipelineKeyException",
     "InvalidResourceSpecificationException",
@@ -34,35 +31,35 @@ class SampleFailedException(LooperError):
 class MisconfigurationException(LooperError):
     """Looper not properly configured"""
 
-    def __init__(self, key):
+    def __init__(self, key: str) -> None:
         super(MisconfigurationException, self).__init__(key)
 
 
 class RegistryPathException(LooperError):
     """Duplication of pipeline identifier precludes unique pipeline ref."""
 
-    def __init__(self, msg):
+    def __init__(self, msg: str) -> None:
         super(RegistryPathException, self).__init__(msg)
 
 
 class DuplicatePipelineKeyException(LooperError):
     """Duplication of pipeline identifier precludes unique pipeline ref."""
 
-    def __init__(self, key):
+    def __init__(self, key: str) -> None:
         super(DuplicatePipelineKeyException, self).__init__(key)
 
 
 class InvalidResourceSpecificationException(LooperError):
     """Pipeline interface resources--if present--needs default."""
 
-    def __init__(self, reason):
+    def __init__(self, reason: str) -> None:
         super(InvalidResourceSpecificationException, self).__init__(reason)
 
 
 class JobSubmissionException(LooperError):
     """Error type for when job submission fails."""
 
-    def __init__(self, sub_cmd, script):
+    def __init__(self, sub_cmd: str, script: str) -> None:
         self.script = script
         reason = "Error for command {} and script '{}'".format(sub_cmd, self.script)
         super(JobSubmissionException, self).__init__(reason)
@@ -73,8 +70,8 @@ class PipestatConfigurationException(LooperError):
 
     def __init__(
         self,
-        sub_cmd,
-    ):
+        sub_cmd: str,
+    ) -> None:
         reason = "Pipestat must be configured for command {}".format(sub_cmd)
         super(PipestatConfigurationException, self).__init__(reason)
 
@@ -82,18 +79,18 @@ class PipestatConfigurationException(LooperError):
 class MissingPipelineConfigurationException(LooperError):
     """A selected pipeline needs configuration data."""
 
-    def __init__(self, pipeline):
+    def __init__(self, pipeline: str) -> None:
         super(MissingPipelineConfigurationException, self).__init__(pipeline)
 
 
 class PipelineInterfaceConfigError(LooperError):
     """Error with PipelineInterface config data during construction."""
 
-    def __init__(self, context):
-        """
-        For exception context, provide message or collection of missing sections.
+    def __init__(self, context: str | Iterable[str]) -> None:
+        """For exception context, provide message or collection of missing sections.
 
-        :param str | Iterable[str] context:
+        Args:
+            context (str | Iterable[str]): Message or collection of missing sections.
         """
         if not isinstance(context, str) and isinstance(context, Iterable):
             context = "Missing section(s): {}".format(", ".join(context))
@@ -103,7 +100,7 @@ class PipelineInterfaceConfigError(LooperError):
 class PipelineInterfaceRequirementsError(LooperError):
     """Invalid specification of pipeline requirements in interface config."""
 
-    def __init__(self, typename_by_requirement):
+    def __init__(self, typename_by_requirement: dict) -> None:
         super(PipelineInterfaceRequirementsError, self).__init__(
             "{} invalid requirements: {}".format(
                 len(typename_by_requirement), typename_by_requirement
@@ -115,5 +112,5 @@ class PipelineInterfaceRequirementsError(LooperError):
 class LooperReportError(LooperError):
     """Looper reporting errors"""
 
-    def __init__(self, reason):
+    def __init__(self, reason: str) -> None:
         super(LooperReportError, self).__init__(reason)

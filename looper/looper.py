@@ -5,13 +5,10 @@ Looper: a pipeline submission engine. https://github.com/pepkit/looper
 
 import abc
 import argparse
-import csv
 import glob
 import logging
-import subprocess
-import yaml
 import os
-import pandas as _pd
+import subprocess
 
 # Need specific sequence of actions for colorama imports?
 from colorama import init
@@ -19,34 +16,41 @@ from colorama import init
 from .const import PipelineLevel
 
 init()
-from shutil import rmtree
-
 # from collections.abc import Mapping
 from collections import defaultdict
+from shutil import rmtree
+
 from colorama import Fore, Style
 from eido import validate_config, validate_sample
 from eido.exceptions import EidoValidationError
-from jsonschema import ValidationError
-from peppy.const import *
 from peppy.exceptions import RemoteYAMLError
+from pipestat.exceptions import PipestatSummarizeError
+from pipestat.reports import get_file_for_table
 from rich.color import Color
 from rich.console import Console
 from rich.table import Table
 from ubiquerg.cli_tools import query_yes_no
 
-
 from .conductor import SubmissionConductor
-
-from .exceptions import *
-from .const import *
+from .const import (
+    DEBUG_COMMANDS,
+    DEBUG_EIDO_VALIDATION,
+    DEBUG_JOBS,
+    NOT_SUB_MSG,
+    SUBMISSION_FAILURE_MESSAGE,
+)
+from .exceptions import (
+    JobSubmissionException,
+    LooperReportError,
+    MisconfigurationException,
+    SampleFailedException,
+)
 from .project import Project
 from .utils import (
-    desired_samples_range_skipped,
     desired_samples_range_limited,
+    desired_samples_range_skipped,
     sample_folder,
 )
-from pipestat.reports import get_file_for_table
-from pipestat.exceptions import PipestatSummarizeError
 
 _PKGNAME = "looper"
 _LOGGER = logging.getLogger(_PKGNAME)
@@ -63,11 +67,11 @@ class Executor(object):
 
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, prj):
-        """
-        The Project defines the instance; establish an iteration counter.
+    def __init__(self, prj: Project) -> None:
+        """The Project defines the instance; establish an iteration counter.
 
-        :param Project prj: Project with which to work/operate on
+        Args:
+            prj (Project): Project with which to work/operate on.
         """
         super(Executor, self).__init__()
         self.prj = prj
@@ -80,11 +84,11 @@ class Executor(object):
 
 
 class Checker(Executor):
-    def __call__(self, args):
-        """
-        Check Project status, using pipestat.
+    def __call__(self, args: argparse.Namespace) -> dict:
+        """Check Project status, using pipestat.
 
-        :param argparse.Namespace: arguments provided to the command
+        Args:
+            args (argparse.Namespace): Arguments provided to the command.
         """
 
         # aggregate pipeline status data
@@ -92,7 +96,6 @@ class Checker(Executor):
 
         psms = {}
         if getattr(args, "project", None):
-
             for piface in self.prj.project_pipeline_interfaces:
                 if piface.psm.pipeline_type == PipelineLevel.PROJECT.value:
                     if piface.psm.pipeline_name not in psms:
@@ -131,7 +134,7 @@ class Checker(Executor):
                 title=table_title,
                 width=len(table_title) + 10,
             )
-            table.add_column(f"Status", justify="center")
+            table.add_column("Status", justify="center")
             table.add_column("Jobs count/total jobs", justify="center")
             for status_id in psms[pipeline_name].status_schema.keys():
                 status_list = list(pipeline_status.values())
@@ -171,7 +174,7 @@ class Checker(Executor):
             table = Table(
                 show_header=True,
                 header_style="bold magenta",
-                title=f"Status codes description",
+                title="Status codes description",
                 width=len(psms[pipeline_name].status_schema_source) + 20,
                 caption=f"Descriptions source: {psms[pipeline_name].status_schema_source}",
             )
@@ -190,12 +193,12 @@ class Checker(Executor):
 class Cleaner(Executor):
     """Remove all intermediate files (defined by pypiper clean scripts)."""
 
-    def __call__(self, args, preview_flag=True):
-        """
-        Execute the file cleaning process.
+    def __call__(self, args: argparse.Namespace, preview_flag: bool = True) -> int:
+        """Execute the file cleaning process.
 
-        :param argparse.Namespace args: command-line options and arguments
-        :param bool preview_flag: whether to halt before actually removing files
+        Args:
+            args (argparse.Namespace): Command-line options and arguments.
+            preview_flag (bool): Whether to halt before actually removing files.
         """
         self.counter.show(name=self.prj.name, type="project")
         for sample in self.prj.samples:
@@ -251,12 +254,14 @@ def select_samples(prj: Project, args: argparse.Namespace):
 class Destroyer(Executor):
     """Destroyer of files and folders associated with Project's Samples"""
 
-    def __call__(self, args, preview_flag=True):
-        """
-        Completely remove all output produced by any pipelines.
+    def __call__(
+        self, args: argparse.Namespace, preview_flag: bool = True
+    ) -> int | None:
+        """Completely remove all output produced by any pipelines.
 
-        :param argparse.Namespace args: command-line options and arguments
-        :param bool preview_flag: whether to halt before actually removing files
+        Args:
+            args (argparse.Namespace): Command-line options and arguments.
+            preview_flag (bool): Whether to halt before actually removing files.
         """
 
         use_pipestat = (
@@ -317,22 +322,20 @@ class Destroyer(Executor):
 class Collator(Executor):
     """Submitter for project-level pipelines"""
 
-    def __init__(self, prj):
-        """
-        Initializes an instance
+    def __init__(self, prj: Project) -> None:
+        """Initializes an instance.
 
-        :param Project prj: Project with which to work/operate on
+        Args:
+            prj (Project): Project with which to work/operate on.
         """
         super(Executor, self).__init__()
         self.prj = prj
 
-    def __call__(self, args, **compute_kwargs):
-        """
-        Matches collators by protocols, creates submission scripts
-        and submits them
+    def __call__(self, args: argparse.Namespace, **compute_kwargs) -> dict:
+        """Matches collators by protocols, creates submission scripts and submits them.
 
-        :param argparse.Namespace args: parsed command-line options and
-            arguments, recognized by looper
+        Args:
+            args (argparse.Namespace): Parsed command-line options and arguments, recognized by looper.
         """
         jobs = 0
         self.debug = {}
@@ -378,16 +381,19 @@ class Collator(Executor):
 class Runner(Executor):
     """The true submitter of pipelines"""
 
-    def __call__(self, args, top_level_args=None, rerun=False, **compute_kwargs):
-        """
-        Do the Sample submission.
+    def __call__(
+        self,
+        args: argparse.Namespace,
+        top_level_args=None,
+        rerun: bool = False,
+        **compute_kwargs,
+    ) -> dict:
+        """Do the Sample submission.
 
-        :param argparse.Namespace args: parsed command-line options and
-            arguments, recognized by looper
-        :param list remaining_args: command-line options and arguments not
-            recognized by looper, germane to samples/pipelines
-        :param bool rerun: whether the given sample is being rerun rather than
-            run for the first time
+        Args:
+            args (argparse.Namespace): Parsed command-line options and arguments, recognized by looper.
+            remaining_args (list): Command-line options and arguments not recognized by looper, germane to samples/pipelines.
+            rerun (bool): Whether the given sample is being rerun rather than run for the first time.
         """
         self.debug = {}  # initialize empty dict for return values
         max_cmds = sum(list(map(len, self.prj._samples_by_interface.values())))
@@ -531,8 +537,9 @@ class Runner(Executor):
         failed_sub_samples = samples_by_reason.get(SUBMISSION_FAILURE_MESSAGE)
         if failed_sub_samples:
             _LOGGER.info(
-                "\n{} samples with at least one failed job submission:"
-                " {}".format(len(failed_sub_samples), ", ".join(failed_sub_samples))
+                "\n{} samples with at least one failed job submission: {}".format(
+                    len(failed_sub_samples), ", ".join(failed_sub_samples)
+                )
             )
 
         # If failure keys are only added when there's at least one sample that
@@ -560,10 +567,9 @@ class Runner(Executor):
 class Reporter(Executor):
     """Combine project outputs into a browsable HTML report"""
 
-    def __call__(self, args):
+    def __call__(self, args: argparse.Namespace) -> dict:
         # initialize the report builder
         self.debug = {}
-        p = self.prj
         project_level = getattr(args, "project", None)
 
         portable = args.portable
@@ -573,7 +579,6 @@ class Reporter(Executor):
         psms = {}
 
         if project_level:
-
             for piface in self.prj.project_pipeline_interfaces:
                 if piface.psm.pipeline_type == PipelineLevel.PROJECT.value:
                     if piface.psm.pipeline_name not in psms:
@@ -616,9 +621,7 @@ class Reporter(Executor):
 class Linker(Executor):
     """Create symlinks for reported results. Requires pipestat to be configured."""
 
-    def __call__(self, args):
-        # initialize the report builder
-        p = self.prj
+    def __call__(self, args: argparse.Namespace) -> None:
         project_level = getattr(args, "project", None)
         link_dir = getattr(args, "output_dir", None)
 
@@ -639,12 +642,13 @@ class Linker(Executor):
 
 
 class Tabulator(Executor):
-    """Project/Sample statistics and table output generator
+    """Project/Sample statistics and table output generator.
 
-    :return list[str|any] results: list containing output file paths of stats and objects
+    Returns:
+        list[str|any]: List containing output file paths of stats and objects.
     """
 
-    def __call__(self, args):
+    def __call__(self, args: argparse.Namespace) -> list:
         # p = self.prj
         project_level = getattr(args, "project", None)
         report_dir = getattr(args, "report_dir", None)
@@ -668,19 +672,17 @@ class Tabulator(Executor):
         return results
 
 
-def _create_failure_message(reason, samples):
+def _create_failure_message(reason: str, samples: set[str]) -> str:
     """Explain lack of submission for a single reason, 1 or more samples."""
     return f"{Fore.LIGHTRED_EX + reason + Style.RESET_ALL}: {', '.join(samples)}"
 
 
-def _remove_or_dry_run(paths, dry_run=False):
-    """
-    Remove file or directory or just inform what would be removed in
-    case of dry run
+def _remove_or_dry_run(paths: list | str, dry_run: bool = False) -> None:
+    """Remove file or directory or just inform what would be removed in case of dry run.
 
-    :param list|str paths: list of paths to files/dirs to be removed
-    :param bool dry_run: logical indicating whether the files should remain
-        untouched and message printed
+    Args:
+        paths (list|str): List of paths to files/dirs to be removed.
+        dry_run (bool): Logical indicating whether the files should remain untouched and message printed.
     """
     paths = paths if isinstance(paths, list) else [paths]
     for path in paths:
@@ -697,7 +699,9 @@ def _remove_or_dry_run(paths, dry_run=False):
             _LOGGER.info(path + " does not exist.")
 
 
-def destroy_summary(prj, dry_run=False, project_level=False):
+def destroy_summary(
+    prj: Project, dry_run: bool = False, project_level: bool = False
+) -> None:
     """
     Delete the summary files if not in dry run mode
     This function is for use with pipestat configured projects.
@@ -760,29 +764,31 @@ def destroy_summary(prj, dry_run=False, project_level=False):
 
 
 class LooperCounter(object):
-    """
-    Count samples as you loop through them, and create text for the
-    subcommand logging status messages.
+    """Count samples as you loop through them, and create text for the subcommand logging status messages.
 
-    :param int total: number of jobs to process
+    Args:
+        total (int): Number of jobs to process.
     """
 
-    def __init__(self, total):
+    def __init__(self, total: int) -> None:
         self.count = 0
         self.total = total
 
-    def show(self, name, type="sample", pipeline_name=None):
-        """
-        Display sample counts status for a particular protocol type.
+    def show(
+        self, name: str, type: str = "sample", pipeline_name: str | None = None
+    ) -> str:
+        """Display sample counts status for a particular protocol type.
 
         The counts are running vs. total for the protocol within the Project,
         and as a side-effect of the call, the running count is incremented.
 
-        :param str name: name of the sample
-        :param str type: the name of the level of entity being displayed,
-            either project or sample
-        :param str pipeline_name: name of the pipeline
-        :return str: message suitable for logging a status update
+        Args:
+            name (str): Name of the sample.
+            type (str): The name of the level of entity being displayed, either project or sample.
+            pipeline_name (str): Name of the pipeline.
+
+        Returns:
+            str: Message suitable for logging a status update.
         """
         self.count += 1
         return _submission_status_text(
@@ -794,16 +800,21 @@ class LooperCounter(object):
             color=Fore.CYAN,
         )
 
-    def reset(self):
+    def reset(self) -> None:
         self.count = 0
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "LooperCounter of size {}".format(self.total)
 
 
 def _submission_status_text(
-    curr, total, name, pipeline_name=None, type="sample", color=Fore.CYAN
-):
+    curr: int,
+    total: int,
+    name: str,
+    pipeline_name: str | None = None,
+    type: str = "sample",
+    color: str = Fore.CYAN,
+) -> str:
     """Generate submission sample text for run or collate"""
     txt = color + f"## [{curr} of {total}] {type}: {name}"
     if pipeline_name:

@@ -1,9 +1,10 @@
 """Assorted divvy tests"""
 
 import pytest
-from yacman import YacAttMap, load_yaml
+from yacman import YAMLConfigManager, load_yaml
+
 from looper.divvy import DEFAULT_COMPUTE_RESOURCES_NAME
-from tests.divvytests.conftest import DCC_ATTRIBUTES, FILES, mock_env_missing
+from tests.divvytests.conftest import DCC_ATTRIBUTES, FILES
 
 
 class TestDefaultDCC:
@@ -60,9 +61,9 @@ class TestGettingActivePackage:
     """Test for the get_active_package method"""
 
     def test_settings_nonempty(self, dcc):
-        """Test if get_active_package produces a nonempty YacAttMap object"""
+        """Test if get_active_package produces a nonempty YAMLConfigManager object"""
         settings = dcc.get_active_package()
-        assert settings != YacAttMap()
+        assert settings != YAMLConfigManager()
 
 
 class TestListingPackages:
@@ -87,7 +88,7 @@ class TestResettingSettings:
     def test_reset_active_settings_works(self, dcc):
         """Test if the settings are cleared"""
         dcc.reset_active_settings()
-        assert dcc.get_active_package() == YacAttMap({})
+        assert dcc.get_active_package() == YAMLConfigManager({})
 
 
 class UpdatingPackagesTests:
@@ -98,4 +99,4 @@ class UpdatingPackagesTests:
         """Test updating does not produce empty compute packages"""
         entries = load_yaml(config_file)
         dcc.update(entries)
-        assert dcc["compute_packages"] != YacAttMap()
+        assert dcc["compute_packages"] != YAMLConfigManager()

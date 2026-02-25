@@ -1,21 +1,23 @@
-import logmuse
 import os
 import sys
+
+import logmuse
 import yaml
+from ubiquerg import VersionInHelpParser, is_writable
 from yaml import SafeLoader
-from ubiquerg import is_writable, VersionInHelpParser
+
 from .const import (
     DEFAULT_COMPUTE_RESOURCES_NAME,
     DEFAULT_CONFIG_FILEPATH,
 )
-from .divvy import select_divvy_config, ComputingConfiguration, divvy_init
+from .divvy import ComputingConfiguration, divvy_init, select_divvy_config
 
 
 def build_argparser():
-    """
-    Builds argument parser.
+    """Builds argument parser.
 
-    :return argparse.ArgumentParser
+    Returns:
+        argparse.ArgumentParser: The argument parser.
     """
 
     banner = (
@@ -99,7 +101,7 @@ def build_argparser():
     return parser
 
 
-def main():
+def main() -> None:
     """Primary workflow for divvy CLI"""
 
     parser = logmuse.add_logging_options(build_argparser())
