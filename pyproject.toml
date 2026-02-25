@@ -11,6 +11,7 @@ authors = [
     { name = "Michal Stolarczyk" },
     { name = "Johanna Klughammer" },
     { name = "Andre Rendeiro" },
+    { name = "Donald Campbell" },
 ]
 keywords = ["bioinformatics", "sequencing", "ngs"]
 classifiers = [
