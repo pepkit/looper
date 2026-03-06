@@ -9,9 +9,6 @@ local level, but this will at least provide a foundation.
 
 from importlib.metadata import version
 
-import logmuse
-
-logmuse.init_logger("looper")
 __version__ = version("looper")
 
 # Lazy imports - only loaded when accessed
