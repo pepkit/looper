@@ -175,8 +175,8 @@ class SubmissionConductor(object):
 
     def __init__(
         self,
-        pipeline_interface,
-        prj,
+        pipeline_interface: "PipelineInterface",
+        prj: "Project",
         delay: float = 0,
         extra_args: str | None = None,
         extra_args_override: str | None = None,
@@ -196,7 +196,7 @@ class SubmissionConductor(object):
         be overseen by this instance, respectively.
 
         Args:
-            pipeline_interface (PipelineInterface): Collection of important
+            pipeline_interface: Collection of important
                 data for one or more pipelines, like resource allocation packages
                 and option/argument specifications.
             prj: Project with which each sample being considered is
