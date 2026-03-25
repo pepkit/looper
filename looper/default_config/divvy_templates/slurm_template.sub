@@ -11,4 +11,8 @@
 echo 'Compute node:' `hostname`
 echo 'Start time:' `date +'%Y-%m-%d %T'`
 
+{PRE_COMMAND}
+
 {CODE}
+
+{POST_COMMAND}

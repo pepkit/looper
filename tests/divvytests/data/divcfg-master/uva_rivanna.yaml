@@ -10,8 +10,8 @@ adapters:
   BULKER_CRATE: compute.bulker_crate
   DOCKER_ARGS: compute.docker_args
   DOCKER_IMAGE: compute.docker_image
-  SINGULARITY_IMAGE: compute.singularity_image
-  SINGULARITY_ARGS: compute.singularity_args
+  APPTAINER_IMAGE: compute.apptainer_image
+  APPTAINER_ARGS: compute.apptainer_args
 compute_packages:
   default:
     submission_template: templates/slurm_template.sub
@@ -32,14 +32,14 @@ compute_packages:
   local:
     submission_template: templates/localhost_template.sub
     submission_command: .
-  singularity_slurm:
-    submission_template: templates/slurm_singularity_template.sub
+  apptainer_slurm:
+    submission_template: templates/slurm_apptainer_template.sub
     submission_command: sbatch
-    singularity_args: -B /sfs/lustre:/sfs/lustre,/nm/t1:/nm/t1
-  singularity_local:
-    submission_template: templates/localhost_singularity_template.sub
+    apptainer_args: -B /sfs/lustre:/sfs/lustre,/nm/t1:/nm/t1
+  apptainer_local:
+    submission_template: templates/localhost_apptainer_template.sub
     submission_command: .
-    singularity_args: -B /apps:/apps
+    apptainer_args: -B /apps:/apps
   bulker_slurm:
     submission_template: templates/slurm_bulker_template.sub
     submission_command: sbatch

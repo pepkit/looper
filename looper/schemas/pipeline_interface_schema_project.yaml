@@ -42,9 +42,9 @@ properties:
       docker_image:
         type: string
         description: "Docker image identifier"
-      singularity_image:
+      apptainer_image:
         type: string
-        description: "Singularity image identifier"
+        description: "Apptainer image identifier"
   inject_env_vars:
     type: object
     description: "Environment variables to inject into submission scripts. Keys are variable names, values are Jinja2 templates."

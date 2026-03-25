@@ -1,1 +1,15 @@
-This has not been implemented, but you could add whatever cluster submission systems here, just use the slurm_template as an example.
+#!/bin/bash
+#$ -N '{JOBNAME}'
+#$ -o '{LOGFILE}'
+#$ -l mem_free={MEM}
+#$ -pe smp {CORES}
+#$ -l h_rt={TIME}
+
+echo 'Compute node:' `hostname`
+echo 'Start time:' `date +'%Y-%m-%d %T'`
+
+{PRE_COMMAND}
+
+{CODE}
+
+{POST_COMMAND}

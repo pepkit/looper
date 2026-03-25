@@ -10,29 +10,54 @@ adapters:
   MEM: compute.mem
   DOCKER_ARGS: compute.docker_args
   DOCKER_IMAGE: compute.docker_image
-  SINGULARITY_IMAGE: compute.singularity_image
-  SINGULARITY_ARGS: compute.singularity_args
+  APPTAINER_IMAGE: compute.apptainer_image
+  APPTAINER_ARGS: compute.apptainer_args
+  BULKER_CRATE: compute.bulker_crate
+  PRE_COMMAND: compute.pre_command
+  POST_COMMAND: compute.post_command
 compute_packages:
   default:
     submission_template: divvy_templates/localhost_template.sub
     submission_command: .
+    pre_command: ""
+    post_command: ""
   local:
     submission_template: divvy_templates/localhost_template.sub
     submission_command: .
+    pre_command: ""
+    post_command: ""
   slurm:
     submission_template: divvy_templates/slurm_template.sub
     submission_command: sbatch
-  singularity:
-    submission_template: divvy_templates/localhost_singularity_template.sub
+    pre_command: ""
+    post_command: ""
+  sge:
+    submission_template: divvy_templates/sge_template.sub
+    submission_command: qsub
+    pre_command: ""
+    post_command: ""
+  apptainer:
+    submission_template: divvy_templates/localhost_apptainer_template.sub
     submission_command: .
-    singularity_args: ""
-  singularity_slurm:
-    submission_template: divvy_templates/slurm_singularity_template.sub
+    apptainer_args: ""
+    pre_command: ""
+    post_command: ""
+  apptainer_slurm:
+    submission_template: divvy_templates/slurm_apptainer_template.sub
     submission_command: sbatch
-    singularity_args: ""
+    apptainer_args: ""
+    pre_command: ""
+    post_command: ""
   bulker_local:
     submission_template: divvy_templates/localhost_bulker_template.sub
     submission_command: sh
+    pre_command: ""
+    post_command: ""
+  bulker_slurm:
+    submission_template: divvy_templates/bulker_slurm_template.sub
+    submission_command: sbatch
+    pre_command: ""
+    post_command: ""
   docker:
     submission_template: divvy_templates/localhost_docker_template.sub
     submission_command: .
@@ -42,6 +67,7 @@ compute_packages:
       --volume="/etc/group:/etc/group:ro" \
       --volume="/etc/passwd:/etc/passwd:ro" \
       --volume="/etc/shadow:/etc/shadow:ro"  \
-      --volume="/etc/sudoers.d:/etc/sudoers.d:ro" \
       --volume="/tmp/.X11-unix:/tmp/.X11-unix:rw" \
       --workdir="`pwd`" \
+    pre_command: ""
+    post_command: ""

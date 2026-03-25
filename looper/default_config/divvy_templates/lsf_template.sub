@@ -1,4 +1,7 @@
 #!/bin/bash
 
-bsub -n{CORES} -W {TIME} -R \"rusage[mem={MEM}]\" -o {LOGFILE} {CODE}
+{PRE_COMMAND}
 
+bsub -n{CORES} -W {TIME} -R "rusage[mem={MEM}]" -o {LOGFILE} {CODE}
+
+{POST_COMMAND}
