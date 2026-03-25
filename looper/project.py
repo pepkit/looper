@@ -130,10 +130,6 @@ class Project(peppyProject):
         amendments (Iterable[str]): Name indicating amendment to use, optional.
         divcfg_path (str): Path to an environment configuration YAML file
             specifying compute settings.
-        permissive (bool): Whether a error should be thrown if a sample input
-            file(s) do not exist or cannot be open.
-        compute_env_file (str): Environment configuration YAML file specifying
-            compute settings.
     """
 
     def __init__(

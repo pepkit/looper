@@ -32,8 +32,6 @@ class ComputingConfiguration(YAMLConfigManager):
     Args:
         entries (str | Iterable[(str, object)] | Mapping[str, object]): Config
             collection of key-value pairs.
-        filepath (str): YAML file specifying computing package data (the
-            `DIVCFG` file).
     """
 
     def __init__(
