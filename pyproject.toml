@@ -88,6 +88,7 @@ ignore = ["F403", "F405", "E501"]
 [tool.ruff.lint.per-file-ignores]
 "looper/__init__.py" = ["E402", "F401"]
 "looper/looper.py" = ["E402"]
+"looper/conductor.py" = ["F821"]
 "looper/processed_project.py" = ["E402", "F821"]
 "tests/**" = ["F841", "E712", "E722"]
 

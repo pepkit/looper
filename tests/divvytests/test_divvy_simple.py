@@ -1,4 +1,3 @@
-
 import pytest
 from yacman import YAMLConfigManager
 
