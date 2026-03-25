@@ -13,6 +13,9 @@ echo 'Start time:' `date +'%Y-%m-%d %T'`
 
 {PRE_COMMAND}
 
-{CODE}
+apptainer instance start {APPTAINER_ARGS} {APPTAINER_IMAGE} {JOBNAME}_image
+srun apptainer exec instance://{JOBNAME}_image {CODE}
+
+apptainer instance stop {JOBNAME}_image
 
 {POST_COMMAND}

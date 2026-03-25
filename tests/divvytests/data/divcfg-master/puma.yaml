@@ -11,10 +11,10 @@ compute_packages:
   default:
     submission_template: templates/localhost_template.sub
     submission_command: sh
-  singularity:
-    submission_template: templates/localhost_singularity_template.sub
+  apptainer:
+    submission_template: templates/localhost_apptainer_template.sub
     submission_command: sh
-    singularity_args: -B /ext:/ext
+    apptainer_args: -B /ext:/ext
   docker:
     submission_template: templates/localhost_docker_template.sub
     submission_command: sh

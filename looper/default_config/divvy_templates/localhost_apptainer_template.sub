@@ -6,7 +6,8 @@ echo 'Start time:' `date +'%Y-%m-%d %T'`
 {PRE_COMMAND}
 
 {
-docker run --rm -it {DOCKER_ARGS} {DOCKER_IMAGE} {CODE}
+apptainer instance start {APPTAINER_ARGS} {APPTAINER_IMAGE} {JOBNAME}_image
+apptainer exec instance://{JOBNAME}_image {CODE}
 } | tee {LOGFILE} --ignore-interrupts
 
 {POST_COMMAND}

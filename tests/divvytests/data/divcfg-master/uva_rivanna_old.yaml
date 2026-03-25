@@ -21,14 +21,14 @@ compute_packages:
   local:
     submission_template: templates/localhost_template.sub
     submission_command: sh
-  singularity_slurm:
-    submission_template: templates/slurm_singularity_template.sub
+  apptainer_slurm:
+    submission_template: templates/slurm_apptainer_template.sub
     submission_command: sbatch
-    singularity_args: -B /sfs/lustre:/sfs/lustre,/nm/t1:/nm/t1
-  singularity_local:
-    submission_template: templates/localhost_singularity_template.sub
+    apptainer_args: -B /sfs/lustre:/sfs/lustre,/nm/t1:/nm/t1
+  apptainer_local:
+    submission_template: templates/localhost_apptainer_template.sub
     submission_command: sh
-    singularity_args: -B /apps:/apps
+    apptainer_args: -B /apps:/apps
   bulker_slurm:
     submission_template: templates/slurm_bulker_template.sub
     submission_command: sbatch

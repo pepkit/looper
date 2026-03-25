@@ -39,9 +39,9 @@ properties:
       docker_image:
         type: string
         description: "Docker image identifier"
-      singularity_image:
+      apptainer_image:
         type: string
-        description: "Singularity image identifier"
+        description: "Apptainer image identifier"
 if:
   properties:
     pipeline_type:

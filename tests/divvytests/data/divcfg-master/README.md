@@ -13,7 +13,7 @@ If you're at one of the following places, set-up is very simple. Here's a list o
    * `nih_biowulf2.yaml`: [Biowulf2](https://hpc.nih.gov/docs/userguide.html) cluster at the NIH
    * `stanford_sherlock.yaml`: [Sherlock](http://sherlock.stanford.edu/mediawiki/index.php/Current_policies) cluster at Stanford
    * `ski-cer_lilac.yaml`: *lilac* cluster at Memorial Sloan Kettering
-   * `local_containers.yaml`: A generic local desktop or server (with no cluster management system) that will use docker or singularity containers.
+   * `local_containers.yaml`: A generic local desktop or server (with no cluster management system) that will use docker or apptainer containers.
 
 To configure `divvy` to use one of these, all you have to do is:
 
@@ -52,4 +52,4 @@ The `divvy` documentation includes detailed instructions for [how to write your 
 
 # What is divvy?
 
-`Divvy` enables any tool to seamlessly switch between cluster resource managers (SGE, SLURM, *etc.*), linux containers (`docker`, `singularity`, *etc.*), or other computing environments.
+`Divvy` enables any tool to seamlessly switch between cluster resource managers (SGE, SLURM, *etc.*), linux containers (`docker`, `apptainer`, *etc.*), or other computing environments.

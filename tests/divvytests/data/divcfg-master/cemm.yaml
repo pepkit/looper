@@ -10,8 +10,8 @@ adapters:
   BULKER_CRATE: compute.bulker_crate
   DOCKER_ARGS: compute.docker_args
   DOCKER_IMAGE: compute.docker_image
-  SINGULARITY_IMAGE: compute.singularity_image
-  SINGULARITY_ARGS: compute.singularity_args
+  APPTAINER_IMAGE: compute.apptainer_image
+  APPTAINER_ARGS: compute.apptainer_args
 compute_packages:
   default:
     submission_template: templates/slurm_template.sub

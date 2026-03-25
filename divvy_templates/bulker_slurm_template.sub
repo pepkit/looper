@@ -11,7 +11,10 @@
 echo 'Compute node:' `hostname`
 echo 'Start time:' `date +'%Y-%m-%d %T'`
 
-singularity instance.start {SINGULARITY_ARGS} {SINGULARITY_IMAGE} {JOBNAME}_image
-srun singularity exec instance://{JOBNAME}_image {CODE}
+{PRE_COMMAND}
 
-singularity instance.stop {JOBNAME}_image
+eval "$(bulker activate -e {BULKER_CRATE})"
+
+{CODE}
+
+{POST_COMMAND}
