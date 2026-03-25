@@ -1,6 +1,6 @@
 [project]
 name = "looper"
-version = "2.1.0"
+version = "2.1.1"
 description = "A pipeline submission engine that parses sample inputs and submits pipelines for each sample."
 readme = "README.md"
 license = "BSD-2-Clause"
