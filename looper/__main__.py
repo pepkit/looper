@@ -122,8 +122,7 @@ def divvy_main(argv=None):
     dcc.activate_package(args.package)
 
     if args.command == "write":
-        outfile = args.outfile or "submit_script.sub"
-        dcc.write_script(outfile, extra_vars)
+        dcc.write_script(args.outfile, extra_vars)
         return 0
 
     if args.command == "submit":

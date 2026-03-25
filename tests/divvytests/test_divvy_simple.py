@@ -1,4 +1,5 @@
-import os
+import pytest
+from yacman import YAMLConfigManager
 
 import looper.divvy as divvy
 from looper.divvy import select_divvy_config
@@ -23,71 +24,53 @@ class TestPackageAtivation:
 
 
 class TestWriting:
-    def test_write_script(self):
+    def test_write_script(self, tmp_path):
         dcc_filepath = select_divvy_config(None)
-        dcc = divvy.ComputingConfiguration().from_yaml_file(filepath=dcc_filepath)
-        dcc
+        dcc = divvy.ComputingConfiguration.from_yaml_file(filepath=dcc_filepath)
         dcc.activate_package("singularity_slurm")
         extra_vars = {
             "singularity_image": "simg",
             "jobname": "jbname",
             "code": "mycode",
         }
-        dcc.write_script("test.sub", extra_vars)
-        with open("test.sub", "r") as f:
+        outfile = str(tmp_path / "test.sub")
+        dcc.write_script(outfile, extra_vars)
+        with open(outfile, "r") as f:
             contents = f.read()
         assert contents.find("mycode") > 0
         assert contents.find("{SINGULARITY_ARGS}") < 0
-        os.remove("test.sub")
 
 
-# class TestAdapters:
-#     @pytest.mark.parametrize(
-#         "compute",
-#         [
-#             dict({"mem": 1000, "test": 0}),
-#             YAMLConfigManager({"mem": 1000, "test": 0}),
-#             OrderedDict({"mem": 1000, "test": 0}),
-#         ],
-#     )
-#     @pytest.mark.parametrize("package", ["singularity_slurm", "slurm"])
-#     def test_write_script_adapters(self, compute, package):
-#         """Test successful adapter sourcing from various Mapping types"""
-#         dcc = divvy.ComputingConfiguration()
-#         dcc.activate_package(package)
-#         extra_vars = {"compute": compute}
-#         dcc.write_script("test.sub", extra_vars)
-#         with open("test.sub", "r") as f:
-#             contents = f.read()
-#             assert contents.find("1000") > 0
-#         os.remove("test.sub")
-#
-#     def test_adapters_overwitten_by_others(self):
-#         dcc = divvy.ComputingConfiguration()
-#         dcc.activate_package("singularity_slurm")
-#         compute = YAMLConfigManager({"mem": 1000})
-#         extra_vars = [{"compute": compute}, {"MEM": 333}]
-#         dcc.write_script("test1.sub", extra_vars)
-#         with open("test1.sub", "r") as f:
-#             contents = f.read()
-#             assert not (contents.find("1000") > 0)
-#             assert contents.find("333") > 0
-#         os.remove("test1.sub")
-#
+class TestAdapters:
+    @pytest.mark.parametrize(
+        "compute",
+        [
+            {"mem": 1000, "test": 0},
+            YAMLConfigManager({"mem": 1000, "test": 0}),
+        ],
+    )
+    @pytest.mark.parametrize("package", ["singularity_slurm", "slurm"])
+    def test_write_script_adapters(self, compute, package, tmp_path):
+        """Test successful adapter sourcing from various Mapping types"""
+        dcc_filepath = select_divvy_config(None)
+        dcc = divvy.ComputingConfiguration.from_yaml_file(filepath=dcc_filepath)
+        dcc.activate_package(package)
+        extra_vars = {"compute": compute}
+        outfile = str(tmp_path / "test.sub")
+        dcc.write_script(outfile, extra_vars)
+        with open(outfile, "r") as f:
+            contents = f.read()
+            assert contents.find("1000") > 0
 
-# def test_update():
-# 	# probably will be removed later
-# 	dcc1 = divvy.ComputingConfiguration()
-# 	dcc1.update_packages("code/divvy/tests/data/pepenv-master/cemm.yaml")
-# 	dcc2 = divvy.ComputingConfiguration()
-# 	y = yacman.load_yaml("code/divvy/tests/data/pepenv-master/cemm.yaml")
-# 	dcc2.update(y)
-# 	dcc1 == dcc2
-
-# class ptest(object):
-# 	@property
-# 	def doubleslash(self):
-# 		return '//'
-
-# p = ptest()
-# p.doubleslash
+    def test_adapters_overwritten_by_others(self, tmp_path):
+        dcc_filepath = select_divvy_config(None)
+        dcc = divvy.ComputingConfiguration.from_yaml_file(filepath=dcc_filepath)
+        dcc.activate_package("singularity_slurm")
+        compute = YAMLConfigManager({"mem": 1000})
+        extra_vars = [{"compute": compute}, {"MEM": 333}]
+        outfile = str(tmp_path / "test1.sub")
+        dcc.write_script(outfile, extra_vars)
+        with open(outfile, "r") as f:
+            contents = f.read()
+            assert not (contents.find("1000") > 0)
+            assert contents.find("333") > 0

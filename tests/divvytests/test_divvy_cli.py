@@ -76,3 +76,21 @@ class TestDivvyWrite:
         with open(outfile) as f:
             contents = f.read()
         assert "echo hello" in contents
+
+    def test_write_no_outfile_prints_to_stdout(self, capsys):
+        from looper.__main__ import divvy_main
+
+        ret = divvy_main(
+            [
+                "write",
+                "--package",
+                "slurm",
+                "--compute",
+                "code=echo hello",
+                "jobname=test",
+            ]
+        )
+        assert ret == 0
+        captured = capsys.readouterr()
+        assert "echo hello" in captured.out
+        assert "SBATCH" in captured.out
