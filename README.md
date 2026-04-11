@@ -1,4 +1,4 @@
-# <img src="looper_logo.svg" alt="looper logo" height="70">
+# <img src="https://raw.githubusercontent.com/pepkit/looper/master/looper_logo.svg" alt="looper logo" height="70">
 
 ![Run pytests](https://github.com/pepkit/looper/workflows/Run%20pytests/badge.svg)
 [![PEP compatible](http://pepkit.github.io/img/PEP-compatible-green.svg)](http://pepkit.github.io)
