@@ -125,8 +125,8 @@ Processed Project manipulation functions, required pipelines with no pipestat su
 import os
 from logging import getLogger
 
-from eido.const import PROP_KEY
-from eido.exceptions import EidoSchemaInvalidError
+from peppy.eido.const import PROP_KEY
+from peppy.eido.exceptions import EidoSchemaInvalidError
 from peppy.project import Project
 from peppy.sample import Sample
 

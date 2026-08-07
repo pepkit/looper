@@ -11,11 +11,11 @@ except ImportError:
     # cached_property was introduced in python 3.8
     cached_property = property
 
-from eido import read_schema
 from jsonschema import ValidationError
 from pandas.core.common import flatten
 from peppy import Project as peppyProject
 from peppy.const import CONFIG_KEY
+from peppy.eido import read_schema
 from peppy.utils import make_abs_via_cfg
 from pipestat import PipestatManager
 

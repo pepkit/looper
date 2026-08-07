@@ -87,7 +87,7 @@ def write_sample_yaml_cwl(namespaces: dict) -> dict:
     Returns:
         dict: Updated variable namespaces dict.
     """
-    from eido import read_schema
+    from peppy.eido import read_schema
     from ubiquerg import is_url
 
     def _get_schema_source(

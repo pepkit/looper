@@ -15,10 +15,10 @@ from subprocess import check_output
 
 import psutil
 import yaml
-from eido import get_input_files_size, read_schema
-from eido.const import INPUT_FILE_SIZE_KEY, MISSING_KEY
 from jinja2.exceptions import UndefinedError
 from peppy.const import CONFIG_KEY, SAMPLE_YAML_EXT
+from peppy.eido import get_input_files_size, read_schema
+from peppy.eido.const import INPUT_FILE_SIZE_KEY, MISSING_KEY
 from peppy.exceptions import RemoteYAMLError
 from pipestat import PipestatError
 from ubiquerg import expandpath

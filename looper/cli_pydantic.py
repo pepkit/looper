@@ -86,8 +86,8 @@ def run_looper(args: Namespace, test_args=None):
     # Lazy imports - only load when actually running commands
     import logmuse
     import yaml
-    from eido import inspect_project
-    from pephubclient import PEPHubClient
+    from peppy.eido import inspect_project
+    from peppy.pephubclient import PEPHubClient
     from rich.console import Console
 
     from . import __version__
