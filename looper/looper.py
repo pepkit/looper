@@ -21,8 +21,8 @@ from collections import defaultdict
 from shutil import rmtree
 
 from colorama import Fore, Style
-from eido import validate_config, validate_sample
-from eido.exceptions import EidoValidationError
+from peppy.eido import validate_config, validate_sample
+from peppy.eido.exceptions import EidoValidationError
 from peppy.exceptions import RemoteYAMLError
 from pipestat.exceptions import PipestatSummarizeError
 from pipestat.reports import get_file_for_table

@@ -11,9 +11,9 @@ from logging import getLogger
 
 import jinja2
 import yaml
-from pephubclient.constants import RegistryPath
 from peppy import Project as peppyProject
 from peppy.const import CONFIG_KEY, NAME_KEY, SAMPLE_MODS_KEY
+from peppy.pephubclient.constants import RegistryPath
 from pydantic import ValidationError
 from rich.console import Console
 from rich.pretty import pprint

@@ -6,8 +6,8 @@ from logging import getLogger
 
 import jsonschema
 import pandas as pd
-from eido import read_schema
 from peppy import utils as peputil
+from peppy.eido import read_schema
 from ubiquerg import expandpath, is_url
 from yacman import YAMLConfigManager, load_yaml
 
