@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   id="svg1"
+   sodipodi:docname="modular.svg"
+   viewBox="0 0 35.433073 35.433073"
+   sodipodi:version="0.32"
+   version="1.0"
+   y="0"
+   x="0"
+   inkscape:version="0.91 r13725"
+   width="10mm"
+   height="10mm">
+  <defs
+     id="defs10" />
+  <sodipodi:namedview
+     id="base"
+     bordercolor="#666666"
+     inkscape:pageshadow="2"
+     inkscape:window-width="1016"
+     pagecolor="#ffffff"
+     inkscape:zoom="4.9119411"
+     inkscape:window-x="0"
+     borderopacity="1.0"
+     inkscape:cx="33.667126"
+     inkscape:cy="16.62639"
+     inkscape:window-y="0"
+     inkscape:window-height="685"
+     inkscape:pageopacity="0.0"
+     showgrid="false"
+     units="mm"
+     inkscape:current-layer="svg1" />
+  <g
+     id="g4138"
+     transform="matrix(0.63713905,0,0,0.63713905,-1.5326153,-1.7751912)">
+    <path
+       inkscape:connector-curvature="0"
+       sodipodi:stroke-cmyk="(0 0 0 0.8)"
+       transform="translate(1.2724,-2.2903)"
+       sodipodi:nodetypes="cc"
+       d="m 7.3092,55.679 c 6.1578,-1.447 12.83,-10.116 16.861,-15.201"
+       style="fill:none;stroke:#333333;stroke-width:3.125;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:3.125, 3.125"
+       id="path818" />
+    <path
+       inkscape:connector-curvature="0"
+       sodipodi:stroke-cmyk="(0 0 0 0.8)"
+       d="m 24.626,30.548 c -1.125,-0.943 -2.48,-1.165 -3.045,-0.494 L 16.5,36.09 16.17,36.481 c -0.052,0.062 -0.004,0.174 -0.039,0.246 -2.224,3.24 -1.757,7.653 1.321,10.233 3.079,2.58 7.548,2.304 10.362,-0.441 0.065,-0.047 0.184,-0.019 0.236,-0.081 l 0.329,-0.392 5.081,-6.035 c 0.565,-0.672 0.112,-1.965 -1.013,-2.908 l -7.821,-6.555 z"
+       transform="translate(1.2724,-2.2903)"
+       style="fill:#b3b3b3;fill-rule:evenodd;stroke:#333333;stroke-width:3.125;stroke-linecap:round;stroke-linejoin:round"
+       id="path821" />
+    <path
+       inkscape:connector-curvature="0"
+       sodipodi:stroke-cmyk="(0 0 0 0.8)"
+       transform="translate(-1.0179,2.5448)"
+       sodipodi:nodetypes="cc"
+       d="M 53.32,5.1674 C 47.162,6.6139 40.49,15.2834 36.459,20.3684"
+       style="fill:none;stroke:#333333;stroke-width:3.125;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:3.125, 3.125"
+       id="path883" />
+    <path
+       inkscape:connector-curvature="0"
+       sodipodi:stroke-cmyk="(0 0 0 0.8)"
+       d="m 36.003,30.299 c 1.125,0.942 2.481,1.164 3.046,0.493 l 5.08,-6.036 0.33,-0.391 c 0.052,-0.062 0.004,-0.174 0.039,-0.246 2.224,-3.239 1.758,-7.652 -1.321,-10.232 -3.079,-2.581 -7.548,-2.305 -10.362,0.441 -0.065,0.046 -0.184,0.019 -0.236,0.08 L 32.25,14.8 27.169,20.836 c -0.565,0.671 -0.112,1.965 1.013,2.907 l 7.821,6.556 z"
+       transform="translate(-1.0179,2.5448)"
+       style="fill:#b3b3b3;fill-rule:evenodd;stroke:#333333;stroke-width:3.125;stroke-linecap:round;stroke-linejoin:round"
+       id="path885" />
+  </g>
+  <metadata
+     id="metadata8">
+    <rdf:RDF>
+      <cc:Work>
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <cc:license
+           rdf:resource="http://creativecommons.org/publicdomain/zero/1.0/" />
+        <dc:publisher>
+          <cc:Agent
+             rdf:about="http://openclipart.org/">
+            <dc:title>Openclipart</dc:title>
+          </cc:Agent>
+        </dc:publisher>
+        <dc:title>ftnetwork connected</dc:title>
+        <dc:date>2011-01-31T02:06:32</dc:date>
+        <dc:description>Originally uploaded by Danny Allen for OCAL 0.18 this icon is part of the flat theme</dc:description>
+        <dc:source>https://openclipart.org/detail/113647/ftnetwork-connected-by-anonymous</dc:source>
+        <dc:creator>
+          <cc:Agent>
+            <dc:title>Anonymous</dc:title>
+          </cc:Agent>
+        </dc:creator>
+        <dc:subject>
+          <rdf:Bag>
+            <rdf:li>flat</rdf:li>
+            <rdf:li>icon</rdf:li>
+            <rdf:li>theme</rdf:li>
+          </rdf:Bag>
+        </dc:subject>
+      </cc:Work>
+      <cc:License
+         rdf:about="http://creativecommons.org/publicdomain/zero/1.0/">
+        <cc:permits
+           rdf:resource="http://creativecommons.org/ns#Reproduction" />
+        <cc:permits
+           rdf:resource="http://creativecommons.org/ns#Distribution" />
+        <cc:permits
+           rdf:resource="http://creativecommons.org/ns#DerivativeWorks" />
+      </cc:License>
+    </rdf:RDF>
+  </metadata>
+</svg>

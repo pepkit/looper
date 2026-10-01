@@ -1,0 +1,52 @@
+# Package `looper` Documentation
+
+## Package Overview
+
+The `looper` package is a pipeline submission engine that parses sample inputs and submits pipelines for each sample. It provides a unified interface for running bioinformatics pipelines across samples defined in PEPs.
+
+### Key Features
+
+- **Pipeline Execution**: Submit and manage pipeline jobs for multiple samples
+- **Compute Management**: Configure and use different compute environments
+- **Pipeline Interfaces**: Define how pipelines connect to sample metadata
+- **Job Tracking**: Monitor and manage pipeline execution status
+
+### Installation
+
+```bash
+pip install looper
+```
+
+### Quick Example
+
+```python
+from looper import Project
+
+# Initialize with a project config file
+prj = Project(cfg="project_config.yaml")
+
+# Run pipelines
+prj.run()
+```
+
+## API Reference
+
+### Project Class
+
+The main class for managing looper projects:
+
+::: looper.Project
+    options:
+      docstring_style: google
+      show_source: true
+      show_signature: true
+      merge_init_into_class: true
+
+### PipelineInterface Class
+
+::: looper.PipelineInterface
+    options:
+      docstring_style: google
+      show_source: true
+      show_signature: true
+      merge_init_into_class: true

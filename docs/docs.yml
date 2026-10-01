@@ -1,0 +1,48 @@
+site_name: Looper
+nav:
+  - Looper: README.md
+  - Installation: install.md
+  - Pipeline User Guide:
+    - User tutorial:
+      - Initiating a new looper project: user-tutorial/initialize.md
+      - Using PEP to simplify metadata: user-tutorial/metadata.md
+      - Configuring pipestat results: user-tutorial/user-pipestat.md
+      - Running project-level pipelines: user-tutorial/project-level-pipelines.md
+      - Configuring cluster computing: user-tutorial/compute-settings.md
+      - Conclusion: user-tutorial/conclusion.md
+    - Advanced user guide:
+      - Advanced run options: advanced-guide/advanced-run-options.md
+      - Customizing compute settings: advanced-guide/advanced-computing.md
+      - Advanced metadata features: advanced-guide/advanced-metadata.md
+    - How-to recipes:
+      - Custom submission templates: how-to/custom-submission-templates.md
+      - Running jobs in containers: how-to/containers.md
+      - Using looper with bulker: how-to/bulker.md
+      - Configure pipestat back-ends: how-to/configure-pipestat-backends.md
+      - Using divvy: using-divvy.md
+      - Link similar results: how-to/link-objects.md
+      - Report images and complex objects: how-to/report-objects.md
+      - Check status and rerun samples: how-to/rerun.md
+  - Pipeline Developer Docs:
+    - Developer tutorial:
+      - Writing a pipeline interface: developer-tutorial/writing-a-pipeline-interface.md
+      - Configuring a pipeline to use pipestat: developer-tutorial/developer-pipestat.md
+      - Using pre-submission hooks: developer-tutorial/pre-submission-hooks.md
+      - Pipeline interface specification: developer-tutorial/pipeline-interface-specification.md
+  - Reference:
+    - CLI Usage: usage.md
+    - Looper config file: looper-config.md
+    - Divvy CLI: divvy-cli.md
+    - API: code/python-api.md
+    - How to cite: /citations/
+    - FAQ: faq.md
+    - Support: support.md
+    - Contributing: contributing.md
+    - Changelog: changelog.md
+
+renderers:
+  - hub-python-api:
+      package_root: ..
+      packages: [looper]
+      include: [code/python-api.md]
+      docstring_style: google
