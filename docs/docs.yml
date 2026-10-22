@@ -23,6 +23,7 @@ nav:
       - Link similar results: how-to/link-objects.md
       - Report images and complex objects: how-to/report-objects.md
       - Check status and rerun samples: how-to/rerun.md
+      - Track submitted jobs: how-to/submission-records.md
   - Pipeline Developer Docs:
     - Developer tutorial:
       - Writing a pipeline interface: developer-tutorial/writing-a-pipeline-interface.md
