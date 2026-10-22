@@ -2,6 +2,14 @@
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format.
 
+## [Unreleased]
+
+### Added
+- Submission records: every real submission writes `<job_name>.submission.json` next to the `.sub` script, with the scheduler job id, samples, and return code. See [Track submitted jobs](how-to/submission-records.md).
+- `job_id_regex` compute package setting (set by default for the slurm and sge packages) to parse the job id from the submission command's output.
+- `--record-environment` flag (run, rerun, runp), also settable as the `record_environment` compute setting, to add container images and digests to each submission record.
+- `ComputingConfiguration.compute_package_name` holds the name of the active compute package.
+
 ## [2.1.1] -- 2026-03-25
 
 ### Changed
