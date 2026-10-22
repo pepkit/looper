@@ -1,14 +1,17 @@
 """Pipeline job submission orchestration"""
 
 import importlib
+import json
 import logging
 import os
+import re
 import shlex
 import signal
 import subprocess
 import sys
 import threading
 import time
+from datetime import datetime, timezone
 from json import loads
 from math import ceil
 from subprocess import check_output
@@ -28,6 +31,8 @@ from yaml import dump
 from .const import (
     EXTRA_PROJECT_CMD_TEMPLATE,
     EXTRA_SAMPLE_CMD_TEMPLATE,
+    JOB_ID_REGEX_KEY,
+    JOB_ID_REGEXES,
     JOB_NAME_KEY,
     NOT_SUB_MSG,
     OUTDIR_KEY,
@@ -39,10 +44,12 @@ from .const import (
     RESULTS_SUBDIR_KEY,
     SAMPLE_CWL_YAML_PATH_KEY,
     SAMPLE_PL_KEY,
+    SUBMISSION_RECORD_SUFFIX,
     SUBMISSION_SUBDIR_KEY,
     VAR_TEMPL_KEY,
     PipelineLevel,
 )
+from .container_digests import describe_environment
 from .exceptions import JobSubmissionException
 from .processed_project import populate_sample_paths
 from .utils import (
@@ -50,6 +57,7 @@ from .utils import (
     fetch_sample_flags,
     jinja_render_template_strictly,
     render_inject_env_vars,
+    write_file_atomically,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -143,6 +151,20 @@ def write_pipestat_config(
     return True
 
 
+def _job_id_regex(compute: dict) -> str | None:
+    """Regex that finds the scheduler job id in the submission command's output.
+
+    An explicit ``job_id_regex`` in the compute package wins (null turns
+    capture off). Otherwise sbatch, qsub and bsub get a default. Anything
+    else (such as ``.`` for local runs) gets None, and the submission
+    command's output is left alone.
+    """
+    if JOB_ID_REGEX_KEY in compute:
+        return compute[JOB_ID_REGEX_KEY]
+    command = os.path.basename(compute["submission_command"].split()[0])
+    return JOB_ID_REGEXES.get(command)
+
+
 def write_submission_yaml(namespaces: dict) -> dict:
     """Save all namespaces to YAML.
 
@@ -187,6 +209,7 @@ class SubmissionConductor(object):
         max_jobs: int | float | None = None,
         automatic: bool = True,
         collate: bool = False,
+        record_environment: bool = False,
     ) -> None:
         """Create a job submission manager.
 
@@ -225,10 +248,16 @@ class SubmissionConductor(object):
                 the pool reaches capacity.
             collate (bool): Whether a collate job is to be submitted (runs on
                 the project level, rather that on the sample level).
+            record_environment (bool): Whether to add the container crate and
+                images (with digests, if docker/bulker can supply them) to
+                each submission record. A ``record_environment`` compute
+                setting (divvy package, pipeline interface, or --compute)
+                turns this on too.
         """
         super(SubmissionConductor, self).__init__()
 
         self.collate = collate
+        self.record_environment = record_environment
         self.section_key = PROJECT_PL_KEY if self.collate else SAMPLE_PL_KEY
         self.pipeline_interface_type = (
             "project_interface" if self.collate else "sample_interface"
@@ -435,6 +464,11 @@ class SubmissionConductor(object):
         of samples if and only if the argument to 'force' evaluates to a
         true value, or the pool of samples is full.
 
+        Each real submission also writes ``<job_name>.submission.json`` next
+        to the ``.sub`` script, holding the scheduler job id (parsed from the
+        submission command's output; see `_job_id_regex`), the samples, and
+        the return code.
+
         Args:
             force (bool): Whether submission should be done/simulated even
                 if this conductor's pool isn't full.
@@ -474,6 +508,12 @@ class SubmissionConductor(object):
                 _LOGGER.info("Dry run, not submitted")
             elif self._rendered_ok:
                 sub_cmd = self.prj.dcc.compute["submission_command"]
+                regex = _job_id_regex(self.prj.dcc.compute)
+                # Capture stdout only to parse a job id from it; a local run
+                # (".") is the pipeline itself and must keep streaming.
+                popen_kwargs = (
+                    {"stdout": subprocess.PIPE, "text": True} if regex else {}
+                )
 
                 # Detect shell metacharacters that require shell=True
                 shell_chars = set("|&;<>()$`\\\"' \t\n*?[#~")
@@ -484,7 +524,7 @@ class SubmissionConductor(object):
                 if sub_cmd == ".":
                     # Direct execution: run script through bash without a submission wrapper
                     _LOGGER.debug("Direct execution via bash: %s", script)
-                    process = subprocess.Popen(["/bin/bash", script])
+                    process = subprocess.Popen(["/bin/bash", script], **popen_kwargs)
                 elif needs_shell:
                     _LOGGER.debug(
                         "Shell execution (detected shell syntax): %s %s",
@@ -492,13 +532,27 @@ class SubmissionConductor(object):
                         script,
                     )
                     process = subprocess.Popen(
-                        f"{sub_cmd} {script}", shell=True, executable="/bin/bash"
+                        f"{sub_cmd} {script}",
+                        shell=True,
+                        executable="/bin/bash",
+                        **popen_kwargs,
                     )
                 else:
                     _LOGGER.debug("Direct execution: %s %s", sub_cmd, script)
-                    process = subprocess.Popen(shlex.split(sub_cmd) + [script])
+                    process = subprocess.Popen(
+                        shlex.split(sub_cmd) + [script], **popen_kwargs
+                    )
                 self.process_id = process.pid
-                process.wait()
+                submitted_at = datetime.now(timezone.utc).isoformat()
+                if not regex:
+                    # The process is the job itself: record it while it runs
+                    self._write_submission_record(script, submitted_at, None, None)
+                stdout, _ = process.communicate()
+                if stdout:
+                    sys.stdout.write(stdout)
+                self._write_submission_record(
+                    script, submitted_at, stdout, regex, process.returncode
+                )
                 if process.returncode != 0:
                     fails = (
                         "" if self.collate else [s.sample_name for s in self._samples]
@@ -522,6 +576,53 @@ class SubmissionConductor(object):
             # submitted = False
 
         return submitted
+
+    def _write_submission_record(
+        self,
+        script: str,
+        submitted_at: str,
+        stdout: str | None,
+        regex: str | None,
+        returncode: int | None = None,
+    ) -> None:
+        """Write ``<job_name>.submission.json`` next to the job script.
+
+        Args:
+            script (str): Path to the job submission script.
+            submitted_at (str): ISO 8601 UTC time of the submission.
+            stdout (str | None): Captured output of the submission command.
+            regex (str | None): Regex whose first group is the job id.
+            returncode (int | None): Exit code of the submission command, or
+                None while it is still running.
+        """
+        job_id = None
+        if stdout and regex:
+            match = re.search(regex, stdout, re.MULTILINE)
+            if match:
+                job_id = match.group(1) if match.groups() else match.group(0)
+            else:
+                _LOGGER.warning(f"No job id matched {regex!r} in: {stdout!r}")
+        record = {
+            "job_name": os.path.splitext(os.path.basename(script))[0],
+            "job_id": job_id,
+            "pid": None if regex else self.process_id,
+            "samples": [s.sample_name for s in self._pool if s],
+            "pipeline": self.pl_name,
+            "compute_package": self.prj.dcc.compute_package_name,
+            "submission_command": self.prj.dcc.compute["submission_command"],
+            "script": script,
+            "submitted_at": submitted_at,
+            "submit_stdout": stdout,
+            "returncode": returncode,
+        }
+        compute_setting = str(self.prj.dcc.compute.get("record_environment"))
+        if self.record_environment or compute_setting.lower() in ("true", "yes"):
+            record["environment"] = describe_environment(self.prj.dcc.compute)
+        path = os.path.splitext(script)[0] + SUBMISSION_RECORD_SUFFIX
+        try:
+            write_file_atomically(path, json.dumps(record, indent=2))
+        except OSError as e:
+            _LOGGER.warning(f"Could not write submission record {path}: {e}")
 
     def _is_full(self, pool: list, size: float) -> bool:
         """Determine whether it's time to submit a job for the pool of commands.

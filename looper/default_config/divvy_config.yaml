@@ -1,6 +1,8 @@
 # Use this to change your cluster manager (SLURM, SGE, LFS, etc).
 # Relative paths are relative to this compute environment configuration file.
 # Compute resource parameters fill the submission_template file's fields.
+# job_id_regex is a Python regex run on the submission command's output; its
+# first capture group is the scheduler job id, saved in the submission record.
 adapters:
   CODE: looper.command
   JOBNAME: looper.job_name
@@ -29,11 +31,13 @@ compute_packages:
   slurm:
     submission_template: divvy_templates/slurm_template.sub
     submission_command: sbatch
+    job_id_regex: 'Submitted batch job (\d+)'
     pre_command: ""
     post_command: ""
   sge:
     submission_template: divvy_templates/sge_template.sub
     submission_command: qsub
+    job_id_regex: 'Your job(?:-array)? (\d+)'
     pre_command: ""
     post_command: ""
   apptainer:
@@ -45,6 +49,7 @@ compute_packages:
   apptainer_slurm:
     submission_template: divvy_templates/slurm_apptainer_template.sub
     submission_command: sbatch
+    job_id_regex: 'Submitted batch job (\d+)'
     apptainer_args: ""
     pre_command: ""
     post_command: ""
@@ -56,6 +61,7 @@ compute_packages:
   bulker_slurm:
     submission_template: divvy_templates/bulker_slurm_template.sub
     submission_command: sbatch
+    job_id_regex: 'Submitted batch job (\d+)'
     pre_command: ""
     post_command: ""
   docker:

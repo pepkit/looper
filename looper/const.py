@@ -93,6 +93,9 @@ __all__ = [
     "LOOPER_GENERIC_OUTPUT_SCHEMA",
     "LOOPER_GENERIC_COUNT_LINES",
     "PipelineLevel",
+    "SUBMISSION_RECORD_SUFFIX",
+    "JOB_ID_REGEX_KEY",
+    "JOB_ID_REGEXES",
 ]
 
 FLAGS = ["completed", "running", "failed", "waiting", "partial"]
@@ -132,6 +135,16 @@ def _get_apperance_dict(type: str, templ: dict = APPEARANCE_BY_FLAG) -> dict:
 DEBUG_JOBS = "Jobs submitted"
 DEBUG_COMMANDS = "Commands submitted"
 DEBUG_EIDO_VALIDATION = "EidoValidationError"
+
+# Submission records (one JSON file per submitted job)
+SUBMISSION_RECORD_SUFFIX = ".submission.json"
+JOB_ID_REGEX_KEY = "job_id_regex"
+# Defaults by submission command, for packages that set no job_id_regex
+JOB_ID_REGEXES = {
+    "sbatch": r"Submitted batch job (\d+)",
+    "qsub": r"Your job(?:-array)? (\d+)",
+    "bsub": r"Job <(\d+)>",
+}
 
 # Compute-related (for divvy)
 COMPUTE_SETTINGS_VARNAME = ["DIVCFG"]

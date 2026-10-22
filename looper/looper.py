@@ -365,6 +365,7 @@ class Collator(Executor):
                 extra_args_override=getattr(args, "command_extra_override", None),
                 ignore_flags=getattr(args, "ignore_flags", None),
                 collate=True,
+                record_environment=getattr(args, "record_environment", False),
             )
             if conductor.is_project_submittable(
                 force=getattr(args, "ignore_flags", None)
@@ -432,6 +433,7 @@ class Runner(Executor):
                 max_cmds=getattr(args, "lump_n", None),
                 max_size=getattr(args, "lump", None),
                 max_jobs=getattr(args, "lump_j", None),
+                record_environment=getattr(args, "record_environment", False),
             )
             submission_conductors[piface.pipe_iface_file] = conductor
 

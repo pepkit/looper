@@ -5,6 +5,7 @@ import glob
 import itertools
 import os
 import re
+import tempfile
 from collections import defaultdict
 from collections.abc import Iterable
 from logging import getLogger
@@ -282,6 +283,24 @@ def render_inject_env_vars(inject_env_vars: dict, namespaces: dict) -> dict[str,
     for var_name, template in inject_env_vars.items():
         rendered[var_name] = jinja_render_template_strictly(template, namespaces)
     return rendered
+
+
+def write_file_atomically(path: str, text: str) -> None:
+    """Write text to a file so that readers never see a partial file.
+
+    The text goes to a temp file in the same directory, which is then renamed
+    over the target. Rename is atomic on one filesystem, so anything polling
+    the file (for example a tool watching submission records, possibly over
+    SSH) sees either the old complete file or the new one.
+
+    Args:
+        path (str): Target file path.
+        text (str): File contents.
+    """
+    fd, tmp = tempfile.mkstemp(dir=os.path.dirname(path) or ".", prefix=".tmp-")
+    with os.fdopen(fd, "w") as f:
+        f.write(text)
+    os.replace(tmp, path)
 
 
 def read_yaml_file(filepath: str) -> dict | None:
