@@ -113,6 +113,7 @@ RunParser = Command(
     MESSAGE_BY_SUBCOMMAND["run"],
     [
         ArgumentEnum.IGNORE_FLAGS.value,
+        ArgumentEnum.RECORD_ENVIRONMENT.value,
         ArgumentEnum.TIME_DELAY.value,
         ArgumentEnum.DRY_RUN.value,
         ArgumentEnum.COMMAND_EXTRA.value,
@@ -133,6 +134,7 @@ RerunParser = Command(
     MESSAGE_BY_SUBCOMMAND["rerun"],
     [
         ArgumentEnum.IGNORE_FLAGS.value,
+        ArgumentEnum.RECORD_ENVIRONMENT.value,
         ArgumentEnum.TIME_DELAY.value,
         ArgumentEnum.DRY_RUN.value,
         ArgumentEnum.COMMAND_EXTRA.value,
@@ -153,6 +155,7 @@ RunProjectParser = Command(
     MESSAGE_BY_SUBCOMMAND["runp"],
     [
         ArgumentEnum.IGNORE_FLAGS.value,
+        ArgumentEnum.RECORD_ENVIRONMENT.value,
         ArgumentEnum.TIME_DELAY.value,
         ArgumentEnum.DRY_RUN.value,
         ArgumentEnum.COMMAND_EXTRA.value,

@@ -3,7 +3,8 @@
 import pytest
 from yacman import YAMLConfigManager, load_yaml
 
-from looper.divvy import DEFAULT_COMPUTE_RESOURCES_NAME
+import looper.divvy as divvy
+from looper.divvy import DEFAULT_COMPUTE_RESOURCES_NAME, select_divvy_config
 from tests.divvytests.conftest import DCC_ATTRIBUTES, FILES
 
 
@@ -100,3 +101,14 @@ class UpdatingPackagesTests:
         entries = load_yaml(config_file)
         dcc.update(entries)
         assert dcc["compute_packages"] != YAMLConfigManager()
+
+
+def test_compute_package_name_tracks_activation():
+    dcc = divvy.ComputingConfiguration.from_yaml_file(
+        filepath=select_divvy_config(None)
+    )
+    assert dcc.compute_package_name == DEFAULT_COMPUTE_RESOURCES_NAME
+    dcc.activate_package("slurm")
+    assert dcc.compute_package_name == "slurm"
+    dcc.reset_active_settings()
+    assert dcc.compute_package_name is None

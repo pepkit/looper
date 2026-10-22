@@ -103,6 +103,11 @@ class ArgumentEnum(enum.Enum):
         default=(bool, False),
         description="Ignore run status flags",
     )
+    RECORD_ENVIRONMENT = Argument(
+        name="record_environment",
+        default=(bool, False),
+        description="Record container images and digests in submission records",
+    )
     FORCE_YES = Argument(
         name="force_yes",
         alias="f",

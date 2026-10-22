@@ -47,6 +47,7 @@ class ComputingConfiguration(YAMLConfigManager):
         # Initialize default compute settings.
         _LOGGER.debug("Establishing project compute settings")
         self.compute = None
+        self.compute_package_name = None
         self.setdefault("adapters", None)
         self.activate_package(DEFAULT_COMPUTE_RESOURCES_NAME)
 
@@ -112,7 +113,7 @@ class ComputingConfiguration(YAMLConfigManager):
 
         This copies the computing attributes from the configuration file into
         the `compute` attribute, where the class stores current compute
-        settings.
+        settings, and records the package name in `compute_package_name`.
 
         Args:
             package_name (str): Name for non-resource compute bundle,
@@ -169,6 +170,7 @@ class ComputingConfiguration(YAMLConfigManager):
                 "Submit template set to: {}".format(self.compute["submission_template"])
             )
 
+            self.compute_package_name = package_name
             return True
 
         else:
@@ -222,6 +224,7 @@ class ComputingConfiguration(YAMLConfigManager):
             bool: Success flag.
         """
         self.compute = YAMLConfigManager()
+        self.compute_package_name = None
         return True
 
     def update_packages(self, config_file: str) -> bool:
